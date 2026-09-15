@@ -30,3 +30,16 @@ export const DEFAULT_USER_ROLE: UserRole = "registered-user";
 export function isUserRole(value: string | null | undefined): value is UserRole {
   return !!value && (USER_ROLES as readonly string[]).includes(value);
 }
+
+/**
+ * The breadcrumb org pill's label for a role that has one (see `orgSwitcher` in
+ * `config/role-access.config.ts`, and `Breadcrumb`'s `orgLabel` prop). `biodata-admin`/
+ * `biodata-user` are themselves DEW - a real, fixed, known org - so the pill can say so instead of
+ * the generic "ORG". `privileged-admin`/`privileged-user` are affiliated with one of several
+ * partner orgs (Birds SA, Adelaide Hills Landcare, ...) with no single logged-in org context to
+ * show a real name for in this exploratory build, so "ORG" stays the honest placeholder there.
+ * Flagged directly by the user: DEW for the `biodata-*` roles, ORG stays for `privileged-*`.
+ */
+export function orgLabelForRole(role: UserRole): string {
+  return role === "biodata-admin" || role === "biodata-user" ? "DEW" : "ORG";
+}

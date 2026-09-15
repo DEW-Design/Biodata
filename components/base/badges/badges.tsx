@@ -146,14 +146,14 @@ export const Badge = <T extends BadgeTypes>(props: BadgeProps<T>) => {
     const colors = withPillTypes[type];
 
     const pillSizes = {
-        sm: "py-1.5 px-2 text-xs font-medium",
-        md: "py-2 px-2.5 text-sm font-medium",
-        lg: "py-2 px-3 text-md font-medium",
+        sm: "py-1.5 px-2 text-xs font-semibold uppercase tracking-wide leading-none",
+        md: "py-2 px-2.5 text-sm font-semibold uppercase tracking-wide leading-none",
+        lg: "py-2 px-3 text-base font-semibold uppercase tracking-wide leading-none",
     };
     const badgeSizes = {
-        sm: "py-1.5 px-1.5 text-xs font-medium",
-        md: "py-2 px-2 text-sm font-medium",
-        lg: "py-2 px-2.5 text-md font-medium rounded-lg",
+        sm: "py-1.5 px-1.5 text-xs font-semibold uppercase tracking-wide leading-none",
+        md: "py-2 px-2 text-sm font-semibold uppercase tracking-wide leading-none",
+        lg: "py-2 px-2.5 text-base font-semibold uppercase tracking-wide leading-none rounded-lg",
     };
 
     const sizes = {
@@ -164,6 +164,40 @@ export const Badge = <T extends BadgeTypes>(props: BadgeProps<T>) => {
 
     return <span className={cx(colors.common, sizes[type][size], colors.styles[color].root, props.className)}>{children}</span>;
 };
+
+interface CountBadgeProps {
+    count: number;
+    color?: "gray" | "brand" | "error";
+    className?: string;
+}
+
+/**
+ * A true circle for a short numeric count sitting next to a heading (e.g. "Needs your attention 3") -
+ * fixed equal width/height, not Badge's own horizontal-heavy pill padding, which renders a lone
+ * digit as an oval rather than a circle no matter how the vertical padding is tuned. Modelled on the
+ * one place in this codebase that already gets a numeric count right: the icon rail's notification
+ * dot (e.g. app/pages/project-list/option-1/page.tsx's Home badge) - a fixed-size box instead of a
+ * per-usage padding hack. Flagged directly by the user: the "Needs your attention" heading count on
+ * both dashboard/option-1 (app/pages/_shared/home-dashboard.tsx) and dashboard/option-2 looked
+ * "awkward" as a Badge with tuned padding - this replaces both.
+ *
+ * `color="error"` reuses the icon rail's exact `bg-error-solid text-white` treatment (same
+ * component, same source data - dashboardTasks.length) - flagged directly by the user as too
+ * low-contrast in gray for a count that's meant to draw attention, not just report a total.
+ */
+export const CountBadge = ({ count, color = "gray", className }: CountBadgeProps) => (
+    <span
+        className={cx(
+            "flex size-5 shrink-0 items-center justify-center rounded-full text-xs font-semibold tabular-nums",
+            color === "brand" && "bg-utility-brand-50 text-utility-brand-700",
+            color === "error" && "bg-error-solid text-white",
+            color === "gray" && "bg-utility-neutral-50 text-utility-neutral-700",
+            className,
+        )}
+    >
+        {count}
+    </span>
+);
 
 interface BadgeWithDotProps<T extends BadgeTypes> {
     type?: T;
@@ -182,15 +216,15 @@ export const BadgeWithDot = <T extends BadgeTypes>(props: BadgeWithDotProps<T>) 
     const backgroundlessColors = backgroundlessDotColors[color as BadgeColors];
 
     const pillSizes = {
-        sm: "gap-1 py-0.5 pl-1.5 pr-2 text-xs font-medium",
-        md: "gap-1.5 py-0.5 pl-2 pr-2.5 text-sm font-medium",
-        lg: "gap-1.5 py-1 pl-2.5 pr-3 text-sm font-medium",
+        sm: "gap-1 py-0.5 pl-1.5 pr-2 text-xs font-semibold uppercase tracking-wide leading-none",
+        md: "gap-1.5 py-0.5 pl-2 pr-2.5 text-sm font-semibold uppercase tracking-wide leading-none",
+        lg: "gap-1.5 py-1 pl-2.5 pr-3 text-sm font-semibold uppercase tracking-wide leading-none",
     };
 
     const badgeSizes = {
-        sm: "gap-1 py-0.5 px-1.5 text-xs font-medium",
-        md: "gap-1.5 py-0.5 px-2 text-sm font-medium",
-        lg: "gap-1.5 py-1 px-2.5 text-sm font-medium rounded-lg",
+        sm: "gap-1 py-0.5 px-1.5 text-xs font-semibold uppercase tracking-wide leading-none",
+        md: "gap-1.5 py-0.5 px-2 text-sm font-semibold uppercase tracking-wide leading-none",
+        lg: "gap-1.5 py-1 px-2.5 text-sm font-semibold uppercase tracking-wide leading-none rounded-lg",
     };
 
     const sizes = {
@@ -233,30 +267,30 @@ export const BadgeWithIcon = <T extends BadgeTypes>(props: BadgeWithIconProps<T>
 
     const pillSizes = {
         sm: {
-            trailing: "gap-0.5 py-1.5 pl-2 pr-1.5 text-xs font-medium",
-            leading: "gap-0.5 py-1.5 pr-2 pl-1.5 text-xs font-medium",
+            trailing: "gap-0.5 py-1.5 pl-2 pr-1.5 text-xs font-semibold uppercase tracking-wide leading-none",
+            leading: "gap-0.5 py-1.5 pr-2 pl-1.5 text-xs font-semibold uppercase tracking-wide leading-none",
         },
         md: {
-            trailing: "gap-1 py-2 pl-2.5 pr-2 text-sm font-medium",
-            leading: "gap-1 py-2 pr-2.5 pl-2 text-sm font-medium",
+            trailing: "gap-1 py-2 pl-2.5 pr-2 text-sm font-semibold uppercase tracking-wide leading-none",
+            leading: "gap-1 py-2 pr-2.5 pl-2 text-sm font-semibold uppercase tracking-wide leading-none",
         },
         lg: {
-            trailing: "gap-1 py-2 pl-3 pr-2.5 text-md font-medium",
-            leading: "gap-1 py-2 pr-3 pl-2.5 text-md font-medium",
+            trailing: "gap-1 py-2 pl-3 pr-2.5 text-base font-semibold uppercase tracking-wide leading-none",
+            leading: "gap-1 py-2 pr-3 pl-2.5 text-base font-semibold uppercase tracking-wide leading-none",
         },
     };
     const badgeSizes = {
         sm: {
-            trailing: "gap-0.5 py-1.5 pl-2 pr-1.5 text-xs font-medium",
-            leading: "gap-0.5 py-1.5 pr-2 pl-1.5 text-xs font-medium",
+            trailing: "gap-0.5 py-1.5 pl-2 pr-1.5 text-xs font-semibold uppercase tracking-wide leading-none",
+            leading: "gap-0.5 py-1.5 pr-2 pl-1.5 text-xs font-semibold uppercase tracking-wide leading-none",
         },
         md: {
-            trailing: "gap-1 py-2 pl-2 pr-1.5 text-sm font-medium",
-            leading: "gap-1 py-2 pr-2 pl-1.5 text-sm font-medium",
+            trailing: "gap-1 py-2 pl-2 pr-1.5 text-sm font-semibold uppercase tracking-wide leading-none",
+            leading: "gap-1 py-2 pr-2 pl-1.5 text-sm font-semibold uppercase tracking-wide leading-none",
         },
         lg: {
-            trailing: "gap-1 py-2 pl-2.5 pr-2 text-md font-medium rounded-lg",
-            leading: "gap-1 py-2 pr-2.5 pl-2 text-md font-medium rounded-lg",
+            trailing: "gap-1 py-2 pl-2.5 pr-2 text-base font-semibold uppercase tracking-wide leading-none rounded-lg",
+            leading: "gap-1 py-2 pr-2.5 pl-2 text-base font-semibold uppercase tracking-wide leading-none rounded-lg",
         },
     };
 
@@ -289,14 +323,14 @@ export const BadgeWithFlag = <T extends BadgeTypes>(props: BadgeWithFlagProps<T>
     const colors = withPillTypes[type];
 
     const pillSizes = {
-        sm: "gap-1 py-1.5 pl-0.75 pr-2 text-xs font-medium",
-        md: "gap-1.5 py-2 pl-1 pr-2.5 text-sm font-medium",
-        lg: "gap-1.5 py-2 pl-1.5 pr-3 text-md font-medium",
+        sm: "gap-1 py-1.5 pl-0.75 pr-2 text-xs font-semibold uppercase tracking-wide leading-none",
+        md: "gap-1.5 py-2 pl-1 pr-2.5 text-sm font-semibold uppercase tracking-wide leading-none",
+        lg: "gap-1.5 py-2 pl-1.5 pr-3 text-base font-semibold uppercase tracking-wide leading-none",
     };
     const badgeSizes = {
-        sm: "gap-1 py-1.5 pl-1 pr-1.5 text-xs font-medium",
-        md: "gap-1.5 py-2 pl-1.5 pr-2 text-sm font-medium",
-        lg: "gap-1.5 py-2 pl-2 pr-2.5 text-md font-medium rounded-lg",
+        sm: "gap-1 py-1.5 pl-1 pr-1.5 text-xs font-semibold uppercase tracking-wide leading-none",
+        md: "gap-1.5 py-2 pl-1.5 pr-2 text-sm font-semibold uppercase tracking-wide leading-none",
+        lg: "gap-1.5 py-2 pl-2 pr-2.5 text-base font-semibold uppercase tracking-wide leading-none rounded-lg",
     };
 
     const sizes = {
@@ -327,14 +361,14 @@ export const BadgeWithImage = <T extends BadgeTypes>(props: BadgeWithImageProps<
     const colors = withPillTypes[type];
 
     const pillSizes = {
-        sm: "gap-1 py-1.5 pl-0.75 pr-2 text-xs font-medium",
-        md: "gap-1.5 py-2 pl-1 pr-2.5 text-sm font-medium",
-        lg: "gap-1.5 py-2 pl-1.5 pr-3 text-md font-medium",
+        sm: "gap-1 py-1.5 pl-0.75 pr-2 text-xs font-semibold uppercase tracking-wide leading-none",
+        md: "gap-1.5 py-2 pl-1 pr-2.5 text-sm font-semibold uppercase tracking-wide leading-none",
+        lg: "gap-1.5 py-2 pl-1.5 pr-3 text-base font-semibold uppercase tracking-wide leading-none",
     };
     const badgeSizes = {
-        sm: "gap-1 py-1.5 pl-1 pr-1.5 text-xs font-medium",
-        md: "gap-1.5 py-2 pl-1.5 pr-2 text-sm font-medium",
-        lg: "gap-1.5 py-2 pl-2 pr-2.5 text-md font-medium rounded-lg",
+        sm: "gap-1 py-1.5 pl-1 pr-1.5 text-xs font-semibold uppercase tracking-wide leading-none",
+        md: "gap-1.5 py-2 pl-1.5 pr-2 text-sm font-semibold uppercase tracking-wide leading-none",
+        lg: "gap-1.5 py-2 pl-2 pr-2.5 text-base font-semibold uppercase tracking-wide leading-none rounded-lg",
     };
 
     const sizes = {
@@ -373,14 +407,14 @@ export const BadgeWithButton = <T extends BadgeTypes>(props: BadgeWithButtonProp
     const colors = withPillTypes[type];
 
     const pillSizes = {
-        sm: "gap-0.5 py-1.5 pl-2 pr-0.75 text-xs font-medium",
-        md: "gap-0.5 py-2 pl-2.5 pr-1 text-sm font-medium",
-        lg: "gap-0.5 py-2 pl-3 pr-1.5 text-md font-medium",
+        sm: "gap-0.5 py-1.5 pl-2 pr-0.75 text-xs font-semibold uppercase tracking-wide leading-none",
+        md: "gap-0.5 py-2 pl-2.5 pr-1 text-sm font-semibold uppercase tracking-wide leading-none",
+        lg: "gap-0.5 py-2 pl-3 pr-1.5 text-base font-semibold uppercase tracking-wide leading-none",
     };
     const badgeSizes = {
-        sm: "gap-0.5 py-1.5 pl-1.5 pr-0.75 text-xs font-medium",
-        md: "gap-0.5 py-2 pl-2 pr-1 text-sm font-medium",
-        lg: "gap-0.5 py-2 pl-2.5 pr-1.5 text-md font-medium rounded-lg",
+        sm: "gap-0.5 py-1.5 pl-1.5 pr-0.75 text-xs font-semibold uppercase tracking-wide leading-none",
+        md: "gap-0.5 py-2 pl-2 pr-1 text-sm font-semibold uppercase tracking-wide leading-none",
+        lg: "gap-0.5 py-2 pl-2.5 pr-1.5 text-base font-semibold uppercase tracking-wide leading-none rounded-lg",
     };
 
     const sizes = {

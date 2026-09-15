@@ -23,7 +23,7 @@
 import type { UserRole } from "@/lib/user-role";
 
 /** One entry per gated product feature. Add a key as a feature is actually gated - don't pre-populate speculatively. */
-export type FeatureKey = "orgSwitcher";
+export type FeatureKey = "orgSwitcher" | "metricCardCustomization";
 
 /** Feature -> the roles (besides biodata-admin, which always passes) allowed to see it. */
 export const roleAccessMatrix: Record<FeatureKey, UserRole[]> = {
@@ -32,6 +32,13 @@ export const roleAccessMatrix: Record<FeatureKey, UserRole[]> = {
   // alongside the partner-org roles (privileged-admin/privileged-user) - only registered-user and
   // public-user have no organisation at all.
   orgSwitcher: ["privileged-user", "privileged-admin", "biodata-user"],
+  // The Flora and Fauna Dashboard's per-card three-dot menu (swap which metric sits in which
+  // slot) - flagged directly by the user: only the admin can reconfigure these cards, and that
+  // choice flows through to every other role's view, not something each signed-in user picks for
+  // themselves. Empty array (no role besides the biodata-admin bypass) rather than an omitted
+  // entry, since an omitted `FeatureKey` defaults to visible-to-everyone - the opposite of what's
+  // needed here.
+  metricCardCustomization: [],
 };
 
 /**

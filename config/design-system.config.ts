@@ -44,6 +44,17 @@ export interface ComponentConfig {
 export type DesignSystemConfig = Record<string, ComponentConfig>;
 
 export const designSystemConfig: DesignSystemConfig = {
+  accordion: {
+    title: "Accordion",
+    enabled: true,
+    features: {
+      playground: true,
+      singleOpen: true,
+      usage: true,
+      figma: true,
+    },
+  },
+
   alert: {
     title: "Alert",
     enabled: true,
@@ -219,6 +230,26 @@ export const designSystemConfig: DesignSystemConfig = {
     },
   },
 
+  progress: {
+    title: "Progress",
+    enabled: true,
+    sizes: [
+      { key: "xxs", label: "XXS", enabled: true },
+      { key: "xs",  label: "XS",  enabled: true },
+      { key: "sm",  label: "SM",  enabled: true },
+      { key: "md",  label: "MD",  enabled: true },
+      { key: "lg",  label: "LG",  enabled: true },
+    ],
+    features: {
+      playground: true,
+      linear: true,
+      circle: true,
+      halfCircle: true,
+      usage: true,
+      figma: true,
+    },
+  },
+
   "radio-buttons": {
     title: "Radio buttons",
     enabled: true,
@@ -262,6 +293,17 @@ export const designSystemConfig: DesignSystemConfig = {
     },
   },
 
+  "section-headers": {
+    title: "Section headers",
+    enabled: true,
+    features: {
+      playground: true,
+      actions: true,
+      usage: true,
+      figma: true,
+    },
+  },
+
   select: {
     title: "Select",
     enabled: true,
@@ -284,6 +326,33 @@ export const designSystemConfig: DesignSystemConfig = {
       multiSelect: true,
       tagSelect: true,
       nativeSelect: true,
+      usage: true,
+      figma: true,
+    },
+  },
+
+  tabs: {
+    title: "Tabs",
+    enabled: true,
+    // button-brand/button-gray/button-border/button-minimal are shared between orientations
+    // (no `group`, so they show in both the Horizontal and Vertical Types sections below);
+    // underline is horizontal-only, line is vertical-only, per the component's own
+    // HorizontalTypes/VerticalTypes union split in components/application/tabs/tabs.tsx.
+    types: [
+      { key: "button-brand",   label: "Button brand",   enabled: true },
+      { key: "button-gray",    label: "Button gray",    enabled: true },
+      { key: "button-border",  label: "Button border",  enabled: true },
+      { key: "button-minimal", label: "Button minimal", enabled: true },
+      { key: "underline",      label: "Underline",      enabled: true, group: "horizontal" },
+      { key: "line",           label: "Line",           enabled: true, group: "vertical" },
+    ],
+    sizes: [
+      { key: "sm", label: "Small",  enabled: true },
+      { key: "md", label: "Medium", enabled: true },
+    ],
+    features: {
+      playground: true,
+      fullWidth: true,
       usage: true,
       figma: true,
     },

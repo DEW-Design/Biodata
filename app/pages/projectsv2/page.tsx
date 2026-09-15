@@ -21,13 +21,14 @@ import {
   SearchLg,
   Share03,
   Sliders02,
-  Table,
+  Table as TableIcon,
   Target01,
   X,
 } from "@untitledui/icons";
 import { Avatar } from "@/components/base/avatar/avatar";
 import { Badge, BadgeWithDot } from "@/components/base/badges/badges";
 import { Input } from "@/components/base/input/input";
+import { Cell, Column, Row, Table, TableBody, TableHeader } from "@/components/base/table/table";
 
 type Icon = ComponentType<SVGProps<SVGSVGElement>>;
 
@@ -206,7 +207,7 @@ function ProjectHeader({ name, view, setView }: { name: string; view: "tree" | "
         </div>
         <div className="flex items-center rounded-lg bg-brand-100/70 p-1">
           <IconButton label="Tree view" icon={Dataflow02} active={view === "tree"} onClick={() => setView("tree")} />
-          <IconButton label="Table view" icon={Table} active={view === "table"} onClick={() => setView("table")} />
+          <IconButton label="Table view" icon={TableIcon} active={view === "table"} onClick={() => setView("table")} />
         </div>
       </div>
     </header>
@@ -325,17 +326,38 @@ function ProjectDetails({ name }: { name: string }) {
 }
 
 function TableView() {
+  const records = treeRows.slice(1).map((row, index) => ({
+    id: `${row.label}-${index}`,
+    recordType: row.label.split(" ")[0],
+    name: row.label,
+    identifier: `BD-${5034 + index}`,
+  }));
+
   return (
-    <section className="flex h-full flex-1 flex-col bg-gray-25 p-4">
-      <div className="overflow-hidden rounded-lg border border-gray-200 bg-white">
-        <div className="grid h-10 grid-cols-[160px_1fr_180px_160px] items-center bg-gray-50 px-4 text-xs font-semibold text-gray-600">
-          <span>Record type</span><span>Name</span><span>Identifier</span><span>Status</span>
-        </div>
-        {treeRows.slice(1).map((row, index) => (
-          <div key={`${row.label}-${index}`} className="grid h-12 grid-cols-[160px_1fr_180px_160px] items-center border-t border-gray-200 px-4 text-sm text-gray-700">
-            <span>{row.label.split(" ")[0]}</span><span>{row.label}</span><span>BD-{5034 + index}</span><span className="flex items-center gap-2"><span className="size-2 rounded-full bg-success-500" />Active</span>
-          </div>
-        ))}
+    <section className="flex h-full flex-1 flex-col bg-secondary p-4">
+      <div className="overflow-hidden rounded-lg border border-secondary bg-primary">
+        <Table aria-label="Records">
+          <TableHeader>
+            <Column isRowHeader>Record type</Column>
+            <Column>Name</Column>
+            <Column>Identifier</Column>
+            <Column>Status</Column>
+          </TableHeader>
+          <TableBody items={records}>
+            {(record) => (
+              <Row id={record.id} textValue={record.name}>
+                <Cell>{record.recordType}</Cell>
+                <Cell className="font-medium text-primary">{record.name}</Cell>
+                <Cell>{record.identifier}</Cell>
+                <Cell>
+                  <BadgeWithDot size="sm" color="success">
+                    Active
+                  </BadgeWithDot>
+                </Cell>
+              </Row>
+            )}
+          </TableBody>
+        </Table>
       </div>
     </section>
   );

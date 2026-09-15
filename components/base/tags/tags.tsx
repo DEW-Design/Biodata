@@ -74,7 +74,7 @@ export const TagList = AriaTagList;
 const styles = {
     sm: {
         root: {
-            base: "px-2 py-0.75 text-xs font-medium",
+            base: "px-2 py-0.75 text-xs leading-none font-semibold uppercase tracking-wide",
             withCheckbox: "pl-1.25",
             withAvatar: "pl-1",
             withDot: "pl-1.5",
@@ -82,11 +82,11 @@ const styles = {
             withClose: "pr-1",
         },
         content: "gap-1",
-        count: "px-1 text-xs font-medium",
+        count: "px-1 text-xs leading-none font-semibold",
     },
     md: {
         root: {
-            base: "px-2.25 py-0.5 text-sm font-medium",
+            base: "px-2.25 py-0.5 text-sm leading-none font-semibold uppercase tracking-wide",
             withCheckbox: "pl-1",
             withAvatar: "pl-1.25",
             withDot: "pl-1.75",
@@ -94,11 +94,11 @@ const styles = {
             withClose: "pr-1",
         },
         content: "gap-1.25",
-        count: "px-1.25 text-xs font-medium",
+        count: "px-1.25 text-xs leading-none font-semibold",
     },
     lg: {
         root: {
-            base: "px-2.5 py-1 text-sm font-medium",
+            base: "px-2.5 py-1 text-sm leading-none font-semibold uppercase tracking-wide",
             withCheckbox: "pl-1.25",
             withAvatar: "pl-1.75",
             withDot: "pl-2.25",
@@ -106,7 +106,7 @@ const styles = {
             withClose: "pr-1",
         },
         content: "gap-1.5",
-        count: "px-1.5 text-sm font-medium",
+        count: "px-1.5 text-sm leading-none font-semibold",
     },
 };
 

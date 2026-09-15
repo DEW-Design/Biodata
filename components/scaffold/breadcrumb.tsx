@@ -19,21 +19,33 @@
 import type { ReactNode } from "react";
 import Link from "next/link";
 import { ChevronSelectorVertical } from "@untitledui/icons";
+import { useRoleHref } from "@/lib/use-role-href";
 
 const HOME_HREF = "/pages/dashboard/option-1";
 
 export function Breadcrumb({
   section,
   current,
-  showOrgSwitcher,
+  orgLabel,
 }: {
   /** The current top-level nav section - a plain label (e.g. "Projects"), or a custom
    * interactive element in its place (e.g. a project switcher). Omit for the Home page itself. */
   section?: ReactNode;
   /** A final, page-specific crumb after `section` - e.g. a project's name. Always plain, always current. */
   current?: string;
-  showOrgSwitcher?: boolean;
+  /** The org pill's text, or omit to hide the pill entirely. "DEW" for the `biodata-*` roles (a
+   * real, fixed org), "ORG" for `privileged-*` (no single real partner-org name to show yet) - see
+   * `orgLabelForRole` in `lib/user-role.ts`. Was a plain `showOrgSwitcher` boolean rendering a
+   * hardcoded "ORG" - flagged directly by the user to show the real org name where there is one. */
+  orgLabel?: string;
 }) {
+  // A bare HOME_HREF drops the active role (there's no real auth/session in this build, so the
+  // URL is the only place it lives - see lib/use-role-href.ts) - the same class of dead end fixed
+  // everywhere else internal navigation happens, missed here the first time round since this
+  // component isn't one of the 3 page shells. Flagged directly by the user: navigating between
+  // pages left the wrong persona active - this crumb is on every non-Home page, so it's the most
+  // likely place anyone actually clicked "Home" from.
+  const roleHref = useRoleHref();
   const isHomeCurrent = !section && !current;
 
   return (
@@ -41,13 +53,13 @@ export function Breadcrumb({
       {isHomeCurrent ? (
         <span className="text-primary">Home</span>
       ) : (
-        <Link href={HOME_HREF} className="hover:text-primary">
+        <Link href={roleHref(HOME_HREF)} className="hover:text-primary">
           Home
         </Link>
       )}
-      {showOrgSwitcher && (
+      {orgLabel && (
         <span className="flex items-center gap-1 rounded-full border border-secondary px-1.5 py-0.5 text-[10px] font-medium">
-          ORG <ChevronSelectorVertical className="size-3" />
+          {orgLabel} <ChevronSelectorVertical className="size-3" />
         </span>
       )}
       {section && (

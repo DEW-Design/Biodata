@@ -1,39 +1,22 @@
 "use client";
 
-import { useState } from "react";
-import { TabPanel } from "react-aria-components";
-import { AlertFullWidth } from "@/components/application/alerts/alerts";
+import { TabPanel } from "@/components/application/tabs/tabs";
 import { HomeDashboardContent } from "@/app/pages/_shared/home-dashboard";
 import { DataOverviewContent } from "@/app/pages/_shared/data-overview";
 
-// Home's two TabPanels (My Dashboard / Data Overview), plus the alert banner both share. The
-// banner used to live inside HomeDashboardContent with its own local dismiss state, so it only
-// ever showed on the My Dashboard tab and dismissing it there didn't affect Data Overview -
-// flagged directly by the user: it should show on both, and dismissing it in either dismisses it
-// in both. Fixed by lifting the one `bannerOpen` state above both TabPanels - react-aria only
-// mounts the selected TabPanel, but the state itself lives in this shared parent regardless of
-// which panel is currently showing, so switching tabs never gets a stale/independent copy.
+// Home's two TabPanels (My BioData / Flora and Fauna Dashboard). Used to also render a shared
+// alert banner here (a lifted `bannerOpen` state above both panels, so dismissing it on either
+// tab dismissed it on both) - removed because the banner's actual content was placeholder copy
+// ("This is where alerts go") shipping as real, user-facing text on every visit to Home. Once
+// there's a real alert to show, reintroduce it here (not back inside HomeDashboardContent) so the
+// "one state, shown on both tabs" behaviour isn't lost again.
 export function HomeTabPanels() {
-  const [bannerOpen, setBannerOpen] = useState(true);
-
-  const alert = bannerOpen && (
-    <AlertFullWidth
-      title="This is where alerts go"
-      description=""
-      confirmLabel="Learn more"
-      onClose={() => setBannerOpen(false)}
-      className="max-w-none px-6 py-4 md:px-6 md:py-3"
-    />
-  );
-
   return (
     <>
       <TabPanel id="dashboard">
-        {alert}
         <HomeDashboardContent />
       </TabPanel>
       <TabPanel id="overview">
-        {alert}
         <DataOverviewContent />
       </TabPanel>
     </>

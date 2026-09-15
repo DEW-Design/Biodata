@@ -20,17 +20,21 @@ export const registeredUserNav: NavNode[] = [
   // rendering it as "Home > BioData Dashboard" implied two things where there's only one. A leaf
   // with its own `key`, same as any other single-destination item.
   { label: "Home", key: "dashboard" },
-  {
-    label: "Projects",
-    // The brief's other five "Projects" items (View Level 1/2, Create Project + its sub-steps,
-    // Download Project Templates, Create/Upload Dataset) aren't nav destinations - flagged
-    // directly by the user off this section's screenshot: they're actions/operations on the
-    // Project resource (Create, Read at two access tiers, an upload), not sibling places to
-    // navigate to. Collapsed to the one real destination; the rest are kept as data in
-    // `projectActions` below so they're not lost, ready to become real buttons/filters/a wizard
-    // inside that screen once that's scoped, rather than sit here as it were more sidebar links.
-    items: [{ label: "Manage Project and Datasets", key: "project-list" }],
-  },
+  // Projects *is* the projects/datasets screen, same "leaf with its own key" shape as Home, not a
+  // group containing one combined "Manage Project and Datasets" destination - that single label
+  // blended two distinct resources into one, flagged directly by the user. The screen behind this
+  // key now presents Projects and Datasets as two peer tabs in its own contextual sidebar (see
+  // dashboard/option-1's "Projects" Tabs block), the same "two peer views, not one blended one"
+  // treatment Home already has for My BioData/Flora and Fauna Dashboard - so, like Home, that split
+  // lives as hardcoded tabs in each page's own JSX, not as `items` here.
+  //
+  // The brief's other five "Projects" items (View Level 1/2, Create Project + its sub-steps,
+  // Download Project Templates, Create/Upload Dataset) aren't nav destinations either - flagged
+  // directly by the user off this section's screenshot: they're actions/operations on the Project
+  // resource (Create, Read at two access tiers, an upload), not sibling places to navigate to. Kept
+  // as data in `projectActions` below so they're not lost, ready to become real buttons/filters/a
+  // wizard inside that screen once that's scoped, rather than sit here as more sidebar links.
+  { label: "Projects", key: "project-list" },
   {
     label: "Observations",
     items: [{ label: "View Level 1 Public Observation Data" }, { label: "View Level 2 Observation Data (DLA Access)" }],
@@ -50,6 +54,24 @@ export const registeredUserNav: NavNode[] = [
   {
     label: "Template Finder",
     items: [{ label: "Browse and Download Standard Dataset Templates" }],
+  },
+];
+
+// public-user's ("Guest User") real, decided IA - a separate tree, not a filtered view of
+// registeredUserNav above, because it isn't a subset of the same shape: Home and Projects are each
+// a single destination here (no My BioData/Datasets peer tab - a signed-out guest has no personal
+// contributions or private datasets to show a second tab for), Observations drops its Level 2/DLA
+// item entirely, and Data Licencing Agreement/Nominate Sensitive Species/Reports/Template Finder
+// don't exist as sections at all (not just hidden leaves inside them). Reuses the `dashboard`/
+// `project-list` keys since the underlying pages are the same ones registered-user's tree points
+// at - each page reads the active role to decide whether to show its two-peer-tab treatment or
+// this single-view one, not two different destinations.
+export const publicUserNav: NavNode[] = [
+  { label: "Home", key: "dashboard" },
+  { label: "Projects", key: "project-list" },
+  {
+    label: "Observations",
+    items: [{ label: "View Level 1 Public Observation Data" }],
   },
 ];
 
@@ -85,12 +107,10 @@ export const projectActions: ProjectAction[] = [
 ];
 
 /**
- * The top-level section a given nav `key` lives under - e.g. `findSection("project-list")` ->
- * the `Projects` node (its child "Manage Project and Datasets" is the one with the `key`, but the
- * breadcrumb shows the section, not the leaf - see `components/scaffold/breadcrumb.tsx`).
- * `findSection("dashboard")` returns the `Home` node itself, since that entry *is* its own
- * destination rather than a group. Same "one place, four-going-on-five screens read from it"
- * reasoning as the tree itself.
+ * The top-level section a given nav `key` lives under - e.g. `findSection("project-list")` and
+ * `findSection("dashboard")` both return the section node itself, since both Projects and Home
+ * *are* their own destination rather than a group with a keyed child. Same "one place,
+ * four-going-on-five screens read from it" reasoning as the tree itself.
  */
 export function findSection(key: NonNullable<NavNode["key"]>): NavNode | undefined {
   return registeredUserNav.find((section) => section.key === key || section.items?.some((item) => item.key === key));
