@@ -25,7 +25,7 @@ import { useFeatureAccess } from "@/lib/use-feature-access";
 import { useUserRole } from "@/lib/use-user-role";
 import { useRoleHref } from "@/lib/use-role-href";
 import { orgLabelForRole } from "@/lib/user-role";
-import { registeredUserNav, publicUserNav, registeredUserAccountMenu, registeredUserFooterLinks, type NavNode } from "@/lib/registered-user-nav";
+import { registeredUserNav, publicUserNav, registeredUserAccountMenu, registeredUserFooterLinks, keyHref, type NavNode } from "@/lib/registered-user-nav";
 import { cx } from "@/utils/cx";
 
 // Option 1 of 2: the projects list on the sidebar-nav shell (primary icon rail + contextual
@@ -63,7 +63,7 @@ const CURRENT_KEY = "project-list";
 function NavTree({ node, depth = 0, defaultOpen = false }: { node: NavNode; depth?: number; defaultOpen?: boolean }) {
   const [open, setOpen] = useState(defaultOpen);
   const hasChildren = !!node.items?.length;
-  const href = node.key ? `/pages/${node.key}/option-1` : undefined;
+  const href = node.key ? keyHref(node.key) : undefined;
   const isCurrent = !!node.key && node.key === CURRENT_KEY;
   const indent = { paddingLeft: 8 + depth * 12, paddingRight: 8 };
 
@@ -168,7 +168,7 @@ function SectionPlaceholder({ node }: { node: NavNode }) {
           : "This section's content hasn't been scoped yet - only its place in the navigation is decided so far."}
       </p>
       {relatedLink && (
-        <Button color="link-color" size="sm" href={roleHref(`/pages/${relatedLink.key}/option-1`)} iconTrailing={ArrowNarrowRight}>
+        <Button color="link-color" size="sm" href={roleHref(keyHref(relatedLink.key!))} iconTrailing={ArrowNarrowRight}>
           Go to {relatedLink.label}
         </Button>
       )}
@@ -230,7 +230,7 @@ function ProjectList() {
   const goToSection = (section: NavNode) => {
     const relatedLink = section.key ? section : section.items?.find((item) => item.key);
     if (relatedLink?.key && relatedLink.key !== CURRENT_KEY) {
-      router.push(roleHref(`/pages/${relatedLink.key}/option-1`));
+      router.push(roleHref(keyHref(relatedLink.key)));
     } else {
       setActiveSection(section.label);
     }
@@ -321,7 +321,7 @@ function ProjectList() {
           <img
             src="/pages/dashboard/gov-sa-dew-lockup.png"
             alt="Government of South Australia, Department for Environment and Water"
-            className="h-[31px] w-auto"
+            className="h-[37px] w-auto"
           />
           <div className="h-6 w-px bg-secondary" />
           <p className="text-[17px] font-semibold tracking-tight text-primary">BioData SA</p>

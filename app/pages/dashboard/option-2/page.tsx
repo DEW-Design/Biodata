@@ -701,7 +701,7 @@ function DashboardOption2() {
           <img
             src="/pages/dashboard/gov-sa-dew-lockup.png"
             alt="Government of South Australia, Department for Environment and Water"
-            className="h-[31px] w-auto"
+            className="h-[37px] w-auto"
           />
           <div className="h-6 w-px bg-secondary" />
           <p className="text-[17px] font-semibold tracking-tight text-primary">BioData SA</p>

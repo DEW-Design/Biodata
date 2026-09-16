@@ -59,7 +59,7 @@ export const rawNav: NavSection[] = [
     title: "Patterns",
     items: [
       { title: "Forms", href: "/patterns/forms", description: "Documentation coming soon." },
-      { title: "Navigation", href: "/patterns/navigation", description: "Documentation coming soon." },
+      { title: "Navigation", href: "/patterns/navigation", description: "The sidebar shell's two nav pieces - primary icon rail + contextual sidebar (side nav) and the persistent header bar (top nav)." },
       { title: "Tree selection", href: "/patterns/tree-view", description: "Multi-select file/folder tree composed from Tree view + the base Checkbox - cascading selection and indeterminate parents." },
       { title: "Empty states", href: "/patterns/empty-states", description: "Documentation coming soon." },
       { title: "Loading states", href: "/patterns/loading-states", description: "Documentation coming soon." },

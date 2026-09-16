@@ -53,7 +53,7 @@ import { useFeatureAccess } from "@/lib/use-feature-access";
 import { useUserRole } from "@/lib/use-user-role";
 import { useRoleHref } from "@/lib/use-role-href";
 import { orgLabelForRole } from "@/lib/user-role";
-import { registeredUserNav, publicUserNav, registeredUserAccountMenu, registeredUserFooterLinks, type NavNode } from "@/lib/registered-user-nav";
+import { registeredUserNav, publicUserNav, registeredUserAccountMenu, registeredUserFooterLinks, keyHref, type NavNode } from "@/lib/registered-user-nav";
 import { cx } from "@/utils/cx";
 
 // One observation's viewing screen, on the sidebar-nav shell - same three-column chrome as
@@ -97,7 +97,7 @@ const sectionIcons: Record<string, FC<{ className?: string }>> = {
 function NavTree({ node, depth = 0, defaultOpen = false }: { node: NavNode; depth?: number; defaultOpen?: boolean }) {
   const [open, setOpen] = useState(defaultOpen);
   const hasChildren = !!node.items?.length;
-  const href = node.key ? `/pages/${node.key}/option-1` : undefined;
+  const href = node.key ? keyHref(node.key) : undefined;
   const indent = { paddingLeft: depth * 12 };
 
   if (!hasChildren) {
@@ -431,7 +431,7 @@ function ChainBreadcrumb({ chain, onSelectCrumb, orgLabel }: { chain: ChainCrumb
 
   return (
     <nav className="flex min-w-0 flex-1 items-center gap-2 overflow-hidden text-sm text-nowrap text-tertiary" aria-label="Breadcrumb">
-      <Link href={roleHref("/pages/dashboard/option-1")} className="shrink-0 hover:text-primary">
+      <Link href={roleHref("/pages/dashboard")} className="shrink-0 hover:text-primary">
         Home
       </Link>
       {orgLabel && (
@@ -529,7 +529,7 @@ function SectionPlaceholder({ node }: { node: NavNode }) {
           : "This section's content hasn't been scoped yet - only its place in the navigation is decided so far."}
       </p>
       {relatedLink && (
-        <Button color="link-color" size="sm" href={roleHref(`/pages/${relatedLink.key}/option-1`)} iconTrailing={ArrowNarrowRight}>
+        <Button color="link-color" size="sm" href={roleHref(keyHref(relatedLink.key!))} iconTrailing={ArrowNarrowRight}>
           Go to {relatedLink.label}
         </Button>
       )}
@@ -891,7 +891,7 @@ function ObservationDetail() {
   const goToSection = (section: NavNode) => {
     const relatedLink = section.key ? section : section.items?.find((item) => item.key);
     if (relatedLink?.key) {
-      router.push(roleHref(`/pages/${relatedLink.key}/option-1`));
+      router.push(roleHref(keyHref(relatedLink.key)));
     } else {
       setActiveSection(section.label);
     }
@@ -978,7 +978,7 @@ function ObservationDetail() {
           <img
             src="/pages/dashboard/gov-sa-dew-lockup.png"
             alt="Government of South Australia, Department for Environment and Water"
-            className="h-[31px] w-auto"
+            className="h-[37px] w-auto"
           />
           <div className="h-6 w-px bg-secondary" />
           <p className="text-[17px] font-semibold tracking-tight text-primary">BioData SA</p>

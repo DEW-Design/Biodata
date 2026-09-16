@@ -1725,3 +1725,53 @@ user owns and edits directly, not something to restructure without asking.
     `dashboard/option-2`, and the full `/components/badge` doc page (every type/colour/size/dot/
     icon/dismiss/group section) - all render uppercase and semibold with no overflow or clipping
     from the `lg` size's corrected font size, zero console errors.
+
+- **Sept 16 2026 layout decision: the sidebar (icon-rail + contextual-sidebar) shell is the
+  preferred direction, decided directly by the user.** Applies going forward to any future
+  `/pages/<page-name>/option-1` vs. `option-2` exploration under "Exploratory page layouts" - default
+  to building the option-1 shell as the real direction; option-2 (top-nav) is now the comparison
+  point kept for the record, not a coin-flip alternative.
+  - **Dashboard specifically was folded into this decision immediately: `app/pages/dashboard/
+    option-1/page.tsx` moved to the canonical `app/pages/dashboard/page.tsx` (no more `/option-1`
+    suffix), and `dashboard/option-2` was kept in place, untouched, as a record of the explored
+    top-nav direction per this codebase's "never delete an explored direction" convention - just no
+    longer linked to from anywhere real** (confirmed via grep: nothing outside `option-2`'s own
+    files ever linked to it). `lib/registered-user-nav.ts` gained a `keyHref(key)` helper
+    (`"dashboard"` -> `/pages/dashboard`, every other key -> `/pages/<key>/option-1`) since Home is
+    now the one nav key with a route shape different from every other keyed section - centralised in
+    one place rather than special-cased at each of the three sidebar shells' (`project-list/
+    option-1`, `project-detail/option-1`, `observation-detail/option-1`) own NavTree/
+    SectionPlaceholder/goToSection call sites. `project-list`/`project-detail` are **not** folded -
+    per the user directly, "the projects page needs work, so we'll keep tweaking that" - both stay on
+    their `/option-1` route for now.
+  - **Option-2's dark gradient greeting banner (`bg-gradient-to-b from-brand-900 via-brand-800
+    via-[63.942%] to-brand-700`) was brought into option-1 as the shared template for the "Hi, X" +
+    KPI-row header**, on both `HomeDashboardContent` (registered-user) and
+    `AdminHomeDashboardContent` (biodata-admin) in `app/pages/_shared/home-dashboard.tsx` - the one
+    shared source both shells' Home content renders through. `KpiStat` gained an `onDark` prop
+    (white text/border-white/20 divider) rather than forking a second component, same "extend, don't
+    fork" convention used elsewhere (e.g. `Accordion`'s `openKeys`). Per the user directly, the
+    banner does **not** carry action buttons the way option-2's own Figma reference did ("Upload a
+    dataset"/"Action 2") - this shell already has "Add project"/"Upload dataset" in its persistent
+    page header, so repeating them in the banner would be the exact redundancy already flagged and
+    removed elsewhere on this page. "Quick actions" became its own labelled section directly below
+    the banner instead (matching option-2's own split), rather than staying folded into the same
+    bordered block the greeting used to share.
+  - **"Bring over all the features"**, interpreted as functional gaps between the two dashboards
+    once ported (not a full visual merge - see "consistent shell" reasoning elsewhere in this file
+    for why option-1 keeps its own bordered-card idiom rather than adopting option-2's shadow cards):
+    ported option-2's richer "Needs your attention" - a "For you"/per-status filter `Tabs` row (the
+    Mobbin-research idea: Deel's "For you today" default + Asana's status tabs) over the flat list
+    option-1 had, and its semantic status-colour distinction (`"Under review"` -> `blue`, not the
+    same flat `gray` as `"Awaiting review"`) so the list reads by urgency at a glance. Both now live
+    once in `home-dashboard.tsx`, so `dashboard/option-2`'s own copies are the only remaining
+    fork - acceptable since that page is now an inert reference, not a maintained parallel surface.
+  - Every internal link that hardcoded `/pages/dashboard/option-1` was moved to `/pages/dashboard`:
+    `components/scaffold/breadcrumb.tsx`'s `HOME_HREF`, the direct breadcrumb "Home" `Link`s in
+    `project-detail/option-1` and `observation-detail/option-1`, and `/proto/project-detail`'s icon
+    rail (a `/proto` lab's internal link kept working, not a content change to the lab itself).
+    Verified live: `curl` confirmed `/pages/dashboard` serves the page and `/pages/dashboard/
+    option-1` now 404s while `/pages/dashboard/option-2` is untouched; a Playwright pass clicked
+    every "Home" entry point (the icon rail on `project-list/option-1`, the breadcrumb on
+    `project-detail/option-1` and `observation-detail/option-1`) and confirmed each lands on
+    `/pages/dashboard` with the active `?userRole=` preserved.

@@ -1,18 +1,30 @@
 // Registered User's real, decided IA - captured by the team ahead of the Sept 15 layout
 // decision (see the "Registered User" nav tree brief). This is the one place the tree lives;
-// app/pages/dashboard/option-{1,2} and app/pages/project-list/option-{1,2} each render it
-// in their own shell's idiom (sidebar accordion vs. top-nav dropdown), but read from here so the
-// four screens can't drift out of sync as the IA changes.
+// app/pages/dashboard, app/pages/dashboard/option-2, and app/pages/project-list/option-{1,2} each
+// render it in their own shell's idiom (sidebar accordion vs. top-nav dropdown), but read from here
+// so the screens can't drift out of sync as the IA changes.
 //
-// `key` is set only on the two items with a real page today - each screen turns it into a
-// same-variant href (`/pages/<key>/option-1` or `/pages/<key>/option-2`). Every other item
-// has no page yet, so it renders as inert text, same "honest, not a placeholder link" convention
-// used elsewhere for undecided content.
+// `key` is set only on the two items with a real page today - every other item has no page yet, so
+// it renders as inert text, same "honest, not a placeholder link" convention used elsewhere for
+// undecided content. See `keyHref` below for how a `key` becomes a real path.
 
 export interface NavNode {
   label: string;
   key?: "dashboard" | "project-list";
   items?: NavNode[];
+}
+
+/**
+ * A nav `key`'s real, decided path on the sidebar (option-1-style) shells. Dashboard is a special
+ * case: per the Sept 16 layout decision (option-1 shell picked as the direction, its dashboard
+ * folded into the canonical `/pages/dashboard` with no `/option-*` suffix), while every other keyed
+ * section (just `project-list` today) is still mid-exploration and stays on its `/option-1` variant
+ * route. Centralised here rather than inlined at each of the sidebar shells' 3 call sites (NavTree's
+ * own href, SectionPlaceholder's "Go to X" button, goToSection's router.push) so the one exception
+ * can't drift out of sync between them.
+ */
+export function keyHref(key: NonNullable<NavNode["key"]>): string {
+  return key === "dashboard" ? "/pages/dashboard" : `/pages/${key}/option-1`;
 }
 
 export const registeredUserNav: NavNode[] = [

@@ -22,6 +22,7 @@ import {
 } from "@untitledui/icons";
 import { Button } from "@/components/base/buttons/button";
 import { Tooltip } from "@/components/base/tooltip/tooltip";
+import { Tabs } from "@/components/application/tabs/tabs";
 import { Badge, CountBadge } from "@/components/base/badges/badges";
 import type { BadgeColor } from "@/components/base/badges/badges";
 import { FeaturedIcon } from "@/components/foundations/featured-icon/featured-icon";
@@ -59,24 +60,31 @@ import { useUserRole } from "@/lib/use-user-role";
 // including `link-color`, so the arrow is a real icon like everywhere else, not a text character
 // standing in for one. See CONTEXT.md's "Final check" list.
 
+// `onDark` - the Sept 16 layout decision brought option-2's gradient greeting banner into this
+// shell as the shared template for "Hi, X" + KPI row (see HomeDashboardContent/
+// AdminHomeDashboardContent below), so this one KpiStat now needs to render on both a plain
+// (light) background and that dark gradient - a variant prop rather than a second, near-duplicate
+// component, same "extend, don't fork" convention as elsewhere in this codebase.
 function KpiStat({
   value,
   label,
   note,
   trend,
   last = false,
+  onDark = false,
 }: {
   value: string;
   label: string;
   note: string;
   trend?: boolean;
   last?: boolean;
+  onDark?: boolean;
 }) {
   return (
-    <div className={`flex flex-col gap-2 pr-6 ${last ? "" : "border-r border-secondary"}`}>
-      <p className="text-2xl font-medium text-primary tabular-nums">{value}</p>
-      <p className="text-md font-medium text-primary">{label}</p>
-      <div className="flex items-center gap-1.5 text-sm text-tertiary">
+    <div className={cx("flex flex-col gap-2 pr-6", !last && (onDark ? "border-r border-white/20" : "border-r border-secondary"))}>
+      <p className={cx("text-2xl font-medium tabular-nums", onDark ? "text-white" : "text-primary")}>{value}</p>
+      <p className={cx("text-md font-medium", onDark ? "text-white" : "text-primary")}>{label}</p>
+      <div className={cx("flex items-center gap-1.5 text-sm", onDark ? "text-white/60" : "text-tertiary")}>
         {trend && <TrendUp02 className="size-3.5 text-fg-success-primary" />}
         <span>{note}</span>
       </div>
@@ -423,16 +431,27 @@ function AdminQueueCard({ queue }: { queue: (typeof adminApprovalQueues)[number]
 function AdminHomeDashboardContent() {
   return (
     <>
-      <div className="flex flex-col border-b border-secondary p-6">
-        {/* "Jane" - the sanctioned placeholder persona for the biodata-admin role, parallel to
-            "Olivia Wyatt" for registered-user (see CONTEXT.md's "Placeholder person convention") -
-            never the real current user's name. */}
-        <h1 className="mb-4 text-2xl font-medium text-primary">Hi, Jane</h1>
-        <div className="mb-6 flex flex-wrap items-start gap-x-6 gap-y-4">
-          <KpiStat value="3,482" label="Registered users" note="128 active projects" />
-          <KpiStat value="340" label="Datasets this month" note="12 DLA requests pending" />
-          <KpiStat value={totalPendingReviews.toLocaleString()} label="Pending reviews" note="Across users, DLA, nominations" last />
+      {/* Same gradient banner template as HomeDashboardContent's - see that component's own
+          comment on the Sept 16 layout decision this ports in from dashboard/option-2. */}
+      <div className="p-6">
+        <div className="flex flex-col gap-8 rounded-2xl bg-gradient-to-b from-brand-900 via-brand-800 via-[63.942%] to-brand-700 p-6">
+          <div className="flex flex-col gap-1">
+            {/* "Jane" - the sanctioned placeholder persona for the biodata-admin role, parallel to
+                "Olivia Wyatt" for registered-user (see CONTEXT.md's "Placeholder person convention") -
+                never the real current user's name. */}
+            <h1 className="text-2xl font-medium text-white">Hi, Jane</h1>
+            <p className="text-md text-white">Platform activity at a glance</p>
+          </div>
+          <div className="flex flex-wrap items-start gap-x-6 gap-y-4">
+            <KpiStat value="3,482" label="Registered users" note="128 active projects" onDark />
+            <KpiStat value="340" label="Datasets this month" note="12 DLA requests pending" onDark />
+            <KpiStat value={totalPendingReviews.toLocaleString()} label="Pending reviews" note="Across users, DLA, nominations" last onDark />
+          </div>
         </div>
+      </div>
+
+      <div className="flex flex-col gap-3 px-6 pb-6">
+        <h2 className="text-lg font-medium text-primary">Quick actions</h2>
         <div className="flex flex-wrap items-center gap-2">
           <DisabledQuickAction icon={UserCheck01} label="User Management" note="Coming soon - user management isn't built yet" />
           <DisabledQuickAction icon={BarChartSquare01} label="Reports" note="Coming soon - reporting isn't built yet" />
@@ -440,7 +459,7 @@ function AdminHomeDashboardContent() {
         </div>
       </div>
 
-      <div className="flex flex-col gap-8 p-6">
+      <div className="flex flex-col gap-8 px-6 pb-6">
         <div className="flex flex-col gap-4 rounded-lg bg-brand-50 p-6">
           <p className="text-sm font-medium text-brand-secondary">Needs your review</p>
           <div className="flex flex-wrap items-end justify-between gap-4">
@@ -507,7 +526,11 @@ export const dashboardTasks: {
     title: "Sensitive species nomination - Southern Bell Frog",
     detail: "Submitted 1 week ago, under review by the sensitive species panel.",
     status: "Under review",
-    statusColor: "gray",
+    // blue, not gray - a status actively being worked (a panel is looking at it right now) reads
+    // as visually distinct from "Awaiting review" (still queued, nothing happening yet), so the
+    // list is scannable by urgency/stage at a glance. Ported from dashboard/option-2's copy of
+    // this same task list, which had this distinction and option-1's didn't.
+    statusColor: "blue",
     icon: Feather,
     progress: {
       steps: [
@@ -556,15 +579,40 @@ export function HomeDashboardContent() {
   const continueTask = dashboardTasks.find((task) => task.actionHref);
   const otherTasks = dashboardTasks.filter((task) => task !== continueTask);
 
+  // Filter tabs on top of the flat list, ported from dashboard/option-2's own Needs-your-attention
+  // (that shell's own comment credits the idea to the Mobbin dashboard research: Deel's "For you
+  // today" all-items default + Asana's status-filtered tabs). Derived from `otherTasks` itself, not
+  // a separately maintained list, so a status can't appear as a tab without a real task behind it.
+  const taskStatuses = Array.from(new Set(otherTasks.map((task) => task.status)));
+
   return (
     <>
-      <div className="flex flex-col border-b border-secondary p-6">
-        <h1 className="mb-4 text-2xl font-medium text-primary">Hi, Olivia</h1>
-        <div className="mb-6 flex flex-wrap items-start gap-x-6 gap-y-4">
-          <KpiStat value="15" label="Species Observed" note="3 up from last week" trend />
-          <KpiStat value="3" label="Datasets contributed" note="1 dataset under review" />
-          <KpiStat value="2" label="Completed Checklists" note="2 completed this month" last />
+      {/* ── Greeting/KPI banner - the Sept 16 layout decision's gradient card, ported from
+          dashboard/option-2 as the shared visual template for this "Hi, X" + stats block (see
+          KpiStat's own comment). No action buttons inside the banner (option-2's Figma reference
+          had "Upload a dataset"/"Action 2" here) - this shell already has its own "Add project"/
+          "Upload dataset" buttons in the persistent page header, so repeating them here would just
+          be the same redundancy already flagged and removed elsewhere in this file (Quick actions'
+          own comment above). ── */}
+      <div className="p-6">
+        <div className="flex flex-col gap-8 rounded-2xl bg-gradient-to-b from-brand-900 via-brand-800 via-[63.942%] to-brand-700 p-6">
+          <div className="flex flex-col gap-1">
+            <h1 className="text-2xl font-medium text-white">Hi, Olivia</h1>
+            <p className="text-md text-white">Your activity at a glance</p>
+          </div>
+          <div className="flex flex-wrap items-start gap-x-6 gap-y-4">
+            <KpiStat value="15" label="Species Observed" note="3 up from last week" trend onDark />
+            <KpiStat value="3" label="Datasets contributed" note="1 dataset under review" onDark />
+            <KpiStat value="2" label="Completed Checklists" note="2 completed this month" last onDark />
+          </div>
         </div>
+      </div>
+
+      {/* ── Quick actions - its own labelled section below the banner, not folded into it, same
+          split dashboard/option-2 uses (a gradient card for identity/stats, a plain section
+          underneath for actions). ── */}
+      <div className="flex flex-col gap-3 px-6 pb-6">
+        <h2 className="text-lg font-medium text-primary">Quick actions</h2>
         <div className="flex flex-wrap items-center gap-2">
           <QuickAction icon={Folder} label="Manage projects & datasets" href={roleHref("/pages/project-list/option-1")} />
           <DisabledQuickAction icon={FileLock01} label="Request new DLA" note="Coming soon - the DLA request flow isn't built yet" />
@@ -572,7 +620,7 @@ export function HomeDashboardContent() {
         </div>
       </div>
 
-      <div className="flex flex-col gap-8 p-6">
+      <div className="flex flex-col gap-8 px-6 pb-6">
         {continueTask?.actionHref && continueTask.actionLabel && (
           <ContinueStrip title={continueTask.title} actionLabel={continueTask.actionLabel} actionHref={roleHref(continueTask.actionHref)} />
         )}
@@ -587,11 +635,28 @@ export function HomeDashboardContent() {
                 CountBadge. Counts `otherTasks`, not the full list - see the comment above on why. */}
             <CountBadge count={otherTasks.length} color="error" />
           </div>
-          <div className="flex flex-col gap-3">
-            {otherTasks.map((task) => (
-              <TaskItem key={task.title} {...task} actionHref={task.actionHref ? roleHref(task.actionHref) : undefined} />
+          <Tabs defaultSelectedKey="all" className="flex flex-col gap-3">
+            <Tabs.List aria-label="Filter by status" type="underline" size="sm">
+              <Tabs.Item id="all" label="For you" badge={otherTasks.length} />
+              {taskStatuses.map((status) => (
+                <Tabs.Item key={status} id={status} label={status} badge={otherTasks.filter((task) => task.status === status).length} />
+              ))}
+            </Tabs.List>
+            <Tabs.Panel id="all" className="flex flex-col gap-3">
+              {otherTasks.map((task) => (
+                <TaskItem key={task.title} {...task} actionHref={task.actionHref ? roleHref(task.actionHref) : undefined} />
+              ))}
+            </Tabs.Panel>
+            {taskStatuses.map((status) => (
+              <Tabs.Panel key={status} id={status} className="flex flex-col gap-3">
+                {otherTasks
+                  .filter((task) => task.status === status)
+                  .map((task) => (
+                    <TaskItem key={task.title} {...task} actionHref={task.actionHref ? roleHref(task.actionHref) : undefined} />
+                  ))}
+              </Tabs.Panel>
             ))}
-          </div>
+          </Tabs>
         </div>
         <FeaturedProjectsSection roleHref={roleHref} />
         <KnowledgeBaseSection />

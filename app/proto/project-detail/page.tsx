@@ -1086,7 +1086,7 @@ function IconRail() {
           return (
             <Tooltip key={section.label} title={section.label} placement="right">
               <Link
-                href="/pages/dashboard/option-1"
+                href="/pages/dashboard"
                 className="flex size-12 items-center justify-center rounded-lg text-quaternary transition duration-100 ease-linear hover:bg-tertiary hover:text-primary active:scale-[0.96]"
               >
                 <section.icon className="size-5" />
@@ -1316,7 +1316,7 @@ export default function ProjectDetailProto() {
           <img
             src="/pages/dashboard/gov-sa-dew-lockup.png"
             alt="Government of South Australia, Department for Environment and Water"
-            className="h-[31px] w-auto"
+            className="h-[37px] w-auto"
           />
           <div className="h-6 w-px bg-secondary" />
           <p className="text-[17px] font-semibold tracking-tight text-primary">BioData SA</p>

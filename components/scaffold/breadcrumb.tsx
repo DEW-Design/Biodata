@@ -21,7 +21,7 @@ import Link from "next/link";
 import { ChevronSelectorVertical } from "@untitledui/icons";
 import { useRoleHref } from "@/lib/use-role-href";
 
-const HOME_HREF = "/pages/dashboard/option-1";
+const HOME_HREF = "/pages/dashboard";
 
 export function Breadcrumb({
   section,
