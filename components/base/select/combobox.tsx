@@ -20,6 +20,15 @@ interface ComboBoxProps extends Omit<AriaComboBoxProps<SelectItemType>, "childre
     shortcutClassName?: string;
     /** Leading icon component displayed before the input. */
     icon?: FC | ReactNode;
+    /** Content rendered inside the popover, above the list - e.g. filter chips for a searchable
+     * list that also needs to be filterable, not just typed into. */
+    listboxHeader?: ReactNode;
+    /** Content rendered inside the popover, below the list - e.g. a "Show N more results" control
+     * for a capped list. Lives outside `AriaListBox`'s own item collection on purpose: a plain
+     * element here doesn't go through `onSelectionChange`, so clicking it can't set `inputValue`
+     * to its own label text or force-select anything the way a real (non-disabled) listbox item
+     * would. */
+    listboxFooter?: ReactNode;
     children: AriaListBoxProps<SelectItemType>["children"];
 }
 
@@ -113,6 +122,8 @@ export const ComboBox = ({
     items,
     shortcutClassName,
     icon,
+    listboxHeader,
+    listboxFooter,
     hideRequiredIndicator,
     ...otherProps
 }: ComboBoxProps) => {
@@ -159,9 +170,11 @@ export const ComboBox = ({
                         />
 
                         <Popover size={size} triggerRef={placeholderRef} style={{ width: popoverWidth }} className={otherProps.popoverClassName}>
+                            {listboxHeader}
                             <AriaListBox items={items} className="size-full outline-hidden">
                                 {children}
                             </AriaListBox>
+                            {listboxFooter}
                         </Popover>
 
                         {otherProps.hint && (

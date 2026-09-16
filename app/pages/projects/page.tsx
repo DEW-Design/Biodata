@@ -26,6 +26,7 @@ import { Avatar } from "@/components/base/avatar/avatar";
 import { Badge, BadgeWithDot, BadgeWithIcon } from "@/components/base/badges/badges";
 import { Button } from "@/components/base/buttons/button";
 import { Input } from "@/components/base/input/input";
+import { Cell, Column, Row, Table, TableBody, TableHeader } from "@/components/base/table/table";
 import { Inspectable, InspectorProvider, type InspectableToken } from "@/components/scaffold/token-inspector";
 
 // Figma source: https://www.figma.com/design/wer8CgO1UoCH3aQw2jQkdy/BioData-SA-High-Fidelity?node-id=1885-6177
@@ -409,26 +410,26 @@ export default function ProjectsPage() {
           </div>
           {showMapping && (
             <div className="overflow-hidden rounded-lg border border-secondary">
-              <table className="w-full text-left text-sm">
-                <thead className="bg-secondary text-xs text-quaternary">
-                  <tr>
-                    <th className="px-3 py-2 font-semibold">Figma layer</th>
-                    <th className="px-3 py-2 font-semibold">Figma spec</th>
-                    <th className="px-3 py-2 font-semibold">DEW mapping</th>
-                    <th className="px-3 py-2 font-semibold">Note</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {mapping.map((m) => (
-                    <tr key={m.layer} className="border-t border-secondary align-top">
-                      <td className="px-3 py-2 font-medium text-primary">{m.layer}</td>
-                      <td className="px-3 py-2 text-tertiary">{m.figma}</td>
-                      <td className="px-3 py-2"><code className="rounded bg-secondary px-1.5 py-0.5 text-xs">{m.dew}</code></td>
-                      <td className="px-3 py-2 text-tertiary">{m.note}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+              <Table aria-label="Component mapping">
+                <TableHeader>
+                  <Column isRowHeader>Figma layer</Column>
+                  <Column>Figma spec</Column>
+                  <Column>DEW mapping</Column>
+                  <Column>Note</Column>
+                </TableHeader>
+                <TableBody items={mapping}>
+                  {(m) => (
+                    <Row id={m.layer} textValue={m.layer}>
+                      <Cell className="align-top font-medium text-primary">{m.layer}</Cell>
+                      <Cell className="align-top text-tertiary">{m.figma}</Cell>
+                      <Cell className="align-top">
+                        <code className="rounded bg-secondary px-1.5 py-0.5 text-xs text-primary">{m.dew}</code>
+                      </Cell>
+                      <Cell className="align-top text-tertiary">{m.note}</Cell>
+                    </Row>
+                  )}
+                </TableBody>
+              </Table>
             </div>
           )}
 

@@ -1,376 +1,593 @@
 "use client";
 
-import { useState } from "react";
-import { SearchMd, Upload01, ChevronSelectorVertical, TrendUp02, ArrowNarrowRight } from "@untitledui/icons";
-import { Input } from "@/components/base/input/input";
+import type { FC } from "react";
+import { Suspense, useState } from "react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import type { Key } from "react-aria-components";
+import { Button as AriaButton, Dialog, DialogTrigger, Focusable, Tabs } from "react-aria-components";
+import { TabList, Tab, TabPanel } from "@/components/application/tabs/tabs";
+import { Upload01, Plus, ChevronDown, ArrowNarrowRight, HomeLine, Folder, Database01, Eye, FileLock01, Feather, BarChart01, FileSearch01, User01, PieChart03 } from "@untitledui/icons";
 import { Button } from "@/components/base/buttons/button";
 import { Avatar } from "@/components/base/avatar/avatar";
-import { AlertFullWidth } from "@/components/application/alerts/alerts";
-import { Inspectable, InspectorProvider, type InspectableToken } from "@/components/scaffold/token-inspector";
+import { Tooltip, TooltipTrigger } from "@/components/base/tooltip/tooltip";
+import { Popover } from "@/components/base/select/popover";
+import { Breadcrumb } from "@/components/scaffold/breadcrumb";
+import { HomeTabPanels } from "@/app/pages/_shared/home-tab-panels";
+import { DataOverviewContent } from "@/app/pages/_shared/data-overview";
+import { dashboardTasks } from "@/app/pages/_shared/home-dashboard";
+import { ProjectListContent } from "@/app/pages/_shared/project-list-content";
+import { GlobalProjectSearch } from "@/app/pages/_shared/global-search";
+import { GuestActionButton } from "@/app/pages/_shared/guest-action-gate";
+import { MobileNavTrigger } from "@/app/pages/_shared/mobile-nav";
+import { RoleSwitcher } from "@/app/pages/_shared/role-switcher";
+import { useFeatureAccess } from "@/lib/use-feature-access";
+import { useUserRole } from "@/lib/use-user-role";
+import { useRoleHref } from "@/lib/use-role-href";
+import { orgLabelForRole } from "@/lib/user-role";
+import { registeredUserNav, publicUserNav, registeredUserAccountMenu, registeredUserFooterLinks, keyHref, type NavNode } from "@/lib/registered-user-nav";
+import { cx } from "@/utils/cx";
 
+// One icon per top-level section, for the primary icon rail below - presentation-only, so it
+// lives here rather than in lib/registered-user-nav.ts (which stays shell-agnostic; option-2's
+// top-nav has no use for icons).
+const sectionIcons: Record<string, FC<{ className?: string }>> = {
+  Home: HomeLine,
+  Projects: Folder,
+  Observations: Eye,
+  "Data Licencing Agreement (DLA)": FileLock01,
+  "Nominate Sensitive Species": Feather,
+  "Reports (Own Submissions)": BarChart01,
+  "Template Finder": FileSearch01,
+};
+
+// The canonical Registered User dashboard, on the sidebar (icon-rail + contextual-sidebar) shell -
+// per the Sept 16 layout decision, this shell direction is the one going forward, so this page lost
+// its `/option-1` suffix and folded into the plain `/pages/dashboard` route. `app/pages/dashboard/
+// option-2` (the top-nav shell alternative this was compared against) is kept in place as a record
+// of that exploration, per this codebase's "never delete a prototype/explored direction" convention
+// - it's just no longer linked to from anywhere real.
+//
+// A task-first dashboard for a registered user. Personal activity stats (KPI row) stay at the top,
+// directly under the greeting - that positioning is a fixed convention, not something to relitigate
+// per redesign. "Needs your attention" (a pending DLA request, a nomination under review, a draft
+// project) follows below it - that's the "task first" part: it's the dashboard's actual primary
+// content, the reason personal contribution stats and org-wide accountability numbers (total
+// records, flora/fauna species counts, the map) that used to live here have been trimmed to just
+// the KPI row. Decided directly by the user: a registered user has limited scope on this platform,
+// so the dashboard's job is to surface what's actually theirs to act on, not to be a smaller version
+// of an org-wide reporting surface - see CONTEXT.md's "Registered User dashboard scope".
+//
 // Figma source: https://www.figma.com/design/SQ58QgwP9Xz0uo3tBpuf6e/DEW-Toolkit--version-1.0-?node-id=103-105
-// "SCREEN" (BioData SA dashboard shell, 1440px) - an exploratory /pages/dashboard layout per
-// CONTEXT.md's "Exploratory page layouts (/pages/<page-name>)" section. Unlike a /test-*
-// screen (a fixed, already-decided Figma frame), this explores what the dashboard could look
-// like while the surrounding IA - primary icon rail, contextual sidebar, breadcrumb - is still
-// undecided, so that chrome is built as simplified structural placeholder from real tokens
-// rather than pixel-matched or ?-blocked. Every contained widget (search, buttons, avatar,
-// alert, date range) still goes through the same "real DEW or honest ? gap" rule as a /test-*
-// screen. Figma's yellow "GENERAL NOTES" sticky note (node 103:225, a designer's comment layer,
-// not product UI) is excluded entirely - see the mapping table below.
+// "SCREEN" (BioData SA dashboard shell, 1440px) - an exploratory layout per CONTEXT.md's
+// "Exploratory page layouts (/pages/<page-name>, /pages/<page-name>/<variant>)" section.
+// Unlike a /test-* screen (a fixed, already-decided Figma frame), this explores what the
+// dashboard could look like while the surrounding IA - primary icon rail, contextual sidebar,
+// breadcrumb - is still undecided, so that chrome is built as simplified structural placeholder
+// from real tokens rather than pixel-matched or ?-blocked. Every contained widget (search,
+// buttons, avatar, alert) still goes through the same "real DEW or honest ? gap" rule as a
+// /test-* screen - except the date range control, which graduated from a `?` gap marker to a
+// real custom component (components/custom/date-range/date-range-control.tsx, documented under
+// "Custom components") once its shape was clear enough to build, ahead of a stakeholder decision
+// on where it belongs long-term. Figma's yellow "GENERAL NOTES" sticky note (a designer's comment
+// layer, not product UI) is excluded entirely.
 
 // ─────────────────────────────────────────────────────────────────────────
 // Local screen chrome - NOT real DEW components. Nav rail/sidebar/footer links
 // are exempt from fidelity per CONTEXT.md (IA isn't decided yet); KPI row,
 // metric cards, filter panel, and map panel are structural shells composed
 // from real tokens because nothing under components/base|application/** models
-// these patterns yet - logged in the mapping table as composed, not real.
+// these patterns yet.
+//
+// Three-column shell (Mobbin/Supabase-style): the primary icon rail is the real top-level IA
+// (lib/registered-user-nav.ts) - one icon per section, click to select - the contextual sidebar
+// shows only the selected section's children as a plain expand/collapse tree built from tokens,
+// same exemption as the rest of this nav chrome (no Accordion component exists or is warranted
+// for content this undecided), and the third column is the page's own main content. Only the two
+// items with a real page (`key` set) are actual links; everything else is inert text until it has
+// somewhere to go.
 // ─────────────────────────────────────────────────────────────────────────
 
-function KpiStat({
-  value,
-  label,
-  note,
-  trend,
-  action,
-  last = false,
-}: {
-  value: string;
-  label: string;
-  note: string;
-  trend?: boolean;
-  action?: boolean;
-  last?: boolean;
-}) {
-  return (
-    <div className={`flex flex-col gap-2 pr-6 ${last ? "" : "border-r border-secondary"}`}>
-      <p className="text-2xl font-medium text-primary tabular-nums">{value}</p>
-      <p className="text-md font-medium text-primary">{label}</p>
-      <div className="flex items-center gap-1.5 text-sm text-tertiary">
-        {trend && <TrendUp02 className="size-3.5 text-fg-success-primary" />}
-        <span>{note}</span>
-        {action && <ArrowNarrowRight className="size-3.5 text-quaternary" />}
-      </div>
-    </div>
-  );
-}
+// This screen's own page key, so its own entry in the tree (Home > BioData Dashboard) can show a
+// selected state - it's the page the user is already on by default, so the nav should say so
+// rather than looking identical to every unvisited item. Flagged directly by the user off a
+// screenshot of this exact link with no active styling.
+const CURRENT_KEY = "dashboard";
 
-function MetricCard({ value, label }: { value: string; label: string }) {
-  return (
-    <div className="flex flex-1 flex-col items-center justify-center gap-3 rounded-lg border border-secondary p-6">
-      <p className="text-4xl font-normal text-primary tabular-nums">{value}</p>
-      <p className="text-xs font-semibold tracking-wide text-quaternary uppercase">{label}</p>
-    </div>
-  );
-}
+function NavTree({ node, depth = 0, defaultOpen = false }: { node: NavNode; depth?: number; defaultOpen?: boolean }) {
+  const [open, setOpen] = useState(defaultOpen);
+  const hasChildren = !!node.items?.length;
+  const href = node.key ? keyHref(node.key) : undefined;
+  const isCurrent = !!node.key && node.key === CURRENT_KEY;
+  const indent = { paddingLeft: 8 + depth * 12, paddingRight: 8 };
 
-// Gap marker - InputDate (components/base/input/input-date.tsx) is a single editable date
-// value driven by react-aria DateSegments, it has no prev/range-text/next composition. This
-// prev-arrow / calendar-icon / range-text / next-arrow control has no real DEW equivalent.
-function GapDateRange() {
-  return (
-    <div className="flex w-[260px] items-center gap-2 rounded-lg border border-dashed p-3" style={{ borderColor: "var(--color-gray-300)" }}>
-      <span
-        className="flex size-5 shrink-0 items-center justify-center rounded text-xs font-semibold"
-        style={{ background: "var(--color-gray-100)", color: "var(--color-gray-400)" }}
+  if (!hasChildren) {
+    return href ? (
+      <Link
+        href={href}
+        style={indent}
+        aria-current={isCurrent ? "page" : undefined}
+        // Active fill matches the Home views TabList's `button-brand` selected state
+        // (components/application/tabs/tabs.tsx) - the "flow this through every column-2
+        // candidate" ask, applied here since NavTree's real links are the other column-2
+        // selectable-item list, not just the Home switcher. Hover is the same neutral
+        // `bg-tertiary`/`text-primary` that type's own hover state now uses (previously this
+        // matched the active/selected fill, previewing "selected" on a plain hover - the exact
+        // mismatch against the primary icon rail flagged directly by the user, fixed at the
+        // design-system level in tabs.tsx and mirrored here since NavTree isn't itself a `Tab`).
+        // NavTree stays real `Link`s (this is navigation between pages, not panels within one), so
+        // it borrows the tokens rather than becoming a Tabs instance itself.
+        className={cx(
+          "rounded-md py-2 text-sm font-medium transition-colors duration-100 ease-linear",
+          isCurrent ? "bg-brand-secondary text-brand-secondary" : "text-primary hover:bg-tertiary",
+        )}
       >
-        ?
-      </span>
-      <span className="text-sm text-quaternary">Date range control - not in DEW yet</span>
-    </div>
-  );
-}
-
-const searchTokens: InspectableToken[] = [
-  { cls: "bg-primary", cssVar: "--ui-bg-primary", value: "#FFFFFF", swatch: true },
-  { cls: "ring-primary", cssVar: "--ui-ring-primary → --color-gray-300", value: "#D2D0CE", swatch: true },
-  { cls: "ring-brand (focus)", cssVar: "--ui-ring-brand → --color-brand-500", value: "#2A667C", swatch: true },
-  { cls: "text-fg-quaternary (icon)", cssVar: "--color-fg-quaternary → --color-gray-500", value: "#8F8B87", swatch: true },
-  { cls: "shadow-xs", cssVar: "--shadow-xs", value: "0 1px 2px rgba(16,24,40,.05)" },
-];
-const primaryButtonTokens: InspectableToken[] = [
-  { cls: "bg-brand-solid", cssVar: "--ui-bg-brand-solid → --color-brand-600", value: "#185E74", swatch: true },
-  { cls: "hover:bg-brand-solid_hover", cssVar: "--ui-bg-brand-solid_hover → --color-brand-700", value: "#0D576E", swatch: true },
-  { cls: "shadow-xs-skeuomorphic", cssVar: "--shadow-xs-skeuomorphic", value: "inset border + drop shadow" },
-  { cls: "text-white", cssVar: "--color-fg-white", value: "#FFFFFF", swatch: true },
-];
-const secondaryButtonTokens: InspectableToken[] = [
-  { cls: "bg-primary", cssVar: "--ui-bg-primary", value: "#FFFFFF", swatch: true },
-  { cls: "ring-primary", cssVar: "--ui-ring-primary → --color-gray-300", value: "#D2D0CE", swatch: true },
-  { cls: "text-secondary", cssVar: "--ui-text-secondary → --color-gray-700", value: "#585451", swatch: true },
-  { cls: "hover:bg-primary_hover", cssVar: "--ui-bg-primary_hover → --color-gray-50", value: "#F8F8F7", swatch: true },
-];
-const avatarTokens: InspectableToken[] = [
-  { cls: "bg-tertiary (fallback)", cssVar: "--ui-bg-tertiary → --color-gray-100", value: "#F2F2F1", swatch: true },
-  { cls: "text-quaternary (initials)", cssVar: "--ui-text-quaternary → --color-gray-500", value: "#8F8B87", swatch: true },
-  { cls: "outline-[var(--ui-border-secondary)]", cssVar: "--ui-border-secondary → --color-gray-200", value: "#E5E4E2", swatch: true },
-];
-const alertTokens: InspectableToken[] = [
-  { cls: "bg-secondary (root)", cssVar: "--ui-bg-secondary → --color-gray-50", value: "#F8F8F7", swatch: true },
-  { cls: "text-secondary (title)", cssVar: "--ui-text-secondary → --color-gray-700", value: "#585451", swatch: true },
-  { cls: "text-tertiary (description)", cssVar: "--ui-text-tertiary → --color-gray-600", value: "#706B68", swatch: true },
-  { cls: "text-fg-secondary (icon, modern/gray)", cssVar: "--color-fg-secondary → --color-gray-700", value: "#585451", swatch: true },
-];
-const kpiShellTokens: InspectableToken[] = [
-  { cls: "text-primary (value/label)", cssVar: "--ui-text-primary → --color-gray-900", value: "#2E2925", swatch: true },
-  { cls: "text-tertiary (note)", cssVar: "--ui-text-tertiary → --color-gray-600", value: "#706B68", swatch: true },
-  { cls: "border-secondary (divider)", cssVar: "--ui-border-secondary → --color-gray-200", value: "#E5E4E2", swatch: true },
-];
-const metricCardTokens: InspectableToken[] = [
-  { cls: "border-secondary", cssVar: "--ui-border-secondary → --color-gray-200", value: "#E5E4E2", swatch: true },
-  { cls: "text-primary (value)", cssVar: "--ui-text-primary → --color-gray-900", value: "#2E2925", swatch: true },
-  { cls: "text-quaternary (label)", cssVar: "--ui-text-quaternary → --color-gray-500", value: "#8F8B87", swatch: true },
-];
-const panelTokens: InspectableToken[] = [
-  { cls: "bg-secondary", cssVar: "--ui-bg-secondary → --color-gray-50", value: "#F8F8F7", swatch: true },
-  { cls: "text-primary", cssVar: "--ui-text-primary → --color-gray-900", value: "#2E2925", swatch: true },
-];
-const navChromeTokens: InspectableToken[] = [
-  { cls: "bg-secondary (rail/sidebar)", cssVar: "--ui-bg-secondary → --color-gray-50", value: "#F8F8F7", swatch: true },
-  { cls: "border-secondary", cssVar: "--ui-border-secondary → --color-gray-200", value: "#E5E4E2", swatch: true },
-  { cls: "text-quaternary (section labels)", cssVar: "--ui-text-quaternary → --color-gray-500", value: "#8F8B87", swatch: true },
-];
-
-const mapping = [
-  { layer: "Header › “BioData SA” wordmark + gov logo", figma: "Text + image, Barlow Medium", dew: "Plain text + downloaded asset", note: "Wordmark is plain text, not a component. Gov crest image (node 103:108) has no DEW equivalent - downloaded and committed to public/pages/dashboard/gov-sa-dew-logo.png per the figma-design-to-code skill's asset rule, cropped to match Figma's own 44px sprite framing." },
-  { layer: "Header › Breadcrumb (Home / ORG / Project / ... / [Location])", figma: "Text + pill + chevron-selector-vertical ×2", dew: "Nav chrome - structural placeholder", note: "Explicitly exempt from fidelity per CONTEXT.md's 'Exploratory page layouts' (IA not decided yet). [Location] rendered literally, same convention as test-site-details' [Custom field name]." },
-  { layer: "Header › Search field", figma: "Input with leading search-refraction icon + trailing help-circle", dew: "Input (icon + tooltip props)", note: "components/base/input/input.tsx - icon renders the leading glyph, tooltip renders the trailing HelpCircle wrapped in a real Tooltip automatically. No separate Tooltip composition needed - Input already does this internally." },
-  { layer: "Header › “Upload a dataset”", figma: "Solid button, bg-brand-solid, upload-01 icon", dew: 'Button color="primary" iconLeading={Upload01}', note: "components/base/buttons/button.tsx" },
-  { layer: "Header › “Action 2”", figma: "Outline button, generic placeholder icon", dew: 'Button color="secondary"', note: "Figma's icon (node 19:4069) is itself literally named \"placeholder\" - a generic filler glyph, not a specified icon - so no iconLeading was invented for it." },
-  { layer: "Header › Avatar", figma: "Circle placeholder", dew: "Avatar", note: 'components/base/avatar/avatar.tsx - initials="OW" (Olivia Wyatt), no src, matching the "Hi, Olivia" heading below.' },
-  { layer: "Primary icon sidebar (80px)", figma: "6 plain icon squares, first active/darker", dew: "Nav chrome - structural placeholder", note: "Exempt from fidelity (icons/spacing not locked in) - rendered as plain token-coloured squares, not the specific Figma icons." },
-  { layer: "Contextual sidebar (286px)", figma: "DASHBOARD + [CATEGORY] nav lists, footer links", dew: "Nav chrome - structural placeholder", note: "Same exemption. [CATEGORY] rendered literally." },
-  { layer: "Info banner (\"This is where alerts go\")", figma: "Full-width bar, info-circle icon, text, x-close", dew: "AlertFullWidth", note: 'components/application/alerts/alerts.tsx - color="default" (renders InfoCircle via its own iconMap, no manual icon import needed). The banner text is itself a Figma placeholder instruction ("this is where alerts go"), not real copy - rendered verbatim as the title, same convention as test-site-details\' literal "[Custom field name]". description left empty since Figma only specifies one line of copy; confirmLabel is a required prop on the type but onConfirm is never wired, so no confirm button renders - same allowance CONTEXT.md gives AlertFloating/AlertFullWidth elsewhere. onClose is wired for real (dismisses the banner).' },
-  { layer: "“Hi, Olivia” heading", figma: "Text, Barlow Medium 24px", dew: "Plain text - not a component", note: "Static heading, no interactive behaviour." },
-  { layer: "KPI row (Species Observed / Datasets contributed / Data label)", figma: "3 stat groups with divider borders, trend/action sub-line", dew: "Composed - not a real component", note: "border-secondary dividers, text-primary/text-tertiary. No DEW \"stat\" component exists yet - candidate for future ingest." },
-  { layer: "Quick actions row (×4)", figma: "4 outline buttons, generic placeholder icon", dew: 'Button color="secondary" ×4', note: "Same placeholder-icon situation as \"Action 2\" - no iconLeading invented." },
-  { layer: "Date range control", figma: "chevron-left + calendar icon + range text + chevron-right, styled like an Input", dew: "? gap - GapDateRange", note: "input-date.tsx is a single-value DateField (react-aria DateSegments), not this prev/range-text/next composition. No real DEW match - flagged, not faked." },
-  { layer: "4 metric cards (Records / Flora / Fauna / Projects)", figma: "Bordered cards, large number + uppercase label", dew: "Composed - not a real component", note: "border-secondary / text-primary / text-quaternary. Candidate for future ingest as a \"stat card\"." },
-  { layer: "Filter panel (\"Taxon filter - Flora, Fauna, All\" ×2)", figma: "Gray box, 2 lines of placeholder text", dew: "Composed - not a real component", note: "Literal Figma placeholder copy rendered verbatim, same convention as test-site-details' bracketed placeholders." },
-  { layer: "Map view panel (\"Title\" / \"Sub-title\" / \"Map view\" / gray rectangle)", figma: "Large gray panel, header text, unlabelled button-shaped rectangle", dew: "Composed - not a real component", note: "Title/Sub-title/Map view rendered verbatim as literal placeholder text. The gray rectangle carries no label or icon in Figma, so it's rendered as a plain placeholder shape rather than guessing what real Button it should be - fabricating a label would violate \"no invented props/content\"." },
-  { layer: "Yellow \"GENERAL NOTES\" sticky note", figma: "Highlighter-yellow card, \"Patterns / ALA left filters\" list (node 103:225)", dew: "Excluded - not rendered", note: "A designer's comment layer (comment-style yellow card, \"NOTES\" label), not product UI, per CONTEXT.md's \"Exploratory page layouts\" annotation rule." },
-];
-
-export default function DashboardPage() {
-  const [bannerOpen, setBannerOpen] = useState(true);
+        {node.label}
+      </Link>
+    ) : (
+      // No real page yet - text-tertiary (not text-primary/font-medium like the links above) so
+      // the sidebar itself shows which of its items are actual destinations, not just labels
+      // holding a place in the IA.
+      <p style={indent} className="py-2 text-sm text-tertiary">
+        {node.label}
+      </p>
+    );
+  }
 
   return (
-    <InspectorProvider>
-      <div className="font-barlow flex min-h-screen flex-col">
-        {/* ── Header ── */}
-        <header className="flex h-16 shrink-0 items-center justify-between border-b border-secondary bg-primary px-4">
-          <div className="flex items-center gap-4">
-            <div className="relative size-11 shrink-0 overflow-hidden">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src="/pages/dashboard/gov-sa-dew-logo.png"
-                alt="Government of South Australia, Department for Environment and Water"
-                className="absolute top-[-0.46%] left-0 w-[484%] max-w-none"
-              />
-            </div>
-            <p className="text-[17px] font-medium tracking-tight text-primary">BioData SA</p>
-            <nav className="flex items-center gap-2 text-sm text-tertiary" aria-label="Breadcrumb">
-              <span>Home</span>
-              <span className="flex items-center gap-1 rounded-full border border-secondary px-1.5 py-0.5 text-[10px] font-medium">
-                ORG <ChevronSelectorVertical className="size-3" />
-              </span>
-              <span>/</span>
-              <span className="flex items-center gap-1">
-                Project <ChevronSelectorVertical className="size-3" />
-              </span>
-              <span>/</span>
-              <span>...</span>
-              <span>/</span>
-              <span className="text-primary">[Location]</span>
-            </nav>
-          </div>
-          <div className="flex items-center gap-6">
-            <div className="flex items-center gap-3">
-              <div className="w-[395px]">
-                <Inspectable label='Input (icon + tooltip)' source="components/base/input/input.tsx" tokens={searchTokens}>
-                  <Input
-                    placeholder="Search for species, projects or datasets ..."
-                    icon={SearchMd}
-                    tooltip="Search across species, project and dataset records"
-                  />
-                </Inspectable>
-              </div>
-              <Inspectable label='Button color="primary"' source="components/base/buttons/button.tsx" tokens={primaryButtonTokens}>
-                <Button color="primary" iconLeading={Upload01}>Upload a dataset</Button>
-              </Inspectable>
-              <Inspectable label='Button color="secondary"' source="components/base/buttons/button.tsx" tokens={secondaryButtonTokens}>
-                <Button color="secondary">Action 2</Button>
-              </Inspectable>
-            </div>
-            <Inspectable label="Avatar" source="components/base/avatar/avatar.tsx" tokens={avatarTokens}>
-              <Avatar size="md" initials="OW" alt="Olivia Wyatt" />
-            </Inspectable>
-          </div>
-        </header>
-
-        <div className="flex flex-1">
-          {/* ── Primary icon sidebar (nav chrome - not pixel-matched) ── */}
-          <Inspectable label="Nav chrome - structural placeholder (not pixel-matched)" source="app/pages/dashboard/page.tsx" tokens={navChromeTokens}>
-            <aside className="flex w-20 shrink-0 flex-col items-center gap-3 border-r border-secondary bg-secondary py-4">
-              <div className="size-12 rounded-lg" style={{ background: "var(--color-gray-400)" }} />
-              {Array.from({ length: 5 }).map((_, i) => (
-                <div key={i} className="size-12 rounded-lg bg-tertiary" />
-              ))}
-            </aside>
-          </Inspectable>
-
-          {/* ── Contextual sidebar (nav chrome - not pixel-matched) ── */}
-          <Inspectable label="Nav chrome - structural placeholder (not pixel-matched)" source="app/pages/dashboard/page.tsx" tokens={navChromeTokens}>
-            <aside className="flex w-[286px] shrink-0 flex-col justify-between border-r border-secondary bg-secondary p-4">
-              <div className="flex flex-col gap-8">
-                <div>
-                  <p className="mb-3 text-xs font-semibold tracking-wide text-quaternary uppercase">Dashboard</p>
-                  <ul className="flex flex-col gap-2 text-md text-primary">
-                    <li>Overview</li>
-                    <li>Track requests</li>
-                    <li>Nav item 3</li>
-                    <li>Nav item 4</li>
-                  </ul>
-                </div>
-                <div className="border-t border-secondary pt-6">
-                  <p className="mb-3 text-xs font-semibold tracking-wide text-quaternary uppercase">[CATEGORY]</p>
-                  <ul className="flex flex-col gap-2 text-md text-primary">
-                    <li>Nav item 1</li>
-                    <li>Nav item 2</li>
-                    <li>Nav item 3</li>
-                    <li>Nav item 4</li>
-                  </ul>
-                </div>
-              </div>
-              <div className="flex flex-col gap-1.5 border-t border-secondary pt-4 text-[10px] font-semibold tracking-wide text-quaternary uppercase">
-                <p>Privacy Policy</p>
-                <p>Terms and Conditions</p>
-                <p>Help and Documentation</p>
-              </div>
-            </aside>
-          </Inspectable>
-
-          {/* ── Main content ── */}
-          <main className="flex flex-1 flex-col">
-            {bannerOpen && (
-              <Inspectable label="AlertFullWidth" source="components/application/alerts/alerts.tsx" tokens={alertTokens} className="w-full">
-                <AlertFullWidth
-                  title="This is where alerts go"
-                  description=""
-                  confirmLabel="Learn more"
-                  onClose={() => setBannerOpen(false)}
-                />
-              </Inspectable>
-            )}
-
-            <div className="flex items-start justify-between gap-6 border-b border-secondary p-6">
-              <div className="flex flex-col gap-8">
-                <div className="flex flex-col gap-6">
-                  <p className="text-2xl font-medium text-primary">Hi, Olivia</p>
-                  <Inspectable label="Composed KPI shell (not a real component)" source="app/pages/dashboard/page.tsx" tokens={kpiShellTokens}>
-                    <div className="flex items-start gap-6">
-                      <KpiStat value="15" label="Species Observed" note="3 up from last week" trend />
-                      <KpiStat value="3" label="Datasets contributed" note="1 dataset under review" />
-                      <KpiStat value="0" label="Data label" note="Data label action" action last />
-                    </div>
-                  </Inspectable>
-                </div>
-                <div className="flex items-center gap-4">
-                  <Inspectable label='Button color="secondary"' source="components/base/buttons/button.tsx" tokens={secondaryButtonTokens}>
-                    <Button color="secondary">Upload a dataset</Button>
-                  </Inspectable>
-                  <Button color="secondary">Track requests</Button>
-                  <Button color="secondary">Quick action 3</Button>
-                  <Button color="secondary">Quick action 4</Button>
-                </div>
-              </div>
-              <GapDateRange />
-            </div>
-
-            <div className="flex flex-col gap-6 p-6">
-              <Inspectable label="Composed metric-card shell (not a real component)" source="app/pages/dashboard/page.tsx" tokens={metricCardTokens} className="flex gap-4">
-                <div className="flex w-full gap-4">
-                  <MetricCard value="6,850,250" label="Records" />
-                  <MetricCard value="9,064" label="Flora Species" />
-                  <MetricCard value="4,170" label="Fauna Species" />
-                  <MetricCard value="1,435" label="Projects across SA" />
-                </div>
-              </Inspectable>
-
-              <div className="flex gap-4">
-                <Inspectable label="Composed filter panel (not a real component)" source="app/pages/dashboard/page.tsx" tokens={panelTokens} className="w-[280px] shrink-0">
-                  <div className="flex w-full flex-col gap-3 rounded-lg bg-secondary p-4">
-                    <p className="text-sm text-primary">Taxon filter - Flora, Fauna, All</p>
-                    <p className="text-sm text-primary">Taxon filter - Flora, Fauna, All</p>
-                  </div>
-                </Inspectable>
-
-                <Inspectable label="Composed map panel (not a real component)" source="app/pages/dashboard/page.tsx" tokens={panelTokens} className="flex-1">
-                  <div className="relative flex min-h-[460px] w-full flex-col gap-1 rounded-lg bg-secondary p-4">
-                    <p className="text-sm text-primary">Title</p>
-                    <p className="text-xs text-tertiary">Sub-title</p>
-                    <div className="h-9 w-40 self-end rounded" style={{ background: "var(--color-gray-400)" }} />
-                    <p className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-sm text-primary">Map view</p>
-                  </div>
-                </Inspectable>
-              </div>
-            </div>
-          </main>
-        </div>
-      </div>
-
-      {/* ── Component mapping ── */}
-      <div className="mx-auto max-w-5xl px-8 py-12">
-        <h2 className="mb-2 text-xl font-semibold text-primary">Component mapping</h2>
-        <p className="mb-4 text-sm text-tertiary">
-          Every Figma layer in node 103:105 traced to the DEW component (or honest gap) that renders it. Nav chrome
-          (icon rail, contextual sidebar, breadcrumb) is exempt from pixel fidelity per CONTEXT.md&apos;s
-          &quot;Exploratory page layouts&quot; section, since the surrounding IA isn&apos;t decided yet.
-        </p>
-        <div className="overflow-hidden rounded-lg border border-secondary">
-          <table className="w-full text-left text-sm">
-            <thead className="bg-secondary text-xs text-quaternary">
-              <tr>
-                <th className="px-3 py-2 font-semibold">Figma layer</th>
-                <th className="px-3 py-2 font-semibold">Figma spec</th>
-                <th className="px-3 py-2 font-semibold">DEW mapping</th>
-                <th className="px-3 py-2 font-semibold">Note</th>
-              </tr>
-            </thead>
-            <tbody>
-              {mapping.map((m) => (
-                <tr key={m.layer} className="border-t border-secondary align-top">
-                  <td className="px-3 py-2 font-medium text-primary">{m.layer}</td>
-                  <td className="px-3 py-2 text-tertiary">{m.figma}</td>
-                  <td className="px-3 py-2"><code className="rounded bg-secondary px-1.5 py-0.5 text-xs">{m.dew}</code></td>
-                  <td className="px-3 py-2 text-tertiary">{m.note}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-
-        <h2 className="mt-8 mb-2 text-xl font-semibold text-primary">New components identified (not blocking)</h2>
-        <p className="mb-4 text-sm text-tertiary">
-          One genuine gap remains open while mapping this screen - it doesn&apos;t block the rest of it. It&apos;s
-          marked with a visible <code className="rounded bg-secondary px-1.5 py-0.5 text-xs">?</code> in place of the
-          date range control above, per the convention in <code className="rounded bg-secondary px-1.5 py-0.5 text-xs">CONTEXT.md</code>.
-          The KPI row, metric cards, filter panel, and map panel are structural shells (composed from tokens, not
-          &quot;?&quot;-blocked) since blocking a whole section would swallow everything inside it - see the mapping
-          table for each.
-        </p>
-        <div className="flex flex-wrap gap-4">
-          {[{ label: "Date range control", note: "Prev-arrow / calendar / range-text / next-arrow composition - input-date.tsx only supports a single editable date value" }].map((g) => (
-            <div key={g.label} className="flex w-56 flex-col items-center gap-2 rounded-xl p-6" style={{ border: "1.5px dashed var(--color-gray-300)", background: "var(--color-gray-50)" }}>
-              <div className="flex size-9 items-center justify-center rounded-lg text-lg font-semibold" style={{ background: "var(--color-gray-200)", color: "var(--color-gray-500)" }}>
-                ?
-              </div>
-              <p className="text-center text-xs text-quaternary">{g.label}</p>
-              <p className="text-center text-[11px] text-quaternary">{g.note}</p>
-            </div>
+    <div className="flex flex-col">
+      <button
+        type="button"
+        onClick={() => setOpen((o) => !o)}
+        style={indent}
+        className={cx(
+          "flex w-full items-center justify-between gap-2 py-2 text-left",
+          depth === 0 ? "text-xs font-semibold tracking-wide text-quaternary uppercase" : "text-sm font-medium text-primary",
+        )}
+      >
+        {node.label}
+        <ChevronDown className={cx("size-3.5 shrink-0 text-quaternary transition-transform", !open && "-rotate-90")} />
+      </button>
+      {open && (
+        <div className="mt-1 flex flex-col gap-0.5">
+          {node.items!.map((child) => (
+            <NavTree key={child.label} node={child} depth={depth + 1} />
           ))}
         </div>
-      </div>
-    </InspectorProvider>
+      )}
+    </div>
+  );
+}
+
+// What column 3 shows for every section besides this screen's own (Home, here). Two honest
+// states, not one: a section either has a real page elsewhere (Home -> this very dashboard,
+// Projects -> project-list) - in which case say so and link to it, don't claim it's unscoped when
+// it demonstrably isn't - or it genuinely has no page yet, which does get the "not scoped" copy.
+// Conflating the two read as a bug: clicking Home from another screen showed "hasn't been scoped
+// yet" directly above a working "Go to Home" link, flagged directly by the user off a screenshot.
+function SectionPlaceholder({ node }: { node: NavNode }) {
+  // A section can itself be the link (a leaf like Home) or have one keyed child (like Projects).
+  const relatedLink = node.key ? node : node.items?.find((item) => item.key);
+  // A bare path drops the active role - see lib/use-role-href.ts. Another instance of the same
+  // dead end fixed everywhere else, missed here the first time round.
+  const roleHref = useRoleHref();
+
+  return (
+    <div className="flex flex-1 flex-col items-center justify-center gap-3 p-12 text-center">
+      <h1 className="text-lg font-medium text-primary">{node.label}</h1>
+      <p className="max-w-sm text-sm text-tertiary">
+        {relatedLink
+          ? "This section has its own page - it isn't embedded here."
+          : "This section's content hasn't been scoped yet - only its place in the navigation is decided so far."}
+      </p>
+      {relatedLink && (
+        <Button color="link-color" size="sm" href={roleHref(keyHref(relatedLink.key!))} iconTrailing={ArrowNarrowRight}>
+          Go to {relatedLink.label}
+        </Button>
+      )}
+    </div>
+  );
+}
+
+// DialogTrigger + our real Popover (react-aria) instead of a hand-rolled useState toggle - gets
+// outside-click and Escape dismissal for free, same primitive DateRangeControl already uses for
+// its overlay. Any hand-rolled dropdown (a switcher, an org-switcher when that gets built) should
+// use this, not a plain conditional div - flagged directly by the user after the project switcher
+// shipped without it.
+function ProfileMenu() {
+  const [open, setOpen] = useState(false);
+
+  return (
+    <DialogTrigger onOpenChange={setOpen}>
+      <AriaButton className="flex items-center gap-1 rounded-md outline-brand focus-visible:outline-2 focus-visible:outline-offset-2">
+        <Avatar size="md" initials="OW" alt="Olivia Wyatt" />
+        <ChevronDown className={cx("size-3.5 text-quaternary transition-transform", open && "rotate-180")} />
+      </AriaButton>
+      <Popover size="sm" className="w-48 p-1">
+        <Dialog className="outline-hidden">
+          <p className="px-3 py-2 text-xs font-semibold tracking-wide text-quaternary uppercase">Profile</p>
+          {registeredUserAccountMenu.map((item) => (
+            <p key={item} className="cursor-pointer rounded-md px-3 py-2 text-sm text-secondary hover:bg-secondary">
+              {item}
+            </p>
+          ))}
+        </Dialog>
+      </Popover>
+    </DialogTrigger>
+  );
+}
+
+// public-user's header replacement for ProfileMenu - there's no account to show an avatar/
+// Profile Settings/Logout for, so a signed-out guest gets a real "Login / Sign up" entry point
+// instead (the real IA screenshot's "Header > Login / Sign up" item). Disabled with a tooltip, not
+// a dead link - same "no fake links, honestly flag what's not built yet" convention as
+// DisabledQuickAction (app/pages/_shared/home-dashboard.tsx), since there's no real auth flow
+// anywhere in this exploratory build (see CONTEXT.md: "No real auth/session"). Two buttons, not
+// one combined "Login / Sign up" control - the screenshot's single nav-tree label is naming the
+// header's auth entry point as a concept, not dictating it must render as one literal button.
+function GuestAuthActions() {
+  return (
+    <div className="flex items-center gap-2">
+      <Tooltip title="Coming soon - authentication isn't built yet">
+        <Focusable>
+          <span className="inline-flex">
+            <Button color="secondary" isDisabled>Log in</Button>
+          </span>
+        </Focusable>
+      </Tooltip>
+      <Tooltip title="Coming soon - authentication isn't built yet">
+        <Focusable>
+          <span className="inline-flex">
+            <Button color="primary" isDisabled>Sign up</Button>
+          </span>
+        </Focusable>
+      </Tooltip>
+    </div>
+  );
+}
+
+// User roles - see CONTEXT.md's "User roles" section. Full 6-role hierarchy is defined in
+// lib/user-role.ts, but build focus right now is just registered-user (default) and public-user -
+// don't build features for the other four ahead of being told to. Gated features (like the org
+// switcher below) read config/role-access.config.ts's role-access matrix via useFeatureAccess
+// rather than checking the role inline - that matrix is the single place feature visibility is
+// decided, owned separately from this screen. Switch roles via the `userRole` URL search param,
+// e.g. `?userRole=public-user`. No real auth/session in this exploratory build, so the URL is the
+// only source of truth for "who's looking at this".
+export default function DashboardPage() {
+  return (
+    <Suspense fallback={null}>
+      <Dashboard />
+    </Suspense>
+  );
+}
+
+function Dashboard() {
+  const router = useRouter();
+  const showOrgSwitcher = useFeatureAccess("orgSwitcher");
+  // public-user ("Guest User") reads a different, smaller nav tree entirely - not a filtered view
+  // of registeredUserNav, since whole sections (DLA, Nominate Sensitive Species, Reports, Template
+  // Finder) don't exist for a signed-out visitor, not just individual leaves inside them. See
+  // lib/registered-user-nav.ts's publicUserNav and CONTEXT.md's "User roles" section for the real
+  // IA this is built from.
+  const role = useUserRole();
+  const isPublicUser = role === "public-user";
+  const nav = isPublicUser ? publicUserNav : registeredUserNav;
+  const roleHref = useRoleHref();
+  const [activeSection, setActiveSection] = useState("Home");
+  const [homeTab, setHomeTab] = useState<Key>("dashboard");
+  const [projectsTab, setProjectsTab] = useState<Key>("projects");
+  const activeSectionNode = nav.find((section) => section.label === activeSection) ?? nav[0];
+
+  // Home and Projects both have a real page of their own - clicking either from a *different*
+  // page's shell now actually navigates there instead of faking the content in place, so the URL,
+  // back/forward, and refresh all behave honestly. Sections with no real page yet (Observations,
+  // DLA, ...) stay a local, in-place section switch, same as before. Flagged directly by the user
+  // off a screenshot: leaving project-list/option-1's URL in the bar while showing Home's content
+  // was "a bit odd". `roleHref` (not a bare path) - a plain `/pages/...` path drops the active
+  // role, silently falling back to `registered-user` on the destination page. Flagged directly by
+  // the user as a dead end: switching Home -> Projects as `public-user` landed on
+  // `registered-user`'s view instead.
+  const goToSection = (section: NavNode) => {
+    const relatedLink = section.key ? section : section.items?.find((item) => item.key);
+    if (relatedLink?.key && relatedLink.key !== CURRENT_KEY) {
+      router.push(roleHref(keyHref(relatedLink.key)));
+    } else {
+      setActiveSection(section.label);
+    }
+  };
+
+  return (
+    <div className="font-barlow flex h-screen flex-col overflow-hidden">
+      <RoleSwitcher />
+      {/* ── Header ── */}
+      <header className="flex min-h-16 shrink-0 flex-wrap items-center justify-between gap-x-6 gap-y-3 border-b border-secondary bg-primary px-4 py-3">
+        <div className="flex flex-wrap items-center gap-4">
+          <MobileNavTrigger
+            sections={nav}
+            sectionIcons={sectionIcons}
+            activeSection={activeSection}
+            onSelectSection={(label) => {
+              const section = nav.find((s) => s.label === label);
+              if (section) goToSection(section);
+            }}
+          >
+            {/* public-user's Home/Projects are each a single view (see publicUserNav) - no peer
+                tab to switch between, so no extra mobile-menu content for either. */}
+            {!isPublicUser && activeSection === "Home"
+              ? ((close: () => void) => (
+                  <>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setHomeTab("dashboard");
+                        close();
+                      }}
+                      className={cx(
+                        "rounded-md px-3 py-2 text-left text-sm font-medium outline-brand focus-visible:outline-2 focus-visible:outline-offset-2",
+                        homeTab === "dashboard" ? "bg-secondary text-primary" : "text-primary hover:bg-secondary",
+                      )}
+                    >
+                      My BioData
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setHomeTab("overview");
+                        close();
+                      }}
+                      className={cx(
+                        "rounded-md px-3 py-2 text-left text-sm font-medium outline-brand focus-visible:outline-2 focus-visible:outline-offset-2",
+                        homeTab === "overview" ? "bg-secondary text-primary" : "text-primary hover:bg-secondary",
+                      )}
+                    >
+                      Flora and Fauna Dashboard
+                    </button>
+                  </>
+                ))
+              : !isPublicUser && activeSection === "Projects"
+                ? ((close: () => void) => (
+                    <>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setProjectsTab("projects");
+                          close();
+                        }}
+                        className={cx(
+                          "rounded-md px-3 py-2 text-left text-sm font-medium outline-brand focus-visible:outline-2 focus-visible:outline-offset-2",
+                          projectsTab === "projects" ? "bg-secondary text-primary" : "text-primary hover:bg-secondary",
+                        )}
+                      >
+                        Projects
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setProjectsTab("datasets");
+                          close();
+                        }}
+                        className={cx(
+                          "rounded-md px-3 py-2 text-left text-sm font-medium outline-brand focus-visible:outline-2 focus-visible:outline-offset-2",
+                          projectsTab === "datasets" ? "bg-secondary text-primary" : "text-primary hover:bg-secondary",
+                        )}
+                      >
+                        Datasets
+                      </button>
+                    </>
+                  ))
+                : undefined}
+          </MobileNavTrigger>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src="/pages/dashboard/gov-sa-dew-lockup.png"
+            alt="Government of South Australia, Department for Environment and Water"
+            className="h-[37px] w-auto"
+          />
+          <div className="h-6 w-px bg-secondary" />
+          <p className="text-[17px] font-semibold tracking-tight text-primary">BioData SA</p>
+          <Breadcrumb
+            section={activeSection === "Home" ? undefined : activeSectionNode.label}
+            orgLabel={showOrgSwitcher ? orgLabelForRole(role) : undefined}
+          />
+        </div>
+        <div className="flex flex-wrap items-center gap-3 sm:gap-6">
+          <div className="flex flex-wrap items-center gap-3">
+            <div className="w-full sm:w-64 lg:w-[395px]">
+              <GlobalProjectSearch />
+            </div>
+            {/* Creating requires an account - visible for every role including public-user (a
+                signed-out guest reaching for these is a real moment, not one to hide), but a
+                guest's click opens a sign-up invite instead of doing nothing. See
+                app/pages/_shared/guest-action-gate.tsx. Flagged directly by the user: turn the
+                "you can't do this" moment into a delight moment, not a wall. */}
+            <GuestActionButton
+              icon={Plus}
+              label="Add project"
+              color="primary"
+              isGuest={isPublicUser}
+              modalTitle="Sign up to add a project"
+              modalDescription="Create a free BioData SA account to start contributing projects to South Australia's biodiversity record."
+            />
+            <GuestActionButton
+              icon={Upload01}
+              label="Upload dataset"
+              color="secondary"
+              isGuest={isPublicUser}
+              modalTitle="Sign up to upload a dataset"
+              modalDescription="Create a free BioData SA account to start contributing datasets to South Australia's biodiversity record."
+            />
+          </div>
+          {isPublicUser ? <GuestAuthActions /> : <ProfileMenu />}
+        </div>
+      </header>
+
+      {/* ── Primary icon rail: top-level IA (nav chrome - not pixel-matched) ── */}
+      {(() => {
+        const iconRail = (
+          <nav aria-label="Primary" className="hidden w-16 shrink-0 flex-col items-center gap-1 overflow-y-auto border-r border-secondary bg-secondary py-4 lg:flex">
+            {nav.map((section) => {
+              const Icon = sectionIcons[section.label];
+              const active = section.label === activeSection;
+              // "Needs your attention"'s count, badged on Home instead of only showing once you're
+              // already there - the same count `HomeDashboardContent` renders, not a second copy.
+              // Only shown for registered-user - that list is a signed-in registered user's own
+              // pending tasks (a draft project, a DLA request); a guest's Home has no such personal
+              // content, and biodata-admin's Home shows a different, operational content set
+              // (AdminHomeDashboardContent) that this count doesn't describe.
+              const badgeCount = role === "registered-user" && section.label === "Home" ? dashboardTasks.length : 0;
+              return (
+                <Tooltip key={section.label} title={section.label} placement="right">
+                  <TooltipTrigger
+                    onPress={() => goToSection(section)}
+                    aria-label={section.label}
+                    className={cx(
+                      "relative flex size-12 items-center justify-center rounded-lg transition duration-100 ease-linear active:scale-[0.96]",
+                      active ? "bg-brand-solid text-white" : "text-quaternary hover:bg-tertiary hover:text-primary",
+                    )}
+                  >
+                    {Icon && <Icon className="size-5" />}
+                    {badgeCount > 0 && (
+                      <span className="absolute -top-1 -right-1 flex size-4 items-center justify-center rounded-full bg-error-solid text-[10px] font-semibold tabular-nums text-white">
+                        {badgeCount}
+                      </span>
+                    )}
+                  </TooltipTrigger>
+                </Tooltip>
+              );
+            })}
+          </nav>
+        );
+
+        // public-user's Home and Projects are each a single view (see publicUserNav) - no peer tab
+        // to switch between, so no Tabs boundary at all, just the section's one real content
+        // directly. Checked before the two-peer-tab branches below so those never run for this
+        // role. A two-tab switcher with only one real tab would be dishonest UI - a control
+        // implying a choice that doesn't exist - not just a visual downgrade.
+        //
+        // No contextual-sidebar column at all here, deliberately - not the usual aside with a
+        // section-label heading and nothing else in it. That shape works when the aside holds real
+        // selectable content (a NavTree, a Tabs switcher); with neither, it's just a 286px-wide
+        // empty box with the footer links stranded at the bottom - dead space, not minimalism.
+        // Flagged directly by the user as looking empty/unfinished. Since public-user is explicitly
+        // "a bare bones version of the platform," dropping the column and letting main content use
+        // the full width reads as a deliberately leaner layout instead of a broken one. The footer
+        // links this column would've carried are still reachable from Observations' own aside
+        // (the one section left that still uses it) - not worth inventing a new place to repeat
+        // them just so every section carries the exact same chrome.
+        if (isPublicUser && (activeSection === "Home" || activeSection === "Projects")) {
+          return (
+            <div className="flex flex-1 overflow-hidden">
+              {iconRail}
+
+              <main className="flex flex-1 flex-col overflow-y-auto">
+                {activeSection === "Home" ? <DataOverviewContent /> : <ProjectListContent />}
+              </main>
+            </div>
+          );
+        }
+
+        // Home's two views (My BioData / Flora and Fauna Dashboard) get their own Tabs boundary, mounted
+        // only while Home is active - not one Tabs wrapping the whole page permanently. React-aria's
+        // Tabs keeps a single internal collection for its whole lifetime; a Tabs that always exists
+        // while its TabList only mounts once you switch to Home crashes the first time TabList
+        // mounts ("Cannot destructure property 'onAction' ... as it is undefined") - caught on
+        // project-detail/option-1, fixed the same way here since this file has the identical shape.
+        if (activeSection === "Home") {
+          return (
+            <Tabs orientation="vertical" selectedKey={homeTab} onSelectionChange={setHomeTab} className="flex flex-1 overflow-hidden">
+              {iconRail}
+
+              {/* ── Contextual sidebar: Home's My BioData/Flora and Fauna Dashboard tab list (nav chrome - not pixel-matched) ── */}
+              <aside aria-label="Section" className="hidden w-[286px] shrink-0 flex-col justify-between overflow-y-auto border-r border-secondary bg-secondary p-4 lg:flex">
+                <div className="flex flex-col gap-1">
+                  <p className="mb-3 text-xs font-semibold tracking-wide text-quaternary uppercase">{activeSectionNode.label}</p>
+                  <TabList aria-label="Home views" orientation="vertical" type="button-brand" fullWidth className="w-full">
+                    <Tab id="dashboard" label="My BioData" icon={User01} />
+                    <Tab id="overview" label="Flora and Fauna Dashboard" icon={PieChart03} />
+                  </TabList>
+                </div>
+                <div className="flex flex-col gap-2 border-t border-secondary pt-4 text-xs text-quaternary">
+                  {registeredUserFooterLinks.map((link) => (
+                    <p key={link}>{link}</p>
+                  ))}
+                </div>
+              </aside>
+
+              {/* ── Main content: Home's tab panels render the real dashboard content (shared
+                  with project-list and project-detail, see app/pages/_shared/home-dashboard.tsx
+                  and data-overview.tsx) ── */}
+              <main className="flex flex-1 flex-col overflow-y-auto">
+                <HomeTabPanels />
+              </main>
+            </Tabs>
+          );
+        }
+
+        // Projects' two views (Projects / Datasets) get the same "own Tabs boundary, own two peer
+        // tabs" treatment as Home's My BioData/Flora and Fauna Dashboard - a single "Manage Project
+        // and Datasets" link used to blend these into one destination, flagged directly by the
+        // user off project-list/option-1's sidebar. Datasets has no reference/content yet, so it's
+        // the honest "hasn't been scoped yet" placeholder rather than an invented list.
+        if (activeSection === "Projects") {
+          return (
+            <Tabs orientation="vertical" selectedKey={projectsTab} onSelectionChange={setProjectsTab} className="flex flex-1 overflow-hidden">
+              {iconRail}
+
+              {/* ── Contextual sidebar: Projects/Datasets tab list (nav chrome - not pixel-matched) ── */}
+              <aside aria-label="Section" className="hidden w-[286px] shrink-0 flex-col justify-between overflow-y-auto border-r border-secondary bg-secondary p-4 lg:flex">
+                <div className="flex flex-col gap-1">
+                  <p className="mb-3 text-xs font-semibold tracking-wide text-quaternary uppercase">{activeSectionNode.label}</p>
+                  <TabList aria-label="Projects views" orientation="vertical" type="button-brand" fullWidth className="w-full">
+                    <Tab id="projects" label="Projects" icon={Folder} />
+                    <Tab id="datasets" label="Datasets" icon={Database01} />
+                  </TabList>
+                </div>
+                <div className="flex flex-col gap-2 border-t border-secondary pt-4 text-xs text-quaternary">
+                  {registeredUserFooterLinks.map((link) => (
+                    <p key={link}>{link}</p>
+                  ))}
+                </div>
+              </aside>
+
+              {/* ── Main content: Projects has this screen's own content; Datasets is unscoped ── */}
+              <main className="flex flex-1 flex-col overflow-y-auto">
+                <TabPanel id="projects">
+                  <ProjectListContent />
+                </TabPanel>
+                <TabPanel id="datasets">
+                  <SectionPlaceholder node={{ label: "Datasets" }} />
+                </TabPanel>
+              </main>
+            </Tabs>
+          );
+        }
+
+        return (
+          <div className="flex flex-1 overflow-hidden">
+            {iconRail}
+
+            {/* ── Contextual sidebar: selected section's children (nav chrome - not pixel-matched) ── */}
+            <aside aria-label="Section" className="hidden w-[286px] shrink-0 flex-col justify-between overflow-y-auto border-r border-secondary bg-secondary p-4 lg:flex">
+              <div className="flex flex-col gap-1">
+                <p className="mb-3 text-xs font-semibold tracking-wide text-quaternary uppercase">{activeSectionNode.label}</p>
+                {activeSectionNode.items?.map((item) => <NavTree key={item.label} node={item} depth={1} />)}
+              </div>
+              <div className="flex flex-col gap-2 border-t border-secondary pt-4 text-xs text-quaternary">
+                {registeredUserFooterLinks.map((link) => (
+                  <p key={link}>{link}</p>
+                ))}
+              </div>
+            </aside>
+
+            {/* ── Main content: Home and Projects are intercepted above (their own Tabs
+                boundary) - every other section is an honest placeholder until it's scoped ── */}
+            <main className="flex flex-1 flex-col overflow-y-auto">
+              <SectionPlaceholder node={activeSectionNode} />
+            </main>
+          </div>
+        );
+      })()}
+    </div>
   );
 }
