@@ -46,26 +46,39 @@ The docs site (`app/(docs)`) is organized into three sections: **primitives** (d
 
 | Component | Description |
 | --- | --- |
+| [Accordion](/components/accordion) | Expand/collapse title/content list, animated with a real spring (motion/react) - optional single-open behaviour. |
 | [Alert](/components/alert) | Dismissible banner - floating and full-width layouts, 6 colours, composed from Button/CloseButton/FeaturedIcon. |
 | [Avatar](/components/avatar) | User representation - sizes, colour variants, and avatar groups. |
 | [Badge](/components/badge) | Status labels - pill and badge-colour styles, 5 documented colours, dot/icon/dismiss variants. |
 | [Button](/components/button) | Primary action trigger - 8 colour variants, 5 sizes, icon and loading states. |
 | [Checkbox](/components/checkbox) | Binary selection control with an indeterminate state and two sizes. |
+| [Dropdown](/components/dropdown) | Menu built on React Aria - icon items, sections, and checkmark/checkbox/radio/toggle selection indicators. |
 | [Input](/components/input) | Text field plus specialised variants - password, date, number, payment, tags, file upload, PIN. |
-| [Modal](/components/modal) | 🚧 Documentation coming soon. |
+| [Modal](/components/modal) | Overlay dialog built on React Aria - Confirmation, Destructive, and free-form Form variants, plus the base ModalOverlay/Modal/Dialog primitives. |
+| [Progress](/components/progress) | Linear progress bar (4 label layouts) plus circular and half-circle indicators, 5 sizes. |
 | [Radio buttons](/components/radio-buttons) | Single-choice selection within a group - optional hint text, horizontal/vertical orientation, two sizes. |
 | [Radio groups](/components/radio-groups) | Card-style single-choice selection - icon, avatar, payment, radio, and checkbox layouts, two sizes. |
+| [Section headers](/components/section-headers) | Title/subheading/actions row with a bottom border, for page and card section chrome - replaces the hand-rolled version used across /pages/*. |
 | [Select](/components/select) | Dropdown selection - single select, searchable combobox, multi-select, tag select, and native select, in three sizes. |
+| [Table](/components/table) | React Aria Table - a plain primitive plus TableCard, the full data table with row selection, sorting, and row-actions dropdown. |
+| [Tabs](/components/tabs) | React Aria Tabs - 5 horizontal types, 5 vertical types, two sizes, optional icon/badge, full-width layout. |
 | [Toast](/components/toast) | Transient corner notification powered by sonner - 6 colours, optional action, composed from Button/CloseButton/FeaturedIcon. |
 | [Toggle](/components/toggle) | Binary switch control with an optional label/hint and a slim track variant, in two sizes. |
 | [Tooltip](/components/tooltip) | Hover/focus overlay for supplementary context - 4 placements, description, arrow, delay. |
+
+### Custom Components
+
+| Component | Description |
+| --- | --- |
+| [Date range](/custom-components/date-range) | Prev-arrow / calendar / range-text / next-arrow control, styled like an Input - no real DEW equivalent (input-date.tsx is single-value only). Pending a stakeholder decision on promotion into Components. |
 
 ### Patterns
 
 | Pattern | Description |
 | --- | --- |
 | [Forms](/patterns/forms) | 🚧 Documentation coming soon. |
-| [Navigation](/patterns/navigation) | 🚧 Documentation coming soon. |
+| [Navigation](/patterns/navigation) | The sidebar shell's two nav pieces - primary icon rail + contextual sidebar (side nav) and the persistent header bar (top nav). |
+| [Tree selection](/patterns/tree-view) | Multi-select file/folder tree composed from Tree view + the base Checkbox - cascading selection and indeterminate parents. |
 | [Empty states](/patterns/empty-states) | 🚧 Documentation coming soon. |
 | [Loading states](/patterns/loading-states) | 🚧 Documentation coming soon. |
 | [Feedback](/patterns/feedback) | 🚧 Documentation coming soon. |
