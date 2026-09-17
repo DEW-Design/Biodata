@@ -50,7 +50,7 @@ export const RadioGroupIconSimple = ({ items, size = "sm", className, ...props }
                                         </span>
                                         <span className={cx("text-tertiary", size === "md" ? "text-md" : "text-sm")}>{plan.secondaryTitle}</span>
                                     </AriaLabel>
-                                    <AriaText slot="description" className={cx("text-tertiary", size === "md" ? "text-md" : "text-sm")}>
+                                    <AriaText slot="description" className={cx("text-balance text-tertiary", size === "md" ? "text-md" : "text-sm")}>
                                         {plan.description}
                                     </AriaText>
                                 </div>

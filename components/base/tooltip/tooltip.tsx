@@ -77,9 +77,9 @@ export const Tooltip = ({
                                 "ease-in animate-out fade-out zoom-out-95 in-placement-left:slide-out-to-right-0.5 in-placement-right:slide-out-to-left-0.5 in-placement-top:slide-out-to-bottom-0.5 in-placement-bottom:slide-out-to-top-0.5",
                         )}
                     >
-                        <span className="text-xs font-semibold text-white">{title}</span>
+                        <span className="text-xs font-semibold text-balance text-white">{title}</span>
 
-                        {description && <span className="text-xs font-medium text-tooltip-supporting-text">{description}</span>}
+                        {description && <span className="text-xs font-medium text-balance text-tooltip-supporting-text">{description}</span>}
 
                         {arrow && (
                             <AriaOverlayArrow>

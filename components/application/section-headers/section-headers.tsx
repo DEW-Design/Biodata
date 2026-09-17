@@ -27,13 +27,13 @@ const SectionHeaderHeading = (props: ComponentPropsWithRef<"h2">) => (
     // heading whenever it renders inside a doc page - same fix as TableCardHeader/Accordion.
     // `text-lg`, not `text-md` - `--text-md` is never defined in app/globals.css, so `text-md`
     // compiles to no CSS at all sitewide (a separate, pre-existing gap, not fixed here).
-    <h2 {...props} className={cx("m-0! text-lg! font-semibold! tracking-normal! text-primary!", props.className)}>
+    <h2 {...props} className={cx("m-0! text-lg! font-semibold! text-balance! tracking-normal! text-primary!", props.className)}>
         {props.children}
     </h2>
 );
 
 const SectionHeaderSubheading = (props: ComponentPropsWithRef<"p">) => (
-    <p {...props} className={cx("text-sm text-tertiary", props.className)}>
+    <p {...props} className={cx("text-sm text-balance text-tertiary", props.className)}>
         {props.children}
     </p>
 );

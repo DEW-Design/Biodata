@@ -49,7 +49,7 @@ export const RadioGroupAvatar = ({ items, size = "sm", className, ...props }: Ra
                                         </span>
                                         <span className={cx("text-tertiary", size === "md" ? "text-md" : "text-sm")}>{person.username}</span>
                                     </AriaLabel>
-                                    <AriaText slot="description" className={cx("text-tertiary", size === "md" ? "text-md" : "text-sm")}>
+                                    <AriaText slot="description" className={cx("text-balance text-tertiary", size === "md" ? "text-md" : "text-sm")}>
                                         {person.title}
                                     </AriaText>
                                 </div>

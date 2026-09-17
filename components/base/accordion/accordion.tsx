@@ -91,7 +91,7 @@ export const Accordion = ({ items, defaultOpenKeys = [], openKeys: controlledOpe
                                 aria-expanded={isOpen}
                                 className="flex w-full cursor-pointer items-start justify-between gap-2 rounded-md text-left outline-focus-ring select-none focus-visible:outline-2 focus-visible:outline-offset-2 md:gap-6"
                             >
-                                <span className="text-lg! font-semibold! tracking-normal! text-primary! normal-case!">{item.title}</span>
+                                <span className="text-lg! font-semibold! text-balance! tracking-normal! text-primary! normal-case!">{item.title}</span>
                                 <AccordionChevron isOpen={isOpen} />
                             </button>
                         </h3>

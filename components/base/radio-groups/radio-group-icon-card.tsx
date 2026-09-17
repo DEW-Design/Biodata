@@ -52,7 +52,7 @@ export const RadioGroupIconCard = ({ items, size = "sm", className, ...props }: 
                             >
                                 <FeaturedIcon size={size === "md" ? "md" : "sm"} icon={plan.icon} color="gray" theme="modern" />
 
-                                <span className={cx("mr-1 text-secondary", size === "md" ? "text-lg font-semibold" : "text-md font-semibold")}>
+                                <span className={cx("mr-1 text-balance text-secondary", size === "md" ? "text-lg font-semibold" : "text-md font-semibold")}>
                                     {plan.title}
                                 </span>
 
@@ -75,7 +75,7 @@ export const RadioGroupIconCard = ({ items, size = "sm", className, ...props }: 
                                         </span>
                                         <span className={cx("text-tertiary", size === "md" ? "text-md" : "text-sm")}>{plan.secondaryTitle}</span>
                                     </p>
-                                    <p className={cx("text-tertiary", size === "md" ? "text-md" : "text-sm")}>{plan.description}</p>
+                                    <p className={cx("text-balance text-tertiary", size === "md" ? "text-md" : "text-sm")}>{plan.description}</p>
                                 </div>
                                 {plan.badge && (
                                     <BadgeWithDot size="sm" type="modern" color="success">

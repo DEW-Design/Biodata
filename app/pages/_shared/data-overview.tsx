@@ -168,9 +168,24 @@ function OverviewMetricCard({
   );
 }
 
-export function DataOverviewContent() {
+// `activeTab`/`onActiveTabChange` are optional, controlled-mode overrides - default to the
+// existing internal `useState` when omitted, so every current caller (dashboard, project-list,
+// project-detail) is unaffected. Added so a consumer can read (or drive) which sub-tab is active
+// from outside - e.g. `/proto/public-user-explorations`'s guest banner copy reacting to whichever
+// tab a guest is actually browsing, without forking this whole component to lift the state out.
+// Same "extend, don't fork" pattern as `Accordion`'s `openKeys`/`onOpenKeysChange`.
+export function DataOverviewContent({
+  activeTab: controlledActiveTab,
+  onActiveTabChange,
+}: { activeTab?: Key; onActiveTabChange?: (key: Key) => void } = {}) {
   const canCustomizeMetrics = useFeatureAccess("metricCardCustomization");
-  const [activeTab, setActiveTab] = useState<Key>("overview");
+  const [internalActiveTab, setInternalActiveTab] = useState<Key>("overview");
+  const isControlled = controlledActiveTab !== undefined;
+  const activeTab = isControlled ? controlledActiveTab : internalActiveTab;
+  const setActiveTab = (key: Key) => {
+    if (!isControlled) setInternalActiveTab(key);
+    onActiveTabChange?.(key);
+  };
   const [metricOrder, setMetricOrder] = useState<MetricId[]>(defaultMetricOrder);
 
   const swapMetric = (currentId: MetricId, newId: MetricId) => {

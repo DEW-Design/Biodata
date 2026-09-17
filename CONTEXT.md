@@ -39,6 +39,36 @@ matter how complete it otherwise looks.
   X</Button>`, a real icon, never a character appended to the label text. Caught after the fact:
   every such button across `/pages/*` originally read `{label} →` as plain text - fixed to use
   the icon prop instead, per the user directly.
+- **No two icons side by side representing one label or concept.** Pick the one icon that names
+  the actual thing - a second icon glued next to it reads as clutter, not information, especially
+  when nothing (spacing, a divider, a different weight) tells the eye they mean different things.
+  Caught on `/proto/public-user-explorations`'s "Log an observation" hook: a `Lock01` (signalling
+  "this is gated") sat directly next to a `Camera01` (signalling the action) with no separation -
+  the CTA button next to it already says "Create a free account," so the lock was redundant. Fixed
+  to the one icon that names the action itself. Applies everywhere, not just that proto.
+- **The shell's header spans the full width, above the icon rail + sidebar + main row - never
+  nested inside `main`, and never a sibling only of `main` instead of the whole row.** Every real
+  shell (`dashboard/page.tsx` and its siblings - see "Build hierarchy" below) renders `<header>`
+  as its own top-level sibling, directly inside the page's root column, *before* the
+  `<div className="flex flex-1 overflow-hidden">` that holds the icon rail/contextual sidebar/main
+  content:
+  ```
+  <div className="flex h-screen flex-col ...">
+    <header>...</header>                          <- full width, spans everything below it
+    <div className="flex flex-1 overflow-hidden">
+      {iconRail}
+      <aside>...</aside>
+      <main>...</main>
+    </div>
+  </div>
+  ```
+  Putting `<header>` inside `main` (or anywhere inside that inner row) makes it only span
+  whatever's to its right instead of the full screen - easy to miss when a page has no sidebar yet
+  (nothing sits to the header's left to expose the bug), and it breaks the moment one gets added.
+  Caught twice on `/proto/public-user-explorations`: flagged directly by the user once a column-2
+  sidebar was introduced and the header suddenly started rendering after it instead of above it -
+  "the shell is a non-negotiable contract you've violated." Check this on sight on any new or
+  edited page shell, not just when a sidebar is visibly broken by it.
 - **Geist stays Geist, Barlow stays Barlow** - Scaffold text never borrows `font-barlow` to match
   a DEW neighbour, and vice versa, except inside a generated screen where everything is Barlow.
 - **No fabricated Figma links, no fabricated icons/assets, no invented props.** An honest "not
@@ -353,7 +383,18 @@ not a hypothetical.
    not depend on ambient page context" principle as font-barlow above, just via a doc-site global
    instead of a font default. Check every new component's headings/paragraphs render identically
    whether mounted inside `.prose-doc` or standalone.
-6. **A live browser render, not just a code read.** Start the dev server, open the doc page (or
+6. **Any real component copy that can wrap to two or more lines carries `text-balance`
+   (`text-wrap: balance`) - a title, description, heading, subheading, label, or hint, never a
+   single-line/`truncate`/`whitespace-nowrap` field.** See `/primitives/typography`'s "Text
+   wrapping" section - this was already the unstated convention for every doc-page heading/
+   paragraph inside `.prose-doc`, made explicit and extended to the real component layer per
+   direct user request. Applied this pass to `Modal` (all 3 variants' title+description),
+   `AlertFloating`/`AlertFullWidth` (title+description), `ToastCard` (title+description),
+   `SectionHeader` (Heading+Subheading), `Accordion` (item title), `Tooltip` (title+description),
+   `Checkbox`/`RadioButton`/`Toggle` (label+hint), and all 6 `radio-groups` layouts (title/
+   description, skipping the name+secondaryTitle pairs that sit inline in one row by design).
+   Every *new* component with a title/description/label/hint-shaped prop needs the same check.
+7. **A live browser render, not just a code read.** Start the dev server, open the doc page (or
    every `/pages/*`/`/test-*` screen using the component), and actually interact with every
    documented state - open the modal, expand the dropdown, toggle the selection, sort the
    column - via a real headless-browser pass (Playwright), checking for zero console/page errors
@@ -361,15 +402,15 @@ not a hypothetical.
    intent. A component can look correct from the source and still be broken at runtime - most
    items above (the dead utility classes, the font-barlow gaps, the prose leak) were only ever
    caught this way, never by reading the JSX.
-7. **If a Figma frame exists, the shipped styling is audited against it directly, on this
+8. **If a Figma frame exists, the shipped styling is audited against it directly, on this
    pass - not deferred.** See "Figma is the source of truth" above; this QA check is one of the
    points in the workflow where that audit is expected to happen, not an optional follow-up.
-8. **If a bug is found, grep sibling/dependent files for the same pattern before calling it
+9. **If a bug is found, grep sibling/dependent files for the same pattern before calling it
    fixed.** A bug caught in one file is often shipped in more than one - `selected:bg-secondary`
    was wrong in both `components/base/table/table.tsx` and `components/application/table/
    table.tsx`; the `font-barlow` gap above was never a single-file fix. Fixing the one instance
    a screenshot happened to catch and stopping there is not passing this check.
-9. **Any genuinely separate, larger issue this pass surfaces gets logged under "Known gaps"
+10. **Any genuinely separate, larger issue this pass surfaces gets logged under "Known gaps"
    below, in the same session - not silently dropped, not silently expanded into scope.** The
    `text-md` sitewide gap and the "Action icons"/"Action buttons" row-action patterns Figma
    documents but this repo hasn't built yet are both this shape: real findings, correctly not
@@ -680,6 +721,38 @@ not-yet-chosen ones.
     Virtualized" (drops the folder/site metaphor for one flat record list with type filter chips -
     the strongest pure-scale answer, but loses the containment story entirely).
 
+## Build hierarchy: components -> shell -> screens -> flows
+
+Four distinct layers, each built from the one below it - stated explicitly so a new screen coming
+in from Figma always gets built in this order, not assembled ad hoc:
+
+1. **Components (`components/base/**`, `components/application/**`)** - the DEW layer, ingested
+   once via the "New component workflow" above, styled entirely through `--ui-*` tokens. Never
+   patched to serve one screen's specific need - see "DEW vs. Scaffold."
+2. **Shell** - the persistent chrome a role's screens share: primary icon rail + contextual
+   sidebar (side nav), plus the header bar above it. Built from real components (step 1) and
+   token-based structural chrome for the nav-specific parts per "Exploratory page layouts"'s
+   nav-chrome exemption. As of the Sept 16 2026 layout decision, the sidebar shell is the one real
+   direction - documented live, in code, at `/patterns/navigation` (side nav + top nav anatomy;
+   the top-nav shell is kept there only as the sunset alternative for the record, not a live
+   option). `dashboard`, `project-list/option-1`, `project-detail/option-1`, and
+   `observation-detail/option-1` already share this one shell - a new screen borrows it too, it
+   does not get its own.
+3. **Screen (`app/pages/<page-name>/page.tsx`)** - the shell plus that page's own real content.
+   Every *contained* widget inside a screen's content still has to be real DEW or an honest `?`
+   gap (see "Generated screens" and "Exploratory page layouts" above) - only the shell itself is
+   exempt from pixel-fidelity, and only until it's decided, which it now is for the sidebar shell.
+   Bringing a new screen in from Figma means: borrow the shell first (check `/patterns/navigation`
+   and the existing shells above before drawing any new chrome), then map the screen's own content
+   against the component library the same way any `/pages/*` work does - never design a new shell
+   per screen.
+4. **Flow** - a sequence of screens a role actually moves through to complete one real task (e.g.
+   a registered user's dashboard -> project-list -> project-detail -> observation-detail). Screens
+   are reviewed individually against the checks above, but a flow is the unit that actually gets
+   user-tested - a screen can pass every check in isolation and still fail as part of a flow (a
+   broken back-button, lost filter state on return, a dead end with no path onward). Any usability
+   pass or stakeholder walkthrough should be scoped to a flow, not a single screen.
+
 ## Adopting UX patterns from external references (Mobbin, Figma, screenshots)
 
 A screenshot or Figma link from another product (Supabase, the SA Flora and Fauna dashboard,
@@ -851,6 +924,81 @@ or drifting from it. Sources:
   public. This is exactly the Level 1 (public) / Level 2 (DLA-licensed) split already named in
   `lib/registered-user-nav.ts`'s Observations/Projects items, and it's a project-level flag, not a
   per-record toggle - worth keeping in mind if/when that gets real UI.
+
+### Data model ingestion research (`/proto/data-model-stress-test`, `/config/data-model`)
+
+A real, working CSV/JSON/XLS/XLSX ingestion stress-test tool (`/proto/data-model-stress-test`) and
+a companion transparency page (`/config/data-model`) were built to validate the corrected Event/
+Occurrence/Observation model above against actual BDBSA legacy exports (real Site/Visit/Species
+Fauna/Species Flora files, survey SU1211) - not just the Figma wireframes the field schema was
+originally pulled from. `config/data-model-schema.ts` is the single source of truth both pages read
+from - the real per-type field schema (`FIELD_SCHEMA`), the BDBSA-key crosswalk
+(`BDBSA_KEY_CROSSWALK`), and the full, current gap list (`KNOWN_GAPS`, with a persisted per-field
+"Verified" checkbox on `/config/data-model`) all live there, not duplicated here - **`/config/
+data-model` is the canonical place to read the up-to-date gap list, not this file.**
+
+- **Confirmed hierarchy: Project → Site → Visit → Observation - Site and Visit are both real,
+  distinct levels.** Directly confirmed with the user after a live scoping question, since
+  "observations roll into visits, visits roll into Project (or Survey)" genuinely read two ways
+  (skip Site, or just describe the roll-up loosely). It does not skip Site.
+- **Project has a real `id`: the Survey Number.** Every row of a real BDBSA export - Site, Visit,
+  and Species alike - carries the same Survey Number; it's the one identifier that ties the whole
+  hierarchy together, confirmed directly by the user and traced across real rows. Not a per-node
+  field - a project-level structural column, same tier as Kind/Type/ID/Parent ID.
+- **A real legacy export has no ID-based relationships at all - and the sandbox now derives them
+  anyway.** Occurrence → Visit → Site is joined by a composite natural key (Survey Number +
+  Zone/Easting/Northing to find the Site, then the Occurrence's own date column matched against
+  that Site's visit date) - confirmed by tracing real rows across all 4 files, not assumed.
+  `resolveNaturalKeyRelationships` in `/proto/data-model-stress-test` simulates that same traceback
+  automatically: real Site/Visit/Occurrence rows get a synthetic ID where the source has none (Site
+  from CAMPMAP-QUADSITE-PATCHQUAD or its own coordinates; Occurrence/Observation from the row's NSX
+  species code + row number, see the classification entry below), then a derived Parent ID via the
+  coordinate+date match, never overriding an explicit one already present. Verified against all 4
+  real BDBSA files uploaded together: every record resolves correctly, Project id `1211` down
+  through 14 Sites, 14 Visits, 837 Occurrences, and 837 Observations (1702 total records once every
+  species row is split into its Occurrence/Observation pair - see below). A record whose Kind is
+  known but whose Type isn't is still placed correctly in the Resolved tree - `unresolved` in
+  `app/proto/data-model-stress-test/page.tsx` is deliberately keyed off Kind/Parent-shape validity
+  only, not Type, since real placement doesn't depend on knowing the exact subtype.
+- **Occurrence is a real tree level between Visit and Observation - "each row on the species CSVs
+  are occurrences," per the user directly.** Not just a label: `expandSpeciesOccurrences` in
+  `/proto/data-model-stress-test` splits every unclassified species row into two records before the
+  rest of the pipeline ever runs - an Occurrence (the real-world "this species was recorded here")
+  with exactly one Observation child (the ecological detail captured for it). This refines the
+  earlier "Occurrences/Observations are always leaves" model rule - an Observation is still always
+  a leaf, but an Occurrence may now parent exactly one thing, its own Observation, and nothing else.
+  Scoped to this ingestion sandbox for now; the live product trees (`project-detail/option-1`,
+  `observation-detail/option-1`) still show Occurrence as a leaf and haven't been revisited against
+  this - see the `project_projects_data_model` memory.
+- **Which Observation scaffold applies is now derivable, not a fabricated guess - closing the "No
+  explicit Observation-type discriminator in real data" gap.** `classifySpeciesRow`
+  (`config/data-model-schema.ts`) reads two real columns already on every species row - Taxonomic
+  Type (in practice, which file a row came from: SPECIES_FAUNA_*/SPECIES_FLORA_*, since the real
+  SPECIESTYPE/"Taxonomic Type" *column* only encodes a narrower group like Bird/Reptile/Plant, not
+  literally "Flora"/"Fauna") and Number Observed:
+  - Number Observed = "Present but not counted" → Observation:Community, Flora or Fauna alike.
+    Originally stated as Flora-only; extended to Fauna once verifying against the real
+    SPECIES_FAUNA export turned up the identical value on 4 real Fauna rows - confirmed directly
+    with the user rather than silently assumed.
+  - Fauna, Number Observed = 1 → Observation:Individual.
+  - Fauna, Number Observed > 1 → Observation:Population - confirmed directly against the literal
+    wording first suggested ("community observation"): Population is the type this schema actually
+    built for a same-species headcount ("Number Observed"/"Cover-Abundance" are Population-only
+    fields), Community is a different, whole-patch, multi-species concept.
+  Occurrence's own type (Individual/Population) follows the same "one organism vs a group" read,
+  independent of which Observation scaffold captures the detail underneath it. Verified against all
+  4 real BDBSA files: 310 Individual, 46 Population, and 481 Community observations, 0 unresolved.
+  Evidence also still suggests the 4-way Observation type split is a UI-level view over one shared
+  species-observation schema, not 4 distinct data schemas: fields scoped Community/Population-only
+  here (Crown Extent, DBH, Number Observed, Cover/Abundance) actually appear on every real species
+  row regardless of type.
+- **Sample/demo data must never self-describe its own bugs.** A deliberately-broken sample record's
+  Label (or any other UI-visible field) has to look exactly like a real record would - flagged
+  directly by the user off a screenshot: "the records ingested will not have these comments like
+  'Quadrat parented under observation'... it's never going to have that. It's just going to be
+  QUADRAT AB131 - whatever that might be called." What a broken sample row is actually testing
+  belongs in a source-code comment beside it, never in a field the UI renders - applies to any
+  future demo/sample data in this codebase, not just this one proto.
 
 ## Registered User dashboard scope
 
@@ -1775,3 +1923,38 @@ user owns and edits directly, not something to restructure without asking.
     every "Home" entry point (the icon rail on `project-list/option-1`, the breadcrumb on
     `project-detail/option-1` and `observation-detail/option-1`) and confirmed each lands on
     `/pages/dashboard` with the active `?userRole=` preserved.
+
+- **README.md was a stale, hand-maintained snapshot of `lib/nav.ts`, drifted since Accordion/
+  Dropdown/Progress/Section headers/Table/Tabs shipped - regenerated to match, per direct user
+  report of "documentation debt."** `lib/nav.ts` itself, the docs homepage (`app/(docs)/page.tsx`,
+  already built on `useNav()`), and `/llms.txt` were all already accurate - confirmed by checking
+  every nav entry resolves to a real page file and isn't a stub beyond the 4 genuinely-unbuilt
+  `/patterns/*` pages (each a literal 4-line "coming soon" placeholder). Only `README.md`'s
+  Components table was hand-copied and never updated - missing 6 shipped components entirely and
+  still marking `Modal` as "coming soon" despite its full doc page. Regenerated the Components
+  table 1:1 against `lib/nav.ts`, added the missing "Custom Components" section (Date range - README
+  had no such section at all), and updated Patterns to reflect Navigation/Tree selection now having
+  real content. No code changes - a markdown-only fix.
+- **New standing typography rule, per direct user request: real component copy that can wrap
+  carries `text-balance` (`text-wrap: balance`).** Documented in `/primitives/typography`'s new
+  "Text wrapping" section and folded into the QA checklist above (item 6) as a standing check for
+  every future ingest. Applied this pass across every DEW component with a title/description/
+  label/hint-shaped prop: `Modal` (`ConfirmationModal`/`DestructiveModal`/`FormModal`, title +
+  description each), `AlertFloating`/`AlertFullWidth` (title + description), `ToastCard` (title +
+  description), `SectionHeader` (`Heading`/`Subheading`), `Accordion` (item title), `Tooltip`
+  (title + description), `Checkbox`/`RadioButton`/`Toggle` (label + hint), and all 6
+  `components/base/radio-groups/**` layouts (title/description slots - deliberately skipped the
+  name+secondaryTitle pairs in `radio-group-avatar`/`radio-group-icon-simple`/`radio-group-
+  checkbox`/`radio-group-radio-button`, since those sit inline in one flex row by design, not as
+  independent wrapped lines). Left untouched: `Badge`/`Tag` labels, `Button` labels, `Table` header
+  cells, `Dropdown` menu item labels, `Select`'s `select-item.tsx` description - all intentionally
+  single-line (`truncate`/`whitespace-nowrap`), where `text-balance` has nothing to do since the
+  text never wraps in the first place.
+  - Verified `tsc`/`lint` clean (one pre-existing, unrelated lint error surfaced in `tooltip.tsx`
+    at a line this pass didn't touch - confirmed via `git diff` showing only the two intended
+    `text-balance` additions - left alone, not this pass's to fix) and a live Playwright pass:
+    opened a real `DestructiveModal` instance and confirmed `getComputedStyle` reports
+    `text-wrap: balance` on both its title and description; confirmed the same on `SectionHeader`'s
+    live `Heading`/`Subheading` instances specifically (distinct from the doc page's own unrelated
+    `.prose-doc` headings, which also carry `text-balance` but for a different, pre-existing
+    reason) and on `Accordion`'s item title - zero console errors throughout.
