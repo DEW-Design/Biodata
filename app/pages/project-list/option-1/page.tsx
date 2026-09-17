@@ -7,7 +7,7 @@ import { useRouter } from "next/navigation";
 import type { Key } from "react-aria-components";
 import { Button as AriaButton, Dialog, DialogTrigger, Focusable, Tabs } from "react-aria-components";
 import { TabList, Tab, TabPanel } from "@/components/application/tabs/tabs";
-import { Upload01, Plus, ChevronDown, ArrowNarrowRight, HomeLine, Folder, Database01, Eye, FileLock01, Feather, BarChart01, FileSearch01, User01, PieChart03 } from "@untitledui/icons";
+import { Upload01, Plus, ChevronDown, ArrowNarrowRight, HomeLine, Folder, Database01, Map01, FileLock01, Feather, BarChart01, FileSearch01, User01, PieChart03 } from "@untitledui/icons";
 import { Button } from "@/components/base/buttons/button";
 import { Avatar } from "@/components/base/avatar/avatar";
 import { Tooltip, TooltipTrigger } from "@/components/base/tooltip/tooltip";
@@ -47,7 +47,7 @@ import { cx } from "@/utils/cx";
 const sectionIcons: Record<string, FC<{ className?: string }>> = {
   Home: HomeLine,
   Projects: Folder,
-  Observations: Eye,
+  Explore: Map01,
   "Data Licencing Agreement (DLA)": FileLock01,
   "Nominate Sensitive Species": Feather,
   "Reports (Own Submissions)": BarChart01,

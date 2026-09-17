@@ -42,7 +42,7 @@ export function TableHeader<T extends object>({ className, ...props }: TableHead
                 cx(
                     "relative bg-secondary",
                     // Row border - using an "after" pseudo-element so it doesn't take up layout space.
-                    "[&>tr>th]:after:pointer-events-none [&>tr>th]:after:absolute [&>tr>th]:after:inset-x-0 [&>tr>th]:after:bottom-0 [&>tr>th]:after:h-px [&>tr>th]:after:bg-border-secondary [&>tr>th]:focus-visible:after:bg-transparent",
+                    "[&>tr>th]:after:pointer-events-none [&>tr>th]:after:absolute [&>tr>th]:after:inset-x-0 [&>tr>th]:after:bottom-0 [&>tr>th]:after:h-px [&>tr>th]:after:bg-[var(--ui-border-secondary)] [&>tr>th]:focus-visible:after:bg-transparent",
                     typeof className === "function" ? className(state) : className,
                 )
             }
@@ -78,7 +78,7 @@ export function Row<T extends object>({ className, ...props }: RowProps<T>) {
                 cx(
                     "group relative outline-focus-ring transition-colors duration-100 ease-linear hover:bg-secondary aria-selected:bg-secondary focus-visible:outline-2 focus-visible:-outline-offset-2 data-[href]:cursor-pointer",
                     // Row border - using an "after" pseudo-element so it doesn't take up layout space.
-                    "[&>td]:after:pointer-events-none [&>td]:after:absolute [&>td]:after:inset-x-0 [&>td]:after:bottom-0 [&>td]:after:h-px [&>td]:after:bg-border-secondary last:[&>td]:after:hidden [&>td]:focus-visible:after:opacity-0",
+                    "[&>td]:after:pointer-events-none [&>td]:after:absolute [&>td]:after:inset-x-0 [&>td]:after:bottom-0 [&>td]:after:h-px [&>td]:after:bg-[var(--ui-border-secondary)] last:[&>td]:after:hidden [&>td]:focus-visible:after:opacity-0",
                     typeof className === "function" ? className(state) : className,
                 )
             }
