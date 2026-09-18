@@ -1048,8 +1048,8 @@ function ObservationsSearch() {
                 <div className="shrink-0">
                   <AlertFullWidth
                     color="warning"
-                    title="Level 1 (public) data"
-                    description="Level 2 (DLA-licensed) access is managed separately, through the Data Licencing Agreement (DLA) process."
+                    title="You're viewing public data"
+                    description="Some records are restricted. Request a Data Licencing Agreement (DLA) for full access."
                     confirmLabel={isPublicUser ? "Sign up for access" : "Go to DLA"}
                     onConfirm={() => {
                       if (isPublicUser) {
@@ -1065,8 +1065,8 @@ function ObservationsSearch() {
                   isOpen={dlaSignUpOpen}
                   onOpenChange={setDlaSignUpOpen}
                   icon={FileLock01}
-                  title="Sign up to request DLA access"
-                  description="Level 2 (DLA-licensed) data needs a free BioData SA account. Create one to request a Data Licencing Agreement."
+                  title="Sign up to request full access"
+                  description="Restricted data needs a free BioData SA account. Create one to request a Data Licencing Agreement (DLA)."
                 />
 
                 {/* Order and style match Figma exactly (node 205:20764): a plain "Edit search"
