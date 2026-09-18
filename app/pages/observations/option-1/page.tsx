@@ -72,6 +72,7 @@ import {
 } from "@/app/pages/_shared/map-search/search-data";
 import { ResultsTable, HierarchyCell, type ColumnDef, type TypeFilterOption } from "@/app/pages/_shared/map-search/results-table";
 import { RecordDetailSidebar, type DetailRecord } from "@/app/pages/_shared/map-search/record-detail";
+import { ArtefactLightbox, type Artefact, type ArtefactType } from "@/app/pages/_shared/artefact-lightbox";
 import { useFeatureAccess } from "@/lib/use-feature-access";
 import { useUserRole } from "@/lib/use-user-role";
 import { useRoleHref } from "@/lib/use-role-href";
@@ -409,6 +410,86 @@ const resourceTypeOptions: TypeFilterOption[] = (["Image", "File", "Reference Li
   icon: resourceTypeIcon[t],
 }));
 
+// Maps a real SearchResource row into the shared `Artefact` shape (app/pages/_shared/artefact-
+// lightbox.tsx) so clicking one opens the exact same modal project-detail/option-1 already uses,
+// per direct request, rather than a second, diverging preview. Every derived field below comes
+// from real data already on the resource (its own filename extension, its parent chain's real
+// Project org via `rootProjectForParentEventId`) - never a fabricated value. `size`/`creator` stay
+// an honest "-" - this dataset doesn't track a real file size or a per-resource author.
+const CC_LICENSE_URL = "https://creativecommons.org/licenses/by-nc-sa/4.0/";
+
+function resourceArtefactType(r: SearchResource): ArtefactType {
+  if (r.type === "Reference Link") return "link";
+  if (r.type === "Image") return "image";
+  const lower = r.name.toLowerCase();
+  if (lower.endsWith(".xls") || lower.endsWith(".xlsx") || lower.endsWith(".csv")) return "spreadsheet";
+  if (lower.endsWith(".mp4") || lower.endsWith(".mov")) return "video";
+  return "pdf";
+}
+
+function resourceFormat(kind: ArtefactType): string {
+  switch (kind) {
+    case "link":
+      return "text/uri-list";
+    case "image":
+      return "image/jpeg";
+    case "spreadsheet":
+      return "application/vnd.ms-excel";
+    case "video":
+      return "video/mp4";
+    default:
+      return "application/pdf";
+  }
+}
+
+function resourceDcType(kind: ArtefactType): string {
+  switch (kind) {
+    case "image":
+      return "StillImage";
+    case "video":
+      return "MovingImage";
+    case "spreadsheet":
+      return "Dataset";
+    case "link":
+      return "InteractiveResource";
+    default:
+      return "Text";
+  }
+}
+
+function resourceToArtefact(r: SearchResource): Artefact {
+  const kind = resourceArtefactType(r);
+  const project = rootProjectForParentEventId(r.parentEventId);
+  const orgInitials = project
+    ? project.org
+        .split(/\s+/)
+        .map((w) => w[0])
+        .join("")
+        .toUpperCase()
+    : "BDR";
+  const description = `${r.attachedToConcept} attached to ${r.recordName} (${r.recordId})`;
+
+  return {
+    id: r.id,
+    title: r.name,
+    type: kind,
+    size: "-",
+    recordLabel: `${r.recordName} · ${r.recordId}`,
+    metaTitle: description,
+    created: r.date,
+    creator: "-",
+    objectId: `${orgInitials}:${orgInitials}:${r.recordId}`,
+    description,
+    format: resourceFormat(kind),
+    identifierUrl: kind === "link" ? r.name : `https://data.environment.sa.gov.au/biodata/${r.id}`,
+    licenseUrl: CC_LICENSE_URL,
+    publisher: project?.org ?? r.region,
+    rightsHolder: project?.org ?? r.region,
+    dcType: resourceDcType(kind),
+    bioDataId: r.id.toUpperCase(),
+  };
+}
+
 // Same NavTree/SectionPlaceholder/ProfileMenu/GuestAuthActions shape as every other option-1 shell
 // (see project-list/option-1's own copies) - kept local rather than extracted, matching this
 // build's existing per-shell duplication of this exact chrome.
@@ -544,6 +625,12 @@ function ObservationsSearch() {
   // Project/Event/Occurrence/Observation row, per direct request. Lifted to page level (not local
   // to ResultsTable) so it persists correctly regardless of which tab's table triggered it.
   const [selectedRecord, setSelectedRecord] = useState<DetailRecord | null>(null);
+  // The Artefacts and Attachments tab's own row click - opens the exact same artefact preview
+  // modal project-detail/option-1 uses (app/pages/_shared/artefact-lightbox.tsx), per direct
+  // request, rather than the generic column-detail panel every other tab still falls back to for
+  // resources (there's no Figma frame for a resource-specific record-detail sidebar the way
+  // Project/Event/Occurrence/Observation rows have - see record-detail.tsx's own note on this).
+  const [artefactIndex, setArtefactIndex] = useState<number | null>(null);
   // The Level 1/Level 2 access banner's own guest sign-up prompt (see below) - a guest sees the
   // same real banner and CTA a registered user does, but has no DLA section to navigate to, so
   // the CTA opens the same invite modal `GuestActionButton` already uses instead of a dead link.
@@ -699,6 +786,7 @@ function ObservationsSearch() {
       ),
     [boundaries, keyword, matchingProjectIds],
   );
+  const resourceArtefacts = useMemo(() => filteredResources.map(resourceToArtefact), [filteredResources]);
 
   const countFor = (tab: EntityTab) =>
     ({
@@ -1115,6 +1203,7 @@ function ObservationsSearch() {
                       emptyLabel="artefacts or attachments"
                       rowTextValue={(r) => r.name}
                       searchText={(r) => `${r.id} ${r.name} ${r.recordName} ${r.attachedToConcept}`}
+                      onRowClick={(r) => setArtefactIndex(filteredResources.findIndex((row) => row.id === r.id))}
                     />
                   )}
                 </div>
@@ -1122,6 +1211,7 @@ function ObservationsSearch() {
             )}
 
             <RecordDetailSidebar record={selectedRecord} onClose={() => setSelectedRecord(null)} />
+            <ArtefactLightbox artefacts={resourceArtefacts} index={artefactIndex} onClose={() => setArtefactIndex(null)} onNavigate={setArtefactIndex} />
           </main>
         </div>
       )}

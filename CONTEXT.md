@@ -3053,3 +3053,60 @@ user owns and edits directly, not something to restructure without asking.
       DLA" button landing on the real (still unscoped) DLA section; `public-user` shows the same
       banner with "Sign up for access", opening the real invite modal, and the modal's own "Sign
       up" button firing the real toast and closing itself - zero console errors either role.
+  - **Twenty-fourth follow-up: the map search results page's Artefacts and Attachments tab now
+    opens the exact same artefact preview modal `project-detail/option-1` already has**, per
+    direct request, with that modal's own metadata panel corrected to match Figma's real
+    "Artefacts and Attachments Overlay" frame (`https://www.figma.com/design/
+    wer8CgO1UoCH3aQw2jQkdy/BioData-SA-High-Fidelity?node-id=2486-63681`) exactly.
+    - **`ArtefactLightbox`/`ArtefactCarousel`/`Artefact` extracted to a new shared file**
+      (`app/pages/_shared/artefact-lightbox.tsx`) - previously a private, page-local
+      implementation inside `project-detail/option-1/page.tsx`. Each consumer still supplies its
+      own `artefacts` array (the data genuinely differs per page); only the modal/carousel
+      implementation itself is now shared, so a future change to it only has to happen once.
+      `project-detail/option-1` was updated to import from the shared file instead of its own
+      local copy - confirmed via a live pass that its own Artefacts carousel and lightbox still
+      render and behave identically post-extraction.
+    - **The metadata panel's field set was read directly from Figma** (`get_metadata` then
+      `get_design_context` on the overlay's own `MetaSection`, node `I2486:63512;1892:26966`) and
+      rebuilt to its exact 12 rows, in order: Title/Created/Creator/Artefact-Object-Id/Description/
+      Format/Identifier/License/Publisher/Rights-Holder/Type/BioDataID - replacing the previous
+      7-field set, which had a "Linked Record" row Figma's own frame never shows in this panel at
+      all (that context already lives in the modal's own header subtitle, left untouched) and was
+      missing Title/Object Id/Description/Rights Holder/Type entirely. `License` and `Identifier`
+      now hold real URLs rendered as working links (Figma's own frame shows both as clickable),
+      not the previous short `"CC BY-NC-SA 4.0"` label. Per this file's own established precedent
+      (the modal was already vetted once against a different dark-themed external reference and
+      deliberately kept this codebase's own light theme, not that reference's dark one) - this
+      pass only corrects the field set to match Figma, not the whole modal's visual theme.
+    - **`project-detail/option-1`'s own 4 artefacts were re-derived to fill every new field
+      honestly**: `identifierUrl` points at `data.environment.sa.gov.au` (a domain this codebase
+      already cites elsewhere for real BDBSA content, not a fabricated one), `licenseUrl` is the
+      real Creative Commons URL Figma's own frame shows, `dcType` uses real DCMI Type Vocabulary
+      terms (StillImage/MovingImage/Text/Dataset) matching each artefact's real file kind, and
+      `objectId`/`rightsHolder` follow the same "org-prefixed code" / "same org as publisher"
+      pattern Figma's own example uses.
+    - **The map search page's own resources (`SearchResource`) are mapped into the shared
+      `Artefact` shape via a new `resourceToArtefact` in `app/pages/observations/option-1/
+      page.tsx`** - every derived field comes from real data already on the resource (its own
+      filename extension decides image/pdf/video/spreadsheet; its parent chain's real Project org,
+      via the already-real `rootProjectForParentEventId`, becomes the publisher/rights
+      holder/object-id prefix); `size`/`creator` are an honest "-" since this dataset doesn't track
+      a real file size or per-resource author. `ArtefactType` gained a new `"link"` variant for
+      Reference Link resources (a real DCMI `InteractiveResource`, using the same `Link02` icon
+      `resourceTypeIcon` already uses for this type) - not previously a concept in project-detail's
+      own artefacts, since it never had a link-type resource. `ResultsTable`'s existing `onRowClick`
+      override (added for the record-detail sidebar) is reused here too - clicking any Artefacts
+      and Attachments row now opens this modal at that row's index within the current search
+      results (not the row's own internal table-filtered subset, matching project-detail's own
+      "one fixed array" carousel/lightbox relationship), with prev/next navigating the same set.
+      The modal's own "Attached Resources" list picked up a `max-h-64 overflow-y-auto` scroll cap,
+      since the map search results page can have many more than the 4 project-detail always has.
+    - Verified live: `project-detail/option-1`'s own Artefacts carousel + lightbox still open and
+      show all 12 corrected metadata fields with real values (confirmed the working Identifier/
+      License links). On the map search results page, clicking a File-type resource
+      ("Field-notes.pdf") opened the identical modal with correctly derived metadata (real Object
+      Id `AHL:AHL:OCRP094`, a real Identifier link); clicking a Reference Link resource
+      (`https://gbif.org/species/2481660`) opened the same modal with `type: "link"`'s own icon,
+      `format: "text/uri-list"`, and the Identifier field correctly showing that exact GBIF URL
+      rather than a constructed one - zero console errors either page. `tsc --noEmit`/`eslint`
+      clean on every touched/new file.

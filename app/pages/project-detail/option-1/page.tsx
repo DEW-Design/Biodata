@@ -12,8 +12,6 @@ import {
   Upload01,
   Plus,
   ChevronDown,
-  ChevronLeft,
-  ChevronRight,
   ChevronSelectorVertical,
   ArrowNarrowLeft,
   ArrowNarrowRight,
@@ -35,29 +33,23 @@ import {
   Compass,
   Flag03,
   Map01,
-  Image01,
-  FileAttachment02,
-  VideoRecorder,
-  FileCheck02,
-  DownloadCloud02,
 } from "@untitledui/icons";
 import { Input } from "@/components/base/input/input";
 import { Button } from "@/components/base/buttons/button";
 import { Avatar } from "@/components/base/avatar/avatar";
 import { Tooltip, TooltipTrigger } from "@/components/base/tooltip/tooltip";
 import { Popover } from "@/components/base/select/popover";
-import { Badge, BadgeWithDot, CountBadge } from "@/components/base/badges/badges";
+import { BadgeWithDot, CountBadge } from "@/components/base/badges/badges";
 import { Cell, Column, Row, Table, TableBody, TableHeader } from "@/components/base/table/table";
 import { Accordion } from "@/components/base/accordion/accordion";
 import { TreeView } from "@/components/application/tree-view/tree-view";
 import { Breadcrumb } from "@/components/scaffold/breadcrumb";
 import { FeaturedIcon } from "@/components/foundations/featured-icon/featured-icon";
-import { ModalOverlay, Modal, Dialog as ModalDialog } from "@/components/application/modals/modal";
-import { CloseButton } from "@/components/base/buttons/close-button";
 import { HomeTabPanels } from "@/app/pages/_shared/home-tab-panels";
 import { dashboardTasks } from "@/app/pages/_shared/home-dashboard";
 import { GlobalProjectSearch } from "@/app/pages/_shared/global-search";
 import { GuestActionButton } from "@/app/pages/_shared/guest-action-gate";
+import { ArtefactCarousel, ArtefactLightbox, type Artefact } from "@/app/pages/_shared/artefact-lightbox";
 import { MobileNavTrigger } from "@/app/pages/_shared/mobile-nav";
 import { RoleSwitcher } from "@/app/pages/_shared/role-switcher";
 import { BentoCard } from "@/app/pages/_shared/bento-card";
@@ -962,22 +954,18 @@ const projectRestrictions: { id: string; title: string; content: ReactNode }[] =
 // exactly matches these 4 rows, 2 from Observation OBS094 · Individual and 2 from Observation
 // OBS095 (see the project_projects_data_model memory for the full reasoning). No real photo asset
 // exists in this build yet (see public/ - only the DEW lockup/logo and one geographic-scope
-// screenshot) - image artefacts get an honest placeholder tile (an Image01 icon on a neutral
-// surface) rather than a fake photo, same "no invented lookalikes" rule as everywhere else. ──
-interface Artefact {
-  id: string;
-  title: string;
-  type: "image" | "pdf" | "video" | "spreadsheet";
-  size: string;
-  recordLabel: string;
-  created: string;
-  creator: string;
-  format: string;
-  license: string;
-  publisher: string;
-  identifier: string;
-}
-
+// screenshot) - image artefacts get an honest placeholder tile (an icon on a neutral surface)
+// rather than a fake photo, same "no invented lookalikes" rule as everywhere else.
+//
+// The modal itself (`ArtefactLightbox`/`ArtefactCarousel`, `Artefact` type) now lives in
+// app/pages/_shared/artefact-lightbox.tsx - extracted once the map search results page's own
+// Artefacts and Attachments tab needed the exact same modal, per direct request, rather than a
+// second, diverging copy. Its metadata panel fields were also corrected there to match Figma's
+// "Artefacts and Attachments Overlay" frame exactly - see that file's own comment for the full
+// field-by-field mapping. `identifierUrl` points at a real, already-established domain this
+// codebase uses elsewhere for BDBSA content (data.environment.sa.gov.au) rather than a fabricated
+// one; `licenseUrl` is the real Creative Commons licence URL Figma's own frame shows, not a short
+// label.
 const artefacts: Artefact[] = [
   {
     id: "photopoint-blue-014",
@@ -985,12 +973,18 @@ const artefacts: Artefact[] = [
     type: "image",
     size: "1.2 MB",
     recordLabel: "Observation OBS094 · Individual",
+    metaTitle: "Photopoint image of the BLUE-014 monitoring site, Adelaide Hills Bushland Survey",
     created: "14 Dec 2024, 16:13",
     creator: "Olivia Wyatt",
+    objectId: "AHL:AHL:BLUE-014",
+    description: "Photopoint image of the BLUE-014 monitoring site, Adelaide Hills Bushland Survey",
     format: "image/jpeg",
-    license: "CC BY-NC-SA 4.0",
+    identifierUrl: "https://data.environment.sa.gov.au/biodata/BDR-00897",
+    licenseUrl: "https://creativecommons.org/licenses/by-nc-sa/4.0/",
     publisher: "Adelaide Hills Landcare",
-    identifier: "BDR-00897",
+    rightsHolder: "Adelaide Hills Landcare",
+    dcType: "StillImage",
+    bioDataId: "BDR-00897",
   },
   {
     id: "survey-instructions",
@@ -998,12 +992,18 @@ const artefacts: Artefact[] = [
     type: "pdf",
     size: "200 KB",
     recordLabel: "Observation OBS094 · Individual",
+    metaTitle: "Survey instructions for Observation OBS094 (Individual) field protocol",
     created: "3 Feb 2025, 09:02",
     creator: "Maya Dewitt",
+    objectId: "DEW:DEW:SURVEY-OBS094",
+    description: "Survey instructions for Observation OBS094 (Individual) field protocol",
     format: "application/pdf",
-    license: "CC BY-NC-SA 4.0",
+    identifierUrl: "https://data.environment.sa.gov.au/biodata/BDR-00891",
+    licenseUrl: "https://creativecommons.org/licenses/by-nc-sa/4.0/",
     publisher: "DEW Biodiversity Team",
-    identifier: "BDR-00891",
+    rightsHolder: "DEW Biodiversity Team",
+    dcType: "Text",
+    bioDataId: "BDR-00891",
   },
   {
     id: "slope-recording",
@@ -1011,12 +1011,18 @@ const artefacts: Artefact[] = [
     type: "video",
     size: "6.4 MB",
     recordLabel: "Observation OBS095",
+    metaTitle: "Slope recording video for Observation OBS095 site assessment",
     created: "18 Mar 2025, 11:52",
     creator: "Olivia Wyatt",
+    objectId: "AHL:AHL:SLOPE-OBS095",
+    description: "Slope recording video for Observation OBS095 site assessment",
     format: "video/mp4",
-    license: "CC BY-NC-SA 4.0",
+    identifierUrl: "https://data.environment.sa.gov.au/biodata/BDR-00903",
+    licenseUrl: "https://creativecommons.org/licenses/by-nc-sa/4.0/",
     publisher: "Adelaide Hills Landcare",
-    identifier: "BDR-00903",
+    rightsHolder: "Adelaide Hills Landcare",
+    dcType: "MovingImage",
+    bioDataId: "BDR-00903",
   },
   {
     id: "slope-measurement",
@@ -1024,146 +1030,20 @@ const artefacts: Artefact[] = [
     type: "spreadsheet",
     size: "3.4 MB",
     recordLabel: "Observation OBS095",
+    metaTitle: "Slope measurement dataset for Observation OBS095 site assessment",
     created: "18 Mar 2025, 11:55",
     creator: "Maya Dewitt",
+    objectId: "DEW:DEW:SLOPE-OBS095",
+    description: "Slope measurement dataset for Observation OBS095 site assessment",
     format: "application/vnd.ms-excel",
-    license: "CC BY-NC-SA 4.0",
+    identifierUrl: "https://data.environment.sa.gov.au/biodata/BDR-00904",
+    licenseUrl: "https://creativecommons.org/licenses/by-nc-sa/4.0/",
     publisher: "DEW Biodiversity Team",
-    identifier: "BDR-00904",
+    rightsHolder: "DEW Biodiversity Team",
+    dcType: "Dataset",
+    bioDataId: "BDR-00904",
   },
 ];
-
-const artefactTypeMeta: Record<Artefact["type"], { icon: FC<{ className?: string }>; badgeColor: "error" | "blue" | "success" | "gray" }> = {
-  image: { icon: Image01, badgeColor: "gray" },
-  pdf: { icon: FileAttachment02, badgeColor: "error" },
-  video: { icon: VideoRecorder, badgeColor: "blue" },
-  spreadsheet: { icon: FileCheck02, badgeColor: "success" },
-};
-
-function ArtefactTile({ artefact, onOpen }: { artefact: Artefact; onOpen: () => void }) {
-  const meta = artefactTypeMeta[artefact.type];
-  return (
-    <button
-      type="button"
-      onClick={onOpen}
-      className="group flex w-44 shrink-0 flex-col gap-2 rounded-lg border border-secondary bg-primary p-2 text-left outline-brand transition-colors duration-100 ease-linear hover:border-secondary_hover focus-visible:outline-2 focus-visible:outline-offset-2"
-    >
-      <div className="flex h-28 items-center justify-center rounded-md bg-secondary">
-        <meta.icon className="size-8 text-quaternary" />
-      </div>
-      <div className="flex flex-col gap-1 px-0.5 pb-0.5">
-        <p className="truncate text-xs font-medium text-primary">{artefact.title}</p>
-        <p className="truncate text-xs text-quaternary">{artefact.recordLabel}</p>
-        <div className="flex items-center gap-1.5">
-          <Badge size="sm" color={meta.badgeColor}>
-            {artefact.type}
-          </Badge>
-          <span className="text-xs text-quaternary">{artefact.size}</span>
-        </div>
-      </div>
-    </button>
-  );
-}
-
-function ArtefactCarousel({ onOpen }: { onOpen: (index: number) => void }) {
-  return (
-    <div className="flex gap-3 overflow-x-auto pb-1" style={{ scrollbarWidth: "none" }}>
-      {artefacts.map((artefact, i) => (
-        <ArtefactTile key={artefact.id} artefact={artefact} onOpen={() => onOpen(i)} />
-      ))}
-    </div>
-  );
-}
-
-// Same structure as the reference (big preview left, attached-resources list below it, metadata
-// panel + download right) - restyled entirely with our own Modal/Dialog/Badge/Button, our light
-// surfaces (not the reference's dark theme, which was a detail of that other viewer's own styling,
-// not something to copy). Only image artefacts get a real preview; non-image types show their
-// file-type icon large, same honest "no invented lookalike" rule as the carousel tiles.
-function ArtefactLightbox({ index, onClose, onNavigate }: { index: number | null; onClose: () => void; onNavigate: (index: number) => void }) {
-  const artefact = index !== null ? artefacts[index] : null;
-  if (!artefact) return null;
-  const meta = artefactTypeMeta[artefact.type];
-
-  return (
-    <ModalOverlay isOpen isDismissable onOpenChange={(open) => !open && onClose()}>
-      <Modal className="w-full max-w-4xl">
-        <ModalDialog aria-label={artefact.title}>
-          <div className="flex items-center justify-between gap-4 border-b border-secondary px-6 py-4">
-            <div>
-              <h2 className="text-md font-semibold text-primary">{artefact.title}</h2>
-              <p className="text-sm text-tertiary">{artefact.recordLabel}</p>
-            </div>
-            <CloseButton onPress={onClose} label="Close" />
-          </div>
-          <div className="grid grid-cols-1 gap-6 p-6 lg:grid-cols-[1fr_320px]">
-            <div className="flex flex-col gap-4">
-              <div className="relative flex h-80 items-center justify-center rounded-lg bg-secondary">
-                <meta.icon className="size-16 text-quaternary" />
-                <button
-                  type="button"
-                  aria-label="Previous artefact"
-                  onClick={() => onNavigate((index! - 1 + artefacts.length) % artefacts.length)}
-                  className="absolute top-1/2 left-3 flex size-9 -translate-y-1/2 items-center justify-center rounded-full bg-primary text-tertiary shadow-sm outline-brand hover:text-primary focus-visible:outline-2 focus-visible:outline-offset-2"
-                >
-                  <ChevronLeft className="size-4" />
-                </button>
-                <button
-                  type="button"
-                  aria-label="Next artefact"
-                  onClick={() => onNavigate((index! + 1) % artefacts.length)}
-                  className="absolute top-1/2 right-3 flex size-9 -translate-y-1/2 items-center justify-center rounded-full bg-primary text-tertiary shadow-sm outline-brand hover:text-primary focus-visible:outline-2 focus-visible:outline-offset-2"
-                >
-                  <ChevronRight className="size-4" />
-                </button>
-              </div>
-              <div className="flex flex-col gap-2">
-                <p className="flex items-center gap-2 text-sm font-medium text-primary">
-                  Attached Resources <CountBadge count={artefacts.length} color="gray" />
-                </p>
-                <div className="flex flex-col gap-1.5">
-                  {artefacts.map((item, i) => {
-                    const itemMeta = artefactTypeMeta[item.type];
-                    const active = i === index;
-                    return (
-                      <button
-                        key={item.id}
-                        type="button"
-                        onClick={() => onNavigate(i)}
-                        className={cx(
-                          "flex items-center gap-3 rounded-md border p-2 text-left outline-brand transition-colors duration-100 ease-linear focus-visible:outline-2 focus-visible:outline-offset-2",
-                          active ? "border-brand-300 bg-brand-50" : "border-secondary hover:bg-secondary",
-                        )}
-                      >
-                        <itemMeta.icon className="size-4 shrink-0 text-quaternary" />
-                        <span className="flex-1 truncate text-sm text-primary">{item.title}</span>
-                        <span className="shrink-0 text-xs text-quaternary">{item.size}</span>
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-            </div>
-            <div className="flex flex-col gap-4 border-secondary lg:border-l lg:pl-6">
-              <div className="flex flex-col gap-3">
-                <MetaField label="Linked Record">{artefact.recordLabel}</MetaField>
-                <MetaField label="Created">{artefact.created}</MetaField>
-                <MetaField label="Creator">{artefact.creator}</MetaField>
-                <MetaField label="Format">{artefact.format}</MetaField>
-                <MetaField label="License">{artefact.license}</MetaField>
-                <MetaField label="Publisher">{artefact.publisher}</MetaField>
-                <MetaField label="BioDataID">{artefact.identifier}</MetaField>
-              </div>
-              <Button color="primary" iconLeading={DownloadCloud02} className="mt-auto w-full">
-                Download
-              </Button>
-            </div>
-          </div>
-        </ModalDialog>
-      </Modal>
-    </ModalOverlay>
-  );
-}
 
 // Which Details-tab accordion item a flagged field's `fieldId` lives inside - so a banner click can
 // force that section open (via Accordion's new controlled `openKeys`) before scrolling to the
@@ -1665,7 +1545,7 @@ function ProjectDetail() {
                             </div>
                           </DetailSection>
                           <DetailSection title="Artefacts">
-                            <ArtefactCarousel onOpen={setArtefactLightboxIndex} />
+                            <ArtefactCarousel artefacts={artefacts} onOpen={setArtefactLightboxIndex} />
                           </DetailSection>
                         </div>
                         <div className="flex w-full flex-col gap-4 lg:w-80 lg:shrink-0">
@@ -1675,6 +1555,7 @@ function ProjectDetail() {
                         </div>
                       </div>
                       <ArtefactLightbox
+                        artefacts={artefacts}
                         index={artefactLightboxIndex}
                         onClose={() => setArtefactLightboxIndex(null)}
                         onNavigate={setArtefactLightboxIndex}
