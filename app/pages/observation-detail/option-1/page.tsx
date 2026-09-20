@@ -87,7 +87,7 @@ import { cx } from "@/utils/cx";
 const sectionIcons: Record<string, FC<{ className?: string }>> = {
   Home: HomeLine,
   Projects: Folder,
-  Observations: Eye,
+  Explore: Map01,
   "Data Licencing Agreement (DLA)": FileLock01,
   "Nominate Sensitive Species": Feather,
   "Reports (Own Submissions)": BarChart01,

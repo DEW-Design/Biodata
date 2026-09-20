@@ -2,7 +2,7 @@
 
 import { Suspense, useState } from "react";
 import type { ReactNode } from "react";
-import { HomeLine, Folder, Eye, FileLock01, Upload01, Plus } from "@untitledui/icons";
+import { HomeLine, Folder, Map01, FileLock01, Upload01, Plus } from "@untitledui/icons";
 import { PageHeader } from "@/components/PageHeader";
 import { Button } from "@/components/base/buttons/button";
 import { Avatar } from "@/components/base/avatar/avatar";
@@ -37,7 +37,7 @@ const Section = ({ label, children, fullBleed = false }: { label: string; childr
 const demoSections = [
   { label: "Home", icon: HomeLine },
   { label: "Projects", icon: Folder },
-  { label: "Observations", icon: Eye },
+  { label: "Explore", icon: Map01 },
   { label: "Data Licencing Agreement (DLA)", icon: FileLock01 },
 ];
 
