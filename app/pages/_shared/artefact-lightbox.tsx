@@ -9,7 +9,7 @@ import { ModalOverlay, Modal, Dialog as ModalDialog } from "@/components/applica
 import { cx } from "@/utils/cx";
 
 // The real artefact preview/download modal - first built at /proto/project-detail, rolled into
-// project-detail/option-1 per direct request, and now extracted here so the map search results
+// project-detail per direct request, and now extracted here so the map search results
 // page's own Artefacts and Attachments tab can open the exact same modal instead of a second,
 // diverging copy (per direct request: "I want the modal to appear as used in [project-detail]").
 // Each consumer supplies its own `artefacts` array (the data genuinely differs per page) but
@@ -93,7 +93,7 @@ export function ArtefactTile({ artefact, onOpen }: { artefact: Artefact; onOpen:
     <button
       type="button"
       onClick={onOpen}
-      className="group flex w-44 shrink-0 flex-col gap-2 rounded-lg border border-secondary bg-primary p-2 text-left outline-brand transition-colors duration-100 ease-linear hover:border-secondary_hover focus-visible:outline-2 focus-visible:outline-offset-2"
+      className="group flex w-44 shrink-0 flex-col gap-2 rounded-lg border border-secondary bg-primary p-2 text-left outline-brand transition-colors duration-100 ease-linear hover:border-primary focus-visible:outline-2 focus-visible:outline-offset-2"
     >
       <div className="flex h-28 items-center justify-center rounded-md bg-secondary">
         <meta.icon className="size-8 text-quaternary" />
@@ -149,7 +149,7 @@ export function ArtefactLightbox({
         <ModalDialog aria-label={artefact.title}>
           <div className="flex items-center justify-between gap-4 border-b border-secondary px-6 py-4">
             <div>
-              <h2 className="text-md font-semibold text-primary">{artefact.title}</h2>
+              <h2 className="text-base font-semibold text-primary">{artefact.title}</h2>
               <p className="text-sm text-tertiary">{artefact.recordLabel}</p>
             </div>
             <CloseButton onPress={onClose} label="Close" />

@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import type React from "react";
-import { ChevronDown, Plus, Trash01, UploadCloud01, CheckCircle } from "@untitledui/icons";
+import { Plus, Trash01, UploadCloud01, CheckCircle } from "@untitledui/icons";
 import { PageHeader } from "@/components/PageHeader";
 import { Input, InputBase } from "@/components/base/input/input";
 import { InputGroup } from "@/components/base/input/input-group";
@@ -10,6 +10,7 @@ import { Select } from "@/components/base/select/select";
 import { Toggle } from "@/components/base/toggle/toggle";
 import { RadioButton, RadioGroup } from "@/components/base/radio-buttons/radio-buttons";
 import { Button } from "@/components/base/buttons/button";
+import { Accordion as DewAccordion } from "@/components/base/accordion/accordion";
 import { FeaturedIcon } from "@/components/foundations/featured-icon/featured-icon";
 import { Inspectable, InspectorProvider, type InspectableToken } from "@/components/scaffold/token-inspector";
 
@@ -22,45 +23,43 @@ import { Inspectable, InspectorProvider, type InspectableToken } from "@/compone
 // flagged with a visible marker in place, never faked or silently dropped.
 
 // ─────────────────────────────────────────────────────────────────────────
-// Local screen chrome - NOT real DEW components. Accordion, in particular, is
-// used 5 times identically in Figma - a strong signal it should eventually be
-// a real ingested DEW component - but nothing under this name exists in
-// components/base/** today, so it's composed here from real tokens
-// (border-brand-100 / text-brand-tertiary / border-secondary) rather than
-// invented as a fake "DEW Accordion". Flagged in the gap table below.
+// Local screen chrome. Accordion used to live here as a composed stand-in (used 5x identically in
+// Figma, nothing real to match). It is now the real DEW `Accordion` with `variant="boxed"`
+// (components/base/accordion/accordion.tsx); this thin wrapper only adapts the page's
+// title-plus-children call sites to its `items` API and keeps every section open on load, as the
+// frame draws it. The rounded-lg override is this page's own frame radius, kept so the swap changes
+// nothing visually - the Figma file wasn't accessible when the swap was made, so neither radius
+// could be audited (see the mapping table).
 // ─────────────────────────────────────────────────────────────────────────
 
 function Accordion({
   title,
   children,
-  defaultOpen = true,
   inspectTokens,
 }: {
   title: string;
   children: React.ReactNode;
-  defaultOpen?: boolean;
   inspectTokens?: InspectableToken[];
 }) {
-  const [open, setOpen] = useState(defaultOpen);
-  const titleEl = <p className="flex-1 text-md font-medium text-brand-tertiary">{title}</p>;
   return (
-    <div className="w-full overflow-hidden rounded-lg" style={{ border: "1px solid var(--color-brand-100)" }}>
-      <button type="button" onClick={() => setOpen((o) => !o)} className="flex w-full items-center gap-3 bg-primary px-4 py-3 text-left">
-        {inspectTokens ? (
-          <Inspectable label="Accordion (composed, not a real component)" source="app/test-site-details/page.tsx" tokens={inspectTokens} className="flex-1">
-            {titleEl}
-          </Inspectable>
-        ) : (
-          titleEl
-        )}
-        <ChevronDown className={`size-5 shrink-0 text-quaternary transition-transform ${open ? "rotate-180" : ""}`} />
-      </button>
-      {open && (
-        <div className="flex flex-col gap-4 border-t bg-primary p-4" style={{ borderColor: "var(--color-brand-100)" }}>
-          {children}
-        </div>
-      )}
-    </div>
+    <DewAccordion
+      variant="boxed"
+      defaultOpenKeys={[title]}
+      className="[&>div]:rounded-lg"
+      items={[
+        {
+          id: title,
+          title: inspectTokens ? (
+            <Inspectable label="Accordion (real component, variant boxed)" source="components/base/accordion/accordion.tsx" tokens={inspectTokens}>
+              {title}
+            </Inspectable>
+          ) : (
+            title
+          ),
+          content: <div className="flex flex-col gap-4">{children}</div>,
+        },
+      ]}
+    />
   );
 }
 
@@ -149,12 +148,12 @@ const ghostButtonTokens: InspectableToken[] = [
   { cls: "hover:bg-primary_hover", cssVar: "--ui-bg-primary_hover → --color-gray-50", value: "#F8F8F7", swatch: true },
 ];
 const accordionTokens: InspectableToken[] = [
-  { cls: "border-brand-100 (composed, not a real component)", cssVar: "--color-brand-100", value: "#DCECEF", swatch: true },
+  { cls: "border-[var(--color-brand-100)]", cssVar: "--color-brand-100", value: "#DCECEF", swatch: true },
   { cls: "text-brand-tertiary", cssVar: "--ui-text-brand-tertiary → --color-brand-600", value: "#185E74", swatch: true },
 ];
 
 const mapping = [
-  { layer: "Accordion (×5 sections)", figma: "Accordion, always open in this frame", dew: "Composed - not a real component", note: "border-brand-100 / text-brand-tertiary tokens. Used identically 5×; strong candidate for real ingest." },
+  { layer: "Accordion (×5 sections)", figma: "Accordion, always open in this frame", dew: 'Accordion variant="boxed"', note: "components/base/accordion/accordion.tsx. Was composed here until the boxed variant landed - swapped for the real component per CONTEXT.md's flow-through rule, with every section open on load as the frame draws it. Radius kept at this page's rounded-lg (the real variant defaults to rounded-md); neither is audited against this frame - Figma file access was denied when this was swapped." },
   { layer: "Text Field / Free text / Number Text Field", figma: "Single-line input", dew: "Input", note: "components/base/input/input.tsx" },
   { layer: "Ctrl vocab", figma: "Controlled vocabulary dropdown", dew: "Select", note: "Location Method, Datum, Reliability, Property name" },
   { layer: "Yes/No", figma: "Binary field", dew: "Toggle", note: "Mud Map, Photopoint Marker Present" },
@@ -545,12 +544,12 @@ export default function TestSiteDetailsPage() {
             the edit view above, per the convention in <code className="rounded bg-secondary px-1.5 py-0.5 text-xs">CONTEXT.md</code>. Radio was the same kind of gap until{" "}
             <code className="rounded bg-secondary px-1.5 py-0.5 text-xs">components/base/radio-buttons/**</code> was ingested - its <code className="rounded bg-secondary px-1.5 py-0.5 text-xs">?</code> was swapped for the real{" "}
             <code className="rounded bg-secondary px-1.5 py-0.5 text-xs">RadioButton</code>/<code className="rounded bg-secondary px-1.5 py-0.5 text-xs">RadioGroup</code> above the moment that landed, per CONTEXT.md&apos;s
-            &quot;flow-through&quot; rule.
+            &quot;flow-through&quot; rule. Accordion was a composed structural shell until <code className="rounded bg-secondary px-1.5 py-0.5 text-xs">Accordion variant=&quot;boxed&quot;</code> landed, and was swapped
+            the same way.
           </p>
           <div className="flex flex-wrap gap-4">
             {[
               { label: "Textarea", note: "Location Comment (2000 words)" },
-              { label: "Accordion", note: "Structural - composed from tokens, not \"?\"-blocked (see mapping table)" },
             ].map((g) => (
               <div key={g.label} className="flex w-56 flex-col items-center gap-2 rounded-xl p-6" style={{ border: "1.5px dashed var(--color-gray-300)", background: "var(--color-gray-50)" }}>
                 <div className="flex size-9 items-center justify-center rounded-lg text-lg font-semibold" style={{ background: "var(--color-gray-200)", color: "var(--color-gray-500)" }}>

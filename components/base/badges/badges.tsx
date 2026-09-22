@@ -176,9 +176,9 @@ interface CountBadgeProps {
  * fixed equal width/height, not Badge's own horizontal-heavy pill padding, which renders a lone
  * digit as an oval rather than a circle no matter how the vertical padding is tuned. Modelled on the
  * one place in this codebase that already gets a numeric count right: the icon rail's notification
- * dot (e.g. app/pages/project-list/option-1/page.tsx's Home badge) - a fixed-size box instead of a
+ * dot (e.g. app/pages/project-list/page.tsx's Home badge) - a fixed-size box instead of a
  * per-usage padding hack. Flagged directly by the user: the "Needs your attention" heading count on
- * both dashboard/option-1 (app/pages/_shared/home-dashboard.tsx) and dashboard/option-2 looked
+ * both dashboard (app/pages/_shared/home-dashboard.tsx) and dashboard/option-2 looked
  * "awkward" as a Badge with tuned padding - this replaces both.
  *
  * `color="error"` reuses the icon rail's exact `bg-error-solid text-white` treatment (same

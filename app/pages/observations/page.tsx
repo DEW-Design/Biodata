@@ -12,7 +12,7 @@ import {
   HomeLine,
   Folder,
   Eye,
-  FileLock01,
+  FileCheck02, FileLock01,
   Feather,
   BarChart01,
   FileSearch01,
@@ -77,7 +77,7 @@ import { useFeatureAccess } from "@/lib/use-feature-access";
 import { useUserRole } from "@/lib/use-user-role";
 import { useRoleHref } from "@/lib/use-role-href";
 import { orgLabelForRole } from "@/lib/user-role";
-import { registeredUserNav, publicUserNav, registeredUserAccountMenu, registeredUserFooterLinks, keyHref, type NavNode } from "@/lib/registered-user-nav";
+import { navForRole, registeredUserAccountMenu, registeredUserFooterLinks, keyHref, type NavNode } from "@/lib/registered-user-nav";
 import { cx } from "@/utils/cx";
 
 // The map search interface built for the sidebar's Observations item, per direct request: a real,
@@ -92,7 +92,7 @@ import { cx } from "@/utils/cx";
 // per-shell changes needed. Renamed "Observations" -> "Explore" in the nav per direct feedback on
 // this build (see the changelog note in lib/registered-user-nav.ts) - only the nav label/icon;
 // "Observations" is still the real name of one of the 4 record types this screen searches for
-// (`entityTabs` below), the route/key (`/pages/observations/option-1`) is untouched.
+// (`entityTabs` below), the route/key (`/pages/observations`) is untouched.
 //
 // The map itself (app/pages/_shared/map-search/sa-map.tsx) is loaded with `ssr: false` - Leaflet
 // touches `window` at import time, which breaks server rendering otherwise - and shows an honest
@@ -111,6 +111,7 @@ const sectionIcons: Record<string, FC<{ className?: string }>> = {
   Projects: Folder,
   Explore: Map01,
   "Data Licencing Agreement (DLA)": FileLock01,
+  "Data Sharing Agreement (DSA)": FileCheck02,
   "Nominate Sensitive Species": Feather,
   "Reports (Own Submissions)": BarChart01,
   "Template Finder": FileSearch01,
@@ -203,6 +204,7 @@ const occurrenceText = (value?: string) => <span className="text-sm whitespace-n
 // reference table at all). No "Type" column (every row here is a Project) or sub-type filter chips
 // (ResultsTable's typeField/typeOptions are omitted below), same as before.
 const projectColumns: ColumnDef<SearchEvent>[] = [
+  { id: "code", label: "Project ID", render: (e) => <span className="text-sm whitespace-nowrap text-tertiary">{e.code}</span> },
   {
     id: "name",
     label: "Project",
@@ -245,7 +247,7 @@ const eventColumns: ColumnDef<SearchEvent>[] = [
   {
     id: "type",
     label: "Event Type",
-    headerTooltip: "The kind of event this row represents in the Site → Visit/Transect/Quadrat/Block/Ramble/Trap/Custom event hierarchy.",
+    headerTooltip: "The kind of event this row represents within a Site: Visit, Transect, Quadrat, Block, Ramble, Trap or Custom event.",
     render: (e) => {
       const Icon = eventTypeIcon[e.type];
       return (
@@ -411,7 +413,7 @@ const resourceTypeOptions: TypeFilterOption[] = (["Image", "File", "Reference Li
 }));
 
 // Maps a real SearchResource row into the shared `Artefact` shape (app/pages/_shared/artefact-
-// lightbox.tsx) so clicking one opens the exact same modal project-detail/option-1 already uses,
+// lightbox.tsx) so clicking one opens the exact same modal project-detail already uses,
 // per direct request, rather than a second, diverging preview. Every derived field below comes
 // from real data already on the resource (its own filename extension, its parent chain's real
 // Project org via `rootProjectForParentEventId`) - never a fabricated value. `size`/`creator` stay
@@ -490,8 +492,8 @@ function resourceToArtefact(r: SearchResource): Artefact {
   };
 }
 
-// Same NavTree/SectionPlaceholder/ProfileMenu/GuestAuthActions shape as every other option-1 shell
-// (see project-list/option-1's own copies) - kept local rather than extracted, matching this
+// Same NavTree/SectionPlaceholder/ProfileMenu/GuestAuthActions shape as every other sidebar shell
+// (see project-list's own copies) - kept local rather than extracted, matching this
 // build's existing per-shell duplication of this exact chrome.
 function NavTree({ node, depth = 1 }: { node: NavNode; depth?: number }) {
   const href = node.key ? keyHref(node.key) : undefined;
@@ -593,7 +595,7 @@ function ObservationsSearch() {
   const showOrgSwitcher = useFeatureAccess("orgSwitcher");
   const role = useUserRole();
   const isPublicUser = role === "public-user";
-  const nav = isPublicUser ? publicUserNav : registeredUserNav;
+  const nav = navForRole(role);
   const roleHref = useRoleHref();
   const [activeSection, setActiveSection] = useState("Explore");
   const activeSectionNode = nav.find((section) => section.label === activeSection) ?? nav[0];
@@ -626,7 +628,7 @@ function ObservationsSearch() {
   // to ResultsTable) so it persists correctly regardless of which tab's table triggered it.
   const [selectedRecord, setSelectedRecord] = useState<DetailRecord | null>(null);
   // The Artefacts and Attachments tab's own row click - opens the exact same artefact preview
-  // modal project-detail/option-1 uses (app/pages/_shared/artefact-lightbox.tsx), per direct
+  // modal project-detail uses (app/pages/_shared/artefact-lightbox.tsx), per direct
   // request, rather than the generic column-detail panel every other tab still falls back to for
   // resources (there's no Figma frame for a resource-specific record-detail sidebar the way
   // Project/Event/Occurrence/Observation rows have - see record-detail.tsx's own note on this).
@@ -1144,7 +1146,7 @@ function ObservationsSearch() {
                       rows={filteredProjects}
                       emptyLabel="projects"
                       rowTextValue={(e) => e.name}
-                      searchText={(e) => `${e.id} ${e.name} ${e.org}`}
+                      searchText={(e) => `${e.code} ${e.name} ${e.org}`}
                       viewActionLabel="View Project"
                       onRowClick={(e) => setSelectedRecord({ kind: "event", event: e })}
                     />

@@ -9,7 +9,7 @@
 //
 // This is a real, working tool, not a static mock - it actually parses an uploaded file and runs
 // real validation against the corrected record model (see the `project_projects_data_model`
-// memory / this session's own work on project-detail/option-1 and observation-detail/option-1):
+// memory / this session's own work on project-detail and observation-detail):
 // a project directly contains Events (Site/Transect/Ramble/Quadrat/Visit), Occurrences (Individual/
 // Population), and Observations (Individual/Non-biotic/Community/Population); an Event can nest
 // under any other Event except a Site can never sit under a Visit; an Observation is always a leaf.
@@ -19,8 +19,8 @@
 // descriptive label. An Occurrence may now parent exactly one thing, its own Observation, and
 // nothing else - see `expandSpeciesOccurrences` and `classifySpeciesRow` (`config/data-model-
 // schema.ts`) for how a real species row is classified into the pair. This refinement is scoped to
-// this ingestion sandbox for now - the live product trees (project-detail/option-1, observation-
-// detail/option-1) still show Occurrence as a leaf and haven't been revisited against it yet.
+// this ingestion sandbox for now - the live product trees (project-detail, observation-
+// detail) still show Occurrence as a leaf and haven't been revisited against it yet.
 //
 // Scope decisions, made explicit rather than silently assumed:
 // - **CSV and JSON parse with zero new dependencies** (a small hand-rolled RFC4180-ish CSV parser
@@ -1075,7 +1075,7 @@ function renderTreeNode(node: TreeNode, ancestorRows: ReadonlySet<number>): Reac
 }
 
 // ── Sample data - the same Site SU00501/Visit VU00501/Observation OBS094-095 tree already used as
-// this project's real example content (project-detail/option-1, observation-detail/option-1), now
+// this project's real example content (project-detail, observation-detail), now
 // with a Community and a Population Observation added so all 4 Observation types actually get
 // exercised, plus 7 deliberately broken rows, one per rule this tool checks (the 7th - a field that
 // belongs to a different type's schema - added alongside `FIELD_SCHEMA` above). A stress test that
@@ -1309,7 +1309,7 @@ function SummaryBar({ fileName, records }: { fileName: string; records: ParsedRe
 // page... it has to be a 1:1 match") - the first pass wrapped the real `TreeView` in an invented
 // floating card (rounded corners, its own border on all sides, a made-up "STRUCTURE" card label)
 // that doesn't exist anywhere in the real product. This is now the exact same contextual-sidebar
-// shell markup as `project-detail/option-1`'s own record-tree `<aside>` (same classes, verbatim -
+// shell markup as `project-detail`'s own record-tree `<aside>` (same classes, verbatim -
 // `w-[286px] shrink-0 flex-col justify-between overflow-y-auto border-r border-secondary
 // bg-secondary p-4`, same section-label paragraph styling) - not a lookalike, the real shape this
 // tree actually ships in. The point of showing structure at all is to prove ingested data forms

@@ -49,6 +49,7 @@ export const designSystemConfig: DesignSystemConfig = {
     enabled: true,
     features: {
       playground: true,
+      variants: true,
       singleOpen: true,
       usage: true,
       figma: true,

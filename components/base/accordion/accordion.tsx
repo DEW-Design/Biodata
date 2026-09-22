@@ -97,7 +97,7 @@ export const Accordion = ({ items, defaultOpenKeys = [], openKeys: controlledOpe
                                 aria-expanded={isOpen}
                                 className="flex w-full cursor-pointer items-center gap-3 px-4 py-3 text-left outline-focus-ring select-none focus-visible:outline-2 focus-visible:-outline-offset-2"
                             >
-                                <span className="flex-1 text-md font-medium text-brand-tertiary">{item.title}</span>
+                                <span className="flex-1 text-base font-medium text-balance text-brand-tertiary">{item.title}</span>
                                 <ChevronDown className={cx("size-5 shrink-0 text-quaternary transition-transform duration-150", isOpen && "rotate-180")} />
                             </button>
                             <motion.div

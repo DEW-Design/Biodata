@@ -43,6 +43,9 @@ import { useRoleHref } from "@/lib/use-role-href";
 import { registeredUserNav, publicUserNav, registeredUserAccountMenu, registeredUserFooterLinks, type NavNode } from "@/lib/registered-user-nav";
 import { cx } from "@/utils/cx";
 
+// NOTE: "option-1" in the comments below means the sidebar-shell dashboard that is now the canonical
+// /pages/dashboard route (its /option-1 suffix was dropped - see CONTEXT.md, Sept 2026 route
+// normalisation). This option-2 folder is kept as a record of the explored top-nav direction.
 // Option 2 of 2: same task-first dashboard as option-1 (see that file's comment for the full
 // rationale) on the top-nav shell instead of the sidebar shell. Personal activity stats (KPI row)
 // stay in the greeting banner at the top - fixed convention - "Needs your attention" is the
@@ -70,7 +73,10 @@ import { cx } from "@/utils/cx";
 // real page (`key` set) are actual links.
 
 // This screen's own page key, so its own entry in the dropdown (Home > BioData Dashboard) can show
-// a selected state - same fix as dashboard/option-1's "BioData Dashboard" link.
+// a selected state - same fix as dashboard's "BioData Dashboard" link.
+// Only these keys have an option-2 page; any other keyed nav node (e.g. `observations`, which only exists as the
+// canonical sidebar-shell page) renders as a plain label instead of a dead /option-2 link.
+const OPTION_2_KEYS: ReadonlySet<string> = new Set(["dashboard", "project-list"]);
 const CURRENT_KEY = "dashboard";
 
 function NavDropdownItem({ node, depth = 0 }: { node: NavNode; depth?: number }) {
@@ -81,7 +87,7 @@ function NavDropdownItem({ node, depth = 0 }: { node: NavNode; depth?: number })
   // dead end: switching sections as `public-user` landed back on `registered-user`'s view. See
   // lib/use-role-href.ts.
   const roleHref = useRoleHref();
-  const href = node.key ? roleHref(`/pages/${node.key}/option-2`) : undefined;
+  const href = node.key && OPTION_2_KEYS.has(node.key) ? roleHref(`/pages/${node.key}/option-2`) : undefined;
   const isCurrent = !!node.key && node.key === CURRENT_KEY;
   const indent = { paddingLeft: 12 + depth * 12 };
 
@@ -131,7 +137,7 @@ function NavTopItem({ node, active = false }: { node: NavNode; active?: boolean 
   const [open, setOpen] = useState(false);
   const hasChildren = !!node.items?.length;
   const roleHref = useRoleHref();
-  const href = node.key ? roleHref(`/pages/${node.key}/option-2`) : undefined;
+  const href = node.key && OPTION_2_KEYS.has(node.key) ? roleHref(`/pages/${node.key}/option-2`) : undefined;
   const labelClassName = cx("relative flex items-center gap-1 px-4 text-sm", active ? "font-medium text-brand-700" : "text-primary");
 
   if (!hasChildren) {
@@ -260,7 +266,7 @@ function KpiStat({
 // Shadow instead of a border - same "cards read as raised, not stamped onto the page" treatment
 // as the Data Dashboard's BentoCard fork (see app/pages/dashboard/option-2/bento-card.tsx), kept
 // here rather than pulled into that shared shell since this card has its own row layout, not the
-// bento column shape. Mirrored from dashboard/option-1's own TaskItem (app/pages/_shared/
+// bento column shape. Mirrored from dashboard's own TaskItem (app/pages/_shared/
 // home-dashboard.tsx) once that shell added a leading FeaturedIcon and a real 3-step progress
 // tracker (ProgressBarBase) - same content/feature, kept in this shell's own shadow-card idiom
 // rather than switching to option-1's bordered card.
@@ -398,7 +404,7 @@ function DisabledQuickAction({ icon, label, note }: { icon: FC<{ className?: str
   );
 }
 
-// Same underlying tasks as dashboard/option-1, but with status colors option-1 doesn't have -
+// Same underlying tasks as dashboard, but with status colors option-1 doesn't have -
 // this fork gives each status its own semantic color instead of the flat gray every row used
 // before, so the list is scannable by urgency at a glance instead of requiring reading every
 // label: "Draft" is the one thing still in the user's own hands (warning - unfinished, needs
@@ -450,7 +456,7 @@ const dashboardTasks: {
     statusColor: "warning",
     icon: Folder,
     // No progress data - this task renders via ContinueStrip, not TaskItem (see continueTask
-    // below), same split as dashboard/option-1.
+    // below), same split as dashboard.
   },
 ];
 
@@ -472,7 +478,7 @@ const otherTasks = dashboardTasks.filter((task) => task !== continueTask);
 // a separate Badge element, same as the Table docs page's demo.
 const taskStatuses = Array.from(new Set(otherTasks.map((task) => task.status)));
 
-// ── Featured Projects + Knowledge Base - mirrored from dashboard/option-1's HomeDashboardContent
+// ── Featured Projects + Knowledge Base - mirrored from dashboard's HomeDashboardContent
 // (app/pages/_shared/home-dashboard.tsx), same content/data, rebuilt on this shell's own shadow
 // BentoCard instead of switching to option-1's bordered one. Reuses the one real `projects` export
 // (app/pages/_shared/project-list-content.tsx) rather than inventing a third copy of this data -
@@ -489,7 +495,7 @@ const knowledgeBaseItems = [
 
 function FeaturedProjectCard({ project }: { project: (typeof projects)[number] }) {
   // No Link here, unlike option-1's copy of this card - the shared `projects` array's one `href`
-  // points at /pages/project-detail/option-1, and there's no project-detail/option-2 yet. Linking
+  // points at /pages/project-detail, and there's no project-detail/option-2 yet. Linking
   // out to option-1's chrome from this top-nav shell would be the exact jarring shell-switch bug
   // already flagged and avoided in project-list/option-2's own Projects table.
   return (
@@ -551,7 +557,7 @@ function KnowledgeBaseSection() {
   );
 }
 
-// ── biodata-admin's "My Dashboard" content - mirrored from dashboard/option-1's
+// ── biodata-admin's "My Dashboard" content - mirrored from dashboard's
 // AdminHomeDashboardContent (app/pages/_shared/home-dashboard.tsx), same "Triage" direction
 // decided at /proto/admin-dashboard-options, same data/copy, rebuilt in this shell's own idiom
 // (gradient greeting banner, shadow BentoCard queue cards) instead of switching to option-1's

@@ -33,7 +33,7 @@ import { cx } from "@/utils/cx";
 import { useRoleHref } from "@/lib/use-role-href";
 import { useUserRole } from "@/lib/use-user-role";
 
-// The real Home/BioData Dashboard content - the single source every option-1 sidebar shell
+// The real Home/BioData Dashboard content - the single source every sidebar shell
 // (dashboard, project-list, project-detail) renders for the "Home" section, instead of the
 // generic SectionPlaceholder. Home is real, built content, not an unscoped section - clicking the
 // Home icon (or the Home breadcrumb) from any of those three screens must always show this exact
@@ -41,7 +41,7 @@ import { useUserRole } from "@/lib/use-user-role";
 // off a screenshot of this content, after a placeholder was shown instead on project-list/
 // project-detail. Not shared with dashboard/option-2 (top-nav shell) - clicking Home there is a
 // real page navigation to its own dashboard, which already renders this correctly; the bug this
-// fixes is specific to option-1's in-place, no-navigation section switching.
+// fixes is specific to the sidebar shells' in-place, no-navigation section switching.
 //
 // The "This is where alerts go" banner used to live here, with its own local dismiss state - moved
 // out to app/pages/_shared/home-tab-panels.tsx instead, since it also needs to show on the Data
@@ -49,8 +49,8 @@ import { useUserRole } from "@/lib/use-user-role";
 // above both tab panels, not two independent copies) - flagged directly by the user.
 //
 // Quick actions used to also repeat "Add project"/"Upload dataset" here, duplicating the
-// persistent header actions every option-1 page already has - flagged directly by the user
-// (`/pages/project-list/option-1`) as redundant, so they're removed from this row rather than
+// persistent header actions every sidebar-shell page already has - flagged directly by the user
+// (`/pages/project-list`) as redundant, so they're removed from this row rather than
 // kept "flagged, not hidden" as before. "Manage projects & datasets" and the two disabled actions
 // below aren't duplicates of anything in the header, so they stay. That button group's gap is
 // `gap-2` (the 8px token), not `gap-3` (12px) - flagged directly by the user off a screenshot.
@@ -323,8 +323,9 @@ function KnowledgeBaseCard({ icon: Icon, title, description }: { icon: FC<{ clas
 }
 
 function FeaturedProjectCard({ project }: { project: (typeof projects)[number] }) {
+  const roleHref = useRoleHref();
   const content = (
-    <BentoCard className={`flex-1 gap-4 ${project.href ? "transition-colors duration-150 group-hover:border-secondary_hover" : ""}`}>
+    <BentoCard className={`flex-1 gap-4 ${project.href ? "transition-colors duration-150 group-hover:border-primary" : ""}`}>
       <div className="flex items-center justify-between gap-2">
         <Badge size="sm" color={project.statusColor}>
           {project.status}
@@ -340,7 +341,7 @@ function FeaturedProjectCard({ project }: { project: (typeof projects)[number] }
   // Only "Adelaide Hills Bushland Survey" has a real detail page - same "only wire what has a real
   // page" convention as the Projects table/global search, not a fake link on every card.
   return project.href ? (
-    <Link href={project.href} className="group flex flex-1">
+    <Link href={roleHref(project.href)} className="group flex flex-1">
       {content}
     </Link>
   ) : (
@@ -353,7 +354,7 @@ function FeaturedProjectsSection({ roleHref }: { roleHref: (path: string) => str
     <div className="flex flex-col gap-3">
       <div className="flex items-center justify-between gap-2">
         <h2 className="text-lg font-medium text-primary">Featured Projects</h2>
-        <Button color="link-color" size="sm" href={roleHref("/pages/project-list/option-1")} iconTrailing={ArrowNarrowRight}>
+        <Button color="link-color" size="sm" href={roleHref("/pages/project-list")} iconTrailing={ArrowNarrowRight}>
           View all projects
         </Button>
       </div>
@@ -493,7 +494,7 @@ function AdminHomeDashboardContent() {
 
 // One array driving both the rendered list and its count badge, so the heading can never drift
 // out of sync with what's actually shown. Exported so the icon rail (dashboard/project-list/
-// project-detail option-1) can badge the Home icon with this same count instead of a second,
+// project-detail) can badge the Home icon with this same count instead of a second,
 // possibly-stale copy of it.
 export const dashboardTasks: {
   title: string;
@@ -529,7 +530,7 @@ export const dashboardTasks: {
     // blue, not gray - a status actively being worked (a panel is looking at it right now) reads
     // as visually distinct from "Awaiting review" (still queued, nothing happening yet), so the
     // list is scannable by urgency/stage at a glance. Ported from dashboard/option-2's copy of
-    // this same task list, which had this distinction and option-1's didn't.
+    // this same task list, which had this distinction and the old option-1 dashboard's didn't.
     statusColor: "blue",
     icon: Feather,
     progress: {
@@ -547,14 +548,14 @@ export const dashboardTasks: {
     statusColor: "gray",
     icon: Folder,
     actionLabel: "Continue",
-    actionHref: "/pages/project-detail/option-1",
+    actionHref: "/pages/project-detail",
     // No progress data - this task renders via ContinueStrip, not TaskItem, so there's no tracker
     // to show it in.
   },
 ];
 
 export function HomeDashboardContent() {
-  // A plain `href="/pages/project-list/option-1"` (or `task.actionHref` below) drops the active
+  // A plain `href="/pages/project-list"` (or `task.actionHref` below) drops the active
   // role - there's no real auth/session in this build, so the URL is the only place it lives (see
   // lib/use-role-href.ts). Flagged directly by the user as a dead end: navigating away as
   // `public-user` silently landed back on `registered-user`'s view.
@@ -564,7 +565,7 @@ export function HomeDashboardContent() {
   // registered user's own species-observed/DLA-request activity means nothing to an admin managing
   // the whole platform. Branches here, inside the one shared Home content component, rather than
   // as a separate admin page/shell - the surrounding chrome (header, icon rail, breadcrumb) in
-  // dashboard/project-list/project-detail's option-1 shells stays identical for every role;
+  // dashboard/project-list/project-detail sidebar shells stays identical for every role;
   // flagged directly by the user as a "keep a consistent shell" requirement, for development ease.
   const role = useUserRole();
   if (role === "biodata-admin") {
@@ -614,7 +615,7 @@ export function HomeDashboardContent() {
       <div className="flex flex-col gap-3 px-6 pb-6">
         <h2 className="text-lg font-medium text-primary">Quick actions</h2>
         <div className="flex flex-wrap items-center gap-2">
-          <QuickAction icon={Folder} label="Manage projects & datasets" href={roleHref("/pages/project-list/option-1")} />
+          <QuickAction icon={Folder} label="Manage projects & datasets" href={roleHref("/pages/project-list")} />
           <DisabledQuickAction icon={FileLock01} label="Request new DLA" note="Coming soon - the DLA request flow isn't built yet" />
           <DisabledQuickAction icon={Feather} label="Nominate Sensitive Species" note="Coming soon - the nomination flow isn't built yet" />
         </div>

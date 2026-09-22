@@ -289,7 +289,7 @@ function PermitSection() {
 /** Every restriction type (Embargo/Species/Location/Project Data/Other) is conditional in Figma's
  *  own frame, per this build's "a conditional field is conditional in the UI too" design
  *  principle - none of this build's mock projects carry real restriction data, so this section
- *  shows the same honest "No restrictions recorded" empty state `project-detail/option-1`'s own
+ *  shows the same honest "No restrictions recorded" empty state `project-detail`'s own
  *  Restrictions tab already established, rather than rendering all 5 sub-blocks unconditionally. */
 function PrivacyRestrictionsSection() {
   return <p className="text-sm text-tertiary">No restrictions recorded for this project.</p>;

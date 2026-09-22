@@ -68,6 +68,8 @@ export default function TablePage() {
   const [rowActions, setRowActions] = useState(playgroundDefaults.rowActions);
   const [sortDescriptor, setSortDescriptor] = useState<SortDescriptor>(playgroundDefaults.sortDescriptor);
   const [page, setPage] = useState(1);
+  const [numberedPage, setNumberedPage] = useState(1);
+  const [numberedPageSize, setNumberedPageSize] = useState(50);
 
   const isDefault =
     size === playgroundDefaults.size &&
@@ -352,6 +354,30 @@ export default function TablePage() {
         has been built here so far.
       </p>
 
+      <h2 className="text-balance">Numbered pagination</h2>
+      <p className="text-balance">
+        <code>TableCard.PaginationNumbered</code> is the richer footer Figma&apos;s Sales example shows: a Rows per
+        page control, Previous/Next, a page list that always keeps the first and last three pages (1 2 3 … 8 9 10), and
+        a &quot;1-50 of 250&quot; summary. It sits alongside <code>TableCard.Pagination</code> rather than replacing it,
+        so every table using the simple &quot;Page X of Y&quot; footer is unaffected. The row slicing is the caller&apos;s
+        job - it only reports the page and page size.
+      </p>
+      <Section label="TableCard.PaginationNumbered">
+        <TableCard.Root>
+          <TableCard.PaginationNumbered
+            page={numberedPage}
+            pageCount={Math.ceil(250 / numberedPageSize)}
+            onPageChange={setNumberedPage}
+            pageSize={numberedPageSize}
+            onPageSizeChange={(size) => {
+              setNumberedPageSize(size);
+              setNumberedPage(1);
+            }}
+            totalCount={250}
+          />
+        </TableCard.Root>
+      </Section>
+
       <h2 className="text-balance">Status badges</h2>
       <p className="text-balance">
         Figma&apos;s table examples use two different status treatments depending on what the status actually
@@ -426,13 +452,16 @@ import { Table, TableCard, TableRowActionsDropdown } from "@/components/applicat
         <tbody>
           {[
             { name: "Table (base)", notes: "React Aria TableProps. Composes TableHeader/Column/TableBody/Row/Cell." },
-            { name: "TableCard.Root", notes: "size (\"sm\" | \"md\", default \"md\") - propagates to the Table inside it via context." },
+            { name: "TableCard.Root", notes: "size (\"xs\" | \"sm\" | \"md\", default \"md\") - propagates to the Table inside it via context, and wins over a size passed only to the nested Table. \"xs\" is the dense 34px header / 44px row size from Figma's results-table reference." },
             { name: "TableCard.Header", notes: "title, badge (string or element), description, contentTrailing." },
-            { name: "TableCard.Pagination", notes: "page, pageCount, onPageChange - the simple \"Page X of Y\" + Previous/Next footer. Doesn't cover the richer numbered-page variant (1 2 3 … 8 9 10) some Figma examples show." },
+            { name: "TableCard.Pagination", notes: "page, pageCount, onPageChange - the simple \"Page X of Y\" + Previous/Next footer." },
+            { name: "TableCard.PaginationNumbered", notes: "page (1-indexed), pageCount, onPageChange, pageSize, onPageSizeChange, totalCount, pageSizeOptions (default 10 / 25 / 50 / 100), className - Rows per page, Previous/Next, a 1 2 3 … 8 9 10 page list and a \"1-50 of 250\" summary. The page list builder is also exported as tableCardPaginationRange." },
             {
               name: "Table (application)",
               notes: "React Aria TableProps + size. Table.Header/Table.Head/Table.Row/Table.Cell auto-render a selection checkbox column when selectionMode is set. sortDescriptor/onSortChange are required to make allowsSorting actually reorder rows - the Table has no built-in comparator.",
             },
+            { name: "Table (application) - bodyScrollable", notes: "Opt-in, default false. Makes the table's own wrapper scroll vertically (min-h-0 flex-1 overflow-y-auto) instead of growing to its full content height - use it only when the table's container already has a fixed height, so a toolbar and pagination can stay on screen while only the rows scroll. Pair with Table.Header sticky." },
+            { name: "Table.Header - sticky", notes: "Opt-in, default false. Pins the header row to the top of a scrolling table (sticky top-0). A no-op when the table is not inside a scrolling ancestor." },
             { name: "Table.Head", notes: "label, tooltip (renders a help-icon Tooltip next to the label), plus Column's allowsSorting/isRowHeader." },
             { name: "Table.Row", notes: "highlightSelectedRow (default true), size override." },
             { name: "TableRowActionsDropdown", notes: "No props - a fixed Edit/Copy link/Delete menu. Build a custom one from Dropdown for other actions." },
@@ -486,10 +515,6 @@ import { Table, TableCard, TableRowActionsDropdown } from "@/components/applicat
         <li>
           <strong>A file-type-icon cell</strong> (a coloured PDF/JPG/MP4/etc. badge next to a filename, the Files
           example) - would need a small file-type icon set; none exists yet.
-        </li>
-        <li>
-          <strong>The richer numbered pagination</strong> (Rows-per-page select, 1 2 3 … 8 9 10, &quot;1-50 of
-          250&quot;) the Sales example shows, beyond the simple Page-X-of-Y <code>TableCard.Pagination</code> covers.
         </li>
       </ul>
     </div>

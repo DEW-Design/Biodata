@@ -139,8 +139,8 @@ export default function NavigationPatternPage() {
       <h2 className="text-balance">Top nav</h2>
       <p className="text-balance">
         A <strong>64px header</strong>: logo (37px, aspect ratio locked) + product name + breadcrumb on the left, primary actions +
-        profile on the right. Every canonical page (<code>/pages/dashboard</code>, <code>/pages/project-detail/option-1</code>,{" "}
-        <code>/pages/observation-detail/option-1</code>, ...) renders this same bar, just with its own section/current crumb.
+        profile on the right. Every canonical page (<code>/pages/dashboard</code>, <code>/pages/project-detail</code>,{" "}
+        <code>/pages/observation-detail</code>, ...) renders this same bar, just with its own section/current crumb.
       </p>
       <Section label="Top nav - anatomy" fullBleed>
         <TopNavDemo />

@@ -23,7 +23,7 @@
 import type { UserRole } from "@/lib/user-role";
 
 /** One entry per gated product feature. Add a key as a feature is actually gated - don't pre-populate speculatively. */
-export type FeatureKey = "orgSwitcher" | "metricCardCustomization";
+export type FeatureKey = "orgSwitcher" | "metricCardCustomization" | "dsaManagement";
 
 /** Feature -> the roles (besides biodata-admin, which always passes) allowed to see it. */
 export const roleAccessMatrix: Record<FeatureKey, UserRole[]> = {
@@ -39,6 +39,11 @@ export const roleAccessMatrix: Record<FeatureKey, UserRole[]> = {
   // entry, since an omitted `FeatureKey` defaults to visible-to-everyone - the opposite of what's
   // needed here.
   metricCardCustomization: [],
+  // The Data Sharing Agreement (DSA) workflow (/pages/dsa) - create, edit, revoke and review every
+  // agreement across partners. Admin-only for now; the requester-facing view (a partner asking for
+  // an agreement) is a separate persona's flow and isn't built. Empty array for the same reason as
+  // metricCardCustomization: an omitted key would default to visible-to-everyone.
+  dsaManagement: [],
 };
 
 /**

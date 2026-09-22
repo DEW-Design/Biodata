@@ -25,7 +25,7 @@ export const USER_ROLES = [
 
 export type UserRole = (typeof USER_ROLES)[number];
 
-export const DEFAULT_USER_ROLE: UserRole = "registered-user";
+export const DEFAULT_USER_ROLE: UserRole = "public-user";
 
 export function isUserRole(value: string | null | undefined): value is UserRole {
   return !!value && (USER_ROLES as readonly string[]).includes(value);

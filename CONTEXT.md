@@ -69,6 +69,13 @@ matter how complete it otherwise looks.
   sidebar was introduced and the header suddenly started rendering after it instead of above it -
   "the shell is a non-negotiable contract you've violated." Check this on sight on any new or
   edited page shell, not just when a sidebar is visibly broken by it.
+- **Three columns on every screen, for every persona: primary icon rail, contextual sidebar, main - under a
+  full-width header.** A role that can't use a section still gets all three, with the restriction stated in main
+  (`DsaShell` does this); a screen is never rebuilt as two columns because its content is thin or its persona is
+  limited. Column 2 always exists and always says something about where you are. `dashboard/page.tsx` and
+  `project-list/page.tsx` render `public-user`'s Home and Projects with `GuestAboutAside` as column 2 (Sept 22 2026
+  fold-in of `/proto/public-user`'s "Reference" variant - see that entry below) - this contract is now met for every
+  built role. See "List -> deep dive" below.
 - **Geist stays Geist, Barlow stays Barlow** - Scaffold text never borrows `font-barlow` to match
   a DEW neighbour, and vice versa, except inside a generated screen where everything is Barlow.
 - **No fabricated Figma links, no fabricated icons/assets, no invented props.** An honest "not
@@ -580,7 +587,7 @@ not-yet-chosen ones.
   Figma frame maps 1:1 onto the shipped component library - it belongs to `/test-*` only. `/pages/*`
   is reserved strictly for building product page layouts: it should look and feel like the real
   screen it's previewing, not a doc/review surface. Follow
-  `app/pages/dashboard/option-1/page.tsx` as the template for a new `/pages/<page-name>` or
+  `app/pages/dashboard/page.tsx` as the template for a new `/pages/<page-name>` or
   `/pages/<page-name>/<variant>` screen, not `app/test-site-details/page.tsx`.
 - **Icon-rail sections that have their own real page navigate there for real; sections that don't
   keep the local, in-place switch.** `dashboard/option-1`, `project-list/option-1`, and
@@ -594,7 +601,7 @@ not-yet-chosen ones.
   Home's content but the URL still read `project-list/option-1`, and going back from there kept
   showing the same stale URL. Each shell's `goToSection(section)` now checks whether the clicked
   section's nav key differs from this page's own `CURRENT_KEY`: if so it `router.push`es to that
-  section's real `/pages/<key>/option-1` route; if not (already on the right page, or the section
+  section's real `/pages/<key>` route; if not (already on the right page, or the section
   has no real page at all) it falls back to the original `setActiveSection` local switch.
   `project-detail/option-1` has no `CURRENT_KEY` of its own (it's reached by drilling into one
   specific project, not a generic destination), so there both Home and Projects always navigate -
@@ -623,7 +630,8 @@ not-yet-chosen ones.
   user clarified the split belonged in the icon rail's contextual sidebar, not inside that
   dashboard's own content.
 - **`public-user` ("Guest User") is built across all three option-1 shells - see "User roles"
-  above for the real nav tree this reads.** Each shell (`dashboard/option-1`, `project-list/
+  above for the real nav tree this reads. (Superseded in part: the no-`<aside>` and hidden-header-actions
+  points below were reversed or revised by the Sept 21 2026 entries at the end of this file.)** Each shell (`dashboard/option-1`, `project-list/
   option-1`, `project-detail/option-1`) reads `useUserRole()` and picks `publicUserNav` over
   `registeredUserNav` for every nav-driven part (icon rail, `MobileNavTrigger`, `activeSectionNode`
   lookups) - a separate tree, not a filtered view, since whole sections disappear for this role,
@@ -675,7 +683,7 @@ not-yet-chosen ones.
   that group entirely, so the root `app/layout.tsx` (fonts, `ConfigProvider`, `Toaster`, dev-only
   `Agentation` - genuinely global concerns only) is the only layout wrapping them. A new screen
   should own its own full-height root (`min-h-screen`) exactly like
-  `app/pages/dashboard/option-1/page.tsx` does - it needs to look like a real screen, not a doc
+  `app/pages/dashboard/page.tsx` does - it needs to look like a real screen, not a doc
   page with the sidebar subtracted.
 - **`project-detail/option-1`'s header/Overview layout and contextual sidebar were redesigned via
   two `prototype`-skill labs, `/proto/project-header` and `/proto/project-sidebar` (kept in place
@@ -735,8 +743,8 @@ in from Figma always gets built in this order, not assembled ad hoc:
    nav-chrome exemption. As of the Sept 16 2026 layout decision, the sidebar shell is the one real
    direction - documented live, in code, at `/patterns/navigation` (side nav + top nav anatomy;
    the top-nav shell is kept there only as the sunset alternative for the record, not a live
-   option). `dashboard`, `project-list/option-1`, `project-detail/option-1`, and
-   `observation-detail/option-1` already share this one shell - a new screen borrows it too, it
+   option). `dashboard`, `project-list`, `project-detail`, `observation-detail`, and
+   `observations` already share this one shell - a new screen borrows it too, it
    does not get its own.
 3. **Screen (`app/pages/<page-name>/page.tsx`)** - the shell plus that page's own real content.
    Every *contained* widget inside a screen's content still has to be real DEW or an honest `?`
@@ -752,6 +760,42 @@ in from Figma always gets built in this order, not assembled ad hoc:
    user-tested - a screen can pass every check in isolation and still fail as part of a flow (a
    broken back-button, lost filter state on return, a dead end with no path onward). Any usability
    pass or stakeholder walkthrough should be scoped to a flow, not a single screen.
+
+## List -> deep dive (the collection pattern)
+
+How any collection of records is built in a `/pages/*` shell. Established by Projects (`project-list` ->
+`project-detail`), made explicit when the Data Sharing Agreement (DSA) workflow was built to match it
+(`/pages/dsa` -> `/pages/dsa/<id>`, Sept 22 2026). A new collection - agreements, datasets, users, vouchers - follows this
+unless a decision here is overridden by the user.
+
+1. **The list is a table page.** One click on the nav section lands on a table of the collection. Column 2 (contextual
+   sidebar) chooses a view of it - Projects/Datasets, or DSA's Active / Inactive / Revoked / Drafts with counts - and main
+   is a `SectionHeader` (title, a count badge, the primary create action) over a `TableCard` with
+   `TableCard.PaginationNumbered`. The view lives in the URL (`?status=`) so back/forward and links work. Don't add a
+   column that repeats what column 2 already filtered on (no Status column inside a status bucket).
+2. **A row is a link, not a button.** Whole-row `href` through `useRoleHref` to the deep dive. No per-row "View" button
+   unless a row has more than one destination.
+3. **The deep dive is its own route** with its own URL: `/pages/<name>/<id>`. Main opens with a "Back to <collection>"
+   link (`link-gray`, `ArrowNarrowLeft`), then the ID, a status `Badge`, and the primary actions (Download, an Actions
+   menu). The breadcrumb is Home / section (now a link back to the list) / the ID. Column 2 stays useful: project-detail
+   shows its records tree, DSA keeps the status buckets with the record's own bucket highlighted.
+4. **Create and edit are routes too,** in the same shell: `/pages/<name>/new` and `/pages/<name>/<id>/edit`. Saving lands
+   on the record's deep dive, Back returns to where you came from and asks before discarding changes. Destructive actions
+   (revoke, delete) are confirmed in a `DestructiveModal` and stay on the page, so the record's new state is visible.
+5. **Three columns on every route and every persona** (see Final check). A restricted role sees the shell with the
+   restriction in main.
+6. **Deep-dive content is tiered,** per the cognitive-load principles: cards or tabs by concern, a `?` marker for a
+   missing component, "Not provided" instead of a stray dash, a section collapsing to one honest line when unused.
+7. **Every internal link carries the role.** `useRoleHref` now appends `&userRole=` to a path that already has a query,
+   so `?status=` links keep the persona.
+8. **No backend, so shared state is a module store.** When list, deep dive and form are separate routes they must read the
+   same records: `app/pages/_shared/dsa/dsa-store.ts` (`useSyncExternalStore`, seeded, server snapshot = the seed) is the
+   template. A client navigation keeps the edits, a full reload resets them, and a deep dive for a record that no longer
+   exists shows an honest "not found" state, not a blank page.
+9. **One shell component per collection,** not a pasted copy per route: `DsaShell` (`app/pages/_shared/dsa/dsa-shell.tsx`)
+   owns header, rail, column 2 and the restricted state, and the list, deep dive, `new` and `edit` routes only supply
+   main. The older shells (dashboard, project-list, project-detail, observation-detail, observations) still each paste
+   their own; folding them onto a shared shell is separate work.
 
 ## Adopting UX patterns from external references (Mobbin, Figma, screenshots)
 
@@ -1043,7 +1087,8 @@ org-affiliated chrome (the breadcrumb's org switcher) applies to the `biodata-*`
 just the `privileged-*` ones - see the role-access matrix below.
 
 - **`public-user`.** Not signed in - shared as "Guest User" off a real IA screenshot, so this is
-  now the decided nav tree, not a placeholder to keep gating down speculatively:
+  now the decided nav tree, not a placeholder to keep gating down speculatively (the Sept 21 2026
+  entries at the end of this file revise it: species-first, and this is now `DEFAULT_USER_ROLE`):
   - **Header**: no `ProfileMenu` - a "Login / Sign up" control instead, since there's no account to
     show an avatar/settings/logout for.
   - **Home**: one destination, "BioData Dashboard" - not `registered-user`'s two-peer-tab split
@@ -1065,9 +1110,10 @@ just the `privileged-*` ones - see the role-access matrix below.
   section, which breaks for a role where those sections only have one. See the "Backlog"
   section below for the stress-test findings from comparing this tree against the current layout.
 - **`registered-user`.** Signed in, an individual account not affiliated with any organisation.
-  Can contribute data, nominate sensitive species, track their own submissions/licensing. This is
-  `DEFAULT_USER_ROLE` - `/pages/dashboard/option-1` and `option-2` render as this role by
-  default, and it's the other tier in active build focus. No organisation - no org switcher.
+  Can contribute data, nominate sensitive species, track their own submissions/licensing. Was
+  `DEFAULT_USER_ROLE` until Sept 21 2026 (now `public-user`, see the note under "Switched via the
+  `userRole` URL search param" below) - reach it with `?userRole=registered-user`. It's the other tier
+  in active build focus. No organisation - no org switcher.
 - **`privileged-user`.** Signed in and affiliated with a partner organisation (a research body, a
   consultancy, a partner like Birds SA - see the "Our partners and data contributors" list on the
   BDBSA page). Gets everything a `registered-user` gets, plus the org switcher. Not in active
@@ -1086,10 +1132,12 @@ just the `privileged-*` ones - see the role-access matrix below.
 build, so the URL is the only source of truth for "who's looking at this" - see `lib/user-role.ts`
 (the role list + `isUserRole` guard + `DEFAULT_USER_ROLE`) and `lib/use-user-role.ts` (the
 `useUserRole()` hook, reads/validates the search param, falls back to `DEFAULT_USER_ROLE` =
-`"registered-user"` if missing or unrecognised). A page reading it must render the role-dependent
+`"public-user"` if missing or unrecognised - **the starting point of the whole app is the signed-out
+visitor, changed from `"registered-user"` on Sept 21 2026; every other persona is reached by an
+explicit `?userRole=`**). A page reading it must render the role-dependent
 part inside a `<Suspense>` boundary - `useSearchParams` opts a route out of static rendering
 otherwise (Next.js build error) - see the `DashboardPage`/`Dashboard` split in
-`app/pages/dashboard/option-1/page.tsx` for the pattern.
+`app/pages/dashboard/page.tsx` for the pattern.
 
 **`RoleSwitcher` (`app/pages/_shared/role-switcher.tsx`)** is a dev tool, not a BioData SA feature -
 rewrites the current URL's `userRole` param, so previewing a role no longer means hand-editing the
@@ -3292,3 +3340,445 @@ user owns and edits directly, not something to restructure without asking.
       `format: "text/uri-list"`, and the Identifier field correctly showing that exact GBIF URL
       rather than a constructed one - zero console errors either page. `tsc --noEmit`/`eslint`
       clean on every touched/new file.
+- **`/pages/biodata-home` wired to the `public-user` persona (Sept 21 2026 merge of `BiodataLandingPage`).**
+  The landing page is the signed-out front door, so it now owns a `publicUserHref(path)` helper
+  (`?userRole=public-user`, typed against `UserRole`) instead of `useRoleHref` - it has no role of its own
+  to read from the URL, and needs no `<Suspense>`. The header's primary "Explore" button now goes to
+  `/pages/dashboard?userRole=public-user` (the public-user Home landing); the "Dashboard" nav link,
+  "View Dashboard" tile, hero search, and "Start Exploring" CTA carry the same role instead of a bare path
+  that would have fallen back to `registered-user`. The header's separate "Explore" nav *text* link still
+  scrolls to the in-page `#explore` section, as before. Verified live: click "Explore" lands on
+  `/pages/dashboard?userRole=public-user` with Log in/Sign up in the header and no ProfileMenu.
+- **Consistency check after merging `BiodataLandingPage` (Explore map search, artefact lightbox,
+  `Accordion` `variant="boxed"`, table changes) - fixed on the spot:** three live `text-md` uses
+  (`side-panel.tsx`, `artefact-lightbox.tsx`, `Accordion`'s boxed title) -> `text-base` (Untitled's `md` is
+  16px); an arrow character in a rendered column tooltip (`observations/option-1`) reworded; and
+  `*-border-secondary_hover`, a class that was never defined, used in 4 places (`artefact-lightbox.tsx`,
+  `home-dashboard.tsx`, and two `/proto` pages) -> `border-primary`. `Accordion`'s new `variant` prop, plus
+  the previously undocumented `openKeys`/`onOpenKeysChange`, are now in its API table with a gated
+  "Variants" section and a `variants` config key. All 13 touched routes render with zero console errors.
+  - **Known gap: `Modal`'s dim overlay is transparent.** `bg-overlay/70` (used by `modal.tsx` and the new
+    `side-panel.tsx`) only resolves in the orphaned `styles/theme.css`, so the backdrop computes to
+    `rgba(0,0,0,0)` - blur only, no dim (confirmed via `getComputedStyle`). Not fixed here: the overlay
+    colour needs a Figma-checked value and changes every modal in the system.
+  - **Known gap: the em-dash character used as an empty-value marker** in sample data (`search-data.ts`, `project-detail`) and
+    a few prose strings in `project-detail`/`tree-view` predate this merge and break the no-em-dash rule;
+    left as-is pending a call on whether a lone em-dash null glyph counts as copy.
+  - **Stale note above:** "Add project"/"Upload dataset" are no longer hidden for `public-user` - they
+    render visibly and open a sign-up prompt (`guest-action-gate.tsx`), per the later public-user pass.
+- **Sept 21 2026 route normalisation: every `/option-1` suffix is gone; each sidebar-shell page lives at
+  its plain route.** `project-list`, `project-detail`, `observation-detail`, and `observations` moved
+  (`git mv`, history kept) from `app/pages/<name>/option-1/page.tsx` to `app/pages/<name>/page.tsx`,
+  finishing what the Sept 16 decision did for `dashboard` alone. The convention going forward: **a
+  page under `/pages` has no `/option-*` suffix once it is the chosen direction; `option-N` folders
+  exist only while a screen is still a competing exploration.** `dashboard/option-2` and
+  `project-list/option-2` stay in place, untouched, as records of the explored top-nav direction, per
+  the "never delete an explored direction" convention. `lib/registered-user-nav.ts`'s `keyHref(key)` is
+  now simply `/pages/${key}` with no special case, so a new keyed section needs no route bookkeeping.
+  - Every internal link, `router.push` target, breadcrumb crumb, and doc-page link was repointed, and
+    file-path references in code comments were updated to the new paths. Old URLs (`/pages/<name>/
+    option-1`) now 404, same as `/pages/dashboard/option-1` did after its own fold - no redirects were
+    added, since these are working screens reached by direct URL, not published surfaces.
+  - **Older entries in this file still say `<name>/option-1`.** They are a historical record of the
+    work as it happened and were left as written; read them with the paths above in mind rather than
+    treating them as current routes.
+  - Found and fixed while crawling every internal link for both roles: `FeaturedProjectCard` on Home
+    linked with a bare `project.href`, so clicking a featured project dropped the active `userRole`
+    (the same dead end `useRoleHref` exists to prevent) - now wrapped in `roleHref`.
+  - **Applied across every persona, not just the two in build focus:** the crawl and rail click-through
+    was run for all six roles (`biodata-admin`, `biodata-user`, `privileged-admin`, `privileged-user`,
+    `registered-user`, `public-user`) across the 5 canonical pages plus both `option-2` records - 42 page
+    loads, all 200, zero console errors, every rendered `/pages/**` link carrying the loaded role, and
+    Home/Projects/Explore in the rail landing on `/pages/dashboard`/`/pages/project-list`/`/pages/observations`
+    with the role preserved for each.
+  - **The option-2 top-nav shells linked to a page that never existed.** Both build `/pages/${node.key}/
+    option-2` for every keyed nav node, and the `observations` key (added with the Explore page) has no
+    option-2 page, so their "Explore" entry 404'd. Found by the all-roles crawl, not by reading code. They
+    now link only the keys in `OPTION_2_KEYS` (`dashboard`, `project-list`) and render any other keyed node
+    as a plain label, the same non-link fallback those files already used for un-keyed sections.
+  - Verified live (public-user/registered-user first pass): all 6 pages return 200, every `/pages/**`
+    link rendered on them resolves 200 and carries `userRole`, the old `/option-1` URLs 404, and the
+    landing -> Explore -> public dashboard -> rail (Projects/Explore/Home) and project-list row ->
+    project-detail flows land on the plain routes with zero console errors. `tsc`/`eslint` clean.
+- **Sept 21 2026: Lapse removed; public-user flow specified, options at `/proto/public-user`.** `@aiforui/lapse`,
+  its `.npmrc` registry line and `instrumentation-client.ts` are gone (`package.json` and the lockfile match
+  the previous commit again).
+  - **Public-user flow, as specified by the user (flow layer, see "Build hierarchy"):** (1) lands on
+    `/pages/biodata-home`; (2) header "Explore" goes to `/pages/dashboard?userRole=public-user`; (3) the Home
+    dashboard has the same three-column shell as `registered-user` (icon rail, column 2, main) with stripped-back
+    content; (4) main opens with a gradient card like the registered-user "Hi, Olivia" card, but its message
+    changes with the dashboard tab (Overview / Flora / Fauna / Projects) and always offers account creation;
+    (5) column 2 explains what BioData SA is and points to guides. This **reverses** the earlier "no `<aside>` for
+    guest Home/Projects" decision in "Exploratory page layouts": that reasoning held only while column 2 had
+    nothing to hold, and it now does.
+  - **Not decided yet:** what column 2 does. `/proto/public-user` compares three directions on that one axis
+    (Reference: flat and always visible; Disclosure: the boxed `Accordion`, one section open; How it works: explains
+    the journey from sighting to project to published record in three steps, with the guides underneath).
+    "Follows the tab" (a fixed about plus guides that changed with the active tab) was cut: it was Reference plus one
+    behaviour, and its context was thin because it only reshuffled the same five Knowledge Centre categories and every
+    guide points at the same landing-page section. Revisit once real per-topic guides exist. Header, rail, gradient card and dashboard are
+    shared and fixed. Not built into `/pages/dashboard` until one is picked.
+  - **Copy rules held in the lab:** plain government-service tone, one ask per tab phrased around what the guest
+    is looking at, no growth-marketing lines. Guide rows use the real Knowledge Centre category names and
+    descriptions from `/pages/biodata-home`; there are no guide pages yet, so the only link is one real anchor to
+    that landing-page section. The card reserves a headline plus two body lines so changing tab never shifts the
+    dashboard below (caught live: one message wrapped an extra line and moved the tabs 8px).
+  - **`DataOverviewContent` keeps only its controlled `activeTab`/`onActiveTabChange` props.** An interim pass added
+    `projectsTab` and `showProjectsMetric` for a Species tab; both were removed when that direction was reverted (see
+    the "features reduce" entry below), so the real dashboard component is unchanged for every role.
+  - **Copy round 2 for the public-user gradient card (per direct feedback: "more engaging, and nudging").** Each
+    tab now leads with a headline that speaks to what the guest is looking at and names the personal payoff, then
+    one body line that gives a concrete reason to act: Overview "Your sightings belong in this record", Flora
+    "Found a plant that isn't on the map?", Fauna "Spotted a bird, mammal or reptile? Log it.", Projects "Give your
+    survey a home in the record". The CTA stays "Create a free account" on every tab because that is what the click
+    does; the nudge lives in the headline and body, and the sign-up modal each one opens repeats the same specific
+    ask. The tone rule that held: warm and second-person, but every claim is one BioData SA already makes about
+    itself (who contributes, what records are used for, that every record belongs to a project). No invented
+    contributor counts, no urgency, no exclamation marks. Headlines stay under ~46 characters so they hold one line
+    at the card's 640px text width.
+- **Sept 21 2026: public-user is species-first (per direct feedback: public users are more curious about species
+  than projects; a project is only a way of organising species by their occurrences and observations).** Scoped to
+  the public-user persona and built so far only in `/proto/public-user`; the real `/pages/*` shells are unchanged
+  until a column-2 variant is picked and promoted.
+  - **Header:** "Add project" and "Upload dataset" removed for this persona (only Log in / Sign up remain), and the
+    search is a species search (common or scientific name) that jumps to the Species tab as you type. Repeats the
+    earlier round-3 decision that the shipped `1834aa7` shell had reversed, so promote it to the real shells too.
+  - **Rail: unchanged - Home, Projects, Explore (corrected the same day).** A first pass replaced Projects with
+    Species, which was wrong: a public user still has to be able to go into Projects, find a project and read more.
+    Species-first lives in Home (the Species tab, the species search, the copy), and Projects stays a real destination
+    that reads species-first.
+  - **Dashboard:** the fourth tab is "Species" (a browsable list with a group filter) instead of Projects, the
+    Overview shows three cards (Records, Flora species, Fauna species) and drops "Projects across SA", and the gradient
+    card copy is species-led on every tab.
+  - **Same publication rule as Explore:** a species is listed only when the project that recorded it is Active or
+    Completed, so drafts and projects under review never surface a species. Empty groups are hidden (Reptile has no
+    public records in the mock data because its project is a draft).
+  - **Known limits, not fixed:** the mock data gives 8 public species, all fauna, so the Flora tab stays aggregate
+    only; there is no species detail page, so rows are not clickable (honest, not a dead link); and the group per
+    species comes from a small factual lookup in the lab because the mock records carry none.
+  - **Projects: unchanged, the real shared table (corrected the same day).** A first pass hand-built a species-first
+    project list in the lab, which redesigned a screen nobody asked to change and stood in for the real `Table` with
+    a lookalike. Reverted: the Projects section renders `ProjectListContent` exactly as `/pages/project-list` does
+    (verified cell for cell), in the same three-column shell, with no gradient card because the real page has none.
+    Rail -> Projects -> a project row -> project detail works as it always has. The one species-to-project link kept in
+    the lab is on a species row ("Recorded through <project>"), which opens that project's record panel.
+  - **Open, not changed:** the real Projects table shows Draft and Under review projects to a public user, while
+    Explore hides them. That is the real page's behaviour for every role (see the Backlog entry on Level 1 public
+    filtering), so it was left alone here; decide it when the real shells are updated.
+  - **Still project-first, flagged for the next round:** Explore's results open on the Projects tab, the real
+    shells' header search (`GlobalProjectSearch`) only finds projects, and the real `/pages/project-list` and
+    `/pages/project-detail` don't list species yet. A species-first Explore, and a "Species recorded" summary at the
+    top of the real project detail page, are the natural next steps.
+- **Sept 21 2026: the public-user experience is the registered experience with features removed, never a redesign
+  (per direct feedback: "The features reduce, they don't change fundamentally").** This supersedes the species-first
+  entry above, whose Species tab, species header search and three-card Overview changed the shape of the screens
+  instead of removing from them. Reverted in `/proto/public-user`: the header search is the real
+  `GlobalProjectSearch`, the dashboard is the real Flora and Fauna Dashboard (Overview / Flora / Fauna / Projects, all
+  four Overview cards), and Projects is the real `ProjectListContent`. What stays reduced, all removals: no "Add project"
+  or "Upload dataset" in the header, no My BioData, no DLA / Nominate / Reports / Template Finder sections. What stays
+  added because the brief asked for it: the gradient card (its copy per tab, and the Projects tab's ask restored) and
+  column 2. The rule for the next round: to change what a public user sees, remove or gate a registered feature; do
+  not substitute a different one. Species-first as a product direction is parked, not lost - it would need to arrive
+  as a change to the shared screens for every role, decided separately.
+- **Sept 21 2026: `public-user` is the app-wide default persona (per direct instruction: "keep public-user selected
+  across our webapp, this is the starting point").** `DEFAULT_USER_ROLE` in `lib/user-role.ts` changed from
+  `registered-user` to `public-user`, so any page opened without `?userRole=` (or with an unrecognised value) renders
+  the signed-out visitor's view, and every in-app link built with `useRoleHref` carries `public-user` forward. Every
+  other persona is reached by an explicit `?userRole=` or the `RoleSwitcher` FAB. `/pages/biodata-home` keeps its
+  explicit `?userRole=public-user` on its links so the URL always states the persona. Anything that used to rely on
+  landing as `registered-user` by default (a bookmarked bare URL, a screenshot walk-through) now needs
+  `?userRole=registered-user`.
+- **Sept 21 2026 QA pass over everything changed this session (the Final check contracts plus the post-ingestion QA
+  checklist).** `tsc` and `eslint` clean on every touched file; 40 live page loads (all six roles across the five
+  canonical pages, plus the lab, both `/test-*` screens and the Accordion/Table/Tabs docs) with no console or page
+  errors; nav and config still alphabetical; no new dead utility classes, no em-dashes or arrow characters in added
+  UI copy. Findings, all fixed in the same pass:
+  - **`Accordion`'s new `boxed` title wraps but had no `text-balance`** (QA item 6) - added. Confirmed live that the
+    boxed title, which sits inside `.prose-doc` on its own doc page, also picks up none of the doc-site heading rules
+    (it is a span, not a heading).
+  - **`/test-site-details` still called its Accordion "composed, not a real component"** after `Accordion
+    variant="boxed"` landed - the flow-through contract. Swapped for the real component (a thin local wrapper adapts
+    the title-plus-children call sites and keeps every section open on load, as the frame draws it), the mapping row
+    and gap cards updated, and the composed version's dead `text-md` title class disappeared with it. The page keeps
+    its own `rounded-lg` radius via a class override on the wrapper so nothing changed visually.
+  - **The Table doc page didn't document the branch's new API** - `size="xs"`, `bodyScrollable`, `sticky`,
+    `TableCard.PaginationNumbered`, `tableCardPaginationRange` - and still said numbered pagination wasn't built.
+    API table corrected, a live "Numbered pagination" demo added, and the Figma-gap note dropped.
+  - **Checked and clean:** portaled content carries Barlow (the sign-up modal, and the tooltip's text nodes - the
+    outer overlay wrapper reads Geist but holds no text), the shell header is a top-level sibling on every shell, and no
+    `components/base/**` change was made for a doc-only need.
+  - **Known gap: `/test-site-details`' Figma frame could not be audited.** The Figma file returned "no access" when
+    the swap was made, so neither the composed radius (8px) nor the real variant's default (6px) is verified against
+    frame 88:11339. Revisit when file access is granted: compare the accordion radius, then drop the class override if
+    the frame matches the component.
+  - **Known gap: two dead utility classes in throwaway labs, present before this session:** `border-l-brand-solid` in
+    `/proto/dashboard-options` and `border-error-subtle` in `/proto/data-model-stress-test` (neither exists in
+    `app/globals.css`). Not fixed - the labs are not part of this work.
+- **Sept 22 2026: project-detail takes the Master Flows Project Details copy, and the records tree follows the confirmed
+  data model.** Source: Figma `yzQY87GXoyGGGPJDnh1hmi` node `10:58214` (Project Details Container, 11 accordions). The
+  frame's accordions are not reproduced, they are the copy source: the existing tabs and layout are unchanged.
+  - **Copy brought in:** title and Project No (Kangaroo Island Wildlife Rehabilitation, BD - 5034), Full Project Name,
+    the full Abstract, "Data Owner/s" and "Project Manager/s" with a Primary and a Secondary Contact each, and the
+    Details tab's Locations (Data Collection Location: MGA Easting/Northing, Latitude, Longitude, Study Area
+    Description), Data Collection Scope, Permit and URI / DOI Number, in the frame's order. Where the frame leaves a
+    field empty the row reads "Not provided", not a stray "-" (design principle above). "Targetted Species" is corrected
+    to "Targeted Species". Contacts use the placeholder cast (Olivia Wyatt, Phoenix Baker, Maya Dewitt, Lana Steiner)
+    instead of the frame's "Olivia Rhye", per the placeholder-person contract; email and phone values are the frame's.
+  - **Not readable through Figma MCP:** the frame's last three accordions (Privacy and Restrictions, Additional
+    Details, Comments) sit in nested instance slots that return no content, so the Restrictions and Additional
+    Information tabs keep their existing copy. Re-pull them when the frame is opened in the desktop app.
+  - **Kept, not overwritten:** dates, status, publisher, dataset table and record counts are data, not frame copy.
+  - **Known mismatch:** project-list's real row is still named "Adelaide Hills Bushland Survey" and links here, and
+    project-list-content already has a separate "Kangaroo Island Recovery Monitoring" row. Decide which project this
+    page is, then rename the list row to match.
+  - **Records tree, `app/pages/_shared/project-record-tree.ts` (new, shared by project-detail and observation-detail,
+    which used to keep drifting local copies):** Project > Site > Visit > Occurrence > Observation, an Occurrence
+    parenting exactly one Observation of the same type (Individual, Population, Non-biotic, Community).
+    Transect/Quadrat/Ramble nest under the Visit they belong to. The Project is the tree's root node.
+- **Sept 22 2026: `/pages/project-detail` rebuilt to a supplied screenshot.** Records sidebar (label "Records") reads
+  Project > Site > Visit > Occurrence > Observation from `project-record-tree.ts`, root row is the project name and
+  opens Overview; children only bucket by type once a node has more than 8 (`shouldGroup`), so a Site lists its
+  Visits/Occurrences flat. The sidebar's own icon collapses every open branch. Main column: `LayoutLeft` sidebar toggle
+  + "Back to projects", then the Home gradient card carrying the project ID/dates/status/publisher (the old "Project
+  Details" rail card and the Datasets tab are gone, so nothing is stated twice), then 8 tabs (Overview, Locations, Data
+  Collection Scope, Permit, URI/DOI, Privacy and Restrictions, Artefacts & Attachments, Comments). The Tree/Table
+  toggle is a react-aria `ToggleButtonGroup` (nesting a second `Tabs` inside the tab row's `Tabs` would fight its
+  collection); Table collapses the sidebar and shows an honest placeholder until its design is supplied.
+  Demo project is now Adelaide Hills Bushland Survey, BD-5039, matching the Projects list.
+  Also: `MapView` reflows on its own container's resize (Highcharts only re-measured on window resize, so a
+  collapsing sidebar left a stale pixel width that pushed the Overview rail off screen); a record-type filter and
+  Expand all / Collapse all sit above the tree; every Explore results table (`ResultsTable`) now defaults to the
+  `md` row size the Projects page uses, and both Projects tables show the same Project ID (`code`, BD-5039).
+- **Sept 22 2026 QA pass over that work (live Playwright, since a browser was available after all).** Found and fixed:
+  `Table.Head` only applied the header style (`text-xs`, semibold, `text-quaternary`) to its `label` prop, so header text
+  passed as children (the Projects page, the Table docs page, `dashboard/option-2`) rendered as unstyled bold black -
+  the style now sits on the wrapper so both work; the project tree now opens fully expanded like the design; two
+  em-dashes removed from the project-detail page (the End Date null marker became "Ongoing"); `text-balance` on new
+  copy. Checked clean: every class on project-detail, Projects and Explore resolves to a real CSS rule (the only
+  strays are the known `text-md` in `Input` and two component-internal tokens), the filter popover and tooltips carry
+  Barlow, no horizontal or page overflow at 1024/1280/1440/1920 in either view, all 5 Explore tabs at 44px header /
+  72px rows with the numbered footer for both roles, zero console errors on every page touched.
+- **Sept 22 2026: project-detail's records-tree controls redone from Mobbin filter patterns** (Delphi, Devin, Plain,
+  Copilot Money: active filters as removable chips + a Clear link; Dropbox: a type checklist with Select all;
+  VS Code explorer via Shopify: tree-wide actions in the section header's "..." menu). "Records" header row carries a
+  `Dropdown` "..." menu (Expand all / Collapse all) instead of two unlabelled double-chevron icons; search sits beside an
+  icon-only `Button` filter that tints (`bg-brand-50`) while a filter is on, its popover is the record-type `Checkbox`
+  list with Select all / Clear, and the real `Tag` component shows each active type as a removable chip beneath.
+  Built on `/pages/project-detail`, not `/proto/public-user` (that lab only varies the left column and has no records
+  tree). Checked live: menu, filter, chip remove, Clear and Select all all drive the tree, portaled menu and popover carry
+  Barlow, no dead classes in the sidebar, zero console errors.
+- **Sept 22 2026: Data Sharing Agreement (DSA) workflow for `biodata-admin`, at `/pages/dsa`.** Source: the Master
+  Flows lo-fi (Figma `yzQY87GXoyGGGPJDnh1hmi`, node `3:15901`: DSA List, DSA Empty State, DSA Record form). The lo-fi is a
+  starting point; its content is fitted into the shell, none of its own header or two-pane chrome is reproduced.
+  - **Fit into the shell, and the list -> deep dive structure (revised the same day, per the user).** The first pass put the
+    agreement list in column 2 and the record in main on one page. Reworked to follow Projects: `/pages/dsa` is a table
+    (`DsaListContent`: Agreement, Data partner, Agreement period, Requested by, Shared via, Updated; rows link out), column 2 is
+    the four status buckets as links with counts, a row opens `/pages/dsa/<id>` (the deep dive), and the form lives at
+    `/pages/dsa/new` and `/pages/dsa/<id>/edit`. Pattern documented in "List -> deep dive" above. The lo-fi's own header and
+    two-pane chrome are still not reproduced. Column 2 (status buckets) also appears in the mobile menu below `lg`.
+  - **Nav:** `biodataAdminNav` in `lib/registered-user-nav.ts` is the registered-user tree with the DLA section given its
+    admin items (Approve Reject DLA Requests, Withdraw DLA) and a keyed "Data Sharing Agreement (DSA)" leaf added straight
+    after it; `navForRole(role)` picks the tree and the five sidebar shells (dashboard, project-list, project-detail,
+    observation-detail, observations) call it instead of the inline public/registered ternary. `key: "dsa"` -> `/pages/dsa`
+    through the existing `keyHref`/`goToSection`, so no per-shell routing was added. DSA's rail icon is `FileCheck02`, DLA keeps
+    `FileLock01`. Gated by the `dsaManagement` feature (`[]`, admin only); a direct visit by any other role shows an honest
+    "managed by BioData Admins" state. Every non-admin nav is unchanged.
+  - **Correction, same day:** the first pass swapped DLA out for DSA in the admin tree, treating them as one renamed concept.
+    That was wrong - the admin IA screenshot (see the cross-check entry below) keeps DLA as its own module and the review
+    comments list DSA as an additional one. DLA is restored; DSA is a separate section.
+  - **Deep dive** follows the lo-fi's three cards (Agreement overview, Agreement contacts, Data sharing methods) but renders
+    read-only facts as label/value pairs, not grey input-looking boxes, and shows "Not provided" for empty values. The API
+    systems table is a real `Table`; its "View details" opens a `SidePanel` with scope, permissions, the organisation contact
+    and credentials (masked until "Show tokens"). Actions menu: Edit / Revoke (Draft: Edit draft / Delete draft, Revoked: none),
+    each destructive one behind a `DestructiveModal`. **Download PDF is a toast**, not a download: no PDFs are stored in this build.
+  - **Deep dive opens with the same gradient card as Home/project-detail (same day, per direct request: "the metadata sort
+    of sits in there").** A plain toolbar (Back to agreements, Download PDF, Actions) sits above it - action buttons stay off
+    the gradient, same "the banner doesn't carry action buttons" precedent as the Home dashboard's own copy of this card - then
+    the card itself carries the agreement's identity (`DATA SHARING AGREEMENT` label, the ID as an H1) and its short-form
+    metadata (Data Partnership, Valid From, Valid To, Status) as `MetaField`s, `onDark`. The Agreement Overview card below
+    dropped those same four fields - it now holds only Purpose of Data Sharing and the signed file, the two that don't fit a
+    compact metadata row - so nothing is stated in two treatments. Agreement Contacts and Data Sharing Methods are unchanged;
+    the gradient card is the glanceable identity, not a replacement for the full contact details. Verified live on both an
+    Active agreement and a Draft with unset dates/contacts (`Not provided` on `white/70` still reads clearly on the dark
+    gradient) - `tsc`/`eslint` clean, zero console errors, Edit/Revoke still work unchanged.
+  - **Correction, same day: the deep dive's own information arrangement rebuilt to borrow project-detail's structure
+    directly, per direct follow-up feedback** ("the structure of arranging information should also be borrowed from the
+    project details screen. Currently the DSA information screen looks like it's all over the place"). The gradient-card pass
+    above still stood, but everything below it was 3 same-weight `BentoCard`s stacked flat, each re-announcing its own icon
+    +title (redundant once the gradient card already states the identity), and Agreement Contacts crammed both contacts into
+    one shared card's grid rather than giving each its own boundary - the actual "all over the place" complaint, not any one
+    card's content. Replaced with a real `Tabs`/`TabList`/`TabPanel` row directly under the gradient card, `type="underline"
+    size="md"`, the exact treatment project-detail's own `ContentTabs` uses (no extra wrapper - `TabList` draws its own
+    underline): **Overview** (Purpose of data sharing, the signed file, then Agreement requested by / Agreement custodian as
+    two separate `BentoCard`s side by side - the same per-contact-card fix project-detail's own `ContactCard` already applies,
+    renamed from `ContactPanel` to `ContactCard` to match) and **Data Sharing** (the offline/system methods plus the API
+    systems table, unchanged). No tab panel repeats its own tab's label as a card header - the tab already says where you are.
+    Verified live: both tabs switch correctly, the system detail `SidePanel` still opens from the Data Sharing tab, the two
+    contacts render as visually distinct cards - `tsc`/`eslint` clean, zero console errors.
+  - **Second correction, same day: the rigour and polish from project-detail ported directly, per a screenshot of that
+    exact screen** ("the rigour and polish from projects needs to flow through to these screens as well"). The prior
+    round fixed the *tiering* (tabs instead of a flat card stack) but the tab content itself was still plainer than
+    project-detail's own Overview: loose `Field` rows with no card boundary, and `ContactCard` was an approximation
+    (name/email/phone as three bare lines, no icons, no org context) rather than a direct port of the real component.
+    Now ported exactly, not re-derived:
+    - **Overview and Data Sharing each render as one bordered card** (`rounded-lg border border-secondary`), its own
+      fields divided by `border-b` - a baseline label-left/value-right row for a short fact (Signed agreement, Data
+      shared via offline - project-detail's "Full Project Name" row) and an uppercase eyebrow-label section for a
+      longer one (Purpose of data sharing, Data shared via system - project-detail's "Abstract"/"Geographic scope").
+      Purpose does not get project-detail's `line-clamp-3`/"Read more" treatment - DSA's purpose text is short enough
+      that it would be a "Read more" button that never has more to show, a fake affordance, not a real port.
+    - **Overview's contacts moved from a same-width grid into a persistent right rail** (`lg:w-80 lg:shrink-0`, main
+      content `flex-1`), matching project-detail's Data Owner/Project Manager rail exactly rather than two cards
+      competing for the same width as the main content.
+    - **`ContactCard` rebuilt to project-detail's real component**, not approximated: an optional `orgLabel` under the
+      title (passed as `dsa.partner` for "Agreement requested by" - real, distinct information; omitted for "Agreement
+      custodian (DEW)", since its org is already named in the title and repeating "DEW" a line below would be a literal
+      duplicate, not the accepted-duplication case), then a `border-t` divider, the contact's name, and a real
+      `Mail01`/`Phone01`-led row instead of two bare text lines.
+    - **Deliberately not ported**: project-detail's `FlaggedConceptsBanner` (an admin review queue over a project's own
+      flagged concepts). DSA's data model has nothing real to flag on an agreement yet, so no banner was faked here
+      just to visually match - "rigour" means porting real structure, not inventing a feature to look busier.
+    - The list page (`dsa-list.tsx`) was checked against `project-list-content.tsx` and already matches its pattern
+      (`SectionHeader`, `TableCard`, numbered pagination, linked rows) - its one addition, a local per-bucket search
+      box, is justified (the global header search is projects-only) and not a gap to fix.
+    Verified live on both an Active agreement (all fields populated) and a Draft (partner/purpose/file/custodian all
+    empty) - "Not provided" rows and the custodian's icon-less empty state both render cleanly, `tsc`/`eslint` clean,
+    zero console errors.
+  - **Form** is tiered, not one flat scroll (the lo-fi has ~8 field groups plus a repeatable system block): tabs Agreement /
+    Contacts / Data sharing, error counts on each tab after a failed submit, a footer count, a sticky Back / Save draft / Submit
+    bar, a discard guard on Back, and each API system as its own boxed `Accordion` item (only present once "System" is
+    ticked, as in the lo-fi). Tokens are masked by default; "Re-generate tokens" is confirmed because it invalidates the old ones.
+    Tokens are random JWT-shaped placeholders, never real credentials. Draft needs only the organisation; Submit validates the rest.
+  - **State is a module store** (`dsa-store.ts`), seeded from `dsa-data.ts`; create, edit, revoke, draft and delete all work
+    across routes for the session and vanish on reload (a deep dive for an agreement created this session then shows "not found"). Status is stored, not derived from dates (see open questions).
+  - **Gaps, both unresolved:** (1) **"Purpose of Data Sharing" is a `?` marker**: it needs a multi-line field and DEW has no
+    Textarea (the same gap `/test-site-details` logs). It is not validated, so new agreements save with no purpose until a
+    Textarea is ingested. (2) **"Upload Agreement" uses the real `InputFile`** (button + file name, PDF only, 5 MB) in place of
+    the lo-fi's drag-and-drop zone; same job and accepted types, different affordance. The lo-fi's concentric-ring empty-state
+    backdrop is a decorative graphic with no asset here and is left out.
+  - **Open questions for the business, none decided here:** (a) **DLA vs DSA, resolved:** two separate modules (see the
+    correction above). The lo-fi's empty-state body still says "Data Licensing Agreement", which reads as a lo-fi copy slip.
+    (b) **What "Inactive" means** and whether anything moves an agreement between buckets automatically (expiry?).
+    Only Save draft, Submit and Revoke transition status. (c) **Is there an approval step?** The lo-fi's empty-state copy
+    ("seek approval... track the status of your request") describes a requester waiting on a decision, but no Pending status is
+    drawn; an admin's Submit makes an agreement Active. The requester-facing flow is a different persona and is not built.
+    (d) **Permissions per scope or per system?** The lo-fi shows one Read/Write pair under the scope select; built once per system.
+    (e) The lo-fi list's filter icon beside search has no defined behaviour and is omitted.
+  - **Shell note:** the shell is one shared component, `DsaShell`, used by all four DSA routes. `ProfileMenu` and
+    `GuestAuthActions` were extracted to `app/pages/_shared/profile-menu.tsx`; the five older shells still carry their own
+    identical copies (separate cleanup). The form
+    footer clears the `RoleSwitcher` FAB (`pr-20`), which otherwise sits on top of Submit.
+  - Verified: `tsc` and `eslint` clean on every touched file; live Playwright pass over list, detail, system panel, all four
+    empty states, create (empty submit, per-tab errors, bad email, wrong file type, system + scope + permissions, token
+    show/re-generate, submit), edit of a live agreement and of a draft, revoke, delete draft, search, all 6 roles, rail
+    navigation from three other shells with the role preserved, and an 800px viewport; zero console errors.
+- **Sept 22 2026: BioData Admin IA cross-check.** Source: the team's "BioData Admin" IA tree (a screenshot supplied by the
+  user, plus a review-comment thread listing modules still to include). This is the real admin IA; today's admin experience
+  is the registered-user tree plus the DSA work above, so most of it is unreconciled. **Nothing below is built except DSA,**
+  logged so the next admin pass starts from the real tree, not from `registeredUserNav`.
+  - **The admin tree, as given:** Header (Profile > Profile Settings, Logout) - Home (BioData Overview, BioData Dashboard) -
+    Projects (Manage Level 1-4 Project Data; Create Project > Add Project Details, Privacy and Restrictions > Embargo /
+    Sensitive Species and Location / Restrict Project Metadata / Request Other Restrictions; Download Project Templates;
+    Create / Upload Dataset) - Observations (View Level 1-4 Observation Data; Nominate Sensitive Species) - Data Licencing
+    Agreement (DLA) (Approve Reject DLA Requests; Withdraw DLA) - Template Finder (Browse and Download Standard Dataset
+    Templates) - User Management (Add Privileged User / Admin; Add Biodata User / Admin; Manage Privileged User Roles; Manage
+    Biodata User Roles; Manage Biodata User Permissions; Manage Privileged User Permissions) - Reports (All Users)
+    (Application and System Reports; Audit Log Reports) - Ctrl Vocab (Create / Manage Ctrl Vocabs) - Footer (Terms and
+    Conditions, Privacy Policy, Help and Documentation).
+  - **Modules from the comment thread, not yet in the tree:** Voucher management, Notification management, Taxonomy
+    management ("to include"), and DSA (added later; built above). Placement of the first three is undecided: whether each is
+    its own top-level section or sits inside another one (Taxonomy and Ctrl Vocab are plausibly neighbours).
+  - **Matches what is built:** the Header account menu and the Footer links; the Create Project steps, Download Project
+    Templates and Create / Upload Dataset (already `projectActions`); Template Finder; Home's admin content already treats
+    "DLA requests" and User Management as approval queues (`AdminHomeDashboardContent`), consistent with DLA staying an admin
+    module.
+  - **Differs from what is built:**
+    - **Access tiers: the admin IA says Level 1-4, this file and the BDBSA research document two (Level 1 public, Level 2
+      DLA-licensed).** Either Levels 3-4 are admin-only tiers we never captured or the IA is looser than the data model; needs
+      a decision before "Manage Level 1-4 Project Data" or "View Level 1-4 Observation Data" gets a real screen.
+    - **Observations vs Explore.** The admin IA has an Observations section with no map-search entry; every role's shell
+      currently shows "Explore" (`/pages/observations`). Unclear whether admin's Observations *is* Explore, sits beside it, or
+      Explore is not an admin module.
+    - **Nominate Sensitive Species sits under Observations** for admin, but is its own top-level section in the registered-user
+      tree and every shell's rail.
+    - **Home labels.** Admin's Home is BioData Overview / BioData Dashboard; every shell hardcodes "My BioData" / "Flora and
+      Fauna Dashboard" for every non-guest role, admin included (the admin *content* differs, the tab labels do not).
+    - **Reports.** "Reports (All Users)" with Application and System Reports and Audit Log Reports, against registered-user's
+      "Reports (Own Submissions)" with one item.
+    - **DLA items.** Approve Reject DLA Requests / Withdraw DLA (admin) against Request New DLA / Manage DLA (registered).
+      Restored in `biodataAdminNav` as unscoped items, since neither has a page.
+  - **Missing from the codebase entirely:** User Management (6 items; only a disabled quick action exists), Ctrl Vocab, Audit
+    Log Reports, and the three unplaced modules above. The Home dashboard's own copy calls the second one "Control Vocal";
+    the IA says "Ctrl Vocab".
+  - **Next step, not started:** replace `biodataAdminNav` with the real tree above (unscoped sections stay honest
+    placeholders), then reconcile Home's tab labels and the Observations / Explore question. Blocked on the decisions listed.
+  - **Restructure verification (list -> deep dive):** `tsc` and `eslint` clean; live Playwright pass over the list, all four
+    buckets (including the empty Revoked one), row -> deep dive, Back to agreements, edit route, revoke from the deep dive
+    (the record's bucket highlight moves, counts update), new -> Save draft -> the new draft's deep dive, and the not-found
+    state; **all 5 personas x 4 routes** (list, deep dive, new, edit) each render rail + column 2 + main under a single
+    header; the role survives every link. Fixed on the way: `useRoleHref` produced `?status=x?userRole=y` for paths that
+    already had a query. Known limit: a restricted persona's column 2 holds only the section label and footer links, so it
+    reads sparse; it's the cost of keeping three columns and can be revisited once there's something honest to put there.
+
+- **Sept 22 2026: `/proto/public-user`'s explorations folded into the real `/pages/*` shells, per direct
+  instruction** ("fold all the explorations we did for public-user into our /pages/* production route. I liked the
+  'Reference' variant"). Everything the lab worked out - the gradient card with per-tab copy, and a real column 2 -
+  had stayed lab-only; production's `dashboard`/`project-list` still ran the pre-Sept-21 "no aside, no gradient card"
+  branch for `public-user`'s Home/Projects. Folded in, not re-derived:
+  - **New shared file `app/pages/_shared/guest-home.tsx`** - `GuestGradientCard` (the gradient surface, one ask per
+    Flora and Fauna Dashboard tab from the lab's `tabAsks`, always ending in "Create a free account") and
+    `GuestAboutAside` (the picked "Reference" variant - "What is BioData SA?" plus a Guides list, both always
+    visible, no accordion/interaction - Disclosure and How it works, the two variants not picked, are unchanged and
+    still live in the lab as the record of what was considered, per the "never delete an explored direction"
+    convention). Guide rows and their copy are ported verbatim from the lab (the real Knowledge Centre categories
+    from `/pages/biodata-home`, one real link to that page's own section - no fabricated per-guide pages).
+  - **Wired into both `dashboard/page.tsx` and `project-list/page.tsx`'s `isPublicUser && (activeSection === "Home"
+    || activeSection === "Projects")` branch** - the same aside renders for both sections (only the eyebrow label
+    differs, matching the lab exactly), and only Home also gets the gradient card above the real
+    `DataOverviewContent` - Projects renders the real `ProjectListContent` directly under the aside, same as the lab
+    and the "features reduce, they don't change fundamentally" decision this persona already follows.
+  - **A new `guestDashboardTab` state** in both files drives `DataOverviewContent`'s controlled `activeTab`/
+    `onActiveTabChange` props, separate from the existing `homeTab` state (registered-user's My BioData/Flora-
+    Dashboard switcher, which doesn't apply to a guest) - so the gradient card's copy changes with whichever Flora
+    and Fauna Dashboard tab (Overview/Flora/Fauna/Projects) the guest is actually on.
+  - **Not changed**: the header's "Add project"/"Upload dataset" stay visible with the real `GuestActionButton`
+    sign-up-invite behaviour for `public-user`, same as registered-user's copy of the header - the lab's own
+    `GuestHeader` predates the later decision to stop hiding these for guests entirely (see the "Stale note" under
+    the `BiodataLandingPage` merge above) and was correctly *not* folded back in, since that would have been a
+    regression, not a fold-in.
+  - Verified live: `public-user` on `/pages/dashboard` shows the aside, the gradient card ("Every species record
+    starts with a sighting"), and switching to the Flora tab both changes the Flora and Fauna Dashboard's own content
+    and the gradient card's headline ("Found a plant that isn't on the map?") together; "Create a free account" opens
+    the real sign-up modal with that tab's own copy. `public-user` on `/pages/project-list` shows the same aside
+    (eyebrow "PROJECTS") beside the real, unmodified Projects table, no gradient card. `registered-user` and
+    `biodata-admin` on `/pages/dashboard` are unaffected (no aside change - they already had one via `HomeTabPanels`).
+    `tsc`/`eslint` clean, zero console errors.
+
+- **Sept 22 2026: `RoleSwitcher` stranded a preview on a whole-page access restriction instead of taking the user
+  somewhere they could actually explore - fixed. Flagged directly by the user off a screenshot: switching to
+  `public-user` while previewing a DSA record left them staring at "Data Sharing Agreements are managed by BioData
+  Admins," not a bug in the access gate itself** ("It's good you have checks and balances but this is not the
+  expected behaviour") - the gate was correct, the switcher's own navigation wasn't.
+  - **Root cause**: `setRole` (`app/pages/_shared/role-switcher.tsx`) reapplied the newly picked role to whatever
+    `pathname` the FAB happened to be opened on, unconditionally. For an ordinary page that's right - most controls
+    are gated individually, the page itself stays visible (see `role-access.config.ts`'s own convention) - but
+    `/pages/dsa/**` is the one route so far that's gated as a whole page (`DsaShell` swaps all of `main` for a
+    restriction message when `hasFeatureAccess("dsaManagement", role)` fails), so previewing a blocked role there
+    just re-rendered the same restriction under the new role instead of leaving the preview somewhere useful.
+  - **Fix**: a small `wholePageGates` allowlist (`{ prefix: "/pages/dsa", feature: "dsaManagement" }`, one entry
+    today) checked before navigating - if the target role fails that feature's check for the current path, `setRole`
+    redirects to `/pages/dashboard` (Home, reachable and honest for every role) with a clean query string instead of
+    carrying over params that mean nothing there (DSA's own `?status=`); otherwise it stays on the current path
+    exactly as before. A direct visit to `/pages/dsa` by a blocked role is untouched - `DsaShell`'s own restriction
+    message is still correct for someone landing on the URL itself (an old link, a bookmark); only the *switcher's*
+    live-preview behaviour changed. Kept as an explicit short list rather than inferred from nav-tree membership -
+    `project-detail`/`observation-detail` are real, unrestricted pages with no nav key of their own, so "not a nav
+    key" isn't the same signal as "this role can't view it."
+  - Verified `tsc --noEmit`/`eslint` clean, then a live Playwright pass across 4 scenarios: `biodata-admin` on a DSA
+    record switching to `public-user` now redirects to `/pages/dashboard?userRole=public-user` (0 restriction
+    messages, the guest gradient card renders); `biodata-admin` on `/pages/project-list` switching to
+    `registered-user` stays on `/pages/project-list?userRole=registered-user` (both roles can view it, no unwanted
+    redirect); a direct visit to `/pages/dsa?userRole=registered-user` still shows the restriction message unchanged
+    (confirming only the switcher's own behaviour changed, not the gate); and `registered-user` on `/pages/dsa`
+    switching to `biodata-admin` (who can manage DSAs) stays on `/pages/dsa?userRole=biodata-admin` with the real
+    list content rendering - zero console errors across all four.
