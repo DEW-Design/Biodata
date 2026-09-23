@@ -359,6 +359,24 @@ export const designSystemConfig: DesignSystemConfig = {
     },
   },
 
+  textarea: {
+    title: "Textarea",
+    enabled: true,
+    sizes: [
+      { key: "sm", label: "Small",  enabled: true },
+      { key: "md", label: "Medium", enabled: true },
+    ],
+    features: {
+      playground: true,
+      withHint: true,
+      tooltip: true,
+      disabled: true,
+      invalid: true,
+      usage: true,
+      figma: true,
+    },
+  },
+
   toast: {
     title: "Toast",
     enabled: true,

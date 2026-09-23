@@ -29,6 +29,25 @@ matter how complete it otherwise looks.
   serve a doc-only or Scaffold-only need. See "DEW vs. Scaffold" below.
 - **Figma is the source of truth wherever a frame exists.** No colour, spacing, or state was
   invented or left un-checked against Figma when a reference frame was available. See below.
+- **A lo-fi/wireframe is a starting point, never the literal layout to ship.** Whether it's a
+  Figma wireframe or a plain screenshot, its job is to establish the content and the flow - what
+  fields exist, what a screen needs to say, what actions are possible - not to dictate the exact
+  chrome, stepper widget, or panel arrangement pixel-for-pixel. That content always gets re-fitted
+  into this system's real three-column shell and real components, following whatever pattern
+  already exists for the closest analogous screen (see "List -> deep dive" below), even where that
+  means restructuring the wireframe's own layout outright - a numbered-circle stepper becomes the
+  same `Tabs`-with-error-count pattern every other multi-step form here already uses, a flat two-
+  pane screen becomes a real list + deep dive, an inline flat scroll becomes tiered per the
+  cognitive-load principles below. This is the same "Figma wins on styling, never on scope or
+  structure" instinct the Generated-screens/Exploratory-page-layouts sections already apply to
+  hi-fi frames, made explicit for lo-fi ones too, because a lo-fi wireframe is even less likely to
+  already reflect this system's real information architecture than a hi-fi one is. Two worked
+  examples: the Data Sharing Agreement (DSA) build (its lo-fi's flat form became three real tabs,
+  its own two-pane screen became a real list -> deep dive) and the Data Licencing Agreement (DLA)
+  build below (its numbered stepper became the same Tabs pattern, its "Add a Location" methods were
+  re-derived from Explore's own real map-search components instead of rebuilt from the wireframe's
+  own drag-and-drop chrome). Ask when a wireframe's intent is ambiguous; never ship its layout
+  verbatim on the assumption that "the wireframe already decided this."
 - **Component-level changes flow through to every `/test-*` page that uses that component, same
   session.** A resolved `?` gap gets its placeholder swapped, its gap table updated, and its
   mapping table updated together. See "Generated screens" below.
@@ -505,8 +524,8 @@ tooling, it's a reconstruction of an actual product screen. Two rules specific t
     inside it working normally, and log the shell itself in the mapping table as "composed, not a
     real component" - a candidate for future ingest, not a blocker. Precedent: `/test-site-details`
     (Figma node 88:11339) - Accordion is used identically 5× across the frame; Radio and Textarea
-    are single fields within it and got the `?` marker as normal (Radio has since been resolved -
-    see the flow-through rule below; Textarea is still open).
+    are single fields within it and got the `?` marker as normal (both have since been resolved -
+    see the flow-through rule below).
 - **A `?` gap is not "done" once flagged - it's done once replaced, and that has to happen the
   moment the missing component lands, not eventually.** Whenever a component gets newly ingested
   into `components/base/**` (or any other DEW layer), immediately grep every `/test-*` page for a
@@ -3782,3 +3801,216 @@ user owns and edits directly, not something to restructure without asking.
     (confirming only the switcher's own behaviour changed, not the gate); and `registered-user` on `/pages/dsa`
     switching to `biodata-admin` (who can manage DSAs) stays on `/pages/dsa?userRole=biodata-admin` with the real
     list content rendering - zero console errors across all four.
+- **Sept 23 2026: `components/base/textarea/textarea.tsx` ingested (Untitled UI CLI), closing the "Purpose of Data
+  Sharing" gap the DSA entries above log and the "Location Comment" gap `/test-site-details` logs.** `TextArea`
+  composes the same shared `Label` and `HintText` (`components/base/input/label.tsx`/`hint-text.tsx`) `Input`
+  already uses - its two real dependencies are those two shared files, not new ones of its own. `Label` already
+  wraps `Tooltip`/`TooltipTrigger` (`components/base/tooltip/tooltip.tsx`), so `TextArea`'s own `tooltip` prop is
+  the same already-shipped, already-audited Tooltip integration Input's `tooltip` prop uses - confirmed live (the
+  `HelpCircle` trigger and its `text-fg-quaternary`/`hover:text-fg-quaternary_hover` classes render correctly in
+  the doc page's SSR output) rather than assumed from the import alone.
+  - **Attach primitives**: every class in `textarea.tsx` (`bg-primary`, `ring-primary`, `ring-brand`,
+    `ring-error_subtle`, `ring-error`, `text-placeholder`, `autofill:*`) is the exact class chain `Input`'s own
+    base field already uses, checked individually against the live `app/globals.css` - all real, all resolve, no
+    dead classes shipped with this ingest. `font-barlow` was already present on the field wrapper (copied from
+    Input's own pattern), so no gap there either.
+  - **Doc page** (`app/(docs)/components/textarea/page.tsx`) follows the full template - Playground, Sizes,
+    With hint text, **With tooltip** (added this pass - the doc page had the prop in its API table but no live
+    section demonstrating it, so the Tooltip dependency wasn't actually shown working anywhere on the page; fixed
+    to match `Input`'s own "With tooltip" section, plus a matching `tooltip` feature key in
+    `config/design-system.config.ts` and the `ContextualConfigPanel` toggle list), Disabled, Invalid, API, Usage,
+    an honest "not linked yet" Figma placeholder. Slotted alphabetically in both `lib/nav.ts` and
+    `design-system.config.ts` (`tabs` -> `textarea` -> `toast`).
+  - **`/pages/_shared/dsa/dsa-form.tsx`'s "Purpose of data sharing" field** now renders the real `TextArea`
+    (`label`/`hint`/`isInvalid`/`rows`/`value`/`onChange`) in place of the `GapField` `?` marker, and
+    `validateDsa` (`dsa-data.ts`) now requires it on submit - the `purpose` field and its seed data already existed
+    (added when the DSA workflow first shipped, anticipating this ingest), so this closes the gap without touching
+    the data model. `errorTab` already routed `purpose` to the "Agreement" tab, so the form's per-tab error count
+    was correct with no further change. The deep-dive (`dsa-detail.tsx`) already rendered `dsa.purpose` with an
+    honest "Not provided" fallback, so the whole path (form -> validation -> store -> deep dive) is now real
+    end to end - verified live via a real `<textarea>` rendering on `/pages/dsa/new`.
+  - **`/test-site-details`'s "Location Comment" `GapField`** (per the flow-through rule under "Generated screens"
+    above) was swapped for the real `TextArea`, wrapped in the same `Inspectable` pattern every other real
+    component on that screen uses (`textareaTokens`, mirroring `inputTokens` exactly since `TextAreaBase` shares
+    the identical class chain). The now-unused `GapField` helper was deleted, the mapping table gained a
+    "Free text (2000-word comment)" row, and the "New components identified" section's prose/gap-cards were
+    updated to state that no component gaps remain on that screen (Radio and Textarea were the only two, both
+    now resolved).
+  - Verified `tsc --noEmit`/`eslint` clean on every touched/new file, and a live pass via `curl`'d SSR output
+    (no browser-automation tool was available in this session) confirming: the textarea doc page's Playground,
+    Sizes, "With tooltip" section (real `HelpCircle` trigger with correct classes), Disabled, and Invalid sections
+    all render real `<textarea>` elements with the expected class chain (including `ring-error_subtle` on the
+    Invalid demo); `/pages/dsa/new`'s "Purpose of data sharing" field renders a real `<textarea>`; and
+    `/test-site-details`'s "Location Comment" row renders a real `<textarea aria-label="Location Comment">` with
+    no `?` marker left on the page. Full interactive hover/focus verification of the tooltip and resize-handle
+    wasn't done in a live browser this pass (no automation tool available) - the wiring is otherwise identical to
+    Input's already browser-verified Tooltip integration, so it inherits that verification rather than duplicating
+    it blind.
+- **Sept 23 2026: removed the "Custom Components" nav section (`lib/nav.ts`) and its one "Date range" entry, per
+  direct user feedback that the section is deprecated.** Same precedent as the earlier "Marketing" nav-section
+  removal above: the underlying page (`app/(docs)/custom-components/date-range/page.tsx`) and component
+  (`components/custom/date-range/date-range-control.tsx`) are untouched and still real - `DateRangeControl` is
+  still the live control filling the `GapDateRange` placeholder on both `/pages/dashboard` and
+  `/pages/project-list`, so deleting it would break two real production screens, which isn't what was asked.
+  Only the nav entry (sidebar + the generated `/llms.txt`, both driven by `lib/nav.ts`) is gone; the doc page is
+  reachable by direct URL only now, same convention already used for `/pages/*`, `/test-*`, and the earlier
+  FAQ-accordion page.
+  - **`/llms.txt` is a generated route** (`app/(docs)/llms.txt/route.ts`), not a checked-in static file - it reads
+    `staticNav()` off `lib/nav.ts` at request time, so it can never drift from the sidebar by construction. Verified
+    live after this change: it lists `Textarea` under Components and no longer has a `## Custom Components`
+    section at all - a 1:1 match with `lib/nav.ts` with no manual edit needed to the route itself.
+  - **`README.md`'s own Components/Custom Components tables are hand-maintained** (see the Sept-earlier
+    "documentation debt" entry above - this is the same file, same drift risk) and had already gone stale again:
+    missing `Textarea` entirely and still carrying the now-removed Custom Components section. Regenerated both to
+    match `lib/nav.ts` exactly in the same pass, rather than leaving `/llms.txt` correct while README quietly drifted.
+  - Verified `tsc --noEmit`/`eslint` clean, and live: the sidebar/`/llms.txt` show 0 "Custom Components" hits,
+    `/custom-components/date-range` still returns 200 by direct URL, and both `/pages/dashboard` and
+    `/pages/project-list` (the real `DateRangeControl` consumers) still return 200 with the control unaffected.
+- **Sept 23 2026: Data Licencing Agreement (DLA) workflow built at `/pages/dla`, following the same "List ->
+  deep dive" shape as Projects/DSA, per direct instruction.** Source: the Master Flows wireframe (Figma
+  `YMproGZfrFB5jUqPHPxMhk`, node `33:43259` - four sections: "No DLAs Yet", "Request/Renew - All Users",
+  "View - All Users", "Approve/Reject - DEW Admin"). The wireframe's own numbered-circle stepper, its two-pane
+  list/detail layout, and its "Add a Location" popup were all re-derived rather than copied - see the new "lo-fi
+  is a starting point" contract above, which this build is the second worked example for (the DSA build above is
+  the first).
+  - **Confirmed with the user before building, not assumed:** (1) **Access-tier numbering** - the wireframe's own
+    "Level 2 - Standard Access"/"Level 3 - Enhanced Access" per-location choice is now the real model: Level 1
+    (public, no DLA - already shipped, unchanged) / Level 2 (a standard DLA) / Level 3 (an enhanced DLA, for
+    sensitive-species data). The already-shipped "View Level 2 Project Data (DLA Access)" nav copy
+    (`lib/registered-user-nav.ts`) needed no change - it was already accurate under this model, since Level 2 is
+    still "the DLA-licensed tier." (2) **The "Projects for Level 3 Access" checklist references our real
+    projects** (`app/pages/_shared/project-list-content.tsx`'s own 4-project array, re-exported as
+    `dlaLevel3Projects` in `dla-data.ts`), not the wireframe's fictional category names ("Threatened Species
+    Monitoring", ...) - so a DLA request points at an actual record in the system. (3) **"Add a Location"'s
+    Upload Shapefile method gets a real parser** (`shpjs` + `proj4`, both added as real dependencies, not
+    transitive-only) rather than an honest stub or a `?` gap - this closes the loop on an earlier open question
+    (an npm-shapefile-reader lookup from a prior session, never acted on until now). (4) **DLA is for every
+    signed-in role except `public-user`** (`registered-user`/`privileged-user`/`privileged-admin`/`biodata-user`,
+    plus the `biodata-admin` bypass) - a guest has no account to request or manage a DLA under, matching how DSA
+    is scoped to admin-only for the opposite reason.
+  - **"Add a Location" reuses Explore's own real map-search components for 3 of its 4 methods, not a rebuilt
+    lookalike.** Every location this modal produces becomes the exact same `Boundary` (circle/polygon) type
+    `app/pages/_shared/map-search/geo.ts` already defines, so `SAMap` (Leaflet + leaflet-draw) needs no new
+    rendering path at all: "Draw on the Map" reuses `SAMap` directly (a drawn circle -> "Defined on Map", a drawn
+    polygon -> "Defined Polygon", disambiguated by the boundary's own `kind`); "Choose from a List" reuses
+    `SA_NATIONAL_PARKS` via a single-select `Select.ComboBox` (a fixed 15km circle around the park's real
+    centroid); "Coordinates" adds a real Easting/Northing option alongside the existing Latitude/Longitude one (a
+    1km pinpoint circle either way), converted via a real `proj4` call
+    (`app/pages/_shared/dla/dla-geo.ts::eastingNorthingToLatLon`) against a single fixed UTM zone (GDA94/MGA Zone
+    54, EPSG:28354 - covering Adelaide and most of the state's populated south-east) - an honest, documented
+    simplification, the same "approximate, not full GIS" convention `SA_NATIONAL_PARKS`' own centroids already
+    use, since real SA coordinates actually span zones 52-54. "Upload Shapefile" is the one genuinely new piece:
+    a real `shpjs` parse (`.geojson`, a bare `.shp`, or a zipped shapefile `.zip`) reduced to a single boundary
+    polygon (the first feature's outer ring only - holes and additional parts are dropped, the same simplification
+    `Boundary`'s own polygon shape already has). The License Category (Level 2/3) radio and, for Level 3, the
+    project checklist are deliberately **not** part of this modal - the wireframe places them on each
+    already-added location row in the parent step, not inside "Add a Location" itself, so the modal only ever
+    produces a location's name/method/geometry.
+  - **List -> deep dive, same shell shape as DSA:** `/pages/dla` (a table of one status bucket, column 2 picks
+    the bucket, a row links to the deep dive), `/pages/dla/<id>` (a real gradient card carrying the ID/requestor
+    org/agreement period/status, a contextual banner per status, an Agreement Summary card with the numbered
+    location list, a Details card with purpose/period/requestor, and Withdraw/Approve/Reject at the bottom of
+    the content - matching the wireframe's own button placement rather than a top toolbar), `/pages/dla/new`
+    (the 3-tab form: Location & License / Details & Purpose / Review & Submit). One `DlaShell` component
+    (`app/pages/_shared/dla/dla-shell.tsx`), one module store (`dla-store.ts`, `useSyncExternalStore`, same
+    "resets on reload" convention as `dsa-store.ts`).
+  - **Real, deliberate departures from the wireframe, each logged here rather than guessed at silently:**
+    - **No "Save draft."** The wireframe's own 3-step form has no draft action anywhere in it (unlike DSA) - it
+      goes straight from Review & Submit to a submitted request, so `submitDla` always sets a new request to
+      Under Review, full stop.
+    - **A fifth status bucket, "Withdrawn," that the wireframe's own list tabs never draw.** The wireframe shows
+      a "Withdraw" link on both the Active and Under Review detail views but only ever draws 4 list tabs (Active/
+      Under Review/Rejected/Expired) - a request a user or admin actually withdraws has to land somewhere, and
+      folding it into "Rejected" would misrepresent a voluntary withdrawal as an admin decision. `dlaStatusOrder`
+      is `active, under_review, rejected, expired, withdrawn`.
+    - **One status label, not two.** The wireframe's requester-facing list says "Under Review"; its admin-facing
+      list says "For Review" for the identical bucket. Unified to "Under Review" everywhere (list, column 2,
+      banners), the same "one stored status, no per-persona relabelling" principle DSA's own Active/Inactive/
+      Revoked/Drafts already follows.
+    - **Adding a location to an already-Active agreement appends directly** (`addDlaLocation`), no separate
+      per-location approval sub-flow - the wireframe shows a "+ Add Location" button on the Active view but never
+      models what happens to that new location's own review state, so this build treats it as a same-session,
+      honest mutation rather than inventing an amendment-approval flow nothing in the wireframe asks for.
+    - **"Renew Licence" creates a brand-new request, never edits the expired one in place** - `/pages/dla/
+      new?renewFrom=<id>` pre-fills locations/purpose/requestor from the expired record, so the expired record's
+      own history stays intact and the new one starts a fresh Under Review cycle, the same "renewal is a new
+      record" precedent DSA doesn't need but this workflow's own "Request/Renew" wireframe section name implies.
+  - **Nav/access wiring:** `DLA_SECTION_LABEL` (`lib/registered-user-nav.ts`) is now a keyed leaf (`key: "dla"`)
+    like Home/Projects/Explore/DSA, replacing the old inert `items: [{label:"Request New DLA"},{label:"Manage
+    DLA"}]` text - those two "items" were really the same list/create split Projects and DSA already collapse
+    into one screen, not two separate destinations. `biodataAdminNav`'s own special-case for DLA (which used to
+    override its `items` to admin-specific text) is gone too - admin gets the identical keyed leaf, and
+    "Approve Reject DLA Requests"/"Withdraw DLA" are real actions inside `/pages/dla` itself (gated by the new
+    `dlaApproval` feature, admin-only via the bypass), not a second nav entry, the same call already made for
+    DLA's own list/create actions. `config/role-access.config.ts` gained `dlaAccess` (every role but
+    `public-user`) and `dlaApproval` (admin-only). `app/pages/_shared/role-switcher.tsx`'s `wholePageGates`
+    gained `{ prefix: "/pages/dla", feature: "dlaAccess" }`, the same whole-page-gate redirect fix already applied
+    to DSA - switching to `public-user` while previewing a DLA record now redirects to Home instead of leaving a
+    restriction message stranded mid-preview.
+  - **Verified live via a real Playwright pass** (chromium installed for this session, run against the existing
+    dev server, then removed - not added as a project dependency): public-user correctly blocked from `/pages/
+    dla`; the Active/Under Review/Rejected/Expired/Withdrawn views each render their correct banner and actions;
+    an admin's Approve modal (real dates + a real `InputFile` attachment + the "Custom DLA" checkbox) moves a
+    request to Active; Reject requires a reason (real `TextArea` validation) before confirming; "Renew Licence"
+    from an Expired record correctly pre-fills the new form from that record's own locations; a full new-request
+    submission (Add Location via "Choose from a List", setting Level 3 + a real project, filling Details &
+    Purpose, agreeing to Terms, Submit) lands on the new request's own deep dive as Under Review with a
+    correctly-generated sequential ID; and, separately, all three of Add Location's non-map methods were
+    exercised directly - Easting/Northing (a real `proj4` conversion, confirmed it produces a plottable circle),
+    and Upload Shapefile (a real 4-vertex test `.geojson`, confirmed `shpjs` parses it to 5 boundary points and
+    the location is added with the correct "Uploaded Shapefile" badge). Zero console/page errors across every
+    scenario. One testing-tool nuance hit and worked around, not a product bug: this codebase's `InputNumber`
+    (react-aria's `NumberField`) only commits its parsed value to the controlled `onChange` on blur, not on every
+    keystroke - a scripted `fill()`/`pressSequentially()` with no follow-up blur left the field visually correct
+    but the boundary state still `null`; a real user's next click (e.g. pressing "Add Location" itself) always
+    causes that blur naturally, so this only bit the automated pass, the same class of gap as this file's already-
+    documented leaflet-draw hover-before-click nuance.
+  - **`tsc --noEmit`/`eslint` clean** on every new/touched file (the `app/pages/_shared/dla/**` module, the 3
+    `app/pages/dla/**` routes, `lib/registered-user-nav.ts`, `config/role-access.config.ts`,
+    `app/pages/_shared/role-switcher.tsx`, `package.json`/`package-lock.json` for the new `shpjs`/`proj4`
+    dependencies). A stray CLI regression on `components/base/tooltip/tooltip.tsx` (the same silent
+    `font-barlow`/`text-balance`/focus-ring revert this file has already logged happening more than once from an
+    unrelated ingest run earlier in this session) was caught via `git diff` and restored to `HEAD` before this
+    build's own work continued, per the established "any CLI ingest can silently touch shared files, `git status`/
+    `git diff` after every ingest is not optional" rule.
+  - **Known gaps, not fixed:** the wireframe's own "Learn More" link on the Expired banner has no real
+    destination anywhere in this build, so it was left out rather than faked with a dead link (only "Renew
+    Licence," which is real, is shown). A location's geometry/method can't be edited after it's added to a
+    request - only removed and re-added - since `AddLocationModal` is add-only by design (matching the
+    wireframe, which shows no location-editing affordance either).
+- **Sept 23 2026: DLA deep dive restructured, per direct UX critique ("a really weird withdraw button sitting at
+  the bottom, the information isn't making sense... you're the admin, how would you want to see info
+  arranged?").** The wireframe's own placement (Approve/Reject/Withdraw at the bottom of the content, after
+  everything else) had been kept largely as-is in the first build - reasonable-looking on paper, wrong once an
+  admin actually has to use it: the one thing they open an Under Review request to do sat below a full scroll of
+  read-only content.
+  - **Every action moved into the toolbar, always visible, none of it behind a scroll:** Download PDF, Withdraw,
+    and (Under Review + `dlaApproval`) Reject/Approve now all sit next to "Back to requests" - the same "the
+    primary action lives where you land, not at the end of the page" principle DSA's own Edit/Revoke toolbar
+    already follows. Withdraw is `link-destructive` when it's the requester's own only action (Under Review) and
+    `secondary-destructive` once it's a real toolbar peer next to Download PDF (Active) - quieter when it's the
+    one thing on the page, more present once it's sharing space with other real actions.
+  - **Content reordered to who/why/how-long, then what, then the outcome**: "Purpose of Data Use" + "Requested
+    Agreement Period" + "Data Requestor" now come first (previously last), "Data Locations & License Categories"
+    second, and the "Agreement" card (grant period + signed file - only for Active/Expired, the actual granted
+    outcome) last. Reading top to bottom now answers "who's asking and why", then "what are they asking for",
+    then "what did we actually give them" in that order, for every role landing on the page, not just admin.
+  - **The gradient card's "Agreement Period" no longer reads as a data gap on a request that hasn't been granted
+    yet** - it was a bare "Not set" for Under Review/Rejected, even though the requester had specified a period;
+    it now falls back to the requested period with an explicit "(requested)" suffix, only saying "Not set" when
+    genuinely nothing was entered.
+  - **Banner copy neutralised - no longer written only in the requester's voice.** "Your DLA application is being
+    assessed... you'll be contacted" was shown verbatim to the admin who was supposed to act on it, which doesn't
+    make sense read as an instruction to *them*. The Under Review banner now branches: an admin with
+    `dlaApproval` sees "This request needs a decision - see Approve/Reject above" (pointing at the toolbar that's
+    now actually there), everyone else sees a neutral "This request is being assessed. The requester will be
+    notified once a decision is made." The Expired banner dropped "Your data licensing agreement ... was expired"
+    for a plain "This agreement expired on [date]" - true regardless of who's reading it.
+  - **`/better-layout` isn't a skill in this session** (checked the available-skills listing before responding) -
+    this restructure was done as a direct manual UX critique + rebuild instead, not a skill invocation.
+  - Verified `tsc --noEmit`/`eslint` clean, and live via Playwright (installed for the session, then removed):
+    the admin's Under Review view shows Withdraw/Reject/Approve in the toolbar and the decision-pointing banner
+    text; the same request as the requester shows only Withdraw and the neutral banner; Active shows Download
+    PDF + Withdraw as toolbar peers; Expired keeps its Renew Licence banner CTA with no Withdraw (correctly
+    gated off once a request is no longer Active/Under Review); a full Approve action from the new toolbar
+    button still correctly moves a request to Active. Zero console errors across every scenario checked.

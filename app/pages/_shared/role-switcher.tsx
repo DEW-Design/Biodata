@@ -15,7 +15,10 @@ import { USER_ROLES, type UserRole } from "@/lib/user-role";
 // short list rather than inferred from nav-tree membership - project-detail/observation-detail are
 // real, unrestricted pages with no nav key of their own, so "not a nav key" isn't the same signal
 // as "this role can't view it".
-const wholePageGates: { prefix: string; feature: FeatureKey }[] = [{ prefix: "/pages/dsa", feature: "dsaManagement" }];
+const wholePageGates: { prefix: string; feature: FeatureKey }[] = [
+  { prefix: "/pages/dsa", feature: "dsaManagement" },
+  { prefix: "/pages/dla", feature: "dlaAccess" },
+];
 
 // A dev tool, not a BioData SA feature - there's no real login in this exploratory build, so the
 // only way to preview a role today is hand-editing the `?userRole=` URL param, which the user

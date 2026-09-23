@@ -9,6 +9,7 @@ import { InputGroup } from "@/components/base/input/input-group";
 import { Select } from "@/components/base/select/select";
 import { Toggle } from "@/components/base/toggle/toggle";
 import { RadioButton, RadioGroup } from "@/components/base/radio-buttons/radio-buttons";
+import { TextArea } from "@/components/base/textarea/textarea";
 import { Button } from "@/components/base/buttons/button";
 import { Accordion as DewAccordion } from "@/components/base/accordion/accordion";
 import { FeaturedIcon } from "@/components/foundations/featured-icon/featured-icon";
@@ -72,21 +73,6 @@ function FieldRow({ label, value }: { label: string; value?: React.ReactNode }) 
   );
 }
 
-// Gap marker - no Textarea in components/base/** either.
-function GapField({ note }: { note: string }) {
-  return (
-    <div className="flex flex-1 items-center gap-2 rounded-lg border border-dashed p-3" style={{ borderColor: "var(--color-gray-300)" }}>
-      <span
-        className="flex size-5 shrink-0 items-center justify-center rounded text-xs font-semibold"
-        style={{ background: "var(--color-gray-100)", color: "var(--color-gray-400)" }}
-      >
-        ?
-      </span>
-      <span className="text-sm text-quaternary">{note}</span>
-    </div>
-  );
-}
-
 // ─────────────────────────────────────────────────────────────────────────
 // Read-only data - matches the Figma frame's example values (Site - 5034,
 // STO-001-02) where shown; everything else Figma showed as "-" stays "-".
@@ -129,6 +115,11 @@ const inputTokens: InspectableToken[] = [
   { cls: "ring-primary", cssVar: "--ui-ring-primary → --color-gray-300", value: "#D2D0CE", swatch: true },
   { cls: "ring-brand (focus)", cssVar: "--ui-ring-brand → --color-brand-500", value: "#2A667C", swatch: true },
 ];
+const textareaTokens: InspectableToken[] = [
+  { cls: "bg-primary", cssVar: "--ui-bg-primary", value: "#FFFFFF", swatch: true },
+  { cls: "ring-primary", cssVar: "--ui-ring-primary → --color-gray-300", value: "#D2D0CE", swatch: true },
+  { cls: "ring-brand (focus)", cssVar: "--ui-ring-brand → --color-brand-500", value: "#2A667C", swatch: true },
+];
 const selectTokens: InspectableToken[] = [
   { cls: "bg-primary", cssVar: "--ui-bg-primary", value: "#FFFFFF", swatch: true },
   { cls: "ring-primary", cssVar: "--ui-ring-primary → --color-gray-300", value: "#D2D0CE", swatch: true },
@@ -158,6 +149,7 @@ const mapping = [
   { layer: "Ctrl vocab", figma: "Controlled vocabulary dropdown", dew: "Select", note: "Location Method, Datum, Reliability, Property name" },
   { layer: "Yes/No", figma: "Binary field", dew: "Toggle", note: "Mud Map, Photopoint Marker Present" },
   { layer: "Radio", figma: "Mutually-exclusive choice", dew: "RadioButton / RadioGroup", note: "Location Details (shapefile vs. coordinates). Was ?-blocked - swapped for the real component the moment components/base/radio-buttons/** was ingested, per CONTEXT.md's flow-through rule." },
+  { layer: "Free text (2000-word comment)", figma: "Multi-line text field", dew: "TextArea", note: "Location Comment. Was ?-blocked - swapped for the real component the moment components/base/textarea/** was ingested, per CONTEXT.md's flow-through rule." },
   { layer: "Two Values with unit / Degrees", figma: "Number input + unit suffix", dew: "InputGroup + InputBase (number)", note: "Sample Site Dimensions, Photopoint Direction" },
   { layer: "Shapefile upload", figma: "Dropzone card + uploaded-file row (see reference screenshot)", dew: "Composed - not a real component", note: "components/base/input/input-file.tsx exists but is a text-field+button row, not this drag-and-drop card style - composed from FeaturedIcon + Button + tokens instead of forcing a visual mismatch" },
   { layer: "System Generated (Site ID)", figma: "Read-only, system-assigned", dew: "Plain text, not editable", note: "Never rendered as an editable field, in view or edit mode" },
@@ -184,6 +176,7 @@ export default function TestSiteDetailsPage() {
   const [locationMethod, setLocationMethod] = useState<string | undefined>();
   const [datum, setDatum] = useState<string | undefined>();
   const [reliability, setReliability] = useState<string | undefined>();
+  const [locationComment, setLocationComment] = useState("");
 
   // Photopoint
   const [photoSeqNo, setPhotoSeqNo] = useState("");
@@ -434,7 +427,11 @@ export default function TestSiteDetailsPage() {
                 </div>
                 <div className="flex w-full gap-12">
                   <p className="w-[180px] shrink-0 pt-2 text-sm text-secondary">Location Comment</p>
-                  <GapField note="Textarea - not in DEW yet (2000-word comment field)" />
+                  <div className="max-w-sm flex-1">
+                    <Inspectable label="TextArea" source="components/base/textarea/textarea.tsx" tokens={textareaTokens}>
+                      <TextArea aria-label="Location Comment" placeholder="Enter a location comment" rows={3} value={locationComment} onChange={setLocationComment} />
+                    </Inspectable>
+                  </div>
                 </div>
               </>
             )}
@@ -540,26 +537,13 @@ export default function TestSiteDetailsPage() {
 
           <h2 className="mt-8 mb-2 text-xl font-semibold text-primary">New components identified (not blocking)</h2>
           <p className="mb-4 text-sm text-tertiary">
-            One gap remains open while mapping this screen - it doesn&apos;t block the rest of it. It&apos;s marked with a visible <code className="rounded bg-secondary px-1.5 py-0.5 text-xs">?</code> in
-            the edit view above, per the convention in <code className="rounded bg-secondary px-1.5 py-0.5 text-xs">CONTEXT.md</code>. Radio was the same kind of gap until{" "}
-            <code className="rounded bg-secondary px-1.5 py-0.5 text-xs">components/base/radio-buttons/**</code> was ingested - its <code className="rounded bg-secondary px-1.5 py-0.5 text-xs">?</code> was swapped for the real{" "}
-            <code className="rounded bg-secondary px-1.5 py-0.5 text-xs">RadioButton</code>/<code className="rounded bg-secondary px-1.5 py-0.5 text-xs">RadioGroup</code> above the moment that landed, per CONTEXT.md&apos;s
-            &quot;flow-through&quot; rule. Accordion was a composed structural shell until <code className="rounded bg-secondary px-1.5 py-0.5 text-xs">Accordion variant=&quot;boxed&quot;</code> landed, and was swapped
+            No component gaps remain open on this screen. Radio and Textarea were both <code className="rounded bg-secondary px-1.5 py-0.5 text-xs">?</code>-blocked at one point - Radio&apos;s marker was swapped for the real{" "}
+            <code className="rounded bg-secondary px-1.5 py-0.5 text-xs">RadioButton</code>/<code className="rounded bg-secondary px-1.5 py-0.5 text-xs">RadioGroup</code> the moment{" "}
+            <code className="rounded bg-secondary px-1.5 py-0.5 text-xs">components/base/radio-buttons/**</code> landed, and Textarea&apos;s marker was swapped for the real{" "}
+            <code className="rounded bg-secondary px-1.5 py-0.5 text-xs">TextArea</code> the moment <code className="rounded bg-secondary px-1.5 py-0.5 text-xs">components/base/textarea/**</code> landed - both per
+            CONTEXT.md&apos;s &quot;flow-through&quot; rule. Accordion was a composed structural shell until <code className="rounded bg-secondary px-1.5 py-0.5 text-xs">Accordion variant=&quot;boxed&quot;</code> landed, and was swapped
             the same way.
           </p>
-          <div className="flex flex-wrap gap-4">
-            {[
-              { label: "Textarea", note: "Location Comment (2000 words)" },
-            ].map((g) => (
-              <div key={g.label} className="flex w-56 flex-col items-center gap-2 rounded-xl p-6" style={{ border: "1.5px dashed var(--color-gray-300)", background: "var(--color-gray-50)" }}>
-                <div className="flex size-9 items-center justify-center rounded-lg text-lg font-semibold" style={{ background: "var(--color-gray-200)", color: "var(--color-gray-500)" }}>
-                  ?
-                </div>
-                <p className="text-center text-xs text-quaternary">{g.label}</p>
-                <p className="text-center text-[11px] text-quaternary">{g.note}</p>
-              </div>
-            ))}
-          </div>
         </div>
       </div>
     </InspectorProvider>

@@ -184,16 +184,13 @@ function contactErrors(prefix: string, c: DsaContact, errors: DsaErrors, opts: {
   if (opts.requirePhone && !c.phone.trim()) errors[`${prefix}.phone`] = "Enter a contact number";
 }
 
-/**
- * Field errors keyed by path ("partner", "requestedBy.email", "systems.<id>.redirectUrl", ...).
- * "Purpose of Data Sharing" is deliberately not checked: it needs a Textarea, which DEW doesn't
- * have yet, so the form shows a `?` gap marker there and can't collect it.
- */
+/** Field errors keyed by path ("partner", "requestedBy.email", "systems.<id>.redirectUrl", ...). */
 export function validateDsa(draft: DsaDraft, mode: "draft" | "submit"): DsaErrors {
   const errors: DsaErrors = {};
   if (!draft.partner.trim()) errors.partner = "Enter the institution or organisation";
   if (mode === "draft") return errors;
 
+  if (!draft.purpose.trim()) errors.purpose = "Describe the purpose of data sharing";
   if (!draft.validFrom) errors.validFrom = "Select a start date";
   if (!draft.validTo) errors.validTo = "Select an end date";
   else if (draft.validFrom && draft.validTo < draft.validFrom) errors.validTo = "End date must be on or after the start date";

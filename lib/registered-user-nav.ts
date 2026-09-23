@@ -11,10 +11,11 @@
 import type { UserRole } from "@/lib/user-role";
 
 export const DSA_SECTION_LABEL = "Data Sharing Agreement (DSA)";
+export const DLA_SECTION_LABEL = "Data Licencing Agreement (DLA)";
 
 export interface NavNode {
   label: string;
-  key?: "dashboard" | "project-list" | "observations" | "dsa";
+  key?: "dashboard" | "project-list" | "observations" | "dsa" | "dla";
   items?: NavNode[];
 }
 
@@ -64,10 +65,14 @@ export const registeredUserNav: NavNode[] = [
   // "Data Licencing Agreement (DLA)" for Level 2 access, rather than fabricating a working
   // access-tier toggle.
   { label: "Explore", key: "observations" },
-  {
-    label: "Data Licencing Agreement (DLA)",
-    items: [{ label: "Request New DLA" }, { label: "Manage DLA" }],
-  },
+  // A keyed leaf, same "list -> deep dive" shape as Explore/DSA - "Request New DLA"/"Manage DLA"
+  // used to be inert `items` text with no page behind either, but they're really the same two
+  // real operations Projects/DSA already collapse into one screen: /pages/dla is a table of the
+  // signed-in user's own requests (a "New agreement" button is the request action, a row is the
+  // manage/view action), not two separate destinations. See CONTEXT.md, "Data Licencing Agreement
+  // (DLA)". Not in `publicUserNav` below - a signed-out guest has no DLA of their own to request or
+  // manage, same reasoning as DSA being admin-only.
+  { label: DLA_SECTION_LABEL, key: "dla" },
   {
     label: "Nominate Sensitive Species",
     items: [{ label: "Nominate Sensitive Species" }],
@@ -100,20 +105,22 @@ export const publicUserNav: NavNode[] = [
 ];
 
 // biodata-admin's tree, the part of the real admin IA that exists so far: the registered-user tree
-// with the DLA section given its admin items (approve/reject requests, withdraw an agreement), and
-// the Data Sharing Agreement (DSA) workflow added as its own section straight after it. DLA and DSA
-// are two modules, not one renamed: the admin IA lists "Data Licencing Agreement (DLA)" with
-// "Approve Reject DLA Requests" and "Withdraw DLA", and DSA arrives as a separate module in the
-// review comments. DSA is a keyed leaf like Home/Projects/Explore (the agreement list lives in the
-// page's own contextual sidebar, not as nav `items`).
+// (DLA included, same keyed leaf) with the Data Sharing Agreement (DSA) workflow added as its own
+// section straight after it. DLA and DSA are two modules, not one renamed: the admin IA lists
+// "Data Licencing Agreement (DLA)" with "Approve Reject DLA Requests" and "Withdraw DLA" as admin's
+// own actions on it, and DSA arrives as a separate module in the review comments. Per the "List ->
+// deep dive" pattern, "Approve Reject DLA Requests"/"Withdraw DLA" aren't separate nav destinations
+// either, the same call already made for DLA's own "Request New DLA"/"Manage DLA" above - they're
+// real actions inside /pages/dla itself (an Approve/Reject pair on a request Under Review, a
+// Withdraw on an Active one), gated to admin via the `dlaApproval` feature, not a second DLA nav
+// entry. DSA is a keyed leaf like Home/Projects/Explore/DLA (the agreement list lives in the page's
+// own contextual sidebar, not as nav `items`).
 //
 // NOT yet the full admin IA - see CONTEXT.md, "BioData Admin IA cross-check": User Management, Ctrl
 // Vocab, Reports (All Users), Voucher/Notification/Taxonomy management, Home's admin labels and
 // Nominate Sensitive Species nesting under Observations are all still to reconcile.
 export const biodataAdminNav: NavNode[] = registeredUserNav.flatMap((section) =>
-  section.label === "Data Licencing Agreement (DLA)"
-    ? [{ ...section, items: [{ label: "Approve Reject DLA Requests" }, { label: "Withdraw DLA" }] }, { label: DSA_SECTION_LABEL, key: "dsa" as const }]
-    : [section],
+  section.label === DLA_SECTION_LABEL ? [section, { label: DSA_SECTION_LABEL, key: "dsa" as const }] : [section],
 );
 
 /** The one nav tree a role's shell reads - see each tree's own comment for how they differ. */

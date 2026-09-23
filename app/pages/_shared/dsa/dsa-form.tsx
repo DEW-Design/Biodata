@@ -12,6 +12,7 @@ import { Input } from "@/components/base/input/input";
 import { InputDate } from "@/components/base/input/input-date";
 import { InputFile } from "@/components/base/input/input-file";
 import { MultiSelect } from "@/components/base/select/multi-select";
+import { TextArea } from "@/components/base/textarea/textarea";
 import { ConfirmationModal, DestructiveModal } from "@/components/application/modals/modal";
 import { SectionHeader } from "@/components/application/section-headers/section-headers";
 import { Tab, TabList, TabPanel, Tabs } from "@/components/application/tabs/tabs";
@@ -40,24 +41,13 @@ import {
 // system block only exists once "System" is ticked, as in the lo-fi, and each system is its own
 // boxed accordion item instead of a stack of always-open cards.
 //
-// Gaps, both logged in CONTEXT.md:
-// - "Purpose of Data Sharing" is a multi-line field and DEW has no Textarea, so it renders a `?`
-//   marker rather than a single-line lookalike. It is not validated as a result.
+// Gap, logged in CONTEXT.md:
 // - "Upload Agreement" is a drag-and-drop zone in the lo-fi; the real `InputFile` (button + file
 //   name) does the same job with the same accepted types, so it stands in for the dropzone.
 
 const MAX_FILE_BYTES = 5 * 1024 * 1024;
 
 type Attempt = null | "draft" | "submit";
-
-function GapField({ note }: { note: string }) {
-  return (
-    <div className="flex items-center gap-2 rounded-lg border border-dashed border-primary p-3">
-      <span className="flex size-5 shrink-0 items-center justify-center rounded bg-tertiary text-xs font-semibold text-quaternary">?</span>
-      <span className="text-sm text-quaternary">{note}</span>
-    </div>
-  );
-}
 
 // One lo-fi row: the group's name on the left, its fields on the right. Stacks below `lg`.
 function FormRow({ title, description, required, error, children }: { title: string; description?: string; required?: boolean; error?: string; children: ReactNode }) {
@@ -361,8 +351,16 @@ export function DsaForm({
               />
             </FormRow>
             <FormRow title="Purpose of data sharing" required>
-              <GapField note="Textarea - not in DEW yet (multi-line purpose of data sharing)" />
-              <p className="text-sm text-tertiary">Briefly describe how the data will be used and what outcomes are expected.</p>
+              <TextArea
+                label="Purpose"
+                hideRequiredIndicator
+                hint={errors.purpose ?? "Briefly describe how the data will be used and what outcomes are expected."}
+                isRequired
+                isInvalid={!!errors.purpose}
+                rows={3}
+                value={draft.purpose}
+                onChange={(v) => update({ purpose: v })}
+              />
             </FormRow>
             <FormRow title="Agreement period" required>
               <div className="grid gap-4 sm:grid-cols-2">
