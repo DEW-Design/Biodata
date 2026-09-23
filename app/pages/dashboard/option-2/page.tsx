@@ -38,6 +38,7 @@ import { DataOverviewContent } from "@/app/pages/dashboard/option-2/data-overvie
 import { BentoCard } from "@/app/pages/dashboard/option-2/bento-card";
 import { projects } from "@/app/pages/_shared/project-list-content";
 import { RoleSwitcher } from "@/app/pages/_shared/role-switcher";
+import { GuestAuthActions } from "@/app/pages/_shared/guest-auth-actions";
 import { useUserRole } from "@/lib/use-user-role";
 import { useRoleHref } from "@/lib/use-role-href";
 import { registeredUserNav, publicUserNav, registeredUserAccountMenu, registeredUserFooterLinks, type NavNode } from "@/lib/registered-user-nav";
@@ -192,33 +193,6 @@ function ProfileMenu() {
   );
 }
 
-// public-user's header replacement for ProfileMenu - there's no account to show an avatar/
-// Profile Settings/Logout for, so a signed-out guest gets a real "Log in / Sign up" entry point
-// instead. Disabled with a tooltip, not a dead link - same "no fake links" convention as
-// DisabledQuickAction below, since there's no real auth flow anywhere in this exploratory build.
-// Ported from option-1's dashboard/project-list pages (same local, per-file component there too,
-// not a shared file) per the user directly - option-2 needed the same persona-switching treatment
-// option-1 already has, not a separate mechanism.
-function GuestAuthActions() {
-  return (
-    <div className="flex items-center gap-2">
-      <Tooltip title="Coming soon - authentication isn't built yet">
-        <Focusable>
-          <span className="inline-flex">
-            <Button color="secondary" isDisabled>Log in</Button>
-          </span>
-        </Focusable>
-      </Tooltip>
-      <Tooltip title="Coming soon - authentication isn't built yet">
-        <Focusable>
-          <span className="inline-flex">
-            <Button color="primary" isDisabled>Sign up</Button>
-          </span>
-        </Focusable>
-      </Tooltip>
-    </div>
-  );
-}
 
 // Light-themed - this used to live inside the dark gradient banner, now it's secondary content
 // White-on-dark - lives inside the gradient greeting banner at the top of the page, a fixed

@@ -5,7 +5,7 @@ import { Suspense, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import type { Key } from "react-aria-components";
-import { Button as AriaButton, Dialog, DialogTrigger, Focusable, Tabs } from "react-aria-components";
+import { Button as AriaButton, Dialog, DialogTrigger, Tabs } from "react-aria-components";
 import { TabList, Tab, TabPanel } from "@/components/application/tabs/tabs";
 import { Upload01, Plus, ChevronDown, ArrowNarrowRight, HomeLine, Folder, Database01, Map01, FileLock01, Feather, BarChart01, FileSearch01, User01, PieChart03 } from "@untitledui/icons";
 import { Button } from "@/components/base/buttons/button";
@@ -19,6 +19,7 @@ import { dashboardTasks } from "@/app/pages/_shared/home-dashboard";
 import { ProjectListContent } from "@/app/pages/_shared/project-list-content";
 import { GlobalProjectSearch } from "@/app/pages/_shared/global-search";
 import { GuestActionButton } from "@/app/pages/_shared/guest-action-gate";
+import { GuestAuthActions } from "@/app/pages/_shared/guest-auth-actions";
 import { MobileNavTrigger } from "@/app/pages/_shared/mobile-nav";
 import { RoleSwitcher } from "@/app/pages/_shared/role-switcher";
 import { useFeatureAccess } from "@/lib/use-feature-access";
@@ -217,35 +218,6 @@ function ProfileMenu() {
   );
 }
 
-// public-user's header replacement for ProfileMenu - there's no account to show an avatar/
-// Profile Settings/Logout for, so a signed-out guest gets a real "Login / Sign up" entry point
-// instead (the real IA screenshot's "Header > Login / Sign up" item). Disabled with a tooltip, not
-// a dead link - same "no fake links, honestly flag what's not built yet" convention as
-// DisabledQuickAction (app/pages/_shared/home-dashboard.tsx), since there's no real auth flow
-// anywhere in this exploratory build (see CONTEXT.md: "No real auth/session"). Two buttons, not
-// one combined "Login / Sign up" control - the screenshot's single nav-tree label is naming the
-// header's auth entry point as a concept, not dictating it must render as one literal button.
-function GuestAuthActions() {
-  return (
-    <div className="flex items-center gap-2">
-      <Tooltip title="Coming soon - authentication isn't built yet">
-        <Focusable>
-          <span className="inline-flex">
-            <Button color="secondary" isDisabled>Log in</Button>
-          </span>
-        </Focusable>
-      </Tooltip>
-      <Tooltip title="Coming soon - authentication isn't built yet">
-        <Focusable>
-          <span className="inline-flex">
-            <Button color="primary" isDisabled>Sign up</Button>
-          </span>
-        </Focusable>
-      </Tooltip>
-    </div>
-  );
-}
-
 // User roles - see CONTEXT.md's "User roles" section. Full 6-role hierarchy is defined in
 // lib/user-role.ts, but build focus right now is just registered-user (default) and public-user -
 // don't build features for the other four ahead of being told to. Gated features (like the org
@@ -408,6 +380,7 @@ function Dashboard() {
               isGuest={isPublicUser}
               modalTitle="Sign up to add a project"
               modalDescription="Create a free BioData SA account to start contributing projects to South Australia's biodiversity record."
+              href="/pages/project-registration"
             />
             <GuestActionButton
               icon={Upload01}

@@ -34,12 +34,18 @@ export interface AccordionProps {
      * treatment - each item its own bordered, rounded card (`border-brand-100`), a smaller
      * brand-coloured title, and a divider between its own header and body - matching Figma's
      * "Details Container" accordion pattern (node 220:45522 and siblings, the record-detail
-     * sidebar's own per-section cards). Same interaction/state logic either way; only the item
-     * chrome changes - extending the one real component rather than forking a second one, per
-     * this codebase's "extend, don't fork" convention.
+     * sidebar's own per-section cards). `"compact"` is a third, denser treatment for a narrow
+     * utility panel (a filter side panel, not a marketing page or a wide sidebar) - small
+     * `text-sm` titles, tight `py-2.5` header padding and no reserved FAQ-width `pr-8 md:pr-12`
+     * gutter on the content, and a real `ChevronDown` (not the circle-glyph `AccordionChevron`
+     * below) coloured `text-brand-600` - built per direct feedback that the default "divided"
+     * variant's FAQ-sized spacing and circle chevron read as excessive white space and an unclear
+     * expand affordance once reused inside a filter panel. Same interaction/state logic in all
+     * three; only the item chrome changes - extending the one real component rather than forking
+     * a second one, per this codebase's "extend, don't fork" convention.
      * @default "divided"
      */
-    variant?: "divided" | "boxed";
+    variant?: "divided" | "boxed" | "compact";
     className?: string;
 }
 
@@ -83,6 +89,37 @@ export const Accordion = ({ items, defaultOpenKeys = [], openKeys: controlledOpe
             setInternalOpenKeys(next);
         }
     };
+
+    if (variant === "compact") {
+        return (
+            <div className={cx("font-barlow flex flex-col", className)}>
+                {items.map((item, index) => {
+                    const isOpen = openKeys.has(item.id);
+                    return (
+                        <div key={item.id} className={cx(index !== 0 && "border-t border-secondary")}>
+                            <button
+                                type="button"
+                                onClick={() => toggle(item.id)}
+                                aria-expanded={isOpen}
+                                className="flex w-full cursor-pointer items-center justify-between gap-2 py-2.5 text-left outline-focus-ring select-none focus-visible:outline-2 focus-visible:-outline-offset-2"
+                            >
+                                <span className="text-sm font-semibold text-primary">{item.title}</span>
+                                <ChevronDown className={cx("size-4 shrink-0 text-brand-600 transition-transform duration-150", isOpen && "rotate-180")} />
+                            </button>
+                            <motion.div
+                                className="overflow-hidden"
+                                initial={false}
+                                animate={{ height: isOpen ? "auto" : 0, opacity: isOpen ? 1 : 0 }}
+                                transition={{ type: "spring", damping: 24, stiffness: 240, bounce: 0.4 }}
+                            >
+                                <div className="pb-3">{item.content}</div>
+                            </motion.div>
+                        </div>
+                    );
+                })}
+            </div>
+        );
+    }
 
     if (variant === "boxed") {
         return (

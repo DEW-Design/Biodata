@@ -5,7 +5,7 @@ import { Suspense, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import type { Key } from "react-aria-components";
-import { Button as AriaButton, Dialog, DialogTrigger, Focusable, Tabs } from "react-aria-components";
+import { Button as AriaButton, Dialog, DialogTrigger, Tabs } from "react-aria-components";
 import { TabList, Tab, TabPanel } from "@/components/application/tabs/tabs";
 import { Upload01, Plus, ChevronDown, ArrowNarrowRight, HomeLine, Folder, Database01, Map01, FileLock01, Feather, BarChart01, FileSearch01, User01, PieChart03 } from "@untitledui/icons";
 import { Button } from "@/components/base/buttons/button";
@@ -19,6 +19,7 @@ import { dashboardTasks } from "@/app/pages/_shared/home-dashboard";
 import { ProjectListContent } from "@/app/pages/_shared/project-list-content";
 import { GlobalProjectSearch } from "@/app/pages/_shared/global-search";
 import { GuestActionButton } from "@/app/pages/_shared/guest-action-gate";
+import { GuestAuthActions } from "@/app/pages/_shared/guest-auth-actions";
 import { MobileNavTrigger } from "@/app/pages/_shared/mobile-nav";
 import { RoleSwitcher } from "@/app/pages/_shared/role-switcher";
 import { useFeatureAccess } from "@/lib/use-feature-access";
@@ -176,29 +177,6 @@ function SectionPlaceholder({ node }: { node: NavNode }) {
   );
 }
 
-// public-user's header replacement for ProfileMenu - see dashboard/option-1's copy of this exact
-// component for the full rationale (no account to show, no real auth flow built yet).
-function GuestAuthActions() {
-  return (
-    <div className="flex items-center gap-2">
-      <Tooltip title="Coming soon - authentication isn't built yet">
-        <Focusable>
-          <span className="inline-flex">
-            <Button color="secondary" isDisabled>Log in</Button>
-          </span>
-        </Focusable>
-      </Tooltip>
-      <Tooltip title="Coming soon - authentication isn't built yet">
-        <Focusable>
-          <span className="inline-flex">
-            <Button color="primary" isDisabled>Sign up</Button>
-          </span>
-        </Focusable>
-      </Tooltip>
-    </div>
-  );
-}
-
 export default function ProjectListPage() {
   return (
     <Suspense fallback={null}>
@@ -345,6 +323,7 @@ function ProjectList() {
               isGuest={isPublicUser}
               modalTitle="Sign up to add a project"
               modalDescription="Create a free BioData SA account to start contributing projects to South Australia's biodiversity record."
+              href="/pages/project-registration"
             />
             <GuestActionButton
               icon={Upload01}

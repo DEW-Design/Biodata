@@ -5,7 +5,7 @@ import { Suspense, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import type { Key } from "react-aria-components";
-import { Button as AriaButton, Dialog, DialogTrigger, Focusable, Tabs } from "react-aria-components";
+import { Button as AriaButton, Dialog, DialogTrigger, Tabs } from "react-aria-components";
 import { TabList, Tab, TabPanel, Tabs as ContentTabs } from "@/components/application/tabs/tabs";
 import {
   SearchMd,
@@ -49,17 +49,25 @@ import { HomeTabPanels } from "@/app/pages/_shared/home-tab-panels";
 import { dashboardTasks } from "@/app/pages/_shared/home-dashboard";
 import { GlobalProjectSearch } from "@/app/pages/_shared/global-search";
 import { GuestActionButton } from "@/app/pages/_shared/guest-action-gate";
+import { GuestAuthActions } from "@/app/pages/_shared/guest-auth-actions";
 import { ArtefactCarousel, ArtefactLightbox, type Artefact } from "@/app/pages/_shared/artefact-lightbox";
 import { MobileNavTrigger } from "@/app/pages/_shared/mobile-nav";
 import { RoleSwitcher } from "@/app/pages/_shared/role-switcher";
 import { BentoCard } from "@/app/pages/_shared/bento-card";
 import { MapView } from "@/app/pages/_shared/map-view";
+import { LocationDetailsTable } from "@/app/pages/_shared/location-details-table";
+import { searchEvents } from "@/app/pages/_shared/map-search/search-data";
+
 import { useFeatureAccess } from "@/lib/use-feature-access";
 import { useUserRole } from "@/lib/use-user-role";
 import { useRoleHref } from "@/lib/use-role-href";
 import { orgLabelForRole } from "@/lib/user-role";
 import { registeredUserNav, publicUserNav, registeredUserAccountMenu, registeredUserFooterLinks, keyHref, type NavNode } from "@/lib/registered-user-nav";
 import { cx } from "@/utils/cx";
+
+// This page's project is the same Adelaide Hills project the map search dataset models - its real
+// coordinates back the shared Location Details table in the Locations accordion.
+const adelaideHillsProject = searchEvents.find((e) => e.id === "adelaide-hills");
 
 // One project's detail view, on the sidebar-nav shell - same three-column chrome as
 // project-list/option-1 (icon rail + contextual sidebar + main content), reused verbatim. Reached
@@ -640,29 +648,6 @@ function SectionPlaceholder({ node }: { node: NavNode }) {
   );
 }
 
-// public-user's header replacement for ProfileMenu - see dashboard/option-1's copy of this exact
-// component for the full rationale (no account to show, no real auth flow built yet).
-function GuestAuthActions() {
-  return (
-    <div className="flex items-center gap-2">
-      <Tooltip title="Coming soon - authentication isn't built yet">
-        <Focusable>
-          <span className="inline-flex">
-            <Button color="secondary" isDisabled>Log in</Button>
-          </span>
-        </Focusable>
-      </Tooltip>
-      <Tooltip title="Coming soon - authentication isn't built yet">
-        <Focusable>
-          <span className="inline-flex">
-            <Button color="primary" isDisabled>Sign up</Button>
-          </span>
-        </Focusable>
-      </Tooltip>
-    </div>
-  );
-}
-
 function MetaField({ label, children }: { label: string; children: ReactNode }) {
   return (
     <div className="flex flex-col gap-1">
@@ -921,7 +906,19 @@ const detailAccordionItems = [
   {
     id: "locations",
     title: "Locations",
-    content: <DetailRow label="Study Area" value="Cleland Conservation Park and surrounding reserves, Adelaide Hills" flagged fieldId="study-area" />,
+    content: (
+      <div className="flex flex-col gap-3">
+        {/* Same shared coordinate table as every other record type - this project's real
+            coordinates come from the same Adelaide Hills project in the search dataset. */}
+        <div className="flex flex-col gap-1 sm:flex-row sm:items-start sm:gap-4">
+          <span className="w-56 shrink-0 text-sm text-tertiary sm:pt-2.5">Location Details</span>
+          <div className="min-w-0 flex-1">
+            <LocationDetailsTable lat={adelaideHillsProject?.lat} lon={adelaideHillsProject?.lon} />
+          </div>
+        </div>
+        <DetailRow label="Study Area" value="Cleland Conservation Park and surrounding reserves, Adelaide Hills" flagged fieldId="study-area" />
+      </div>
+    ),
   },
   {
     id: "permit",
@@ -1323,6 +1320,7 @@ function ProjectDetail() {
               isGuest={isPublicUser}
               modalTitle="Sign up to add a project"
               modalDescription="Create a free BioData SA account to start contributing projects to South Australia's biodiversity record."
+              href="/pages/project-registration"
             />
             <GuestActionButton
               icon={Upload01}

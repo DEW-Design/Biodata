@@ -89,6 +89,21 @@ function formatPoint([lat, lon]: [number, number]): string {
     return `${lat.toFixed(2)}, ${lon.toFixed(2)}`;
 }
 
+/** Deliberately reduces a coordinate's precision for a sensitive/`"Level 2"` species record (see
+ *  `LicenceLevel` in search-data.ts) - snaps both lat and lon to the centre of a grid cell sized to
+ *  the requested radius (≈111km per degree of latitude, close enough for this illustrative build's
+ *  own already-approximate coordinates - see `NationalPark`'s own doc comment on that convention),
+ *  rather than adding random jitter. Deterministic and honestly reproducible: the same input always
+ *  obfuscates to the same output, unlike a random offset that would silently "wander" a sensitive
+ *  species' displayed location on every render. This is the same real BDBSA mechanic already
+ *  documented in CONTEXT.md's "BDBSA domain research" - a sensitive species' precise location is
+ *  withheld even when the rest of its project is public. */
+export function obfuscateCoordinate(lat: number, lon: number, radiusKm: number): { lat: number; lon: number; radiusKm: number } {
+    const gridDeg = radiusKm / 111;
+    const snap = (value: number) => Math.round(value / gridDeg) * gridDeg;
+    return { lat: Number(snap(lat).toFixed(2)), lon: Number(snap(lon).toFixed(2)), radiusKm };
+}
+
 export function boundarySummary(boundary: Boundary): string {
     if (boundary.kind === "circle") {
         const place = boundary.label ?? formatPoint(boundary.center);

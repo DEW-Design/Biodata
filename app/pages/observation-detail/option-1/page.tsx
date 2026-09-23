@@ -46,9 +46,11 @@ import { HomeTabPanels } from "@/app/pages/_shared/home-tab-panels";
 import { dashboardTasks } from "@/app/pages/_shared/home-dashboard";
 import { GlobalProjectSearch } from "@/app/pages/_shared/global-search";
 import { GuestActionButton } from "@/app/pages/_shared/guest-action-gate";
+import { GuestAuthActions } from "@/app/pages/_shared/guest-auth-actions";
 import { MobileNavTrigger } from "@/app/pages/_shared/mobile-nav";
 import { RoleSwitcher } from "@/app/pages/_shared/role-switcher";
 import { MapView } from "@/app/pages/_shared/map-view";
+import { LocationDetailsTable } from "@/app/pages/_shared/location-details-table";
 import { useFeatureAccess } from "@/lib/use-feature-access";
 import { useUserRole } from "@/lib/use-user-role";
 import { useRoleHref } from "@/lib/use-role-href";
@@ -537,27 +539,6 @@ function SectionPlaceholder({ node }: { node: NavNode }) {
   );
 }
 
-function GuestAuthActions() {
-  return (
-    <div className="flex items-center gap-2">
-      <Tooltip title="Coming soon - authentication isn't built yet">
-        <Focusable>
-          <span className="inline-flex">
-            <Button color="secondary" isDisabled>Log in</Button>
-          </span>
-        </Focusable>
-      </Tooltip>
-      <Tooltip title="Coming soon - authentication isn't built yet">
-        <Focusable>
-          <span className="inline-flex">
-            <Button color="primary" isDisabled>Sign up</Button>
-          </span>
-        </Focusable>
-      </Tooltip>
-    </div>
-  );
-}
-
 function MetaField({ label, children }: { label: string; children: ReactNode }) {
   return (
     <div className="flex flex-col gap-1">
@@ -816,17 +797,23 @@ const observationAccordionItems = [
           <MapView />
         </div>
         <div className="flex flex-col gap-3">
-          <div className="flex items-center justify-between gap-3">
-            <span className="w-56 shrink-0 text-sm text-tertiary">Location Details</span>
-            <Tooltip title="Coming soon - shapefile downloads aren't wired up yet">
-              <Focusable>
-                <span className="inline-flex">
-                  <Button color="link-color" size="sm" isDisabled>
-                    Shapefile.shp
-                  </Button>
-                </span>
-              </Focusable>
-            </Tooltip>
+          {/* Same shared coordinate table as every other record type. This mock observation
+              carries no coordinates of its own, so every cell is an honest "-". The shapefile
+              link stays underneath it - still a real (not-yet-wired) attachment on this record. */}
+          <div className="flex flex-col gap-1 sm:flex-row sm:items-start sm:gap-3">
+            <span className="w-56 shrink-0 text-sm text-tertiary sm:pt-2.5">Location Details</span>
+            <div className="flex min-w-0 flex-1 flex-col items-start gap-2">
+              <LocationDetailsTable />
+              <Tooltip title="Coming soon - shapefile downloads aren't wired up yet">
+                <Focusable>
+                  <span className="inline-flex">
+                    <Button color="link-color" size="sm" isDisabled>
+                      Shapefile.shp
+                    </Button>
+                  </span>
+                </Focusable>
+              </Tooltip>
+            </div>
           </div>
           <DetailRow label="IBRA Region" value="Flinders Lofty Block" />
           <DetailRow label="IBRA Sub Region" value="Southern Lofty" />
@@ -1003,6 +990,7 @@ function ObservationDetail() {
               isGuest={isPublicUser}
               modalTitle="Sign up to add a project"
               modalDescription="Create a free BioData SA account to start contributing projects to South Australia's biodiversity record."
+              href="/pages/project-registration"
             />
             <GuestActionButton
               icon={Upload01}

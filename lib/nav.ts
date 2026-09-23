@@ -52,7 +52,9 @@ export const rawNav: NavSection[] = [
   {
     title: "Custom Components",
     items: [
+      { title: "Date picker", href: "/custom-components/date-picker", description: "Segmented DD/MM/YYYY field plus a real calendar-icon trigger opening a Calendar popover - input-date.tsx is segmented-entry only, with no clickable picker. Pending a stakeholder decision on promotion into Components." },
       { title: "Date range", href: "/custom-components/date-range", description: "Prev-arrow / calendar / range-text / next-arrow control, styled like an Input - no real DEW equivalent (input-date.tsx is single-value only). Pending a stakeholder decision on promotion into Components." },
+      { title: "Textarea", href: "/custom-components/textarea", description: "Multi-line text field styled exactly like Input - no real DEW equivalent exists yet. Pending a stakeholder decision on promotion into Components." },
     ],
   },
   {

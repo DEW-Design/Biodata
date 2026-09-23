@@ -2,17 +2,17 @@
 
 import { Suspense, useState } from "react";
 import Link from "next/link";
-import { Button as AriaButton, Dialog, DialogTrigger, Focusable } from "react-aria-components";
+import { Button as AriaButton, Dialog, DialogTrigger } from "react-aria-components";
 import { Bell01, ChevronDown, Upload01, Plus, SearchMd } from "@untitledui/icons";
 import { Button } from "@/components/base/buttons/button";
 import { Avatar } from "@/components/base/avatar/avatar";
 import { Input } from "@/components/base/input/input";
-import { Tooltip } from "@/components/base/tooltip/tooltip";
 import { Popover } from "@/components/base/select/popover";
 import { Badge } from "@/components/base/badges/badges";
 import type { BadgeColor } from "@/components/base/badges/badges";
 import { Cell, Column, Row, Table, TableBody, TableHeader } from "@/components/base/table/table";
 import { RoleSwitcher } from "@/app/pages/_shared/role-switcher";
+import { GuestAuthActions } from "@/app/pages/_shared/guest-auth-actions";
 import { useUserRole } from "@/lib/use-user-role";
 import { useRoleHref } from "@/lib/use-role-href";
 import { registeredUserNav, publicUserNav, registeredUserAccountMenu, registeredUserFooterLinks, type NavNode } from "@/lib/registered-user-nav";
@@ -148,30 +148,6 @@ function ProfileMenu() {
         </Dialog>
       </Popover>
     </DialogTrigger>
-  );
-}
-
-// public-user's header replacement for ProfileMenu - see dashboard/option-2's copy of this exact
-// component for the full rationale (no account to show, no real auth flow built yet). Ported from
-// option-1's project-list page, same local per-file component there too, not a shared file.
-function GuestAuthActions() {
-  return (
-    <div className="flex items-center gap-2">
-      <Tooltip title="Coming soon - authentication isn't built yet">
-        <Focusable>
-          <span className="inline-flex">
-            <Button color="secondary" isDisabled>Log in</Button>
-          </span>
-        </Focusable>
-      </Tooltip>
-      <Tooltip title="Coming soon - authentication isn't built yet">
-        <Focusable>
-          <span className="inline-flex">
-            <Button color="primary" isDisabled>Sign up</Button>
-          </span>
-        </Focusable>
-      </Tooltip>
-    </div>
   );
 }
 
