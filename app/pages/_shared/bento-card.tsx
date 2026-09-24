@@ -16,7 +16,7 @@ export function BentoCard({ children, className }: { children: ReactNode; classN
 // `size="md"` (default) is the Flora and Fauna Dashboard's own KPI-row treatment - large centered
 // number, meant to be the visual anchor of a landing tab. `size="sm"` is a second, deliberately
 // smaller variant for contexts where the number is supporting detail, not the headline - e.g.
-// project-detail/option-1's Overview tab, where 4 of these sitting at `md` size pushed real
+// project-detail's Overview tab, where 4 of these sitting at `md` size pushed real
 // content (Data Owner, Project Manager) below the fold. Left-aligned, not centered, and noticeably
 // shorter (smaller value text, tighter internal gap) - reads as a compact stat row, not a second
 // KPI dashboard stacked on top of the page's actual content.

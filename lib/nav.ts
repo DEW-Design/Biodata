@@ -44,15 +44,10 @@ export const rawNav: NavSection[] = [
       { title: "Select", href: "/components/select", description: "Dropdown selection - single select, searchable combobox, multi-select, tag select, and native select, in three sizes." },
       { title: "Table", href: "/components/table", description: "React Aria Table - a plain primitive plus TableCard, the full data table with row selection, sorting, and row-actions dropdown." },
       { title: "Tabs", href: "/components/tabs", description: "React Aria Tabs - 5 horizontal types, 5 vertical types, two sizes, optional icon/badge, full-width layout." },
+      { title: "Textarea", href: "/components/textarea", description: "Multi-line text input - label, hint, tooltip, two sizes, invalid and disabled states." },
       { title: "Toast", href: "/components/toast", description: "Transient corner notification powered by sonner - 6 colours, optional action, composed from Button/CloseButton/FeaturedIcon." },
       { title: "Toggle", href: "/components/toggle", description: "Binary switch control with an optional label/hint and a slim track variant, in two sizes." },
       { title: "Tooltip", href: "/components/tooltip", description: "Hover/focus overlay for supplementary context - 4 placements, description, arrow, delay." },
-    ],
-  },
-  {
-    title: "Custom Components",
-    items: [
-      { title: "Date range", href: "/custom-components/date-range", description: "Prev-arrow / calendar / range-text / next-arrow control, styled like an Input - no real DEW equivalent (input-date.tsx is single-value only). Pending a stakeholder decision on promotion into Components." },
     ],
   },
   {

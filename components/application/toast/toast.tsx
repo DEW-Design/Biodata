@@ -53,8 +53,8 @@ export const ToastCard = ({ title, description, color = "default", actionLabel, 
             <FeaturedIcon icon={iconMap[color]} color={color === "default" ? "gray" : color} theme={color === "default" ? "modern" : "outline"} size="md" />
 
             <div className="flex flex-1 flex-col gap-1 pr-6">
-                <p className="text-sm font-semibold text-secondary">{title}</p>
-                {description && <p className="text-sm text-tertiary">{description}</p>}
+                <p className="text-sm font-semibold text-balance text-secondary">{title}</p>
+                {description && <p className="text-sm text-balance text-tertiary">{description}</p>}
 
                 {actionLabel && onAction && (
                     <div className="-ml-3 mt-1">

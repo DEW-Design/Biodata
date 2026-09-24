@@ -63,7 +63,7 @@ export const RadioGroupRadioButton = ({ items, size = "sm", className, ...props 
                                     </span>
                                     <span className={cx("text-tertiary", size === "md" ? "text-md" : "text-sm")}>{plan.secondaryTitle}</span>
                                 </AriaLabel>
-                                <AriaText slot="description" className={cx("text-sm text-tertiary", size === "md" ? "text-md" : "text-sm")}>
+                                <AriaText slot="description" className={cx("text-sm text-balance text-tertiary", size === "md" ? "text-md" : "text-sm")}>
                                     {plan.description}
                                 </AriaText>
                             </div>

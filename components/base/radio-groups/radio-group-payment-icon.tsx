@@ -44,11 +44,14 @@ export const RadioGroupPaymentIcon = ({ items, size = "sm", className, ...props 
                                 <div>
                                     <div className={cx("flex flex-col", size === "md" ? "gap-0.5" : "")}>
                                         <AriaLabel
-                                            className={cx("pointer-events-none text-secondary", size === "md" ? "text-md font-medium" : "text-sm font-medium")}
+                                            className={cx(
+                                                "pointer-events-none text-balance text-secondary",
+                                                size === "md" ? "text-md font-medium" : "text-sm font-medium",
+                                            )}
                                         >
                                             {card.title}
                                         </AriaLabel>
-                                        <AriaText slot="description" className={cx("text-tertiary", size === "md" ? "text-md" : "text-sm")}>
+                                        <AriaText slot="description" className={cx("text-balance text-tertiary", size === "md" ? "text-md" : "text-sm")}>
                                             {card.description}
                                         </AriaText>
                                     </div>

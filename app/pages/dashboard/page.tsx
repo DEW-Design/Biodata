@@ -7,7 +7,7 @@ import { useRouter } from "next/navigation";
 import type { Key } from "react-aria-components";
 import { Button as AriaButton, Dialog, DialogTrigger, Focusable, Tabs } from "react-aria-components";
 import { TabList, Tab, TabPanel } from "@/components/application/tabs/tabs";
-import { Upload01, Plus, ChevronDown, ArrowNarrowRight, HomeLine, Folder, Database01, Eye, FileLock01, Feather, BarChart01, FileSearch01, User01, PieChart03 } from "@untitledui/icons";
+import { Upload01, Plus, ChevronDown, ArrowNarrowRight, HomeLine, Folder, Database01, Map01, FileCheck02, FileLock01, Feather, BarChart01, FileSearch01, User01, PieChart03 } from "@untitledui/icons";
 import { Button } from "@/components/base/buttons/button";
 import { Avatar } from "@/components/base/avatar/avatar";
 import { Tooltip, TooltipTrigger } from "@/components/base/tooltip/tooltip";
@@ -19,13 +19,14 @@ import { dashboardTasks } from "@/app/pages/_shared/home-dashboard";
 import { ProjectListContent } from "@/app/pages/_shared/project-list-content";
 import { GlobalProjectSearch } from "@/app/pages/_shared/global-search";
 import { GuestActionButton } from "@/app/pages/_shared/guest-action-gate";
+import { GuestAboutAside, GuestGradientCard } from "@/app/pages/_shared/guest-home";
 import { MobileNavTrigger } from "@/app/pages/_shared/mobile-nav";
 import { RoleSwitcher } from "@/app/pages/_shared/role-switcher";
 import { useFeatureAccess } from "@/lib/use-feature-access";
 import { useUserRole } from "@/lib/use-user-role";
 import { useRoleHref } from "@/lib/use-role-href";
 import { orgLabelForRole } from "@/lib/user-role";
-import { registeredUserNav, publicUserNav, registeredUserAccountMenu, registeredUserFooterLinks, keyHref, type NavNode } from "@/lib/registered-user-nav";
+import { navForRole, registeredUserAccountMenu, registeredUserFooterLinks, keyHref, type NavNode } from "@/lib/registered-user-nav";
 import { cx } from "@/utils/cx";
 
 // One icon per top-level section, for the primary icon rail below - presentation-only, so it
@@ -34,8 +35,9 @@ import { cx } from "@/utils/cx";
 const sectionIcons: Record<string, FC<{ className?: string }>> = {
   Home: HomeLine,
   Projects: Folder,
-  Observations: Eye,
+  Explore: Map01,
   "Data Licencing Agreement (DLA)": FileLock01,
+  "Data Sharing Agreement (DSA)": FileCheck02,
   "Nominate Sensitive Species": Feather,
   "Reports (Own Submissions)": BarChart01,
   "Template Finder": FileSearch01,
@@ -247,7 +249,7 @@ function GuestAuthActions() {
 }
 
 // User roles - see CONTEXT.md's "User roles" section. Full 6-role hierarchy is defined in
-// lib/user-role.ts, but build focus right now is just registered-user (default) and public-user -
+// lib/user-role.ts, but build focus right now is just public-user (the default) and registered-user -
 // don't build features for the other four ahead of being told to. Gated features (like the org
 // switcher below) read config/role-access.config.ts's role-access matrix via useFeatureAccess
 // rather than checking the role inline - that matrix is the single place feature visibility is
@@ -272,18 +274,23 @@ function Dashboard() {
   // IA this is built from.
   const role = useUserRole();
   const isPublicUser = role === "public-user";
-  const nav = isPublicUser ? publicUserNav : registeredUserNav;
+  const nav = navForRole(role);
   const roleHref = useRoleHref();
   const [activeSection, setActiveSection] = useState("Home");
   const [homeTab, setHomeTab] = useState<Key>("dashboard");
   const [projectsTab, setProjectsTab] = useState<Key>("projects");
+  // public-user's own Flora and Fauna Dashboard tab (Overview/Flora/Fauna/Projects) - separate from
+  // `homeTab` above, which is registered-user's My BioData/Flora-Dashboard switcher and doesn't
+  // apply to a guest (see the isPublicUser branch below). Lifted here, not left uncontrolled inside
+  // DataOverviewContent, so the gradient card's copy can change with it.
+  const [guestDashboardTab, setGuestDashboardTab] = useState<Key>("overview");
   const activeSectionNode = nav.find((section) => section.label === activeSection) ?? nav[0];
 
   // Home and Projects both have a real page of their own - clicking either from a *different*
   // page's shell now actually navigates there instead of faking the content in place, so the URL,
   // back/forward, and refresh all behave honestly. Sections with no real page yet (Observations,
   // DLA, ...) stay a local, in-place section switch, same as before. Flagged directly by the user
-  // off a screenshot: leaving project-list/option-1's URL in the bar while showing Home's content
+  // off a screenshot: leaving project-list's URL in the bar while showing Home's content
   // was "a bit odd". `roleHref` (not a bare path) - a plain `/pages/...` path drops the active
   // role, silently falling back to `registered-user` on the destination page. Flagged directly by
   // the user as a dead end: switching Home -> Projects as `public-user` landed on
@@ -465,23 +472,28 @@ function Dashboard() {
         // role. A two-tab switcher with only one real tab would be dishonest UI - a control
         // implying a choice that doesn't exist - not just a visual downgrade.
         //
-        // No contextual-sidebar column at all here, deliberately - not the usual aside with a
-        // section-label heading and nothing else in it. That shape works when the aside holds real
-        // selectable content (a NavTree, a Tabs switcher); with neither, it's just a 286px-wide
-        // empty box with the footer links stranded at the bottom - dead space, not minimalism.
-        // Flagged directly by the user as looking empty/unfinished. Since public-user is explicitly
-        // "a bare bones version of the platform," dropping the column and letting main content use
-        // the full width reads as a deliberately leaner layout instead of a broken one. The footer
-        // links this column would've carried are still reachable from Observations' own aside
-        // (the one section left that still uses it) - not worth inventing a new place to repeat
-        // them just so every section carries the exact same chrome.
+        // Column 2 is `GuestAboutAside` ("What is BioData SA?" + Guides, the "Reference" variant
+        // picked from `/proto/public-user` after comparing it against a boxed-accordion
+        // "Disclosure" and a stepped "How it works") - not the empty box the pre-Sept-21 version of
+        // this branch dropped entirely for lack of anything to put in it. Same content for Home and
+        // Projects (only the eyebrow label differs), matching the lab exactly.
         if (isPublicUser && (activeSection === "Home" || activeSection === "Projects")) {
           return (
             <div className="flex flex-1 overflow-hidden">
               {iconRail}
+              <GuestAboutAside sectionLabel={activeSection} />
 
               <main className="flex flex-1 flex-col overflow-y-auto">
-                {activeSection === "Home" ? <DataOverviewContent /> : <ProjectListContent />}
+                {activeSection === "Home" ? (
+                  <>
+                    <div className="p-6">
+                      <GuestGradientCard tab={guestDashboardTab} />
+                    </div>
+                    <DataOverviewContent activeTab={guestDashboardTab} onActiveTabChange={setGuestDashboardTab} />
+                  </>
+                ) : (
+                  <ProjectListContent />
+                )}
               </main>
             </div>
           );
@@ -492,7 +504,7 @@ function Dashboard() {
         // Tabs keeps a single internal collection for its whole lifetime; a Tabs that always exists
         // while its TabList only mounts once you switch to Home crashes the first time TabList
         // mounts ("Cannot destructure property 'onAction' ... as it is undefined") - caught on
-        // project-detail/option-1, fixed the same way here since this file has the identical shape.
+        // project-detail, fixed the same way here since this file has the identical shape.
         if (activeSection === "Home") {
           return (
             <Tabs orientation="vertical" selectedKey={homeTab} onSelectionChange={setHomeTab} className="flex flex-1 overflow-hidden">
@@ -527,7 +539,7 @@ function Dashboard() {
         // Projects' two views (Projects / Datasets) get the same "own Tabs boundary, own two peer
         // tabs" treatment as Home's My BioData/Flora and Fauna Dashboard - a single "Manage Project
         // and Datasets" link used to blend these into one destination, flagged directly by the
-        // user off project-list/option-1's sidebar. Datasets has no reference/content yet, so it's
+        // user off project-list's sidebar. Datasets has no reference/content yet, so it's
         // the honest "hasn't been scoped yet" placeholder rather than an invented list.
         if (activeSection === "Projects") {
           return (

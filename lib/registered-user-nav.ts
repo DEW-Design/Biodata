@@ -8,23 +8,26 @@
 // it renders as inert text, same "honest, not a placeholder link" convention used elsewhere for
 // undecided content. See `keyHref` below for how a `key` becomes a real path.
 
+import type { UserRole } from "@/lib/user-role";
+
+export const DSA_SECTION_LABEL = "Data Sharing Agreement (DSA)";
+export const DLA_SECTION_LABEL = "Data Licencing Agreement (DLA)";
+
 export interface NavNode {
   label: string;
-  key?: "dashboard" | "project-list";
+  key?: "dashboard" | "project-list" | "observations" | "dsa" | "dla";
   items?: NavNode[];
 }
 
 /**
- * A nav `key`'s real, decided path on the sidebar (option-1-style) shells. Dashboard is a special
- * case: per the Sept 16 layout decision (option-1 shell picked as the direction, its dashboard
- * folded into the canonical `/pages/dashboard` with no `/option-*` suffix), while every other keyed
- * section (just `project-list` today) is still mid-exploration and stays on its `/option-1` variant
- * route. Centralised here rather than inlined at each of the sidebar shells' 3 call sites (NavTree's
- * own href, SectionPlaceholder's "Go to X" button, goToSection's router.push) so the one exception
- * can't drift out of sync between them.
+ * A nav `key`'s real path on the sidebar shells: always `/pages/<key>`, no `/option-*` suffix.
+ * Every keyed section's page was folded into its plain route once the sidebar shell was picked as
+ * the direction (see CONTEXT.md's Sept 16 2026 layout decision and the route normalisation that
+ * followed). Centralised here rather than inlined at each shell's call sites (NavTree's own href,
+ * SectionPlaceholder's "Go to X" button, goToSection's router.push) so they can't drift apart.
  */
 export function keyHref(key: NonNullable<NavNode["key"]>): string {
-  return key === "dashboard" ? "/pages/dashboard" : `/pages/${key}/option-1`;
+  return `/pages/${key}`;
 }
 
 export const registeredUserNav: NavNode[] = [
@@ -36,7 +39,7 @@ export const registeredUserNav: NavNode[] = [
   // group containing one combined "Manage Project and Datasets" destination - that single label
   // blended two distinct resources into one, flagged directly by the user. The screen behind this
   // key now presents Projects and Datasets as two peer tabs in its own contextual sidebar (see
-  // dashboard/option-1's "Projects" Tabs block), the same "two peer views, not one blended one"
+  // dashboard's "Projects" Tabs block), the same "two peer views, not one blended one"
   // treatment Home already has for My BioData/Flora and Fauna Dashboard - so, like Home, that split
   // lives as hardcoded tabs in each page's own JSX, not as `items` here.
   //
@@ -47,14 +50,29 @@ export const registeredUserNav: NavNode[] = [
   // as data in `projectActions` below so they're not lost, ready to become real buttons/filters/a
   // wizard inside that screen once that's scoped, rather than sit here as more sidebar links.
   { label: "Projects", key: "project-list" },
-  {
-    label: "Observations",
-    items: [{ label: "View Level 1 Public Observation Data" }, { label: "View Level 2 Observation Data (DLA Access)" }],
-  },
-  {
-    label: "Data Licencing Agreement (DLA)",
-    items: [{ label: "Request New DLA" }, { label: "Manage DLA" }],
-  },
+  // This is the map search screen now, same "leaf with its own key" shape as Home and Projects -
+  // it used to be "Observations", holding its Level 1/Level 2 split as inert `items` text with no
+  // real page behind either. Per direct request for a real map-search interface (draw a boundary,
+  // enter coordinates, or pick a national park; search across Projects/Events/Occurrence/
+  // Observations), built at app/pages/observations - and, per direct feedback on that
+  // build, renamed "Observations" -> "Explore" here (the nav label only; "Observations" stays the
+  // name of the record type it searches for, one of the 4 result tabs on that page - the `key`,
+  // `keyHref`, and the route itself are also untouched, still `observations`/`/pages/observations`, since only the visible label and its icon were flagged, not the URL). The Level 1
+  // (public) vs. Level 2 (DLA-licensed) distinction from the old `items` isn't dropped - it's a
+  // real, already-documented access tier (see the "BDBSA domain research" section below) - but
+  // building actual DLA-gated result filtering is a separate, larger piece of work than this
+  // search UI itself, so today every role sees the same Level 1 results with a note pointing at
+  // "Data Licencing Agreement (DLA)" for Level 2 access, rather than fabricating a working
+  // access-tier toggle.
+  { label: "Explore", key: "observations" },
+  // A keyed leaf, same "list -> deep dive" shape as Explore/DSA - "Request New DLA"/"Manage DLA"
+  // used to be inert `items` text with no page behind either, but they're really the same two
+  // real operations Projects/DSA already collapse into one screen: /pages/dla is a table of the
+  // signed-in user's own requests (a "New agreement" button is the request action, a row is the
+  // manage/view action), not two separate destinations. See CONTEXT.md, "Data Licencing Agreement
+  // (DLA)". Not in `publicUserNav` below - a signed-out guest has no DLA of their own to request or
+  // manage, same reasoning as DSA being admin-only.
+  { label: DLA_SECTION_LABEL, key: "dla" },
   {
     label: "Nominate Sensitive Species",
     items: [{ label: "Nominate Sensitive Species" }],
@@ -72,7 +90,7 @@ export const registeredUserNav: NavNode[] = [
 // public-user's ("Guest User") real, decided IA - a separate tree, not a filtered view of
 // registeredUserNav above, because it isn't a subset of the same shape: Home and Projects are each
 // a single destination here (no My BioData/Datasets peer tab - a signed-out guest has no personal
-// contributions or private datasets to show a second tab for), Observations drops its Level 2/DLA
+// contributions or private datasets to show a second tab for), Explore drops its Level 2/DLA
 // item entirely, and Data Licencing Agreement/Nominate Sensitive Species/Reports/Template Finder
 // don't exist as sections at all (not just hidden leaves inside them). Reuses the `dashboard`/
 // `project-list` keys since the underlying pages are the same ones registered-user's tree points
@@ -81,11 +99,36 @@ export const registeredUserNav: NavNode[] = [
 export const publicUserNav: NavNode[] = [
   { label: "Home", key: "dashboard" },
   { label: "Projects", key: "project-list" },
-  {
-    label: "Observations",
-    items: [{ label: "View Level 1 Public Observation Data" }],
-  },
+  // Same real map search screen as registered-user's Explore above - guest already only ever
+  // saw Level 1 public data, which is exactly what this screen shows for every role today.
+  { label: "Explore", key: "observations" },
 ];
+
+// biodata-admin's tree, the part of the real admin IA that exists so far: the registered-user tree
+// (DLA included, same keyed leaf) with the Data Sharing Agreement (DSA) workflow added as its own
+// section straight after it. DLA and DSA are two modules, not one renamed: the admin IA lists
+// "Data Licencing Agreement (DLA)" with "Approve Reject DLA Requests" and "Withdraw DLA" as admin's
+// own actions on it, and DSA arrives as a separate module in the review comments. Per the "List ->
+// deep dive" pattern, "Approve Reject DLA Requests"/"Withdraw DLA" aren't separate nav destinations
+// either, the same call already made for DLA's own "Request New DLA"/"Manage DLA" above - they're
+// real actions inside /pages/dla itself (an Approve/Reject pair on a request Under Review, a
+// Withdraw on an Active one), gated to admin via the `dlaApproval` feature, not a second DLA nav
+// entry. DSA is a keyed leaf like Home/Projects/Explore/DLA (the agreement list lives in the page's
+// own contextual sidebar, not as nav `items`).
+//
+// NOT yet the full admin IA - see CONTEXT.md, "BioData Admin IA cross-check": User Management, Ctrl
+// Vocab, Reports (All Users), Voucher/Notification/Taxonomy management, Home's admin labels and
+// Nominate Sensitive Species nesting under Observations are all still to reconcile.
+export const biodataAdminNav: NavNode[] = registeredUserNav.flatMap((section) =>
+  section.label === DLA_SECTION_LABEL ? [section, { label: DSA_SECTION_LABEL, key: "dsa" as const }] : [section],
+);
+
+/** The one nav tree a role's shell reads - see each tree's own comment for how they differ. */
+export function navForRole(role: UserRole): NavNode[] {
+  if (role === "public-user") return publicUserNav;
+  if (role === "biodata-admin") return biodataAdminNav;
+  return registeredUserNav;
+}
 
 // The rest of the brief's "Projects" items - not nav destinations (see the comment on the
 // `Projects` section above), but not dropped either. Real actions/operations on the Project

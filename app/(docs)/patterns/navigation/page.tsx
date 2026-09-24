@@ -2,7 +2,7 @@
 
 import { Suspense, useState } from "react";
 import type { ReactNode } from "react";
-import { HomeLine, Folder, Eye, FileLock01, Upload01, Plus } from "@untitledui/icons";
+import { HomeLine, Folder, Map01, FileLock01, Upload01, Plus } from "@untitledui/icons";
 import { PageHeader } from "@/components/PageHeader";
 import { Button } from "@/components/base/buttons/button";
 import { Avatar } from "@/components/base/avatar/avatar";
@@ -37,7 +37,7 @@ const Section = ({ label, children, fullBleed = false }: { label: string; childr
 const demoSections = [
   { label: "Home", icon: HomeLine },
   { label: "Projects", icon: Folder },
-  { label: "Observations", icon: Eye },
+  { label: "Explore", icon: Map01 },
   { label: "Data Licencing Agreement (DLA)", icon: FileLock01 },
 ];
 
@@ -139,8 +139,8 @@ export default function NavigationPatternPage() {
       <h2 className="text-balance">Top nav</h2>
       <p className="text-balance">
         A <strong>64px header</strong>: logo (37px, aspect ratio locked) + product name + breadcrumb on the left, primary actions +
-        profile on the right. Every canonical page (<code>/pages/dashboard</code>, <code>/pages/project-detail/option-1</code>,{" "}
-        <code>/pages/observation-detail/option-1</code>, ...) renders this same bar, just with its own section/current crumb.
+        profile on the right. Every canonical page (<code>/pages/dashboard</code>, <code>/pages/project-detail</code>,{" "}
+        <code>/pages/observation-detail</code>, ...) renders this same bar, just with its own section/current crumb.
       </p>
       <Section label="Top nav - anatomy" fullBleed>
         <TopNavDemo />

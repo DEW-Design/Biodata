@@ -94,10 +94,10 @@ export const ConfirmationModal = ({
                         <CloseButton size="sm" />
                     </div>
                     <div className="flex flex-col gap-1">
-                        <AriaHeading slot="title" className="text-md font-semibold text-primary">
+                        <AriaHeading slot="title" className="text-md font-semibold text-balance text-primary">
                             {title}
                         </AriaHeading>
-                        {description && <p className="text-sm text-tertiary">{description}</p>}
+                        {description && <p className="text-sm text-balance text-tertiary">{description}</p>}
                     </div>
                     <div className="mt-2 grid grid-cols-2 gap-3">
                         <Button color="secondary" size="lg" slot="close">
@@ -149,10 +149,10 @@ export const DestructiveModal = ({
                         <CloseButton size="sm" />
                     </div>
                     <div className="flex flex-col gap-1">
-                        <AriaHeading slot="title" className="text-md font-semibold text-primary">
+                        <AriaHeading slot="title" className="text-md font-semibold text-balance text-primary">
                             {title}
                         </AriaHeading>
-                        {description && <p className="text-sm text-tertiary">{description}</p>}
+                        {description && <p className="text-sm text-balance text-tertiary">{description}</p>}
                     </div>
                     <div className="mt-2 grid grid-cols-2 gap-3">
                         <Button color="secondary" size="lg" slot="close">
@@ -220,10 +220,10 @@ export const FormModal = ({
                 >
                     <div className="flex items-start justify-between gap-4">
                         <div className="flex flex-col gap-1">
-                            <AriaHeading slot="title" className="text-md font-semibold text-primary">
+                            <AriaHeading slot="title" className="text-md font-semibold text-balance text-primary">
                                 {title}
                             </AriaHeading>
-                            {description && <p className="text-sm text-tertiary">{description}</p>}
+                            {description && <p className="text-sm text-balance text-tertiary">{description}</p>}
                         </div>
                         <CloseButton size="sm" />
                     </div>

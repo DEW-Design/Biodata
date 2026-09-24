@@ -3,6 +3,7 @@
 import type { Key, ReactNode } from "react";
 import { useState } from "react";
 import { motion } from "motion/react";
+import { ChevronDown } from "@untitledui/icons";
 import { cx } from "@/utils/cx";
 
 export interface AccordionItemType {
@@ -27,6 +28,18 @@ export interface AccordionProps {
     onOpenKeysChange?: (keys: Set<Key>) => void;
     /** When true, opening an item closes any other open item. @default false */
     singleOpen?: boolean;
+    /**
+     * `"divided"` (default) is the original FAQ-page treatment - a borderless stacked list, items
+     * separated by a thin top rule, large semibold titles. `"boxed"` is a second, real visual
+     * treatment - each item its own bordered, rounded card (`border-brand-100`), a smaller
+     * brand-coloured title, and a divider between its own header and body - matching Figma's
+     * "Details Container" accordion pattern (node 220:45522 and siblings, the record-detail
+     * sidebar's own per-section cards). Same interaction/state logic either way; only the item
+     * chrome changes - extending the one real component rather than forking a second one, per
+     * this codebase's "extend, don't fork" convention.
+     * @default "divided"
+     */
+    variant?: "divided" | "boxed";
     className?: string;
 }
 
@@ -47,7 +60,7 @@ const AccordionChevron = ({ isOpen }: { isOpen: boolean }) => (
  * components/marketing/faq/faq-accordion-01.tsx, which now composes this instead of hand-rolling
  * its own expand/collapse state - the reusable interaction pattern, not tied to FAQ copy.
  */
-export const Accordion = ({ items, defaultOpenKeys = [], openKeys: controlledOpenKeys, onOpenKeysChange, singleOpen = false, className }: AccordionProps) => {
+export const Accordion = ({ items, defaultOpenKeys = [], openKeys: controlledOpenKeys, onOpenKeysChange, singleOpen = false, variant = "divided", className }: AccordionProps) => {
     const isControlled = controlledOpenKeys !== undefined;
     const [internalOpenKeys, setInternalOpenKeys] = useState(new Set(defaultOpenKeys));
     const openKeys = isControlled ? controlledOpenKeys : internalOpenKeys;
@@ -71,6 +84,37 @@ export const Accordion = ({ items, defaultOpenKeys = [], openKeys: controlledOpe
         }
     };
 
+    if (variant === "boxed") {
+        return (
+            <div className={cx("font-barlow flex flex-col gap-4", className)}>
+                {items.map((item) => {
+                    const isOpen = openKeys.has(item.id);
+                    return (
+                        <div key={item.id} className="overflow-hidden rounded-md border border-[var(--color-brand-100)] bg-primary">
+                            <button
+                                type="button"
+                                onClick={() => toggle(item.id)}
+                                aria-expanded={isOpen}
+                                className="flex w-full cursor-pointer items-center gap-3 px-4 py-3 text-left outline-focus-ring select-none focus-visible:outline-2 focus-visible:-outline-offset-2"
+                            >
+                                <span className="flex-1 text-base font-medium text-balance text-brand-tertiary">{item.title}</span>
+                                <ChevronDown className={cx("size-5 shrink-0 text-quaternary transition-transform duration-150", isOpen && "rotate-180")} />
+                            </button>
+                            <motion.div
+                                className="overflow-hidden border-t border-[var(--color-brand-100)]"
+                                initial={false}
+                                animate={{ height: isOpen ? "auto" : 0, opacity: isOpen ? 1 : 0 }}
+                                transition={{ type: "spring", damping: 24, stiffness: 240, bounce: 0.4 }}
+                            >
+                                <div className="p-4">{item.content}</div>
+                            </motion.div>
+                        </div>
+                    );
+                })}
+            </div>
+        );
+    }
+
     return (
         <div className={cx("font-barlow flex flex-col gap-8", className)}>
             {items.map((item, index) => {
@@ -91,7 +135,7 @@ export const Accordion = ({ items, defaultOpenKeys = [], openKeys: controlledOpe
                                 aria-expanded={isOpen}
                                 className="flex w-full cursor-pointer items-start justify-between gap-2 rounded-md text-left outline-focus-ring select-none focus-visible:outline-2 focus-visible:outline-offset-2 md:gap-6"
                             >
-                                <span className="text-lg! font-semibold! tracking-normal! text-primary! normal-case!">{item.title}</span>
+                                <span className="text-lg! font-semibold! text-balance! tracking-normal! text-primary! normal-case!">{item.title}</span>
                                 <AccordionChevron isOpen={isOpen} />
                             </button>
                         </h3>

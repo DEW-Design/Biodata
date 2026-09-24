@@ -20,6 +20,7 @@ const Section = ({ label, children }: { label: string; children: React.ReactNode
 
 const sectionToggles = [
   { key: "playground", label: "Component Playground" },
+  { key: "variants", label: "Variants" },
   { key: "singleOpen", label: "Single open" },
   { key: "usage", label: "Usage" },
   { key: "figma", label: "Figma" },
@@ -28,7 +29,10 @@ const sectionToggles = [
 const accordionProps = [
   { name: "items", type: "AccordionItemType[]", default: "-" },
   { name: "defaultOpenKeys", type: "Key[]", default: "[]" },
+  { name: "openKeys", type: "Set<Key>", default: "-" },
+  { name: "onOpenKeysChange", type: "(keys: Set<Key>) => void", default: "-" },
   { name: "singleOpen", type: "boolean", default: "false" },
+  { name: "variant", type: '"divided" | "boxed"', default: '"divided"' },
   { name: "className", type: "string", default: "-" },
 ];
 
@@ -103,6 +107,29 @@ export default function AccordionPage() {
               </div>
             </div>
           </div>
+        </>
+      )}
+
+      {/* ── Variants ── */}
+      {isFeatureEnabled(config, "variants") && (
+        <>
+          <h2 className="text-balance">Variants</h2>
+          <p className="text-balance">
+            <code>divided</code> is the default - a borderless stacked list with a thin rule between items and large
+            semibold titles, as used by the FAQ section. <code>boxed</code> gives each item its own bordered, rounded
+            card with a smaller brand-coloured title and a divider between header and body, for dense detail panels
+            such as the record-detail sidebar on Observations. Interaction and state logic are identical.
+          </p>
+          <Section label="divided">
+            <div className="w-full max-w-md">
+              <Accordion items={playgroundItems} defaultOpenKeys={["trial"]} variant="divided" />
+            </div>
+          </Section>
+          <Section label="boxed">
+            <div className="w-full max-w-md">
+              <Accordion items={playgroundItems} defaultOpenKeys={["trial"]} variant="boxed" />
+            </div>
+          </Section>
         </>
       )}
 
@@ -189,7 +216,9 @@ export default function AccordionPage() {
       <h2 className="text-balance">Where it&apos;s used</h2>
       <p className="text-balance">
         <a href="/marketing/faq-accordion">Marketing / FAQ accordion</a> composes this component for its
-        question/answer list, rather than hand-rolling its own expand/collapse state.
+        question/answer list, rather than hand-rolling its own expand/collapse state. The <code>boxed</code> variant
+        is used for the per-section cards in the record-detail sidebar on{" "}
+        <a href="/pages/observations">Observations</a>.
       </p>
 
       {/* ── Figma ── */}

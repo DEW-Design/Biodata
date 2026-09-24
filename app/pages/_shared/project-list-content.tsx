@@ -8,7 +8,7 @@ import { Table, TableCard } from "@/components/application/table/table";
 import { SectionHeader } from "@/components/application/section-headers/section-headers";
 import { useRoleHref } from "@/lib/use-role-href";
 
-// The real Projects list content - shared by every option-1 sidebar shell (dashboard,
+// The real Projects list content - shared by every sidebar shell (dashboard,
 // project-list, project-detail) so clicking the Projects icon always shows this, the same
 // "content is real, not a placeholder redirect" fix already applied to Home
 // (see app/pages/_shared/home-dashboard.tsx). project-detail is the one exception: its
@@ -41,6 +41,9 @@ import { useRoleHref } from "@/lib/use-role-href";
 // (app/pages/_shared/global-search.tsx), instead of two hand-kept-in-sync lists.
 export interface Project {
   id: string;
+  /** Display-only BioData project number ("BD-5039"). `id` stays the internal slug. The map search
+   *  Projects tab (map-search/search-data.ts) reads the same value, so both tables show one ID. */
+  code: string;
   name: string;
   href?: string;
   org: string;
@@ -55,8 +58,9 @@ export interface Project {
 export const projects: Project[] = [
   {
     id: "adelaide-hills",
+    code: "BD-5039",
     name: "Adelaide Hills Bushland Survey",
-    href: "/pages/project-detail/option-1",
+    href: "/pages/project-detail",
     org: "Adelaide Hills Landcare",
     status: "Active",
     statusColor: "success",
@@ -67,6 +71,7 @@ export const projects: Project[] = [
   },
   {
     id: "coorong",
+    code: "BD-5102",
     name: "Coorong Wetlands Bird Count",
     org: "Birds SA",
     status: "Under review",
@@ -78,6 +83,7 @@ export const projects: Project[] = [
   },
   {
     id: "flinders",
+    code: "BD-5137",
     name: "Flinders Ranges Reptile Atlas",
     org: "DEW Biodiversity Team",
     status: "Draft",
@@ -89,6 +95,7 @@ export const projects: Project[] = [
   },
   {
     id: "kangaroo-island",
+    code: "BD-4988",
     name: "Kangaroo Island Recovery Monitoring",
     org: "Natural Resources KI",
     status: "Completed",
@@ -103,9 +110,13 @@ export const projects: Project[] = [
 export function ProjectListContent() {
   const roleHref = useRoleHref();
   // Real, working pagination state - `pageCount` is 1 with this example's 4 rows, so Previous/Next
-  // both render disabled rather than faked as active. TableCard.Pagination is the real missing
-  // piece for the "1000+ projects expected" scale this table is built for, not decorative chrome.
+  // both render disabled rather than faked as active. The numbered footer is the same one the
+  // Explore results tables use, so both Projects tables read as one component.
   const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(50);
+  const pageCount = Math.max(1, Math.ceil(projects.length / pageSize));
+  const currentPage = Math.min(page, pageCount);
+  const pagedProjects = projects.slice((currentPage - 1) * pageSize, currentPage * pageSize);
 
   return (
     <>
@@ -136,15 +147,17 @@ export function ProjectListContent() {
         <TableCard.Root>
           <Table aria-label="Projects">
             <Table.Header>
-              <Table.Head id="project" isRowHeader>
-                Project
-              </Table.Head>
-              <Table.Head id="org">Organisation</Table.Head>
-              <Table.Head id="status">Status</Table.Head>
-              <Table.Head id="contributor">Contributor</Table.Head>
-              <Table.Head id="updated">Updated</Table.Head>
+              {/* `label` (not children) - Table.Head only applies the design system's header treatment
+                  (text-xs, semibold, text-quaternary) through its own `label` prop, the same way the
+                  Explore results tables do. Plain children rendered as unstyled bold black text. */}
+              <Table.Head id="code" label="Project ID" isRowHeader />
+              <Table.Head id="project" label="Project" />
+              <Table.Head id="org" label="Organisation" />
+              <Table.Head id="status" label="Status" />
+              <Table.Head id="contributor" label="Contributor" />
+              <Table.Head id="updated" label="Updated" />
             </Table.Header>
-            <Table.Body items={projects}>
+            <Table.Body items={pagedProjects}>
               {(project) => (
                 <Table.Row
                   id={project.id}
@@ -152,6 +165,9 @@ export function ProjectListContent() {
                   textValue={project.name}
                   className="group data-[href]:cursor-pointer"
                 >
+                  <Table.Cell>
+                    <span className="text-sm whitespace-nowrap text-tertiary">{project.code}</span>
+                  </Table.Cell>
                   <Table.Cell>
                     <div className="flex flex-col gap-0.5">
                       <p className={`text-sm font-medium text-primary ${project.href ? "group-hover:text-brand-700 group-hover:underline" : ""}`}>
@@ -181,7 +197,17 @@ export function ProjectListContent() {
               )}
             </Table.Body>
           </Table>
-          <TableCard.Pagination page={page} pageCount={1} onPageChange={setPage} />
+          <TableCard.PaginationNumbered
+            page={currentPage}
+            pageCount={pageCount}
+            onPageChange={setPage}
+            pageSize={pageSize}
+            onPageSizeChange={(size) => {
+              setPageSize(size);
+              setPage(1);
+            }}
+            totalCount={projects.length}
+          />
         </TableCard.Root>
       </div>
     </>

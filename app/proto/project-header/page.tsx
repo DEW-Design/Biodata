@@ -2,7 +2,7 @@
 
 // PROTOTYPE LAB - throwaway, imported by nothing. Exploring where project owner/contact info and
 // the Events/Occurrences/Observations/Attached Resources counts should live on
-// project-detail/option-1's "Projects" header - currently all of it sits inside the Overview tab
+// project-detail's "Projects" header - currently all of it sits inside the Overview tab
 // body, below the persistent title/meta header. KEPT after promotion (per the user: never delete
 // explorations - they're the evidence that all the options were actually considered, not just the
 // one that shipped). See CONTEXT.md's entry for where "Meta Under Title, Full Rail" landed in the
@@ -31,7 +31,7 @@ import { BadgeWithDot } from "@/components/base/badges/badges";
 import { BentoCard, MetricCard } from "@/app/pages/_shared/bento-card";
 import { MapView } from "@/app/pages/_shared/map-view";
 
-// ── Real example data, reused verbatim from project-detail/option-1 (same project, same numbers) ──
+// ── Real example data, reused verbatim from project-detail (same project, same numbers) ──
 const project = {
   title: "Adelaide Hills Bushland Survey",
   id: "BD-5039",

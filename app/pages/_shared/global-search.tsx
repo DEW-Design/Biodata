@@ -59,9 +59,9 @@ export function GlobalProjectSearch() {
   const visible = showAll ? filtered : filtered.slice(0, RESULTS_LIMIT);
   const remaining = filtered.length - visible.length;
 
-  // Only "Adelaide Hills Bushland Survey" has a real `href` (project-detail/option-1) - the other
+  // Only "Adelaide Hills Bushland Survey" has a real `href` (project-detail) - the other
   // 3 don't. Selecting one of those used to call `router.push(project.href ?? "/pages/project-
-  // list/option-1")`, which silently no-ops whenever you're already on that fallback page -
+  // list")`, which silently no-ops whenever you're already on that fallback page -
   // the popover closes, the input is left showing garbled leftover text (react-aria sets the
   // input to the selected item's textValue), and the URL never changes - reads as "nothing
   // happens" / "broken", flagged directly by the user. Fixed via `isDisabled` on results with no

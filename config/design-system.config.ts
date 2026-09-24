@@ -49,6 +49,7 @@ export const designSystemConfig: DesignSystemConfig = {
     enabled: true,
     features: {
       playground: true,
+      variants: true,
       singleOpen: true,
       usage: true,
       figma: true,
@@ -353,6 +354,24 @@ export const designSystemConfig: DesignSystemConfig = {
     features: {
       playground: true,
       fullWidth: true,
+      usage: true,
+      figma: true,
+    },
+  },
+
+  textarea: {
+    title: "Textarea",
+    enabled: true,
+    sizes: [
+      { key: "sm", label: "Small",  enabled: true },
+      { key: "md", label: "Medium", enabled: true },
+    ],
+    features: {
+      playground: true,
+      withHint: true,
+      tooltip: true,
+      disabled: true,
+      invalid: true,
       usage: true,
       figma: true,
     },

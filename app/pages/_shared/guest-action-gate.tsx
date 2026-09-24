@@ -24,7 +24,7 @@ import { toast } from "@/components/application/toast/toast";
 // disabled button as the very next thing you touch after being invited in undercuts that - the
 // toast still tells the truth (no real auth flow exists yet), it just does it as a response to a
 // real interaction instead of a hover state on a dead control.
-function SignUpPromptModal({
+export function SignUpPromptModal({
   isOpen,
   onOpenChange,
   icon: Icon,

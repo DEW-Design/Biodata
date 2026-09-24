@@ -21,8 +21,11 @@ import { cx } from "@/utils/cx";
 
 // Option 2 of 2: the projects list on the top-nav shell (header + primary nav bar), reusing
 // app/pages/dashboard/option-2's header/nav chrome verbatim - see that file's comment for the
-// full rationale. See app/pages/project-list/option-1 for the same screen on the sidebar shell.
+// full rationale. See app/pages/project-list for the same screen on the sidebar shell.
 //
+// NOTE: "option-1" in the comments below means the sidebar-shell Projects list that is now the canonical
+// /pages/project-list route (its /option-1 suffix was dropped - see CONTEXT.md, Sept 2026 route
+// normalisation). This option-2 folder is kept as a record of the explored top-nav direction.
 // No Figma frame yet for a Projects list screen, so - same as option-1 and the dashboard body's
 // metric/filter/map panels - this is built structurally: every contained widget (button, avatar,
 // badge) is a real DEW component used exactly, the project rows are a structural shell composed
@@ -31,7 +34,10 @@ import { cx } from "@/utils/cx";
 // dashboard/option-2, "Projects" active since that's the section here.
 
 // This screen's own page key, so its own entry in the dropdown (Projects > Manage Project and
-// Datasets) can show a selected state - same fix as dashboard/option-1's "BioData Dashboard" link.
+// Datasets) can show a selected state - same fix as dashboard's "BioData Dashboard" link.
+// Only these keys have an option-2 page; any other keyed nav node (e.g. `observations`, which only exists as the
+// canonical sidebar-shell page) renders as a plain label instead of a dead /option-2 link.
+const OPTION_2_KEYS: ReadonlySet<string> = new Set(["dashboard", "project-list"]);
 const CURRENT_KEY = "project-list";
 
 function NavDropdownItem({ node, depth = 0 }: { node: NavNode; depth?: number }) {
@@ -40,7 +46,7 @@ function NavDropdownItem({ node, depth = 0 }: { node: NavNode; depth?: number })
   // roleHref, not a bare path - a plain `/pages/...` string drops the active role, silently
   // falling back to `registered-user` on the destination page. See lib/use-role-href.ts.
   const roleHref = useRoleHref();
-  const href = node.key ? roleHref(`/pages/${node.key}/option-2`) : undefined;
+  const href = node.key && OPTION_2_KEYS.has(node.key) ? roleHref(`/pages/${node.key}/option-2`) : undefined;
   const isCurrent = !!node.key && node.key === CURRENT_KEY;
   const indent = { paddingLeft: 12 + depth * 12 };
 
@@ -90,7 +96,7 @@ function NavTopItem({ node, active = false }: { node: NavNode; active?: boolean 
   const [open, setOpen] = useState(false);
   const hasChildren = !!node.items?.length;
   const roleHref = useRoleHref();
-  const href = node.key ? roleHref(`/pages/${node.key}/option-2`) : undefined;
+  const href = node.key && OPTION_2_KEYS.has(node.key) ? roleHref(`/pages/${node.key}/option-2`) : undefined;
   const labelClassName = cx("relative flex items-center gap-1 px-4 text-sm", active ? "font-medium text-brand-700" : "text-primary");
 
   if (!hasChildren) {
@@ -178,7 +184,7 @@ function GuestAuthActions() {
 // Same 4 example projects as the shared app/pages/_shared/project-list-content.tsx (option-1's
 // table) - one real dataset, not a fresh invented list per shell. Deliberately no `href` on any
 // row: the shared version links "Adelaide Hills Bushland Survey" to
-// /pages/project-detail/option-1, a real page - but that page only exists on the sidebar shell.
+// /pages/project-detail, a real page - but that page only exists on the sidebar shell.
 // Copying that href verbatim would send option-2 users into option-1's chrome mid-browse, a
 // jarring shell-switch a plain nav bug, not a feature - flagged directly by the user off exactly
 // that. No project-detail/option-2 exists yet, so this table stays honest and unlinked, same

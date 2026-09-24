@@ -1,7 +1,7 @@
 "use client";
 
-// PROTOTYPE LAB - throwaway, imported by nothing. Started as an exploration of project-detail/
-// option-1's Overview tab (traceback/hierarchy card, new data blocks, flagged-field indicator,
+// PROTOTYPE LAB - throwaway, imported by nothing. Started as an exploration of project-detail's
+// Overview tab (traceback/hierarchy card, new data blocks, flagged-field indicator,
 // artefacts carousel + lightbox - see the variant comments below for that original brief). Extended
 // per direct follow-up feedback: "Please bring the whole scaffold in. We need to test the
 // breadcrumbs as well... We're able to switch projects (correct), we could even switch between
@@ -587,7 +587,7 @@ function ArtefactTile({ artefact, onOpen, size = "md" }: { artefact: Artefact; o
       type="button"
       onClick={onOpen}
       className={cx(
-        "group flex shrink-0 flex-col gap-2 rounded-lg border border-secondary bg-primary p-2 text-left outline-brand transition-colors duration-100 ease-linear hover:border-secondary_hover focus-visible:outline-2 focus-visible:outline-offset-2",
+        "group flex shrink-0 flex-col gap-2 rounded-lg border border-secondary bg-primary p-2 text-left outline-brand transition-colors duration-100 ease-linear hover:border-primary focus-visible:outline-2 focus-visible:outline-offset-2",
         size === "sm" ? "w-32" : "w-44",
       )}
     >

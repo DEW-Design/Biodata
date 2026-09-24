@@ -2,7 +2,7 @@
 
 import type { ComponentPropsWithRef, HTMLAttributes, ReactNode, Ref, TdHTMLAttributes, ThHTMLAttributes } from "react";
 import { createContext, isValidElement, useContext } from "react";
-import { ArrowDown, ChevronSelectorVertical, Copy01, Edit01, HelpCircle, Trash01 } from "@untitledui/icons";
+import { ArrowDown, ArrowLeft, ArrowRight, ChevronSelectorVertical, Copy01, Edit01, HelpCircle, Trash01 } from "@untitledui/icons";
 import type {
     CellProps as AriaCellProps,
     ColumnProps as AriaColumnProps,
@@ -48,9 +48,16 @@ export const TableRowActionsDropdown = () => (
     </Dropdown.Root>
 );
 
-const TableContext = createContext<{ size: "sm" | "md" }>({ size: "md" });
+// "xs" - a third, denser size beyond the existing "sm"/"md" - matches the dense results-table
+// pattern from Figma's "Home - Landing Page" file (node 205:20764 -> I205:21340;195:10229;
+// 1396:59991): a 34px header row, a 44px body row, and 12px/10px cell padding, none of which
+// "sm" (36px/56px, 20px/12px) or "md" (44px/72px, 24px/16px) already covered. Used by the map
+// search results table (app/pages/_shared/map-search/results-table.tsx) - a real, reusable size
+// option, not a one-off override, since any other page needing this same dense table pattern
+// should reach for it instead of re-deriving the same pixel values inline.
+const TableContext = createContext<{ size: "xs" | "sm" | "md" }>({ size: "md" });
 
-const TableCardRoot = ({ children, className, size = "md", ...props }: HTMLAttributes<HTMLDivElement> & { size?: "sm" | "md" }) => {
+const TableCardRoot = ({ children, className, size = "md", ...props }: HTMLAttributes<HTMLDivElement> & { size?: "xs" | "sm" | "md" }) => {
     return (
         <TableContext.Provider value={{ size }}>
             <div {...props} className={cx("font-barlow overflow-hidden rounded-xl bg-primary shadow-xs ring-1 ring-secondary", className)}>
@@ -123,15 +130,24 @@ const TableCardHeader = ({ title, badge, description, contentTrailing, className
 };
 
 interface TableRootProps extends AriaTableProps, Omit<ComponentPropsWithRef<"table">, "className" | "slot" | "style"> {
-    size?: "sm" | "md";
+    size?: "xs" | "sm" | "md";
+    /** When true, the table's own scroll wrapper also scrolls vertically (in addition to its
+     *  existing horizontal scroll) and grows to fill a bounded-height flex ancestor
+     *  (`flex-1 min-h-0`), instead of always growing to its full content height. Off by default -
+     *  every existing consumer keeps its current "grows with content, page scrolls" behaviour;
+     *  opt in only when a caller has already constrained the table's own container to a fixed
+     *  height and wants an internal scrollbar instead (see the map search results table, which
+     *  needs the toolbar/pagination to stay on-screen while only the rows scroll). Pair with
+     *  `Table.Header`'s own `sticky` prop so the header stays visible above the scrolling rows. */
+    bodyScrollable?: boolean;
 }
 
-const TableRoot = ({ className, size = "md", ...props }: TableRootProps) => {
+const TableRoot = ({ className, size = "md", bodyScrollable, ...props }: TableRootProps) => {
     const context = useContext(TableContext);
 
     return (
         <TableContext.Provider value={{ size: context?.size ?? size }}>
-            <div className="overflow-x-auto">
+            <div className={cx("overflow-x-auto", bodyScrollable && "min-h-0 flex-1 overflow-y-auto")}>
                 <AriaTable
                     className={(state) => cx("font-barlow w-full overflow-x-hidden", typeof className === "function" ? className(state) : className)}
                     {...props}
@@ -145,10 +161,14 @@ TableRoot.displayName = "Table";
 interface TableHeaderProps<T extends object>
     extends AriaTableHeaderProps<T>, Omit<ComponentPropsWithRef<"thead">, "children" | "className" | "slot" | "style"> {
     bordered?: boolean;
-    size?: "sm" | "md";
+    size?: "xs" | "sm" | "md";
+    /** Pairs with `Table`'s own `bodyScrollable` - pins the header to the top of that scrolling
+     *  wrapper (`sticky top-0`) so column labels stay visible while only the body rows scroll. Off
+     *  by default; a no-op for any table that isn't inside a scrolling ancestor. */
+    sticky?: boolean;
 }
 
-const TableHeader = <T extends object>({ columns, children, bordered = true, className, size: sizeProp, ...props }: TableHeaderProps<T>) => {
+const TableHeader = <T extends object>({ columns, children, bordered = true, sticky, className, size: sizeProp, ...props }: TableHeaderProps<T>) => {
     const context = useContext(TableContext);
     const { selectionBehavior, selectionMode } = useTableOptions();
 
@@ -160,11 +180,12 @@ const TableHeader = <T extends object>({ columns, children, bordered = true, cla
             className={(state) =>
                 cx(
                     "relative bg-secondary",
-                    size === "sm" ? "h-9" : "h-11",
+                    size === "xs" ? "h-[34px]" : size === "sm" ? "h-9" : "h-11",
+                    sticky && "sticky top-0 z-10",
 
                     // Row border—using an "after" pseudo-element to avoid the border taking up space.
                     bordered &&
-                        "[&>tr>th]:after:pointer-events-none [&>tr>th]:after:absolute [&>tr>th]:after:inset-x-0 [&>tr>th]:after:bottom-0 [&>tr>th]:after:h-px [&>tr>th]:after:bg-border-secondary [&>tr>th]:focus-visible:after:bg-transparent",
+                        "[&>tr>th]:after:pointer-events-none [&>tr>th]:after:absolute [&>tr>th]:after:inset-x-0 [&>tr>th]:after:bottom-0 [&>tr>th]:after:h-px [&>tr>th]:after:bg-[var(--ui-border-secondary)] [&>tr>th]:focus-visible:after:bg-transparent",
 
                     typeof className === "function" ? className(state) : className,
                 )
@@ -192,6 +213,7 @@ interface TableHeadProps extends AriaColumnProps, Omit<ThHTMLAttributes<HTMLTabl
 }
 
 const TableHead = ({ className, tooltip, label, children, ...props }: TableHeadProps) => {
+    const { size } = useContext(TableContext);
     const { selectionBehavior } = useTableOptions();
 
     return (
@@ -199,7 +221,8 @@ const TableHead = ({ className, tooltip, label, children, ...props }: TableHeadP
             {...props}
             className={(state) =>
                 cx(
-                    "relative p-0 px-6 py-2 outline-hidden focus-visible:z-1 focus-visible:ring-2 focus-visible:ring-focus-ring focus-visible:ring-inset",
+                    "relative p-0 py-2 outline-hidden focus-visible:z-1 focus-visible:ring-2 focus-visible:ring-focus-ring focus-visible:ring-inset",
+                    size === "xs" ? "px-3" : "px-6",
                     selectionBehavior === "toggle" && "nth-2:pl-3",
                     state.allowsSorting && "cursor-pointer",
                     typeof className === "function" ? className(state) : className,
@@ -208,8 +231,10 @@ const TableHead = ({ className, tooltip, label, children, ...props }: TableHeadP
         >
             {(state) => (
                 <AriaGroup className="flex items-center gap-1">
-                    <div className="flex items-center gap-1">
-                        {label && <span className="text-xs font-semibold whitespace-nowrap text-quaternary">{label}</span>}
+                    {/* The header text style sits on this wrapper, not just the `label` span, so header text passed
+                        as children gets the same treatment - it used to render as unstyled bold black text. */}
+                    <div className="flex items-center gap-1 text-xs font-semibold whitespace-nowrap text-quaternary">
+                        {label && <span>{label}</span>}
                         {typeof children === "function" ? children(state) : children}
                     </div>
 
@@ -237,10 +262,13 @@ TableHead.displayName = "TableHead";
 interface TableRowProps<T extends object>
     extends AriaRowProps<T>, Omit<ComponentPropsWithRef<"tr">, "children" | "className" | "onClick" | "slot" | "style" | "id"> {
     highlightSelectedRow?: boolean;
-    size?: "sm" | "md";
+    /** Keep the final row divider visible. By default it is hidden so a table card's outer edge
+     *  provides the final boundary without drawing a second line. */
+    showLastRowBorder?: boolean;
+    size?: "xs" | "sm" | "md";
 }
 
-const TableRow = <T extends object>({ columns, children, className, highlightSelectedRow = true, size: sizeProp, ...props }: TableRowProps<T>) => {
+const TableRow = <T extends object>({ columns, children, className, highlightSelectedRow = true, showLastRowBorder = false, size: sizeProp, ...props }: TableRowProps<T>) => {
     const context = useContext(TableContext);
     const { selectionBehavior } = useTableOptions();
 
@@ -252,14 +280,15 @@ const TableRow = <T extends object>({ columns, children, className, highlightSel
             className={(state) =>
                 cx(
                     "relative outline-focus-ring transition-colors after:pointer-events-none hover:bg-secondary focus-visible:outline-2 focus-visible:-outline-offset-2",
-                    size === "sm" ? "h-14" : "h-18",
+                    size === "xs" ? "h-11" : size === "sm" ? "h-14" : "h-18",
                     // "selected:" is the tailwindcss-react-aria-components plugin variant, which isn't
                     // registered in app/globals.css (only in the unused styles/globals.css) - "aria-selected:"
                     // is a core Tailwind variant that reads the same attribute React Aria sets, no plugin needed.
                     highlightSelectedRow && "aria-selected:bg-secondary",
 
                     // Row border—using an "after" pseudo-element to avoid the border taking up space.
-                    "[&>td]:after:absolute [&>td]:after:inset-x-0 [&>td]:after:bottom-0 [&>td]:after:h-px [&>td]:after:w-full [&>td]:after:bg-border-secondary last:[&>td]:after:hidden [&>td]:focus-visible:after:opacity-0 focus-visible:[&>td]:after:opacity-0",
+                    "[&>td]:after:absolute [&>td]:after:inset-x-0 [&>td]:after:bottom-0 [&>td]:after:h-px [&>td]:after:w-full [&>td]:after:bg-[var(--ui-border-secondary)] [&>td]:focus-visible:after:opacity-0 focus-visible:[&>td]:after:opacity-0",
+                    !showLastRowBorder && "last:[&>td]:after:hidden",
 
                     typeof className === "function" ? className(state) : className,
                 )
@@ -281,7 +310,7 @@ TableRow.displayName = "TableRow";
 
 interface TableCellProps extends AriaCellProps, Omit<TdHTMLAttributes<HTMLTableCellElement>, "children" | "className" | "style" | "id"> {
     ref?: Ref<HTMLTableCellElement>;
-    size?: "sm" | "md";
+    size?: "xs" | "sm" | "md";
 }
 
 const TableCell = ({ className, children, size: sizeProp, ...props }: TableCellProps) => {
@@ -296,6 +325,7 @@ const TableCell = ({ className, children, size: sizeProp, ...props }: TableCellP
             className={(state) =>
                 cx(
                     "relative text-sm text-tertiary outline-focus-ring focus-visible:z-1 focus-visible:outline-2 focus-visible:-outline-offset-2",
+                    size === "xs" && "px-3 py-2",
                     size === "sm" && "px-5 py-3",
                     size === "md" && "px-6 py-4",
 
@@ -343,10 +373,123 @@ const TableCardPagination = ({ page, pageCount, onPageChange, className }: Table
     </div>
 );
 
+/** Builds the page-number list `TableCardPaginationNumbered` renders, always showing the first 3
+ *  and last 3 pages with a single "ellipsis" gap between - matching Figma's own example exactly
+ *  ("1 2 3 … 8 9 10" for page 1 of 10, node I205:21340;195:10229;1396:59991;1:84675). When the
+ *  current page falls outside both of those fixed boundaries, it's inserted in the middle with an
+ *  ellipsis on each side (e.g. "1 2 3 … 6 … 8 9 10"). Exported for its own sake - a caller with an
+ *  unusual pagination need can build a custom list from this same logic. */
+export function tableCardPaginationRange(page: number, pageCount: number): (number | "ellipsis")[] {
+    if (pageCount <= 7) return Array.from({ length: pageCount }, (_, i) => i + 1);
+    const leading = [1, 2, 3];
+    const trailing = [pageCount - 2, pageCount - 1, pageCount];
+    if (leading.includes(page) || trailing.includes(page)) return [...leading, "ellipsis", ...trailing];
+    if (page - 1 <= 4) return [...leading, page, "ellipsis", ...trailing];
+    if (pageCount - page <= 4) return [...leading, "ellipsis", page, ...trailing];
+    return [...leading, "ellipsis", page, "ellipsis", ...trailing];
+}
+
+interface TableCardPaginationNumberedProps {
+    /** Current page, 1-indexed. */
+    page: number;
+    pageCount: number;
+    onPageChange: (page: number) => void;
+    /** Rows shown per page - drives the "Rows per page" control and the "X - Y of Z" summary. */
+    pageSize: number;
+    onPageSizeChange: (pageSize: number) => void;
+    pageSizeOptions?: number[];
+    /** Total row count across every page - the "of Z" in "X - Y of Z". */
+    totalCount: number;
+    className?: string;
+}
+
+/**
+ * The richer numbered-page footer some Figma table examples show ("Rows per page [50] |
+ * ← Previous | 1 2 3 … 8 9 10 | Next → | 1-50 of 250", node
+ * I205:21340;195:10229;1396:59991;1:84675, the map search results table's own reference) -
+ * previously logged as "a bigger, separate component, not built speculatively" in this codebase's
+ * own working notes; built once a real consumer (the map search results table) actually needed it
+ * to match Figma exactly, rather than ahead of time. Kept as a genuinely separate component from
+ * `TableCardPagination` (the simple "Page X of Y" version) rather than replacing it - every
+ * existing consumer of the simple version keeps working unchanged.
+ * The "Rows per page" control is a small native `<select>` built from raw tokens, not the real
+ * `NativeSelect` component - `NativeSelect`'s own default styling (rounded-lg, shadow-xs, ring-1,
+ * text-md) is sized for a real form field, not this compact, borderless-until-focused inline
+ * control Figma shows (border-primary, rounded-xs, text-xs, minimal padding); overriding that much
+ * of `NativeSelect`'s baked-in styling would fight the component more than reuse it.
+ */
+const TableCardPaginationNumbered = ({ page, pageCount, onPageChange, pageSize, onPageSizeChange, pageSizeOptions = [10, 25, 50, 100], totalCount, className }: TableCardPaginationNumberedProps) => {
+    const range = tableCardPaginationRange(page, Math.max(pageCount, 1));
+    const rangeStart = totalCount === 0 ? 0 : (page - 1) * pageSize + 1;
+    const rangeEnd = Math.min(page * pageSize, totalCount);
+
+    return (
+        <div className={cx("flex items-center justify-center gap-3 border-t border-secondary px-6 py-3", className)}>
+            <div className="flex shrink-0 items-center gap-2">
+                <span className="text-sm font-medium text-secondary whitespace-nowrap">Rows per page</span>
+                <select
+                    aria-label="Rows per page"
+                    value={pageSize}
+                    onChange={(e) => onPageSizeChange(Number(e.target.value))}
+                    className="rounded-xs border border-primary bg-primary px-1 py-0.5 text-xs font-semibold text-tertiary outline-focus-ring"
+                >
+                    {pageSizeOptions.map((size) => (
+                        <option key={size} value={size}>
+                            {size}
+                        </option>
+                    ))}
+                </select>
+            </div>
+
+            <div className="flex flex-1 items-center">
+                <Button color="secondary" size="md" iconLeading={ArrowLeft} isDisabled={page <= 1} onPress={() => onPageChange(page - 1)}>
+                    Previous
+                </Button>
+            </div>
+
+            <div className="flex shrink-0 items-center gap-0.5">
+                {range.map((item, i) =>
+                    item === "ellipsis" ? (
+                        <span key={`ellipsis-${i}`} className="flex size-10 shrink-0 items-center justify-center text-sm font-medium text-quaternary">
+                            …
+                        </span>
+                    ) : (
+                        <button
+                            key={item}
+                            type="button"
+                            onClick={() => onPageChange(item)}
+                            aria-current={item === page ? "page" : undefined}
+                            className={cx(
+                                "flex size-10 shrink-0 items-center justify-center rounded-md text-sm font-medium outline-focus-ring",
+                                item === page ? "bg-primary_hover text-secondary" : "text-quaternary hover:bg-primary_hover",
+                            )}
+                        >
+                            {item}
+                        </button>
+                    ),
+                )}
+            </div>
+
+            <div className="flex flex-1 items-center justify-end">
+                <Button color="secondary" size="md" iconTrailing={ArrowRight} isDisabled={page >= pageCount} onPress={() => onPageChange(page + 1)}>
+                    Next
+                </Button>
+            </div>
+
+            <div className="flex shrink-0 items-center">
+                <span className="text-sm font-medium whitespace-nowrap text-secondary">
+                    {rangeStart} - {rangeEnd} of {totalCount}
+                </span>
+            </div>
+        </div>
+    );
+};
+
 const TableCard = {
     Root: TableCardRoot,
     Header: TableCardHeader,
     Pagination: TableCardPagination,
+    PaginationNumbered: TableCardPaginationNumbered,
 };
 
 const Table = TableRoot as typeof TableRoot & {
