@@ -1,7 +1,7 @@
 "use client";
 
 // A second, deliberately different take on the project detail screen - built to compare directly
-// against project-detail/option-1 (per direct request: "Create this as a new page. so we can
+// against project-detail (per direct request: "Create this as a new page. so we can
 // compare old option and new option"). Two Figma references grounded this rebuild:
 // wer8CgO1UoCH3aQw2jQkdy node 1938:35405 (the real tree/table view toggle in this screen's own
 // top-right corner, and its dark project-identity band) and node 2526:58529 (15 "Details
@@ -63,6 +63,7 @@ import { GuestActionButton } from "@/app/pages/_shared/guest-action-gate";
 import { GuestAuthActions } from "@/app/pages/_shared/guest-auth-actions";
 import { MobileNavTrigger } from "@/app/pages/_shared/mobile-nav";
 import { RoleSwitcher } from "@/app/pages/_shared/role-switcher";
+import { assetPath } from "@/lib/base-path";
 import { MapView } from "@/app/pages/_shared/map-view";
 import { SpeciesResultsView } from "@/app/pages/_shared/map-search/species-results";
 import { searchEvents } from "@/app/pages/_shared/map-search/search-data";
@@ -419,7 +420,7 @@ function ProjectDetail() {
             }}
           />
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/pages/dashboard/gov-sa-dew-lockup.png" alt="Government of South Australia, Department for Environment and Water" className="h-[37px] w-auto" />
+          <img src={assetPath("/pages/dashboard/gov-sa-dew-lockup.png")} alt="Government of South Australia, Department for Environment and Water" className="h-[37px] w-auto" />
           <div className="h-6 w-px bg-secondary" />
           <p className="text-[17px] font-semibold tracking-tight text-primary">BioData SA</p>
           {activeSection === "Projects" ? (
@@ -488,11 +489,11 @@ function ProjectDetail() {
           {activeSection === "Projects" ? (
             <div className="flex flex-col gap-6 p-6">
               <div className="flex flex-wrap items-center justify-between gap-2">
-                <Link href={roleHref("/pages/project-list/option-1")} className="flex w-fit items-center gap-1.5 text-sm font-medium text-tertiary hover:text-primary">
+                <Link href={roleHref("/pages/project-list")} className="flex w-fit items-center gap-1.5 text-sm font-medium text-tertiary hover:text-primary">
                   <ArrowNarrowLeft className="size-4" />
                   Back to projects
                 </Link>
-                <Link href={roleHref("/pages/project-detail/option-1")} className="flex w-fit items-center gap-1.5 text-sm font-medium text-tertiary hover:text-primary">
+                <Link href={roleHref("/pages/project-detail")} className="flex w-fit items-center gap-1.5 text-sm font-medium text-tertiary hover:text-primary">
                   Comparing layouts · View Option 1
                   <ArrowNarrowRight className="size-4" />
                 </Link>

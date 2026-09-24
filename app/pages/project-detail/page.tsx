@@ -59,6 +59,7 @@ import { GuestAuthActions } from "@/app/pages/_shared/guest-auth-actions";
 import { ArtefactCarousel, ArtefactLightbox, type Artefact } from "@/app/pages/_shared/artefact-lightbox";
 import { MobileNavTrigger } from "@/app/pages/_shared/mobile-nav";
 import { RoleSwitcher } from "@/app/pages/_shared/role-switcher";
+import { ProjectDetailLayoutSwitcher } from "@/app/pages/_shared/project-detail-layout-switcher";
 import { BentoCard } from "@/app/pages/_shared/bento-card";
 import { MapView } from "@/app/pages/_shared/map-view";
 import { LocationDetailsTable } from "@/app/pages/_shared/location-details-table";
@@ -1141,6 +1142,7 @@ function ProjectDetail() {
   return (
     <div className="font-barlow flex h-screen flex-col overflow-hidden">
       <RoleSwitcher />
+      <ProjectDetailLayoutSwitcher current="option-1" />
       {/* ── Header ── */}
       <header className="flex min-h-16 shrink-0 flex-wrap items-center justify-between gap-x-6 gap-y-3 border-b border-secondary bg-primary px-4 py-3">
         {/* min-w-0 so this block can actually shrink (and the breadcrumb inside it truncate)

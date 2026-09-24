@@ -3,7 +3,7 @@
 // The Records tab - the tree/table toggle from the Figma reference (wer8CgO1UoCH3aQw2jQkdy, node
 // 1938:35405's own top-right icon pair: a tree/hierarchy glyph and a table/grid glyph), plus the
 // same Events/Occurrences/Observations/Artefacts metric-tile switcher already proven out for the
-// map search results page's own Records mode (app/pages/observations/option-1) - scoped down to
+// map search results page's own Records mode (app/pages/observations) - scoped down to
 // just this one project's own records instead of a cross-project search. Both view modes open the
 // same real, editable `RecordEditPanel` on click - this is the one place in the whole page a user
 // can actually inspect and edit a specific Event/Occurrence/Observation.

@@ -326,7 +326,7 @@ export const searchOccurrences: SearchOccurrence[] = [
 
     // Matching the new block-adelaide-1/ramble-adelaide-1 events above - real SA native species not
     // yet used elsewhere in this dataset. Southern Brown Bandicoot is already named as a real
-    // targeted species for this exact project in project-detail/option-1's own Data Collection
+    // targeted species for this exact project in project-detail's own Data Collection
     // Scope section - a genuine continuity, not a coincidence.
     { id: "occ-22", species: "Isoodon obesulus", commonName: "Southern Brown Bandicoot", type: "Individual", parentEventId: "block-adelaide-1", date: "2026-07-14", lastSurveyed: "2026-07-21", status: "Present", region: "Adelaide Hills", lat: -35.03, lon: 138.73, count: 1, family: "Peramelidae", group: "Mammal", licenceLevel: "Level 1" },
     { id: "occ-23", species: "Malurus cyaneus", commonName: "Superb Fairywren", type: "Individual", parentEventId: "ramble-adelaide-1", date: "2026-07-20", lastSurveyed: "2026-07-27", status: "Present", region: "Adelaide Hills", lat: -35.02, lon: 138.73, count: 1, family: "Maluridae", group: "Bird", licenceLevel: "Level 1" },

@@ -6335,3 +6335,19 @@ user owns and edits directly, not something to restructure without asking.
     and the Species view's Mammal/Bird/Reptile/Amphibian/Plant tiles both still render identically
     to before, confirming the shared fix didn't regress either flex-row consumer - zero console
     errors anywhere.
+  - **Fourteenth follow-up: the Overview stage now responds to the docked edit column, not the
+    viewport, per direct feedback off a screenshot of it breaking at the column's widest drag.**
+    Every layout switch in `about-content.tsx` was a viewport breakpoint (`lg:`/`sm:`), but opening
+    or widening the docked column shrinks `<main>` while the viewport stays the same size - so the
+    page kept its full desktop layout squeezed into ~800px (Project Details' value column wrapped
+    one word per line and ran under the record-counts card). Switched to container queries: the
+    About content is `@container/about` (the stage nav stacks above the card below `@4xl`), each
+    stage's body is `@container/stage` (Project Details and the counts card sit side by side from
+    `@3xl`, Published By / Project Managers from `@2xl`). The shared `FieldRow`
+    (`option-2/field-editor.tsx`) is now its own `@container` too, putting the label beside the
+    value only when the row itself is at least `@md` wide - which also fixes the same squeeze inside
+    the edit column's own forms, and changes nothing for option-2 at normal widths. Contact emails
+    in `DataOwnerCard`/`ProjectManagersCard` stay on one line and truncate with the full address as
+    a hover title. Verified `tsc`/`eslint` clean and live with the column dragged to its 920px
+    maximum (`<main>` at 808px): stacked nav, readable Project Details, counts card below it, a long
+    email truncated on one line - zero console errors.

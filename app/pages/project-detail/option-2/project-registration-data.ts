@@ -81,7 +81,7 @@ export const registrationDataCollection: DataCollectionState = {
   focusAreaOther: "",
   // Real species already tied to this project in search-data.ts (never invented) - the same
   // Southern Brown Bandicoot already named as a targeted species for this exact project in
-  // project-detail/option-1's own Data Collection Scope section.
+  // project-detail's own Data Collection Scope section.
   targetedSpeciesIds: ["Isoodon obesulus", "Macropus giganteus", "Tachyglossus aculeatus"],
   collectionMethod: "systematic",
   methodDetails: "Quarterly transect and quadrat surveys across reserve sites, supplemented by camera traps and incidental records logged by Landcare volunteers.",

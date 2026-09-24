@@ -553,7 +553,7 @@ function AddRestrictionEditor({
         onBack={onDone}
         onNext={() => setStep(0)}
       >
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+        <div className="grid grid-cols-1 gap-3 @xl/stage:grid-cols-2">
           {remaining.map(({ key, title, description, icon }) => (
             <ChoiceTile key={key} icon={icon} label={title} hint={description} isSelected={pickedTypes.has(key)} onClick={() => toggleType(key)} />
           ))}
@@ -637,7 +637,7 @@ function AboutStageNav({ stage, onSelect }: { stage: Stage; onSelect: (id: Stage
       selectedKey={stage}
       onSelectionChange={(key) => onSelect(key as Stage)}
       orientation="vertical"
-      className="w-full shrink-0 lg:sticky lg:top-6 lg:w-64"
+      className="w-full shrink-0 @4xl/about:sticky @4xl/about:top-6 @4xl/about:w-64"
     >
       {/* `TabList`'s own vertical-orientation default is `w-max` (shrink-wrapped to its content),
           which leaves dead space inside this column's `lg:w-64` and reads as "too much gap" between
@@ -658,13 +658,13 @@ function AboutStageNav({ stage, onSelect }: { stage: Stage; onSelect: (id: Stage
 
 function StageCard({ stage, children }: { stage: (typeof STAGES)[number]; children: ReactNode }) {
   return (
-    <div className="min-w-0 flex-1 rounded-2xl border border-secondary bg-primary p-6 sm:p-8">
+    <div className="min-w-0 flex-1 rounded-2xl border border-secondary bg-primary p-6 @2xl/about:p-8">
       <div className="flex flex-col gap-1 border-b border-secondary pb-6">
         <span className="text-xs font-semibold tracking-wide text-brand-tertiary uppercase">{stage.kicker}</span>
-        <h2 className="text-xl font-semibold text-primary sm:text-2xl">{stage.title}</h2>
+        <h2 className="text-xl font-semibold text-primary @2xl/about:text-2xl">{stage.title}</h2>
         <p className="text-sm text-tertiary">{stage.description}</p>
       </div>
-      <div className="flex flex-col gap-6 pt-6">{children}</div>
+      <div className="@container/stage flex flex-col gap-6 pt-6">{children}</div>
     </div>
   );
 }
@@ -705,7 +705,7 @@ const RECORD_METRICS: { id: EntityTab; label: string; icon: typeof Activity }[] 
 
 function RecordCountsCard({ counts, onNavigateToRecords }: { counts: Record<EntityTab, number>; onNavigateToRecords: (tab: EntityTab) => void }) {
   return (
-    <div className="flex w-full shrink-0 flex-col gap-2 rounded-2xl border border-secondary bg-secondary p-3 lg:w-72">
+    <div className="flex w-full shrink-0 flex-col gap-2 rounded-2xl border border-secondary bg-secondary p-3 @3xl/stage:w-72">
       {RECORD_METRICS.map((m) => (
         <div key={m.id} className="w-full">
           <MetricTile icon={m.icon} label={m.label} value={counts[m.id]} active={false} onClick={() => onNavigateToRecords(m.id)} />
@@ -818,13 +818,17 @@ export function AboutContent({
   const permitValues = { ...permitSeed, ...store.getSection(permitKey) };
 
   return (
-    <div className="flex flex-col gap-4 lg:flex-row lg:items-start">
+    // Container queries (not viewport breakpoints): this column shrinks whenever the docked edit
+    // column opens or is dragged wider, while the viewport stays the same size - `lg:`/`sm:` never
+    // noticed, so the Overview kept a desktop layout squeezed into a narrow column.
+    <div className="@container/about">
+    <div className="flex flex-col gap-4 @4xl/about:flex-row @4xl/about:items-start">
       <AboutStageNav stage={stage} onSelect={setStage} />
 
       <StageCard stage={activeStage}>
         {stage === "overview" && (
           <>
-            <div className="flex flex-col gap-6 lg:flex-row lg:items-start">
+            <div className="flex flex-col gap-6 @3xl/stage:flex-row @3xl/stage:items-start">
               <div className="min-w-0 flex-1">
                 <EditableCard
                   title="Overview"
@@ -855,7 +859,7 @@ export function AboutContent({
               <RecordCountsCard counts={counts} onNavigateToRecords={onNavigateToRecords} />
             </div>
 
-            <div className="flex flex-col gap-4 border-t border-secondary pt-6 sm:flex-row">
+            <div className="flex flex-col gap-4 border-t border-secondary pt-6 @2xl/stage:flex-row">
               <div className="min-w-0 flex-1">
                 <EditableCard
                   title="Published By"
@@ -969,6 +973,7 @@ export function AboutContent({
           </BentoCard>
         )}
       </StageCard>
+    </div>
     </div>
   );
 }

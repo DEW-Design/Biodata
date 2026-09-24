@@ -1,8 +1,8 @@
 "use client";
 
-// Generic "view a field, edit a field" primitive - the piece project-detail/option-1 never had
+// Generic "view a field, edit a field" primitive - the piece project-detail never had
 // (that page's own DetailRow is permanently read-only; editing was explicitly logged as future
-// work on observation-detail/option-1 - see that file's own header comment). Built directly off
+// work on observation-detail - see that file's own header comment). Built directly off
 // the Figma "Details Container" edit-mode frames (wer8CgO1UoCH3aQw2jQkdy, node 2526:58529) - every
 // one of the 15 record-type frames there stacks a read-only view of a section directly above an
 // editable version of the exact same fields: plain text inputs, "Please Select" dropdowns, an
@@ -172,18 +172,25 @@ function FieldControl({ spec, value, onChange }: { spec: FieldSpec; value: Field
 export function FieldRow({ spec, value, editing, onChange }: { spec: FieldSpec; value: FieldValue; editing: boolean; onChange: (next: FieldValue) => void }) {
   if (!editing || spec.type === "readonly") {
     return (
-      <div className="flex flex-col gap-1 sm:flex-row sm:gap-6">
-        <span className="shrink-0 text-sm text-secondary sm:w-44">{spec.label}</span>
-        <span className="min-w-0 flex-1 text-sm font-medium text-primary">{displayValue(spec, value)}</span>
+      // Self-contained `@container`: the label/value split follows the row's own width, not the
+      // viewport - a row inside a narrow column (e.g. beside a docked edit panel) stacks instead of
+      // squeezing its value into a one-word-wide strip.
+      <div className="@container">
+        <div className="flex flex-col gap-1 @md:flex-row @md:gap-6">
+          <span className="shrink-0 text-sm text-secondary @md:w-44">{spec.label}</span>
+          <span className="min-w-0 flex-1 text-sm font-medium break-words text-primary">{displayValue(spec, value)}</span>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="flex flex-col gap-1.5 sm:flex-row sm:items-start sm:gap-6">
-      <span className="shrink-0 pt-2.5 text-sm text-secondary sm:w-44">{spec.label}</span>
-      <div className="min-w-0 flex-1">
-        <FieldControl spec={spec} value={value} onChange={onChange} />
+    <div className="@container">
+      <div className="flex flex-col gap-1.5 @md:flex-row @md:items-start @md:gap-6">
+        <span className="shrink-0 text-sm text-secondary @md:w-44 @md:pt-2.5">{spec.label}</span>
+        <div className="min-w-0 flex-1">
+          <FieldControl spec={spec} value={value} onChange={onChange} />
+        </div>
       </div>
     </div>
   );

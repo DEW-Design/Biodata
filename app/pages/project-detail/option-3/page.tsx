@@ -38,20 +38,20 @@ import {
   BarChart01,
   FileSearch01,
   Map01,
-  Columns03,
 } from "@untitledui/icons";
 import { Button } from "@/components/base/buttons/button";
 import { Avatar } from "@/components/base/avatar/avatar";
 import { Tooltip, TooltipTrigger } from "@/components/base/tooltip/tooltip";
 import { Popover } from "@/components/base/select/popover";
 import { BadgeWithDot } from "@/components/base/badges/badges";
-import { Dropdown } from "@/components/base/dropdown/dropdown";
 import { Breadcrumb } from "@/components/scaffold/breadcrumb";
 import { GlobalProjectSearch } from "@/app/pages/_shared/global-search";
 import { GuestActionButton } from "@/app/pages/_shared/guest-action-gate";
 import { GuestAuthActions } from "@/app/pages/_shared/guest-auth-actions";
 import { MobileNavTrigger } from "@/app/pages/_shared/mobile-nav";
 import { RoleSwitcher } from "@/app/pages/_shared/role-switcher";
+import { assetPath } from "@/lib/base-path";
+import { ProjectDetailLayoutSwitcher } from "@/app/pages/_shared/project-detail-layout-switcher";
 import { SpeciesResultsView } from "@/app/pages/_shared/map-search/species-results";
 import { searchEvents } from "@/app/pages/_shared/map-search/search-data";
 
@@ -208,56 +208,6 @@ function ProjectHero({ onEditRequest }: { onEditRequest: (req: EditRequest) => v
   );
 }
 
-// ── Layout switcher - a floating panel to jump between the three project-detail explorations,
-//    replacing the inline "Comparing layouts: Option 1 | Option 2 | Option 3" text row that used
-//    to sit at the top of the page and take up space on every load (per direct feedback: "make
-//    this a floating panel to switch between three options"). Same FAB + Dropdown pattern as
-//    `RoleSwitcher` (bottom-right) - positioned bottom-left instead so the two floating panels
-//    never overlap. `Dropdown.Root` accepts any trigger, so the FAB itself opens the menu
-//    directly, one click to open and one to pick, same as RoleSwitcher's own reasoning for using
-//    Dropdown over a DialogTrigger+Select. ──
-
-const LAYOUT_OPTIONS: { id: string; label: string; href: string }[] = [
-  { id: "option-1", label: "Option 1", href: "/pages/project-detail/option-1" },
-  { id: "option-2", label: "Option 2", href: "/pages/project-detail/option-2" },
-  { id: "option-3", label: "Option 3 (this page)", href: "/pages/project-detail/option-3" },
-];
-
-function LayoutSwitcher() {
-  const router = useRouter();
-  const roleHref = useRoleHref();
-
-  return (
-    <div className="fixed bottom-24 left-5 z-50">
-      <Dropdown.Root>
-        <AriaButton
-          aria-label="Compare project detail layouts"
-          className="flex size-12 items-center justify-center rounded-full bg-primary-solid text-white shadow-lg outline-brand transition duration-100 ease-linear hover:opacity-90 focus-visible:outline-2 focus-visible:outline-offset-2 active:scale-[0.96]"
-        >
-          <Columns03 className="size-5" />
-        </AriaButton>
-        <Dropdown.Popover placement="top left">
-          <Dropdown.Menu
-            aria-label="Compare layouts"
-            selectionMode="single"
-            selectedKeys={["option-3"]}
-            onSelectionChange={(keys) => {
-              if (keys === "all") return;
-              const [id] = Array.from(keys) as string[];
-              const option = LAYOUT_OPTIONS.find((o) => o.id === id);
-              if (option && option.id !== "option-3") router.push(roleHref(option.href));
-            }}
-          >
-            {LAYOUT_OPTIONS.map((option) => (
-              <Dropdown.Item key={option.id} id={option.id} label={option.label} />
-            ))}
-          </Dropdown.Menu>
-        </Dropdown.Popover>
-      </Dropdown.Root>
-    </div>
-  );
-}
-
 export default function ProjectDetailOption3Page() {
   return (
     <Suspense fallback={null}>
@@ -320,7 +270,7 @@ function ProjectDetail() {
   return (
     <div className="font-barlow flex h-screen flex-col overflow-hidden">
       <RoleSwitcher />
-      <LayoutSwitcher />
+      <ProjectDetailLayoutSwitcher current="option-2" />
       {/* ── Header - identical shape to option-1/option-2's own clean, flat header (no colour
           band): an eyebrow label, the title, and a meta line - per the user's own direct
           preference against a dark banner, confirmed twice already on option-2. ── */}
@@ -336,7 +286,7 @@ function ProjectDetail() {
             }}
           />
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/pages/dashboard/gov-sa-dew-lockup.png" alt="Government of South Australia, Department for Environment and Water" className="h-[37px] w-auto" />
+          <img src={assetPath("/pages/dashboard/gov-sa-dew-lockup.png")} alt="Government of South Australia, Department for Environment and Water" className="h-[37px] w-auto" />
           <div className="h-6 w-px bg-secondary" />
           <p className="text-[17px] font-semibold tracking-tight text-primary">BioData SA</p>
           {activeSection === "Projects" ? (
@@ -398,7 +348,7 @@ function ProjectDetail() {
         <main className="flex flex-1 flex-col overflow-y-auto">
           {activeSection === "Projects" ? (
             <div className="flex flex-col gap-6 p-6">
-              <Link href={roleHref("/pages/project-list/option-1")} className="flex w-fit items-center gap-1.5 text-sm font-medium text-tertiary hover:text-primary">
+              <Link href={roleHref("/pages/project-list")} className="flex w-fit items-center gap-1.5 text-sm font-medium text-tertiary hover:text-primary">
                 <ArrowNarrowLeft className="size-4" />
                 Back to projects
               </Link>

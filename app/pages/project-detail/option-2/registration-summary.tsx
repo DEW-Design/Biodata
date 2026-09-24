@@ -10,6 +10,7 @@
 // FieldSections): the ask here is display quality, not a second inline copy of the wizard's own
 // multi-select/contact-list editing UI.
 
+import { cx } from "@/utils/cx";
 import type { ReactNode } from "react";
 import { getLocalTimeZone } from "@internationalized/date";
 import type { DateValue } from "react-aria-components";
@@ -85,17 +86,17 @@ export function IdentificationRow({ details }: { details: ProjectDetailsState })
  *  the same "one real point of contact" convention `ProjectManager.isPrimary` already uses. */
 function ContactRow({ contact, isPrimary, role }: { contact: ContactPerson; isPrimary?: boolean; role?: string }) {
   return (
-    <div className="flex flex-col gap-1">
-      <p className="flex items-center gap-1.5 text-sm font-medium text-primary">
+    <div className="flex min-w-0 flex-col gap-1">
+      <p className="flex flex-wrap items-center gap-x-1.5 text-sm font-medium text-primary">
         {contact.firstName} {contact.lastName}
         {isPrimary && <span className="rounded-full bg-brand-50 px-1.5 py-0.5 text-[10px] font-semibold tracking-wide text-brand-secondary uppercase">Primary</span>}
         {role && <span className="font-normal text-tertiary"> · {role}</span>}
       </p>
       {contact.organisation && <p className="text-xs text-tertiary">{contact.organisation}</p>}
-      <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-tertiary">
-        <span className="flex items-center gap-1.5">
-          <Mail01 className="size-3.5 text-quaternary" />
-          {contact.email}
+      <div className="flex min-w-0 flex-wrap items-center gap-x-4 gap-y-1 text-sm text-tertiary">
+        <span className="flex max-w-full min-w-0 items-center gap-1.5" title={contact.email}>
+          <Mail01 className="size-3.5 shrink-0 text-quaternary" />
+          <span className="truncate">{contact.email}</span>
         </span>
         {contact.phone && (
           <span className="flex items-center gap-1.5">
@@ -127,7 +128,7 @@ export function DataOwnerCard({
   hoverable?: boolean;
 }) {
   return (
-    <BentoCard className={hoverable ? "transition-colors group-hover:bg-primary_hover" : undefined}>
+    <BentoCard className={cx("min-w-0", hoverable && "transition-colors group-hover:bg-primary_hover")}>
       <div className="flex items-center gap-3">
         {details.dataOwnerType === "organisation" ? (
           details.dataOwnerOrgLogo ? (
@@ -163,12 +164,12 @@ export function ProjectManagersCard({
   hoverable?: boolean;
 }) {
   return (
-    <BentoCard className={hoverable ? "transition-colors group-hover:bg-primary_hover" : undefined}>
+    <BentoCard className={cx("min-w-0", hoverable && "transition-colors group-hover:bg-primary_hover")}>
       <h2 className="text-sm font-medium text-primary">Project Manager{managers.length > 1 ? "/s" : ""}</h2>
       <div className="flex flex-col gap-4 border-t border-secondary pt-4">
         {managers.map((m) => (
-          <div key={m.id} className="flex flex-col gap-1">
-            <p className="flex items-center gap-1.5 text-sm font-medium text-primary">
+          <div key={m.id} className="flex min-w-0 flex-col gap-1">
+            <p className="flex flex-wrap items-center gap-x-1.5 text-sm font-medium text-primary">
               {m.firstName} {m.lastName}
               {m.isPrimary && (
                 <span className="rounded-full bg-brand-50 px-1.5 py-0.5 text-[10px] font-semibold tracking-wide text-brand-secondary uppercase">Primary</span>
@@ -176,10 +177,10 @@ export function ProjectManagersCard({
               {m.role && <span className="font-normal text-tertiary"> · {ROLE_OF_WORK_OPTIONS.find((o) => o.id === m.role)?.label ?? m.roleOther}</span>}
             </p>
             {m.organisation && <p className="text-xs text-tertiary">{m.organisation}</p>}
-            <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-tertiary">
-              <span className="flex items-center gap-1.5">
-                <Mail01 className="size-3.5 text-quaternary" />
-                {m.email}
+            <div className="flex min-w-0 flex-wrap items-center gap-x-4 gap-y-1 text-sm text-tertiary">
+              <span className="flex max-w-full min-w-0 items-center gap-1.5" title={m.email}>
+                <Mail01 className="size-3.5 shrink-0 text-quaternary" />
+                <span className="truncate">{m.email}</span>
               </span>
               {m.phone && (
                 <span className="flex items-center gap-1.5">
