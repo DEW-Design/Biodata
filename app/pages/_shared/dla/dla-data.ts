@@ -1,5 +1,5 @@
 import type { BadgeColors } from "@/components/base/badges/badge-types";
-import { projects as realProjects } from "@/app/pages/_shared/project-list-content";
+import { projects as realProjects } from "@/app/pages/_shared/project-list-data";
 import type { Boundary } from "@/app/pages/_shared/map-search/geo";
 
 // Data Licencing Agreement (DLA) model + seed data for /pages/dla. Shaped from the Master Flows
