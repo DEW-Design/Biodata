@@ -7,6 +7,7 @@
 // properties of undefined (reading 'Axis')" the moment a map chart tried to construct. The
 // `esm/` subpath is Highcharts' own real ESM build (`import * as from "../highcharts.js"`
 // internally) built for exactly this - bundler-native, no global required.
+import { useEffect, useRef } from "react";
 import Highcharts from "highcharts/esm/highcharts";
 import "highcharts/esm/modules/map";
 import HighchartsReact from "highcharts-react-official";
@@ -15,7 +16,7 @@ import auTopology from "@highcharts/map-collection/countries/au/au-all.topo.json
 // A real map, built on Highcharts Maps (the `highcharts/modules/map` plugin) plus Highcharts'
 // own official map data package (`@highcharts/map-collection`) - not a fabricated grid or an
 // invented boundary. Replaces the "Map view" placeholder box on the Flora and Fauna Dashboard's
-// Overview and Flora tabs, per the user directly ("bring in map view from Highcharts"), option-1
+// Overview and Flora tabs, per the user directly ("bring in map view from Highcharts"), on the sidebar shell
 // only.
 //
 // Highcharts' public map collection only goes down to state/territory level for Australia - no
@@ -35,6 +36,21 @@ const mapData = (auTopology as { objects: { default: { geometries: Array<{ prope
 );
 
 export function MapView() {
+  const wrapperRef = useRef<HTMLDivElement>(null);
+  const chartRef = useRef<HighchartsReact.RefObject>(null);
+
+  // Highcharts sizes itself in pixels at render time and only re-measures on window resize. When the
+  // container changes width without the window changing (a sidebar collapsing or expanding), the
+  // stale pixel width props open the surrounding flex row and pushes siblings out of view. Reflow on
+  // the container's own resize instead.
+  useEffect(() => {
+    const el = wrapperRef.current;
+    if (!el) return;
+    const observer = new ResizeObserver(() => chartRef.current?.chart?.reflow());
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
+
   const options: Highcharts.Options = {
     chart: {
       map: auTopology as unknown as Highcharts.TopoJSON,
@@ -61,8 +77,12 @@ export function MapView() {
   };
 
   return (
-    <div className="min-h-[380px] flex-1 overflow-hidden rounded-md">
-      <HighchartsReact highcharts={Highcharts} constructorType="mapChart" options={options} />
+    // The chart sits in an absolutely-positioned layer so its own pixel width never contributes to
+    // this wrapper's (or its flex parents') min-content width - the wrapper is what sizes the chart.
+    <div ref={wrapperRef} className="relative min-h-[380px] min-w-0 flex-1 overflow-hidden rounded-md">
+      <div className="absolute inset-0">
+        <HighchartsReact ref={chartRef} highcharts={Highcharts} constructorType="mapChart" options={options} />
+      </div>
     </div>
   );
 }

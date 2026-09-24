@@ -1,7 +1,7 @@
 "use client";
 
 /**
- * Live breadcrumb for the Registered User sidebar shell (option-1 pages) - reflects the real IA
+ * Live breadcrumb for the Registered User sidebar shell (the canonical /pages screens) - reflects the real IA
  * (`lib/registered-user-nav.ts`) instead of the generic "Home / Project ▾ / ... / [Location]"
  * mockup text it replaced.
  *

@@ -102,6 +102,23 @@ export default function TypographyPage() {
         </tbody>
       </table>
 
+      <h2 className="text-balance">Text wrapping</h2>
+      <p className="text-balance">
+        Any real component copy that can wrap to two or more lines - a Modal/Alert/Toast/Tooltip title or
+        description, a SectionHeader heading/subheading, an Accordion item title, a Checkbox/RadioButton/Toggle
+        label or hint, a RadioGroup card&apos;s title or description - carries Tailwind&apos;s{" "}
+        <code>text-balance</code> utility (<code>text-wrap: balance</code>). It evens out the line lengths of a
+        wrapped heading or short paragraph instead of leaving a single short orphan word on the last line.
+        Single-line, intentionally-clipped text (a Badge/Tag label, a Button label, a Table header cell) doesn&apos;t
+        need it - <code>text-balance</code> only matters once text is actually allowed to wrap.
+      </p>
+      <p className="text-balance">
+        This documentation site&apos;s own prose (every heading and paragraph inside <code>.prose-doc</code>) has used
+        the same utility from the start - this section makes that existing, previously-unstated convention explicit
+        and extends it to the real component layer (<code>components/base/**</code>/<code>components/application/
+        **</code>) as well, not just doc-page copy.
+      </p>
+
       <h2 className="text-balance">Font family</h2>
       <p className="text-balance">
         <code>--font-barlow</code> is set to <strong>Barlow</strong> - the primary typeface of the DEW design system. The type scale above previews

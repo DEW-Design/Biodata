@@ -23,7 +23,7 @@ export interface SearchEvent {
     id: string;
     /** The short alphanumeric code shown in the Event ID column and in every Hierarchy chain -
      *  matches Figma's own per-type prefix convention exactly (node 205:20764 -> get_design_context
-     *  on the Event ID column: "BD - 5034" for a Project, "SU00501" Site, "VU00501" Visit,
+     *  on the Event ID column: "BD-5039" for a Project, "SU00501" Site, "VU00501" Visit,
      *  "TR00501" Transect, "QR00501" Quadrat, "BK00501" Block, "RMB00501" Ramble, "TRP00501" Trap,
      *  "CU00501" Custom event). `id` stays the internal slug used for parent-linking/React keys/
      *  routing - `code` is the display-only value a real BDBSA record ID would look like. */
@@ -50,17 +50,20 @@ export interface SearchEvent {
     description?: string;
 }
 
-const MY_PROJECT_COORDS: Record<string, { region: string; lat: number; lon: number; code: string }> = {
-    "adelaide-hills": { region: "Adelaide Hills", lat: -35.02, lon: 138.71, code: "BD - 5031" },
-    coorong: { region: "Coorong", lat: -35.79, lon: 139.29, code: "BD - 5032" },
-    flinders: { region: "Flinders Ranges", lat: -31.49, lon: 138.6, code: "BD - 5033" },
-    "kangaroo-island": { region: "Kangaroo Island", lat: -35.95, lon: 136.71, code: "BD - 5034" },
+// `code` comes from `myProjects` itself so the Projects page and the Projects results tab
+// show the same Project ID for the same project.
+const MY_PROJECT_COORDS: Record<string, { region: string; lat: number; lon: number }> = {
+    "adelaide-hills": { region: "Adelaide Hills", lat: -35.02, lon: 138.71 },
+    coorong: { region: "Coorong", lat: -35.79, lon: 139.29 },
+    flinders: { region: "Flinders Ranges", lat: -31.49, lon: 138.6 },
+    "kangaroo-island": { region: "Kangaroo Island", lat: -35.95, lon: 136.71 },
 };
 
 const myProjectEvents: SearchEvent[] = myProjects
     .filter((p) => MY_PROJECT_COORDS[p.id])
     .map((p) => ({
         id: p.id,
+        code: p.code,
         name: p.name,
         type: "Project",
         status: p.status,
@@ -86,10 +89,10 @@ const myProjectEvents: SearchEvent[] = myProjects
 // name - and a one-line description matching each project's own name/status, the same convention
 // `project-list-content.tsx`'s real `projects` array already follows.
 const otherProjectEvents: SearchEvent[] = [
-    { id: "naracoorte-fossil", code: "BD - 5035", name: "Naracoorte Caves Fossil Fauna Survey", type: "Project", status: "Active", statusColor: "success", startDate: "2025-09-14", endDate: "—", org: "South Australian Museum", region: "Naracoorte", lat: -36.97, lon: 140.8, contributorInitials: "LS", contributorName: "Lana Steiner", updated: "4 days ago", description: "Fossil deposit survey mapping historical fauna records across the cave system." },
-    { id: "lake-eyre-waterbirds", code: "BD - 5036", name: "Lake Eyre Basin Waterbird Survey", type: "Project", status: "Active", statusColor: "success", startDate: "2025-10-01", endDate: "—", org: "BirdLife Australia", region: "Lake Eyre", lat: -28.9, lon: 137.3, contributorInitials: "PB", contributorName: "Phoenix Baker", updated: "1 week ago", description: "Seasonal waterbird counts across the Lake Eyre Basin's ephemeral wetlands." },
-    { id: "nullarbor-arid-zone", code: "BD - 5037", name: "Nullarbor Arid Zone Monitoring", type: "Project", status: "Under review", statusColor: "warning", startDate: "2025-12-05", endDate: "—", org: "DEW Biodiversity Team", region: "Nullarbor", lat: -31.43, lon: 130.9, contributorInitials: "OW", contributorName: "Olivia Wyatt", updated: "6 days ago", description: "Arid zone flora and fauna monitoring data pending verification." },
-    { id: "remarkable-malleefowl", code: "BD - 5038", name: "Mount Remarkable Malleefowl Program", type: "Project", status: "Active", statusColor: "success", startDate: "2025-08-19", endDate: "—", org: "Southern Flinders Landcare", region: "Mount Remarkable", lat: -32.8, lon: 138.14, contributorInitials: "MD", contributorName: "Maya Dewitt", updated: "2 weeks ago", description: "Malleefowl mound monitoring and nest-site recovery tracking." },
+    { id: "naracoorte-fossil", code: "BD-5035", name: "Naracoorte Caves Fossil Fauna Survey", type: "Project", status: "Active", statusColor: "success", startDate: "2025-09-14", endDate: "—", org: "South Australian Museum", region: "Naracoorte", lat: -36.97, lon: 140.8, contributorInitials: "LS", contributorName: "Lana Steiner", updated: "4 days ago", description: "Fossil deposit survey mapping historical fauna records across the cave system." },
+    { id: "lake-eyre-waterbirds", code: "BD-5036", name: "Lake Eyre Basin Waterbird Survey", type: "Project", status: "Active", statusColor: "success", startDate: "2025-10-01", endDate: "—", org: "BirdLife Australia", region: "Lake Eyre", lat: -28.9, lon: 137.3, contributorInitials: "PB", contributorName: "Phoenix Baker", updated: "1 week ago", description: "Seasonal waterbird counts across the Lake Eyre Basin's ephemeral wetlands." },
+    { id: "nullarbor-arid-zone", code: "BD-5037", name: "Nullarbor Arid Zone Monitoring", type: "Project", status: "Under review", statusColor: "warning", startDate: "2025-12-05", endDate: "—", org: "DEW Biodiversity Team", region: "Nullarbor", lat: -31.43, lon: 130.9, contributorInitials: "OW", contributorName: "Olivia Wyatt", updated: "6 days ago", description: "Arid zone flora and fauna monitoring data pending verification." },
+    { id: "remarkable-malleefowl", code: "BD-5038", name: "Mount Remarkable Malleefowl Program", type: "Project", status: "Active", statusColor: "success", startDate: "2025-08-19", endDate: "—", org: "Southern Flinders Landcare", region: "Mount Remarkable", lat: -32.8, lon: 138.14, contributorInitials: "MD", contributorName: "Maya Dewitt", updated: "2 weeks ago", description: "Malleefowl mound monitoring and nest-site recovery tracking." },
 ];
 
 // Child events - Sites, and a further level of Visits/Transects/Quadrats/Blocks/Rambles/Traps/
@@ -145,7 +148,7 @@ export const searchEvents: SearchEvent[] = [...myProjectEvents, ...otherProjectE
 const eventById = new Map(searchEvents.map((e) => [e.id, e]));
 
 // Per-type leading icon - shared by both the Type column's cells and the sub-filter chip row
-// above it (app/pages/observations/option-1/page.tsx) and, via `eventChain`/`hierarchyFor` below,
+// above it (app/pages/observations/page.tsx) and, via `eventChain`/`hierarchyFor` below,
 // the Hierarchy cell's own per-segment detail panel - one source, never duplicated per consumer.
 // Matches Figma's own icon-per-sub-type treatment exactly - confirmed via get_design_context on
 // the chip row itself (I205:21340;195:10229;1396:59991;195:9701), not inferred from a screenshot:
@@ -207,7 +210,7 @@ export function hierarchyFor(parentEventId: string): SearchEvent[] {
  *  in this dataset terminates at a root Project by construction (see `SearchEvent.parentId`'s own
  *  doc comment), so this never returns undefined. Backs the map search's core invariant: every
  *  Event/Occurrence/Observation/Resource shown in a results tab must belong to a Project that's
- *  also shown in the Projects tab - see app/pages/observations/option-1/page.tsx. */
+ *  also shown in the Projects tab - see app/pages/observations/page.tsx. */
 export function rootProjectOfEvent(event: SearchEvent): SearchEvent {
     const ancestors = eventAncestors(event);
     return ancestors.length > 0 ? ancestors[0] : event;

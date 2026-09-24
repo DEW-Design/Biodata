@@ -1,11 +1,11 @@
 "use client";
 
-import type { FC, ReactNode, Key as ReactKey } from "react";
+import type { FC, ReactNode } from "react";
 import { Suspense, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import type { Key } from "react-aria-components";
-import { Button as AriaButton, Dialog, DialogTrigger, Tabs } from "react-aria-components";
+import { Button as AriaButton, Dialog, DialogTrigger, Tabs, ToggleButton, ToggleButtonGroup } from "react-aria-components";
 import { TabList, Tab, TabPanel, Tabs as ContentTabs } from "@/components/application/tabs/tabs";
 import {
   SearchMd,
@@ -18,7 +18,7 @@ import {
   HomeLine,
   Folder,
   Eye,
-  FileLock01,
+  FileCheck02, FileLock01,
   Feather,
   BarChart01,
   FileSearch01,
@@ -33,6 +33,10 @@ import {
   Compass,
   Flag03,
   Map01,
+  LayoutLeft,
+  FilterLines,
+  Dataflow03,
+  Table as TableIcon,
 } from "@untitledui/icons";
 import { Input } from "@/components/base/input/input";
 import { Button } from "@/components/base/buttons/button";
@@ -40,8 +44,10 @@ import { Avatar } from "@/components/base/avatar/avatar";
 import { Tooltip, TooltipTrigger } from "@/components/base/tooltip/tooltip";
 import { Popover } from "@/components/base/select/popover";
 import { BadgeWithDot, CountBadge } from "@/components/base/badges/badges";
-import { Cell, Column, Row, Table, TableBody, TableHeader } from "@/components/base/table/table";
 import { Accordion } from "@/components/base/accordion/accordion";
+import { Checkbox } from "@/components/base/checkbox/checkbox";
+import { Dropdown } from "@/components/base/dropdown/dropdown";
+import { Tag, TagGroup, TagList } from "@/components/base/tags/tags";
 import { TreeView } from "@/components/application/tree-view/tree-view";
 import { Breadcrumb } from "@/components/scaffold/breadcrumb";
 import { FeaturedIcon } from "@/components/foundations/featured-icon/featured-icon";
@@ -62,16 +68,17 @@ import { useFeatureAccess } from "@/lib/use-feature-access";
 import { useUserRole } from "@/lib/use-user-role";
 import { useRoleHref } from "@/lib/use-role-href";
 import { orgLabelForRole } from "@/lib/user-role";
-import { registeredUserNav, publicUserNav, registeredUserAccountMenu, registeredUserFooterLinks, keyHref, type NavNode } from "@/lib/registered-user-nav";
+import { navForRole, registeredUserAccountMenu, registeredUserFooterLinks, keyHref, type NavNode } from "@/lib/registered-user-nav";
 import { cx } from "@/utils/cx";
+import { projectRecordTree, type RecordNode, type RecordType } from "@/app/pages/_shared/project-record-tree";
 
 // This page's project is the same Adelaide Hills project the map search dataset models - its real
 // coordinates back the shared Location Details table in the Locations accordion.
 const adelaideHillsProject = searchEvents.find((e) => e.id === "adelaide-hills");
 
 // One project's detail view, on the sidebar-nav shell - same three-column chrome as
-// project-list/option-1 (icon rail + contextual sidebar + main content), reused verbatim. Reached
-// by clicking "Adelaide Hills Bushland Survey" from project-list/option-1 - the other three rows
+// project-list (icon rail + contextual sidebar + main content), reused verbatim. Reached
+// by clicking the one row with a real `href` from project-list - the other three rows
 // there aren't wired yet, same "only link what has a real page" convention used everywhere else.
 //
 // Content model (not layout) is drawn from the other designer's Projects Figma
@@ -81,7 +88,7 @@ const adelaideHillsProject = searchEvents.find((e) => e.id === "adelaide-hills")
 // Details block, an Overview (abstract + geographic scope), and a nested-records tree of survey
 // record types (Site, Observation, Occurrence, Visit, Transect, Quadrat, Block, Ramble, Trap,
 // Custom Event) that live inside it. That tree renders with the same NavTree expand/collapse
-// pattern already used for the registered-user IA (see dashboard/option-1) rather than the Figma's
+// pattern already used for the registered-user IA (see dashboard) rather than the Figma's
 // own tree-explorer widget - our pattern, their content.
 //
 // One concrete example project, not a dynamic per-ID route - same "one hardcoded instance, not a
@@ -92,6 +99,7 @@ const sectionIcons: Record<string, FC<{ className?: string }>> = {
   Projects: Folder,
   Explore: Map01,
   "Data Licencing Agreement (DLA)": FileLock01,
+  "Data Sharing Agreement (DSA)": FileCheck02,
   "Nominate Sensitive Species": Feather,
   "Reports (Own Submissions)": BarChart01,
   "Template Finder": FileSearch01,
@@ -179,23 +187,27 @@ function NavTree({ node, depth = 0, defaultOpen = false }: { node: NavNode; dept
 // observations or occurrences or both. However, an event cannot be a child of an observation or
 // occurrence" - Events can nest inside other Events (Site > Visit > Transect/Quadrat/Ramble, real
 // survey methodology: place > field trip > survey method) and can have Observations/Occurrences as
-// children, but never the reverse. The tree below is now an array of Site (Event) roots directly,
-// not Dataset roots - `projectDatasets` further down stays a flat, separate attribution table (who
-// uploaded what, when), decoupled from this browsable tree, matching "dataset = ingestion
-// template," not a container.
-type RecordType = "Sites" | "Visits" | "Observations" | "Occurrences" | "Transects" | "Quadrats" | "Rambles";
+// children, but never the reverse. Refined 2026-09-22 (user direct): the tree reads Project > Site >
+// Visit > Occurrence > Observation, an Occurrence parenting exactly one Observation - see
+// app/pages/_shared/project-record-tree.ts, the one shared source this and observation-detail render.
+// `projectDatasets` further down stays a flat, separate attribution table (who uploaded what, when),
+// decoupled from this browsable tree, matching "dataset = ingestion template," not a container.
 
 const recordTypeMeta: Record<RecordType, { icon: FC<{ className?: string }> }> = {
+  Projects: { icon: Folder },
   Sites: { icon: Map01 },
   Visits: { icon: Calendar },
-  Observations: { icon: Eye },
   Occurrences: { icon: MarkerPin01 },
+  Observations: { icon: Eye },
   Transects: { icon: Route },
   Quadrats: { icon: Grid01 },
   Rambles: { icon: Compass },
 };
 
 const recordTypes = Object.keys(recordTypeMeta) as RecordType[];
+
+// Every record type a user can filter by - the Project is the tree's root, never a filter.
+const filterableTypes = recordTypes.filter((type) => type !== "Projects");
 
 // Built from recordTypeMeta, not hand-typed, so the copy can't drift from the actual set of
 // searchable record types - flagged directly by the user: a generic "Search records…" didn't say
@@ -206,52 +218,22 @@ const recordSearchPlaceholder = `Search ${recordTypes
   .map((t) => t.toLowerCase())
   .join(", ")}, or ${recordTypes[recordTypes.length - 1].toLowerCase()}…`;
 
-interface RecordNode {
-  id: string;
-  type: RecordType;
-  label: string;
-  children?: RecordNode[];
-}
 
 // "Observation OBS094 · Individual" (id "obs-094") is the one node with a real page behind it -
-// app/pages/observation-detail/option-1, the concrete "Individual Observation" record that page
+// app/pages/observation-detail, the concrete "Individual Observation" record that page
 // documents field-for-field. Every other node here is honest content with nowhere real to go yet -
 // selecting one shows what it is and where it sits (via SelectedRecordPanel below), not a fake link.
 // Two Site (Event) roots directly, matching the corrected model above - no Dataset/Sub-site wrapper.
-const projectRecordTree: RecordNode[] = [
-  {
-    id: "site",
-    type: "Sites",
-    label: "Site SU00501",
-    children: [
-      { id: "obs-094", type: "Observations", label: "Observation OBS094 · Individual" },
-      { id: "obs-nonbiotic", type: "Observations", label: "Observation OBS094 · Non-biotic" },
-      { id: "obs-community", type: "Observations", label: "Observation OBS094 · Community" },
-      { id: "occ-individual", type: "Occurrences", label: "Occurrence OBS094 · Individual" },
-      { id: "occ-population", type: "Occurrences", label: "Occurrence OBS094 · Population" },
-      {
-        id: "visit",
-        type: "Visits",
-        label: "Visit VU00501",
-        children: [{ id: "visit-obs", type: "Observations", label: "Observation OBS095 · Individual" }],
-      },
-      { id: "transect", type: "Transects", label: "Transect TR00501" },
-      { id: "quadrat", type: "Quadrats", label: "Quadrat QR00501" },
-      { id: "ramble", type: "Rambles", label: "Ramble RMB00501" },
-    ],
-  },
-  {
-    id: "site-777",
-    type: "Sites",
-    label: "Site SU00777",
-    children: [
-      { id: "inc-obs-1", type: "Observations", label: "Observation INC-0231 · Individual" },
-      { id: "inc-obs-2", type: "Observations", label: "Observation INC-0232 · Community" },
-    ],
-  },
-];
 
 const TRUNCATE_AT = 8;
+
+// A node's children are only bucketed by record type once there are more than TRUNCATE_AT of them
+// AND they're a genuine mix - the scale case the "grouped by type" pattern exists for. Below that,
+// they list flat in their real hierarchy order, which is how the design reads (a Site listing its
+// Visits, Occurrences and Observations directly).
+function shouldGroup(children: RecordNode[]): boolean {
+  return children.length > TRUNCATE_AT && groupByType(children).size > 1;
+}
 
 function groupByType(children: RecordNode[]): Map<RecordType, RecordNode[]> {
   const map = new Map<RecordType, RecordNode[]>();
@@ -263,20 +245,21 @@ function groupByType(children: RecordNode[]): Map<RecordType, RecordNode[]> {
   return map;
 }
 
-function filterRecordTree(node: RecordNode, query: string): RecordNode | null {
-  if (!query.trim()) return node;
-  const q = query.toLowerCase();
-  const selfMatch = node.label.toLowerCase().includes(q);
-  if (selfMatch) return node;
-  const filteredChildren = node.children?.map((c) => filterRecordTree(c, query)).filter((c): c is RecordNode => c !== null) ?? [];
-  return filteredChildren.length > 0 ? { ...node, children: filteredChildren } : null;
+// Text search and the record-type filter compose: a node stays if it matches both (or has a kept
+// descendant, so its place in the hierarchy survives). A text-only match keeps its whole subtree, as
+// before; once types are filtered, only the selected types are shown beneath it.
+function filterRecordTree(node: RecordNode, query: string, types: ReadonlySet<RecordType>): RecordNode | null {
+  const q = query.trim().toLowerCase();
+  if (!q && types.size === 0) return node;
+  const selfMatch = (!q || node.label.toLowerCase().includes(q)) && (types.size === 0 || types.has(node.type));
+  if (selfMatch && types.size === 0) return node;
+  const filteredChildren = node.children?.map((c) => filterRecordTree(c, query, types)).filter((c): c is RecordNode => c !== null) ?? [];
+  return selfMatch || filteredChildren.length > 0 ? { ...node, children: filteredChildren } : null;
 }
 
-// Runs filterRecordTree (still single-root logic) across every Dataset root and drops any that
-// come back empty - same "search across the whole tree" behavior as before, just over an array of
-// roots instead of one.
-function filterRecordForest(nodes: RecordNode[], query: string): RecordNode[] {
-  return nodes.map((n) => filterRecordTree(n, query)).filter((n): n is RecordNode => n !== null);
+// Runs filterRecordTree across every root and drops any that come back empty.
+function filterRecordForest(nodes: RecordNode[], query: string, types: ReadonlySet<RecordType>): RecordNode[] {
+  return nodes.map((n) => filterRecordTree(n, query, types)).filter((n): n is RecordNode => n !== null);
 }
 
 // Mirrors renderGroupedNode's own bucketing decision so the synthetic type-bucket ids it introduces
@@ -287,7 +270,7 @@ function collectGroupedContainerIds(node: RecordNode, acc: string[] = []): strin
   acc.push(node.id);
   const grouped = groupByType(node.children);
   const distinctTypes = Array.from(grouped.keys());
-  if (distinctTypes.length <= 1) {
+  if (!shouldGroup(node.children)) {
     for (const child of node.children) collectGroupedContainerIds(child, acc);
   } else {
     for (const type of distinctTypes) {
@@ -329,7 +312,7 @@ function renderGroupedNode(n: RecordNode, currentKey: string | null): ReactNode 
   const grouped = groupByType(n.children!);
   const distinctTypes = Array.from(grouped.keys());
 
-  if (distinctTypes.length <= 1) {
+  if (!shouldGroup(n.children!)) {
     return (
       <TreeView.Item key={n.id} id={n.id} textValue={n.label}>
         <TreeView.ItemContent icon={Icon} className={n.id === currentKey ? highlightClassName : undefined}>
@@ -359,7 +342,7 @@ function renderGroupedNode(n: RecordNode, currentKey: string | null): ReactNode 
             {shown.map((child) => renderGroupedNode(child, currentKey))}
             {remaining > 0 && (
               <TreeView.Item key={`${bucketId}__more`} id={`${bucketId}__more`} textValue={`${remaining} more`} isDisabled>
-                <TreeView.ItemContent>{`+${remaining.toLocaleString()} more — search to narrow`}</TreeView.ItemContent>
+                <TreeView.ItemContent>{`+${remaining.toLocaleString()} more - search to narrow`}</TreeView.ItemContent>
               </TreeView.Item>
             )}
           </TreeView.Item>
@@ -389,7 +372,7 @@ function findRecordChain(nodes: RecordNode[], targetId: string, trail: ChainCrum
     if (node.children?.length) {
       const grouped = groupByType(node.children);
       const distinctTypes = Array.from(grouped.keys());
-      if (distinctTypes.length <= 1) {
+      if (!shouldGroup(node.children)) {
         const found = findRecordChain(node.children, targetId, nextTrail);
         if (found) return found;
       } else {
@@ -418,7 +401,7 @@ function SelectedRecordPanel({ crumb, onBack }: { crumb: ChainCrumb; onBack: () 
       <h1 className="text-lg font-medium text-primary">{crumb.label}</h1>
       <p className="max-w-sm text-sm text-tertiary">
         This record&apos;s own detail view isn&apos;t built yet - only Observation OBS094 · Individual has one so far
-        (app/pages/observation-detail/option-1).
+        (app/pages/observation-detail).
       </p>
       <Button color="link-color" size="sm" iconLeading={ArrowNarrowLeft} onClick={onBack}>
         Back to project overview
@@ -427,10 +410,12 @@ function SelectedRecordPanel({ crumb, onBack }: { crumb: ChainCrumb; onBack: () 
   );
 }
 
-// Same 4 example projects as project-list/option-1 - only this one has a real detail page, so it's
+// Same 4 example projects as project-list - only this one has a real detail page, so it's
 // the only clickable row, same "only wire what has a real page" convention used everywhere else.
+const PROJECT_NAME = "Adelaide Hills Bushland Survey";
+
 const switcherProjects = [
-  { name: "Adelaide Hills Bushland Survey", href: "/pages/project-detail/option-1" },
+  { name: PROJECT_NAME, href: "/pages/project-detail" },
   { name: "Coorong Wetlands Bird Count" },
   { name: "Flinders Ranges Reptile Atlas" },
   { name: "Kangaroo Island Recovery Monitoring" },
@@ -489,7 +474,7 @@ function ProjectSwitcher() {
           </div>
           <div className="mt-1 shrink-0 border-t border-secondary pt-1">
             <Link
-              href={roleHref("/pages/project-list/option-1")}
+              href={roleHref("/pages/project-list")}
               onClick={() => setOpen(false)}
               className="block rounded-md px-2 py-2 text-sm font-medium text-brand-700 hover:bg-secondary"
             >
@@ -543,10 +528,10 @@ function ChainBreadcrumb({ chain, onSelectCrumb, orgLabel }: { chain: ChainCrumb
       </span>
       <span className="shrink-0">/</span>
       {chain.length === 0 ? (
-        <span className="min-w-0 truncate text-primary">Adelaide Hills Bushland Survey</span>
+        <span className="min-w-0 truncate text-primary">{PROJECT_NAME}</span>
       ) : (
         <button type="button" onClick={() => onSelectCrumb(null)} className="min-w-0 shrink truncate hover:text-primary">
-          Adelaide Hills Bushland Survey
+          {PROJECT_NAME}
         </button>
       )}
       {collapsed.length > 0 && (
@@ -648,18 +633,18 @@ function SectionPlaceholder({ node }: { node: NavNode }) {
   );
 }
 
-function MetaField({ label, children }: { label: string; children: ReactNode }) {
+function MetaField({ label, children, onDark = false }: { label: string; children: ReactNode; onDark?: boolean }) {
   return (
     <div className="flex flex-col gap-1">
-      <p className="text-xs font-semibold tracking-wide text-quaternary uppercase">{label}</p>
-      <div className="text-sm text-primary">{children}</div>
+      <p className={cx("text-xs font-semibold tracking-wide uppercase", onDark ? "text-white/70" : "text-quaternary")}>{label}</p>
+      <div className={cx("text-sm", onDark ? "text-white" : "text-primary")}>{children}</div>
     </div>
   );
 }
 
 // The concept-level flag indicator - if an admin flags a field, a registered user sees that it's
 // been flagged (an icon + tooltip), same convention now shared with
-// app/pages/observation-detail/option-1's own copy of this exact component. Just the indicator -
+// app/pages/observation-detail's own copy of this exact component. Just the indicator -
 // the real flag-management UI is separate, later work.
 function FlagIndicator() {
   return (
@@ -689,7 +674,7 @@ function DetailRow({ label, value, flagged = false, fieldId }: { label: string; 
 function DetailSection({ title, children }: { title: string; children: ReactNode }) {
   return (
     <div className="flex flex-col gap-4 rounded-lg border border-secondary p-6">
-      <h2 className="text-md font-medium text-primary">{title}</h2>
+      <h2 className="text-base font-medium text-primary">{title}</h2>
       <div className="flex flex-col gap-3">{children}</div>
     </div>
   );
@@ -720,7 +705,7 @@ function ContactCard({ title, orgLabel, contacts }: { title: string; orgLabel?: 
       </div>
       <div className="flex flex-col gap-4 border-t border-secondary pt-4">
         {contacts.map((contact) => (
-          <div key={contact.email} className="flex flex-col gap-1">
+          <div key={`${contact.role}-${contact.email}`} className="flex flex-col gap-1">
             <p className="text-sm font-medium text-primary">
               {contact.name}
               {contact.role && <span className="font-normal text-tertiary"> · {contact.role}</span>}
@@ -745,8 +730,8 @@ function ContactCard({ title, orgLabel, contacts }: { title: string; orgLabel?: 
 // Adelaide Hills Bushland Survey is owned by the org whose name already appears elsewhere for this
 // same project (project-list-content.tsx's "Adelaide Hills Landcare") - one real accountable
 // person behind that org attribution, per the confirmed data model, not a shared org-wide login.
-const dataOwner: ProjectContact = { name: "Olivia Wyatt", email: "olivia.wyatt@adelaidehillslandcare.org.au", phone: "(08) 8388 4188" };
-const projectManager: ProjectContact = { name: "Maya Dewitt", role: "DEW Ecologist", email: "maya.dewitt@sa.gov.au", phone: "(08) 8204 1910" };
+const dataOwner: ProjectContact[] = [{ name: "Olivia Wyatt", email: "olivia.wyatt@adelaidehillslandcare.org.au", phone: "(08) 8388 4188" }];
+const projectManager: ProjectContact[] = [{ name: "Maya Dewitt", role: "DEW Ecologist", email: "maya.dewitt@sa.gov.au", phone: "(08) 8204 1910" }];
 
 // One place for the identifying metadata, so the meta row under the title and the rail's "Project
 // Details" card below can't drift apart - "Meta Under Title, Full Rail" decided from
@@ -766,157 +751,43 @@ const project = {
   id: "BD-5039",
   fullName: "Adelaide Hills Bushland Flora and Fauna Monitoring Survey",
   startDate: "3 Feb 2025",
-  endDate: "—",
+  endDate: "Ongoing",
   status: "Active" as const,
   publishedBy: "Adelaide Hills Landcare",
   attachedResources: 4,
 };
 
-function PropertyRow({ label, children, flagged = false }: { label: string; children: ReactNode; flagged?: boolean }) {
-  return (
-    <div className="flex items-center justify-between gap-3 text-sm">
-      <span className="flex items-center gap-1.5 text-tertiary">
-        {label}
-        {flagged && <FlagIndicator />}
-      </span>
-      <span className="font-medium text-primary">{children}</span>
-    </div>
-  );
-}
-
-// Consolidated per the user directly, off a second Figma reference (bgksKvmSaVR7ZptB98LzGr's own
-// "Project Details" card - see the project_projects_data_model memory) that independently landed
-// on the same instinct as /proto/project-detail's "Consolidated Rail" variant they picked: one
-// denser card (identity fields + Attached Resources + Events/Occurrences/Observations) beats
-// splitting those counts into a separate MetricCard row above it - fewer visual blocks, same
-// information, less to scan before finding the one you need.
-// Grouped into 3 chunks (identity/dates, descriptive fields, activity) with a divider between
-// each, rather than one flat 7-row list - a get-creative pass on the consolidated card: folding
-// Events/Occurrences/Observations and Attached Resources into this one card (see the comment above
-// `project`) removed 3 separate MetricCard tiles, but a flat list of 7 rows plus a 3-metric footer
-// reads as a wall of text without some chunking to scan by, even inside a single card.
-function ProjectDetailsCard() {
-  return (
-    <BentoCard className="gap-3">
-      <h2 className="text-sm font-semibold text-primary">Project Details</h2>
-      <div className="flex flex-col gap-3 border-t border-secondary pt-3">
-        <PropertyRow label="Status">
-          <BadgeWithDot size="sm" color="success">
-            {project.status}
-          </BadgeWithDot>
-        </PropertyRow>
-        <PropertyRow label="Project ID">{project.id}</PropertyRow>
-        <PropertyRow label="Start Date">{project.startDate}</PropertyRow>
-        <PropertyRow label="End Date">{project.endDate}</PropertyRow>
-      </div>
-      <div className="flex flex-col gap-3 border-t border-secondary pt-3">
-        <div className="flex flex-col gap-1">
-          <span className="text-sm text-tertiary">Full Project Name</span>
-          <span className="text-sm font-medium text-primary">{project.fullName}</span>
-        </div>
-        <div className="flex flex-col gap-1">
-          <span className="text-sm text-tertiary">Published By</span>
-          <span className="text-sm font-medium text-primary">{project.publishedBy}</span>
-        </div>
-      </div>
-      <div className="flex flex-col gap-3 border-t border-secondary pt-3">
-        <PropertyRow label="Attached Resources">{project.attachedResources}</PropertyRow>
-        {/* Summed from projectDatasets below (the Datasets tab's own real table), not a second,
-            independently-typed set of numbers - referencing it here is safe despite the textual
-            order (this function only runs at render time, well after the module has finished
-            evaluating every top-level const). */}
-        <div className="grid grid-cols-3 gap-3 text-center">
-          <div className="flex flex-col gap-0.5">
-            <span className="text-lg font-medium text-primary tabular-nums">{projectDatasets.reduce((sum, d) => sum + d.events, 0)}</span>
-            <span className="text-xs text-tertiary">Events</span>
-          </div>
-          <div className="flex flex-col gap-0.5">
-            <span className="text-lg font-medium text-primary tabular-nums">{projectDatasets.reduce((sum, d) => sum + d.occurrences, 0)}</span>
-            <span className="text-xs text-tertiary">Occurrences</span>
-          </div>
-          <div className="flex flex-col gap-0.5">
-            <span className="text-lg font-medium text-primary tabular-nums">{projectDatasets.reduce((sum, d) => sum + d.observations, 0)}</span>
-            <span className="text-xs text-tertiary">Observations</span>
-          </div>
-        </div>
-      </div>
-    </BentoCard>
-  );
-}
-
-// Contribution is open - any registered user can add a dataset to any project, per the confirmed
-// data model - so this project (like a real one would) has datasets from more than one person, not
-// a single owner-uploaded list. Counts sum to the same Events/Occurrences/Observations totals (6/
-// 18/42) already shown elsewhere on this page - two real contributions, not two independent totals.
-interface ProjectDataset {
-  id: string;
-  name: string;
-  contributor: string;
-  contributorInitials: string;
-  uploadedDate: string;
-  events: number;
-  occurrences: number;
-  observations: number;
-}
-
-const projectDatasets: ProjectDataset[] = [
-  {
-    id: "fleurieu-autumn-2025",
-    name: "Fleurieu Transect Survey — Autumn 2025",
-    contributor: "Olivia Wyatt",
-    contributorInitials: "OW",
-    uploadedDate: "4 Feb 2025",
-    events: 4,
-    occurrences: 12,
-    observations: 28,
-  },
-  {
-    id: "cleland-incidental",
-    name: "Cleland Incidental Observations",
-    contributor: "Maya Dewitt",
-    contributorInitials: "MD",
-    uploadedDate: "18 Mar 2025",
-    events: 2,
-    occurrences: 6,
-    observations: 14,
-  },
-];
-
-// One Accordion item per fill-once reference field group (Data Collection Scope, Locations,
-// Permit, URI/DOI) - collapsed by default, so the "Details" tab isn't a forced scroll through
-// fields most visits don't need, per the same cognitive-load principles. Fields with no honest
-// value are omitted entirely (Method Details, exact survey-extent coordinates) rather than shown
-// as a stray "-" - this project doesn't have a DOI yet since it's still ongoing, which is the
-// point: a field can genuinely not apply yet, and the UI should say that plainly instead of
-// padding out empty rows.
+// One Accordion item per fill-once reference field group (Locations, Data Collection Scope, Permit,
+// URI / DOI Number, in the order the Master Flows Project Details frame lists them) - collapsed by
+// default, so the "Details" tab isn't a forced scroll through fields most visits don't need, per the
+// same cognitive-load principles. Labels and values are the frame's own copy. Where the frame leaves a
+// field empty the row says so plainly ("Not provided") instead of a stray "-".
+const NOT_PROVIDED = "Not provided";
 const detailAccordionItems = [
+  {
+    id: "locations",
+    title: "Locations",
+    content: (
+      <div className="flex flex-col gap-3">
+        <p className="text-xs font-semibold tracking-wide text-quaternary uppercase">Data Collection Location</p>
+        {/* Same shared coordinate table as every other record type - this project's real
+            coordinates come from the same Adelaide Hills project in the search dataset. */}
+        <LocationDetailsTable lat={adelaideHillsProject?.lat} lon={adelaideHillsProject?.lon} />
+        <DetailRow label="Study Area Description" value={NOT_PROVIDED} flagged fieldId="study-area" />
+      </div>
+    ),
+  },
   {
     id: "data-collection",
     title: "Data Collection Scope",
     content: (
       <div className="flex flex-col gap-3">
         <DetailRow label="Project Focus Areas" value="Biological" />
-        <DetailRow label="Targeted Species" value="Yellow-footed Antechinus (Antechinus flavipes), Southern Brown Bandicoot (Isoodon obesulus)" flagged fieldId="targeted-species" />
-        <DetailRow label="Method of Data Collection" value="Structured transect surveys" />
-        <DetailRow label="Limitations and biases" value="Surveys conducted only in accessible reserve areas; nocturnal species may be under-detected." />
-        <DetailRow label="Raw Data Storage Details" value="DEW BioData SA repository" />
-      </div>
-    ),
-  },
-  {
-    id: "locations",
-    title: "Locations",
-    content: (
-      <div className="flex flex-col gap-3">
-        {/* Same shared coordinate table as every other record type - this project's real
-            coordinates come from the same Adelaide Hills project in the search dataset. */}
-        <div className="flex flex-col gap-1 sm:flex-row sm:items-start sm:gap-4">
-          <span className="w-56 shrink-0 text-sm text-tertiary sm:pt-2.5">Location Details</span>
-          <div className="min-w-0 flex-1">
-            <LocationDetailsTable lat={adelaideHillsProject?.lat} lon={adelaideHillsProject?.lon} />
-          </div>
-        </div>
-        <DetailRow label="Study Area" value="Cleland Conservation Park and surrounding reserves, Adelaide Hills" flagged fieldId="study-area" />
+        <DetailRow label="Targeted Species" value="Kookaburra (Dacelo novaeguineae)" flagged fieldId="targeted-species" />
+        <DetailRow label="Limitations and biases" value={NOT_PROVIDED} />
+        <DetailRow label="Method of Data Collection" value={NOT_PROVIDED} />
+        <DetailRow label="Method Details" value={NOT_PROVIDED} />
+        <DetailRow label="Raw Data Storage Details" value={NOT_PROVIDED} />
       </div>
     ),
   },
@@ -925,15 +796,15 @@ const detailAccordionItems = [
     title: "Permit",
     content: (
       <div className="flex flex-col gap-3">
-        <DetailRow label="Permit Type" value="Scientific Research Permit" />
-        <DetailRow label="Permit No." value="SA-2025-0142" />
+        <DetailRow label="Permit Type" value={NOT_PROVIDED} />
+        <DetailRow label="Permit No." value={NOT_PROVIDED} />
       </div>
     ),
   },
   {
     id: "uri-doi",
-    title: "URI / DOI",
-    content: <DetailRow label="URI / DOI Number" value="Not yet assigned - this project hasn't been published." />,
+    title: "URI / DOI Number",
+    content: <DetailRow label="URI / DOI Number" value={NOT_PROVIDED} />,
   },
 ];
 
@@ -1042,11 +913,10 @@ const artefacts: Artefact[] = [
   },
 ];
 
-// Which Details-tab accordion item a flagged field's `fieldId` lives inside - so a banner click can
-// force that section open (via Accordion's new controlled `openKeys`) before scrolling to the
-// field itself. Mirrors app/pages/observation-detail/option-1's own flaggedFieldSections map for
-// its own accordion.
-const detailFieldSections: Record<string, string> = {
+// Which tab a flagged field's `fieldId` lives in - so a banner click can switch to that tab before
+// scrolling to the field itself. Each fill-once field group (Locations, Data Collection Scope,
+// Permit, URI/DOI) is its own tab now, not an accordion item on one Details tab.
+const detailFieldTabs: Record<string, string> = {
   "targeted-species": "data-collection",
   "study-area": "locations",
 };
@@ -1068,8 +938,8 @@ interface FlaggedConcept {
 }
 
 const flaggedConcepts: FlaggedConcept[] = [
-  { id: "targeted-species", label: "Targeted Species", location: "Project · Details tab", kind: "details-tab" },
-  { id: "study-area", label: "Study Area", location: "Project · Details tab", kind: "details-tab" },
+  { id: "targeted-species", label: "Targeted Species", location: "Project · Data Collection Scope tab", kind: "details-tab" },
+  { id: "study-area", label: "Study Area Description", location: "Project · Locations tab", kind: "details-tab" },
   { id: "pouch-status", label: "Pouch Status", location: "Observation OBS094 · Individual", kind: "observation" },
   { id: "location-method", label: "Location Method", location: "Observation OBS094 · Individual", kind: "observation" },
 ];
@@ -1134,13 +1004,13 @@ export default function ProjectDetailPage() {
 function ProjectDetail() {
   const router = useRouter();
   const showOrgSwitcher = useFeatureAccess("orgSwitcher");
-  // public-user reads a different, smaller nav tree entirely - see dashboard/option-1's copy of
+  // public-user reads a different, smaller nav tree entirely - see dashboard's copy of
   // this same branch for the full rationale. Doesn't change this page's own "Projects" content
   // (this project's detail + records tree) - that's already a single view for every role, not the
-  // two-peer-tab pattern dashboard/option-1 and project-list/option-1 have to branch around.
+  // two-peer-tab pattern dashboard and project-list have to branch around.
   const role = useUserRole();
   const isPublicUser = role === "public-user";
-  const nav = isPublicUser ? publicUserNav : registeredUserNav;
+  const nav = navForRole(role);
   const roleHref = useRoleHref();
   const [activeSection, setActiveSection] = useState("Projects");
   const [homeTab, setHomeTab] = useState<Key>("dashboard");
@@ -1150,22 +1020,50 @@ function ProjectDetail() {
   // Controlled (not the Accordion's own default uncontrolled state) so a flagged-concept click can
   // force the right section open even after this page has already mounted - see
   // FlaggedConceptsBanner/handleFlaggedConceptSelect below.
-  const [detailOpenKeys, setDetailOpenKeys] = useState<Set<ReactKey>>(new Set());
+  // Tree/Table view of the records. Table view collapses the records sidebar (it needs the width);
+  // the LayoutLeft button beside "Back to projects" toggles it by hand in either view.
+  const [viewMode, setViewMode] = useState<"tree" | "table">("tree");
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const changeViewMode = (mode: "tree" | "table") => {
+    setViewMode(mode);
+    setSidebarCollapsed(mode === "table");
+  };
+  // "Expand all" / "Collapse all" under the search box. defaultExpandedKeys only applies on mount, so
+  // choosing one bumps `treeVersion` to remount the tree with that expanded set; typing a search or
+  // changing the filter returns to "default" (the same remount).
+  const [treeMode, setTreeMode] = useState<"default" | "all" | "none">("default");
+  const [treeVersion, setTreeVersion] = useState(0);
+  const [typeFilter, setTypeFilter] = useState<ReadonlySet<RecordType>>(new Set());
+  const [filterOpen, setFilterOpen] = useState(false);
+  const isFilteringRecords = recordQuery.trim() !== "" || typeFilter.size > 0;
+  const setTreeExpansion = (mode: "all" | "none") => {
+    setTreeMode(mode);
+    setTreeVersion((v) => v + 1);
+  };
+  const toggleRecordType = (type: RecordType, checked: boolean) => {
+    setTypeFilter((prev) => {
+      const next = new Set(prev);
+      if (checked) next.add(type);
+      else next.delete(type);
+      return next;
+    });
+    setTreeMode("default");
+  };
   const activeSectionNode = nav.find((section) => section.label === activeSection) ?? nav[0];
 
   // A flagged concept either lives on this same page (the Details tab) or on a specific record's
   // own page (so far, only the Observation deep-dive) - two different "jump to it" mechanics, same
   // as the concept's own two possible `kind`s. Same "let the real open animation finish before
-  // scrolling" delay as observation-detail/option-1's own copy of this pattern.
+  // scrolling" delay as observation-detail's own copy of this pattern.
   const handleFlaggedConceptSelect = (concept: FlaggedConcept) => {
     if (concept.kind === "details-tab") {
-      setDetailTab("details");
-      setDetailOpenKeys(new Set([detailFieldSections[concept.id]]));
+      setViewMode("tree");
+      setDetailTab(detailFieldTabs[concept.id]);
       setTimeout(() => {
         document.getElementById(`field-${concept.id}`)?.scrollIntoView({ behavior: "smooth", block: "center" });
       }, 350);
     } else {
-      router.push(`/pages/observation-detail/option-1?userRole=${role}&flag=${concept.id}`);
+      router.push(`/pages/observation-detail?userRole=${role}&flag=${concept.id}`);
     }
   };
 
@@ -1173,7 +1071,7 @@ function ProjectDetail() {
   // not on every render of the tree, and the auto-expand set is derived from the same filtered
   // result so a match's containing buckets open without needing separate state to track them. Now
   // over an array of Dataset roots (filterRecordForest), not the single Site object this used to be.
-  const filteredRecordForest = useMemo(() => filterRecordForest(projectRecordTree, recordQuery), [recordQuery]);
+  const filteredRecordForest = useMemo(() => filterRecordForest(projectRecordTree, recordQuery, typeFilter), [recordQuery, typeFilter]);
 
   // Selecting a record drives the breadcrumb chain (ChainBreadcrumb) and swaps the main column to
   // SelectedRecordPanel - unless it's the one record with a real page of its own
@@ -1182,7 +1080,7 @@ function ProjectDetail() {
   // nowhere right now" - every leaf in this tree was purely structural before, no selection or
   // action at all.
   // Initial value can come from `?select=<id>` - the focused tree view on
-  // app/pages/observation-detail/option-1 links back here with this for any record besides a
+  // app/pages/observation-detail links back here with this for any record besides a
   // Dataset (Datasets go to the plain Overview instead - see that page's own comment on why).
   const searchParams = useSearchParams();
   const [selectedRecordKey, setSelectedRecordKey] = useState<string | null>(() => searchParams.get("select"));
@@ -1194,19 +1092,25 @@ function ProjectDetail() {
   // revealing it.
   const recordExpandedKeys = useMemo(
     () =>
-      recordQuery
+      isFilteringRecords
         ? filteredRecordForest.flatMap((n) => collectGroupedContainerIds(n))
-        : Array.from(new Set(["site", ...recordChain.map((c) => c.id)])),
-    [recordQuery, filteredRecordForest, recordChain],
+        : Array.from(new Set([...projectRecordTree.flatMap((n) => collectGroupedContainerIds(n)), ...recordChain.map((c) => c.id)])),
+    [isFilteringRecords, filteredRecordForest, recordChain],
   );
+
+  const allRecordIds = useMemo(() => filteredRecordForest.flatMap((n) => collectGroupedContainerIds(n)), [filteredRecordForest]);
 
   // The tree's own `onAction` (react-aria's row-activation event, fired on a plain click when the
   // tree has no `selectionMode` set) rather than selection - see renderGroupedNode's own comment
   // for why: a checkbox implies "include this in a bulk action," not "show me this one."
   const handleRecordAction = (key: Key) => {
     const nextKey = String(key);
+    if (nextKey === "project") {
+      setSelectedRecordKey(null);
+      return;
+    }
     if (nextKey === REAL_PAGE_RECORD_ID) {
-      router.push(roleHref("/pages/observation-detail/option-1"));
+      router.push(roleHref("/pages/observation-detail"));
       return;
     }
     setSelectedRecordKey((current) => (current === nextKey ? null : nextKey));
@@ -1221,7 +1125,7 @@ function ProjectDetail() {
   // "own" nav key to stay put for (it's reached by drilling into one specific project, not a
   // generic destination), so both always navigate - "Projects" from here means the real projects
   // list, not re-showing this same project's own detail. Sections with no real page yet stay a
-  // local, in-place section switch. See dashboard/option-1's copy of this fix for the full
+  // local, in-place section switch. See dashboard's copy of this fix for the full
   // rationale - flagged directly by the user off a screenshot. `roleHref` (not a bare path) so the
   // active role survives the navigation - see lib/use-role-href.ts.
   const goToSection = (section: NavNode) => {
@@ -1311,7 +1215,7 @@ function ProjectDetail() {
               <GlobalProjectSearch />
             </div>
             {/* Visible for every role, gated by click instead of by visibility for public-user -
-                see app/pages/_shared/guest-action-gate.tsx / dashboard/option-1's copy for the
+                see app/pages/_shared/guest-action-gate.tsx / dashboard's copy for the
                 full rationale. */}
             <GuestActionButton
               icon={Plus}
@@ -1409,36 +1313,113 @@ function ProjectDetail() {
 
             {/* ── Contextual sidebar: this project's nested-records tree when on Projects,
                 otherwise the selected section's children (nav chrome - not pixel-matched) ── */}
-            <aside aria-label="Section" className="hidden w-[286px] shrink-0 flex-col justify-between overflow-y-auto border-r border-secondary bg-secondary p-4 lg:flex">
+            <aside
+              aria-label="Section"
+              className={cx(
+                "w-[286px] shrink-0 flex-col justify-between overflow-y-auto border-r border-secondary bg-secondary p-4",
+                sidebarCollapsed && activeSection === "Projects" ? "hidden" : "hidden lg:flex",
+              )}
+            >
               <div className="flex flex-col gap-1">
-                <p className="mb-3 text-xs font-semibold tracking-wide text-quaternary uppercase">
-                  {activeSection === "Projects" ? "Adelaide Hills Bushland Survey" : activeSectionNode.label}
-                </p>
+                {/* For Projects, the section label doubles as the tree's header row: the tree-wide actions
+                    (expand/collapse all) live in a "..." menu at its right end, the way a file explorer's
+                    section header does, rather than as loose icons with no labels. */}
+                <div className="mb-3 flex items-center justify-between gap-2">
+                  <p className="text-xs font-semibold tracking-wide text-quaternary uppercase">
+                    {activeSection === "Projects" ? "Records" : activeSectionNode.label}
+                  </p>
+                  {activeSection === "Projects" && (
+                    <Dropdown.Root>
+                      <Dropdown.DotsButton aria-label="Records tree actions" />
+                      <Dropdown.Popover placement="bottom right">
+                        <Dropdown.Menu aria-label="Records tree actions" onAction={(key) => setTreeExpansion(key === "expand" ? "all" : "none")}>
+                          <Dropdown.Item id="expand" label="Expand all" />
+                          <Dropdown.Item id="collapse" label="Collapse all" />
+                        </Dropdown.Menu>
+                      </Dropdown.Popover>
+                    </Dropdown.Root>
+                  )}
+                </div>
                 {activeSection === "Projects" ? (
                   <div className="flex flex-col gap-3">
-                    <Input
-                      size="sm"
-                      placeholder={recordSearchPlaceholder}
-                      icon={SearchMd}
-                      value={recordQuery}
-                      onChange={setRecordQuery}
-                      aria-label="Search records"
-                    />
-                    {recordQuery && filteredRecordForest.length === 0 ? (
+                    <div className="flex items-center gap-2">
+                      <Input
+                        size="sm"
+                        placeholder={recordSearchPlaceholder}
+                        icon={SearchMd}
+                        value={recordQuery}
+                        onChange={(value) => {
+                          setRecordQuery(value);
+                          setTreeMode("default");
+                        }}
+                        aria-label="Search records"
+                        className="min-w-0 flex-1"
+                      />
+                      <DialogTrigger isOpen={filterOpen} onOpenChange={setFilterOpen}>
+                        {/* Icon-only, tinted while a filter is on (the count lives on the chips below, not
+                            on this button). */}
+                        <Button
+                          color="secondary"
+                          size="sm"
+                          iconLeading={FilterLines}
+                          aria-label={typeFilter.size > 0 ? `Filter records by type, ${typeFilter.size} applied` : "Filter records by type"}
+                          className={typeFilter.size > 0 ? "bg-brand-50! ring-brand-100!" : undefined}
+                        />
+                        <Popover size="auto" placement="bottom end" className="font-barlow w-56 p-3">
+                          <Dialog className="flex flex-col gap-3 outline-hidden">
+                            <div className="flex items-center justify-between">
+                              <p className="text-xs font-semibold tracking-wide text-quaternary uppercase">Record type</p>
+                              <Button
+                                color="link-color"
+                                size="sm"
+                                onPress={() => setTypeFilter(typeFilter.size > 0 ? new Set() : new Set(filterableTypes))}
+                              >
+                                {typeFilter.size > 0 ? "Clear" : "Select all"}
+                              </Button>
+                            </div>
+                            <div className="flex flex-col gap-2">
+                              {filterableTypes.map((type) => (
+                                <Checkbox key={type} label={type} isSelected={typeFilter.has(type)} onChange={(checked) => toggleRecordType(type, checked)} />
+                              ))}
+                            </div>
+                          </Dialog>
+                        </Popover>
+                      </DialogTrigger>
+                    </div>
+                    {/* Active filters as removable chips, shown only while something is filtered. */}
+                    {typeFilter.size > 0 && (
+                      <div className="flex items-start justify-between gap-2">
+                        <TagGroup label="Active record type filters" size="sm">
+                          <TagList className="flex flex-wrap gap-1.5">
+                            {filterableTypes
+                              .filter((type) => typeFilter.has(type))
+                              .map((type) => (
+                                <Tag key={type} id={type} onClose={() => toggleRecordType(type, false)}>
+                                  {type}
+                                </Tag>
+                              ))}
+                          </TagList>
+                        </TagGroup>
+                        <Button color="link-color" size="sm" className="shrink-0" onPress={() => setTypeFilter(new Set())}>
+                          Clear
+                        </Button>
+                      </div>
+                    )}
+                    {isFilteringRecords && filteredRecordForest.length === 0 ? (
                       <div className="flex flex-col items-center gap-2 px-2 py-6 text-center">
                         <FileSearch01 className="size-5 text-fg-quaternary" />
-                        <p className="text-xs text-tertiary">No records match &ldquo;{recordQuery}&rdquo;. Try a different name, ID, or record type.</p>
+                        <p className="text-xs text-balance text-tertiary">No records match this search and filter. Try a different name, ID, or record type.</p>
                       </div>
                     ) : (
                       <TreeView
-                        aria-label="Adelaide Hills Bushland Survey records, grouped by type"
-                        key={recordQuery}
+                        aria-label={`${PROJECT_NAME} records`}
+                        key={`${recordQuery}-${[...typeFilter].join(",")}-${treeVersion}`}
                         showConnectors
                         onAction={handleRecordAction}
-                        defaultExpandedKeys={recordExpandedKeys}
+                        defaultExpandedKeys={treeMode === "none" ? [] : treeMode === "all" ? allRecordIds : recordExpandedKeys}
                         className="w-full"
                       >
-                        {filteredRecordForest.map((node) => renderGroupedNode(node, selectedRecordKey))}
+                        {filteredRecordForest.map((node) => renderGroupedNode(node, selectedRecordKey ?? "project"))}
                       </TreeView>
                     )}
                   </div>
@@ -1455,17 +1436,24 @@ function ProjectDetail() {
 
             {/* ── Main content: Projects has this screen's own content - every other section is an
                 honest placeholder (see SectionPlaceholder above) until it's actually scoped ── */}
-            <main className="flex flex-1 flex-col overflow-y-auto">
+            <main className="flex min-w-0 flex-1 flex-col overflow-y-auto">
               {activeSection === "Projects" ? (
-                currentRecordCrumb ? (
-                  <SelectedRecordPanel crumb={currentRecordCrumb} onBack={() => setSelectedRecordKey(null)} />
-                ) : (
                 <>
-                  {/* "Back to projects" is column 3's own content, above everything else here -
-                      not spanning the nav columns (icon rail, contextual sidebar). */}
-                  <div className="p-6 pb-0">
+                  {/* Sidebar toggle and "Back to projects" sit together at the top of column 3, above
+                      everything else here - not spanning the nav columns (icon rail, contextual sidebar). */}
+                  <div className="flex items-center gap-3 px-6 pt-6">
+                    <Tooltip title={sidebarCollapsed ? "Show records" : "Hide records"}>
+                      <TooltipTrigger
+                        onPress={() => setSidebarCollapsed((c) => !c)}
+                        aria-label={sidebarCollapsed ? "Show records sidebar" : "Hide records sidebar"}
+                        className="hidden size-8 items-center justify-center rounded-md text-quaternary outline-focus-ring transition duration-100 ease-linear hover:bg-tertiary hover:text-primary focus-visible:outline-2 lg:flex"
+                      >
+                        <LayoutLeft className="size-5" />
+                      </TooltipTrigger>
+                    </Tooltip>
+                    <div className="hidden h-5 w-px bg-secondary lg:block" />
                     <Link
-                      href={roleHref("/pages/project-list/option-1")}
+                      href={roleHref("/pages/project-list")}
                       className="flex w-fit items-center gap-1.5 text-sm font-medium text-tertiary hover:text-primary"
                     >
                       <ArrowNarrowLeft className="size-4" />
@@ -1473,164 +1461,176 @@ function ProjectDetail() {
                     </Link>
                   </div>
 
-                  <div className="flex flex-col gap-1 p-6 pb-0">
-                    <p className="text-xs font-semibold tracking-wide text-quaternary uppercase">Project</p>
-                    <h1 className="text-2xl font-medium text-primary">Adelaide Hills Bushland Survey</h1>
-                  </div>
-
-                  <div className="flex flex-wrap items-start gap-8 border-b border-secondary p-6">
-                    <MetaField label="Project ID">{project.id}</MetaField>
-                    <MetaField label="Start Date">{project.startDate}</MetaField>
-                    <MetaField label="End Date">{project.endDate}</MetaField>
-                    <MetaField label="Status">
-                      <BadgeWithDot size="sm" color="success">
-                        {project.status}
-                      </BadgeWithDot>
-                    </MetaField>
-                    <MetaField label="Published by">{project.publishedBy}</MetaField>
-                  </div>
-
-                  {/* Restructured from one continuous scroll of ~10 flat sections (Project
-                      Details, Overview, Data Owner/s, Project Manager/s, Locations, Data
-                      Collection Scope, Permit, URI/DOI, Privacy and Restrictions, Additional
-                      Details, Comments - the full content inventory from both the lo-fi and hi-fi
-                      references) into real Tabs, per CONTEXT.md's "Design principles (cognitive
-                      load)" section - grouped by how it's used (Overview = checked often,
-                      Details = filled once, Restrictions = conditional, Additional Information =
-                      free-form), not by schema order. Events/Occurrences/Observations don't get
-                      their own tabs here the way the references had them - that hierarchy is
-                      already real and browsable in this page's own contextual-sidebar TreeView, so
-                      repeating it as 3 more flat tabs would just be the same records twice, one of
-                      them without the real component. */}
-                  <ContentTabs selectedKey={detailTab} onSelectionChange={setDetailTab} className="flex flex-1 flex-col">
-                    <TabList aria-label="Project views" type="underline" size="md" className="gap-6 px-6 pt-4">
-                      <Tab id="overview" label="Overview" />
-                      <Tab id="datasets" label="Datasets" />
-                      <Tab id="details" label="Details" />
-                      <Tab id="restrictions" label="Restrictions" />
-                      <Tab id="additional" label="Additional Information" />
-                    </TabList>
-
-                    <TabPanel id="overview" className="flex flex-col gap-4 p-6">
-                      {/* "Meta Under Title, Full Rail" - decided from /proto/project-header (see
-                          CONTEXT.md). Below the flagged-concepts banner, Overview (abstract + map)
-                          takes the wide column and a persistent rail repeats Project Details
-                          alongside Data Owner/Project Manager - deliberate duplication of the meta
-                          row above, not an oversight, so dates/status/contacts are scannable
-                          without scrolling back to the header. The record-count tiles that used to
-                          sit here as their own MetricCard row are now folded into ProjectDetailsCard
-                          itself instead - consolidated per the user directly, off a second Figma
-                          reference that independently landed on the same "fewer, denser cards"
-                          instinct as /proto/project-detail's "Consolidated Rail" variant (see the
-                          project_projects_data_model memory). */}
-                      <FlaggedConceptsBanner onSelect={handleFlaggedConceptSelect} />
-
-                      <div className="flex flex-col gap-4 lg:flex-row lg:items-start">
-                        <div className="flex flex-1 flex-col gap-4">
-                          <DetailSection title="Overview">
-                            <div className="flex flex-col gap-2">
-                              <p className="text-xs font-semibold tracking-wide text-quaternary uppercase">Abstract</p>
-                              <p className={cx("text-sm text-secondary", !abstractExpanded && "line-clamp-3")}>{abstract}</p>
-                              <Button color="link-color" size="sm" className="self-start" onClick={() => setAbstractExpanded((e) => !e)}>
-                                {abstractExpanded ? "Show less" : "Read more"}
-                              </Button>
-                            </div>
-                            <div className="flex flex-col gap-2 border-t border-secondary pt-4">
-                              <p className="text-xs font-semibold tracking-wide text-quaternary uppercase">Geographic scope</p>
-                              <div className="mt-2 flex min-h-[220px] flex-1 flex-col">
-                                <MapView />
-                              </div>
-                            </div>
-                          </DetailSection>
-                          <DetailSection title="Artefacts">
-                            <ArtefactCarousel artefacts={artefacts} onOpen={setArtefactLightboxIndex} />
-                          </DetailSection>
-                        </div>
-                        <div className="flex w-full flex-col gap-4 lg:w-80 lg:shrink-0">
-                          <ProjectDetailsCard />
-                          <ContactCard title="Data Owner" orgLabel="Adelaide Hills Landcare" contacts={[dataOwner]} />
-                          <ContactCard title="Project Manager" contacts={[projectManager]} />
+                  {currentRecordCrumb ? (
+                    <SelectedRecordPanel crumb={currentRecordCrumb} onBack={() => setSelectedRecordKey(null)} />
+                  ) : (
+                    <>
+                      {/* The same gradient card the Home dashboard opens with, so the project's identity
+                          and its metadata are the one focal point at the top of the page. The meta row
+                          lives only here now - it used to be repeated in a "Project Details" rail card. */}
+                      <div className="px-6 pt-4">
+                        <div className="flex flex-col gap-4 rounded-2xl bg-gradient-to-b from-brand-900 via-brand-800 via-[63.942%] to-brand-700 p-6">
+                          <div className="flex flex-col gap-1">
+                            <p className="text-xs font-semibold tracking-wide text-white/70 uppercase">Project</p>
+                            <h1 className="text-2xl font-medium text-white">{PROJECT_NAME}</h1>
+                          </div>
+                          <div className="flex flex-wrap items-start gap-8">
+                            <MetaField onDark label="Project ID">
+                              {project.id}
+                            </MetaField>
+                            <MetaField onDark label="Start Date">
+                              {project.startDate}
+                            </MetaField>
+                            <MetaField onDark label="End Date">
+                              {project.endDate}
+                            </MetaField>
+                            <MetaField onDark label="Status">
+                              <BadgeWithDot size="sm" color="success">
+                                {project.status}
+                              </BadgeWithDot>
+                            </MetaField>
+                            <MetaField onDark label="Published by">
+                              {project.publishedBy}
+                            </MetaField>
+                          </div>
                         </div>
                       </div>
-                      <ArtefactLightbox
-                        artefacts={artefacts}
-                        index={artefactLightboxIndex}
-                        onClose={() => setArtefactLightboxIndex(null)}
-                        onNavigate={setArtefactLightboxIndex}
-                      />
-                    </TabPanel>
 
-                    <TabPanel id="datasets" className="p-6">
-                      {/* Contribution is open - any registered user can add a dataset to any
-                          project (see the Projects data model decisions) - so this table has more
-                          than one contributor, not a single owner-uploaded list. Counts sum to the
-                          same 6/18/42 totals shown in Overview - two real contributions, not two
-                          independent totals invented on top of the existing numbers. */}
-                      <Table aria-label="Datasets">
-                        <TableHeader>
-                          <Column isRowHeader>Dataset</Column>
-                          <Column>Contributor</Column>
-                          <Column>Uploaded</Column>
-                          <Column>Events</Column>
-                          <Column>Occurrences</Column>
-                          <Column>Observations</Column>
-                        </TableHeader>
-                        <TableBody items={projectDatasets}>
-                          {(dataset) => (
-                            <Row id={dataset.id} textValue={dataset.name}>
-                              <Cell>
-                                <p className="text-sm font-medium text-primary">{dataset.name}</p>
-                              </Cell>
-                              <Cell>
-                                <div className="flex items-center gap-2">
-                                  <Avatar size="xs" initials={dataset.contributorInitials} alt={dataset.contributor} />
-                                  <span className="text-sm text-secondary">{dataset.contributor}</span>
-                                </div>
-                              </Cell>
-                              <Cell>
-                                <span className="text-sm whitespace-nowrap text-tertiary">{dataset.uploadedDate}</span>
-                              </Cell>
-                              <Cell>
-                                <span className="text-sm text-secondary">{dataset.events}</span>
-                              </Cell>
-                              <Cell>
-                                <span className="text-sm text-secondary">{dataset.occurrences}</span>
-                              </Cell>
-                              <Cell>
-                                <span className="text-sm text-secondary">{dataset.observations}</span>
-                              </Cell>
-                            </Row>
-                          )}
-                        </TableBody>
-                      </Table>
-                    </TabPanel>
-
-                    <TabPanel id="details" className="p-6">
-                      <Accordion items={detailAccordionItems} openKeys={detailOpenKeys} onOpenKeysChange={setDetailOpenKeys} />
-                    </TabPanel>
-
-                    <TabPanel id="restrictions" className="p-6">
-                      {projectRestrictions.length === 0 ? (
-                        <div className="flex flex-col items-center justify-center gap-1 rounded-lg border border-dashed border-secondary p-12 text-center">
-                          <p className="text-sm font-medium text-primary">No restrictions</p>
-                          <p className="text-sm text-tertiary">This project&apos;s data is publicly available.</p>
+                      {/* One tab per field group in the design. The tab row's underline is drawn by
+                          TabList itself; the Tree/Table toggle sits at the row's right end with its own
+                          matching baseline so the rule runs the full width. */}
+                      <ContentTabs selectedKey={detailTab} onSelectionChange={setDetailTab} className="flex flex-1 flex-col">
+                        <div className="flex items-end gap-4 px-6 pt-4">
+                          <TabList aria-label="Project views" type="underline" size="md" className="min-w-0 flex-1 gap-6 overflow-x-auto">
+                            <Tab id="overview" label="Overview" />
+                            <Tab id="locations" label="Locations" />
+                            <Tab id="data-collection" label="Data Collection Scope" />
+                            <Tab id="permit" label="Permit" />
+                            <Tab id="uri-doi" label="URI/DOI" />
+                            <Tab id="restrictions" label="Privacy and Restrictions" />
+                            <Tab id="artefacts" label="Artefacts & Attachments" />
+                            <Tab id="comments" label="Comments" />
+                          </TabList>
+                          {/* Not a Tabs boundary - nesting one inside this Tabs' own tree would fight
+                              react-aria's collection - so the same segmented look is a single-select
+                              ToggleButtonGroup built from tokens. */}
+                          <div className="relative shrink-0 pb-2 before:absolute before:inset-x-0 before:bottom-0 before:h-px before:bg-[var(--ui-border-secondary)]">
+                            <ToggleButtonGroup
+                              aria-label="Records view"
+                              selectionMode="single"
+                              disallowEmptySelection
+                              selectedKeys={[viewMode]}
+                              onSelectionChange={(keys) => {
+                                const next = Array.from(keys)[0];
+                                if (next === "tree" || next === "table") changeViewMode(next);
+                              }}
+                              className="flex gap-1 rounded-[10px] bg-secondary p-1 ring-1 ring-secondary ring-inset"
+                            >
+                              {(
+                                [
+                                  { id: "tree", label: "Tree", icon: Dataflow03 },
+                                  { id: "table", label: "Table", icon: TableIcon },
+                                ] as const
+                              ).map(({ id, label, icon: Icon }) => (
+                                <ToggleButton
+                                  key={id}
+                                  id={id}
+                                  className={({ isSelected }) =>
+                                    cx(
+                                      "flex cursor-pointer items-center gap-2 rounded-md px-2.5 py-1.5 text-sm font-semibold outline-focus-ring transition duration-100 ease-linear focus-visible:outline-2",
+                                      isSelected ? "bg-primary_alt text-secondary shadow-xs" : "text-quaternary hover:text-secondary",
+                                    )
+                                  }
+                                >
+                                  <Icon className="size-4" />
+                                  {label}
+                                </ToggleButton>
+                              ))}
+                            </ToggleButtonGroup>
+                          </div>
                         </div>
-                      ) : (
-                        <Accordion items={projectRestrictions} />
-                      )}
-                    </TabPanel>
 
-                    <TabPanel id="additional" className="flex flex-col gap-4 p-6">
-                      <DetailSection title="Additional Details">
-                        <p className="text-sm text-tertiary">No additional details have been added to this project yet.</p>
-                      </DetailSection>
-                      <DetailSection title="Comments">
-                        <p className="text-sm text-tertiary">No comments yet.</p>
-                      </DetailSection>
-                    </TabPanel>
-                  </ContentTabs>
+                        {viewMode === "table" ? (
+                          <div className="p-6">
+                            <div className="flex flex-col items-center justify-center gap-1 rounded-lg border border-dashed border-secondary p-12 text-center">
+                              <p className="text-sm font-medium text-primary">Table view</p>
+                              <p className="max-w-sm text-sm text-balance text-tertiary">The records table for this project hasn&apos;t been designed yet.</p>
+                            </div>
+                          </div>
+                        ) : (
+                          <>
+                            <TabPanel id="overview" className="flex flex-col gap-4 p-6">
+                              {/* Admin flags are a signed-in reviewer's queue, so the roll-up banner is a
+                                  registered-user feature that a guest never sees (a removal, not a redesign). */}
+                              {!isPublicUser && <FlaggedConceptsBanner onSelect={handleFlaggedConceptSelect} />}
+
+                              <div className="flex flex-col gap-4 lg:flex-row lg:items-start">
+                                <div className="flex min-w-0 flex-1 flex-col rounded-lg border border-secondary">
+                                  <div className="flex flex-wrap items-baseline justify-between gap-x-6 gap-y-1 border-b border-secondary p-6">
+                                    <span className="text-sm text-tertiary">Full Project Name</span>
+                                    <span className="text-sm font-medium text-primary">{project.fullName}</span>
+                                  </div>
+                                  <div className="flex flex-col gap-2 border-b border-secondary p-6">
+                                    <p className="text-xs font-semibold tracking-wide text-quaternary uppercase">Abstract</p>
+                                    <p className={cx("text-sm text-secondary", !abstractExpanded && "line-clamp-3")}>{abstract}</p>
+                                    <Button color="link-color" size="sm" className="self-start" onClick={() => setAbstractExpanded((e) => !e)}>
+                                      {abstractExpanded ? "Show less" : "Read more"}
+                                    </Button>
+                                  </div>
+                                  <div className="flex flex-col gap-2 p-6">
+                                    <p className="text-xs font-semibold tracking-wide text-quaternary uppercase">Geographic scope</p>
+                                    <div className="mt-2 flex min-h-[220px] flex-1 flex-col">
+                                      <MapView />
+                                    </div>
+                                  </div>
+                                </div>
+                                <div className="flex w-full flex-col gap-4 lg:w-80 lg:shrink-0">
+                                  <ContactCard title="Data Owner" orgLabel={project.publishedBy} contacts={dataOwner} />
+                                  <ContactCard title="Project Manager" contacts={projectManager} />
+                                </div>
+                              </div>
+                            </TabPanel>
+
+                            {detailAccordionItems.map((item) => (
+                              <TabPanel key={item.id} id={item.id} className="p-6">
+                                <DetailSection title={item.title}>{item.content}</DetailSection>
+                              </TabPanel>
+                            ))}
+
+                            <TabPanel id="restrictions" className="p-6">
+                              {projectRestrictions.length === 0 ? (
+                                <div className="flex flex-col items-center justify-center gap-1 rounded-lg border border-dashed border-secondary p-12 text-center">
+                                  <p className="text-sm font-medium text-primary">No restrictions</p>
+                                  <p className="text-sm text-balance text-tertiary">This project&apos;s data is publicly available.</p>
+                                </div>
+                              ) : (
+                                <Accordion items={projectRestrictions} />
+                              )}
+                            </TabPanel>
+
+                            <TabPanel id="artefacts" className="p-6">
+                              <DetailSection title="Artefacts & Attachments">
+                                <ArtefactCarousel artefacts={artefacts} onOpen={setArtefactLightboxIndex} />
+                              </DetailSection>
+                              <ArtefactLightbox
+                                artefacts={artefacts}
+                                index={artefactLightboxIndex}
+                                onClose={() => setArtefactLightboxIndex(null)}
+                                onNavigate={setArtefactLightboxIndex}
+                              />
+                            </TabPanel>
+
+                            <TabPanel id="comments" className="p-6">
+                              <DetailSection title="Comments">
+                                <p className="text-sm text-tertiary">No comments yet.</p>
+                              </DetailSection>
+                            </TabPanel>
+                          </>
+                        )}
+                      </ContentTabs>
+                    </>
+                  )}
                 </>
-                )
               ) : (
                 <SectionPlaceholder node={activeSectionNode} />
               )}

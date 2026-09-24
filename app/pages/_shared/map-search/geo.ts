@@ -1,4 +1,4 @@
-// Shared geo primitives for the map search tool (app/pages/observations/option-1) - kept separate
+// Shared geo primitives for the map search tool (app/pages/observations) - kept separate
 // from the map component itself so the pure math/data has no dependency on Leaflet or React and
 // can be unit-reasoned about (and reused by any future search entry point) on its own.
 

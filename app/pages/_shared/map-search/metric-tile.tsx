@@ -5,7 +5,7 @@ import { cx } from "@/utils/cx";
 
 // One real, shared tile component for every icon+label+count quick-filter row on the map search
 // results page - the Records view's own Projects/Events/Occurrences/Observations/Artefacts
-// switcher (app/pages/observations/option-1/page.tsx) and the Species view's taxonomic-group
+// switcher (app/pages/observations/page.tsx) and the Species view's taxonomic-group
 // breakdown (species-results.tsx) used to be two hand-copied, independently-styled versions of the
 // same idea; per direct feedback ("follow the same styling in the records view... make sure both
 // styling are the same"), they now render through this one component so the two can never drift.

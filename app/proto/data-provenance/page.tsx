@@ -5,7 +5,7 @@
 // Site) is SUPERSEDED as of 2026-09-14 - see the project_projects_data_model memory. The user
 // corrected the model directly: "we're not worried too much about the dataset (which is just
 // treated as a template to ingest data)" - Dataset isn't a tree level at all anymore in production
-// (project-detail/option-1, observation-detail/option-1), so "Variant 1: By Dataset" here is no
+// (project-detail, observation-detail), so "Variant 1: By Dataset" here is no
 // longer a live comparison, just a record of what was tried. Provenance tags (Variant 2's per-record
 // dataset badge) were separately removed per the user directly, before this model correction landed.
 // The two trees below are left running the OLD Dataset/Sub-site shape for historical accuracy of
@@ -57,7 +57,7 @@ const leafTypeMeta: Record<LeafType, { icon: FC<{ className?: string }> }> = {
 
 const TRUNCATE_AT = 8;
 
-// ── The two real datasets already established elsewhere in this build (project-detail/option-1's
+// ── The two real datasets already established elsewhere in this build (project-detail's
 // own projectDatasets) - same names, same totals, not invented for this lab. ──
 interface DatasetMeta {
   id: string;
@@ -82,7 +82,7 @@ function ProvenanceTag({ datasetId }: { datasetId: string }) {
 }
 
 // ── Variant 1 data: Dataset > Site > Sub-site > grouped leaf records - identical shape to
-// project-detail/option-1's real projectRecordTree. ──
+// project-detail's real projectRecordTree. ──
 type DatasetTreeType = "Datasets" | "Sites" | "Sub-sites" | LeafType;
 
 const datasetTreeMeta: Record<DatasetTreeType, { icon: FC<{ className?: string }> }> = {
@@ -387,7 +387,7 @@ function renderSiteNode(n: SiteTreeNode, currentKey: string | null): ReactNode {
   );
 }
 
-// ── Shared sidebar chrome - matches project-detail/option-1's real sidebar (search input, no
+// ── Shared sidebar chrome - matches project-detail's real sidebar (search input, no
 // checkboxes, TreeView's own onAction for clicks) so only the tree's PRIMARY AXIS is the variable
 // being judged, not the surrounding chrome. ──
 function ProjectSidebar<T extends { id: string; label: string }>({
@@ -445,7 +445,7 @@ function MainStandIn({ currentKey, currentLabel }: { currentKey: string | null; 
   );
 }
 
-// ── Variant 1: By Dataset - the tree already shipped on project-detail/option-1, unchanged. ──
+// ── Variant 1: By Dataset - the tree already shipped on project-detail, unchanged. ──
 function VariantByDataset() {
   const [currentKey, setCurrentKey] = useState<string | null>(null);
   const label = useMemo(() => findLabel(datasetRootedTree, currentKey), [currentKey]);

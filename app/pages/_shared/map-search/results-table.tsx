@@ -17,7 +17,7 @@ import type { SearchEvent } from "./search-data";
 // the map search results page - one real implementation of "search box + customise-columns +
 // type-filter chips + table + row-click detail panel" per direct feedback, rather than four
 // hand-duplicated copies. Column *definitions* (what each entity's columns are, how each renders)
-// still live with each entity's own data in app/pages/observations/option-1/page.tsx - this file
+// still live with each entity's own data in app/pages/observations/page.tsx - this file
 // only owns the shared table chrome/interaction, not domain knowledge of what an Event or a
 // Resource actually is.
 
@@ -36,7 +36,7 @@ export interface ColumnDef<T> {
   cellClassName?: string;
   render: (row: T) => ReactNode;
   /** A plain, comparable value for this column - backs the "All Filters" side panel's per-column
-   *  facets (app/pages/observations/option-1/page.tsx), so a filter category and its real values
+   *  facets (app/pages/observations/page.tsx), so a filter category and its real values
    *  can never drift from what the column itself actually shows. Deliberately separate from
    *  `render` (which can return a Badge, an icon, a button - not something to compare/group by) and
    *  from `searchText` (a per-row free-text haystack, not a per-column discrete value). Omitted on
@@ -93,7 +93,7 @@ export function HierarchyCell({ chain }: { chain: SearchEvent[] }) {
     <>
       {/* Stops the click from bubbling to the row's own onAction (which opens the record detail
           panel) - same defensive stopPropagation already used for the Resources tab's reference-
-          link anchor in app/pages/observations/option-1/page.tsx's resourceColumns. */}
+          link anchor in app/pages/observations/page.tsx's resourceColumns. */}
       <div className="flex flex-wrap items-center gap-1" onClick={(e) => e.stopPropagation()} title={chain.map((event) => event.code).join(" > ")}>
         {hiddenCount > 0 && (
           <span className="flex items-center gap-1">
@@ -171,6 +171,7 @@ export function ResultsTable<T extends { id: string }>({
   viewActionLabel,
   showHeaderColumnCustomizer = false,
   onRowClick,
+  size = "md",
   searchValue,
   onSearchChange,
   hideSearchBox = false,
@@ -203,6 +204,8 @@ export function ResultsTable<T extends { id: string }>({
    *  Figma-matched `RecordDetailSidebar` instead - the Resources/Artefacts tab has no such sidebar
    *  (no Figma frame documents one) and keeps the generic panel by omitting this prop. */
   onRowClick?: (row: T) => void;
+  /** Row/header density. Defaults to "md" so every results tab matches the Projects page's own table. */
+  size?: "xs" | "sm" | "md";
   /** Controls the search box from outside instead of this component's own internal state - pass
    *  both together (omit either and this component falls back to its original, fully self-
    *  contained behaviour, unaffected). Species mode uses this to fold its own search input into a
@@ -396,13 +399,13 @@ export function ResultsTable<T extends { id: string }>({
             <p className="max-w-sm text-sm text-tertiary">Try a different filter, or clear the search box above.</p>
           </div>
         ) : (
-          // size="xs" here, not just on <Table> below - TableRoot's own context provider prefers an
-          // ancestor's size over its own prop (`context?.size ?? size`), so TableCard.Root's default
-          // "md" would otherwise win over <Table size="xs">. h-full min-h-0 flex flex-col - lets
+          // size on TableCard.Root, not just on <Table> below - TableRoot's own context provider
+          // prefers an ancestor's size over its own prop (`context?.size ?? size`), so the card's
+          // size is the one that counts. h-full min-h-0 flex flex-col - lets
           // the card fill this section's own bounded height, with the middle (`Table`, via its own
           // `bodyScrollable` prop) taking the remaining space and scrolling internally while the
           // pagination footer stays put at the bottom.
-          <TableCard.Root size="xs" className="relative flex h-full min-h-0 flex-col">
+          <TableCard.Root size={size} className="relative flex h-full min-h-0 flex-col">
             {/* react-aria's Table requires the *dynamic columns* collection API (a `columns` prop
                 plus function children, on both Header and every Row) whenever the column set can
                 change at runtime, as it does here via "customise columns" - a static list of

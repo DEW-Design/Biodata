@@ -1,5 +1,5 @@
 // Parses a user-uploaded shapefile into search areas for the map search tool
-// (app/pages/observations/option-1). Real parsing via `shpjs`, entirely client-side, no backend:
+// (app/pages/observations). Real parsing via `shpjs`, entirely client-side, no backend:
 //  - a .zip of the whole shapefile (the usual way shapefiles are shared), or
 //  - the component files picked together (.shp required; .dbf/.prj/.cpg optional), or
 //  - a .geojson / .json file.
@@ -69,12 +69,14 @@ async function readGeometries(files: File[]): Promise<{ name: string; geometries
         result = await shp(await zip.arrayBuffer());
         name = zip.name;
     } else if (shpFile) {
+        // shpjs 6 accepts the component files as an object at runtime; @types/shpjs (written for
+        // v3) only types a single buffer, hence the cast.
         result = await shp({
             shp: await shpFile.arrayBuffer(),
             dbf: await byExt.get("dbf")?.arrayBuffer(),
             prj: await byExt.get("prj")?.text(),
             cpg: await byExt.get("cpg")?.text(),
-        });
+        } as unknown as ArrayBuffer);
         name = shpFile.name;
     } else {
         throw new Error("Choose a .zip shapefile, a .shp file (with its .dbf/.prj if you have them), or a .geojson file.");

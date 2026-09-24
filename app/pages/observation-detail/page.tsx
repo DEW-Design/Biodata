@@ -18,7 +18,7 @@ import {
   HomeLine,
   Folder,
   Eye,
-  FileLock01,
+  FileCheck02, FileLock01,
   Feather,
   BarChart01,
   FileSearch01,
@@ -55,13 +55,14 @@ import { useFeatureAccess } from "@/lib/use-feature-access";
 import { useUserRole } from "@/lib/use-user-role";
 import { useRoleHref } from "@/lib/use-role-href";
 import { orgLabelForRole } from "@/lib/user-role";
-import { registeredUserNav, publicUserNav, registeredUserAccountMenu, registeredUserFooterLinks, keyHref, type NavNode } from "@/lib/registered-user-nav";
+import { navForRole, registeredUserAccountMenu, registeredUserFooterLinks, keyHref, type NavNode } from "@/lib/registered-user-nav";
 import { cx } from "@/utils/cx";
+import { projectRecordTree, type RecordNode, type RecordType } from "@/app/pages/_shared/project-record-tree";
 
 // One observation's viewing screen, on the sidebar-nav shell - same three-column chrome as
-// project-detail/option-1, forked from that file rather than shared with it (this codebase's own
+// project-detail, forked from that file rather than shared with it (this codebase's own
 // established convention: per-page local chrome, not a cross-page shared shell component - see
-// project-detail/option-1's own NavTree/ProfileMenu/GuestAuthActions, each a local copy too).
+// project-detail's own NavTree/ProfileMenu/GuestAuthActions, each a local copy too).
 //
 // Content model (the fields grouped into Observation Details/Species/Observers/Temporal Details/
 // Location Information/Custom Property, and their order) is drawn directly from the Figma
@@ -74,11 +75,11 @@ import { cx } from "@/utils/cx";
 // Figma references.
 //
 // One concrete example (OBS094, an Individual Observation of a Yellow-footed Antechinus - the same
-// species already named in project-detail/option-1's "Targeted Species" field, not a fresh invented
+// species already named in project-detail's "Targeted Species" field, not a fresh invented
 // one), nested under the same Adelaide Hills Bushland Survey project's real record tree
 // (Site SU00501) - not a dynamic per-ID route, same "one hardcoded instance" scope as every other
 // page in this build. Reachable only by direct URL for now - the project's own records tree
-// (project-detail/option-1's sidebar) doesn't link into individual records yet; that wiring, and
+// (project-detail's sidebar) doesn't link into individual records yet; that wiring, and
 // the deep breadcrumb chain a real record this many levels down would need, is being vetted
 // separately at /proto/project-detail before it's promoted.
 //
@@ -91,6 +92,7 @@ const sectionIcons: Record<string, FC<{ className?: string }>> = {
   Projects: Folder,
   Explore: Map01,
   "Data Licencing Agreement (DLA)": FileLock01,
+  "Data Sharing Agreement (DSA)": FileCheck02,
   "Nominate Sensitive Species": Feather,
   "Reports (Own Submissions)": BarChart01,
   "Template Finder": FileSearch01,
@@ -143,28 +145,22 @@ function NavTree({ node, depth = 0, defaultOpen = false }: { node: NavNode; dept
   );
 }
 
-// ── The focused tree view - same data, grouping, and styling as project-detail/option-1's own
-// sidebar, copied verbatim (same "each page keeps its own local copy of chrome" convention this
-// whole build already follows). "Focused" per the user directly: this page IS the smallest/most
-// specific element (the last item on a breadcrumb), so the tree opens already expanded down to it,
-// current row highlighted. Clicking any other node navigates instead of showing a second copy of
-// its content: an Event of type Site goes back to the project's plain Overview, anything else
-// deep-links to project-detail/option-1's own SelectedRecordPanel via `?select=<id>`.
+// ── The focused tree view - same data (app/pages/_shared/project-record-tree.ts, shared with
+// project-detail), grouping, and styling as project-detail's own sidebar. "Focused" per the user
+// directly: this page IS the smallest/most specific element (the last item on a breadcrumb), so the
+// tree opens already expanded down to it, current row highlighted. Clicking any other node navigates
+// instead of showing a second copy of its content: the Project root goes back to the project's plain
+// Overview, anything else deep-links to project-detail's own SelectedRecordPanel via `?select=<id>`.
 //
-// CORRECTED record model (2026-09-14, user direct - see the project_projects_data_model memory):
-// Dataset/Sub-site aren't tree levels - a project directly contains **Event** (5 types: Site,
-// Transect, Ramble, Quadrat, Visit - Site is just one Event type, not a special container),
-// **Occurrence** (Individual, Population), and **Observation** (Individual, Non-biotic, Community,
-// Population). "Block"/"Trap"/"Custom Event" no longer exist. Nesting: any Event can nest under any
-// other Event (except a Site can never sit under a Visit), and an Event can have
-// Observations/Occurrences as children - but never the reverse.
-type RecordType = "Sites" | "Visits" | "Observations" | "Occurrences" | "Transects" | "Quadrats" | "Rambles";
+// Record model, per CONTEXT.md: Project > Site > Visit > Occurrence > Observation, an Occurrence
+// parenting exactly one Observation; Transect/Quadrat/Ramble nest under the Visit they belong to.
 
 const recordTypeMeta: Record<RecordType, { icon: FC<{ className?: string }> }> = {
+  Projects: { icon: Folder },
   Sites: { icon: Map01 },
   Visits: { icon: Calendar },
-  Observations: { icon: Eye },
   Occurrences: { icon: MarkerPin01 },
+  Observations: { icon: Eye },
   Transects: { icon: Route },
   Quadrats: { icon: Grid01 },
   Rambles: { icon: Compass },
@@ -177,47 +173,9 @@ const recordSearchPlaceholder = `Search ${recordTypes
   .map((t) => t.toLowerCase())
   .join(", ")}, or ${recordTypes[recordTypes.length - 1].toLowerCase()}…`;
 
-interface RecordNode {
-  id: string;
-  type: RecordType;
-  label: string;
-  children?: RecordNode[];
-}
 
 // This observation's own id is "obs-094" - the CURRENT_RECORD_ID this page focuses the tree on.
 // Two Site (Event) roots directly - no Dataset/Sub-site wrapper.
-const projectRecordTree: RecordNode[] = [
-  {
-    id: "site",
-    type: "Sites",
-    label: "Site SU00501",
-    children: [
-      { id: "obs-094", type: "Observations", label: "Observation OBS094 · Individual" },
-      { id: "obs-nonbiotic", type: "Observations", label: "Observation OBS094 · Non-biotic" },
-      { id: "obs-community", type: "Observations", label: "Observation OBS094 · Community" },
-      { id: "occ-individual", type: "Occurrences", label: "Occurrence OBS094 · Individual" },
-      { id: "occ-population", type: "Occurrences", label: "Occurrence OBS094 · Population" },
-      {
-        id: "visit",
-        type: "Visits",
-        label: "Visit VU00501",
-        children: [{ id: "visit-obs", type: "Observations", label: "Observation OBS095 · Individual" }],
-      },
-      { id: "transect", type: "Transects", label: "Transect TR00501" },
-      { id: "quadrat", type: "Quadrats", label: "Quadrat QR00501" },
-      { id: "ramble", type: "Rambles", label: "Ramble RMB00501" },
-    ],
-  },
-  {
-    id: "site-777",
-    type: "Sites",
-    label: "Site SU00777",
-    children: [
-      { id: "inc-obs-1", type: "Observations", label: "Observation INC-0231 · Individual" },
-      { id: "inc-obs-2", type: "Observations", label: "Observation INC-0232 · Community" },
-    ],
-  },
-];
 
 const CURRENT_RECORD_ID = "obs-094";
 const TRUNCATE_AT = 8;
@@ -290,7 +248,7 @@ function findRecordChain(nodes: RecordNode[], targetId: string, trail: ChainCrum
   return null;
 }
 
-// bg-brand-50/text-brand-secondary - the same highlight project-detail/option-1 settled on for its
+// bg-brand-50/text-brand-secondary - the same highlight project-detail settled on for its
 // own "current row" treatment (its first attempt, bg-brand-secondary, silently didn't render -
 // logged directly in that page's own comment).
 const CURRENT_ROW_CLASSNAME = "bg-brand-50 text-brand-secondary";
@@ -360,7 +318,7 @@ const recordChain = findRecordChain(projectRecordTree, CURRENT_RECORD_ID)!;
 const focusedExpandedKeys = recordChain.map((c) => c.id);
 
 const switcherProjects = [
-  { name: "Adelaide Hills Bushland Survey", href: "/pages/project-detail/option-1" },
+  { name: "Adelaide Hills Bushland Survey", href: "/pages/project-detail" },
   { name: "Coorong Wetlands Bird Count" },
   { name: "Flinders Ranges Reptile Atlas" },
   { name: "Kangaroo Island Recovery Monitoring" },
@@ -402,7 +360,7 @@ function ProjectSwitcher() {
           </div>
           <div className="mt-1 shrink-0 border-t border-secondary pt-1">
             <Link
-              href={roleHref("/pages/project-list/option-1")}
+              href={roleHref("/pages/project-list")}
               onClick={() => setOpen(false)}
               className="block rounded-md px-2 py-2 text-sm font-medium text-brand-700 hover:bg-secondary"
             >
@@ -415,7 +373,7 @@ function ProjectSwitcher() {
   );
 }
 
-// ── The chain breadcrumb - same component/behavior as project-detail/option-1's own
+// ── The chain breadcrumb - same component/behavior as project-detail's own
 // ChainBreadcrumb (ported here rather than shared, same "each page keeps its own local copy of
 // chrome" convention this whole build follows). Flagged directly by the user off a screenshot:
 // this page was still using the original fixed-3-level `Breadcrumb` (Home / Projects⌄ / current),
@@ -446,7 +404,7 @@ function ChainBreadcrumb({ chain, onSelectCrumb, orgLabel }: { chain: ChainCrumb
         <ProjectSwitcher />
       </span>
       <span className="shrink-0">/</span>
-      <Link href={roleHref("/pages/project-detail/option-1")} className="min-w-0 shrink truncate hover:text-primary">
+      <Link href={roleHref("/pages/project-detail")} className="min-w-0 shrink truncate hover:text-primary">
         Adelaide Hills Bushland Survey
       </Link>
       {collapsed.length > 0 && (
@@ -564,7 +522,7 @@ function FlagIndicator() {
 }
 
 // `fieldId` renders as a real DOM id (`field-<fieldId>`) - the anchor a flagged-concept banner
-// elsewhere (project-detail/option-1's Overview tab) scrolls to after this page loads with
+// elsewhere (project-detail's Overview tab) scrolls to after this page loads with
 // `?flag=<fieldId>` in the URL. Only flagged rows need to pass it; every other row is fine without
 // one.
 function DetailRow({
@@ -659,7 +617,7 @@ function MeasurementsTable() {
 }
 
 // The observation this page shows - one concrete example (OBS094, an Individual Observation of a
-// Yellow-footed Antechinus), not a generic per-record schema. Grounded in project-detail/option-1's
+// Yellow-footed Antechinus), not a generic per-record schema. Grounded in project-detail's
 // own real data: the same species named in that page's "Targeted Species" field, the same
 // Observer/Data Owner pair (Olivia Wyatt/Maya Dewitt), the same Site SU00501 - this is a real record
 // living inside that project's already-established world, not a fresh invented one.
@@ -851,13 +809,13 @@ function ObservationDetail() {
   const showOrgSwitcher = useFeatureAccess("orgSwitcher");
   const role = useUserRole();
   const isPublicUser = role === "public-user";
-  const nav = isPublicUser ? publicUserNav : registeredUserNav;
+  const nav = navForRole(role);
   const roleHref = useRoleHref();
   const [activeSection, setActiveSection] = useState("Projects");
   const [homeTab, setHomeTab] = useState<Key>("dashboard");
   const activeSectionNode = nav.find((section) => section.label === activeSection) ?? nav[0];
 
-  // Deep-link target for a flagged concept - project-detail/option-1's flagged-concepts banner
+  // Deep-link target for a flagged concept - project-detail's flagged-concepts banner
   // links here as `?flag=<fieldId>` (see flaggedFieldSections above for the fieldId->section map).
   // The accordion section opens on first render (defaultOpenKeys, not a controlled prop the shared
   // Accordion component doesn't expose) and a plain scrollIntoView after a short delay lands on
@@ -884,7 +842,7 @@ function ObservationDetail() {
     }
   };
 
-  // The focused tree view - same "grouped by type + search" mechanics as project-detail/option-1's
+  // The focused tree view - same "grouped by type + search" mechanics as project-detail's
   // own sidebar, opened by default to this page's own record (focusedExpandedKeys).
   const [recordQuery, setRecordQuery] = useState("");
   const filteredRecordForest = useMemo(() => filterRecordForest(projectRecordTree, recordQuery), [recordQuery]);
@@ -894,20 +852,19 @@ function ObservationDetail() {
   );
 
   // Clicking a row here doesn't show a second copy of that record's content on this same page -
-  // it navigates. The current record (CURRENT_RECORD_ID, already this page) is a no-op. A top-level
-  // Site (an Event, the broadest thing this tree roots on now that Dataset isn't a tree level) goes
-  // back to the project's plain Overview - flagged directly by the user off the original "Dataset"
+  // it navigates. The current record (CURRENT_RECORD_ID, already this page) is a no-op. The Project
+  // root (the broadest node in this tree) goes back to the project's plain Overview - flagged directly by the user off the original "Dataset"
   // version of this same idea: the broadest node in the tree doesn't get its own dedicated
   // placeholder, it just returns to the project. Everything else deep-links to
-  // project-detail/option-1's own SelectedRecordPanel via `?select=<id>`.
+  // project-detail's own SelectedRecordPanel via `?select=<id>`.
   const handleTreeAction = (key: Key) => {
     const id = String(key);
     if (id === CURRENT_RECORD_ID) return;
-    const isTopLevelSite = projectRecordTree.some((site) => site.id === id);
-    if (isTopLevelSite) {
-      router.push(roleHref("/pages/project-detail/option-1"));
+    const isProjectRoot = projectRecordTree.some((root) => root.id === id);
+    if (isProjectRoot) {
+      router.push(roleHref("/pages/project-detail"));
     } else {
-      router.push(`/pages/project-detail/option-1?userRole=${role}&select=${id}`);
+      router.push(`/pages/project-detail?userRole=${role}&select=${id}`);
     }
   };
 
@@ -918,7 +875,7 @@ function ObservationDetail() {
       <header className="flex min-h-16 shrink-0 flex-wrap items-center justify-between gap-x-6 gap-y-3 border-b border-secondary bg-primary px-4 py-3">
         {/* min-w-0 so this block can shrink (and the breadcrumb inside it truncate) instead of
             forcing the header's own flex-wrap to push "search + actions" onto a second row - same
-            fix as project-detail/option-1's own header, for the same reason. */}
+            fix as project-detail's own header, for the same reason. */}
         <div className="flex min-w-0 flex-1 flex-wrap items-center gap-4">
           <MobileNavTrigger
             sections={nav}
@@ -1066,7 +1023,7 @@ function ObservationDetail() {
             {iconRail}
 
             {/* ── Contextual sidebar: the focused tree view when on Projects (same tree/styling as
-                project-detail/option-1's own sidebar, opened to reveal this page's own record),
+                project-detail's own sidebar, opened to reveal this page's own record),
                 otherwise the selected section's children (nav chrome - not pixel-matched) ── */}
             <aside aria-label="Section" className="hidden w-[286px] shrink-0 flex-col justify-between overflow-y-auto border-r border-secondary bg-secondary p-4 lg:flex">
               <div className="flex flex-col gap-1">
@@ -1117,7 +1074,7 @@ function ObservationDetail() {
                 <>
                   <div className="p-6 pb-0">
                     <Link
-                      href={roleHref("/pages/project-detail/option-1")}
+                      href={roleHref("/pages/project-detail")}
                       className="flex w-fit items-center gap-1.5 text-sm font-medium text-tertiary hover:text-primary"
                     >
                       <ArrowNarrowLeft className="size-4" />

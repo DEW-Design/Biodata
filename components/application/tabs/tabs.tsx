@@ -18,7 +18,7 @@ type TabTypeColors<T> = T extends "horizontal" ? HorizontalTypes : VerticalTypes
 // Styles for different types of tab
 const getTabStyles = ({ isFocusVisible, isSelected, isHovered }: AriaTabRenderProps) => ({
     // `button-brand` is the type used for real IA navigation, not just generic in-page tabs (see
-    // dashboard/option-1's Home and Projects contextual-sidebar switchers) - flagged directly by
+    // dashboard's Home and Projects contextual-sidebar switchers) - flagged directly by
     // the user that its hover state didn't match the primary icon rail sitting right next to it.
     // The other types below still merge hover into the same classes as selected (a hover "preview"
     // of what selecting would look like, a defensible choice for a plain in-page tab list); this

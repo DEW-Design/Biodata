@@ -231,8 +231,10 @@ const TableHead = ({ className, tooltip, label, children, ...props }: TableHeadP
         >
             {(state) => (
                 <AriaGroup className="flex items-center gap-1">
-                    <div className="flex items-center gap-1">
-                        {label && <span className="text-xs font-semibold whitespace-nowrap text-quaternary">{label}</span>}
+                    {/* The header text style sits on this wrapper, not just the `label` span, so header text passed
+                        as children gets the same treatment - it used to render as unstyled bold black text. */}
+                    <div className="flex items-center gap-1 text-xs font-semibold whitespace-nowrap text-quaternary">
+                        {label && <span>{label}</span>}
                         {typeof children === "function" ? children(state) : children}
                     </div>
 

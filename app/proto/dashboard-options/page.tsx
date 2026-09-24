@@ -209,7 +209,7 @@ function KnowledgeBaseCard({ icon: Icon, title, description }: { icon: FC<{ clas
 
 function FeaturedProjectCard({ project }: { project: (typeof projects)[number] }) {
   const content = (
-    <BentoCard className={cx("flex-1 gap-4", project.href && "transition-colors duration-150 group-hover:border-secondary_hover")}>
+    <BentoCard className={cx("flex-1 gap-4", project.href && "transition-colors duration-150 group-hover:border-primary")}>
       <div className="flex items-center justify-between gap-2">
         <Badge size="sm" color={project.statusColor}>
           {project.status}

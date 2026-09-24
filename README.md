@@ -62,15 +62,10 @@ The docs site (`app/(docs)`) is organized into three sections: **primitives** (d
 | [Select](/components/select) | Dropdown selection - single select, searchable combobox, multi-select, tag select, and native select, in three sizes. |
 | [Table](/components/table) | React Aria Table - a plain primitive plus TableCard, the full data table with row selection, sorting, and row-actions dropdown. |
 | [Tabs](/components/tabs) | React Aria Tabs - 5 horizontal types, 5 vertical types, two sizes, optional icon/badge, full-width layout. |
+| [Textarea](/components/textarea) | Multi-line text input - label, hint, tooltip, two sizes, invalid and disabled states. |
 | [Toast](/components/toast) | Transient corner notification powered by sonner - 6 colours, optional action, composed from Button/CloseButton/FeaturedIcon. |
 | [Toggle](/components/toggle) | Binary switch control with an optional label/hint and a slim track variant, in two sizes. |
 | [Tooltip](/components/tooltip) | Hover/focus overlay for supplementary context - 4 placements, description, arrow, delay. |
-
-### Custom Components
-
-| Component | Description |
-| --- | --- |
-| [Date range](/custom-components/date-range) | Prev-arrow / calendar / range-text / next-arrow control, styled like an Input - no real DEW equivalent (input-date.tsx is single-value only). Pending a stakeholder decision on promotion into Components. |
 
 ### Patterns
 

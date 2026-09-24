@@ -4,8 +4,21 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { Button as AriaButton } from "react-aria-components";
 import { Glasses01 } from "@untitledui/icons";
 import { Dropdown } from "@/components/base/dropdown/dropdown";
+import { hasFeatureAccess, type FeatureKey } from "@/config/role-access.config";
 import { useUserRole } from "@/lib/use-user-role";
 import { USER_ROLES, type UserRole } from "@/lib/user-role";
+
+// Route prefixes whose *entire* page is gated behind one feature flag, rather than a single
+// control inside an otherwise-visible page (the ordinary case - see config/role-access.config.ts's
+// own build convention). DSA is the one instance of this so far: `DsaShell` replaces all of `main`
+// with a restriction message for any role `dsaManagement` doesn't cover. Kept as an explicit,
+// short list rather than inferred from nav-tree membership - project-detail/observation-detail are
+// real, unrestricted pages with no nav key of their own, so "not a nav key" isn't the same signal
+// as "this role can't view it".
+const wholePageGates: { prefix: string; feature: FeatureKey }[] = [
+  { prefix: "/pages/dsa", feature: "dsaManagement" },
+  { prefix: "/pages/dla", feature: "dlaAccess" },
+];
 
 // A dev tool, not a BioData SA feature - there's no real login in this exploratory build, so the
 // only way to preview a role today is hand-editing the `?userRole=` URL param, which the user
@@ -28,9 +41,19 @@ export function RoleSwitcher() {
   const activeRole = useUserRole();
 
   const setRole = (role: UserRole) => {
-    const params = new URLSearchParams(searchParams.toString());
+    // Switching to a role that can't view the page you're currently previewing shouldn't strand
+    // you on that same URL showing its own "you don't have access" fallback - that fallback is
+    // correct for someone who lands on the URL directly (an old link, a bookmark), but this
+    // switcher is a live preview tool, so it re-routes to Home instead. Flagged directly by the
+    // user off a screenshot: switching to public-user while on a DSA record showed the restricted
+    // page rather than taking them somewhere they could actually explore.
+    const isBlocked = wholePageGates.some(({ prefix, feature }) => pathname.startsWith(prefix) && !hasFeatureAccess(feature, role));
+    const targetPath = isBlocked ? "/pages/dashboard" : pathname;
+    // A blocked redirect starts a clean query string (dropping e.g. DSA's own `?status=`) rather
+    // than carrying params that mean nothing on the destination page.
+    const params = new URLSearchParams(isBlocked ? undefined : searchParams.toString());
     params.set("userRole", role);
-    router.push(`${pathname}?${params.toString()}`);
+    router.push(`${targetPath}?${params.toString()}`);
   };
 
   return (

@@ -78,7 +78,7 @@ export function SidePanel({
             Dialog carries it explicitly. */}
         <Dialog className="font-barlow flex h-full flex-col outline-hidden">
           <div className="flex shrink-0 items-center justify-between gap-3 border-b border-secondary p-4">
-            <Heading slot="title" className="flex-1 truncate text-md font-semibold text-primary">
+            <Heading slot="title" className="flex-1 truncate text-base font-semibold text-primary">
               {title}
             </Heading>
             <div className="flex shrink-0 items-center gap-1">

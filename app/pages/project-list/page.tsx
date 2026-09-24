@@ -7,7 +7,7 @@ import { useRouter } from "next/navigation";
 import type { Key } from "react-aria-components";
 import { Button as AriaButton, Dialog, DialogTrigger, Tabs } from "react-aria-components";
 import { TabList, Tab, TabPanel } from "@/components/application/tabs/tabs";
-import { Upload01, Plus, ChevronDown, ArrowNarrowRight, HomeLine, Folder, Database01, Map01, FileLock01, Feather, BarChart01, FileSearch01, User01, PieChart03 } from "@untitledui/icons";
+import { Upload01, Plus, ChevronDown, ArrowNarrowRight, HomeLine, Folder, Database01, Map01, FileCheck02, FileLock01, Feather, BarChart01, FileSearch01, User01, PieChart03 } from "@untitledui/icons";
 import { Button } from "@/components/base/buttons/button";
 import { Avatar } from "@/components/base/avatar/avatar";
 import { Tooltip, TooltipTrigger } from "@/components/base/tooltip/tooltip";
@@ -19,6 +19,7 @@ import { dashboardTasks } from "@/app/pages/_shared/home-dashboard";
 import { ProjectListContent } from "@/app/pages/_shared/project-list-content";
 import { GlobalProjectSearch } from "@/app/pages/_shared/global-search";
 import { GuestActionButton } from "@/app/pages/_shared/guest-action-gate";
+import { GuestAboutAside, GuestGradientCard } from "@/app/pages/_shared/guest-home";
 import { GuestAuthActions } from "@/app/pages/_shared/guest-auth-actions";
 import { MobileNavTrigger } from "@/app/pages/_shared/mobile-nav";
 import { RoleSwitcher } from "@/app/pages/_shared/role-switcher";
@@ -26,11 +27,11 @@ import { useFeatureAccess } from "@/lib/use-feature-access";
 import { useUserRole } from "@/lib/use-user-role";
 import { useRoleHref } from "@/lib/use-role-href";
 import { orgLabelForRole } from "@/lib/user-role";
-import { registeredUserNav, publicUserNav, registeredUserAccountMenu, registeredUserFooterLinks, keyHref, type NavNode } from "@/lib/registered-user-nav";
+import { navForRole, registeredUserAccountMenu, registeredUserFooterLinks, keyHref, type NavNode } from "@/lib/registered-user-nav";
 import { cx } from "@/utils/cx";
 
 // Option 1 of 2: the projects list on the sidebar-nav shell (primary icon rail + contextual
-// sidebar), reusing app/pages/dashboard/option-1's three-column header/rail/sidebar chrome
+// sidebar), reusing app/pages/dashboard's three-column header/rail/sidebar chrome
 // verbatim - see that file's comment for the full rationale. See app/pages/project-list/option-2
 // for the same screen on the top-nav shell.
 //
@@ -40,16 +41,17 @@ import { cx } from "@/utils/cx";
 // tokens (no `?` marker, same "structural pattern organizing the whole screen" exemption as those
 // dashboard panels). The primary icon rail is the real top-level IA (lib/registered-user-nav.ts),
 // the contextual sidebar shows only the selected section's children - same NavTree/ProfileMenu
-// treatment as dashboard/option-1, "Projects" selected by default since that's the active section
+// treatment as dashboard, "Projects" selected by default since that's the active section
 // here.
 
-// Same icon map as dashboard/option-1 - kept local (not in lib/registered-user-nav.ts) since it's
+// Same icon map as dashboard - kept local (not in lib/registered-user-nav.ts) since it's
 // presentation-only and option-2's top-nav has no use for it.
 const sectionIcons: Record<string, FC<{ className?: string }>> = {
   Home: HomeLine,
   Projects: Folder,
   Explore: Map01,
   "Data Licencing Agreement (DLA)": FileLock01,
+  "Data Sharing Agreement (DSA)": FileCheck02,
   "Nominate Sensitive Species": Feather,
   "Reports (Own Submissions)": BarChart01,
   "Template Finder": FileSearch01,
@@ -188,20 +190,25 @@ export default function ProjectListPage() {
 function ProjectList() {
   const router = useRouter();
   const showOrgSwitcher = useFeatureAccess("orgSwitcher");
-  // public-user reads a different, smaller nav tree entirely - see dashboard/option-1's copy of
+  // public-user reads a different, smaller nav tree entirely - see dashboard's copy of
   // this same branch for the full rationale.
   const role = useUserRole();
   const isPublicUser = role === "public-user";
-  const nav = isPublicUser ? publicUserNav : registeredUserNav;
+  const nav = navForRole(role);
   const roleHref = useRoleHref();
   const [activeSection, setActiveSection] = useState("Projects");
   const [homeTab, setHomeTab] = useState<Key>("dashboard");
   const [projectsTab, setProjectsTab] = useState<Key>("projects");
+  // public-user's own Flora and Fauna Dashboard tab (Overview/Flora/Fauna/Projects) - separate from
+  // `homeTab` above, which is registered-user's My BioData/Flora-Dashboard switcher and doesn't
+  // apply to a guest (see the isPublicUser branch below). Lifted here, not left uncontrolled inside
+  // DataOverviewContent, so the gradient card's copy can change with it.
+  const [guestDashboardTab, setGuestDashboardTab] = useState<Key>("overview");
   const activeSectionNode = nav.find((section) => section.label === activeSection) ?? nav[0];
 
   // Home and Projects both have a real page of their own - clicking either from a *different*
   // page's shell now actually navigates there instead of faking the content in place. Sections
-  // with no real page yet stay a local, in-place section switch. See dashboard/option-1's copy of
+  // with no real page yet stay a local, in-place section switch. See dashboard's copy of
   // this same fix for the full rationale - flagged directly by the user off a screenshot. `roleHref`
   // (not a bare path) so the active role survives the navigation instead of silently reverting to
   // `registered-user` - see lib/use-role-href.ts.
@@ -314,7 +321,7 @@ function ProjectList() {
               <GlobalProjectSearch />
             </div>
             {/* Visible for every role, gated by click instead of by visibility for public-user -
-                see app/pages/_shared/guest-action-gate.tsx / dashboard/option-1's copy for the
+                see app/pages/_shared/guest-action-gate.tsx / dashboard's copy for the
                 full rationale. */}
             <GuestActionButton
               icon={Plus}
@@ -371,16 +378,32 @@ function ProjectList() {
 
         // public-user's Home and Projects are each a single view (see publicUserNav) - no Tabs
         // boundary, no contextual-sidebar column at all (an aside holding only a section-label
-        // heading is dead space, not minimalism - see dashboard/option-1's copy of this branch for
+        // heading is dead space, not minimalism - see dashboard's copy of this branch for
         // the full rationale, flagged directly by the user off that exact empty column). Checked
         // first so the two-peer-tab branches below never run for this role.
+        // Column 2 is `GuestAboutAside` ("What is BioData SA?" + Guides, the "Reference" variant
+        // picked from `/proto/public-user` after comparing it against a boxed-accordion
+        // "Disclosure" and a stepped "How it works") - not the empty box the pre-Sept-21 version of
+        // this branch dropped entirely for lack of anything to put in it. Same content for Home and
+        // Projects (only the eyebrow label differs), matching the lab exactly. See dashboard's copy
+        // of this same branch for the full rationale.
         if (isPublicUser && (activeSection === "Home" || activeSection === "Projects")) {
           return (
             <div className="flex flex-1 overflow-hidden">
               {iconRail}
+              <GuestAboutAside sectionLabel={activeSection} />
 
               <main className="flex flex-1 flex-col overflow-y-auto">
-                {activeSection === "Home" ? <DataOverviewContent /> : <ProjectListContent />}
+                {activeSection === "Home" ? (
+                  <>
+                    <div className="p-6">
+                      <GuestGradientCard tab={guestDashboardTab} />
+                    </div>
+                    <DataOverviewContent activeTab={guestDashboardTab} onActiveTabChange={setGuestDashboardTab} />
+                  </>
+                ) : (
+                  <ProjectListContent />
+                )}
               </main>
             </div>
           );
@@ -391,7 +414,7 @@ function ProjectList() {
         // Tabs keeps a single internal collection for its whole lifetime; a Tabs that always exists
         // while its TabList only mounts once you switch to Home crashes the first time TabList
         // mounts ("Cannot destructure property 'onAction' ... as it is undefined") - caught on
-        // project-detail/option-1, fixed the same way here since this file has the identical shape.
+        // project-detail, fixed the same way here since this file has the identical shape.
         if (activeSection === "Home") {
           return (
             <Tabs orientation="vertical" selectedKey={homeTab} onSelectionChange={setHomeTab} className="flex flex-1 overflow-hidden">

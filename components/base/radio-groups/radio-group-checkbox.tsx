@@ -59,7 +59,7 @@ export const RadioGroupCheckbox = ({ items, size = "sm", className, ...props }: 
                                     <span className={cx("text-secondary", size === "md" ? "text-md font-medium" : "text-sm font-medium")}>{plan.title}</span>
                                     <span className={cx("text-tertiary", size === "md" ? "text-md" : "text-sm")}>{plan.secondaryTitle}</span>
                                 </AriaLabel>
-                                <AriaText slot="description" className={cx("text-tertiary", size === "md" ? "text-md" : "text-sm")}>
+                                <AriaText slot="description" className={cx("text-balance text-tertiary", size === "md" ? "text-md" : "text-sm")}>
                                     {plan.description}
                                 </AriaText>
                             </div>

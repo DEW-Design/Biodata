@@ -11,7 +11,7 @@
 // reference, read for its own real IA (3 steps: Project Identification / Data Collection and
 // Storage / Privacy and Restrictions; the 5 restriction types nested in step 3) rather than for any
 // pixel/colour choice - the same "extract patterns, not pixels" treatment this file's own
-// "BDBSA domain research"/`/pages/observations/option-1` sections already apply to this exact
+// "BDBSA domain research"/`/pages/observations` sections already apply to this exact
 // source. Every visual decision (the single-card wizard shell, the boxed-Accordion restriction
 // list, the shared species/location picker panels) is this session's own design call, per the
 // user's explicit request for "the design must come from you."
@@ -161,7 +161,7 @@ function ProjectRegistrationForm() {
                     <div className="rounded-2xl border border-secondary bg-primary p-8">
                         <SuccessScreen
                             projectName={projectDetails.shortTitle || "Untitled project"}
-                            onGoToProjects={() => router.push(roleHref("/pages/project-list/option-1"))}
+                            onGoToProjects={() => router.push(roleHref("/pages/project-list"))}
                         />
                     </div>
                 ) : (

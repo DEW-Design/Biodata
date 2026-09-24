@@ -1,6 +1,6 @@
 "use client";
 
-// Species mode for the map search results page (app/pages/observations/option-1) - a species-first
+// Species mode for the map search results page (app/pages/observations) - a species-first
 // way to browse the same real occurrence data the Occurrences tab already shows, per direct
 // request: "I want a species search results page... Find a way if we can make a toggle view to
 // view results as a species mode or Projects, Events, Occurrences, Observations and Resources
@@ -51,7 +51,7 @@
 // Summary toggle is gone entirely (not just hidden) - the analytics tile row it used to gate now
 // always renders. The count/Summary/export bar as its own separate boxed row is gone too; Export
 // itself later moved out of this component into the page's own header row (see
-// app/pages/observations/option-1/page.tsx's `runExport`) so it stays visible in Records mode too.
+// app/pages/observations/page.tsx's `runExport`) so it stays visible in Records mode too.
 //
 // Fourth UI follow-up, per direct feedback off a live Agentation review of this exact page: (1)
 // the filter row (search box + the 6 filter dropdown buttons) moved from the top of this view down
@@ -71,7 +71,7 @@
 // only through "All Filters" now instead of duplicated as inline buttons too (`accordionItems`
 // below, and the state each one reads/writes, are untouched). The same "search box + single All
 // Filters button, left-anchored panel with real per-group categories" shape was also brought to
-// Records mode - see the Metrics-section toolbar in app/pages/observations/option-1/page.tsx.
+// Records mode - see the Metrics-section toolbar in app/pages/observations/page.tsx.
 
 import { useEffect, useMemo, useState, type FC, type Key } from "react";
 import type { DateRange } from "react-aria-components";
@@ -167,7 +167,7 @@ function CoordinateCell({ o }: { o: SearchOccurrence }) {
   return <span className="text-sm whitespace-nowrap text-tertiary">{coordinateText(o)}</span>;
 }
 
-// Exported so the page's own header-row export control (app/pages/observations/option-1/page.tsx)
+// Exported so the page's own header-row export control (app/pages/observations/page.tsx)
 // can build the same CSV/Excel/PDF content this view would have, without duplicating the column
 // list or the per-row extraction logic.
 export const EXPORT_HEADERS = [
@@ -264,7 +264,7 @@ export function SpeciesResultsView({
   onExportableRowsChange,
 }: {
   /** The page's own already spatially + keyword filtered occurrence rows (`filteredOccurrences`
-   *  in app/pages/observations/option-1/page.tsx) - Species mode narrows this further to rows with
+   *  in app/pages/observations/page.tsx) - Species mode narrows this further to rows with
    *  real taxonomy (`family`/`group` set), excluding the two Non-Biotic/Community rows that were
    *  never a real species to begin with. */
   rows: SearchOccurrence[];
@@ -272,7 +272,7 @@ export function SpeciesResultsView({
   /** Reports this view's own currently fully-filtered rows up to the parent page whenever they
    *  change - per a real Figma reference (node 2294:175340), "Export results" now lives in the
    *  page's own header row, next to the Records/Species toggle, not inside this component. The
-   *  export button/dropdown itself moved to app/pages/observations/option-1/page.tsx; this
+   *  export button/dropdown itself moved to app/pages/observations/page.tsx; this
    *  component still owns every filter that decides *which* rows are exportable, so it's the one
    *  source of truth for that set - it just hands the current answer up rather than rendering the
    *  export control itself. `EXPORT_HEADERS`/`exportRowFor` are exported below for the page to

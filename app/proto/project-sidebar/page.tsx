@@ -1,7 +1,7 @@
 "use client";
 
-// PROTOTYPE LAB - throwaway, imported by nothing. Exploring how project-detail/option-1's
-// contextual sidebar (app/pages/project-detail/option-1/page.tsx, the <aside aria-label="Section">
+// PROTOTYPE LAB - throwaway, imported by nothing. Exploring how project-detail's
+// contextual sidebar (app/pages/project-detail/page.tsx, the <aside aria-label="Section">
 // TreeView around line 672-736) should show a project's nested records at scale - the current
 // implementation dumps every child (observations, occurrences, transects, quadrats, blocks,
 // rambles, traps, custom events) as flat siblings under one Site node, which doesn't scale to the

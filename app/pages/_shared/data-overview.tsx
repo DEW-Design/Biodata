@@ -18,11 +18,11 @@ import { FaunaContent } from "@/app/pages/_shared/fauna-content";
 // single "Data Overview" screen into "Flora and Fauna Dashboard": 4 sub-tabs (Overview/Flora/
 // Fauna/Projects), matching the real SA Flora and Fauna dashboard the user shared as a reference.
 // Flora and Fauna are each built off a screenshot of that dashboard's own tab (see
-// flora-content.tsx / fauna-content.tsx); Projects doesn't have its option-1 treatment built yet,
+// flora-content.tsx / fauna-content.tsx); Projects doesn't have its sidebar-shell treatment built yet,
 // so it still renders the honest "hasn't been scoped yet" placeholder rather than invented numbers.
 //
 // (The Projects/Datasets split lives one level up, in the icon rail's own "Projects" section
-// contextual sidebar - see dashboard/option-1's "Projects" Tabs block - not here. First attempt
+// contextual sidebar - see dashboard's "Projects" Tabs block - not here. First attempt
 // at this feedback put the split in this file's own sub-tabs instead; reverted once the user
 // clarified the split belonged in the sidebar, matching Home's My BioData/Flora and Fauna
 // Dashboard pattern one level higher in the IA, not inside this tab's own content.)
@@ -168,9 +168,24 @@ function OverviewMetricCard({
   );
 }
 
-export function DataOverviewContent() {
+// `activeTab`/`onActiveTabChange` are optional, controlled-mode overrides - default to the
+// existing internal `useState` when omitted, so every current caller (dashboard, project-list,
+// project-detail) is unaffected. Added so a consumer can read (or drive) which sub-tab is active
+// from outside - e.g. `/proto/public-user-explorations`'s guest banner copy reacting to whichever
+// tab a guest is actually browsing, without forking this whole component to lift the state out.
+// Same "extend, don't fork" pattern as `Accordion`'s `openKeys`/`onOpenKeysChange`.
+export function DataOverviewContent({
+  activeTab: controlledActiveTab,
+  onActiveTabChange,
+}: { activeTab?: Key; onActiveTabChange?: (key: Key) => void } = {}) {
   const canCustomizeMetrics = useFeatureAccess("metricCardCustomization");
-  const [activeTab, setActiveTab] = useState<Key>("overview");
+  const [internalActiveTab, setInternalActiveTab] = useState<Key>("overview");
+  const isControlled = controlledActiveTab !== undefined;
+  const activeTab = isControlled ? controlledActiveTab : internalActiveTab;
+  const setActiveTab = (key: Key) => {
+    if (!isControlled) setInternalActiveTab(key);
+    onActiveTabChange?.(key);
+  };
   const [metricOrder, setMetricOrder] = useState<MetricId[]>(defaultMetricOrder);
 
   const swapMetric = (currentId: MetricId, newId: MetricId) => {

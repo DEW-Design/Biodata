@@ -39,6 +39,7 @@ import { Button } from "@/components/base/buttons/button";
 import { Input } from "@/components/base/input/input";
 import { Dialog, DialogTrigger, Modal, ModalOverlay } from "@/components/application/modals/modal";
 import { cx } from "@/utils/cx";
+import type { UserRole } from "@/lib/user-role";
 
 // ─────────────────────────────────────────────────────────────────────────
 // BioData SA public marketing home page - rebuilt directly against the real
@@ -242,17 +243,24 @@ const fredoka = Fredoka({ subsets: ["latin"], weight: ["500", "600"], variable: 
 // this nav label and the section's own eyebrow (below); a later round (see the changelog above)
 // extended the rename to the "Where to next" grid tile's title/CTA too. The section's own H2 and
 // the footer's own "Knowledge Centre" link are still left as-is since feedback hasn't flagged them.
+// This page is the signed-out front door, so every hand-off into `/pages/**` carries the
+// `public-user` role explicitly. That is also `DEFAULT_USER_ROLE` now, but the link stays explicit so
+// the URL always says who is looking and never changes meaning if the default does. See
+// `lib/use-role-href.ts` for the same problem in-app.
+const LANDING_ROLE: UserRole = "public-user";
+const publicUserHref = (path: string) => `${path}?userRole=${LANDING_ROLE}`;
+
+const EXPLORE_ROUTE = publicUserHref("/pages/project-list");
+const DASHBOARD_ROUTE = publicUserHref("/pages/dashboard");
+
 const NAV_LINKS: { label: string; href: string }[] = [
   { label: "What is Biodata", href: "#about" },
   { label: "Explore", href: "#explore" },
   { label: "Contribute", href: "#contribute" },
-  { label: "Dashboard", href: "/pages/dashboard" },
+  { label: "Dashboard", href: DASHBOARD_ROUTE },
   { label: "Resources & User Guides", href: "#knowledge-centre" },
   { label: "Contact Us", href: "#site-footer" },
 ];
-
-const EXPLORE_ROUTE = "/pages/project-list/option-1";
-const DASHBOARD_ROUTE = "/pages/dashboard";
 
 function Container({ className, children }: { className?: string; children: ReactNode }) {
   // Figma's own sections aren't built on this site's default 1280px docs
@@ -520,7 +528,7 @@ export default function BiodataHomePage() {
             <Button color="secondary" size="sm" href="/pages/auth/signup">
               Sign up
             </Button>
-            <Button color="primary" size="sm" href="#explore">
+            <Button color="primary" size="sm" href={DASHBOARD_ROUTE}>
               Explore
             </Button>
           </div>

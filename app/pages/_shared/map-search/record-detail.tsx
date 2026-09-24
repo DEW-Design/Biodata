@@ -36,7 +36,7 @@ import {
 // which real Project a record belongs to. First built as a Project/Parent/Hierarchy field list,
 // then replaced per direct feedback with this eyebrow-label + title + meta-row shape instead - the
 // same real "PROJECT" eyebrow / big title / Project ID-Start Date-End Date-Status-Published by
-// meta row already established for `project-detail/option-1`'s own page header (`MetaField` there,
+// meta row already established for `project-detail`'s own page header (`MetaField` there,
 // reused here as a page-local copy since it's a small, page-scoped primitive, not something this
 // codebase cross-imports between `/pages/**` files). Shows the record's own root Project -
 // `rootProjectOfEvent`/`rootProjectForParentEventId` - every field real (`code`/`name`/
@@ -300,7 +300,7 @@ function PermitSection() {
 /** Every restriction type (Embargo/Species/Location/Project Data/Other) is conditional in Figma's
  *  own frame, per this build's "a conditional field is conditional in the UI too" design
  *  principle - none of this build's mock projects carry real restriction data, so this section
- *  shows the same honest "No restrictions recorded" empty state `project-detail/option-1`'s own
+ *  shows the same honest "No restrictions recorded" empty state `project-detail`'s own
  *  Restrictions tab already established, rather than rendering all 5 sub-blocks unconditionally. */
 function PrivacyRestrictionsSection() {
   return <p className="text-sm text-tertiary">No restrictions recorded for this project.</p>;
@@ -650,7 +650,7 @@ function projectFor(record: DetailRecord): SearchEvent | undefined {
   return rootProjectForParentEventId(parentEventId);
 }
 
-/** Same small "small-caps label above value" stat field `project-detail/option-1`'s own page
+/** Same small "small-caps label above value" stat field `project-detail`'s own page
  *  header (`MetaField` there) already establishes - kept as a page-local copy here rather than
  *  cross-imported, matching this codebase's convention for small, page-scoped primitives. */
 function MetaField({ label, children }: { label: string; children: ReactNode }) {
@@ -689,13 +689,13 @@ function ProjectSummaryHeader({ project }: { project?: SearchEvent }) {
 //    project's own real detail page with the same record selected in that page's own TreeView. ──
 
 /** The one project with a real, dedicated detail page in this build - "Adelaide Hills Bushland
- *  Survey" (see project-detail/option-1's own comment: "Only one project in this whole build has a
+ *  Survey" (see project-detail's own comment: "Only one project in this whole build has a
  *  real detail page... routing every other project's own records to that same page would
  *  misrepresent a different project as if it were that specific example"). "Go to project" only
  *  ever navigates for real when a record's own root Project is this one. */
 const ADELAIDE_HILLS_PROJECT_ID = "adelaide-hills";
 
-/** project-detail/option-1's own `projectRecordTree` is a separate, smaller, hand-authored mock
+/** project-detail's own `projectRecordTree` is a separate, smaller, hand-authored mock
  *  tree with its own ids ("site"/"visit"/...) - not the same records as search-data.ts, and most of
  *  its node codes don't correspond to any real record here (see that file's own comment on
  *  `projectRecordTree`). Only these two nodes genuinely share a real code with a record in this
@@ -728,7 +728,7 @@ function GoToProjectButton({ record }: { record: DetailRecord }) {
   }
 
   const nodeId = record.kind === "event" ? ADELAIDE_HILLS_TREE_NODE_BY_CODE[record.event.code] : undefined;
-  const target = `${roleHref("/pages/project-detail/option-1")}${nodeId ? `&select=${nodeId}` : ""}`;
+  const target = `${roleHref("/pages/project-detail")}${nodeId ? `&select=${nodeId}` : ""}`;
 
   return (
     <Button color="secondary" size="sm" href={target}>

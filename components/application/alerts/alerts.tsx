@@ -56,8 +56,8 @@ export const AlertFloating = ({ title, description, confirmLabel, onClose, onCon
 
             <div className="flex flex-1 flex-col gap-3 md:w-0">
                 <div className="flex flex-col gap-1 overflow-auto">
-                    <p className="pr-8 text-sm font-semibold text-secondary md:truncate md:pr-0">{title}</p>
-                    <p className="text-sm text-tertiary md:truncate">{description}</p>
+                    <p className="pr-8 text-sm font-semibold text-balance text-secondary md:truncate md:pr-0">{title}</p>
+                    <p className="text-sm text-balance text-tertiary md:truncate">{description}</p>
                 </div>
 
                 {(onConfirm || onClose) && (
