@@ -39,7 +39,13 @@ export function MetricTile({
       type="button"
       onClick={onClick}
       className={cx(
-        "flex flex-1 flex-col items-start gap-1 rounded-md border px-4 py-2 text-left transition-colors",
+        // `flex-1` alone only shares row width when the parent is itself a flex row (the Records/
+        // Species switchers this component was originally built for) - it's inert as a plain block
+        // child, which left `project-detail/option-3`'s own vertically-stacked `RecordCountsCard`
+        // rendering each tile shrink-wrapped to its own label width instead of the shared full
+        // width every sibling tile should have. `w-full` fixes that case directly; it's a no-op
+        // inside a real flex row, since `flex-1`'s own `flex-basis: 0%` already wins there.
+        "flex w-full flex-1 flex-col items-start gap-1 rounded-md border px-4 py-2 text-left transition-colors",
         active ? "border-brand-500 bg-brand-50" : "border-secondary bg-primary hover:bg-secondary",
       )}
     >
