@@ -29,6 +29,7 @@ import { useRoleHref } from "@/lib/use-role-href";
 import { orgLabelForRole } from "@/lib/user-role";
 import { navForRole, registeredUserAccountMenu, registeredUserFooterLinks, keyHref, type NavNode } from "@/lib/registered-user-nav";
 import { cx } from "@/utils/cx";
+import { assetPath } from "@/lib/base-path";
 
 // Option 1 of 2: the projects list on the sidebar-nav shell (primary icon rail + contextual
 // sidebar), reusing app/pages/dashboard's three-column header/rail/sidebar chrome
@@ -304,7 +305,7 @@ function ProjectList() {
           </MobileNavTrigger>
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
-            src="/pages/dashboard/gov-sa-dew-lockup.png"
+            src={assetPath("/pages/dashboard/gov-sa-dew-lockup.png")}
             alt="Government of South Australia, Department for Environment and Water"
             className="h-[37px] w-auto"
           />

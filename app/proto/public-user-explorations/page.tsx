@@ -83,6 +83,7 @@ import { GuestActionButton } from "@/app/pages/_shared/guest-action-gate";
 import { GlobalProjectSearch } from "@/app/pages/_shared/global-search";
 import { DataOverviewContent } from "@/app/pages/_shared/data-overview";
 import { cx } from "@/utils/cx";
+import { assetPath } from "@/lib/base-path";
 
 // ── Shared stubs - real IA/header shape, not a design decision this lab is exploring ──
 
@@ -142,7 +143,7 @@ function GuestHeaderStub({ actions = [] }: { actions?: GatedAction[] }) {
       <div className="flex flex-wrap items-center gap-4">
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
-          src="/pages/dashboard/gov-sa-dew-lockup.png"
+          src={assetPath("/pages/dashboard/gov-sa-dew-lockup.png")}
           alt="Government of South Australia, Department for Environment and Water"
           className="h-[37px] w-auto"
         />

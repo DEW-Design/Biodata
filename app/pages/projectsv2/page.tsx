@@ -29,6 +29,7 @@ import { Avatar } from "@/components/base/avatar/avatar";
 import { Badge, BadgeWithDot } from "@/components/base/badges/badges";
 import { Input } from "@/components/base/input/input";
 import { Cell, Column, Row, Table, TableBody, TableHeader } from "@/components/base/table/table";
+import { assetPath } from "@/lib/base-path";
 
 type Icon = ComponentType<SVGProps<SVGSVGElement>>;
 
@@ -124,7 +125,7 @@ function Sidebar() {
 
         <div className="mb-4 h-[78px] overflow-hidden rounded-lg bg-white px-2 py-2">
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/pages/dashboard/gov-sa-dew-logo.png" alt="Government of South Australia, Department for Environment and Water" className="h-full w-full object-contain" />
+          <img src={assetPath("/pages/dashboard/gov-sa-dew-logo.png")} alt="Government of South Australia, Department for Environment and Water" className="h-full w-full object-contain" />
         </div>
 
         <button type="button" className="flex h-16 w-full items-center gap-3 rounded-xl border border-white/10 bg-white/[0.01] px-3 text-left">
@@ -311,7 +312,7 @@ function ProjectDetails({ name }: { name: string }) {
               <h3 className="mb-4 text-base font-medium text-gray-700">Geographic scope</h3>
               <div className="h-[219px] overflow-hidden rounded-lg bg-gray-100">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src="/pages/projects/geographic-scope.png" alt="Map of the project geographic scope" className="h-full w-full object-cover" />
+                <img src={assetPath("/pages/projects/geographic-scope.png")} alt="Map of the project geographic scope" className="h-full w-full object-cover" />
               </div>
             </div>
           </div>

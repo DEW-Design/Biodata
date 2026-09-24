@@ -9,6 +9,7 @@ import { Circle, MapContainer, Marker, Polygon, ScaleControl, TileLayer, useMap 
 import { ZoomIn, ZoomOut } from "@untitledui/icons";
 import { Button } from "@/components/base/buttons/button";
 import type { Boundary } from "./geo";
+import { assetPath } from "@/lib/base-path";
 
 // A real, working map of South Australia - OpenStreetMap tiles via Leaflet, not a fabricated grid
 // or a static image. Kept in app/pages/_shared (not components/custom) to match the precedent
@@ -24,9 +25,9 @@ import type { Boundary } from "./geo";
 // node_modules/leaflet/dist/images/ into public/leaflet/, instead of leaflet's own asset path.
 delete (L.Icon.Default.prototype as unknown as { _getIconUrl?: unknown })._getIconUrl;
 L.Icon.Default.mergeOptions({
-    iconRetinaUrl: "/leaflet/marker-icon-2x.png",
-    iconUrl: "/leaflet/marker-icon.png",
-    shadowUrl: "/leaflet/marker-shadow.png",
+    iconRetinaUrl: assetPath("/leaflet/marker-icon-2x.png"),
+    iconUrl: assetPath("/leaflet/marker-icon.png"),
+    shadowUrl: assetPath("/leaflet/marker-shadow.png"),
 });
 
 const SA_CENTER: [number, number] = [-30.5, 135.8];

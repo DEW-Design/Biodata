@@ -8,6 +8,7 @@ import { Button } from "@/components/base/buttons/button";
 import { Avatar } from "@/components/base/avatar/avatar";
 import { Breadcrumb } from "@/components/scaffold/breadcrumb";
 import { cx } from "@/utils/cx";
+import { assetPath } from "@/lib/base-path";
 
 // `fullBleed` breaks the card out of the docs shell's normal `max-w-5xl` reading column
 // (app/(docs)/layout.tsx) on the RIGHT only - left edge stays exactly where normal flow already
@@ -97,7 +98,7 @@ function TopNavDemo() {
         <div className="flex flex-wrap items-center gap-4">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
-            src="/pages/dashboard/gov-sa-dew-lockup.png"
+            src={assetPath("/pages/dashboard/gov-sa-dew-lockup.png")}
             alt="Government of South Australia, Department for Environment and Water"
             className="h-[37px] w-auto"
           />

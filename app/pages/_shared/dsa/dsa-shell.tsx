@@ -22,6 +22,7 @@ import { useUserRole } from "@/lib/use-user-role";
 import { orgLabelForRole } from "@/lib/user-role";
 import { DSA_SECTION_LABEL, keyHref, navForRole, registeredUserFooterLinks, type NavNode } from "@/lib/registered-user-nav";
 import { cx } from "@/utils/cx";
+import { assetPath } from "@/lib/base-path";
 
 // The one shell every DSA route renders through (the agreement list, an agreement's deep dive, the
 // new/edit form), so the three-column structure - primary icon rail, contextual sidebar, main - is
@@ -184,7 +185,7 @@ export function DsaShell({
             {showStatusNav ? (close: () => void) => <StatusNav activeStatus={activeStatus} onNavigate={close} /> : undefined}
           </MobileNavTrigger>
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/pages/dashboard/gov-sa-dew-lockup.png" alt="Government of South Australia, Department for Environment and Water" className="h-[37px] w-auto" />
+          <img src={assetPath("/pages/dashboard/gov-sa-dew-lockup.png")} alt="Government of South Australia, Department for Environment and Water" className="h-[37px] w-auto" />
           <div className="h-6 w-px bg-secondary" />
           <p className="text-[17px] font-semibold tracking-tight text-primary">BioData SA</p>
           <Breadcrumb

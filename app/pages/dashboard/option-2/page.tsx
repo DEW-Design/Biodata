@@ -43,6 +43,7 @@ import { useUserRole } from "@/lib/use-user-role";
 import { useRoleHref } from "@/lib/use-role-href";
 import { registeredUserNav, publicUserNav, registeredUserAccountMenu, registeredUserFooterLinks, type NavNode } from "@/lib/registered-user-nav";
 import { cx } from "@/utils/cx";
+import { assetPath } from "@/lib/base-path";
 
 // NOTE: "option-1" in the comments below means the sidebar-shell dashboard that is now the canonical
 // /pages/dashboard route (its /option-1 suffix was dropped - see CONTEXT.md, Sept 2026 route
@@ -679,7 +680,7 @@ function DashboardOption2() {
         <div className="flex items-center gap-4">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
-            src="/pages/dashboard/gov-sa-dew-lockup.png"
+            src={assetPath("/pages/dashboard/gov-sa-dew-lockup.png")}
             alt="Government of South Australia, Department for Environment and Water"
             className="h-[37px] w-auto"
           />

@@ -369,3 +369,16 @@ export const seedDlas: Dla[] = [
     updatedAt: "2026-05-14",
   },
 ];
+
+/** Every id /pages/dla/[id] is pre-rendered for in the static GitHub Pages build: the seeds, plus
+ *  the next `count` ids `nextDlaId` would hand out this year and next. New DLAs live in memory only
+ *  (a reload resets to the seeds), so a session never gets far past the seed numbers - without
+ *  these, opening a just-created DLA would 404 on a static host. */
+export function staticDlaIds(count = 50): string[] {
+  const highest = seedDlas.reduce((max, item) => Math.max(max, Number(item.id.split("-")[2]) || 0), 0);
+  const year = new Date().getFullYear();
+  const upcoming = [year, year + 1].flatMap((y) =>
+    Array.from({ length: count }, (_, i) => `DLA-${y}-${String(highest + 1 + i).padStart(5, "0")}`),
+  );
+  return [...new Set([...seedDlas.map((item) => item.id), ...upcoming])];
+}

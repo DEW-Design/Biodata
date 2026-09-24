@@ -18,6 +18,7 @@ import { useRoleHref } from "@/lib/use-role-href";
 import { registeredUserNav, publicUserNav, registeredUserAccountMenu, registeredUserFooterLinks, type NavNode } from "@/lib/registered-user-nav";
 import { SectionHeader } from "@/components/application/section-headers/section-headers";
 import { cx } from "@/utils/cx";
+import { assetPath } from "@/lib/base-path";
 
 // Option 2 of 2: the projects list on the top-nav shell (header + primary nav bar), reusing
 // app/pages/dashboard/option-2's header/nav chrome verbatim - see that file's comment for the
@@ -270,7 +271,7 @@ function ProjectListOption2() {
         <div className="flex items-center gap-4">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
-            src="/pages/dashboard/gov-sa-dew-lockup.png"
+            src={assetPath("/pages/dashboard/gov-sa-dew-lockup.png")}
             alt="Government of South Australia, Department for Environment and Water"
             className="h-[37px] w-auto"
           />

@@ -9,6 +9,7 @@ import { Badge, BadgeWithDot, BadgeWithIcon } from "@/components/base/badges/bad
 import { Cell, Column, Row, Table, TableBody, TableHeader } from "@/components/base/table/table";
 import { Table as DataTable, TableCard, TableRowActionsDropdown } from "@/components/application/table/table";
 import { PageHeader } from "@/components/PageHeader";
+import Link from "next/link";
 import { ScaffoldCheckbox, ScaffoldLabel, ScaffoldNumberInput, SegmentedControl } from "@/components/scaffold/controls";
 
 const Section = ({ label, children }: { label: string; children: React.ReactNode }) => (
@@ -347,7 +348,7 @@ export default function TablePage() {
       </Section>
       <p className="text-balance">
         <code>TableRowActionsDropdown</code> is a ready-made Edit/Copy link/Delete menu built on{" "}
-        <a href="/components/dropdown">Dropdown</a> - see that page for building a custom one. Figma&apos;s own
+        <Link href="/components/dropdown">Dropdown</Link> - see that page for building a custom one. Figma&apos;s own
         &quot;Team members&quot; reference documents two other row-action treatments this system doesn&apos;t have a
         ready-made component for yet - bare &quot;Action icons&quot; (a row of icon-only buttons, no dropdown) and
         &quot;Action buttons&quot; (text links). Both are real, valid Untitled UI patterns; only the dropdown one
@@ -382,7 +383,7 @@ export default function TablePage() {
       <p className="text-balance">
         Figma&apos;s table examples use two different status treatments depending on what the status actually
         means - <code>BadgeWithDot</code> for a simple on/off state (Active/Inactive), <code>BadgeWithIcon</code> for
-        an outcome (Paid/Refunded/Cancelled). Both are real, already-shipped <a href="/components/badge">Badge</a>{" "}
+        an outcome (Paid/Refunded/Cancelled). Both are real, already-shipped <Link href="/components/badge">Badge</Link>{" "}
         variants - picking the wrong one for the context is the mismatch to avoid, not a missing component.
       </p>
       <Section label="BadgeWithDot (on/off) / BadgeWithIcon (outcome)">
@@ -500,8 +501,8 @@ import { Table, TableCard, TableRowActionsDropdown } from "@/components/applicat
         <li>
           <strong>A filters bar</strong> (segmented view tabs + search input + a &quot;Filters&quot; button, sitting
           between the card header and the grid) - achievable today by composing{" "}
-          <a href="/components/tabs">Tabs</a>, <a href="/components/input">Input</a>, and{" "}
-          <a href="/components/button">Button</a> directly rather than a new bespoke component.
+          <Link href="/components/tabs">Tabs</Link>, <Link href="/components/input">Input</Link>, and{" "}
+          <Link href="/components/button">Button</Link> directly rather than a new bespoke component.
         </li>
         <li>
           <strong>An avatar-group cell</strong> (4-5 overlapping avatars + a &quot;+N&quot; overflow badge, seen in
