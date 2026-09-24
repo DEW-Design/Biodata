@@ -15,6 +15,13 @@ export interface ContactPerson {
     lastName: string;
     email: string;
     phone: string;
+    /** The contact's own team/organisation, if it differs from the project's own publishing
+     *  organisation (`dataOwnerOrgName`) - e.g. a DEW staffer publishing on behalf of a partner
+     *  org still belongs to their own internal team. Optional and not asked by the wizard's own
+     *  Data Owner step today (that step only asks for the org name once, not per contact) - real
+     *  display-only detail a caller can set directly on seed data, same as `ProjectManager.
+     *  organisation` already supports per manager. */
+    organisation?: string;
 }
 
 export function emptyContact(id: number): ContactPerson {

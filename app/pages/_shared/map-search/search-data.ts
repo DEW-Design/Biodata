@@ -141,6 +141,19 @@ const childEvents: SearchEvent[] = [
     // asking for the table to show "multiple" of every event type with real nested hierarchy.
     { id: "transect-adelaide-1", code: "TR00502", name: "Transect TR00502", type: "Transect", status: "Completed", statusColor: "gray", startDate: "2026-06-10", endDate: "2026-06-10", org: "Adelaide Hills Landcare", region: "Adelaide Hills", parentId: "site-adelaide-2", lat: -35.01, lon: 138.67 },
     { id: "quadrat-adelaide-1", code: "QR00502", name: "Quadrat QR00502", type: "Quadrat", status: "Completed", statusColor: "gray", startDate: "2026-06-11", endDate: "2026-06-11", org: "Adelaide Hills Landcare", region: "Adelaide Hills", parentId: "transect-adelaide-1", lat: -35.01, lon: 138.66 },
+
+    // Block/Ramble/Trap/Custom event siblings under Adelaide Hills' own site-adelaide-1 - added so
+    // this one project demonstrates every real Event sub-type (matching the full Site > Visit/
+    // Transect/Quadrat/Block/Ramble/Trap/Custom Event breadth shown in the Projects Figma reference
+    // frame, node 1938:35405) rather than relying on a reader to trust the code handles types it
+    // never actually renders for this project. Every other project already had at most 1-2 of
+    // these types scattered across the dataset - Adelaide Hills gets its own full set instead of
+    // borrowing from elsewhere, per this file's own "reuse real events, extend rather than fork"
+    // convention.
+    { id: "block-adelaide-1", code: "BK00503", name: "Block BK00503", type: "Block", status: "Completed", statusColor: "gray", startDate: "2026-07-14", endDate: "2026-07-14", org: "Adelaide Hills Landcare", region: "Adelaide Hills", parentId: "site-adelaide-1", lat: -35.03, lon: 138.73 },
+    { id: "ramble-adelaide-1", code: "RMB00504", name: "Ramble RMB00504", type: "Ramble", status: "Completed", statusColor: "gray", startDate: "2026-07-20", endDate: "2026-07-20", org: "Adelaide Hills Landcare", region: "Adelaide Hills", parentId: "site-adelaide-1", lat: -35.02, lon: 138.73 },
+    { id: "trap-adelaide-1", code: "TRP00503", name: "Trap TRP00503", type: "Trap", status: "Completed", statusColor: "gray", startDate: "2026-07-22", endDate: "2026-07-22", org: "Adelaide Hills Landcare", region: "Adelaide Hills", parentId: "site-adelaide-1", lat: -35.03, lon: 138.71 },
+    { id: "custom-adelaide-1", code: "CU00503", name: "Custom CU00503", type: "Custom event", status: "Completed", statusColor: "gray", startDate: "2026-07-25", endDate: "2026-07-25", org: "Adelaide Hills Landcare", region: "Adelaide Hills", parentId: "site-adelaide-1", lat: -35.03, lon: 138.72 },
 ];
 
 export const searchEvents: SearchEvent[] = [...myProjectEvents, ...otherProjectEvents, ...childEvents];
@@ -310,6 +323,13 @@ export const searchOccurrences: SearchOccurrence[] = [
     { id: "occ-19", species: "Xanthorrhoea semiplana", commonName: "Grass Tree", type: "Population", parentEventId: "site-flinders-1", date: "2026-06-25", lastSurveyed: "2026-07-02", status: "Present", region: "Flinders Ranges", lat: -31.51, lon: 138.59, count: 34, family: "Xanthorrhoeaceae", group: "Plant", licenceLevel: "Level 1" },
     { id: "occ-20", species: "Santalum acuminatum", commonName: "Quandong", type: "Individual", parentEventId: "site-ki-1", date: "2026-05-18", lastSurveyed: "2026-05-25", status: "Present", region: "Kangaroo Island", lat: -35.94, lon: 136.72, count: 1, family: "Santalaceae", group: "Plant", licenceLevel: "Level 1" },
     { id: "occ-21", species: "Grevillea lavandulacea", commonName: "Lavender Grevillea", type: "Population", parentEventId: "site-remarkable-1", date: "2026-08-11", lastSurveyed: "2026-08-18", status: "Present", region: "Mount Remarkable", lat: -32.79, lon: 138.13, count: 12, family: "Proteaceae", group: "Plant", licenceLevel: "Level 1" },
+
+    // Matching the new block-adelaide-1/ramble-adelaide-1 events above - real SA native species not
+    // yet used elsewhere in this dataset. Southern Brown Bandicoot is already named as a real
+    // targeted species for this exact project in project-detail/option-1's own Data Collection
+    // Scope section - a genuine continuity, not a coincidence.
+    { id: "occ-22", species: "Isoodon obesulus", commonName: "Southern Brown Bandicoot", type: "Individual", parentEventId: "block-adelaide-1", date: "2026-07-14", lastSurveyed: "2026-07-21", status: "Present", region: "Adelaide Hills", lat: -35.03, lon: 138.73, count: 1, family: "Peramelidae", group: "Mammal", licenceLevel: "Level 1" },
+    { id: "occ-23", species: "Malurus cyaneus", commonName: "Superb Fairywren", type: "Individual", parentEventId: "ramble-adelaide-1", date: "2026-07-20", lastSurveyed: "2026-07-27", status: "Present", region: "Adelaide Hills", lat: -35.02, lon: 138.73, count: 1, family: "Maluridae", group: "Bird", licenceLevel: "Level 1" },
 ];
 
 export interface SearchObservation {
@@ -357,6 +377,10 @@ export const searchObservations: SearchObservation[] = [
     { id: "obs-19", commonName: "Grass Tree", species: "Xanthorrhoea semiplana", type: "Population", observerInitials: "PB", observerName: "Phoenix Baker", parentEventId: "site-flinders-1", date: "2026-06-25", region: "Flinders Ranges", lat: -31.51, lon: 138.59, family: "Xanthorrhoeaceae", group: "Plant", licenceLevel: "Level 1" },
     { id: "obs-20", commonName: "Quandong", species: "Santalum acuminatum", type: "Individual", observerInitials: "MD", observerName: "Maya Dewitt", parentEventId: "site-ki-1", date: "2026-05-18", region: "Kangaroo Island", lat: -35.94, lon: 136.72, family: "Santalaceae", group: "Plant", licenceLevel: "Level 1" },
     { id: "obs-21", commonName: "Lavender Grevillea", species: "Grevillea lavandulacea", type: "Population", observerInitials: "OW", observerName: "Olivia Wyatt", parentEventId: "site-remarkable-1", date: "2026-08-11", region: "Mount Remarkable", lat: -32.79, lon: 138.13, family: "Proteaceae", group: "Plant", licenceLevel: "Level 1" },
+
+    // Matching occ-22/occ-23 above.
+    { id: "obs-22", commonName: "Southern Brown Bandicoot", species: "Isoodon obesulus", type: "Individual", observerInitials: "MD", observerName: "Maya Dewitt", parentEventId: "block-adelaide-1", date: "2026-07-14", region: "Adelaide Hills", lat: -35.03, lon: 138.73, family: "Peramelidae", group: "Mammal", licenceLevel: "Level 1" },
+    { id: "obs-23", commonName: "Superb Fairywren", species: "Malurus cyaneus", type: "Individual", observerInitials: "OW", observerName: "Olivia Wyatt", parentEventId: "ramble-adelaide-1", date: "2026-07-20", region: "Adelaide Hills", lat: -35.02, lon: 138.73, family: "Maluridae", group: "Bird", licenceLevel: "Level 1" },
 ];
 
 export type ResourceType = "Image" | "File" | "Reference Link";

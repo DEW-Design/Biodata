@@ -31,7 +31,7 @@ import type { EmbargoType, RestrictionTypeKey, RestrictionsState } from "./types
 
 const EMBARGO_TYPE_ITEMS = EMBARGO_TYPE_OPTIONS.map((o) => ({ id: o.id, label: o.label }));
 
-const RESTRICTION_TYPE_META: { key: RestrictionTypeKey; title: string; description: string; icon: typeof Lock01 }[] = [
+export const RESTRICTION_TYPE_META: { key: RestrictionTypeKey; title: string; description: string; icon: typeof Lock01 }[] = [
     { key: "embargo", title: "Embargo", description: "Temporarily hide this project from all users until a specified date", icon: Hourglass03 },
     { key: "species", title: "Restrict data based on Species", description: "Manage protection rules for species recorded in this project", icon: Feather },
     { key: "locations", title: "Restrict data based on Locations", description: "Manage protection rules for sensitive locations recorded in this project", icon: MarkerPin04 },
@@ -48,7 +48,7 @@ export function isEmbargoValid(embargo: RestrictionsState["embargo"]): boolean {
     );
 }
 
-function isTypeValid(key: RestrictionTypeKey, r: RestrictionsState): boolean {
+export function isTypeValid(key: RestrictionTypeKey, r: RestrictionsState): boolean {
     if (key === "embargo") return isEmbargoValid(r.embargo);
     // A "restrict by species/location" choice with nothing nominated restricts nothing - the
     // accordion version let this through silently; each now needs at least one real entry.
@@ -66,7 +66,7 @@ export function isStep3Valid(restrictions: RestrictionsState): boolean {
 
 type CardId = "any" | "types" | RestrictionTypeKey | "review";
 
-const TYPE_CARD_TITLES: Record<RestrictionTypeKey, { title: string; description: string }> = {
+export const TYPE_CARD_TITLES: Record<RestrictionTypeKey, { title: string; description: string }> = {
     embargo: { title: "Tell us about the embargo", description: "Choose why this project is embargoed and when it should become available." },
     species: { title: "Which species need protecting?", description: "Nominate every species whose records in this project should be treated as sensitive." },
     locations: { title: "Which locations are sensitive?", description: "Nominate every location whose records in this project should be protected." },
@@ -74,18 +74,167 @@ const TYPE_CARD_TITLES: Record<RestrictionTypeKey, { title: string; description:
     other: { title: "Describe any other restriction", description: "Anything not covered by the other restriction types." },
 };
 
+/** One enabled restriction type's own summary line - shared by the review card below and by any
+ *  external read-only display of a `RestrictionsState` (e.g. project-detail/option-3's own
+ *  Overview stage, which shows this same summary before the user opens the real editor). */
+export function restrictionSummaryFor(key: RestrictionTypeKey, value: RestrictionsState): string {
+    if (key === "embargo") {
+        const labels = value.embargo.types.map((t) => (t === "other" && value.embargo.typeOther ? value.embargo.typeOther : EMBARGO_TYPE_OPTIONS.find((o) => o.id === t)?.label)).join(", ");
+        const until = value.embargo.endDate ? ` - until ${value.embargo.endDate.toDate(getLocalTimeZone()).toLocaleDateString("en-AU")}` : "";
+        return `${labels}${until}`;
+    }
+    if (key === "species")
+        return value.species
+            .map((s) => {
+                const name = REGISTRATION_SPECIES.find((r) => r.id === s.speciesId)?.commonName ?? s.speciesId;
+                const scope = s.scope === "all" ? "all concepts" : s.concepts.map((c) => conceptLabel(c, SPECIES_CONCEPTS)).join(", ");
+                return `${name} (${scope})`;
+            })
+            .join("; ");
+    if (key === "locations") return value.locations.map((l) => l.name).join(", ");
+    if (key === "metadata") return value.metadata.concepts.filter((c) => c.concept).map((c) => conceptLabel(c, PROJECT_METADATA_CONCEPTS)).join(", ");
+    return value.otherRestrictions;
+}
+
+/** Every enabled restriction type's own row (title/icon/summary), in the same fixed order the
+ *  wizard itself uses - the one shared source both the wizard's own review card and an external
+ *  read-only display build their rows from, so the two can never list restrictions differently. */
+export function restrictionsSummaryRows(value: RestrictionsState): { key: RestrictionTypeKey; title: string; icon: typeof Lock01; summary: string }[] {
+    return RESTRICTION_TYPE_META.filter((m) => value.enabledTypes.has(m.key)).map((m) => ({ key: m.key, title: m.title, icon: m.icon, summary: restrictionSummaryFor(m.key, value) }));
+}
+
+/** One restriction type's own field set, extracted out of the wizard sequence below so it can be
+ *  reused standalone - `project-detail/option-3`'s own per-type editable cards render exactly this,
+ *  the same fields the wizard itself asks, rather than a second, hand-rolled copy of the same form.
+ *  Owns its own local "has the user touched the embargo end date" tracking (reset per mount, which
+ *  is correct here - each standalone edit session starts fresh) rather than depending on the
+ *  wizard's own step-level state, since a standalone caller never has that state to hand down. */
+export function RestrictionTypeFields({ typeKey, value, onChange }: { typeKey: RestrictionTypeKey; value: RestrictionsState; onChange: (value: RestrictionsState) => void }) {
+    const patch = (partial: Partial<RestrictionsState>) => onChange({ ...value, ...partial });
+
+    const [embargoEndDateTouched, setEmbargoEndDateTouched] = useState(false);
+    const embargoMaxMonths = maxEmbargoMonths(value.embargo.types);
+    const embargoMaxDate = value.embargo.types.length > 0 ? today(getLocalTimeZone()).add({ months: embargoMaxMonths }) : null;
+
+    const handleEmbargoTypesChange = (keys: Set<string>) => {
+        const types = Array.from(keys) as EmbargoType[];
+        const newMax = maxEmbargoMonths(types);
+        const newMaxDate = types.length > 0 ? today(getLocalTimeZone()).add({ months: newMax }) : null;
+        const endDate = !newMaxDate
+            ? value.embargo.endDate
+            : !embargoEndDateTouched
+              ? newMaxDate
+              : value.embargo.endDate && value.embargo.endDate.compare(newMaxDate) > 0
+                ? newMaxDate
+                : value.embargo.endDate;
+        patch({ embargo: { ...value.embargo, types, typeOther: types.includes("other") ? value.embargo.typeOther : "", endDate } });
+    };
+
+    if (typeKey === "embargo")
+        return (
+            <div className="flex flex-col gap-4">
+                <MultiSelect
+                    label="Select type of Embargo"
+                    placeholder="Select embargo type(s)"
+                    isRequired
+                    items={EMBARGO_TYPE_ITEMS}
+                    selectedKeys={new Set(value.embargo.types)}
+                    onSelectionChange={(keys) => handleEmbargoTypesChange(keys as Set<string>)}
+                    onReset={() => handleEmbargoTypesChange(new Set())}
+                    onSelectAll={() => handleEmbargoTypesChange(new Set(EMBARGO_TYPE_ITEMS.map((o) => o.id)))}
+                >
+                    {(item) => <MultiSelect.Item {...item} selectionIndicator="checkbox" selectionIndicatorAlign="left" />}
+                </MultiSelect>
+                {value.embargo.types.length > 0 && (
+                    <ul className="-mt-2 flex flex-col gap-1 text-sm text-tertiary">
+                        {value.embargo.types.map((t) => (
+                            <li key={t}>{EMBARGO_TYPE_OPTIONS.find((o) => o.id === t)?.description}</li>
+                        ))}
+                    </ul>
+                )}
+                {value.embargo.types.includes("other") && (
+                    <Input label="Please specify" isRequired value={value.embargo.typeOther} onChange={(v) => patch({ embargo: { ...value.embargo, typeOther: v } })} />
+                )}
+                <Textarea
+                    label="Reason"
+                    placeholder="Provide justification for embargo"
+                    isRequired
+                    rows={3}
+                    value={value.embargo.reason}
+                    onChange={(v) => patch({ embargo: { ...value.embargo, reason: v } })}
+                />
+                <div className="flex w-full max-w-xs flex-col gap-1.5">
+                    <InputDatePicker
+                        label="Embargo End Date"
+                        isRequired
+                        value={value.embargo.endDate}
+                        onChange={(v) => {
+                            setEmbargoEndDateTouched(true);
+                            patch({ embargo: { ...value.embargo, endDate: v } });
+                        }}
+                        minValue={today(getLocalTimeZone())}
+                        maxValue={embargoMaxDate ?? undefined}
+                    />
+                    {embargoMaxDate && (
+                        <p className="text-xs text-tertiary">
+                            Maximum embargo period for the selected type{value.embargo.types.length > 1 ? "s" : ""}: {formatEmbargoDuration(embargoMaxMonths)}
+                        </p>
+                    )}
+                </div>
+            </div>
+        );
+
+    if (typeKey === "species") return <SpeciesRestrictionSection entries={value.species} onChange={(species) => patch({ species })} />;
+    if (typeKey === "locations") return <LocationRestrictionSection entries={value.locations} onChange={(locations) => patch({ locations })} />;
+
+    if (typeKey === "metadata")
+        return (
+            <div className="flex flex-col gap-4">
+                <ConceptRows rows={value.metadata.concepts} onChange={(concepts) => patch({ metadata: { ...value.metadata, concepts } })} options={PROJECT_METADATA_CONCEPTS} />
+                <Textarea
+                    label="Justification"
+                    placeholder="Reasons for restrictions"
+                    isRequired
+                    rows={3}
+                    value={value.metadata.justification}
+                    onChange={(v) => patch({ metadata: { ...value.metadata, justification: v } })}
+                />
+            </div>
+        );
+
+    return (
+        <Textarea
+            label="Other Restrictions"
+            placeholder="Provide reasons why this restriction is needed to this project..."
+            isRequired
+            rows={4}
+            value={value.otherRestrictions}
+            onChange={(v) => patch({ otherRestrictions: v })}
+            autoFocus
+        />
+    );
+}
+
 export function Step3PrivacyRestrictions({
     value,
     onChange,
     onBackToPreviousStep,
     onComplete,
+    reviewNextLabel = "Create Project",
+    reviewTitle = "Ready to create your project",
 }: {
     value: RestrictionsState;
     onChange: (value: RestrictionsState) => void;
     /** Back from the first card - returns to Step 2 (its own review card). */
     onBackToPreviousStep: () => void;
-    /** Called from the review card's "Create Project". */
+    /** Called from the review card's own primary action. */
     onComplete: () => void;
+    /** The review card's own primary-action label and heading - both default to the real wizard's
+     *  own "Create Project" copy, but a caller reusing this flow to *edit* an existing project's
+     *  restrictions (rather than create a new one) passes something honest for that context
+     *  instead, e.g. `reviewNextLabel="Save changes"` / `reviewTitle="Review restrictions"`. */
+    reviewNextLabel?: string;
+    reviewTitle?: string;
 }) {
     const patch = (partial: Partial<RestrictionsState>) => onChange({ ...value, ...partial });
     const [cardId, setCardId] = useState<CardId>("any");
@@ -105,30 +254,6 @@ export function Step3PrivacyRestrictions({
         if (enabledTypes.has(key)) enabledTypes.delete(key);
         else enabledTypes.add(key);
         patch({ enabledTypes });
-    };
-
-    // Tracks whether the user has ever manually picked an End Date themselves (via the date
-    // picker's own onChange) - as opposed to it only ever being the system's own auto-filled
-    // default. While untouched, the date keeps following the selected type(s)' own maximum
-    // exactly (even upward, when a longer-duration type is added on top of a shorter one). Once
-    // the user has manually touched the field, their choice is respected and only ever clamped
-    // down if a later type change lowers the maximum below it.
-    const [embargoEndDateTouched, setEmbargoEndDateTouched] = useState(false);
-    const embargoMaxMonths = maxEmbargoMonths(value.embargo.types);
-    const embargoMaxDate = value.embargo.types.length > 0 ? today(getLocalTimeZone()).add({ months: embargoMaxMonths }) : null;
-
-    const handleEmbargoTypesChange = (keys: Set<string>) => {
-        const types = Array.from(keys) as EmbargoType[];
-        const newMax = maxEmbargoMonths(types);
-        const newMaxDate = types.length > 0 ? today(getLocalTimeZone()).add({ months: newMax }) : null;
-        const endDate = !newMaxDate
-            ? value.embargo.endDate
-            : !embargoEndDateTouched
-              ? newMaxDate
-              : value.embargo.endDate && value.embargo.endDate.compare(newMaxDate) > 0
-                ? newMaxDate
-                : value.embargo.endDate;
-        patch({ embargo: { ...value.embargo, types, typeOther: types.includes("other") ? value.embargo.typeOther : "", endDate } });
     };
 
     const kicker = "Privacy and restrictions";
@@ -190,114 +315,17 @@ export function Step3PrivacyRestrictions({
                 onNext={next}
                 onBack={back}
             >
-                {key === "embargo" && (
-                    <div className="flex flex-col gap-4">
-                        <MultiSelect
-                            label="Select type of Embargo"
-                            placeholder="Select embargo type(s)"
-                            isRequired
-                            items={EMBARGO_TYPE_ITEMS}
-                            selectedKeys={new Set(value.embargo.types)}
-                            onSelectionChange={(keys) => handleEmbargoTypesChange(keys as Set<string>)}
-                            onReset={() => handleEmbargoTypesChange(new Set())}
-                            onSelectAll={() => handleEmbargoTypesChange(new Set(EMBARGO_TYPE_ITEMS.map((o) => o.id)))}
-                        >
-                            {(item) => <MultiSelect.Item {...item} selectionIndicator="checkbox" selectionIndicatorAlign="left" />}
-                        </MultiSelect>
-                        {value.embargo.types.length > 0 && (
-                            <ul className="-mt-2 flex flex-col gap-1 text-sm text-tertiary">
-                                {value.embargo.types.map((t) => (
-                                    <li key={t}>{EMBARGO_TYPE_OPTIONS.find((o) => o.id === t)?.description}</li>
-                                ))}
-                            </ul>
-                        )}
-                        {value.embargo.types.includes("other") && (
-                            <Input label="Please specify" isRequired value={value.embargo.typeOther} onChange={(v) => patch({ embargo: { ...value.embargo, typeOther: v } })} />
-                        )}
-                        <Textarea
-                            label="Reason"
-                            placeholder="Provide justification for embargo"
-                            isRequired
-                            rows={3}
-                            value={value.embargo.reason}
-                            onChange={(v) => patch({ embargo: { ...value.embargo, reason: v } })}
-                        />
-                        <div className="flex w-full max-w-xs flex-col gap-1.5">
-                            <InputDatePicker
-                                label="Embargo End Date"
-                                isRequired
-                                value={value.embargo.endDate}
-                                onChange={(v) => {
-                                    setEmbargoEndDateTouched(true);
-                                    patch({ embargo: { ...value.embargo, endDate: v } });
-                                }}
-                                minValue={today(getLocalTimeZone())}
-                                maxValue={embargoMaxDate ?? undefined}
-                            />
-                            {embargoMaxDate && (
-                                <p className="text-xs text-tertiary">
-                                    Maximum embargo period for the selected type{value.embargo.types.length > 1 ? "s" : ""}: {formatEmbargoDuration(embargoMaxMonths)}
-                                </p>
-                            )}
-                        </div>
-                    </div>
-                )}
-                {key === "species" && <SpeciesRestrictionSection entries={value.species} onChange={(species) => patch({ species })} />}
-                {key === "locations" && <LocationRestrictionSection entries={value.locations} onChange={(locations) => patch({ locations })} />}
-                {key === "metadata" && (
-                    <div className="flex flex-col gap-4">
-                        <ConceptRows rows={value.metadata.concepts} onChange={(concepts) => patch({ metadata: { ...value.metadata, concepts } })} options={PROJECT_METADATA_CONCEPTS} />
-                        <Textarea
-                            label="Justification"
-                            placeholder="Reasons for restrictions"
-                            isRequired
-                            rows={3}
-                            value={value.metadata.justification}
-                            onChange={(v) => patch({ metadata: { ...value.metadata, justification: v } })}
-                        />
-                    </div>
-                )}
-                {key === "other" && (
-                    <Textarea
-                        label="Other Restrictions"
-                        placeholder="Provide reasons why this restriction is needed to this project..."
-                        isRequired
-                        rows={4}
-                        value={value.otherRestrictions}
-                        onChange={(v) => patch({ otherRestrictions: v })}
-                        autoFocus
-                    />
-                )}
+                <RestrictionTypeFields typeKey={key} value={value} onChange={onChange} />
             </TypeformCard>
         );
     }
 
     // Review - same shape as Steps 1 and 2's own closing card: one summary row per answer with an
-    // edit-jump link, then "Create Project" as the primary action.
-    const summaryFor = (key: RestrictionTypeKey): string => {
-        if (key === "embargo") {
-            const labels = value.embargo.types.map((t) => (t === "other" && value.embargo.typeOther ? value.embargo.typeOther : EMBARGO_TYPE_OPTIONS.find((o) => o.id === t)?.label)).join(", ");
-            const until = value.embargo.endDate ? ` - until ${value.embargo.endDate.toDate(getLocalTimeZone()).toLocaleDateString("en-AU")}` : "";
-            return `${labels}${until}`;
-        }
-        if (key === "species")
-            return value.species
-                .map((s) => {
-                    const name = REGISTRATION_SPECIES.find((r) => r.id === s.speciesId)?.commonName ?? s.speciesId;
-                    const scope = s.scope === "all" ? "all concepts" : s.concepts.map((c) => conceptLabel(c, SPECIES_CONCEPTS)).join(", ");
-                    return `${name} (${scope})`;
-                })
-                .join("; ");
-        if (key === "locations") return value.locations.map((l) => l.name).join(", ");
-        if (key === "metadata") {
-            return value.metadata.concepts.filter((c) => c.concept).map((c) => conceptLabel(c, PROJECT_METADATA_CONCEPTS)).join(", ");
-        }
-        return value.otherRestrictions;
-    };
-
+    // edit-jump link, then the review card's own primary action (real wizard's own "Create
+    // Project", or a caller-supplied label when this flow is reused to edit an existing project).
     const rows: { label: string; value: string; goTo: CardId }[] = [
         { label: "Restrictions", value: value.hasRestrictions ? "Yes, apply restrictions" : "No restrictions", goTo: "any" },
-        ...enabledOrdered.map((key) => ({ label: RESTRICTION_TYPE_META.find((m) => m.key === key)!.title, value: summaryFor(key), goTo: key as CardId })),
+        ...enabledOrdered.map((key) => ({ label: RESTRICTION_TYPE_META.find((m) => m.key === key)!.title, value: restrictionSummaryFor(key, value), goTo: key as CardId })),
     ];
 
     return (
@@ -306,10 +334,14 @@ export function Step3PrivacyRestrictions({
             step={totalQuestions}
             totalSteps={totalQuestions}
             kicker="Review"
-            title="Ready to create your project"
-            description={value.hasRestrictions ? "Review the restrictions below before creating your project." : "This project's data will be openly available to every BioData SA user."}
+            title={reviewTitle}
+            description={
+                value.hasRestrictions
+                    ? "Review the restrictions below before saving."
+                    : "This project's data will be openly available to every BioData SA user."
+            }
             showQuestionCount={false}
-            nextLabel="Create Project"
+            nextLabel={reviewNextLabel}
             nextDisabled={!isStep3Valid(value)}
             onNext={onComplete}
             onBack={back}

@@ -5429,3 +5429,909 @@ user owns and edits directly, not something to restructure without asking.
     its value inside a `<p>`, and a `<table>` inside a `<p>` is invalid HTML (a hydration error).
   - Verified `tsc`/`eslint` clean and live on all three surfaces (project-detail Locations, a map
     search Occurrence sidebar, observation-detail) - zero console errors.
+
+- **`/pages/project-detail/option-2` - a fresh, "totally new" project detail redesign, built to sit
+  side by side with `project-detail/option-1` for comparison, per direct request** ("Come up with a
+  new page that is totally new from the current experience... Create this as a new page. so we can
+  compare old option and new option"). Two Figma references (`wer8CgO1UoCH3aQw2jQkdy`) grounded the
+  rebuild: node `1938:35405` (the real screen shape - a dark project-identity band, and a tree/table
+  view toggle in the main content's own top-right corner) and node `2526:58529` (15 "Details
+  Container" frames, one per Event/Occurrence/Observation sub-type, each stacking a read-only view
+  of a section directly above a real, *editable* version of the same fields - text inputs,
+  "Please Select" dropdowns, an "N Selected" multi-select, a "Select dates" date picker, Yes/No
+  radios, and a repeatable Property/Value/Description row editor for Custom Property).
+  - **Real editing, introduced for the first time anywhere in this build.** Every other detail
+    screen in this codebase (`project-detail/option-1`, `observation-detail/option-1`, the map
+    search tool's own `RecordDetailSidebar`) is permanently read-only - `observation-detail/
+    option-1`'s own header comment says so explicitly ("This is the VIEWING screen only... editing
+    is explicitly future work"). This page builds it: `field-editor.tsx` (`FieldSpec`/`FieldRow`/
+    `FieldSection`/`CustomPropertyEditor`) is one generic, data-driven "view a field, edit a field"
+    system - a field declares its own type once (`text`/`textarea`/`select`/`multiselect`/`date`/
+    `number`/`boolean`/`readonly`) and renders as either a plain label/value row or the matching
+    real DEW input (`Input`/`Textarea`/`Select`/`MultiSelect`/`InputDatePicker`/`RadioGroup`/
+    `InputNumber`), controlled by whichever mode its own section is in - matching Figma's own
+    stacked view-then-edit pattern exactly, generalised so 15 record types don't need 15 bespoke
+    forms. `record-fields.tsx` ports the same field vocabulary `record-detail.tsx` already
+    established in view-only form into this new `FieldSpec[]` shape, cross-checked directly against
+    this session's own edit-mode reference (Occurrence's Taxonomic Type/NSX Code & Species/
+    Occurrence Status/Voucher fields, Duration, Observers as a real multi-select) rather than
+    invented. Select-type fields need a real option list Figma's own frames never populate (no live
+    taxonomy service behind this preview) - each list is this build's own honest, illustrative
+    enumeration, the same convention project-registration's `ConceptOption` lists already use.
+  - **No real backend exists anywhere in this build, so "Save" commits into a session-only record
+    store instead of a server** (`record-store.tsx`, a small React Context over two plain maps -
+    field-section values and Custom Property rows, keyed by `${kind}-${id}:${sectionId}`) - the
+    same honest "Changes saved... kept for this session only" toast convention project-registration's
+    own "Save Draft" already established. One shared store at the page root means the same record
+    opened from the Tree view, the Table view, and the Species view (three separate mount points
+    for the same underlying record) always shows the same edit, never a stale copy.
+  - **Records and Species are real, first-class tabs**, matching the map search tool's own Records/
+    Species split brought in per direct request, instead of a tree buried in a contextual sidebar.
+    `project-scope.ts` scopes the *same* shared map-search dataset (`search-data.ts`) down to one
+    project's own Events/Occurrences/Observations/Resources (via the already-real `rootProjectOfEvent`/
+    `rootProjectForParentEventId`) rather than a second, disconnected mock - this page and the map
+    search tool can never disagree about the same project's own records. The Species tab reuses the
+    real, already-built `SpeciesResultsView` (`species-results.tsx`) directly - that component
+    already accepted an external `rows` prop and an `onRowClick` callback with no detail panel of
+    its own, so scoping it to `projectOccurrences(project.id)` needed no changes to the shared
+    component at all. Records' own Tree view (`records-view.tsx`) nests this project's events by
+    `parentId` into a real tree (`buildEventTree`) with each event's own directly-recorded
+    Occurrences/Observations as leaves; Table view reuses the shared `ResultsTable`/`MetricTile`
+    primitives already proven out for map search, scoped to this project only. Clicking any row in
+    either view opens the same real, editable `RecordEditPanel` (a page-local sibling of the map
+    search `RecordDetailSidebar`, since that shared component is read-only by design and this page
+    specifically needed edit affordances added to it).
+  - **A new dark gradient hero banner** replaces option-1's flat white meta row plus separate rail
+    card - the same real `bg-gradient-to-b from-brand-900 via-brand-800 via-[63.942%] to-brand-700`
+    token treatment `home-dashboard.tsx`'s own greeting banner already established, not a raw hex
+    clone of Figma's own dark header - carrying the project's identity and its 4 headline counts
+    (Events/Occurrences/Observations/Attached Resources) in one glance. `KpiStat` is a small
+    page-local copy of that same file's own `onDark` stat primitive, not cross-imported, matching
+    this codebase's "page-local copy for a small, page-scoped primitive" convention.
+  - **The contextual sidebar's nested-records tree is gone** - it now lives inside the Records tab's
+    own Tree view instead, so the same content isn't shown twice. The sidebar is a plain section
+    list (Overview/Records/Species/Details/Restrictions) mirroring the tabs below it.
+  - **`search-data.ts` extended**: Adelaide Hills (this page's one concrete project, same as
+    option-1) gained its own Block/Ramble/Trap/Custom event siblings under `site-adelaide-1` (it
+    previously had only Site/Visit/Transect/Quadrat, borrowing every other sub-type from elsewhere
+    in the dataset) plus two matching Occurrence/Observation pairs (Southern Brown Bandicoot -
+    already named as a real targeted species for this exact project in `project-detail/option-1`'s
+    own Data Collection Scope section, not a coincidence - and Superb Fairywren, a real SA bird) -
+    so this one project now demonstrates every real Event sub-type, matching the full breadth shown
+    in the Figma reference frame, per this file's own "reuse real events, extend rather than fork"
+    convention. Both the map search tool and `project-detail/option-1` were re-verified live
+    afterward to confirm neither regressed.
+  - Verified `tsc --noEmit` and `eslint` clean on every new/touched file, and a live Chrome pass:
+    the Tree view expanding a Site to show every sub-type side by side (matching the Figma
+    screenshot's own breadth), the Table view's metric tiles and sub-type chips, the Species tab
+    correctly scoped to this project's own 6 species (not the global dataset), opening a Trap
+    record's panel and editing its Comment field (Textarea) through Edit -> Save -> a real "Changes
+    saved" toast -> the new value persisting in view mode, editing an Occurrence's Taxonomic Type
+    (a real "Please Select" dropdown with Fauna/Flora/Fungi) and Occurrence Status (correctly
+    pre-seeded to "Present" from the real record), adding a Custom Property row (Property name/
+    Value/Description) and confirming it rendered correctly in view mode afterward, the Details
+    tab's 5 sections each with their own Edit affordance, and the `public-user` role rendering the
+    same page correctly (Log in/Sign up instead of the profile menu) - zero console errors across
+    every pass.
+  - **Follow-up round, per direct feedback on the shipped page: the contextual sidebar removed,
+    the hero compacted, and the fragmented Overview/Details/Restrictions tabs merged into one
+    unified Overview built from the real Add Project wizard's own data model.**
+    - **Contextual sidebar removed entirely** - the plain section list mirroring the Tabs
+      (Overview/Records/Species/Details/Restrictions) was pure duplicate navigation once the Tabs
+      already did the same job, flagged directly off a screenshot. `main` now runs full-width next
+      to the primary icon rail alone - the same "icon rail + full-width main, no contextual aside"
+      shape this build's own guest single-view layout already established elsewhere (see
+      CONTEXT.md's "User roles" section), not a new pattern. `NavTree` (only ever used inside that
+      aside) was removed as dead code with it.
+    - **Hero compacted from a tall stacked block (eyebrow/title, a meta row, a divider, then a
+      stat row) to one flex row** - title + a single inline meta line (ID · Start date · status ·
+      published by) on the left, the 4 KPI counts on the right, wrapping only at narrow widths.
+      `KpiStat` shrank to match (smaller value/label text, tighter gap). Same real dark-gradient
+      token treatment, only the internal layout changed.
+    - **Overview/Details/Restrictions merged into one "Overview" tab** (now 3 tabs total: Overview/
+      Records/Species), per direct feedback ("All details regarding project must be together not
+      separated like how it is now"). Built by actually walking the real Add Project wizard
+      (`/pages/project-registration?userRole=registered-user`, `project-registration/types.ts`+
+      `data.ts`) rather than guessing what it collects - a new `project-registration-data.ts`
+      holds this project's data in the wizard's own real state shapes
+      (`ProjectDetailsState`/`DataCollectionState`/`RestrictionsState`), reusing its real option
+      vocabularies directly (`ROLE_OF_WORK_OPTIONS`/`FOCUS_AREA_OPTIONS`/`PERMIT_TYPE_OPTIONS`/
+      `COLLECTION_METHOD_OPTIONS`/`EMBARGO_TYPE_OPTIONS`/`SPECIES_CONCEPTS`/`REGISTRATION_SPECIES`)
+      rather than a second, disconnected copy - filled out with values consistent with everything
+      this project already says elsewhere (the same abstract, the same Data Owner/Project Manager
+      contacts, the same permit, the same real species already tied to it in `search-data.ts`),
+      not contradicting option-1 or the map search tool's own facts about it. New fields shown for
+      the first time on this page: role of work, full vs. short title, a second Project Manager,
+      Project Focus Areas and Targeted Species (real chips), Geographic Extent (method + summary),
+      and a real, non-empty Restrictions section (a Project-completion embargo + a Southern Brown
+      Bandicoot species restriction with a location-precision concept) - reversing the earlier "no
+      restrictions" empty-state framing now that the page needed to demonstrate what registration
+      actually produces, not just the honest-empty-state case.
+    - **`registration-summary.tsx`** holds the new read-only display cards (`IdentificationRow`,
+      `DataOwnerCard`, `ProjectManagersCard`, `DataCollectionCard`, `RestrictionsCard`,
+      `GeographicExtentSummary`) plus the label-lookup helpers they share. Deliberately read-only -
+      wiring real editing for a multi-select (focus areas, targeted species) or a repeatable
+      contact list (project managers) would mean rebuilding the wizard's own editing UI a second
+      time inline, a materially bigger lift than this round's actual ask (show the information
+      well); logged as a scope line in the file's own header rather than silently attempted or
+      silently dropped. What *stays* editable, unchanged from before: Permit Type/No., URI/DOI
+      Number, and Custom Property, now seeded with this project's real registration values instead
+      of blank placeholders - still real `FieldSection`s wired to the same session-only
+      `record-store.tsx`.
+    - "All details regarding project" was read as the project's own metadata specifically
+      (identity, ownership, data collection scope, permits, restrictions) - Records and Species
+      stay their own tabs, since they're genuinely large, distinct datasets (a nested tree/table of
+      individual records, a filterable species table), not project-level metadata, and merging them
+      in would recreate exactly the "wall of everything" the cognitive-load principles in this file
+      warn against.
+    - Verified `tsc --noEmit` and `eslint` clean on every touched/new file, and a live Chrome pass:
+      the compact hero rendering as one row, no contextual sidebar next to the icon rail, the
+      merged Overview tab showing every registration field in order (Identification chip + full
+      title, Abstract, Geographic Extent + map, Data Collection with real focus-area and
+      targeted-species chips, Permit &amp; Identifiers, Privacy and Restrictions rendering both the
+      embargo and the species restriction with their real values, Custom Property), Records and
+      Species tabs both still working full-width, and the `public-user` role rendering the same
+      unified layout correctly - zero console errors across every pass.
+  - **Second follow-up: the dark gradient hero replaced with option-1's own plain header
+    treatment, per direct feedback with a screenshot of it** ("I like this way of the project
+    header and not the green bar... make it clean like this"). `ProjectHero` is now an eyebrow
+    label, the title, and a meta row (Project ID/Start Date/End Date/Status/Published by) with a
+    bottom rule - no colour block, no `KpiStat`s. The 4 headline counts the gradient version
+    carried are gone rather than moved elsewhere - they're already live on the Records tab's own
+    metric tiles, and repeating them in the header would be the exact "same fact, two treatments"
+    duplication this file's cognitive-load principles already warn against, so dropping them (not
+    relocating them) was the right call once the header itself stopped being a dedicated stats
+    surface. `eventCount`/`observationCount`/`resourceCount` and their now-unused
+    `projectEvents`/`projectObservations`/`projectResources` imports were removed with it.
+  - Verified `tsc --noEmit`/`eslint` clean and a live Chrome pass - the header now renders
+    identically in shape to option-1's own (matched directly against the reference screenshot),
+    zero console errors.
+  - **Third follow-up: the "About" tab (renamed from "Overview" - see below) rebuilt as a left
+    sidebar + Typeform-styled card, mirroring the real Add Project wizard's own 3-stage grouping
+    instead of one long continuous-scroll page.** Per direct request, with a screenshot of the
+    then-current continuous layout and a screenshot of the wizard's own Typeform-style question
+    card: "We have three stages and we collect different kind of information in each level. I
+    want the same information collected in the same sort of grouping in the project homepage.
+    Introduce a left side bar below the header with the three stages... Try to reflect the card
+    view (Typeform) style we used in the project registration form." A Figma link
+    (`wer8CgO1UoCH3aQw2jQkdy`, node `2536:75323`) was supplied explicitly as inspiration only
+    ("come up with the best UX and UI possible") - its screenshot turned out to be a mockup of
+    this exact ask (a plain gray sub-nav list under an "About" tab, items "Overview"/"Data
+    Collection and Storage"/"Privacy and Restrictions"), confirming the sidebar's item order/
+    naming and the "About" tab rename, but not pixel-matched for styling - the card treatment
+    came from the registration wizard's own screenshot instead, per the explicit instruction.
+    - `detailTabs`' first tab relabelled "Overview" -> "About" (id stays `"overview"`, no route/
+      state changes) so it doesn't collide with the new sidebar's own "Overview" item.
+    - New `OVERVIEW_STAGES`/`OverviewStageNav`/`StageCard`/`OverviewSection` in `page.tsx` - a
+      `w-64` sidebar (`bg-secondary`, rounded, bordered) listing the 3 stages by the exact same
+      names/order as `project-registration/stepper.tsx`'s own `STEPS` (Project Identification /
+      Data Collection and Storage / Privacy and Restrictions), each with a small icon
+      (`File02`/`Database01`/`Shield01`) and a brand-tinted selected state (`ring-1
+      ring-[var(--color-brand-500)]`, matching the `ChoiceTile`/`MetricTile` selected-state
+      language already established elsewhere in this build). Selecting a stage swaps the content
+      of one `StageCard` - a `rounded-2xl border border-secondary bg-primary p-6 sm:p-8` shell
+      with a kicker/title/description header, directly copying `TypeformCard`'s own header
+      composition (`text-brand-tertiary uppercase` kicker + `text-primary` heading) rather than
+      importing that component itself, since this is a static viewer with no Back/Continue/
+      progress-bar flow to drive - only its header language needed to carry over, not its
+      question-stepping mechanics.
+    - **Identification** stage: `IdentificationRow` + Abstract + `DataOwnerCard`/
+      `ProjectManagersCard` side by side. **Data Collection** stage: Geographic Extent summary +
+      map, `DataCollectionCard`, Permit &amp; Identifiers (`PermitAndUriFields`, already bare),
+      Custom Property (`CustomPropertyFields`, renamed from `CustomPropertyCard` and stripped of
+      its own `BentoCard`/heading, since the stage card now supplies one). **Restrictions**
+      stage: `RestrictionsCard`. Every existing display component/editable `FieldSection` was
+      reused as-is - the ask was regrouping and a new outer chrome, not new data or new editing
+      surfaces - moving Permit/URI-DOI/Custom Property (previously stacked as their own cards
+      alongside Geographic Extent/Data Collection in one long "main column") to sit together as
+      Data Collection stage content, matching the real wizard's own step 2 field set exactly
+      rather than the ad hoc column split the continuous-scroll layout had used.
+    - **`DataCollectionCard`/`RestrictionsCard` (`registration-summary.tsx`) gained an optional
+      `bare` prop** (default `false`, so their own still-standalone usage pattern is unchanged in
+      spirit) that skips the component's own outer `BentoCard` wrapper and top-level `<h2>` -
+      needed once each was nested inside a `StageCard` that already supplies an equivalent
+      heading ("Data Collection and Storage" / "Privacy and Restrictions"), avoiding the "same
+      fact, two treatments" duplication this file's own cognitive-load principles warn against
+      (an inner "Data Collection" `<h2>` directly under an outer, near-identical "Data Collection
+      and Storage" heading). Both components are only ever used on this one page (confirmed via
+      grep) so this was a safe, contained signature change, not a sitewide one.
+    - Verified `tsc --noEmit`/`eslint --max-warnings=0` clean on both touched files (`page.tsx`
+      needed its now-unused `BentoCard` import dropped once the old continuous layout's direct
+      `BentoCard` usage was replaced by `StageCard`), then a live Chrome pass across all 3 stages
+      (Identification/Data Collection/Restrictions, confirmed no duplicate headings, the map and
+      focus-area chips and permit/custom-property `FieldSection`s all render correctly under Data
+      Collection, and the embargo/species restriction cards render correctly under Restrictions),
+      re-confirmed the unrelated Records and Species tabs still work exactly as before, and
+      checked the `public-user` role renders the same sidebar+card layout correctly - zero
+      console errors throughout.
+
+- **`/pages/project-detail/option-3` - a third About-tab exploration, sitting alongside option-1
+  and option-2 for direct comparison, per this build's own "create a new page so we can compare"
+  precedent.** Prompted by a Figma link (`wer8CgO1UoCH3aQw2jQkdy`, node `2537:75960` - this same
+  project's About tab as one continuous scroll under a plain anchor-link sidebar) handed over
+  explicitly "for your idea and reference only... I expect you to come up with an even more
+  advanced UX UI and visual design" - run through this file's own "Adopting UX patterns from
+  external references" workflow (extract the pattern, not the pixels) rather than matched
+  literally: what that frame documents is real IA (Identification/Data Collection/Restrictions,
+  the same 3 real wizard stages option-2 already grouped by), not a layout worth copying - its own
+  single continuous scroll is the literal "flat dump" this file's own cognitive-load principles
+  warn against, and copying it as-is would have been a regression from option-2, not an advance.
+  - **The actual design move: replace option-2's single-stage-at-a-time switcher with a
+    persistent "At a glance" rail plus a multi-open `Accordion` (`variant="boxed"`).** The stage
+    switcher's real cost was context loss - clicking "Restrictions" fully replaced "Ownership,"
+    so comparing who manages a project against whether it's restricted meant clicking back and
+    forth. The rail (Data Owner, primary Project Manager, Geographic Extent, Permit, a
+    Restrictions status badge - name/role only, never full contact detail) is always visible and
+    never replaced, the same "accepted duplication" precedent already established for
+    project-detail/option-1's own `ProjectDetailsCard` rail, just applied to a second exploration
+    rather than copied pixel-for-pixel from the first. The Accordion lets more than one of the 3
+    real stages stay open at once; Restrictions auto-opens when the project actually has active
+    ones and its own collapsed header still carries a live count badge (`2 active`), so that fact
+    is visible even collapsed - "a conditional field is conditional in the UI too," surfaced, not
+    hidden behind an extra click. Full Title + Abstract moved out of the accordion entirely into
+    their own full-width block above the rail/accordion split - the project's own description is
+    the one clear focal point of an About tab, not one more row buried inside a collapsed section.
+  - **Every real display component option-2 already built was reused as-is, not reinvented** -
+    `DataOwnerCard` (already surfaces an org logo when one exists), `ProjectManagersCard`,
+    `DataCollectionCard`/`RestrictionsCard` (`bare` mode, already colour-codes Embargo amber and
+    Species restrictions neutral via `FeaturedIcon` - genuinely already ahead of the Figma
+    reference's own plain notice-card treatment), `GeographicExtentSummary`, `roleOfWorkLabel`,
+    `permitTypeLabel`. Confirmed live these were already correct before building anything new
+    around them, rather than assuming they needed improving too.
+  - **The generic record-editing machinery (`record-store.tsx`, `field-editor.tsx`,
+    `record-fields.tsx`, `record-panel.tsx`, `records-view.tsx`, `project-scope.ts`,
+    `project-registration-data.ts`, `registration-summary.tsx`) is imported directly from
+    `../option-2/` rather than duplicated a third time.** None of it is coupled to option-2's own
+    page shell - every piece already takes `project`/data as plain arguments - so this is the same
+    "one real dataset, never a second disconnected copy" principle already applied to
+    `search-data.ts` across the map search tool, option-1, and option-2, just extended one hop
+    further. `option-2` itself was not modified - a pure one-directional import. Only two small
+    functions (`PermitAndUriFields`/`CustomPropertyFields`, ~15 lines each) were duplicated locally
+    rather than exported from option-2's `page.tsx`, since they weren't exported there and the glue
+    was small enough that cross-importing two more single-use functions wasn't worth it.
+  - Header/icon rail/Records tab/Species tab are all unchanged from option-2 (same clean flat
+    header with no colour band - matching the user's own direct, twice-confirmed preference against
+    a dark banner - same Tree/Table Records view, same Species table) - this exploration is scoped
+    to the About tab's own layout, per the actual ask, not a full page rebuild.
+  - Verified `tsc --noEmit` and `eslint --max-warnings=0` clean, then a live Chrome pass: Ownership
+    and Restrictions both open by default and stay open simultaneously, expanding Data Collection
+    left both other sections open (confirming the core fix - no more losing context on switch), the
+    real Leaflet-adjacent `MapView`/chips/editable Permit `FieldSection` all rendered correctly, the
+    rail's restriction badge (`2 active`) matched the accordion header's own badge exactly, Records
+    and Species tabs both worked unchanged, and the `public-user` role rendered the guest header
+    (Log in/Sign up, no profile menu) with the same About layout - zero console errors throughout.
+    Not added to `lib/nav.ts`, per the same "these are working screens, reached by direct URL"
+    convention every other `/pages/*` exploration already follows.
+  - **Follow-up, per direct feedback on the shipped page: the Accordion swapped for a horizontal
+    Tab switcher, the badge-in-front-of-title treatment reworked, the "Comparing layouts" row
+    turned into a floating panel, and Geographic Extent rebuilt to match this build's own
+    "Location Information" shape used everywhere else.**
+    - **Horizontal tabs, not a vertical accordion** ("make the three accordions as a horizontal
+      tab"). The real `Tabs`/`TabList`/`Tab`/`TabPanel` (`components/application/tabs/tabs.tsx`,
+      `type="button-brand"` - the same real IA-switcher styling already used for Home/Projects
+      elsewhere in this build) replaced `Accordion` in `about-content.tsx`. One panel visible at a
+      time now (the multi-open advantage is gone), but the Restrictions tab carries a real live
+      count badge (`Tab`'s own `badge` prop) so that status is still visible without switching to
+      it - the same "a fact worth knowing shouldn't need an extra click" idea the rail already
+      applied, now at the tab-label level too.
+    - **Full Title no longer has a badge glued in front of it** (flagged directly as awkward).
+      Role of Work moved out of the identity block entirely into its own rail row (`Briefcase01`
+      icon, "ROLE OF WORK"); Full Title and Abstract are now two plain eyebrow-label-over-value
+      fields ("FULL TITLE" / "ABSTRACT", the same `MetaField`-style pattern used everywhere else
+      in this build), not one run-on line starting with a chip.
+    - **Geographic Extent rebuilt to match the real "Location Information" shape every other
+      record type in this build already shows** (`app/pages/_shared/map-search/record-detail.tsx`'s
+      own map + `LocationDetailsTable`), replacing the whole-of-Australia `MapView` that never
+      actually zoomed to this project's own extent. New `GeographicExtentDetails` in
+      `about-content.tsx`: the same real single-point Leaflet map (`sa-map.tsx`'s `SAMap`,
+      dynamically imported `ssr:false`) centred on `project.lat`/`project.lon` with a circle
+      boundary sized from the real registered extent (`registrationDataCollection.geographicExtent
+      .boundary`'s own `radiusKm` when it's a circle, a 1km fallback marker otherwise - a polygon
+      extent has no single radius), then the shared `LocationDetailsTable`
+      (`app/pages/_shared/location-details-table.tsx`) - Zone/Easting/Northing/Latitude/Longitude,
+      Coordinate/Entered Value/GDA2020 Equivalent, the exact same table Projects/Events/
+      Occurrences/Observations already share everywhere else. Verified live: the map correctly
+      flies from its default whole-state view to a tight fit on the Adelaide Hills extent (pin +
+      12km circle) on first open, and the table shows the project's own real `-35.02, 138.71`.
+    - **The inline "Comparing layouts: Option 1 | Option 2 | Option 3" text row is gone, replaced
+      by a floating panel** ("Make this a floating panel to switch between three options"). New
+      `LayoutSwitcher` in `page.tsx` - the exact same FAB + `Dropdown.Root`/`Popover`/`Menu`
+      pattern `RoleSwitcher` already established (one click to open, one click to pick,
+      `selectionMode="single"` with the current option checked), reusing `useRoleHref()` so
+      switching option preserves the current `?userRole=`. Positioned bottom-left rather than
+      RoleSwitcher's bottom-right so the two floating panels never overlap.
+      - **Real bug caught live, not just by reading the code**: at its first position
+        (`bottom-5 left-5`, mirroring `RoleSwitcher`'s own `bottom-5 right-5`), the FAB sat exactly
+        under Next.js's own dev-mode indicator badge (also anchored to the bottom-left corner in
+        local dev, with a higher stacking context) - clicking the FAB's own screen position
+        actually opened the *Next.js* dev panel (Route/Bundler/Route Info/Preferences), not my
+        Dropdown, confirmed by clicking and seeing the wrong menu appear. Fixed by moving the FAB
+        up to `bottom-24 left-5`, clear of the Next indicator's own small footprint - a dev-only
+        collision (the Next badge doesn't render in production) but one worth designing around
+        anyway so the control is actually usable while building. Re-verified after the fix: the
+        FAB opens its own real menu, and picking "Option 2" navigated to
+        `/pages/project-detail/option-2?userRole=registered-user` with the role preserved.
+    - Verified `tsc --noEmit` and `eslint --max-warnings=0` clean on both touched files
+      (`about-content.tsx`, `page.tsx`), then a full live Chrome pass across all 3 tabs (Ownership,
+      Data Collection with the new map+table, Restrictions with its badge matching the rail) and
+      the floating layout switcher - zero console errors throughout.
+  - **Third follow-up, per direct feedback with screenshots: a genuine architecture change, not a
+    restyle - the "At a glance" rail gained real clickable record counts, and every other card
+    switched from an inline Edit/Save toggle to a hover-only icon that opens a real, expandable
+    right-anchored panel ("like Jira").** A prior round attempting a lighter version of the
+    editability piece was reverted outright ("revert the changes. I dont like it.") before this
+    one - this pass is a from-scratch rebuild against much more specific direction, not a
+    reapplication of the reverted one.
+    - **"At a glance" gained the real Events/Occurrences/Observations/Artefacts counts**, each the
+      exact same `MetricTile` component records-view.tsx's own switcher already uses (not a new
+      tile), laid out in one full row per the reference screenshot rather than a cramped grid - the
+      rail widened to `lg:w-[540px]` to fit all 4 without truncating labels, per direct permission
+      ("Increase the width if needed"). Each tile click calls a new `onNavigateToRecords(tab)` prop
+      that switches to the Records tab **and** its Table view (not just the tab), pre-selected to
+      that exact entity type - `records-view.tsx`'s `RecordsView` gained a second additive prop,
+      `initialViewMode` (alongside the already-existing `initialEntityTab`), both read once on
+      mount; `page.tsx` tracks `recordsInitialTab`/`recordsInitialViewMode` state, set together by
+      a `goToRecords` handler. Verified live: clicking "Occurrences" in the rail lands on Records'
+      Table view with Occurrences already selected and its 7 real rows showing.
+    - **Every other card (all of them, per direct instruction - "except at a glance") now shows a
+      small icon-only Edit button, top-right, visible only on hover**, opening a real expandable
+      `SidePanel` (the same right-anchored slide-over the map search tool's own record-detail
+      sidebar already uses) instead of toggling inline edit state inside the card. New shared
+      `EditableCard` wrapper (`about-content.tsx`) - a `group relative` wrapper, an
+      `opacity-0 group-hover:opacity-100` icon button, and a `SidePanel` with a real expand/collapse
+      toggle in its `headerActions` (flipping `widthClassName` between `max-w-md` and `max-w-2xl`) -
+      "the right sidebar must be within the window which can be expandable," not a second route.
+      Two panels (`GeoExtentPicker`'s own 4-tab layout, `ConceptRows`' 3-column grid) genuinely
+      need the wider width to render without their own content overflowing, so those two pass a new
+      `defaultExpanded` prop rather than making the user discover the expand button themselves -
+      confirmed live (the 4-tab row visibly overflowed the panel at `max-w-md`, fixed once expanded
+      by default).
+    - **Every edit field now puts its label on the left and its control on the right**, per direct
+      reference to a real Figma frame (`wer8CgO1UoCH3aQw2jQkdy`, node `2526:59792` - fetched and
+      confirmed live, the same "Details Container" edit-mode frame `field-editor.tsx`'s own header
+      comment already cited as this whole system's original design reference, which the actual
+      implementation had never matched - every control rendered with its own DEW-component label
+      stacked above it instead). Fixed at the shared component level, not duplicated for the About
+      tab alone: `FieldRow` (`option-2/field-editor.tsx`) now renders a fixed-width label column
+      (`sm:w-44`, matching its own view-mode column exactly, so a row never shifts horizontally
+      switching modes) beside a new `FieldControl` sub-component that renders every field type
+      (text/textarea/select/multiselect/date/number/boolean) with no visible label of its own, only
+      `aria-label`. This is a real, sitewide fix - option-2's own Records/Species edit panel picked
+      up the identical correction, confirmed live by opening a real Site record's own edit mode
+      there and seeing the same label-left layout, not just in the About tab.
+      - `FieldSection` gained two more additive props - `startEditing` (mounts already in edit
+        mode, since the panel itself is now the "start editing" affordance, so a second redundant
+        inline "Edit" button inside the panel would be wrong) and `onDone` (called by Cancel and
+        Save alike, so the wrapping `EditableCard` can close its own panel) - both default to
+        `false`/`undefined`, every pre-existing caller (option-2's own Permit/URI-DOI fields,
+        `record-panel.tsx`) unaffected.
+      - **A real Cancel-doesn't-discard bug caught and fixed before calling this done**: a first
+        pass for the multi-manager panel wrote each keystroke straight to the record store (no
+        local draft), so Cancel closed the panel without reverting anything it had already
+        committed - the same "Cancel discards, Save commits" contract every other panel keeps.
+        Fixed with a dedicated `ProjectManagersEditor` component holding its own `useState` draft
+        array, seeded once per open, only reaching the store on a real Save.
+    - **Privacy and Restrictions rebuilt end to end** (per direct feedback with a screenshot: "this
+      is not clear way of representation... use what we have done in project registration form and
+      make it better. Also this must be editable"). The old run-on "Location (coordinates):
+      Generalise to 10 km" sentence is now a real two-column Concept/Value table (`RestrictionsDisplay`
+      in `about-content.tsx`), and the whole section is genuinely editable via one panel
+      (`RestrictionsEditor`) that reuses the real registration-wizard components directly rather
+      than inventing a second editor: plain label-left `FieldRow`s for Embargo Type (multiselect)/
+      Reason/Ends, and the wizard's own real `ConceptRows` component (`project-registration/
+      concept-rows.tsx`, the exact same `SPECIES_CONCEPTS` list Step 3 uses) for the species
+      restriction's own concept list - "Add concept," per-concept Select+Value controls, and
+      per-concept remove, all real and working. Scoped to this project's one real embargo and one
+      real species restriction (adding a second species restriction entry stays out of scope, same
+      "no fabricated add/remove flow" call already made for Data Owner/Project Manager) - draft
+      state lives in `AboutContent`'s own `useState` (not the record-store, since a compound
+      `ConceptValueRow[]` doesn't fit its flat `FieldValues` shape), so a save is honestly
+      session-only like everything else in this build, just via a slightly different, still-real
+      mechanism.
+    - **Geographic Extent is now genuinely editable too**, via the real `GeoExtentPicker`
+      (`project-registration/geo-extent-picker.tsx` - Upload Shapefile/Draw on the Map/Choose from
+      a List/Coordinates, all real) rather than a fabricated second geography picker. The preview
+      map/table re-centre on the edited boundary's own circle when the method produces one (drawn
+      or entered coordinates); a park or shapefile selection has no single point to re-centre on,
+      so the preview honestly keeps showing the project's own real coordinate rather than guessing.
+    - Verified `tsc --noEmit` and `eslint --max-warnings=0` clean on every touched file
+      (`about-content.tsx`, `page.tsx`, `option-2/field-editor.tsx`, `option-2/records-view.tsx`),
+      then an extensive live Chrome pass: hovered every card and confirmed the icon-only Edit
+      button appears only on hover; opened and expanded the Data Owner panel and confirmed the
+      real label-left fields; opened Geographic Extent's panel (defaulting to expanded) and
+      confirmed the real `GeoExtentPicker`'s 4 tabs render without overflow; opened Privacy and
+      Restrictions' panel and confirmed the real pre-populated `ConceptRows` row ("1 selected" ->
+      "Location (coordinates)" -> "Generalise to 10 km"); clicked "Occurrences" in the rail and
+      confirmed it landed on Records' Table view with Occurrences pre-selected; and reopened
+      option-2's own Records panel to confirm the shared `FieldRow`/`records-view.tsx` changes left
+      it fully working, just with the corrected label-left layout - zero console errors anywhere.
+  - **Fourth follow-up: a real architecture change - the overlay panel became a genuine docked
+    column, every edit form became the real registration-wizard `TypeformCard` shell, the header
+    was rebuilt to match option-1/2's own real meta-row exactly (with Start/End Date/Status now
+    editable), and a live page review (structured "Agentation" feedback plus a Jira reference
+    screenshot) surfaced two real bugs and three smaller fixes.**
+    - **The right-hand panel is now a real docked column, not an overlay** (per direct feedback
+      with a real Jira screenshot: "In Jira it is appearing as a new column. I want a new column to
+      the right"). New `edit-column.tsx` - `EditColumn` is a genuine flex sibling of `<main>` in
+      `page.tsx` (inside the same `flex flex-1 overflow-hidden` row the primary icon rail and main
+      content already share), not a `ModalOverlay`/`Modal`/`Dialog` covering the page - opening it
+      visibly shrinks the main content area exactly like Jira's own work-item panel, confirmed live
+      by watching the page reflow narrower the instant a card's Edit icon was clicked. One shared
+      `EditRequest = { title, render }` slot, lifted to `page.tsx` (the nearest common ancestor of
+      both the header and every About-tab card), so only one edit surface is ever open at once,
+      same as Jira. Every `EditableCard`'s own hover-icon now calls `onEditRequest(...)` instead of
+      managing a local `SidePanel`/`isOpen` state - the per-card expand-width toggle from the prior
+      round moved into `EditColumn` itself as one shared 460px/720px toggle.
+    - **Every edit form is now the real `TypeformCard` shell the registration wizard itself is
+      built from** (per direct instruction: "the edit screen must be same as the project
+      registration flow"), not a dense field-row stack with its own Cancel/Save bar - kicker, a
+      big `text-display-xs` heading, an optional description, the fields, then Back (doubling as
+      Cancel)/Save. Several kicker/title/description strings are the wizard's own real copy for the
+      matching question, not invented text: Data Owner -> "Who owns this data?" / "The organisation
+      or person responsible for this project's data.", Geographic Extent -> "Where does this data
+      come from?" / "Define the geographic extent this project's data collection covers.", Focus
+      Areas -> "What kind of data does this project focus on?" / "Biological is always included -
+      add any other domains this project also collects data on.", Method -> "How was this data
+      collected?", Project Manager/s -> "Who's managing this project day to day?". New shared
+      `FieldsEditor` (exported from `about-content.tsx`, reused by `page.tsx`'s own header editor
+      too) wraps any flat `FieldSpec[]`/`FieldValues` pair in this shell with real local draft
+      state; `GeoExtentEditor`/`RestrictionsEditor`/`ProjectManagersEditor` (compound data that
+      doesn't fit a flat field list) each wrap their own bespoke content in the same shell directly.
+      - **A real mid-build mistake caught and fixed before calling this done**: a first pass tried
+        to share one `FieldGroup` component across every `FieldsEditor`-style call site via a
+        `Context` meant to let `EditShell`'s own Save button reach a draft it had no direct access
+        to - the context provider's `commit` value was written but never actually invoked from
+        anywhere, so those fields silently didn't save at all. Caught by re-reading the code (not
+        live), not treated as a valid pattern to keep - replaced with `FieldsEditor` owning its
+        `useState` draft directly (the same "local draft, commit on Save" shape every other editor
+        in this file already used correctly), which is simple enough to reuse everywhere instead.
+    - **The project header now matches option-1/2's own real meta-row exactly** (per direct
+      reference to that header, `PROJECT ID`/`START DATE`/`END DATE`/`STATUS`/`PUBLISHED BY` as
+      five labelled columns, replacing the one-line "code · Started X · Published by Y" sentence
+      this page had used until now) - **and Start Date, End Date and Status are now genuinely
+      editable**, via the same hover-icon on the header block itself (per direct request: "There
+      must also be an option to change the project start date end date and project status" -
+      Project ID and Published By stay fixed identifiers, scoped to exactly the three fields named).
+      Real `parseDate`/`DateValue` round-trip (`project.startDate`'s own `"YYYY-MM-DD"` string
+      parses and re-serialises losslessly), a real `PROJECT_STATUS_OPTIONS`/`statusColorFor` select
+      matching the real status vocabulary already used across this dataset (Active/success, Under
+      review/warning, Completed/gray) - not invented options. Verified live end to end: opened the
+      header's edit panel, changed Status to "Under review," saved, watched the header's own
+      `BadgeWithDot` update to the amber "UNDER REVIEW" pill immediately, and confirmed a fresh
+      reload correctly reverted it (session-only, same honesty convention as every other edit in
+      this build - no real backend exists to persist it further).
+    - **A live page review (a batch of structured "Agentation" feedback, cross-checked against the
+      real rendered page at its exact reported viewport/coordinates rather than guessed) surfaced
+      five more fixes:**
+      - **A real double-card bug** ("there are extra outer containers which is ugly") -
+        `DataOwnerCard`/`ProjectManagersCard` (`registration-summary.tsx`) already return their own
+        `BentoCard`; this file was wrapping them in a second one. Fixed by giving `EditableCard` a
+        `bare` prop (skips its own `BentoCard`+heading wrap for a child that already supplies its
+        own complete card) - confirmed live via a zoomed screenshot showing one clean border, not
+        two nested ones.
+      - **Every card now shares one real heading style** - `EditableCard`'s default (non-`bare`)
+        path now always renders a `<h2 className="text-sm font-medium text-primary">`, the exact
+        style `DataOwnerCard` already established, so Project Identification/Focus Areas & Targeted
+        Species/Method of Data Collection/Permit & Identifiers (previously headingless, reading as
+        structurally different from Data Owner/Project Manager) all match now.
+      - **The inner Ownership/Data Collection/Restrictions switcher changed from `button-brand` to
+        `underline`** - the exact type the outer About/Records/Species tabs on this same page
+        already use, per direct feedback ("the tabs are not the same as the DEW design system") -
+        confirmed by mapping the reported region coordinates onto a live screenshot at the exact
+        reported 1792×1120 viewport before concluding which tab row was meant.
+      - **Record-count tiles now wrap Events/Occurrences/Observations onto one row and Artefacts
+        onto its own** below, per direct feedback, rather than one cramped or one overly wide row.
+      - **The rail's own "Geographic Extent" row was removed** - the one row whose full detail (map
+        + table) already sits one click away in the very same tab, and the only row whose text
+        wrapped to two lines unlike every other single-line row around it; this specific row wasn't
+        named directly in the feedback (a generic `<RailRow>` component reference with no
+        distinguishing instance detail), so this is a stated best-effort reading of "remove this"
+        rather than a confirmed instruction - flagged directly as an assumption to double-check.
+    - Verified `tsc --noEmit` and `eslint --max-warnings=0` clean on every touched/new file
+      (`about-content.tsx`, `page.tsx`, `edit-column.tsx`), then an extensive live Chrome pass at
+      the real reported viewport size: confirmed the docked column genuinely reflows `<main>`
+      narrower (not an overlay); opened and saved the header's own Start/End Date/Status editor
+      end to end, watching the header's badge update live; opened Data Owner's panel and confirmed
+      the real wizard copy and pre-filled fields; confirmed the single-border fix and the new
+      shared heading style via a zoomed screenshot; and confirmed the Restrictions tab's own hover
+      icon and heading render correctly - zero console errors throughout.
+  - **Fifth follow-up: the docked column's own width behaviour, per direct feedback - "the left
+    panel need not be responsive. just the right column can be expanded or compressed. The full
+    view icon will make the full screen view."** The previous round's column toggled between two
+    in-flex-row widths (460px/720px), meaning `<main>` had to keep responsively re-shrinking every
+    time the column's own width changed - not what was asked. `edit-column.tsx` now has exactly
+    two real states instead: **docked** (a single fixed 460px, `<main>` reflows to make room for it
+    exactly once when it opens, never again afterwards) and **full screen** (the same expand icon
+    now switches the column out of the flex row entirely into a `fixed inset-0 z-[9999]` overlay
+    covering the whole viewport - the same real full-screen technique and z-index this build's own
+    `MapFullscreenView`/`GeoExtentPicker` full-screen map already established, needed here for the
+    same reason: whatever's still mounted behind it must never be responsible for reacting to it).
+    Minimize returns to the one fixed docked width only, never an intermediate size. Verified live:
+    opened the header's own editor (docked, 460px, main reflowed once), clicked the expand icon and
+    confirmed the column became a true full-page takeover with the main content fully hidden behind
+    it (not resized), clicked minimize and confirmed it returned cleanly to the fixed dock with the
+    form's own values untouched - zero console errors throughout. `tsc --noEmit`/
+    `eslint --max-warnings=0` clean on the one touched file.
+  - **Sixth follow-up: the docked column is now genuinely drag-to-resize, per direct feedback with
+    a real screenshot ("for the last time.. i want the right dock to be resizable"), referencing
+    shadcn's own react-aria-components-based Resizable (ui.shadcn.com/docs/components/aria/
+    resizable) as the interaction to match.** `ResizeHandle` (`edit-column.tsx`) is a thin,
+    `role="separator"` handle on the docked column's own left edge (a wider `w-3.5` invisible hit
+    area around a 1px visible line, brand-coloured on hover/drag - easier to grab than a bare 1px
+    line, matching the reference's own handle shape), tracking the pointer's live distance from the
+    viewport's right edge (`window.innerWidth - e.clientX`, exactly the column's own width since
+    it's flush against that edge), clamped to a real `MIN_WIDTH`/`MAX_WIDTH`, plus ArrowLeft/
+    ArrowRight while focused as the same `role="separator"` keyboard affordance a real resizable
+    panel carries. The expand icon stays a separate, second way to get more room (the fixed
+    `inset-0` full-screen overlay from the fifth follow-up, untouched) - independent of whatever
+    width was last dragged to; minimize returns to that dragged width, not a reset default.
+    - **A real bug found and fixed mid-build, not just a testing artifact: the first version
+      attached the drag's own `pointermove`/`pointerup` listeners inside a `useEffect` keyed off an
+      `isDragging` state flag** - `useEffect` only runs after React commits and paints, so there's
+      a genuine gap between `pointerdown` and the listener actually going live. A fast drag (a real
+      quick flick, or a scripted one whose moves are all dispatched in one task with no yield back
+      to the event loop in between) can fire every `pointermove` before that effect ever attaches,
+      silently dropping the whole gesture - confirmed live, reproducibly, via this session's own
+      browser automation. Fixed by attaching the listeners synchronously inside the `pointerdown`
+      handler itself (`window.addEventListener` called directly, not via an effect), plus
+      `e.currentTarget.setPointerCapture(e.pointerId)` so every subsequent move stays routed to the
+      handler even if the cursor leaves the thin handle mid-drag - the standard, more robust pattern
+      for a drag handle regardless of this session's own testing method, not just a workaround for
+      it.
+    - **`MIN_WIDTH` raised from 380 to 480 (and `DEFAULT_WIDTH` from 460 to 520 to stay above it) -
+      a second real bug, caught by actually dragging to the minimum and looking, not by reading the
+      code.** At 380px the Start/End Date fields' own calendar-icon trigger was genuinely clipped by
+      the panel's edge - traced to `FieldRow` (`option-2/field-editor.tsx`) switching label-above-
+      control to label-beside-control at Tailwind's `sm:` breakpoint, which is a *viewport*-width
+      media query, not a container query. On a real desktop viewport (always >= 640px here) that
+      side-by-side layout never actually stacks no matter how narrow the *panel* itself gets, so the
+      panel's own minimum has to leave room for the side-by-side layout rather than assuming it will
+      collapse to single-column at small widths. Confirmed fixed via a zoomed screenshot at the new
+      480px minimum - both calendar icons render fully.
+    - **Live verification needed a different technique than pixel-coordinate dragging, and this is
+      worth recording for any future QA pass on a thin drag handle.** This session's own browser-
+      automation tool reports screenshots in a downscaled space (1415×840) that does not equal the
+      real CSS viewport (confirmed via `window.innerWidth`: 1792) - fine for clicking wide targets
+      (a button, a tab) where a few pixels of slop doesn't matter, but the handle's real hit area is
+      only ~11px wide in that downscaled space, so estimating its position from a screenshot (even
+      via a tight `zoom` crop) repeatedly missed by just enough to land inside the panel instead
+      (selecting field text) rather than on the handle - not a product bug, a targeting-precision
+      limit of this specific tool for a thin element. Verified the actual mechanism instead by
+      dispatching real `PointerEvent`s directly in the page's own JS context (`pointerdown` on the
+      handle's own measured `getBoundingClientRect()` center, `pointermove`/`pointerup` on
+      `window`, reading the result back off the handle's own `aria-valuenow`) - confirmed a precise
+      143px drag produced exactly a 143px width change, confirmed dragging far past either end
+      clamps to exactly 480 and 920, and confirmed a live screenshot at the clamped minimum shows
+      the fixed date-icon clipping resolved. Zero console errors on a fresh reload. `tsc --noEmit`/
+      `eslint --max-warnings=0` clean on the one touched file.
+  - **Seventh follow-up: the About tab rebuilt around a real left vertical stage nav (per a fresh
+    Figma reference, `wer8CgO1UoCH3aQw2jQkdy` node `2556:77520`), and the docked column's own width
+    is now clamped so `<main>` can never be squeezed below a real minimum - direct feedback with
+    the reference link: "There is a left vertical tab to switch between overview, data collection
+    and storage... if i click on edit on overview we will be able to edit the overview content like
+    the project registration flow... same way for published by, project manager etc... the main
+    content area content is breaking when i resize the right edit panel."**
+    - **Layout rebuilt to match the reference exactly**: a persistent left nav (Overview/Data
+      Collection and Storage/Privacy and Restrictions) beside one stage's content, replacing the
+      prior round's horizontal `Tabs` switcher + separate "At a glance" rail. Reused option-2's own
+      already-established `OverviewStageNav`/`StageCard` visual language (`wer8CgO1UoCH3aQw2jQkdy`
+      is the same file; option-2's read-only `OverviewSection` already builds this exact nav+card
+      shell) rather than inventing a new one - not cross-imported, since option-2's version has no
+      edit affordances and every card here still needs the `EditableCard` hover-icon wiring.
+    - **Overview stage matches the reference's own field set exactly**: Role of Work/Full
+      Title/Abstract/Start Date/End Date/Status as one edit-triggered field list, a compact
+      vertical `RecordCountsCard` beside it (the same real Events/Occurrences/Observations/
+      Artefacts & Attachments counts, reusing the already-real `MetricTile`, each a click into
+      Records' Table view pre-selected to that type), then Published By + Project Manager/s side by
+      side below - matching the reference's Full Title/Abstract/Start-End-Status/counts-card/
+      Published-By/Project-Manager arrangement precisely. The old separate "At a glance" rail
+      (role of work/data owner/project manager/permit/restrictions as a persistent sidebar) is
+      gone - its content is now either part of the Overview field list directly, or the record
+      counts card, matching what the reference actually shows rather than a bespoke summary.
+    - **Start Date/End Date/Status are now editable from *two* places - the header's own hover-icon
+      (unchanged from the fifth follow-up) and the new Overview card - and both read/write the
+      exact same session-store section (`event-<id>:header`), so they can never drift out of
+      sync.** `PROJECT_STATUS_OPTIONS`/`parseProjectDate`/`statusColorFor` moved from `page.tsx`
+      into `about-content.tsx` and are now exported from there (page.tsx already imports
+      `AboutContent`/`FieldsEditor` from that file, so this keeps the dependency one-way rather
+      than introducing a circular import). Verified live: changed Status to "Under review" from the
+      Overview panel's own editor and confirmed the header's badge updated to the amber "UNDER
+      REVIEW" pill in the same render, not just the Overview row.
+    - **`DataOwnerCard` (option-2/registration-summary.tsx) gained an optional `heading` prop**
+      (default `"Data Owner"`, so option-2's own usage is untouched) so this page could relabel the
+      visible card heading to "Published By," matching the reference exactly, without hand-rolling
+      a second copy of the card or renaming the shared component's default text out from under
+      option-2.
+    - **The docked column's own width is now clamped against a real `<main>` minimum, not just its
+      own `MIN_WIDTH`/`MAX_WIDTH`** - the actual bug behind "the main content area content is
+      breaking when i resize." `edit-column.tsx` gained `MAIN_MIN_WIDTH` (760) and `ICON_RAIL_WIDTH`
+      (64, matching the primary nav's own fixed `w-16`), plus `dockedMaxWidth()`/`canDock()`: while
+      docked, dragging (and the keyboard resize) now clamps to `min(MAX_WIDTH, window.innerWidth -
+      ICON_RAIL_WIDTH - MAIN_MIN_WIDTH)` instead of the flat `MAX_WIDTH` - the resize genuinely
+      "stops" once `<main>` would drop below its own minimum. On a viewport too narrow to dock at
+      all without already violating that minimum (`canDock()` false), the column switches to a true
+      floating overlay instead (`fixed inset-y-0 right-0 z-[500] shadow-2xl`, no longer a flex
+      sibling of `<main>`, which is left at full width underneath) - the "or float on top" half of
+      the request. Both states are recomputed live on window resize (not just on open), re-clamping
+      the current width down if the window shrinks while the panel is already open.
+    - Verified `tsc --noEmit`/`eslint --max-warnings=0` clean on every touched file
+      (`about-content.tsx`, `page.tsx`, `edit-column.tsx`, `option-2/registration-summary.tsx`),
+      then a live Chrome pass: confirmed all 3 stages render and switch correctly (Overview/Data
+      Collection and Storage with its map+table/Privacy and Restrictions with its own "2" badge
+      matching the sidebar's), opened the Overview editor and confirmed it's the real `TypeformCard`
+      shell with all 6 fields, changed Status there and watched the header badge update in the same
+      render, and confirmed the docked resize clamp at the real 1792px viewport: dragging to the
+      extreme correctly stopped at exactly 920px (this viewport's own `dockedMaxWidth()`, still
+      within the flat `MAX_WIDTH` cap) leaving `<main>` at exactly 808px (1792 - 920 - 64, matching
+      the formula precisely) - confirmed via `getBoundingClientRect()`/`aria-valuenow`, not just a
+      screenshot. Floating-mode's own trigger condition was verified by simulating a narrower
+      viewport (overriding `window.innerWidth` to 1250 and dispatching a real `resize` event, since
+      this session's browser-automation `resize_window` tool does not actually change the page's
+      real rendering viewport in this environment - confirmed separately via `window.innerWidth`
+      staying at 1792 after the call, a tooling limitation worth remembering for any future viewport
+      test on this page): the column correctly switched to `position: fixed` with its width reduced
+      to the real `MIN_WIDTH` (480), confirmed via `getComputedStyle`, not assumed from the class
+      list alone. Zero console errors on a genuinely fresh tab (a stale Turbopack chunk cached in an
+      older tab briefly showed a false "defined multiple times" build error from before this
+      change; `tsc`, a server-side `curl`, and a fresh tab all confirmed it was a client-cache
+      artifact, not a real duplicate-declaration bug).
+  - **Eighth follow-up: the left nav's styling corrected to match a fresh Figma fetch exactly, a
+    real data-model correction to where "Role of Work" belongs, and Privacy and Restrictions
+    rebuilt to reuse the real Add Project wizard's own multi-step flow directly - per direct
+    feedback with two Figma links (node `2556:77520` re-fetched, plus `2556:78633` specifically
+    showing "the role of work for Olivia") and a set of project-registration screenshots: "Follow
+    the same styling for the left tabs... The field called Role of work actually belongs to the
+    project publisher's contact details. Always remember this... For privacy and restriction -
+    refer to what we have done in project registration screens... it's best you refer to the
+    project registration flow to come up with the edit flow."**
+    - **Left nav restyled to match the reference exactly** - the active item was a brand-tinted
+      `bg-primary shadow-xs ring-1 ring-[var(--color-brand-500)]`, a guess from the first build of
+      this layout; the actual reference uses a plain neutral `bg-primary_hover` + `shadow-xs`, no
+      ring at all, and there's no restriction-count badge anywhere in the nav (also removed, along
+      with the now-unneeded `Badge` import).
+    - **"Role of Work" moved off the Overview field list entirely, onto the Published By card's own
+      primary contact** - confirmed directly from the second Figma link's own generated markup:
+      `roleOfWork` ("Management") renders as a "· Management" suffix next to Olivia Wyatt's name in
+      the "Published By" card (node `2556:78633`), the exact same treatment
+      `ProjectManagersCard` already gives each manager's own role - not a bare top-level "Role of
+      Work: Management" row. `DataOwnerCard` (`option-2/registration-summary.tsx`, shared with
+      option-2) gained an optional `primaryRole` prop (undefined by default, so option-2's own
+      usage is completely unaffected) that decorates the first contact's row with the same
+      "Primary" pill + "· role" suffix `ProjectManagersCard`'s row already uses; `ContactRow`
+      gained matching `isPrimary`/`role` props plus a `contact.organisation` team line. `roleOfWork`
+      editing moved from the Overview panel's `FieldsEditor` to the Published By panel's, as
+      `primaryRole` (a `ROLE_OF_WORK_OPTIONS` select) - the Overview field list is now exactly
+      Full Title/Abstract/Start Date/End Date/Status, matching the reference's own "Project
+      Details" card (node `2557:78744`) precisely, wrapped in a new `ProjectDetailsCard` (icon
+      circle + heading + divider, the reference's own shape) instead of the previous headingless
+      `bare` field list.
+    - **`ContactPerson` (project-registration/types.ts) gained an optional `organisation?: string`
+      field** - additive, so every existing wizard step/consumer is unaffected (nothing in the real
+      Data Owner editing step reads or writes it today; it's a display-only detail a caller can set
+      directly on seed data, mirroring `ProjectManager.organisation`, which already supports
+      exactly this per manager). Set to `"DEW Biodiversity Team"` on this project's real Data Owner
+      contact in `project-registration-data.ts` - the exact value the Figma reference shows under
+      Olivia Wyatt's own row, confirmed as real (not fabricated) since `ProjectManager` Maya
+      Dewitt already carries the identical value in this same file.
+    - **Privacy and Restrictions now reuses `Step3PrivacyRestrictions` (the real Add Project
+      wizard's own Step 3 component) directly, docked in the same `EditColumn`** - not a bespoke
+      edit form rebuilt a second time. This is what makes "add more restrictions as well, not just
+      edit the existing" real: the wizard's own "Which kinds of restriction apply?" multi-select
+      and its own "Add another species"/"Add another Location" flows are the actual add mechanism.
+      `Step3PrivacyRestrictions` gained two additive props, `reviewNextLabel`/`reviewTitle` (both
+      default to the real wizard's own "Create Project"/"Ready to create your project" copy, so the
+      registration flow itself is untouched) - option-3's `RestrictionsEditor` passes `"Save
+      changes"`/`"Review restrictions"` instead, since this is editing an existing project, not
+      creating one. The component's own local `summaryFor` closure was extracted to two new
+      exports, `restrictionSummaryFor`/`restrictionsSummaryRows` (and `RESTRICTION_TYPE_META`
+      itself exported) - the one shared source for both the wizard's own review card and option-3's
+      static `RestrictionsDisplay`, so the two can never list a project's restrictions differently.
+      `RestrictionsState` (the real wizard type) replaced the old bespoke `RestrictionsDraft`
+      interface entirely - `about-content.tsx` lost ~140 lines of hand-rolled embargo/species
+      field-row and `ConceptRows` wiring that now lives in exactly one place (the wizard's own Step
+      3 file) instead of two.
+    - Verified `tsc --noEmit`/`eslint --max-warnings=0` clean on every touched file
+      (`about-content.tsx`, `page.tsx`'s own re-exported `PROJECT_STATUS_OPTIONS`/
+      `parseProjectDate` imports unaffected, `option-2/registration-summary.tsx`,
+      `project-registration/step-3-privacy-restrictions.tsx`, `project-registration/types.ts`,
+      `option-2/project-registration-data.ts`), then an extensive live Chrome pass: confirmed the
+      left nav's active state now reads as a plain neutral highlight (no brand ring), confirmed the
+      Overview stage matches the reference layout exactly (a bordered "Project Details" card with
+      no Role of Work row, the record-counts card beside it, Published By showing "Olivia Wyatt
+      PRIMARY · Management" + "DEW Biodiversity Team" + email/phone, Project Manager/s unchanged),
+      and ran the full add-a-restriction flow end to end through the real docked wizard: opened the
+      existing Yes/Embargo/Species state pre-filled correctly, additionally selected "Restrict data
+      based on Locations" (question count live-updated 4→5, proving the dynamic card-list logic
+      still works when reused this way), stepped through the pre-filled Embargo and Species cards
+      unchanged, filled in a brand-new location via the real "Nominate Sensitive Location" panel
+      (Choose from a List → Belair National Park + a real justification), reached the Review card
+      showing all 4 rows with the correct "Save changes" label, saved, and confirmed the on-page
+      display immediately showed all three restrictions including the newly added location one -
+      zero console errors throughout. Also re-verified `project-detail/option-2` (which shares
+      `DataOwnerCard`/`ContactPerson`) still renders its own Overview tab correctly with no role
+      suffix/badge shown (since it never passes the new `primaryRole` prop) - confirming the shared
+      changes are genuinely additive, not a regression.
+  - **Ninth follow-up: the left vertical stage nav's own styling replaced with the real DEW
+    `Tabs`/`TabList`/`Tab` component (`type="button-border"`, `orientation="vertical"`) instead of
+    hand-copied colours - per direct request with a side-by-side reference: "Could you come up with
+    the same styling for this [the left vertical nav]? The reference provided is a horizontal tab
+    but this here is a vertical tab but the look and feel must be consistent," pointing at the
+    boundary-method tab row ("Upload Shapefile / Draw on the Map / Choose from a List /
+    Coordinates") already built on `GeoExtentPicker`.** That row is this exact component/type
+    already (`geo-extent-picker.tsx`'s own `<TabList type="button-border" size="sm">`), just
+    horizontal - `button-border` is one real type shared by both `HorizontalTypes` and
+    `VerticalTypes` in `components/application/tabs/tabs.tsx`, so switching `AboutStageNav` to the
+    same component with `orientation="vertical"` reuses the identical tray (`bg-secondary` +
+    `ring-1 ring-secondary`, rounded) and selected-pill (`bg-primary_alt` + `shadow-sm`) styling
+    automatically, rather than a second hand-matched copy of the same colours that could drift from
+    the real component over time. This also replaces the eighth follow-up's own `bg-primary_hover`
+    Figma-nav guess, since the real shared component is a strictly better source of truth once one
+    exists for this exact look. `cx`, now unused once the hand-rolled `<nav>`/`<button>` markup was
+    removed, was dropped from the file's imports. Verified `tsc --noEmit`/`eslint
+    --max-warnings=0` clean, then a live Chrome pass on a fresh tab (an older tab's console briefly
+    surfaced the same stale-Turbopack-chunk artifact already documented in the seventh follow-up -
+    confirmed harmless the same way, via a fresh tab showing zero errors): clicked through all 3
+    stages (Overview/Data Collection and Storage/Privacy and Restrictions) and confirmed each
+    correctly shows the real `button-border` selected treatment (light pill, subtle shadow, bold
+    text) with the two inactive rows reading as plain muted text, matching the reference's own
+    "look and feel" - zero console errors.
+  - **Tenth follow-up, per direct feedback with a screenshot of the ninth follow-up's own real-
+    `Tabs` nav: "Too much spacing inbetween. and alo the the padding within is looking very tight.
+    Fix it. plus make the left tabs sticky on scroll. For all the editable containers, I want the
+    container color to change to bg-hover on hover." Four fixes, one real bug found along the way.**
+    - **The "too much spacing" turned out to be a real sizing bug in the shared `TabList`
+      component, not the inter-tab gap** (measured live via `getBoundingClientRect`/
+      `getComputedStyle`: the tray's own inter-tab `gap-1`/`p-1` were both tight, ~4px, consistent
+      with the *second* complaint about padding being too tight - the actual dead space was
+      between the tray and the content card next to it). `components/application/tabs/tabs.tsx`'s
+      `TabList` sets `orientation === "vertical" && "w-max flex-col"` - an explicit `width:
+      max-content` that overrides the parent `Tabs` wrapper's `flex flex-col` `align-items:
+      stretch`, so the tray never actually filled the intended `lg:w-64` column, leaving a real gap
+      of dead space between the tray's own right edge and `StageCard` next to it. Fixed locally in
+      `AboutStageNav` (`about-content.tsx`) via `TabList`'s own `className="w-full"` - the shared
+      component's `cx` is `tailwind-merge`, so a caller-supplied `w-full` reliably wins over the
+      component's own `w-max` for the same CSS property, no `!important` needed, and no change to
+      the shared component's own default (`GeoExtentPicker`'s horizontal reuse of this exact type/
+      size is untouched).
+    - **Padding increased directly on each `Tab`** (`className="w-full py-3 px-3.5"`, up from the
+      shared `sizes.sm["button-border"]` default of `py-2 px-2.5`, tuned for a short horizontal
+      label rather than this taller vertical list) - `Tab`'s own `className` prop merges through
+      the same `cx`/`tailwind-merge` path, so this is a local override, not a change to the shared
+      component's global sizing table.
+    - **Sticky nav**: `AboutStageNav`'s outer `<Tabs>` wrapper gained `lg:sticky lg:top-6` - safe
+      because the parent row (`<div className="flex flex-col gap-4 lg:flex-row lg:items-start">`)
+      already uses `lg:items-start`, so the nav column was never stretched to the content's full
+      height in the first place. Verified live: scrolled the Data Collection stage's long content
+      (map, location table, focus areas, method, permit) and confirmed the nav stayed pinned near
+      the top of the viewport throughout.
+    - **Hover background on every editable container**: `EditableCard`'s own non-`bare`
+      `<BentoCard>` (covers Geographic Extent, Focus Areas & Targeted Species, Method of Data
+      Collection, Permit & Identifiers, Privacy and Restrictions) and the page-local
+      `ProjectDetailsCard` (Overview's own field-list card) both picked up
+      `transition-colors group-hover:bg-primary_hover` directly, relying on the existing outer
+      `<div className="group relative">` wrapper `EditableCard` already renders. The two shared
+      cards used by both option-2 and option-3 - `DataOwnerCard`/`ProjectManagersCard`
+      (`option-2/registration-summary.tsx`) - gained a new optional `hoverable?: boolean` prop
+      (default off) applying the same class conditionally, and only option-3's own call sites pass
+      it, so option-2's own read-only Overview page is unaffected. `BentoCard` itself
+      (`app/pages/_shared/bento-card.tsx`) has no base `bg-*` class, confirmed by reading it first,
+      so this was a purely additive change with no cascade-order risk.
+    - Verified `tsc --noEmit` and `eslint --max-warnings=0` clean on both touched files
+      (`about-content.tsx`, `option-2/registration-summary.tsx`), then a live Chrome pass on a
+      fresh tab: zoomed into the nav and confirmed the tray now fills its column with no dead space
+      and visibly roomier per-tab padding; scrolled the Data Collection stage and confirmed the nav
+      stayed sticky; hovered "Permit & Identifiers" and the Overview stage's "Project Details" card
+      and confirmed both tint `bg-primary_hover` and reveal their edit icon on hover; re-checked
+      `project-detail/option-2`'s own Data Owner card and confirmed it stays plain white on hover
+      (no `hoverable` passed there) - zero console errors throughout.
+  - **Eleventh follow-up, per direct feedback with a screenshot of the shipped Privacy and
+    Restrictions card: "separate editable container for each restriction types and an option to
+    add more restrictions if required. a way to remove a restriction already configured."** The
+    single "Privacy and Restrictions" card used to open the *entire* wizard sequence for any edit,
+    with no way to remove one already-configured type without stepping through the whole flow -
+    now each enabled type (Embargo, Species, Locations, Project Metadata, Other) is its own row
+    with its own hover-only Edit and Remove icons, plus a standing "+ Add restriction" row.
+    - **`step-3-privacy-restrictions.tsx` gained three new exports, extracted rather than
+      duplicated**: `RESTRICTION_TYPE_META`/`TYPE_CARD_TITLES`/`isTypeValid` (already existed,
+      just made `export`), and a genuinely new `RestrictionTypeFields({ typeKey, value, onChange
+      })` - the exact per-type field JSX (Embargo's `MultiSelect`+`Textarea`+`InputDatePicker`
+      with its own max-duration logic, `SpeciesRestrictionSection`, `LocationRestrictionSection`,
+      the metadata `ConceptRows`, the plain Other `Textarea`) pulled out of the wizard's own
+      per-type card render into its own component, including the embargo end-date
+      "has the user manually touched this" tracking (now a self-contained `useState` inside
+      `RestrictionTypeFields` itself, correctly reset per standalone edit session). The main
+      `Step3PrivacyRestrictions` sequence now renders `<RestrictionTypeFields typeKey={key}
+      value={value} onChange={onChange} />` in place of the ~90 lines of inline JSX it used to
+      carry - one real implementation, not two that could drift, reused by both the full
+      onboarding wizard and `project-detail/option-3`'s own new per-type editors.
+    - **`about-content.tsx`**: `RestrictionsDisplay`/`RestrictionsEditor` (the old single-card
+      pair) replaced with `RestrictionsSection` (lays out one `RestrictionTypeRow` per enabled
+      type plus the "Add restriction" row), `RestrictionTypeRow` (the warning-tinted row itself,
+      `group relative` with two hover-only icon buttons - Edit02 opens that one type's editor,
+      Trash01 removes it immediately from `enabledTypes`, same "no confirm dialog" precedent this
+      exact wizard's own Species/Location/Project-Manager "Remove" buttons already establish),
+      `RestrictionTypeEditor` (a real `EditShell`+`RestrictionTypeFields` pair, gated by the
+      shared `isTypeValid`, scoped to exactly one type), and `AddRestrictionEditor` (an
+      `EditShell` wrapping a `ChoiceTile` multi-select grid of only the *not-yet-enabled* types -
+      picking one or more and saving merges them into `enabledTypes` with `hasRestrictions: true`,
+      landing as new rows reading an honest "Needs setup - click Edit to finish" until their own
+      Edit panel is filled in). `EditShell` itself gained a small additive `nextDisabled` prop
+      (default `false`, every other caller unaffected) so both new editors can correctly grey out
+      Save until valid. The outer "Privacy and Restrictions" wrapper is now a plain heading-only
+      `BentoCard` (no single edit affordance of its own, since editing is now per-row) instead of
+      the old single `EditableCard`.
+    - Verified `tsc --noEmit`/`eslint --max-warnings=0` clean on both touched files, then a live
+      Chrome pass: hovered the Embargo row and confirmed both Edit/Remove icons appear; opened its
+      Edit panel and confirmed it's scoped to just Embargo, pre-filled with the real "1 selected"
+      type, reason text, and end date; opened "Add restriction" and confirmed it offered only the
+      3 remaining types (Species/Embargo correctly excluded) with Save disabled until one was
+      picked; picked "Restrict data based on Locations," saved, and confirmed a new row appeared
+      reading "Needs setup - click Edit to finish"; opened its own isolated editor (the real
+      "Which locations are sensitive?" panel, Save correctly disabled while empty); closed it and
+      clicked its Remove icon, confirming the row disappeared immediately, Embargo/Species stayed
+      untouched, and "Add restriction" once again offered all 3 remaining types. Re-verified the
+      real Add Project wizard (`/pages/project-registration`) still loads with zero console errors
+      after the shared-component extraction - zero console errors anywhere in this round.
+  - **Twelfth follow-up, two direct corrections to the eleventh follow-up above: "the journey you
+    created for adding a restriction is wrong... first you choose the restriction types and then
+    you hit continue and then you define each restriction type" - the previous round's
+    `AddRestrictionEditor` picked types and saved in one single step, leaving new rows sitting
+    incomplete rather than actually stepping through each one. And: "you can simply allow for the
+    users to remove a restriction... there must be a confirmation taken before removing a
+    restriction... written in the best UX writing approach" - the previous round's Trash01 button
+    removed a row with no confirmation at all.**
+    - **`AddRestrictionEditor` rebuilt as the real multi-step sequence, matching
+      `Step3PrivacyRestrictions`' own "any" → "types" → per-type-card shape exactly** (re-read
+      directly from `step-3-privacy-restrictions.tsx` before rebuilding, not assumed): step 1 is
+      the same "Which kinds of restriction do you want to add?" `ChoiceTile` multi-select
+      (`showQuestionCount` now defaulting to true, so it reads "Question 1 of N" like every other
+      wizard card, not the flattened single-step version the eleventh follow-up shipped); Continue
+      moves into one focused `RestrictionTypeFields` card per newly picked type, in
+      `RESTRICTION_TYPE_META`'s own fixed order, each with real Back/Continue and the same
+      `isTypeValid` gating the main wizard uses - only the very last card's button reads "Save"
+      (every other reads "Continue"), which then commits every newly picked type's filled-in data
+      to `enabledTypes` in one write. Deliberately skips a closing Review card - the outer
+      restrictions list this panel sits on top of already serves as the review, so a second one
+      inside the panel would be a duplicate.
+    - **Removal now opens the real `DestructiveModal`** (`components/application/modals/modal.tsx`
+      - already a genuine component in this library, not built new) instead of removing
+      immediately. `RestrictionsSection` tracks `pendingRemove: RestrictionTypeKey | null`; the
+      Trash01 button sets it instead of calling remove directly, and one shared modal at the
+      bottom of the section renders when it's set, naming the specific type being removed. Copy,
+      written to name the exact thing and its exact consequence rather than a generic "Are you
+      sure?": title `Remove "{title}"?`, description `This project's data will no longer be
+      restricted by "{title}", and everything you've entered for it will be lost.`, buttons
+      `Remove restriction` (destructive) / `Keep restriction` (a specific, paired verb rather than
+      a bare "Cancel").
+    - Verified `tsc --noEmit`/`eslint --max-warnings=0` clean, then a live Chrome pass: opened "Add
+      restriction," multi-selected 2 remaining types (Locations + Other Restrictions), confirmed
+      "Question 1 of 3" then Continue moved to "Question 2 of 3 · Restrict data based on
+      Locations" with Continue correctly disabled until a location was nominated (used the real
+      "Nominate Sensitive Location" panel end to end - name, "Choose from a List" → Belair National
+      Park, justification), advanced to "Question 3 of 3 · Other Restrictions" and confirmed the
+      button read "Save" (not "Continue"), filled the required text and saved - both new rows
+      landed with their real, filled-in summaries, not an incomplete placeholder. Then hovered
+      Embargo's row, clicked Trash01, confirmed the `DestructiveModal` opened reading `Remove
+      "Embargo"?` with the exact consequence copy above; clicked "Keep restriction" and confirmed
+      the row was untouched; reopened it and clicked "Remove restriction," confirming the row was
+      removed only after that explicit confirmation. Zero console errors throughout.
+  - **Thirteenth follow-up: a real, sitewide `MetricTile` sizing bug, caught off a screenshot of
+    the Overview stage's `RecordCountsCard`** ("fix the width for each item on this") - each of the
+    4 stacked Events/Occurrences/Observations/Artefacts & Attachments tiles was shrink-wrapped to
+    its own label width instead of sharing one consistent full width, so the card read as a ragged
+    column of differently-sized pills rather than a clean stack. Root cause: `MetricTile`'s own
+    root `<button>` (`app/pages/_shared/map-search/metric-tile.tsx`) only had `flex-1` for sizing,
+    which shares row width correctly when the parent is itself a real flex row (`flex items-stretch
+    gap-2`, the shape both of this component's other two consumers - the map search Records
+    switcher and the Species taxonomic-group tiles - already use) but is inert as a plain block
+    child, which is exactly what `RecordCountsCard`'s own `<div className="w-full">` wrappers are
+    (a `flex flex-col` stack, not a row). Fixed by adding `w-full` directly to the button's own
+    className alongside `flex-1` - a no-op inside a real flex row (`flex-1`'s own `flex-basis: 0%`
+    already wins there) and the actual fix for the plain-block case. One shared component, one
+    fix, no per-consumer special-casing. Verified `tsc --noEmit`/`eslint --max-warnings=0` clean,
+    then a live Chrome pass across all 3 real consumers: `project-detail/option-3`'s Overview stage
+    now shows all 4 tiles at the exact same full width (matching the reference screenshot); the map
+    search Records switcher (Projects/Events/Occurrences/Observations/Artefacts and Attachments)
+    and the Species view's Mammal/Bird/Reptile/Amphibian/Plant tiles both still render identically
+    to before, confirming the shared fix didn't regress either flex-row consumer - zero console
+    errors anywhere.
