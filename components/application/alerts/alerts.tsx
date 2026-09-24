@@ -124,7 +124,32 @@ interface AlertFullWidthProps {
      * content aligns with the content around it instead of centering independently.
      */
     className?: string;
+    /**
+     * When true, the alert's own background/border pick up a subtle tint matching `color`
+     * (`bg-{color}-50` + `border-{color}-300`) instead of the default neutral `bg-secondary`/
+     * `border-primary`.
+     * @default false
+     */
+    tintedBackground?: boolean;
+    /**
+     * When true and `onClose` is set, suppresses the text "Dismiss" button in the action row -
+     * the corner `CloseButton` (an icon-only close, `absolute top-2 right-2`) still renders, so
+     * the alert is still fully dismissable, just via one control instead of two doing the same
+     * thing. Use this when the alert already has one clear primary action and a second, separate
+     * "Dismiss" button next to it would be redundant with a close icon that's already there.
+     * @default false
+     */
+    hideDismissButton?: boolean;
 }
+
+const tintMap: Record<NonNullable<AlertFullWidthProps["color"]>, { bg: string; border: string }> = {
+    default: { bg: "bg-secondary", border: "border-primary" },
+    brand: { bg: "bg-brand-50", border: "border-brand-300" },
+    gray: { bg: "bg-secondary", border: "border-primary" },
+    error: { bg: "bg-error-50", border: "border-error-300" },
+    warning: { bg: "bg-warning-50", border: "border-warning-300" },
+    success: { bg: "bg-success-50", border: "border-success-300" },
+};
 
 export const AlertFullWidth = ({
     title,
@@ -136,9 +161,12 @@ export const AlertFullWidth = ({
     actionType = "button",
     dismissLabel = "Dismiss",
     className,
+    tintedBackground = false,
+    hideDismissButton = false,
 }: AlertFullWidthProps) => {
+    const tone = tintedBackground ? tintMap[color] : tintMap.default;
     return (
-        <div className="font-barlow relative border-t border-primary bg-secondary md:border-t-0 md:border-b">
+        <div className={cx("font-barlow relative border-t md:border-t-0 md:border-b", tone.bg, tone.border)}>
             <div className={cx("mx-auto flex max-w-container flex-col gap-4 p-4 md:flex-row md:items-center md:gap-3 md:px-8 md:py-3", className)}>
                 <div className="flex flex-1 flex-col gap-4 md:w-0 md:flex-row md:items-center">
                     <FeaturedIcon
@@ -158,7 +186,7 @@ export const AlertFullWidth = ({
                 {(onConfirm || onClose) && (
                     <div className="flex gap-2">
                         <div className={cx("flex w-full gap-3", actionType === "button" ? "flex-col-reverse md:flex-row" : "flex-row")}>
-                            {onClose && (
+                            {onClose && !hideDismissButton && (
                                 <Button onClick={onClose} color={actionType === "button" ? "secondary" : "link-gray"} size="sm">
                                     {dismissLabel}
                                 </Button>

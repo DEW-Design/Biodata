@@ -142,15 +142,16 @@ export interface ProjectAction {
 export const projectActions: ProjectAction[] = [
   { label: "View Level 1 Public Project Data" },
   { label: "View Level 2 Project Data (DLA Access)" },
+  // Built at app/pages/project-registration (reached via the "Add project" header button on every
+  // real page - see app/pages/_shared/guest-action-gate.tsx). The brief's original 5-step list
+  // (one step per restriction type) didn't match the real Figma wireframe this was built from
+  // (node 2298:179004 in the "Biodata Wireframe Presentation" file) - that source has 3 real steps,
+  // with all 5 restriction types living as sub-sections inside step 3, not 5 steps of their own.
+  // Updated to match what was actually built, per this file's own "keep documentation honest"
+  // convention.
   {
     label: "Create Project",
-    steps: [
-      "Add Project Details",
-      "Privacy and Restrictions: Embargo",
-      "Privacy and Restrictions: Sensitive Species and Location",
-      "Privacy and Restrictions: Restrict Project Metadata",
-      "Privacy and Restrictions: Request Other Restrictions",
-    ],
+    steps: ["Project Identification", "Data Collection and Storage", "Privacy and Restrictions"],
   },
   { label: "Download Project Templates" },
   // Not a standalone flow - per CONTEXT.md's "BDBSA domain research", every dataset must be

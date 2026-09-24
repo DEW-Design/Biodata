@@ -5,7 +5,6 @@ import { useRouter } from "next/navigation";
 import { Fredoka } from "next/font/google";
 import Highcharts from "highcharts";
 import HighchartsReact from "highcharts-react-official";
-import { Focusable } from "react-aria-components";
 import {
   SearchMd,
   ArrowNarrowUpRight,
@@ -38,7 +37,6 @@ import {
 } from "@untitledui/icons";
 import { Button } from "@/components/base/buttons/button";
 import { Input } from "@/components/base/input/input";
-import { Tooltip } from "@/components/base/tooltip/tooltip";
 import { Dialog, DialogTrigger, Modal, ModalOverlay } from "@/components/application/modals/modal";
 import { cx } from "@/utils/cx";
 import type { UserRole } from "@/lib/user-role";
@@ -524,15 +522,12 @@ export default function BiodataHomePage() {
           </nav>
 
           <div className="flex items-center gap-3">
-            <Tooltip title="Coming soon - authentication isn't built yet">
-              <Focusable>
-                <span className="inline-flex">
-                  <Button color="secondary" size="sm" isDisabled>
-                    Login
-                  </Button>
-                </span>
-              </Focusable>
-            </Tooltip>
+            <Button color="secondary" size="sm" href="/pages/auth/login">
+              Login
+            </Button>
+            <Button color="secondary" size="sm" href="/pages/auth/signup">
+              Sign up
+            </Button>
             <Button color="primary" size="sm" href={DASHBOARD_ROUTE}>
               Explore
             </Button>

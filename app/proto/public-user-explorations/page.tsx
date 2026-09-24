@@ -73,7 +73,7 @@
 // permission." Both are real, separate decisions from "which banner"/"what's in column 2" - flagged
 // here, not solved by forking the whole shared component inside a throwaway proto.
 
-import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { Suspense, useEffect, useLayoutEffect, useRef, useState } from "react";
 import type { FC, ReactNode } from "react";
 import { Focusable, type Key } from "react-aria-components";
 import { HomeLine, Folder, Eye, DownloadCloud02, ArrowNarrowRight, Camera01, Check, BookOpen01, FileCheck02 } from "@untitledui/icons";
@@ -484,7 +484,17 @@ function Picker({ current, setCurrent }: { current: number; setCurrent: (i: numb
   );
 }
 
-export default function PublicUserExplorationsProto() {
+// GuestActionButton reads the active role via useSearchParams, so the whole page needs a Suspense
+// boundary to prerender (same pattern as the /pages/** shells).
+export default function PublicUserExplorationsPage() {
+  return (
+    <Suspense fallback={null}>
+      <PublicUserExplorationsProto />
+    </Suspense>
+  );
+}
+
+function PublicUserExplorationsProto() {
   const [current, setCurrent] = useState(0);
   // A single effect, not the read-then-write pair other /proto labs in this codebase copy
   // (e.g. admin-dashboard-options) - that pair races on mount: the "write current to the URL"

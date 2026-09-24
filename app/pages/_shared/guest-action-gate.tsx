@@ -2,11 +2,12 @@
 
 import { useState, type FC } from "react";
 import { Heading as AriaHeading } from "react-aria-components";
+import { useRouter } from "next/navigation";
 import { Dialog, Modal, ModalOverlay } from "@/components/application/modals/modal";
 import { Button } from "@/components/base/buttons/button";
 import { CloseButton } from "@/components/base/buttons/close-button";
 import { FeaturedIcon } from "@/components/foundations/featured-icon/featured-icon";
-import { toast } from "@/components/application/toast/toast";
+import { useRoleHref } from "@/lib/use-role-href";
 
 // The moment of delight, for the two header actions ("Add project"/"Upload dataset") that need a
 // signed-in account: a guest used to just not see these buttons at all - honest, but a dead end
@@ -19,11 +20,9 @@ import { toast } from "@/components/application/toast/toast";
 // forcing it through `cancelLabel`/`confirmLabel` semantics would misrepresent what it is.
 //
 // "Log in"/"Sign up" are real buttons, not disabled-with-tooltip like `GuestAuthActions`'s header
-// pair - clicking either fires a real `toast.brand(...)` ("Sign-up isn't built yet...") instead of
-// going nowhere. Deliberately not disabled: this modal's entire point is to feel inviting, and a
-// disabled button as the very next thing you touch after being invited in undercuts that - the
-// toast still tells the truth (no real auth flow exists yet), it just does it as a response to a
-// real interaction instead of a hover state on a dead control.
+// pair - clicking either now navigates to the real /pages/auth/login or /pages/auth/signup flow
+// (see CONTEXT.md's dated entry for the auth flow build) instead of firing a "not built yet"
+// toast, now that a real flow exists to send the user to.
 export function SignUpPromptModal({
   isOpen,
   onOpenChange,
@@ -37,11 +36,11 @@ export function SignUpPromptModal({
   title: string;
   description: string;
 }) {
-  const respond = () => {
+  const router = useRouter();
+
+  const respond = (href: string) => {
     onOpenChange(false);
-    toast.brand("Thanks for your interest!", {
-      description: "Sign-up isn't built yet in this preview - you'll be able to create a free account here soon.",
-    });
+    router.push(href);
   };
 
   return (
@@ -60,10 +59,10 @@ export function SignUpPromptModal({
               <p className="text-sm text-tertiary">{description}</p>
             </div>
             <div className="mt-2 grid grid-cols-2 gap-3">
-              <Button color="secondary" size="lg" onClick={respond}>
+              <Button color="secondary" size="lg" onClick={() => respond("/pages/auth/login")}>
                 Log in
               </Button>
-              <Button color="primary" size="lg" onClick={respond}>
+              <Button color="primary" size="lg" onClick={() => respond("/pages/auth/signup")}>
                 Sign up
               </Button>
             </div>
@@ -91,6 +90,7 @@ export function GuestActionButton({
   isGuest,
   modalTitle,
   modalDescription,
+  href,
 }: {
   icon: FC<{ className?: string }>;
   label: string;
@@ -98,12 +98,18 @@ export function GuestActionButton({
   isGuest: boolean;
   modalTitle: string;
   modalDescription: string;
+  /** Where a signed-in user's click goes - carries the active role forward via `useRoleHref`, same
+   *  as every other internal navigation in this build. Omit to keep the button a no-op (still true
+   *  for "Upload dataset" - no real flow exists behind it yet). */
+  href?: string;
 }) {
   const [open, setOpen] = useState(false);
+  const roleHref = useRoleHref();
+  const router = useRouter();
 
   if (!isGuest) {
     return (
-      <Button color={color} iconLeading={icon}>
+      <Button color={color} iconLeading={icon} onClick={href ? () => router.push(roleHref(href)) : undefined}>
         {label}
       </Button>
     );

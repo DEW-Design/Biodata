@@ -5,10 +5,11 @@ import { Suspense, useMemo, useState } from "react";
 import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
 import type { Selection } from "react-aria-components";
-import { Button as AriaButton, Dialog, DialogTrigger, Focusable, Tabs } from "react-aria-components";
+import { Button as AriaButton, Dialog, DialogTrigger, Tabs } from "react-aria-components";
 import { TabList, Tab, TabPanel } from "@/components/application/tabs/tabs";
 import {
   ChevronDown,
+  ChevronUp,
   HomeLine,
   Folder,
   Eye,
@@ -36,23 +37,37 @@ import {
   LayersThree01,
   Waves,
   Users01,
+  Download01,
+  FileDownload01,
+  File07,
+  Printer,
+  FilterLines,
+  UploadCloud02,
+  File04,
 } from "@untitledui/icons";
 import { Button } from "@/components/base/buttons/button";
+import { Dropdown } from "@/components/base/dropdown/dropdown";
 import { Avatar } from "@/components/base/avatar/avatar";
 import { Badge } from "@/components/base/badges/badges";
+import { Checkbox } from "@/components/base/checkbox/checkbox";
 import { Input } from "@/components/base/input/input";
 import { InputNumber } from "@/components/base/input/input-number";
+import { InputFile } from "@/components/base/input/input-file";
 import { MultiSelect } from "@/components/base/select/multi-select";
 import { SectionHeader } from "@/components/application/section-headers/section-headers";
 import { AlertFullWidth } from "@/components/application/alerts/alerts";
+import { Accordion, type AccordionItemType } from "@/components/base/accordion/accordion";
 import { Tooltip, TooltipTrigger } from "@/components/base/tooltip/tooltip";
 import { Popover } from "@/components/base/select/popover";
 import { Breadcrumb } from "@/components/scaffold/breadcrumb";
 import { MobileNavTrigger } from "@/app/pages/_shared/mobile-nav";
 import { RoleSwitcher } from "@/app/pages/_shared/role-switcher";
 import { GuestActionButton, SignUpPromptModal } from "@/app/pages/_shared/guest-action-gate";
+import { GuestAuthActions } from "@/app/pages/_shared/guest-auth-actions";
 import { GlobalProjectSearch } from "@/app/pages/_shared/global-search";
 import { SA_NATIONAL_PARKS, isPointInAnyBoundary, boundarySummary, type Boundary } from "@/app/pages/_shared/map-search/geo";
+import { SidePanel } from "@/app/pages/_shared/map-search/side-panel";
+import { parseShapefileUpload, shapefileLayerSummary, type ShapefileLayer } from "@/app/pages/_shared/map-search/shapefile";
 import {
   searchEvents,
   searchOccurrences,
@@ -71,6 +86,9 @@ import {
   type OccurrenceType,
 } from "@/app/pages/_shared/map-search/search-data";
 import { ResultsTable, HierarchyCell, type ColumnDef, type TypeFilterOption } from "@/app/pages/_shared/map-search/results-table";
+import { MetricTile } from "@/app/pages/_shared/map-search/metric-tile";
+import { SpeciesResultsView, EXPORT_HEADERS, exportRowFor } from "@/app/pages/_shared/map-search/species-results";
+import { downloadCsv, downloadExcel, printAsPdf } from "@/app/pages/_shared/map-search/export-utils";
 import { RecordDetailSidebar, type DetailRecord } from "@/app/pages/_shared/map-search/record-detail";
 import { ArtefactLightbox, type Artefact, type ArtefactType } from "@/app/pages/_shared/artefact-lightbox";
 import { useFeatureAccess } from "@/lib/use-feature-access";
@@ -119,7 +137,7 @@ const sectionIcons: Record<string, FC<{ className?: string }>> = {
 
 const CURRENT_KEY = "observations";
 
-type Method = "draw" | "coordinates" | "location";
+type Method = "draw" | "coordinates" | "location" | "shapefile";
 // Reversed per direct business feedback: Projects is its own top-level tab again, separate from
 // Events - matches the new Figma reference (node 209:27950, "Projects" first in the metrics bar,
 // ahead of Events/Occurrences/Observations/Resources). A Project is still internally an Event
@@ -129,9 +147,11 @@ type Method = "draw" | "coordinates" | "location";
 type EntityTab = "projects" | "events" | "occurrence" | "observations" | "resources";
 
 const methodTabs: { id: Method; label: string; icon: FC<{ className?: string }> }[] = [
-  { id: "draw", label: "Draw on map", icon: PenTool02 },
-  { id: "coordinates", label: "Enter coordinates", icon: MarkerPin02 },
-  { id: "location", label: "Select a location", icon: Map02 },
+  // Short labels so all 4 methods fit one row in the 480px panel.
+  { id: "draw", label: "Draw", icon: PenTool02 },
+  { id: "coordinates", label: "Coordinates", icon: MarkerPin02 },
+  { id: "location", label: "Location", icon: Map02 },
+  { id: "shapefile", label: "Shapefile", icon: UploadCloud02 },
 ];
 
 // Icons match Figma's own "Metrics section" exactly (node 209:27950, superseding the earlier
@@ -150,11 +170,85 @@ const entityTabs: { id: EntityTab; label: string; icon: FC<{ className?: string 
   { id: "resources", label: "Artefacts and Attachments", icon: File06 },
 ];
 
+// Records-mode export headers, one per EntityTab - per direct feedback ("the export results
+// disappears when records view is selected... make sure the export button stays"), the header-row
+// export control now works in Records mode too, not just Species mode. Each row list is the same
+// plain, already-real fields that tab's own ColumnDef list already renders (see projectColumns/
+// eventColumns/occurrenceColumns/observationColumns/resourceColumns above) - never a fabricated
+// field with no real data behind it.
+const recordsExportHeaders: Record<EntityTab, string[]> = {
+  projects: ["Project ID", "Project", "Organisation", "Status", "Contributor", "Updated"],
+  events: ["Event ID", "Event Name", "Event Type", "Start Date", "End Date"],
+  occurrence: ["Occurrence ID", "Occurrence Name", "Occurrence Type", "Scientific Name", "Date"],
+  observations: ["Observation ID", "Observation Name", "Observation Type", "Scientific Name", "Date"],
+  resources: ["Attached Resource", "Type", "Attached to Concept", "Record ID", "Record Name"],
+};
+
 const parkItems = SA_NATIONAL_PARKS.map((park) => ({ id: park.id, label: park.name }));
 
 function matchesKeyword(haystack: string, keyword: string): boolean {
   const q = keyword.trim().toLowerCase();
   return !q || haystack.toLowerCase().includes(q);
+}
+
+// Same toggle-a-value-in-a-Set helper species-results.tsx's own `toggleInSet` already provides for
+// Species mode's facet checkboxes - duplicated here (not imported) since it's a tiny, self-
+// contained utility and this file doesn't otherwise import from that one.
+function toggleInSet<T>(set: Set<T>, value: T, checked: boolean): Set<T> {
+  const next = new Set(set);
+  if (checked) next.add(value);
+  else next.delete(value);
+  return next;
+}
+
+// ── Records mode's "All Filters" panel is built directly from each entity tab's own real
+//    ColumnDef list, per direct feedback ("the all filters side panel... [is] not reflecting the
+//    column headers and values as filters. Use the same column headers and column values as
+//    filters and values. You can ignore the hierarchy column as filter") - never a separate,
+//    invented facet set (the previous Region/Organisation pair). A column only participates when
+//    it declares a real `filterValue` (see ColumnDef's own doc comment in results-table.tsx) -
+//    Hierarchy never does (a breadcrumb, not a discrete value), and neither do occurrenceColumns'
+//    ~25 `defaultVisible: false` placeholder columns, whose value never varies by row. ──
+
+function filterableColumns<T>(columns: ColumnDef<T>[]): (ColumnDef<T> & { filterValue: (row: T) => string })[] {
+  return columns.filter((c): c is ColumnDef<T> & { filterValue: (row: T) => string } => c.id !== "hierarchy" && Boolean(c.filterValue));
+}
+
+function matchesColumnFilters<T>(row: T, columns: ColumnDef<T>[], selected: Record<string, Set<string>>): boolean {
+  return columns.every((col) => {
+    const values = selected[col.id];
+    if (!values || values.size === 0 || !col.filterValue) return true;
+    return values.has(col.filterValue(row));
+  });
+}
+
+/** One real accordion section per filterable column, its real distinct values (from `rows`, not
+ *  narrowed by any other currently-selected facet - same "independent option lists" precedent
+ *  Species mode's own Family/Genus/Species/Authority dropdowns already use) as checkboxes. */
+function buildColumnFilterSections<T>(
+  rows: T[],
+  columns: ColumnDef<T>[],
+  selected: Record<string, Set<string>>,
+  onToggle: (columnId: string, value: string, checked: boolean) => void,
+): AccordionItemType[] {
+  return filterableColumns(columns).map((col) => {
+    const values = [...new Set(rows.map(col.filterValue))].sort();
+    const selectedSet = selected[col.id] ?? new Set<string>();
+    return {
+      id: col.id,
+      title: col.label,
+      content:
+        values.length === 0 ? (
+          <p className="py-2 text-sm text-tertiary">No values in this search.</p>
+        ) : (
+          <div className="flex flex-col gap-3">
+            {values.map((v) => (
+              <Checkbox key={v} label={v} isSelected={selectedSet.has(v)} onChange={(checked) => onToggle(col.id, v, checked)} />
+            ))}
+          </div>
+        ),
+    };
+  });
 }
 
 // ── Result table column definitions, one array per entity - the customise-columns feature (see
@@ -208,6 +302,7 @@ const projectColumns: ColumnDef<SearchEvent>[] = [
   {
     id: "name",
     label: "Project",
+    filterValue: (e) => e.name,
     render: (e) => (
       <div className="flex flex-col gap-0.5">
         <p className="text-sm font-medium text-primary">{e.name}</p>
@@ -215,10 +310,11 @@ const projectColumns: ColumnDef<SearchEvent>[] = [
       </div>
     ),
   },
-  { id: "org", label: "Organisation", render: (e) => <span className="text-sm text-secondary">{e.org}</span> },
+  { id: "org", label: "Organisation", filterValue: (e) => e.org, render: (e) => <span className="text-sm text-secondary">{e.org}</span> },
   {
     id: "status",
     label: "Status",
+    filterValue: (e) => e.status,
     render: (e) => (
       <Badge size="sm" color={e.statusColor}>
         {e.status}
@@ -228,6 +324,7 @@ const projectColumns: ColumnDef<SearchEvent>[] = [
   {
     id: "contributor",
     label: "Contributor",
+    filterValue: (e) => e.contributorName ?? "-",
     render: (e) =>
       e.contributorName ? (
         <div className="flex items-center gap-2">
@@ -238,16 +335,22 @@ const projectColumns: ColumnDef<SearchEvent>[] = [
         <span className="text-sm text-tertiary">-</span>
       ),
   },
-  { id: "updated", label: "Updated", render: (e) => <span className="text-sm whitespace-nowrap text-tertiary">{e.updated ?? "-"}</span> },
+  {
+    id: "updated",
+    label: "Updated",
+    filterValue: (e) => e.updated ?? "-",
+    render: (e) => <span className="text-sm whitespace-nowrap text-tertiary">{e.updated ?? "-"}</span>,
+  },
 ];
 
 const eventColumns: ColumnDef<SearchEvent>[] = [
-  { id: "id", label: "Event ID", render: (e) => <span className="text-sm text-tertiary">{e.code}</span> },
-  { id: "name", label: "Event Name", render: (e) => <span className="text-sm font-medium text-primary">{e.name}</span> },
+  { id: "id", label: "Event ID", filterValue: (e) => e.code, render: (e) => <span className="text-sm text-tertiary">{e.code}</span> },
+  { id: "name", label: "Event Name", filterValue: (e) => e.name, render: (e) => <span className="text-sm font-medium text-primary">{e.name}</span> },
   {
     id: "type",
     label: "Event Type",
     headerTooltip: "The kind of event this row represents within a Site: Visit, Transect, Quadrat, Block, Ramble, Trap or Custom event.",
+    filterValue: (e) => e.type,
     render: (e) => {
       const Icon = eventTypeIcon[e.type];
       return (
@@ -258,8 +361,10 @@ const eventColumns: ColumnDef<SearchEvent>[] = [
       );
     },
   },
-  { id: "startDate", label: "Start Date", render: (e) => <span className="text-sm whitespace-nowrap text-tertiary">{e.startDate}</span> },
-  { id: "endDate", label: "End Date", render: (e) => <span className="text-sm whitespace-nowrap text-tertiary">{e.endDate}</span> },
+  { id: "startDate", label: "Start Date", filterValue: (e) => e.startDate, render: (e) => <span className="text-sm whitespace-nowrap text-tertiary">{e.startDate}</span> },
+  { id: "endDate", label: "End Date", filterValue: (e) => e.endDate, render: (e) => <span className="text-sm whitespace-nowrap text-tertiary">{e.endDate}</span> },
+  // No filterValue - a breadcrumb, not a discrete value to select, per direct request ("ignore the
+  // hierarchy column as filter").
   { id: "hierarchy", label: "Hierarchy", render: (e) => <HierarchyCell chain={eventChain(e)} /> },
 ];
 
@@ -271,13 +376,21 @@ const eventTypeOptions: TypeFilterOption[] = (["Site", "Visit", "Transect", "Qua
   icon: eventTypeIcon[t],
 }));
 
+// Only the 5 default-visible columns below get a `filterValue` - the ~25 `defaultVisible: false`
+// columns further down are honest Figma-documented placeholders whose `render` never varies per
+// row (most take no row argument at all, always "-"), so a filter built from them would have
+// exactly one, functionally useless option. Per direct request the "All Filters" panel should
+// reflect this table's real column headers/values (Hierarchy excluded) - these placeholder columns
+// have no real per-row value to reflect, so they're left out the same way Hierarchy is, not a
+// silent gap.
 const occurrenceColumns: ColumnDef<SearchOccurrence>[] = [
-  { id: "id", label: "Occurrence ID", render: (o) => <span className="text-sm text-tertiary">{o.id}</span> },
-  { id: "name", label: "Occurrence Name", render: (o) => <span className="text-sm font-medium text-primary">{o.commonName}</span> },
+  { id: "id", label: "Occurrence ID", filterValue: (o) => o.id, render: (o) => <span className="text-sm text-tertiary">{o.id}</span> },
+  { id: "name", label: "Occurrence Name", filterValue: (o) => o.commonName, render: (o) => <span className="text-sm font-medium text-primary">{o.commonName}</span> },
   {
     id: "type",
     label: "Occurrence Type",
     headerTooltip: "Individual, Population, Non-Biotic, or Community - the record's biological classification.",
+    filterValue: (o) => o.type,
     render: (o) => {
       const Icon = occurrenceTypeIcon[o.type];
       return (
@@ -288,8 +401,8 @@ const occurrenceColumns: ColumnDef<SearchOccurrence>[] = [
       );
     },
   },
-  { id: "species", label: "Scientific Name", render: (o) => <span className="text-sm text-tertiary italic">{o.species}</span> },
-  { id: "date", label: "Date", render: (o) => <span className="text-sm whitespace-nowrap text-tertiary">{o.date}</span> },
+  { id: "species", label: "Scientific Name", filterValue: (o) => o.species, render: (o) => <span className="text-sm text-tertiary italic">{o.species}</span> },
+  { id: "date", label: "Date", filterValue: (o) => o.date, render: (o) => <span className="text-sm whitespace-nowrap text-tertiary">{o.date}</span> },
   { id: "hierarchy", label: "Hierarchy", render: (o) => <HierarchyCell chain={hierarchyFor(o.parentEventId)} /> },
   { id: "project", label: "Project", defaultVisible: false, render: (o) => occurrenceText(projectForOccurrence(o)?.name) },
   { id: "event-linked-parent", label: "Event Linked (Parent)", defaultVisible: false, render: (o) => occurrenceText(linkedEventForOccurrence(o)?.name) },
@@ -337,12 +450,13 @@ const occurrenceTypeOptions: TypeFilterOption[] = (["Individual", "Population", 
 }));
 
 const observationColumns: ColumnDef<SearchObservation>[] = [
-  { id: "id", label: "Observation ID", render: (o) => <span className="text-sm text-tertiary">{o.id}</span> },
-  { id: "name", label: "Observation Name", render: (o) => <span className="text-sm font-medium text-primary">{o.commonName}</span> },
+  { id: "id", label: "Observation ID", filterValue: (o) => o.id, render: (o) => <span className="text-sm text-tertiary">{o.id}</span> },
+  { id: "name", label: "Observation Name", filterValue: (o) => o.commonName, render: (o) => <span className="text-sm font-medium text-primary">{o.commonName}</span> },
   {
     id: "type",
     label: "Observation Type",
     headerTooltip: "Individual, Population, Non-Biotic, or Community - the record's biological classification.",
+    filterValue: (o) => o.type,
     render: (o) => {
       const Icon = occurrenceTypeIcon[o.type];
       return (
@@ -353,8 +467,8 @@ const observationColumns: ColumnDef<SearchObservation>[] = [
       );
     },
   },
-  { id: "species", label: "Scientific Name", render: (o) => <span className="text-sm text-tertiary italic">{o.species}</span> },
-  { id: "date", label: "Date", render: (o) => <span className="text-sm whitespace-nowrap text-tertiary">{o.date}</span> },
+  { id: "species", label: "Scientific Name", filterValue: (o) => o.species, render: (o) => <span className="text-sm text-tertiary italic">{o.species}</span> },
+  { id: "date", label: "Date", filterValue: (o) => o.date, render: (o) => <span className="text-sm whitespace-nowrap text-tertiary">{o.date}</span> },
   { id: "hierarchy", label: "Hierarchy", render: (o) => <HierarchyCell chain={hierarchyFor(o.parentEventId)} /> },
 ];
 
@@ -364,6 +478,7 @@ const resourceColumns: ColumnDef<SearchResource>[] = [
   {
     id: "name",
     label: "Attached Resource",
+    filterValue: (r) => r.name,
     render: (r) => {
       const Icon = resourceTypeIcon[r.type];
       return (
@@ -390,6 +505,7 @@ const resourceColumns: ColumnDef<SearchResource>[] = [
     id: "type",
     label: "Type",
     headerTooltip: "Image, File, or Reference Link - what kind of resource is attached.",
+    filterValue: (r) => r.type,
     render: (r) => {
       const Icon = resourceTypeIcon[r.type];
       return (
@@ -400,9 +516,9 @@ const resourceColumns: ColumnDef<SearchResource>[] = [
       );
     },
   },
-  { id: "attachedTo", label: "Attached to Concept", render: (r) => <span className="text-sm text-tertiary">{r.attachedToConcept}</span> },
-  { id: "recordId", label: "Record ID", render: (r) => <span className="font-mono text-sm text-secondary">{r.recordId}</span> },
-  { id: "recordName", label: "Record Name", render: (r) => <span className="text-sm text-secondary">{r.recordName}</span> },
+  { id: "attachedTo", label: "Attached to Concept", filterValue: (r) => r.attachedToConcept, render: (r) => <span className="text-sm text-tertiary">{r.attachedToConcept}</span> },
+  { id: "recordId", label: "Record ID", filterValue: (r) => r.recordId, render: (r) => <span className="font-mono text-sm text-secondary">{r.recordId}</span> },
+  { id: "recordName", label: "Record Name", filterValue: (r) => r.recordName, render: (r) => <span className="text-sm text-secondary">{r.recordName}</span> },
   { id: "hierarchy", label: "Hierarchy", render: (r) => <HierarchyCell chain={hierarchyFor(r.parentEventId)} /> },
 ];
 
@@ -557,31 +673,6 @@ function ProfileMenu() {
   );
 }
 
-function GuestAuthActions() {
-  return (
-    <div className="flex items-center gap-2">
-      <Tooltip title="Coming soon - authentication isn't built yet">
-        <Focusable>
-          <span className="inline-flex">
-            <Button color="secondary" isDisabled>
-              Log in
-            </Button>
-          </span>
-        </Focusable>
-      </Tooltip>
-      <Tooltip title="Coming soon - authentication isn't built yet">
-        <Focusable>
-          <span className="inline-flex">
-            <Button color="primary" isDisabled>
-              Sign up
-            </Button>
-          </span>
-        </Focusable>
-      </Tooltip>
-    </div>
-  );
-}
-
 export default function ObservationsPage() {
   return (
     <Suspense fallback={null}>
@@ -618,11 +709,38 @@ function ObservationsSearch() {
   // below, so changing the radius or the selection recomputes just those, never touching a
   // manually drawn shape or entered point.
   const [mode, setMode] = useState<"search" | "results">("search");
+  // Floating search panel over the full-width map - collapsible so the whole map is visible.
+  const [searchPanelOpen, setSearchPanelOpen] = useState(true);
+  // Results header's "N search areas" disclosure - lists each area so the user can see what was searched.
+  const [showSearchAreas, setShowSearchAreas] = useState(false);
   const [method, setMethod] = useState<Method>("draw");
   const [manualBoundaries, setManualBoundaries] = useState<Boundary[]>([]);
   const [activeDrawTool, setActiveDrawTool] = useState<"circle" | "polygon" | null>(null);
   const [keyword, setKeyword] = useState("");
   const [entityTab, setEntityTab] = useState<EntityTab>("projects");
+  // Species mode vs. the existing Projects/Events/Occurrences/Observations/Artefacts record-by-
+  // record view (app/pages/_shared/map-search/species-results.tsx), per direct request - an
+  // additive sibling view, not a replacement. Defaults to "records" so first load is unchanged.
+  const [viewMode, setViewMode] = useState<"records" | "species">("records");
+  // Records mode's own shared search box + "All Filters" panel, per direct request ("do the same
+  // for Records as well... there will be an All Filters button which will show the side bar on the
+  // left"). One search term/facet selection shared across all 5 entity tabs, same "page-level, not
+  // per-tab" precedent `keyword`/`boundaries` above already use - each `ResultsTable` call below
+  // wires its own internal search box to this via `searchValue`/`onSearchChange`/`hideSearchBox`.
+  const [recordsSearch, setRecordsSearch] = useState("");
+  const [recordsFilterPanelOpen, setRecordsFilterPanelOpen] = useState(false);
+  // The "All Filters" panel's own facet selections, per direct feedback that it must reflect each
+  // tab's own real column headers/values (Hierarchy excluded) rather than a fixed Region/
+  // Organisation pair - keyed first by EntityTab, then by that tab's own ColumnDef id, so switching
+  // tabs can never show or apply a different tab's selections (each tab has its own real column
+  // set, sometimes sharing an id like "id" or "type" with a different real meaning).
+  const [columnFilters, setColumnFilters] = useState<Record<EntityTab, Record<string, Set<string>>>>({
+    projects: {},
+    events: {},
+    occurrence: {},
+    observations: {},
+    resources: {},
+  });
   // The rich, Figma-matched record-detail sidebar (record-detail.tsx) - opened by clicking a
   // Project/Event/Occurrence/Observation row, per direct request. Lifted to page level (not local
   // to ResultsTable) so it persists correctly regardless of which tab's table triggered it.
@@ -637,6 +755,16 @@ function ObservationsSearch() {
   // same real banner and CTA a registered user does, but has no DLA section to navigate to, so
   // the CTA opens the same invite modal `GuestActionButton` already uses instead of a dead link.
   const [dlaSignUpOpen, setDlaSignUpOpen] = useState(false);
+  // The banner is dismissible (a real corner close icon, per direct feedback) - once dismissed for
+  // this session it stays gone rather than reappearing on every re-render; it's a live notice about
+  // the current search's own data, not a one-time onboarding tip, so no persistence beyond this
+  // component's own lifetime is attempted.
+  const [dlaBannerDismissed, setDlaBannerDismissed] = useState(false);
+  // Species mode's own currently fully-filtered rows, reported up via `SpeciesResultsView`'s
+  // `onExportableRowsChange` - per a real Figma reference (node 2294:175340), "Export results" now
+  // lives in this page's own header row next to the Records/Species toggle, not inside that
+  // component, but the filtering that decides *which* rows are exportable still lives there.
+  const [speciesExportRows, setSpeciesExportRows] = useState<SearchOccurrence[]>([]);
 
   const [lat, setLat] = useState<number | null>(null);
   const [lon, setLon] = useState<number | null>(null);
@@ -671,7 +799,53 @@ function ObservationsSearch() {
     }));
   }, [selectedParkIds, parkRadius]);
 
-  const boundaries = useMemo(() => [...manualBoundaries, ...parkBoundaries], [manualBoundaries, parkBoundaries]);
+  // Uploaded shapefiles - each file stays one grouped entry (one row in the areas list, removed as
+  // a whole), expanded into real boundaries below: a circle of `shapefileRadius` around each point
+  // (the map's own marker shows each point) and each polygon as drawn.
+  const [shapefileLayers, setShapefileLayers] = useState<ShapefileLayer[]>([]);
+  const [shapefileRadius, setShapefileRadius] = useState(5);
+  const [shapefileError, setShapefileError] = useState<string | null>(null);
+  const [shapefileBusy, setShapefileBusy] = useState(false);
+  const [shapefileInputKey, setShapefileInputKey] = useState(0);
+
+  const handleShapefileUpload = async (files: File[]) => {
+    setShapefileBusy(true);
+    setShapefileError(null);
+    try {
+      const layer = await parseShapefileUpload(files);
+      setShapefileLayers((prev) => [...prev, layer]);
+      setShapefileInputKey((k) => k + 1);
+    } catch (error) {
+      setShapefileError(error instanceof Error ? error.message : "We couldn't read that file.");
+    } finally {
+      setShapefileBusy(false);
+    }
+  };
+
+  const shapefileBoundaries = useMemo<Boundary[]>(
+    () =>
+      shapefileLayers.flatMap((layer) => [
+        ...layer.points.map<Boundary>((center, i) => ({
+          id: `${layer.id}-pt-${i}`,
+          source: `shapefile:${layer.id}`,
+          kind: "circle",
+          center,
+          radiusKm: shapefileRadius,
+        })),
+        ...layer.polygons.map<Boundary>((points, i) => ({
+          id: `${layer.id}-poly-${i}`,
+          source: `shapefile:${layer.id}`,
+          kind: "polygon",
+          points,
+        })),
+      ]),
+    [shapefileLayers, shapefileRadius],
+  );
+
+  const boundaries = useMemo(
+    () => [...manualBoundaries, ...parkBoundaries, ...shapefileBoundaries],
+    [manualBoundaries, parkBoundaries, shapefileBoundaries],
+  );
 
   const removeBoundary = (target: Boundary) => {
     if (target.source?.startsWith("park:")) {
@@ -689,7 +863,29 @@ function ObservationsSearch() {
   const clearAllBoundaries = () => {
     setManualBoundaries([]);
     setSelectedParkIds(new Set());
+    setShapefileLayers([]);
   };
+
+  // What the user thinks of as "a search area": each drawn/entered shape and each selected park is
+  // one, but an uploaded shapefile is one area however many locations it holds. Used by the search
+  // panel's list and the results header's "N search areas" disclosure so both count the same way.
+  const areaEntries = useMemo(
+    () => [
+      ...[...manualBoundaries, ...parkBoundaries].map((b) => ({
+        id: b.id,
+        icon: b.kind === "circle" ? MarkerPin02 : Pentagon,
+        summary: boundarySummary(b),
+        onRemove: () => removeBoundary(b),
+      })),
+      ...shapefileLayers.map((layer) => ({
+        id: layer.id,
+        icon: File04,
+        summary: shapefileLayerSummary(layer),
+        onRemove: () => setShapefileLayers((prev) => prev.filter((l) => l.id !== layer.id)),
+      })),
+    ],
+    [manualBoundaries, parkBoundaries, shapefileLayers],
+  );
 
   // ── Results filtering - real spatial + keyword filtering against the union of every active
   //     boundary, not decorative furniture: a circle boundary uses real haversine distance, a
@@ -745,9 +941,15 @@ function ObservationsSearch() {
     );
   }, [boundaries, keyword]);
 
-  const filteredProjects = useMemo(() => searchEvents.filter((e) => e.type === "Project" && matchingProjectIds.has(e.id)), [matchingProjectIds]);
+  // "pre-facet" - spatial + keyword + matchingProjectIds only, same as before this round. The
+  // Records-mode "All Filters" panel (see below) layers two more real facets - Region and
+  // Organisation - on top of this set, per direct request ("do the same for Records as well...
+  // add filter categories and filter values for each group"). Kept separate from the final
+  // `filteredX` arrays below so the panel's own Region/Organisation option lists can be derived
+  // from this wider set rather than shrinking to nothing the moment a facet is picked.
+  const preFacetProjects = useMemo(() => searchEvents.filter((e) => e.type === "Project" && matchingProjectIds.has(e.id)), [matchingProjectIds]);
 
-  const filteredEvents = useMemo(
+  const preFacetEvents = useMemo(
     () =>
       searchEvents.filter(
         (e) =>
@@ -758,7 +960,7 @@ function ObservationsSearch() {
       ),
     [boundaries, keyword, matchingProjectIds],
   );
-  const filteredOccurrences = useMemo(
+  const preFacetOccurrences = useMemo(
     () =>
       searchOccurrences.filter(
         (o) =>
@@ -768,7 +970,7 @@ function ObservationsSearch() {
       ),
     [boundaries, keyword, matchingProjectIds],
   );
-  const filteredObservations = useMemo(
+  const preFacetObservations = useMemo(
     () =>
       searchObservations.filter(
         (o) =>
@@ -778,7 +980,7 @@ function ObservationsSearch() {
       ),
     [boundaries, keyword, matchingProjectIds],
   );
-  const filteredResources = useMemo(
+  const preFacetResources = useMemo(
     () =>
       searchResources.filter(
         (r) =>
@@ -788,7 +990,94 @@ function ObservationsSearch() {
       ),
     [boundaries, keyword, matchingProjectIds],
   );
+
+  const toggleColumnFilterValue = (tab: EntityTab, columnId: string, value: string, checked: boolean) => {
+    setColumnFilters((prev) => ({
+      ...prev,
+      [tab]: { ...prev[tab], [columnId]: toggleInSet(prev[tab][columnId] ?? new Set<string>(), value, checked) },
+    }));
+  };
+
+  const filteredProjects = useMemo(
+    () => preFacetProjects.filter((e) => matchesColumnFilters(e, projectColumns, columnFilters.projects)),
+    [preFacetProjects, columnFilters.projects],
+  );
+  const filteredEvents = useMemo(
+    () => preFacetEvents.filter((e) => matchesColumnFilters(e, eventColumns, columnFilters.events)),
+    [preFacetEvents, columnFilters.events],
+  );
+  const filteredOccurrences = useMemo(
+    () => preFacetOccurrences.filter((o) => matchesColumnFilters(o, occurrenceColumns, columnFilters.occurrence)),
+    [preFacetOccurrences, columnFilters.occurrence],
+  );
+  const filteredObservations = useMemo(
+    () => preFacetObservations.filter((o) => matchesColumnFilters(o, observationColumns, columnFilters.observations)),
+    [preFacetObservations, columnFilters.observations],
+  );
+  const filteredResources = useMemo(
+    () => preFacetResources.filter((r) => matchesColumnFilters(r, resourceColumns, columnFilters.resources)),
+    [preFacetResources, columnFilters.resources],
+  );
   const resourceArtefacts = useMemo(() => filteredResources.map(resourceToArtefact), [filteredResources]);
+
+  // The "All Filters" panel's own accordion content - one real section per the active tab's own
+  // filterable columns (see buildColumnFilterSections above), so switching tabs shows that tab's
+  // own real column headers/values, never a fixed, invented facet set.
+  const columnFilterSections = useMemo((): AccordionItemType[] => {
+    switch (entityTab) {
+      case "projects":
+        return buildColumnFilterSections(preFacetProjects, projectColumns, columnFilters.projects, (id, v, c) => toggleColumnFilterValue("projects", id, v, c));
+      case "events":
+        return buildColumnFilterSections(preFacetEvents, eventColumns, columnFilters.events, (id, v, c) => toggleColumnFilterValue("events", id, v, c));
+      case "occurrence":
+        return buildColumnFilterSections(preFacetOccurrences, occurrenceColumns, columnFilters.occurrence, (id, v, c) =>
+          toggleColumnFilterValue("occurrence", id, v, c),
+        );
+      case "observations":
+        return buildColumnFilterSections(preFacetObservations, observationColumns, columnFilters.observations, (id, v, c) =>
+          toggleColumnFilterValue("observations", id, v, c),
+        );
+      case "resources":
+        return buildColumnFilterSections(preFacetResources, resourceColumns, columnFilters.resources, (id, v, c) => toggleColumnFilterValue("resources", id, v, c));
+    }
+  }, [entityTab, preFacetProjects, preFacetEvents, preFacetOccurrences, preFacetObservations, preFacetResources, columnFilters]);
+
+  // The active tab's own filterable columns as plain {id, label} pairs - used for the pill row
+  // below, kept separate from `columnFilterSections` (which needs real option values too, not just
+  // the column identity) so building pills doesn't require re-deriving every column's full value
+  // list a second time.
+  const activeFilterableColumns = useMemo((): { id: string; label: string }[] => {
+    switch (entityTab) {
+      case "projects":
+        return filterableColumns(projectColumns).map((c) => ({ id: c.id, label: c.label }));
+      case "events":
+        return filterableColumns(eventColumns).map((c) => ({ id: c.id, label: c.label }));
+      case "occurrence":
+        return filterableColumns(occurrenceColumns).map((c) => ({ id: c.id, label: c.label }));
+      case "observations":
+        return filterableColumns(observationColumns).map((c) => ({ id: c.id, label: c.label }));
+      case "resources":
+        return filterableColumns(resourceColumns).map((c) => ({ id: c.id, label: c.label }));
+    }
+  }, [entityTab]);
+
+  const activeTabColumnFilters = columnFilters[entityTab];
+  const recordsFilterCount = Object.values(activeTabColumnFilters).reduce((sum, values) => sum + values.size, 0);
+
+  // One removable pill per selected value, scoped to the currently active tab only - matching how
+  // the panel itself only ever shows that tab's own real columns, never a cross-tab combined list.
+  const recordsFilterPills = useMemo(() => {
+    const pills: { key: string; label: string; onRemove: () => void }[] = [];
+    for (const col of activeFilterableColumns) {
+      const values = activeTabColumnFilters[col.id] ?? new Set<string>();
+      for (const v of values) {
+        pills.push({ key: `${col.id}:${v}`, label: `${col.label}: ${v}`, onRemove: () => toggleColumnFilterValue(entityTab, col.id, v, false) });
+      }
+    }
+    return pills;
+  }, [activeFilterableColumns, activeTabColumnFilters, entityTab]);
+
+  const clearRecordsFilters = () => setColumnFilters((prev) => ({ ...prev, [entityTab]: {} }));
 
   const countFor = (tab: EntityTab) =>
     ({
@@ -803,6 +1092,58 @@ function ObservationsSearch() {
   const runSearch = () => {
     setMode("results");
     setEntityTab("projects");
+  };
+
+  // Same real behaviour the top-level DLA banner's own "Go to DLA"/"Sign up for access" CTA
+  // already uses (see the AlertFullWidth below) - pulled out so Species mode's own DLA notice and
+  // export gating (species-results.tsx) can reuse it rather than reimplementing the branch.
+  const requestDlaAccess = () => {
+    if (isPublicUser) {
+      setDlaSignUpOpen(true);
+      return;
+    }
+    const dlaSection = nav.find((section) => section.label === "Data Licencing Agreement (DLA)");
+    if (dlaSection) goToSection(dlaSection);
+  };
+
+  // Records mode's own export rows, one branch per EntityTab, each pulling straight from that
+  // tab's own already-filtered array (filteredProjects/filteredEvents/...) - the same plain fields
+  // recordsExportHeaders above names, in the same order.
+  const recordsExportRows = (): string[][] => {
+    switch (entityTab) {
+      case "projects":
+        return filteredProjects.map((e) => [e.code, e.name, e.org, e.status, e.contributorName ?? "-", e.updated ?? "-"]);
+      case "events":
+        return filteredEvents.map((e) => [e.code, e.name, e.type, e.startDate, e.endDate]);
+      case "occurrence":
+        return filteredOccurrences.map((o) => [o.id, o.commonName, o.type, o.species, o.date]);
+      case "observations":
+        return filteredObservations.map((o) => [o.id, o.commonName, o.type, o.species, o.date]);
+      case "resources":
+        return filteredResources.map((r) => [r.name, r.type, r.attachedToConcept, r.recordId, r.recordName]);
+    }
+  };
+
+  // Header-row "Export results" control - works in both view modes, per direct feedback ("the
+  // export results disappears when records view is selected... make sure the export button
+  // stays"). Species mode reuses `EXPORT_HEADERS`/`exportRowFor` exported from species-results.tsx
+  // and `speciesExportRows` (that component's own currently fully-filtered rows, reported up via
+  // `onExportableRowsChange`); Records mode exports whichever entity tab is currently active, via
+  // `recordsExportHeaders`/`recordsExportRows` above. Same guest gating either way - a guest's
+  // click opens the sign-up invite modal instead of downloading anything.
+  const runExport = (kind: "csv" | "excel" | "pdf") => {
+    if (isPublicUser) {
+      requestDlaAccess();
+      return;
+    }
+    const headers = viewMode === "species" ? EXPORT_HEADERS : recordsExportHeaders[entityTab];
+    const rowsOut = viewMode === "species" ? speciesExportRows.map(exportRowFor) : recordsExportRows();
+    const baseName = viewMode === "species" ? "biodata-sa-species-search" : `biodata-sa-${entityTab}-search`;
+    const title =
+      viewMode === "species" ? "BioData SA - Species Search Results" : `BioData SA - ${entityTabs.find((t) => t.id === entityTab)?.label} Results`;
+    if (kind === "csv") downloadCsv(`${baseName}.csv`, headers, rowsOut);
+    if (kind === "excel") downloadExcel(`${baseName}.xls`, headers, rowsOut);
+    if (kind === "pdf") printAsPdf(title, headers, rowsOut);
   };
 
   // A results view with nothing left to show (every area was removed from within it) isn't a
@@ -872,6 +1213,7 @@ function ObservationsSearch() {
               isGuest={isPublicUser}
               modalTitle="Sign up to add a project"
               modalDescription="Create a free BioData SA account to start contributing projects to South Australia's biodiversity record."
+              href="/pages/project-registration"
             />
           </div>
           {isPublicUser ? <GuestAuthActions /> : <ProfileMenu />}
@@ -909,31 +1251,63 @@ function ObservationsSearch() {
               and the page itself never grows taller than the viewport, per direct feedback. */}
           <main className={cx("flex flex-1 flex-col", displayMode === "search" ? "overflow-y-auto [scrollbar-gutter:stable]" : "overflow-hidden")}>
             {displayMode === "search" ? (
-              <div className="flex flex-1 flex-col">
-                <SectionHeader.Root className="p-6">
-                  <SectionHeader.Group>
-                    <div className="flex flex-1 flex-col gap-1">
-                      <SectionHeader.Heading>Search biodiversity records</SectionHeader.Heading>
-                      <SectionHeader.Subheading>
-                        Define an area of interest to search Projects, Events, Occurrence and Observation records across South Australia.
-                      </SectionHeader.Subheading>
-                    </div>
-                  </SectionHeader.Group>
-                </SectionHeader.Root>
+              // The map fills the whole content area. The page heading and the search controls live
+              // together in one floating card over it (no separate top bar), per direct feedback.
+              // `z-[1000]` - Leaflet's own panes go up to ~700, so a plain z-50 renders under tiles.
+              <div className="relative min-h-[640px] flex-1 overflow-hidden">
+                <div className="absolute inset-0">
+                  <SAMap
+                    boundaries={boundaries}
+                    onBoundaryAdd={addManualBoundary}
+                    activeDrawTool={activeDrawTool}
+                    onDrawToolChange={setActiveDrawTool}
+                    fitPaddingTopLeft={searchPanelOpen ? [512, 48] : [48, 120]}
+                    className="size-full"
+                  />
+                </div>
 
-                {/* No padding, no gap, no corner radius on this row or its two panels - both the
-                    boundary-method panel and the map now sit flush against each other and the
-                    viewport edges, per direct feedback. */}
-                <div className="flex flex-1 flex-col lg:flex-row">
-                  {/* ── Boundary method panel ── */}
-                  {/* 480px, not 360px - a real Figma reference for this exact panel (node 188:4788
-                      in the same landing-page file) shows the 3 method tabs as a single horizontal
-                      row, each a fixed ~155px, which only fits without cramping at roughly this
-                      width. The panel's earlier 360px width was the real bug behind "not enough
-                      space" - fixed by widening the panel to fit the reference's own horizontal
-                      tab row, not by re-orienting the tabs (reverted the previous vertical-tabs
-                      workaround now that the actual cause is fixed). */}
-                  <div className="flex w-full flex-col border border-secondary bg-primary p-4 lg:w-[480px] lg:shrink-0">
+                {/* Collapsing minimises the card to its own header (title + a one-line status of
+                    what's defined so far) rather than swapping it for a separate button - the card
+                    stays the same object in the same place, just folded, with Search still one
+                    click away once areas exist. */}
+                <section
+                  aria-label="Search biodiversity records"
+                  className="absolute top-4 right-4 left-4 z-[1000] flex max-h-[calc(100%-2rem)] flex-col overflow-hidden rounded-xl border border-secondary bg-primary shadow-lg lg:right-auto lg:w-[480px]"
+                >
+                  <div className="flex shrink-0 items-start gap-3 p-4">
+                    <button
+                      type="button"
+                      aria-expanded={searchPanelOpen}
+                      aria-controls="search-panel-body"
+                      onClick={() => setSearchPanelOpen((v) => !v)}
+                      className="flex min-w-0 flex-1 cursor-pointer flex-col gap-1 rounded-md text-left outline-focus-ring focus-visible:outline-2 focus-visible:outline-offset-2"
+                    >
+                      <span className="text-lg font-semibold text-primary">Search biodiversity records</span>
+                      <span className="text-sm text-tertiary">
+                        {searchPanelOpen
+                          ? "Define one or more areas to search Projects, Events, Occurrences and Observations across South Australia."
+                          : areaEntries.length > 0
+                            ? `${areaEntries.length} search area${areaEntries.length === 1 ? "" : "s"} defined${keyword ? ` · "${keyword}"` : ""}`
+                            : "No search area defined yet"}
+                      </span>
+                    </button>
+                    {!searchPanelOpen && boundaries.length > 0 && (
+                      <Button color="primary" size="sm" iconLeading={SearchLg} className="shrink-0" onPress={runSearch}>
+                        Search
+                      </Button>
+                    )}
+                    <Button
+                      color="tertiary"
+                      size="sm"
+                      iconLeading={searchPanelOpen ? ChevronUp : ChevronDown}
+                      aria-label={searchPanelOpen ? "Minimise search panel" : "Expand search panel"}
+                      className="shrink-0"
+                      onPress={() => setSearchPanelOpen((v) => !v)}
+                    />
+                  </div>
+
+                  {searchPanelOpen && (
+                  <div id="search-panel-body" className="flex min-h-0 flex-col overflow-y-auto border-t border-secondary p-4">
                     <Tabs selectedKey={method} onSelectionChange={(key) => setMethod(key as Method)} className="flex flex-col gap-3">
                       <TabList aria-label="Boundary method" type="button-border" size="sm" fullWidth>
                         {methodTabs.map((m) => (
@@ -996,22 +1370,41 @@ function ObservationsSearch() {
                         </MultiSelect>
                         <InputNumber label="Search radius (km)" defaultValue={15} minValue={1} maxValue={100} step={5} onChange={setParkRadius} />
                       </TabPanel>
+                      <TabPanel id="shapefile" className="flex flex-col gap-3 pt-4">
+                        <p className="text-sm text-tertiary">
+                          Upload a shapefile to search around the locations it contains. Points are searched within the radius below; polygons are searched as drawn.
+                        </p>
+                        <InputFile
+                          key={`shp-${shapefileInputKey}`}
+                          label="Shapefile"
+                          placeholder={shapefileBusy ? "Reading file…" : "Choose file(s)"}
+                          acceptedFileTypes={[".zip", ".shp", ".dbf", ".prj", ".cpg", ".geojson", ".json"]}
+                          allowsMultiple
+                          isInvalid={!!shapefileError}
+                          hint={
+                            shapefileError ??
+                            "A .zip of the shapefile, or the .shp with its .dbf and .prj selected together. GeoJSON also works. Up to 500 locations."
+                          }
+                          onChange={(files) => files && files.length > 0 && handleShapefileUpload(Array.from(files))}
+                        />
+                        <InputNumber label="Radius around each point (km)" value={shapefileRadius} minValue={1} maxValue={100} step={1} onChange={(v) => setShapefileRadius(v || 1)} />
+                      </TabPanel>
                     </Tabs>
 
-                    {boundaries.length > 0 && (
+                    {areaEntries.length > 0 && (
                       <div className="mt-4 flex flex-col gap-2">
-                        {boundaries.map((b) => (
-                          <div key={b.id} className="flex items-start justify-between gap-3 rounded-lg border border-secondary bg-secondary p-3">
+                        {areaEntries.map((entry) => (
+                          <div key={entry.id} className="flex items-start justify-between gap-3 rounded-lg border border-secondary bg-secondary p-3">
                             <div className="flex min-w-0 items-start gap-2 text-sm text-secondary">
-                              <MarkerPin02 className="mt-0.5 size-4 shrink-0 text-brand-600" />
-                              <span className="break-words">{boundarySummary(b)}</span>
+                              <entry.icon className="mt-0.5 size-4 shrink-0 text-brand-600" />
+                              <span className="break-words">{entry.summary}</span>
                             </div>
-                            <Button color="link-gray" size="sm" iconLeading={Trash01} className="shrink-0" onPress={() => removeBoundary(b)}>
+                            <Button color="link-gray" size="sm" iconLeading={Trash01} className="shrink-0" onPress={entry.onRemove}>
                               Remove
                             </Button>
                           </div>
                         ))}
-                        {boundaries.length > 1 && (
+                        {areaEntries.length > 1 && (
                           <Button color="link-gray" size="sm" className="self-start" onPress={clearAllBoundaries}>
                             Clear all
                           </Button>
@@ -1025,12 +1418,8 @@ function ObservationsSearch() {
                       Search records
                     </Button>
                   </div>
-
-                  {/* ── The map itself ── */}
-                  <div className="relative min-h-[420px] flex-1 overflow-hidden">
-                    <SAMap boundaries={boundaries} onBoundaryAdd={addManualBoundary} activeDrawTool={activeDrawTool} onDrawToolChange={setActiveDrawTool} className="size-full" />
-                  </div>
-                </div>
+                  )}
+                </section>
               </div>
             ) : (
               // min-h-0 - lets this results view shrink to <main>'s own bounded height (now
@@ -1046,23 +1435,30 @@ function ObservationsSearch() {
                     same real, always-visible CTA pattern `GuestActionButton` already established
                     elsewhere on this page: the control is real, not hidden, but a guest's click
                     opens the sign-up invite modal instead of navigating somewhere that isn't
-                    theirs to use yet. */}
-                <div className="shrink-0">
-                  <AlertFullWidth
-                    color="warning"
-                    title="You're viewing public data"
-                    description="Some records are restricted. Request a Data Licencing Agreement (DLA) for full access."
-                    confirmLabel={isPublicUser ? "Sign up for access" : "Go to DLA"}
-                    onConfirm={() => {
-                      if (isPublicUser) {
-                        setDlaSignUpOpen(true);
-                        return;
-                      }
-                      const dlaSection = nav.find((section) => section.label === "Data Licencing Agreement (DLA)");
-                      if (dlaSection) goToSection(dlaSection);
-                    }}
-                  />
-                </div>
+                    theirs to use yet.
+                    Per direct UI feedback: dismissible (a real corner close icon - `onClose`
+                    already renders one on `AlertFullWidth`, just wasn't wired up before), left-
+                    aligned and slim (the `className` override already documented on that
+                    component for exactly this - dropping the centred `max-w-container` and
+                    cutting vertical padding), and a subtle warning tint on the background/bottom
+                    border instead of the neutral default (`tintedBackground`, a new additive prop
+                    on `AlertFullWidth` - see alerts.tsx - defaulting to false so every other real
+                    consumer of that shared component is untouched). */}
+                {!dlaBannerDismissed && (
+                  <div className="shrink-0">
+                    <AlertFullWidth
+                      color="warning"
+                      tintedBackground
+                      hideDismissButton
+                      title="You're viewing public data"
+                      description="Some records are restricted. Request a Data Licencing Agreement (DLA) for full access."
+                      confirmLabel={isPublicUser ? "Sign up for access" : "Go to DLA"}
+                      onConfirm={requestDlaAccess}
+                      onClose={() => setDlaBannerDismissed(true)}
+                      className="mx-0 max-w-none px-6 py-2.5 md:px-6 md:py-2.5"
+                    />
+                  </div>
+                )}
                 <SignUpPromptModal
                   isOpen={dlaSignUpOpen}
                   onOpenChange={setDlaSignUpOpen}
@@ -1071,73 +1467,198 @@ function ObservationsSearch() {
                   description="Restricted data needs a free BioData SA account. Create one to request a Data Licencing Agreement (DLA)."
                 />
 
-                {/* Order and style match Figma exactly (node 205:20764): a plain "Edit search"
-                    link sits above the heading block, not beside it as a bordered Action button -
-                    get_design_context on 205:23084 confirmed it's a link (icon + text-tertiary
-                    text, no border/background), not a Button. */}
+                {/* "Edit search" is grouped tightly with the heading/subheading (see its own
+                    earlier fix, still in place). The Records/Species view-mode toggle used to sit
+                    in its own full-width row below this header, an awkward, disconnected spot per
+                    direct feedback - moved into `SectionHeader.Actions`, the header row's own
+                    established trailing-content slot (already used this way elsewhere in this
+                    codebase, e.g. app/pages/_shared/data-overview.tsx), so title and view switch
+                    read as one coherent header instead of two stacked, unrelated rows. */}
                 <SectionHeader.Root className="shrink-0 p-6">
-                  <Button color="link-gray" size="sm" iconLeading={ArrowNarrowLeft} onPress={() => setMode("search")} className="self-start">
-                    Edit search
-                  </Button>
-                  <SectionHeader.Group>
-                    <div className="flex flex-1 flex-col gap-1">
-                      <SectionHeader.Heading>Search results</SectionHeader.Heading>
-                      <SectionHeader.Subheading>
-                        {totalCount} record{totalCount === 1 ? "" : "s"} found across {boundaries.length} search area{boundaries.length === 1 ? "" : "s"}
-                      </SectionHeader.Subheading>
-                    </div>
-                  </SectionHeader.Group>
+                  <div className="flex flex-col gap-2">
+                    <Button color="link-gray" size="sm" iconLeading={ArrowNarrowLeft} onPress={() => setMode("search")} className="self-start">
+                      Edit search
+                    </Button>
+                    <SectionHeader.Group>
+                      <div className="flex flex-1 flex-col gap-1">
+                        <SectionHeader.Heading>Search results</SectionHeader.Heading>
+                        <SectionHeader.Subheading>
+                          {totalCount} record{totalCount === 1 ? "" : "s"} found across{" "}
+                          <button
+                            type="button"
+                            aria-expanded={showSearchAreas}
+                            aria-controls="search-areas-list"
+                            onClick={() => setShowSearchAreas((v) => !v)}
+                            className="inline-flex cursor-pointer items-center gap-0.5 rounded font-semibold text-brand-secondary underline decoration-dotted underline-offset-2 outline-focus-ring hover:text-brand-secondary_hover focus-visible:outline-2 focus-visible:outline-offset-2"
+                          >
+                            {areaEntries.length} search area{areaEntries.length === 1 ? "" : "s"}
+                            {showSearchAreas ? <ChevronUp className="size-4" /> : <ChevronDown className="size-4" />}
+                          </button>
+                        </SectionHeader.Subheading>
+                        {showSearchAreas && (
+                          <ul id="search-areas-list" className="mt-2 flex flex-wrap gap-2">
+                            {areaEntries.map((entry) => (
+                              <li key={entry.id} className="inline-flex max-w-full items-start gap-1.5 rounded-lg border border-secondary bg-primary px-2.5 py-1.5 text-sm text-secondary">
+                                <entry.icon className="mt-0.5 size-4 shrink-0 text-brand-600" />
+                                <span className="break-words">{entry.summary}</span>
+                              </li>
+                            ))}
+                          </ul>
+                        )}
+                      </div>
+                      <SectionHeader.Actions>
+                        <div className="inline-flex items-center gap-1 rounded-lg border border-secondary bg-secondary p-1">
+                          {/* Species first, Records second - per direct feedback ("interchange
+                              species and records - species must be first"). The default active
+                              view (`viewMode`'s own initial state, still "records") is untouched -
+                              only the two buttons' left-to-right order changed. */}
+                          {(["species", "records"] as const).map((m) => (
+                            <button
+                              key={m}
+                              type="button"
+                              onClick={() => setViewMode(m)}
+                              className={cx(
+                                "rounded-md px-3 py-1.5 text-sm font-semibold whitespace-nowrap transition duration-100 ease-linear",
+                                viewMode === m ? "bg-primary text-brand-secondary shadow-xs" : "text-tertiary hover:text-secondary",
+                              )}
+                            >
+                              {m === "records" ? "Records" : "Species"}
+                            </button>
+                          ))}
+                        </div>
+                        {/* Export results - now works in both Records and Species mode, per direct
+                            feedback ("the export results disappears when records view is
+                            selected... make sure the export button stays"). Sits in the header row
+                            next to the view toggle either way - see runExport's own comment for how
+                            it branches on `viewMode`/`entityTab` to export whatever's currently
+                            shown. */}
+                        {isPublicUser ? (
+                          // `Tooltip` (not `TooltipTrigger`, which renders its own real
+                          // `<button>`) wrapping a real, enabled `Button` directly -
+                          // `TooltipTrigger` would nest one button inside another, invalid HTML.
+                          <Tooltip title="Create a free account to export results">
+                            <Button color="secondary" size="md" iconLeading={Download01} onPress={requestDlaAccess}>
+                              Export results
+                            </Button>
+                          </Tooltip>
+                        ) : (
+                          <Dropdown.Root>
+                            <Button color="secondary" size="md" iconLeading={Download01}>
+                              Export results
+                            </Button>
+                            <Dropdown.Popover placement="bottom right" className="w-48">
+                              <Dropdown.Menu aria-label="Export format">
+                                <Dropdown.Item id="csv" icon={FileDownload01} onAction={() => runExport("csv")}>
+                                  Export as CSV
+                                </Dropdown.Item>
+                                <Dropdown.Item id="excel" icon={File07} onAction={() => runExport("excel")}>
+                                  Export as Excel
+                                </Dropdown.Item>
+                                <Dropdown.Item id="pdf" icon={Printer} onAction={() => runExport("pdf")}>
+                                  Export as PDF
+                                </Dropdown.Item>
+                              </Dropdown.Menu>
+                            </Dropdown.Popover>
+                          </Dropdown.Root>
+                        )}
+                      </SectionHeader.Actions>
+                    </SectionHeader.Group>
+                  </div>
                 </SectionHeader.Root>
 
-                {/* ── Metrics section ── a real, working stat-tile switcher matching Figma's own
-                    "Metrics section" exactly (get_design_context on I209:27950, the 5-tab version
-                    superseding the earlier 4-tab 205:20764 one): plain buttons, not react-aria Tab
-                    semantics - Figma's own generated code uses <button> here, not a tab/tabpanel
-                    role, so this is composed from real tokens rather than forced through the DEW
-                    Tabs component.
-                    Every tile keeps an identical 1px border box at all times (colour toggles, the
-                    width never does) - the active tile's visible "underline" is a separate,
-                    absolutely-positioned 1.5px bar sitting on the tile's own bottom edge, not an
-                    actual border-width change. Flagged directly by the user off a screenshot: the
-                    selected tile was shifting vertically by ~1px on selection, because the old
-                    version toggled real border width between states (inactive: 1px on all 4 sides;
-                    active: 0px top/sides + 1.5px bottom only) - a different total border height per
-                    state, so the button's own box (and everything inside it) physically moved when
-                    switching. An absolutely-positioned indicator is taken out of normal flow
-                    entirely, so it can never affect the button's box height regardless of its own
-                    width - the standard fix for this exact "underline causes reflow" tab bug class,
-                    not specific to this codebase. Both border colours remain real @theme values
-                    with no matching @utility yet (same "reference the CSS variable directly"
-                    precedent as tree-view's connector line / progress bar's track). ── */}
-                <div className="flex w-full shrink-0 items-stretch">
-                  {entityTabs.map((t) => {
-                    const Icon = t.icon;
-                    const active = entityTab === t.id;
-                    return (
-                      <button
-                        key={t.id}
-                        type="button"
-                        onClick={() => setEntityTab(t.id)}
-                        className={cx(
-                          "relative flex flex-1 flex-col items-start gap-1 border bg-primary px-4 py-2 text-left",
-                          active ? "border-transparent" : "border-[var(--color-brand-100)]",
-                        )}
-                      >
-                        {active && <span className="absolute inset-x-0 -bottom-px h-[1.5px] bg-[var(--color-brand-500)]" />}
-                        <span className={cx("flex w-full items-center gap-1 text-sm", active ? "font-medium text-brand-tertiary" : "font-normal text-tertiary")}>
-                          <Icon className="size-4 shrink-0" />
-                          {t.label}
-                        </span>
-                        <span className={cx("text-lg font-medium", active ? "text-brand-secondary" : "text-tertiary")}>{countFor(t.id)}</span>
-                      </button>
-                    );
-                  })}
+                {/* ── View mode ── Species vs. the existing Projects/Events/Occurrences/
+                    Observations/Artefacts record-by-record view below, per direct request: "a
+                    toggle view to view results as a species mode or Projects, Events,
+                    Occurrences, Observations and Resources leaving what we have accomplished
+                    already." Everything below this toggle for "Records" is completely unchanged
+                    from before this feature - only "Species" is new. Both branches now share the
+                    same `p-6`/`px-6 pt-4` rhythm as the header above - the Records-mode metrics
+                    row used to have no horizontal padding of its own at all (flush to the
+                    viewport edge while the header and table content on either side of it were
+                    both padded), the concrete "padding is kind of broken" bug per direct
+                    feedback. */}
+                {viewMode === "species" && (
+                  <div className="min-h-0 flex-1 overflow-hidden p-6 pt-4">
+                    <SpeciesResultsView
+                      rows={filteredOccurrences}
+                      onRowClick={(o) => setSelectedRecord({ kind: "occurrence", occurrence: o })}
+                      onExportableRowsChange={setSpeciesExportRows}
+                    />
+                  </div>
+                )}
+
+                {viewMode === "records" && (
+                  <>
+                {/* ── Metrics section ── a real, working stat-tile switcher, originally built to
+                    match Figma's own "Metrics section" exactly (get_design_context on I209:27950)
+                    - plain buttons, not react-aria Tab semantics, matching Figma's own generated
+                    markup there. Now renders through the shared `MetricTile` (metric-tile.tsx),
+                    per direct feedback to keep this row and the Species view's own taxonomic-group
+                    tile row visually identical - a deliberate departure from that Figma frame's
+                    flush, un-rounded, colour-only-on-underline tiles (`MetricTile`'s selected state
+                    is a real border-colour + light-brand-background change instead, gapped and
+                    rounded, matching the "light brand BG, border colour = brand" card-selection
+                    language already established on the signup flow's affiliation cards) - see
+                    metric-tile.tsx's own doc comment for why this is bug-safe without the earlier
+                    absolutely-positioned underline-bar workaround. ── */}
+                <div className="flex w-full shrink-0 items-stretch gap-2 px-6 pt-4">
+                  {entityTabs.map((t) => (
+                    <MetricTile key={t.id} icon={t.icon} label={t.label} value={countFor(t.id)} active={entityTab === t.id} onClick={() => setEntityTab(t.id)} />
+                  ))}
                 </div>
+
+                {/* ── Shared search + "All Filters" row - a full-width search box with the "All
+                    Filters" button pinned to its right edge, per direct feedback ("the search bar
+                    shall be full width and the all filters button on the right. Do the same for
+                    records screen as well") - same full-width shape as Species mode's own toolbar
+                    (species-results.tsx). One search box and one filter panel trigger shared across
+                    all 5 entity tabs. Each tab's own `ResultsTable` below wires its internal search
+                    box to `recordsSearch` via `searchValue`/`onSearchChange`/`hideSearchBox`
+                    instead of rendering its own, and picks up `showHeaderColumnCustomizer` so its
+                    "Customise columns" trigger stays a floating icon over the table (opening the
+                    same right-hand SidePanel it always has) rather than an empty leftover row where
+                    its own search box used to be. ── */}
+                <div className="flex shrink-0 items-center gap-3 px-6 pt-4">
+                  <Input icon={SearchLg} placeholder="Search" value={recordsSearch} onChange={setRecordsSearch} className="flex-1" />
+                  <Button
+                    color="secondary"
+                    size="md"
+                    iconLeading={FilterLines}
+                    onPress={() => setRecordsFilterPanelOpen(true)}
+                    className="min-w-[220px] shrink-0 justify-center"
+                  >
+                    All Filters{recordsFilterCount > 0 ? ` (${recordsFilterCount})` : ""}
+                  </Button>
+                </div>
+
+                {recordsFilterPills.length > 0 && (
+                  <div className="flex shrink-0 flex-wrap items-center gap-1.5 px-6 pt-2">
+                    {recordsFilterPills.map((pill) => (
+                      <span
+                        key={pill.key}
+                        className="inline-flex items-center gap-1 rounded-full border border-secondary bg-secondary py-1 pr-1 pl-2.5 text-xs font-medium text-secondary"
+                      >
+                        {pill.label}
+                        <button
+                          type="button"
+                          onClick={pill.onRemove}
+                          aria-label={`Remove filter: ${pill.label}`}
+                          className="flex size-4 shrink-0 items-center justify-center rounded-full text-quaternary outline-focus-ring hover:bg-primary_hover hover:text-primary"
+                        >
+                          <Trash01 className="size-3" />
+                        </button>
+                      </span>
+                    ))}
+                    <Button color="link-gray" size="sm" onPress={clearRecordsFilters}>
+                      Clear all
+                    </Button>
+                  </div>
+                )}
 
                 {/* min-h-0 flex-1 overflow-hidden - takes exactly the space left over below the
                     toolbar pieces above; ResultsTable's own internal scroll region (its table
                     body, via Table's `bodyScrollable` prop) fills this and scrolls on its own,
-                    keeping the chip row/search box/pagination on-screen at all times. */}
+                    keeping the chip row/pagination on-screen at all times. */}
                 <div className="min-h-0 flex-1 overflow-hidden p-6 pt-4">
                   {entityTab === "projects" && (
                     <ResultsTable
@@ -1149,6 +1670,10 @@ function ObservationsSearch() {
                       searchText={(e) => `${e.code} ${e.name} ${e.org}`}
                       viewActionLabel="View Project"
                       onRowClick={(e) => setSelectedRecord({ kind: "event", event: e })}
+                      searchValue={recordsSearch}
+                      onSearchChange={setRecordsSearch}
+                      hideSearchBox
+                      showHeaderColumnCustomizer
                     />
                   )}
 
@@ -1163,6 +1688,10 @@ function ObservationsSearch() {
                       rowTextValue={(e) => e.name}
                       searchText={(e) => `${e.id} ${e.name} ${e.type} ${e.org}`}
                       onRowClick={(e) => setSelectedRecord({ kind: "event", event: e })}
+                      searchValue={recordsSearch}
+                      onSearchChange={setRecordsSearch}
+                      hideSearchBox
+                      showHeaderColumnCustomizer
                     />
                   )}
 
@@ -1178,6 +1707,9 @@ function ObservationsSearch() {
                       searchText={(o) => `${o.id} ${o.commonName} ${o.species} ${o.type}`}
                       showHeaderColumnCustomizer
                       onRowClick={(o) => setSelectedRecord({ kind: "occurrence", occurrence: o })}
+                      searchValue={recordsSearch}
+                      onSearchChange={setRecordsSearch}
+                      hideSearchBox
                     />
                   )}
 
@@ -1192,6 +1724,10 @@ function ObservationsSearch() {
                       rowTextValue={(o) => o.commonName}
                       searchText={(o) => `${o.id} ${o.commonName} ${o.species} ${o.observerName} ${o.type}`}
                       onRowClick={(o) => setSelectedRecord({ kind: "observation", observation: o })}
+                      searchValue={recordsSearch}
+                      onSearchChange={setRecordsSearch}
+                      hideSearchBox
+                      showHeaderColumnCustomizer
                     />
                   )}
 
@@ -1206,9 +1742,39 @@ function ObservationsSearch() {
                       rowTextValue={(r) => r.name}
                       searchText={(r) => `${r.id} ${r.name} ${r.recordName} ${r.attachedToConcept}`}
                       onRowClick={(r) => setArtefactIndex(filteredResources.findIndex((row) => row.id === r.id))}
+                      searchValue={recordsSearch}
+                      onSearchChange={setRecordsSearch}
+                      hideSearchBox
+                      showHeaderColumnCustomizer
                     />
                   )}
                 </div>
+
+                {/* ── "All Filters" panel - left-anchored, matching Species mode's own left panel
+                    (see species-results.tsx). Content is the currently active entity tab's own
+                    real column headers/values (`columnFilterSections`, built from that tab's own
+                    ColumnDef list - see buildColumnFilterSections above), per direct feedback that
+                    this panel must reflect the table's real columns rather than an invented facet
+                    set. Hierarchy is never a section (excluded in `filterableColumns`), per direct
+                    request. ── */}
+                <SidePanel
+                  isOpen={recordsFilterPanelOpen}
+                  onOpenChange={setRecordsFilterPanelOpen}
+                  title="All Filters"
+                  side="left"
+                  widthClassName="max-w-sm"
+                  headerActions={
+                    recordsFilterCount > 0 ? (
+                      <Button color="link-gray" size="sm" onPress={clearRecordsFilters}>
+                        Clear all
+                      </Button>
+                    ) : undefined
+                  }
+                >
+                  <Accordion variant="compact" items={columnFilterSections} />
+                </SidePanel>
+                  </>
+                )}
               </div>
             )}
 

@@ -520,7 +520,17 @@ function Picker({ current, setCurrent }: { current: number; setCurrent: (i: numb
   );
 }
 
-export default function PublicUserProto() {
+// GuestActionButton reads the active role via useSearchParams, so the whole page needs a Suspense
+// boundary to prerender (same pattern as the /pages/** shells).
+export default function PublicUserPage() {
+  return (
+    <Suspense fallback={null}>
+      <PublicUserProto />
+    </Suspense>
+  );
+}
+
+function PublicUserProto() {
   const [current, setCurrent] = useState(0);
   const [tab, setTab] = useState<Key>("overview");
   const [section, setSection] = useState<Section>("home");
