@@ -4,12 +4,13 @@ import type { FC, ReactNode } from "react";
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ArrowNarrowRight, BarChart01, CheckCircle, Clock, Feather, FileCheck02, FileLock01, FileSearch01, Folder, HomeLine, Map01, MinusCircle, Plus, SlashCircle01, Upload01, XCircle } from "@untitledui/icons";
+import { ArrowNarrowRight, BarChart01, CheckCircle, Clock, Edit05, Feather, FileCheck02, FileLock01, FileSearch01, Folder, HomeLine, Map01, MinusCircle, PauseCircle, Plus, Send01, SlashCircle01, Upload01, XCircle } from "@untitledui/icons";
 import { Button } from "@/components/base/buttons/button";
 import { CountBadge } from "@/components/base/badges/badges";
 import { Tooltip, TooltipTrigger } from "@/components/base/tooltip/tooltip";
 import { Breadcrumb } from "@/components/scaffold/breadcrumb";
-import { dlaStatusMeta, dlaStatusOrder, type DlaStatus } from "@/app/pages/_shared/dla/dla-data";
+import { ActionsGroup, downloadCsv } from "@/app/pages/_shared/agreement-actions";
+import { dlaStatusMeta, dlaStatusOrder, requestorName, type DlaStatus } from "@/app/pages/_shared/dla/dla-data";
 import { useDlas } from "@/app/pages/_shared/dla/dla-store";
 import { GlobalProjectSearch } from "@/app/pages/_shared/global-search";
 import { GuestActionButton } from "@/app/pages/_shared/guest-action-gate";
@@ -28,9 +29,12 @@ import { cx } from "@/utils/cx";
 // (app/pages/_shared/dsa/dsa-shell.tsx), which this file mirrors closely. See CONTEXT.md, "Data
 // Licencing Agreement (DLA)".
 //
-// Column 2 is the request status buckets (Active / Under Review / Rejected / Expired / Withdrawn)
-// as links back to the list - on the list it's the filter, on a deep dive or the form it shows
-// which bucket the request is in and gets you back out.
+// Column 2 is the request status buckets (see agreement-status.ts's shared DSA/DLA workflow -
+// Draft/Submitted/Under Review/Approved/Rejected/Active/On Hold/Closed/Cancelled) as links back to
+// the list - on the list it's the filter, on a deep dive or the form it shows which bucket the
+// request is in and gets you back out. Below the status list, an "Actions" group (Export CSV /
+// Create report) is folded in from /proto/collection-sidebar's own "Actions" baseline - see
+// CONTEXT.md.
 
 const sectionIcons: Record<string, FC<{ className?: string }>> = {
   Home: HomeLine,
@@ -44,11 +48,15 @@ const sectionIcons: Record<string, FC<{ className?: string }>> = {
 };
 
 const statusIcons: Record<DlaStatus, FC<{ className?: string }>> = {
-  active: CheckCircle,
+  draft: Edit05,
+  submitted: Send01,
   under_review: Clock,
+  on_hold: PauseCircle,
+  approved: CheckCircle,
   rejected: XCircle,
-  expired: SlashCircle01,
-  withdrawn: MinusCircle,
+  active: CheckCircle,
+  closed: SlashCircle01,
+  cancelled: MinusCircle,
 };
 
 const CURRENT_KEY = "dla";
@@ -83,6 +91,8 @@ function FooterLinks() {
 }
 
 // Column 2's content. Also rendered inside the mobile navigation menu, where the aside is hidden.
+// `Actions` (Export CSV / Create report) below the status list is folded in directly from
+// /proto/collection-sidebar's own "Actions" baseline (see CONTEXT.md) - real navigation, real data.
 function StatusNav({ activeStatus, onNavigate }: { activeStatus?: DlaStatus; onNavigate?: () => void }) {
   const roleHref = useRoleHref();
   const dlas = useDlas();
@@ -111,6 +121,15 @@ function StatusNav({ activeStatus, onNavigate }: { activeStatus?: DlaStatus; onN
           </Link>
         );
       })}
+      <ActionsGroup
+        onExportCsv={() =>
+          downloadCsv(
+            "data-licencing-agreements.csv",
+            ["ID", "Requestor", "Status", "Valid to"],
+            dlas.map((d) => [d.id, requestorName(d.requestor), dlaStatusMeta[d.status].tabLabel, d.validTo]),
+          )
+        }
+      />
     </div>
   );
 }

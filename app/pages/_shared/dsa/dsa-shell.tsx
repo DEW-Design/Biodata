@@ -4,11 +4,12 @@ import type { FC, ReactNode } from "react";
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ArrowNarrowRight, BarChart01, CheckCircle, Clock, Edit05, FileCheck02, FileLock01, FileSearch01, Feather, Folder, HomeLine, Map01, Plus, SlashCircle01, Upload01 } from "@untitledui/icons";
+import { ArrowNarrowRight, BarChart01, CheckCircle, Clock, Edit05, FileCheck02, FileLock01, FileSearch01, Feather, Folder, HomeLine, Map01, MinusCircle, PauseCircle, Plus, Send01, SlashCircle01, Upload01, XCircle } from "@untitledui/icons";
 import { Button } from "@/components/base/buttons/button";
 import { CountBadge } from "@/components/base/badges/badges";
 import { Tooltip, TooltipTrigger } from "@/components/base/tooltip/tooltip";
 import { Breadcrumb } from "@/components/scaffold/breadcrumb";
+import { ActionsGroup, downloadCsv } from "@/app/pages/_shared/agreement-actions";
 import { dsaStatusMeta, dsaStatusOrder, type DsaStatus } from "@/app/pages/_shared/dsa/dsa-data";
 import { useDsas } from "@/app/pages/_shared/dsa/dsa-store";
 import { GlobalProjectSearch } from "@/app/pages/_shared/global-search";
@@ -29,10 +30,12 @@ import { cx } from "@/utils/cx";
 // columns, with the restricted message in main. Header, rail and section switching follow
 // project-list/page.tsx; see CONTEXT.md, "List -> deep dive".
 //
-// Column 2 is the agreement status buckets (Active / Inactive / Revoked / Drafts) as links back to
+// Column 2 is the agreement status buckets (see agreement-status.ts's shared DSA/DLA workflow -
+// Draft/Submitted/Under Review/Approved/Rejected/Active/On Hold/Closed/Cancelled) as links back to
 // the list, on every DSA route: on the list it is the filter, on a deep dive or the form it shows
 // which bucket you are in and gets you back out. Links, not local state, so the bucket is in the
-// URL and back/forward work.
+// URL and back/forward work. Below the status list, an "Actions" group (Export CSV / Create
+// report) is folded in from /proto/collection-sidebar's own "Actions" baseline - see CONTEXT.md.
 
 const sectionIcons: Record<string, FC<{ className?: string }>> = {
   Home: HomeLine,
@@ -46,10 +49,15 @@ const sectionIcons: Record<string, FC<{ className?: string }>> = {
 };
 
 const statusIcons: Record<DsaStatus, FC<{ className?: string }>> = {
-  active: CheckCircle,
-  inactive: Clock,
-  revoked: SlashCircle01,
   draft: Edit05,
+  submitted: Send01,
+  under_review: Clock,
+  on_hold: PauseCircle,
+  approved: CheckCircle,
+  rejected: XCircle,
+  active: CheckCircle,
+  closed: SlashCircle01,
+  cancelled: MinusCircle,
 };
 
 const CURRENT_KEY = "dsa";
@@ -84,6 +92,8 @@ function FooterLinks() {
 }
 
 // Column 2's content. Also rendered inside the mobile navigation menu, where the aside is hidden.
+// `Actions` (Export CSV / Create report) below the status list is folded in directly from
+// /proto/collection-sidebar's own "Actions" baseline (see CONTEXT.md) - real navigation, real data.
 function StatusNav({ activeStatus, onNavigate }: { activeStatus?: DsaStatus; onNavigate?: () => void }) {
   const roleHref = useRoleHref();
   const dsas = useDsas();
@@ -112,6 +122,15 @@ function StatusNav({ activeStatus, onNavigate }: { activeStatus?: DsaStatus; onN
           </Link>
         );
       })}
+      <ActionsGroup
+        onExportCsv={() =>
+          downloadCsv(
+            "data-sharing-agreements.csv",
+            ["ID", "Data partner", "Status", "Valid to"],
+            dsas.map((d) => [d.id, d.partner, dsaStatusMeta[d.status].tabLabel, d.validTo]),
+          )
+        }
+      />
     </div>
   );
 }

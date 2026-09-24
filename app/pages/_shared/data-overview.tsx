@@ -201,7 +201,7 @@ export function DataOverviewContent({
 
   return (
     <>
-      <SectionHeader.Root className="p-6">
+      <SectionHeader.Root className="p-8">
         <SectionHeader.Group>
           <div className="flex flex-1 flex-col gap-1">
             <SectionHeader.Heading>Flora and Fauna Dashboard</SectionHeader.Heading>

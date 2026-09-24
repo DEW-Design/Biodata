@@ -228,8 +228,8 @@ export function DsaForm({
 }) {
   const [draft, setDraft] = useState<DsaDraft>(() => {
     if (!initial) return emptyDsaDraft();
-    const { partner, purpose, validFrom, validTo, agreementFile, requestedBy, custodian, sharedOffline, sharedViaSystem, systems } = initial;
-    return structuredClone({ partner, purpose, validFrom, validTo, agreementFile, requestedBy, custodian, sharedOffline, sharedViaSystem, systems });
+    const { partner, purpose, validFrom, validTo, agreementFile, requestedBy, custodian, sharedOffline, sharedViaSystem, systems, rejectionReason } = initial;
+    return structuredClone({ partner, purpose, validFrom, validTo, agreementFile, requestedBy, custodian, sharedOffline, sharedViaSystem, systems, rejectionReason });
   });
   const [tab, setTab] = useState<Key>("agreement");
   const [attempt, setAttempt] = useState<Attempt>(null);

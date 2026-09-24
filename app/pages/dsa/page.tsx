@@ -2,7 +2,7 @@
 
 import { Suspense } from "react";
 import { useSearchParams } from "next/navigation";
-import { DsaListContent } from "@/app/pages/_shared/dsa/dsa-list";
+import { DsaBanner, DsaListContent } from "@/app/pages/_shared/dsa/dsa-list";
 import { dsaStatusOrder, type DsaStatus } from "@/app/pages/_shared/dsa/dsa-data";
 import { DsaShell } from "@/app/pages/_shared/dsa/dsa-shell";
 
@@ -26,7 +26,7 @@ function DsaList() {
     <DsaShell activeStatus={status}>
       <div className="min-h-0 flex-1 overflow-y-auto">
         {/* key: switching bucket starts a fresh search and page. */}
-        <DsaListContent key={status} status={status} />
+        <DsaListContent key={status} status={status} banner={<DsaBanner />} />
       </div>
     </DsaShell>
   );

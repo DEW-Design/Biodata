@@ -38,7 +38,7 @@ import { Avatar } from "@/components/base/avatar/avatar";
 import { Tooltip, TooltipTrigger } from "@/components/base/tooltip/tooltip";
 import { Popover } from "@/components/base/select/popover";
 import { Badge, BadgeWithDot, CountBadge } from "@/components/base/badges/badges";
-import { Cell, Column, Row, Table, TableBody, TableHeader } from "@/components/base/table/table";
+import { Table, TableCard } from "@/components/application/table/table";
 import { Accordion } from "@/components/base/accordion/accordion";
 import { TreeView } from "@/components/application/tree-view/tree-view";
 import { Breadcrumb } from "@/components/scaffold/breadcrumb";
@@ -608,30 +608,57 @@ const measurements: Measurement[] = [
   { type: "Tail Length", value: "11", unit: "cm" },
 ];
 
+// Real `TableCard`/`Table` (components/application/table/table.tsx) - was built on the bare base
+// `Table` primitive, the exact "wrong table component" bug this whole pattern check exists to
+// catch. Real numbered pagination too, matching project-list-content.tsx's own precedent of
+// showing it even at a handful of rows (Previous/Next just render disabled) rather than skipping
+// it because the row count is small. No search box here, unlike the other list/sub-list
+// instances of this fix - this table is the *value* of a single "Measurements" field inside a
+// label/value row, not its own labeled section, and a search field wouldn't fit that slot
+// honestly; flagged rather than forced in silently.
 function MeasurementsTable() {
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(50);
+  const pageCount = Math.max(1, Math.ceil(measurements.length / pageSize));
+  const currentPage = Math.min(page, pageCount);
+  const paged = measurements.slice((currentPage - 1) * pageSize, currentPage * pageSize);
+
   return (
-    <Table aria-label="Measurements">
-      <TableHeader>
-        <Column isRowHeader>Type</Column>
-        <Column>Value</Column>
-        <Column>Unit</Column>
-      </TableHeader>
-      <TableBody items={measurements}>
-        {(row) => (
-          <Row id={row.type} textValue={row.type}>
-            <Cell>
-              <span className="text-sm font-medium text-primary">{row.type}</span>
-            </Cell>
-            <Cell>
-              <span className="text-sm text-secondary">{row.value}</span>
-            </Cell>
-            <Cell>
-              <span className="text-sm text-secondary">{row.unit}</span>
-            </Cell>
-          </Row>
-        )}
-      </TableBody>
-    </Table>
+    <TableCard.Root size="sm">
+      <Table aria-label="Measurements">
+        <Table.Header>
+          <Table.Head id="type" label="Type" isRowHeader />
+          <Table.Head id="value" label="Value" />
+          <Table.Head id="unit" label="Unit" />
+        </Table.Header>
+        <Table.Body items={paged}>
+          {(row) => (
+            <Table.Row id={row.type} textValue={row.type}>
+              <Table.Cell>
+                <span className="text-sm font-medium text-primary">{row.type}</span>
+              </Table.Cell>
+              <Table.Cell>
+                <span className="text-sm text-secondary">{row.value}</span>
+              </Table.Cell>
+              <Table.Cell>
+                <span className="text-sm text-secondary">{row.unit}</span>
+              </Table.Cell>
+            </Table.Row>
+          )}
+        </Table.Body>
+      </Table>
+      <TableCard.PaginationNumbered
+        page={currentPage}
+        pageCount={pageCount}
+        onPageChange={setPage}
+        pageSize={pageSize}
+        onPageSizeChange={(size) => {
+          setPageSize(size);
+          setPage(1);
+        }}
+        totalCount={measurements.length}
+      />
+    </TableCard.Root>
   );
 }
 
@@ -726,7 +753,10 @@ const observationAccordionItems = [
         <DetailRow label="Regeneration" value="-" />
         <div className="flex flex-col gap-1 sm:flex-row sm:gap-4">
           <span className="w-56 shrink-0 text-sm text-tertiary">Measurements</span>
-          <div className="flex-1 overflow-hidden rounded-lg border border-secondary">
+          {/* No extra wrapper - `TableCard.Root` already provides its own card chrome
+              (rounded-xl, ring-1, shadow-xs). The old wrapper's own border/radius nested around
+              it, doubling the border line. */}
+          <div className="flex-1">
             <MeasurementsTable />
           </div>
         </div>

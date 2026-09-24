@@ -39,7 +39,7 @@ function EditDsa() {
           }}
           onSubmit={(draft) => {
             saveDsa(draft, "submit", dsa.id);
-            toast.success(dsa.status === "draft" ? "Agreement created" : "Agreement updated", { description: dsa.id });
+            toast.success(dsa.status === "draft" ? "Agreement submitted" : "Agreement updated", { description: dsa.id });
             router.push(detailHref);
           }}
         />

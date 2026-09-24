@@ -2,7 +2,7 @@
 
 import { Suspense } from "react";
 import { useSearchParams } from "next/navigation";
-import { DlaListContent } from "@/app/pages/_shared/dla/dla-list";
+import { DlaBanner, DlaListContent } from "@/app/pages/_shared/dla/dla-list";
 import { dlaStatusOrder, type DlaStatus } from "@/app/pages/_shared/dla/dla-data";
 import { DlaShell } from "@/app/pages/_shared/dla/dla-shell";
 
@@ -27,7 +27,7 @@ function DlaList() {
     <DlaShell activeStatus={status}>
       <div className="min-h-0 flex-1 overflow-y-auto">
         {/* key: switching bucket starts a fresh search and page. */}
-        <DlaListContent key={status} status={status} />
+        <DlaListContent key={status} status={status} banner={<DlaBanner />} />
       </div>
     </DlaShell>
   );

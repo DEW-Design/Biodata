@@ -1,9 +1,11 @@
 "use client";
 
 import { useState } from "react";
+import { SearchMd } from "@untitledui/icons";
 import { Avatar } from "@/components/base/avatar/avatar";
 import { Badge, CountBadge } from "@/components/base/badges/badges";
 import type { BadgeColor } from "@/components/base/badges/badges";
+import { Input } from "@/components/base/input/input";
 import { Table, TableCard } from "@/components/application/table/table";
 import { SectionHeader } from "@/components/application/section-headers/section-headers";
 import { useRoleHref } from "@/lib/use-role-href";
@@ -109,14 +111,19 @@ export const projects: Project[] = [
 
 export function ProjectListContent() {
   const roleHref = useRoleHref();
-  // Real, working pagination state - `pageCount` is 1 with this example's 4 rows, so Previous/Next
-  // both render disabled rather than faked as active. The numbered footer is the same one the
-  // Explore results tables use, so both Projects tables read as one component.
+  // Search, then real, working pagination state - matching dsa-list.tsx/dla-list.tsx's own
+  // "Section header, then search, then table" shape (CONTEXT.md's non-negotiable table pattern) -
+  // this list was missing the search step. `pageCount` is 1 with this example's 4 rows, so
+  // Previous/Next both render disabled rather than faked as active. The numbered footer is the
+  // same one the Explore results tables use, so both Projects tables read as one component.
+  const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(50);
-  const pageCount = Math.max(1, Math.ceil(projects.length / pageSize));
+  const query = search.trim().toLowerCase();
+  const rows = query ? projects.filter((p) => [p.code, p.name, p.org, p.contributorName].some((v) => v.toLowerCase().includes(query))) : projects;
+  const pageCount = Math.max(1, Math.ceil(rows.length / pageSize));
   const currentPage = Math.min(page, pageCount);
-  const pagedProjects = projects.slice((currentPage - 1) * pageSize, currentPage * pageSize);
+  const pagedProjects = rows.slice((currentPage - 1) * pageSize, currentPage * pageSize);
 
   return (
     <>
@@ -143,7 +150,23 @@ export function ProjectListContent() {
       {/* p-6, not px-6 pb-6 - the table sat flush against SectionHeader's own bottom
           border/padding with no breathing room above it. Flagged directly by the user off a
           screenshot: "see how close the table is to the section header?" */}
-      <div className="p-6">
+      <div className="flex flex-col gap-4 p-6">
+        <div className="w-full max-w-sm">
+          <Input
+            aria-label="Search projects"
+            size="sm"
+            icon={SearchMd}
+            placeholder="Search ID, name, organisation or contributor"
+            value={search}
+            onChange={(value) => {
+              setSearch(value);
+              setPage(1);
+            }}
+          />
+        </div>
+        {rows.length === 0 ? (
+          <p className="py-6 text-sm text-tertiary">No projects match your search.</p>
+        ) : (
         <TableCard.Root>
           <Table aria-label="Projects">
             <Table.Header>
@@ -206,9 +229,10 @@ export function ProjectListContent() {
               setPageSize(size);
               setPage(1);
             }}
-            totalCount={projects.length}
+            totalCount={rows.length}
           />
         </TableCard.Root>
+        )}
       </div>
     </>
   );

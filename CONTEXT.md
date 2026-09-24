@@ -27,6 +27,46 @@ matter how complete it otherwise looks.
   scoped to `Components` only.)
 - **The DEW/Scaffold line holds.** No real component under `components/base/**` was patched to
   serve a doc-only or Scaffold-only need. See "DEW vs. Scaffold" below.
+- **Every collection/list screen is Section header, then search, then table - non-negotiable.**
+  `SectionHeader.Root/Group/Heading/Subheading/Actions` (title, a real `CountBadge`, a subheading,
+  the primary create action) first, then a real `Input` search field, then `TableCard.Root` wrapping
+  `Table` with real `TableCard.PaginationNumbered` - never a hand-rolled header, never a bare
+  unpaginated table. `app/pages/_shared/dsa/dsa-list.tsx` and `app/pages/_shared/dla/dla-list.tsx`
+  are the canonical reference - both already match this exactly. Caught twice in one pass, both
+  directly by the user: `/proto/collection-sidebar`'s own column 3 had hand-rolled its own `<h1>` +
+  `CountBadge` header and a bare, unpaginated `Table` instead of pulling in the real components -
+  fixed by deleting the reimplementation and rendering the real `DsaListContent`/`DlaListContent`
+  directly, not a lookalike. The same sweep found `app/pages/_shared/project-list-content.tsx` -
+  a real, live, shared production screen - missing the search step entirely; fixed the same
+  session. Check this on sight any time a collection/list screen is touched, the same way a
+  `font-barlow` gap or a dead utility class gets checked on every new component.
+  - **Applies at whatever scale the table actually is, confirmed directly by the user rather than
+    left as an exemption.** A first pass read a small table embedded inside a record's own detail/
+    tabbed content - `dsa-detail.tsx`'s "Systems that receive data through the API" table and
+    `observation-detail/page.tsx`'s `MeasurementsTable` - as a different, smaller pattern exempt
+    from this contract. Asked directly; the answer was no, they follow it too. Both fixed: `dsa-
+    detail.tsx`'s Systems table gained a `CountBadge` next to its own label, a real search `Input`,
+    and real `TableCard.PaginationNumbered` (still no page-level `SectionHeader` - that component
+    is sized for a whole screen, not a sub-card inside a tab, so the count+label pairing stands in
+    for it at this scale). `observation-detail/page.tsx`'s `MeasurementsTable` was rebuilt on the
+    real `TableCard`/`Table` (it had been on the bare `components/base/table/table.tsx` primitive -
+    the exact "wrong table component" bug this whole contract exists to catch) with real numbered
+    pagination; its own wrapping `<div>` had a redundant `border`/`rounded-lg` that doubled up
+    against `TableCard.Root`'s own `ring-1`/`rounded-xl` chrome once the real component was in
+    place - removed. One search box was deliberately left out: `MeasurementsTable` renders as the
+    *value* of a single "Measurements" field in a label/value row, not its own labeled section, and
+    a search field doesn't fit that slot honestly - flagged here rather than forced in silently.
+    The takeaway for the next screen this comes up on: don't assume a table's context makes it
+    exempt - ask, the way this one did, rather than deciding unilaterally either way.
+  - **Two known items deliberately left alone, both confirmed directly:** `app/pages/dashboard/
+    option-2/data-overview.tsx`'s `ProjectsTable` and `app/pages/project-list/option-2/page.tsx`
+    stay untouched - both sit inside the `option-2` top-nav shell this file already documents
+    elsewhere as "an inert reference, not a maintained parallel surface," and that precedent holds
+    here too. `app/pages/projects/page.tsx` and `app/pages/projectsv2/page.tsx` - both render a
+    table with neither a `SectionHeader` nor search, aren't linked from anywhere in the app, and
+    aren't otherwise documented in this file - are confirmed stale/superseded drafts, safe to leave
+    as-is; not brought in line with this contract and not deleted either, since deletion wasn't
+    asked for.
 - **Figma is the source of truth wherever a frame exists.** No colour, spacing, or state was
   invented or left un-checked against Figma when a reference frame was available. See below.
 - **A lo-fi/wireframe is a starting point, never the literal layout to ship.** Whether it's a
@@ -4014,3 +4054,334 @@ user owns and edits directly, not something to restructure without asking.
     PDF + Withdraw as toolbar peers; Expired keeps its Renew Licence banner CTA with no Withdraw (correctly
     gated off once a request is no longer Active/Under Review); a full Approve action from the new toolbar
     button still correctly moves a request to Active. Zero console errors across every scenario checked.
+- **Sept 24 2026: `AlertFullWidth` (`components/application/alerts/alerts.tsx`) shipped a real bug that had
+  already landed in production - a stray border/background line under every "contained card" instance,
+  caught via `/proto/collection-sidebar`'s own new banners** (see the "Section header, then search, then
+  table" contract above for that build) but not introduced by them. The component's outer wrapper always
+  renders `border-t border-primary bg-secondary md:border-t-0 md:border-b` - correct for its default
+  full-viewport-width banner look, but every caller that overrides the inner `className` to look like a
+  self-contained bordered card (`dla-detail.tsx`'s 4 status banners: Under Review/Rejected/Withdrawn/
+  Expired, all using `className="max-w-none rounded-lg border border-{color}-200 ..."`) still had the
+  outer wrapper's own flat, unrounded `bg-secondary`/`border-b` bleeding out underneath the rounded card -
+  flagged directly by the user off a screenshot ("what's with the stroke underneath?"). Fixed with a new,
+  additive `contained?: boolean` prop (default `false`, so the component's default full-bleed look is
+  unchanged for any caller that doesn't pass it) - when `true`, the outer wrapper drops its own border/
+  background classes entirely, leaving the caller's own `className` fully in charge of the shape. Checked
+  every real consumer before calling it fixed, per the sibling-file-grep rule: `dla-detail.tsx`'s 4
+  instances and the new `/proto/collection-sidebar` banners all needed `contained` added (done);
+  `dashboard-options`' `ContinueBanner` (`className="px-6"`, no border/rounding) and `observations/
+  page.tsx`'s Level 1/2 banner (no `className` override at all) both genuinely want the default
+  full-bleed look and were correctly left untouched. Verified live via `getComputedStyle` on both the
+  proto's own banner and a real `dla-detail.tsx` "Under Review" banner - outer wrapper's
+  `border-bottom-width`/`background-color` both compute to `0px`/transparent post-fix, only the inner
+  card's own `1px` border remains. `tsc --noEmit`/`eslint` clean on all three touched files.
+  - **Superseded for `/proto/collection-sidebar`'s own two banners, same day: `AlertFullWidth` was
+    the wrong component for the job entirely, not just visually broken - "are you sure the alert
+    component is the correct component? ... this is a classic violation of the design system,"**
+    per direct feedback. Right the first time: `TaskItem` (`app/pages/_shared/home-dashboard.tsx`)
+    already settled this exact question once, in its own doc comment - "The banner (`AlertFullWidth`,
+    color="warning") is real but deliberately not used here: neither DLA requests nor species
+    nominations need the user's action right now - both are 'submitted, waiting on someone else's
+    review' - so an 'Action required' banner would misrepresent their actual state." An `Alert`
+    communicates something about *this page's own current state* (every legitimate `AlertFullWidth`
+    use in this codebase does exactly that: `dla-detail.tsx`'s own record-status banners, `observations`'
+    own data-scope notice, `dashboard-options`' own continue-task strip) - a computed fact about
+    *other* records, with its own status and a link elsewhere, is a `TaskItem`, not an alert.
+    `TaskItem` was exported (was file-local to `home-dashboard.tsx`) and given one additive prop,
+    `onActionClick` (alongside its existing `actionHref`), for a second real consumer whose action
+    switches the current page's own view instead of navigating away - both are now real, working
+    call sites, not a fork. `/proto/collection-sidebar`'s "Needs attention" and "Nearest to expiry"
+    are now real `TaskItem` cards (a status `Badge` sourced directly from `dsaStatusMeta`/
+    `dlaStatusMeta`, not invented copy) - the `AlertFullWidth`-specific `contained`/`actionType`
+    fixes above no longer apply to this file at all, since it doesn't use the component any more;
+    they stay correct and in place for `dla-detail.tsx`'s own legitimate usage. Verified `tsc
+    --noEmit`/`eslint` clean and live: both cards render as real bordered `TaskItem` rows with a
+    real status badge, "Review drafts"/"Review requests" switch the page's own status view with no
+    navigation, "View agreement"/"View request" navigate to the real record - zero console errors.
+- **Sept 24 2026: `/proto/collection-sidebar` consolidated to a single direction, per direct
+  instruction ("Let the 'Actions' become the baseline... do not do anything to it").** The
+  "Actions" variant (from the round above) is now the sole Baseline - `QuickCreateButton` and the
+  plain `StatusNav`-mirror-only variant are dropped, not kept as dead code, since "Actions" had
+  already won on its own merits across several rounds of feedback rather than being one option
+  among equals. `ProtoPicker`/`VARIANTS` are gone too - a comparison widget with one entry compares
+  nothing; reintroduce it once a real second variant exists (see below). Verified live: no picker,
+  the real `Actions` group (Export CSV/Create report) and both `TaskItem` banners still render and
+  work identically to before, `tsc --noEmit`/`eslint` clean.
+  - **Two real directions queued for the next round, grounded in Mobbin research, not yet built -
+    per direct instruction to research before building.** (1) **Status as tabs above the table**
+    instead of the `StatusNavColumn` list - real precedent: Xero's "Quotes" (All/Draft/Sent/
+    Declined/Accepted/Invoiced as tabs directly under the page title) and Remote's "Team's
+    expenses" (Pending/Approved/Declined/All requests, same placement) - a well-established, common
+    pattern, not a novel idea. (2) **A real view switcher in column 2** once status moves out of
+    it - not another status list, but a genuinely different lens, the same shape as Home's own My
+    BioData / Flora and Fauna Dashboard split. Employment Hero's "Goals" page (My Goals / Team
+    Goals / Company Goals / Search Goals as tabs) is the closest real precedent for this exact
+    personal-vs-org-wide axis. For DLA specifically, "My Requests" (submitted by the current user)
+    vs. "All Requests" (every request, the admin/reviewer view) is a real, domain-accurate split - a
+    request has a genuine submitter and a genuine reviewer, unlike a cosmetic re-grouping. DSA has
+    no equivalent submitter/reviewer split (a single-persona, admin-authored collection), so whether
+    it needs an equivalent switcher at all, and on what axis, is still an open question - not
+    assumed symmetric with DLA just because the two collections share a shell shape.
+- **Sept 24 2026: `/proto/collection-sidebar` grew the two queued directions above into real,
+  side-by-side variants, per direct instruction ("make actions the baseline and come up with some
+  variants from the above patterns") - `ProtoPicker` is back, comparing Baseline / Status Tabs / My
+  Items.** Both real, shipped list components (`app/pages/_shared/dsa/dsa-list.tsx`,
+  `app/pages/_shared/dla/dla-list.tsx`) gained two more additive, opt-in props alongside their
+  existing `banner` - `statusTabs?: ReactNode` (rendered directly under `SectionHeader.Root`,
+  before the empty-state/table branch) and `extraFilter?: (record) => boolean` (applied to the
+  status bucket before search/pagination ever see it, so the header's count badge, the empty
+  state, and pagination all stay honest about what's actually showing). Both default to
+  `undefined` - every real `/pages/dsa` and `/pages/dla` route is unaffected.
+  - **The corrected finding from the round above, verified directly rather than left as an
+    assumption:** DSA does have a real submitter field after all - `dsa-data.ts`'s own seed data
+    gives every agreement a real `requestedBy: DsaContact`, including Olivia Wyatt, the same
+    placeholder-person convention DLA's `requestor` already uses. So "My Agreements"/"All
+    Agreements" is exactly as real for DSA as "My Requests"/"All Requests" is for DLA - the earlier
+    "still an open question" note was answered by actually reading the data, not by guessing.
+  - **Status Tabs**: a real horizontal `Tabs`/`TabList type="underline" size="md"` row (matching
+    project-detail's own `ContentTabs` usage exactly, not a bespoke build) replaces the
+    `StatusNavColumn` list - column 2 becomes Actions alone, with no `mt-4 border-t` floating rule
+    now that it's the only thing there (`DsaActions`/`DlaActions` gained a `withTopRule?: boolean`
+    prop, default `true`, so Baseline's own layout is untouched).
+  - **My Items**: a real vertical `Tabs`/`TabList orientation="vertical" type="button-brand"
+    fullWidth` switcher in column 2 (`ScopeSwitcher`) - the exact same component/type/orientation
+    as Home's own My BioData / Flora and Fauna Dashboard split (`app/pages/dashboard/page.tsx`),
+    not a lookalike built from scratch. "Mine" filters to whichever contact's name matches "Olivia
+    Wyatt" (`contactName(d.requestedBy)` for DSA, `requestorName(d.requestor)` for DLA) - the same
+    "current signed-in user" placeholder this build already uses everywhere else. This variant
+    carries Status Tabs' own change forward (status still needs a home once the switcher takes
+    column 2), rather than stacking two nav lists.
+  - **A real, previously-unnoticed bug in the shipped `Tab` component was caught during this
+    build's own live verification, not invented for the lab: `{badge && (<Badge>...)}` in
+    `components/application/tabs/tabs.tsx` is the classic React `0 &&` gotcha** - a real, valid
+    `badge={0}` (an empty status bucket shown as a tab, e.g. "Revoked 0" on this exact screen) is
+    falsy, so `&&` rendered the bare text "0" glued to the label instead of a zero-count pill,
+    visible as "Revoked0" with no space. Fixed to `{badge != null && badge !== "" && (...)}`,
+    correcting every consumer of `Tab`'s `badge` prop at once (this lab's Status Tabs, and any
+    future real page that shows a zero-count status as a tab), not just this lab's own usage.
+    Grepped for the same `count &&`/`.length &&` shape elsewhere in the codebase - no other
+    instance found.
+  - Verified `tsc --noEmit`/`eslint` clean on every touched file
+    (`app/proto/collection-sidebar/page.tsx`, `dsa-list.tsx`, `dla-list.tsx`,
+    `components/application/tabs/tabs.tsx`), then a live Playwright pass (installed for the
+    session, removed after, `package.json`/`package-lock.json` confirmed unchanged): all three
+    variants render for both DSA and DLA with zero console errors; Status Tabs' own tab click
+    correctly filters the table (Drafts -> 1 row) with the corrected zero-count "Revoked 0" pill
+    rendering properly; My Items' scope switch correctly narrows DSA to Olivia Wyatt's one active
+    agreement (count badge 5 -> 1) and correctly shows DLA's own real, honest empty state ("No
+    active agreements") for "My Requests" x Active, since Olivia Wyatt has no active DLA record in
+    the seed data - the `extraFilter` -> empty-state path works end to end, not just the row-count
+    path. `ProtoPicker` itself moved into the header (not a fixed bottom-right overlay) since that
+    corner is already claimed by the dev-only Agentation feedback toolbar and `RoleSwitcher`'s FAB.
+- **Sept 24 2026: Unified DSA/DLA status model, rolled straight into production per direct
+  instruction ("it's sitting in a good spot now... let's roll these updates into production").**
+  Source: a real business reference sheet ("DLA/DSA - users Workflow Status", a screenshot supplied
+  directly) plus a follow-up Slack thread (Suresh Saicharan asking, Adith Mohan/Uma Shankar
+  answering) that resolved every open question against it. DSA and DLA used to run two
+  independently-invented status sets (DSA: Active/Inactive/Revoked/Draft; DLA: Active/Under Review/
+  Rejected/Expired/Withdrawn) - both now share one real workflow, `app/pages/_shared/
+  agreement-status.ts`'s `AgreementStatus`: **Draft -> Submitted -> Under Review -> (Approved /
+  Auto Approve -> Active) or Rejected; Under Review <-> On Hold; Active -> Closed (auto on expiry,
+  or manual); Cancelled reachable from anywhere before Closed.**
+  - **Every open question from the sheet was answered directly, not guessed** - each one changed
+    the model from what the sheet's numbering alone would have implied:
+    1. **Approved is a real, visible status, not a momentary transition.** "If the Start Date of
+       the DSA is in the future, the status shall remain as 'Approved'/'Auto Approved' until the
+       date before it becomes active." Confirmed with a real worked example: DSA-2026-01415/
+       DLA-2026-00510 both carry a `validFrom` in the future and correctly stay `approved` rather
+       than jumping straight to `active`.
+    2. **Submitted and Under Review are genuinely distinct, and the transition is a manual reviewer
+       action** ("Once a reviewer clicks on a submitted request it changes to Under Review... shall
+       assist reporting and notifications to reviewers for action") - not automatic, so both DSA
+       and DLA gained a real "Start Review" button, not a same-step alias.
+    3. **On Hold only applies during review, never once Active** ("will be used by reviewer to hold
+       the review in cases where there is pending info from requestor... for active requests only
+       cancel option can be used"). Both detail pages only ever show "Put On Hold"/"Resume Review"
+       on Under Review, never on Active - Active's only workflow action is Cancel.
+    4. **Cancelled is one status, not two** ("I can cancel my own DSA, Admin can also cancel my
+       DSA") - who cancelled it is an audit detail this build doesn't track, not a second status;
+       the button's own color (`link-destructive` vs `secondary-destructive`) still varies by
+       whether it's the page's only action or a peer among others, same convention DLA's own
+       Withdraw button already used.
+    5. **"Revoke" is not a real status at all - confirmed legacy terminology** ("Revoke will be
+       called cancelled. That term was used before WF stages were finalised.") DSA's old `revoked`
+       bucket is gone entirely, folded into `cancelled` - not kept as a separate "compliance" axis,
+       which is what the sheet's own side-annotation had originally implied before this was asked.
+    6. **Sequence #7 is confirmed missing on purpose** ("Yes there was something there that was
+       removed") - nothing invented to fill the gap.
+  - **`agreement-status.ts`** is the single shared source: `AgreementStatus`, `agreementStatusOrder`
+    (draft/submitted/under_review/approved/rejected/active/on_hold/closed/cancelled - the sheet's
+    own sequence order, not an invented "healthiest first" ordering), `agreementStatusMeta`
+    (label/tabLabel/badgeColor, reusing this build's existing 5-colour status palette - gray/brand/
+    warning/error/success - rather than introducing new ones no other status badge in this codebase
+    uses), and `effectiveStatus()` - the pure function computing Approved -> Active and Active ->
+    Closed once a real date passes. `dsa-data.ts`/`dla-data.ts` now `export type`/`export` alias
+    `DsaStatus`/`DlaStatus` and `dsaStatusOrder`/`dsaStatusMeta`/`dlaStatusOrder`/`dlaStatusMeta`
+    straight from this file, so every existing call site across both features kept working
+    unchanged - only the literal status values themselves needed updating, not every import.
+  - **A real, previously-unnoticed `useSyncExternalStore` bug was caught live during verification,
+    not shipped**: the first pass applied `effectiveStatus` inside `getSnapshot` itself
+    (`() => resolve(dsas)`), which maps over the array and returns a brand-new reference on every
+    single call - `useSyncExternalStore` requires a referentially stable snapshot between renders
+    when nothing has changed, so this produced React's own "the result of getSnapshot should be
+    cached to avoid an infinite loop" warning immediately followed by "Maximum update depth
+    exceeded," crashing `/pages/dsa` and `/pages/dla` outright (confirmed via `page.on("pageerror")`
+    in a live Playwright pass, not visible from a code read). Fixed by moving the resolution into
+    `commit()` - a cached `resolved`/`seedResolved` reference that only recomputes when the store
+    actually changes, exactly the pattern `useSyncExternalStore` expects. Fixed identically in both
+    `dsa-store.ts` and `dla-store.ts`, the same "a bug caught in one file is often shipped in
+    both" convention this file already applies elsewhere.
+  - **DSA gained the full review pipeline it never had** (previously Draft -> Active in one step,
+    no reviewer step at all) - `dsa-store.ts` gained `startDsaReview`/`holdDsaReview`/
+    `resumeDsaReview`/`approveDsa`/`rejectDsa`/`cancelDsa` (replacing the old single `revokeDsa`).
+    `approveDsa` needs no extra input at all, unlike DLA's own Approve - a DSA's `validFrom`/
+    `validTo` are already fixed from the agreement's own form, so approving just compares that
+    date to today and lands on `approved` or `active` directly. DSA has no separate requester-vs-
+    reviewer persona to gate any of this behind - `DsaShell` already replaces all of `main` with a
+    restricted message for every role but the one that can manage DSAs at all
+    (`useFeatureAccess("dsaManagement")`), so every action is unconditionally available once
+    `DsaDetail` renders; `DsaDetail`'s own toolbar is now a full set of direct buttons (matching
+    DLA's own "every action in the toolbar, always visible" convention from the Sept 23 follow-up)
+    instead of hiding Edit/Revoke behind a `Dropdown`.
+  - **DLA gained two real capabilities it never had**: a genuine **Draft** status (the wireframe's
+    own form had no draft step at all - `dla-store.ts` gained `saveDla`, mirroring `saveDsa`
+    exactly, and a brand-new `app/pages/dla/[id]/edit/page.tsx` route, since a draft has to be
+    editable to ever get submitted) and **Submitted as its own stage, distinct from Under Review**
+    (previously `submitDla` put a new request straight into `under_review`). `dla-form.tsx`'s
+    `DlaForm` gained the same `initial`/`onSaveDraft` split `DsaForm` already had (`renewFrom`
+    stays a separate, additive case - pre-filling a *new* record from a closed one's fields, not
+    editing that closed record in place) plus a `mode: "draft" | "submit"` on `validateDla` (a
+    draft only needs the requestor's own organisation, the same "just enough to identify it" rule
+    DSA's own draft mode already uses). `dla-store.ts` gained `startDlaReview`/`holdDlaReview`/
+    `resumeDlaReview`/`deleteDla` (for a deleted draft) alongside the existing `approveDla`/
+    `rejectDla`, and `cancelDla` replacing the old `withdrawDla`.
+  - **A shared `RejectModal`** (`app/pages/_shared/agreement-modals.tsx`) replaces DLA's own
+    previously-local one - DSA needed the identical "Under Review -> Rejected, reason required"
+    modal once it gained the same review step, so it's now one real component both import instead
+    of two copies of the same ~35 lines.
+  - **Status icons and list-bucket subheadings/empty-state copy rewritten for all 9 statuses** in
+    both `dsa-shell.tsx`/`dla-shell.tsx` (icons: `Edit05`/`Send01`/`Clock`/`PauseCircle`/
+    `CheckCircle`/`XCircle`/`CheckCircle`/`SlashCircle01`/`MinusCircle`, the same set both shells
+    now share) and `dsa-list.tsx`/`dla-list.tsx`/`dsa-detail.tsx`/`dla-detail.tsx`'s own
+    subheading/emptyCopy maps - no status left with stale Active/Inactive/Revoked or Active/Under
+    Review/Rejected/Expired/Withdrawn-era copy.
+  - **Seed data enriched with real examples of every new status**, not left undemonstrated: DSA
+    gained 6 new agreements (Submitted/Under Review/On Hold/Approved/Rejected/Cancelled, its 2 old
+    `inactive` rows converted to `closed` since both already had a `validTo` in the past) and DLA
+    gained 4 (Draft/Submitted/On Hold/Approved, its old `expired`/`withdrawn` rows renamed
+    `closed`/`cancelled` directly). Every new record follows this build's own established
+    conventions - real BDBSA partner orgs, the Olivia Wyatt/Maya Dewitt/Phoenix Baker/Lana Steiner
+    placeholder persona set, real South Australian national parks for DLA locations - never
+    invented names or orgs.
+  - `/proto/collection-sidebar`'s own `dsaStatusIcons`/`dlaStatusIcons` maps (built for the earlier,
+    narrower status sets) now point at one shared 9-status `statusIcons` map, matching the two real
+    shells exactly - the lab would otherwise have failed to type-check the moment `DsaStatus`/
+    `DlaStatus` became aliases of the same shared `AgreementStatus` union.
+  - Verified `tsc --noEmit`/`eslint` clean on every touched/new file, then an extensive live
+    Playwright pass covering both features end to end: all 9 status buckets and their real seeded
+    counts confirmed on both `/pages/dsa` and `/pages/dla`; a full DSA transition walk (Submitted ->
+    Start Review -> Under Review -> Put On Hold -> On Hold -> Resume -> Under Review -> Approve ->
+    correctly landed on Approved, since that record's own start date is in the future) plus a
+    separate Reject flow (Under Review -> a required reason -> Rejected) and a full create -> Save
+    draft flow; the identical DLA transition walk, including the Approve modal's own live copy
+    correctly announcing "moves to Approved and becomes Active on [date]" before confirming, and a
+    full create -> Save draft -> Edit draft -> Add Location -> Back flow exercised through real
+    in-app navigation (not repeated `page.goto()` calls, which would have reset the in-memory store
+    - the same "client nav keeps state, a full reload resets it" convention this build's stores
+    already document) - zero console errors across every scenario. Chromium/Playwright installed
+    for the session only, removed after; `package.json`/`package-lock.json` confirmed unchanged.
+- **Sept 24 2026: `/proto/collection-sidebar`'s "Actions" group and its two column-3 banners
+  folded into the real `/pages/dsa`/`/pages/dla` shells, per direct instruction ("we should fold
+  actions into production, please").** Only the unified status model had been rolled into
+  production so far - the Baseline variant's own "Actions" (Export CSV / Create report, plus the
+  "Drafts to finish"/"Requests awaiting review" and "nearest to expiry" `TaskItem` banners) was
+  still lab-only until this pass, confirmed by grepping `dsa-shell.tsx`/`dla-shell.tsx` for
+  "Export CSV" before starting (zero hits).
+  - **New shared file `app/pages/_shared/agreement-actions.tsx`** - `downloadCsv` and
+    `ActionsGroup` (the "Actions" label + Export CSV + Create report block), ported verbatim from
+    the proto's own styling (`shortcutRowClassName`, the `border-t` divider). Each shell still
+    supplies its own CSV export via `onExportCsv`, since the columns genuinely differ between an
+    agreement and a request - only the wrapper/label/button styling and the "Create report" toast
+    are shared.
+  - **`nearestToExpiry`** (the 60-day-window helper behind the expiry banner) moved from the proto
+    into `agreement-status.ts`, alongside `effectiveStatus` - the natural shared home now that a
+    real production consumer exists too, not just the lab.
+  - **`StatusNav` in both shells renders `<ActionsGroup>` directly after the status list**, inside
+    the same `<div className="flex flex-col gap-1">` root (not a sibling under the aside's own
+    `justify-between`, which would have pushed it to the bottom next to `FooterLinks` instead of
+    right under the status list) - real navigation/real data throughout, no lab-only local state:
+    `onExportCsv` calls the real `downloadCsv` against `useDsas()`/`useDlas()`'s own live array.
+  - **`DsaBanner`/`DlaBanner` exported from `dsa-list.tsx`/`dla-list.tsx`** (co-located with the
+    `banner` prop they fill, per that file's own convention) instead of staying page-local like the
+    proto's version - both are now fully self-contained (`useDsas()`/`useDlas()`, `useRoleHref()`
+    internally), so `app/pages/dsa/page.tsx`/`app/pages/dla/page.tsx` only need
+    `banner={<DsaBanner />}`/`banner={<DlaBanner />}`, no props to thread through. The proto's own
+    `onViewStatus` local-state callback is gone entirely - production has a real `?status=` URL, so
+    "Review drafts"/"Review requests" are real `actionHref` links (`roleHref("/pages/dsa?status=
+    draft")`) instead of a simulated in-page switch, simpler than the lab's own version needed to
+    be.
+  - **Ported as-designed, not redesigned for the new status model** - `DsaBanner` still keys off
+    `draftCount` (DSA's own requester-facing action) and `DlaBanner` still keys off `under_review`
+    count (the reviewer's own queue), the same two conditions already tested in the lab. Both are
+    still real, valid triggers under the new unified workflow (Draft and Under Review are both
+    still real statuses) - extending this to also flag `submitted` records (now a distinct,
+    genuinely actionable "needs someone to Start Review" state that didn't exist when this banner
+    was designed) is a reasonable next step but wasn't done here, since it wasn't part of what was
+    being folded in - logged here rather than silently added.
+  - Verified `tsc --noEmit`/`eslint` clean on every touched/new file, then a live Playwright pass
+    on both real production pages (not the lab): confirmed "Actions" renders below the full 9-status
+    list on both `/pages/dsa` and `/pages/dla`, clicking "Export CSV" fires a real file download
+    (`data-sharing-agreements.csv`/`data-licencing-agreements.csv`, not a dead button), "Create
+    report" fires the real "not wired up yet" toast, and the "Drafts to finish"/"Requests awaiting
+    review" banners render correctly above the search bar on each page's default (Active) view with
+    the correct real counts - zero console errors either page. Chromium/Playwright installed for
+    the session only, removed after; `package.json`/`package-lock.json` confirmed unchanged.
+  - **Follow-up, same day: the "Actions" label's own spacing to its first row didn't match the
+    status list's, flagged directly by the user off a screenshot.** Two separate bugs, not one:
+    (1) `ActionsGroup`'s label used `mb-1 px-2` (copied from the proto's own `GroupLabel`) while
+    `StatusNav`'s "Agreements"/"Requests" label uses `mb-3` with no horizontal padding - fixed to
+    match exactly, in both the real `agreement-actions.tsx` and the proto's own `GroupLabel`
+    (same bug, same fix, both files). (2) Matching the label's margin alone wasn't enough - the
+    status list's real label-to-first-row gap is `gap-1` (4px, from `StatusNav`'s own `flex
+    flex-col gap-1` wrapper) *plus* the label's `mb-3` (12px) = 16px, not 12px, so `ActionsGroup`'s
+    wrapper needed the same `gap-1` too (measured live via `boundingBox()`, not eyeballed: 12px
+    before this second fix, 16px after, matching the status list exactly on both `/pages/dsa` and
+    `/pages/dla` and in the proto). Caught and fixed while there: the proto's own `DsaActions`/
+    `DlaActions` had a redundant inner `flex flex-col` div with no gap of its own, restructured
+    into one `flex flex-col gap-1` wrapper matching `StatusNavColumn`'s shape exactly (also fixed a
+    stray leftover closing `</div>` in `DlaActions` from that restructure). Verified `tsc --noEmit`/
+    `eslint` clean and a live Playwright pass measuring real `boundingBox()` gaps (not assumed from
+    the className) on `/pages/dsa`, `/pages/dla`, and `/proto/collection-sidebar` - all three now
+    read exactly 16px for both the status-list and Actions label gaps, zero console errors.
+  - **Follow-up, same day: "My Items"' single-status Tabs row replaced with a real status filter +
+    a Status column, per direct instruction** ("All Agreements and My Agreements with the filters
+    having all statuses. And the table having a status column"). "My Items"' whole point is that
+    My/All is a *scope*, not a status bucket - it had still been showing exactly one status bucket
+    at a time via the same `StatusTabsRow` "Status Tabs" itself uses, which didn't actually answer
+    what a scope-only view needs: every status visible at once, filterable, with each row's own
+    status legible in the table.
+    - **`DsaAllStatusesTable`/`DlaAllStatusesTable`** (new, proto-local - not a change to the real
+      `DsaListContent`/`DlaListContent`, same "build a local mirror for an unvalidated direction"
+      precedent as `StatusNavColumn`/`StatusTabsRow`/`ScopeSwitcher` above) - `SectionHeader` +
+      search + a real `StatusFilterSelect` (a `MultiSelect` offering all 9 statuses, empty
+      selection = no filter = every status shown) + `TableCard`/`Table` with a real Status `Badge`
+      column + numbered pagination - the full "Section header, then search, then table" contract,
+      plus the filter. Column shapes mirror the real `DsaListContent`/`DlaListContent` closely
+      (Agreement/Data partner/Status/Requested by/Updated; Request/Requestor/Status/Locations/
+      Updated) with a live Status column standing in for what column 2 used to say.
+    - **`statusInColumn3` narrowed to `variant === "Status Tabs"` only** - "My Items" no longer
+      renders `StatusTabsRow` at all, and `dsaExtraFilter`/`dlaExtraFilter` (passed into
+      `DsaListContent`/`DlaListContent`) were replaced with `scopedDsas`/`scopedDlas` (the My/All
+      filter applied directly to the array before it ever reaches the new table), since "My Items"
+      no longer renders those shared components in `main` at all.
+    - Verified `tsc --noEmit`/`eslint` clean, then a live Playwright pass: DSA's table shows all 14
+      seeded agreements across every status with a real Status column (confirmed each row's own
+      badge text); "My Agreements" correctly scopes to Olivia Wyatt's 3 records; the status
+      `MultiSelect` filter live-updates the table the instant a box is checked, confirmed with the
+      popover still open (2 rows, both Closed) before ever closing it; DLA's own table (Request/
+      Requestor/Status/Locations/Updated, 9 total rows, 2 for "My Requests") works identically -
+      zero console errors throughout. One testing-tool nuance re-confirmed, not a product bug: this
+      codebase's `MultiSelect` already documents that pressing Escape while its popover is open
+      clears the selection instead of just closing it (a pre-existing, known gap logged elsewhere
+      in this file) - hit again here by an early draft of the verification script, worked around by
+      checking the live-filtered table state directly instead of relying on Escape to commit.

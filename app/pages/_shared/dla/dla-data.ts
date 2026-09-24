@@ -1,4 +1,3 @@
-import type { BadgeColors } from "@/components/base/badges/badge-types";
 import { projects as realProjects } from "@/app/pages/_shared/project-list-content";
 import type { Boundary } from "@/app/pages/_shared/map-search/geo";
 
@@ -7,23 +6,16 @@ import type { Boundary } from "@/app/pages/_shared/map-search/geo";
 // Approve-Reject), re-fitted to the shell the same way DSA was - see CONTEXT.md, "Data Licencing
 // Agreement (DLA)" for the full mapping and every deliberate departure from the wireframe.
 //
-// Status is stored, not derived from dates, same reasoning as DSA: the wireframe's own four list
-// tabs (Active/Under Review/Rejected/Expired) don't say what moves a request between them beyond
-// its own named actions, so only those actions are built - Submit -> Under Review, Approve ->
-// Active, Reject -> Rejected, and Withdraw (by the requester or an admin) -> Withdrawn, a fifth
-// bucket the wireframe's own "Withdraw" link implies but never draws a tab for.
-
-export type DlaStatus = "active" | "under_review" | "rejected" | "expired" | "withdrawn";
-
-export const dlaStatusOrder: DlaStatus[] = ["active", "under_review", "rejected", "expired", "withdrawn"];
-
-export const dlaStatusMeta: Record<DlaStatus, { label: string; tabLabel: string; badgeColor: BadgeColors }> = {
-  active: { label: "Active", tabLabel: "Active", badgeColor: "success" },
-  under_review: { label: "Under Review", tabLabel: "Under Review", badgeColor: "warning" },
-  rejected: { label: "Rejected", tabLabel: "Rejected", badgeColor: "error" },
-  expired: { label: "Expired", tabLabel: "Expired", badgeColor: "gray" },
-  withdrawn: { label: "Withdrawn", tabLabel: "Withdrawn", badgeColor: "gray" },
-};
+// Status now follows the shared DSA/DLA workflow model (see agreement-status.ts) - Draft, Submitted,
+// Under Review, On Hold, Approved, Rejected, Active, Closed, Cancelled - replacing the wireframe's
+// own narrower Active/Under Review/Rejected/Expired/Withdrawn set (see CONTEXT.md, "Unified
+// DSA/DLA status model" for the source and every decision behind it). Two real, new capabilities
+// this brought to DLA specifically: a request can now be saved as a Draft before submitting (the
+// wireframe's own form had no draft step at all), and Submitted/Under Review are now distinct
+// stages, not one and the same.
+export type { AgreementStatus as DlaStatus } from "@/app/pages/_shared/agreement-status";
+export { agreementStatusOrder as dlaStatusOrder, agreementStatusMeta as dlaStatusMeta } from "@/app/pages/_shared/agreement-status";
+import type { AgreementStatus as DlaStatus } from "@/app/pages/_shared/agreement-status";
 
 // Level 1 (public, no DLA needed) is the tier already documented sitewide (see CONTEXT.md's "BDBSA
 // domain research" and Explore's own access banner) - it never appears here because a Level 1
@@ -196,9 +188,15 @@ function requestorErrors(r: DlaRequestor, errors: DlaErrors) {
   else if (!EMAIL.test(r.email.trim())) errors["requestor.email"] = "Enter a valid email address";
 }
 
-/** Field errors keyed by path ("purpose", "requestor.email", "locations.<id>.name", ...). */
-export function validateDla(draft: DlaDraft): DlaErrors {
+/** Field errors keyed by path ("purpose", "requestor.email", "locations.<id>.name", ...). A draft
+ *  only needs the requestor's organisation - the same "just enough to identify it" rule as DSA's
+ *  own draft mode. */
+export function validateDla(draft: DlaDraft, mode: "draft" | "submit" = "submit"): DlaErrors {
   const errors: DlaErrors = {};
+  if (mode === "draft") {
+    if (!draft.requestor.organisation.trim()) errors["requestor.organisation"] = "Enter an organisation";
+    return errors;
+  }
 
   if (draft.locations.length === 0) errors.locations = "Add at least one location";
   for (const location of draft.locations) {
@@ -318,7 +316,7 @@ export const seedDlas: Dla[] = [
   },
   {
     id: "DLA-2024-00219",
-    status: "expired",
+    status: "closed",
     locations: [
       {
         id: "loc-5",
@@ -344,7 +342,7 @@ export const seedDlas: Dla[] = [
   },
   {
     id: "DLA-2026-00340",
-    status: "withdrawn",
+    status: "cancelled",
     locations: [
       {
         id: "loc-6",
@@ -367,5 +365,103 @@ export const seedDlas: Dla[] = [
     rejectionReason: "",
     submittedAt: "2026-05-02",
     updatedAt: "2026-05-14",
+  },
+  // Draft through Approved: real examples of every stage in the shared DSA/DLA workflow (see
+  // agreement-status.ts) that DLA didn't have seed coverage for before - Draft and Submitted (as
+  // its own distinct stage from Under Review) are both genuinely new capabilities for DLA.
+  {
+    id: "DLA-2026-00520",
+    status: "draft",
+    locations: [],
+    purpose: "",
+    requestPeriodFrom: "",
+    requestPeriodTo: "",
+    validFrom: "",
+    validTo: "",
+    requestor: { firstName: "Phoenix", lastName: "Baker", organisation: "Baker Environmental Consulting", email: "phoenix.baker@example.org", phone: "" },
+    agreementFile: null,
+    isCustom: false,
+    customNote: "",
+    rejectionReason: "",
+    submittedAt: "2026-09-19",
+    updatedAt: "2026-09-19",
+  },
+  {
+    id: "DLA-2026-00515",
+    status: "submitted",
+    locations: [
+      {
+        id: "loc-7",
+        name: "Belair National Park",
+        method: "list",
+        boundary: boundary("b-7", [-35.02, 138.65], 8),
+        level: "level2",
+        projectIds: [],
+      },
+    ],
+    purpose: "Standard-access monitoring data to support a joint revegetation survey.",
+    requestPeriodFrom: "2026-11-01",
+    requestPeriodTo: "2027-10-31",
+    validFrom: "",
+    validTo: "",
+    requestor: { firstName: "Maya", lastName: "Dewitt", organisation: "BirdLife Australia", email: "maya.dewitt@example.org", phone: "03 9347 0757" },
+    agreementFile: null,
+    isCustom: false,
+    customNote: "",
+    rejectionReason: "",
+    submittedAt: "2026-09-21",
+    updatedAt: "2026-09-21",
+  },
+  {
+    id: "DLA-2026-00498",
+    status: "on_hold",
+    locations: [
+      {
+        id: "loc-8",
+        name: "Flinders Ranges National Park",
+        method: "map",
+        boundary: boundary("b-8", [-31.49, 138.6], 40),
+        level: "level3",
+        projectIds: ["flinders"],
+      },
+    ],
+    purpose: "Enhanced-access sensitive species data for a proposed grazing management plan.",
+    requestPeriodFrom: "2026-10-15",
+    requestPeriodTo: "2027-10-14",
+    validFrom: "",
+    validTo: "",
+    requestor: { firstName: "Lana", lastName: "Steiner", organisation: "Natural Resources KI", email: "lana.steiner@example.org", phone: "08 8553 4444" },
+    agreementFile: null,
+    isCustom: false,
+    customNote: "",
+    rejectionReason: "",
+    submittedAt: "2026-09-11",
+    updatedAt: "2026-09-19",
+  },
+  {
+    id: "DLA-2026-00510",
+    status: "approved",
+    locations: [
+      {
+        id: "loc-9",
+        name: "Naracoorte Caves National Park",
+        method: "coordinates",
+        boundary: boundary("b-9", [-36.98, 140.8], 12),
+        level: "level2",
+        projectIds: [],
+      },
+    ],
+    purpose: "Standard-access cave fauna monitoring data ahead of the next survey season.",
+    requestPeriodFrom: "2026-12-01",
+    requestPeriodTo: "2028-11-30",
+    validFrom: "2026-12-01",
+    validTo: "2028-11-30",
+    requestor: { firstName: "Olivia", lastName: "Wyatt", organisation: "SA Museum", email: "olivia.wyatt@sa.gov.au", phone: "" },
+    agreementFile: { name: "DLA-2026-00510.pdf" },
+    isCustom: false,
+    customNote: "",
+    rejectionReason: "",
+    submittedAt: "2026-09-05",
+    updatedAt: "2026-09-23",
   },
 ];

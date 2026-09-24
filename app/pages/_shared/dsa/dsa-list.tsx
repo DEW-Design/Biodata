@@ -1,16 +1,18 @@
 "use client";
 
-import { useState } from "react";
-import { Plus, SearchMd } from "@untitledui/icons";
+import { useState, type ReactNode } from "react";
+import { Clock, Edit05, Plus, SearchMd } from "@untitledui/icons";
 import { Avatar } from "@/components/base/avatar/avatar";
 import { Badge, CountBadge } from "@/components/base/badges/badges";
 import { Button } from "@/components/base/buttons/button";
 import { Input } from "@/components/base/input/input";
 import { SectionHeader } from "@/components/application/section-headers/section-headers";
 import { Table, TableCard } from "@/components/application/table/table";
+import { nearestToExpiry } from "@/app/pages/_shared/agreement-status";
 import { DsaEmptyState } from "@/app/pages/_shared/dsa/dsa-detail";
-import { contactName, dsaStatusMeta, formatShortDate, type DsaStatus } from "@/app/pages/_shared/dsa/dsa-data";
+import { contactName, dsaStatusMeta, formatShortDate, type Dsa, type DsaStatus } from "@/app/pages/_shared/dsa/dsa-data";
 import { useDsas } from "@/app/pages/_shared/dsa/dsa-store";
+import { TaskItem } from "@/app/pages/_shared/home-dashboard";
 import { useRoleHref } from "@/lib/use-role-href";
 
 // The DSA list: a table of agreements in one status bucket (chosen in column 2), each row linking to
@@ -18,24 +20,94 @@ import { useRoleHref } from "@/lib/use-role-href";
 // (project-list-content.tsx): a SectionHeader, then a TableCard with numbered pagination, rows are
 // links. There is no Status column - the bucket is already chosen in column 2, so a column of
 // identical badges would state the same fact twice.
+//
+// `banner`, `statusTabs`, and `extraFilter` are additive, opt-in slots (all default undefined, no
+// change for any existing consumer) - same convention as `Table`'s own `bodyScrollable`/`sticky`
+// props. `banner` renders above the search input, per direct feedback moving
+// `/proto/collection-sidebar`'s column-2 alerts into column 3 instead ("shouldn't this sit above
+// the DSA table, above the search bar?") - `DsaBanner` below is the real, folded-in version,
+// rendered from `app/pages/dsa/page.tsx`. `statusTabs` renders directly under the header, for a
+// lab exploring status-as-tabs (Xero/Remote's own real pattern) instead of a column-2 nav list.
+// `extraFilter` narrows `inStatus` further (e.g. "My Agreements only") before search/pagination
+// ever see it, so the count badge/empty state/pagination all stay honest about what's actually
+// showing.
 
 const subheadings: Record<DsaStatus, string> = {
-  active: "Agreements in effect between DEW and partner organisations.",
-  inactive: "Agreements that are no longer in effect.",
-  revoked: "Agreements that have been revoked.",
   draft: "Drafts that haven't been submitted yet.",
+  submitted: "Agreements submitted, waiting for a reviewer to pick them up.",
+  under_review: "Agreements a reviewer is currently assessing.",
+  on_hold: "Agreements paused pending information from the requester.",
+  approved: "Agreements approved and waiting on their own start date.",
+  rejected: "Agreements a reviewer formally rejected.",
+  active: "Agreements in effect between DEW and partner organisations.",
+  closed: "Agreements that have run their course, automatically or manually.",
+  cancelled: "Agreements cancelled by the requester or an admin.",
 };
 
 const initials = (first: string, last: string) => `${first[0] ?? ""}${last[0] ?? ""}`.toUpperCase();
 
-export function DsaListContent({ status }: { status: DsaStatus }) {
+/**
+ * Column-3 banner (via `DsaListContent`'s own `banner` prop) - folded in directly from
+ * /proto/collection-sidebar's own "Actions" baseline (see CONTEXT.md). Real `TaskItem`
+ * (`app/pages/_shared/home-dashboard.tsx`), not `AlertFullWidth` - a computed fact about other
+ * records pointing elsewhere is a `TaskItem`, per that component's own established precedent.
+ * Renders nothing when there's nothing to say.
+ */
+export function DsaBanner() {
+  const dsas = useDsas();
+  const roleHref = useRoleHref();
+  const expiring = nearestToExpiry(dsas);
+  const draftCount = dsas.filter((d) => d.status === "draft").length;
+  if (draftCount === 0 && !expiring) return null;
+  return (
+    <div className="flex flex-col gap-3">
+      {draftCount > 0 && (
+        <TaskItem
+          icon={Edit05}
+          title="Drafts to finish"
+          detail={`${draftCount} draft${draftCount === 1 ? "" : "s"} still need${draftCount === 1 ? "s" : ""} to be finished.`}
+          status={dsaStatusMeta.draft.label}
+          statusColor={dsaStatusMeta.draft.badgeColor}
+          actionLabel="Review drafts"
+          actionHref={roleHref("/pages/dsa?status=draft")}
+        />
+      )}
+      {expiring && (
+        <TaskItem
+          icon={Clock}
+          title={expiring.id}
+          detail={`${expiring.partner || "No partner set"} - expires ${formatShortDate(expiring.validTo)}.`}
+          status={dsaStatusMeta[expiring.status].label}
+          statusColor={dsaStatusMeta[expiring.status].badgeColor}
+          actionLabel="View agreement"
+          actionHref={roleHref(`/pages/dsa/${expiring.id}`)}
+        />
+      )}
+    </div>
+  );
+}
+
+export function DsaListContent({
+  status,
+  banner,
+  statusTabs,
+  extraFilter,
+}: {
+  status: DsaStatus;
+  banner?: ReactNode;
+  statusTabs?: ReactNode;
+  extraFilter?: (dsa: Dsa) => boolean;
+}) {
   const roleHref = useRoleHref();
   const dsas = useDsas();
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(50);
 
-  const inStatus = dsas.filter((d) => d.status === status).sort((a, b) => (a.createdAt === b.createdAt ? b.id.localeCompare(a.id) : b.createdAt.localeCompare(a.createdAt)));
+  const statusMatches = dsas.filter((d) => d.status === status);
+  const inStatus = (extraFilter ? statusMatches.filter(extraFilter) : statusMatches).sort((a, b) =>
+    a.createdAt === b.createdAt ? b.id.localeCompare(a.id) : b.createdAt.localeCompare(a.createdAt),
+  );
   const query = search.trim().toLowerCase();
   const rows = query ? inStatus.filter((d) => [d.id, d.partner, contactName(d.requestedBy)].some((v) => v.toLowerCase().includes(query))) : inStatus;
   const pageCount = Math.max(1, Math.ceil(rows.length / pageSize));
@@ -61,10 +133,13 @@ export function DsaListContent({ status }: { status: DsaStatus }) {
         </SectionHeader.Group>
       </SectionHeader.Root>
 
+      {statusTabs}
+
       {inStatus.length === 0 ? (
         <DsaEmptyState status={status} newHref={roleHref("/pages/dsa/new")} />
       ) : (
         <div className="flex flex-col gap-4 p-6">
+          {banner}
           <div className="w-full max-w-sm">
             <Input
               aria-label="Search agreements"

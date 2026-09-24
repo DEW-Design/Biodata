@@ -36,8 +36,10 @@ import {
 // same Tabs-with-error-count pattern DSA's form already established, not a bespoke stepper
 // component, for consistency across this codebase's forms.
 //
-// No "Save draft" - unlike DSA, the wireframe's own form has no draft action anywhere in it, it
-// goes straight from Review & Submit to a submitted request (see dla-store.ts's own comment).
+// "Save draft" is real now - the shared DSA/DLA workflow (agreement-status.ts) gave DLA a genuine
+// Draft status it didn't have before, so this form gained the same Save Draft/Submit split DSA's
+// own form already has, and `initial` (an existing request or draft being edited) alongside the
+// pre-existing `renewFrom` (a closed agreement's own fields, pre-filling a brand new request).
 
 function FormRow({ title, description, required, error, children }: { title: string; description?: string; required?: boolean; error?: string; children: ReactNode }) {
   return (
@@ -105,22 +107,41 @@ function LocationEditor({ location, error, onChange, onRemove }: { location: Dla
   );
 }
 
-export function DlaForm({ onBack, onSubmit, renewFrom }: { onBack: () => void; onSubmit: (draft: DlaDraft) => void; renewFrom?: Dla }) {
+type Attempt = null | "draft" | "submit";
+
+export function DlaForm({
+  initial,
+  onBack,
+  onSaveDraft,
+  onSubmit,
+  renewFrom,
+}: {
+  /** The request being edited - omit for a new one. */
+  initial?: Dla;
+  onBack: () => void;
+  onSaveDraft: (draft: DlaDraft) => void;
+  onSubmit: (draft: DlaDraft) => void;
+  renewFrom?: Dla;
+}) {
   const [draft, setDraft] = useState<DlaDraft>(() => {
-    if (!renewFrom) return emptyDlaDraft();
-    const { locations, purpose, requestPeriodFrom, requestPeriodTo, requestor } = renewFrom;
-    return { ...emptyDlaDraft(), locations: structuredClone(locations), purpose, requestPeriodFrom, requestPeriodTo, requestor: structuredClone(requestor) };
+    const source = initial ?? renewFrom;
+    if (!source) return emptyDlaDraft();
+    const { locations, purpose, requestPeriodFrom, requestPeriodTo, requestor, agreementFile, isCustom, customNote, rejectionReason, validFrom, validTo } = source;
+    return initial
+      ? structuredClone({ locations, purpose, requestPeriodFrom, requestPeriodTo, requestor, agreementFile, isCustom, customNote, rejectionReason, validFrom, validTo })
+      : { ...emptyDlaDraft(), locations: structuredClone(locations), purpose, requestPeriodFrom, requestPeriodTo, requestor: structuredClone(requestor) };
   });
   const [tab, setTab] = useState<Key>("locations");
-  const [attempted, setAttempted] = useState(false);
+  const [attempt, setAttempt] = useState<Attempt>(null);
   const [dirty, setDirty] = useState(false);
   const [confirmBack, setConfirmBack] = useState(false);
   const [addLocationOpen, setAddLocationOpen] = useState(false);
-  const [agreedToTerms, setAgreedToTerms] = useState(false);
+  const [agreedToTerms, setAgreedToTerms] = useState(() => !!initial && initial.status !== "draft");
   const [termsAttempted, setTermsAttempted] = useState(false);
 
-  const errors: DlaErrors = attempted ? validateDla(draft) : {};
-  const errorCount = Object.keys(errors).length + (termsAttempted && !agreedToTerms ? 1 : 0);
+  const isEditingLive = !!initial && initial.status !== "draft";
+  const errors: DlaErrors = attempt ? validateDla(draft, attempt) : {};
+  const errorCount = Object.keys(errors).length + (attempt === "submit" && termsAttempted && !agreedToTerms ? 1 : 0);
   const tabErrors: Record<DlaFormTab, number> = { locations: 0, details: 0, review: 0 };
   for (const path of Object.keys(errors)) tabErrors[errorTab(path)] += 1;
 
@@ -135,9 +156,9 @@ export function DlaForm({ onBack, onSubmit, renewFrom }: { onBack: () => void; o
   const goBack = () => (dirty ? setConfirmBack(true) : onBack());
 
   const submit = () => {
-    setAttempted(true);
+    setAttempt("submit");
     setTermsAttempted(true);
-    const found = validateDla(draft);
+    const found = validateDla(draft, "submit");
     const first = Object.keys(found)[0];
     if (first) {
       setTab(errorTab(first));
@@ -150,13 +171,24 @@ export function DlaForm({ onBack, onSubmit, renewFrom }: { onBack: () => void; o
     onSubmit(draft);
   };
 
+  const saveDraft = () => {
+    setAttempt("draft");
+    if (Object.keys(validateDla(draft, "draft")).length) {
+      setTab("details");
+      return;
+    }
+    onSaveDraft(draft);
+  };
+
   return (
     <div className="flex min-h-0 flex-1 flex-col">
       <SectionHeader.Root className="shrink-0 px-6 pt-6">
         <SectionHeader.Group>
           <div className="flex flex-1 flex-col gap-1">
-            <SectionHeader.Heading>{renewFrom ? `Renew ${renewFrom.id}` : "Data Licence Agreement Request"}</SectionHeader.Heading>
-            <SectionHeader.Subheading>Fields marked * are required to submit.</SectionHeader.Subheading>
+            <SectionHeader.Heading>
+              {renewFrom ? `Renew ${renewFrom.id}` : initial ? (isEditingLive ? `Edit ${initial.id}` : `Edit draft ${initial.id}`) : "Data Licence Agreement Request"}
+            </SectionHeader.Heading>
+            <SectionHeader.Subheading>Fields marked * are required to submit. A draft only needs the requestor&apos;s organisation.</SectionHeader.Subheading>
           </div>
         </SectionHeader.Group>
       </SectionHeader.Root>
@@ -164,8 +196,8 @@ export function DlaForm({ onBack, onSubmit, renewFrom }: { onBack: () => void; o
       <Tabs selectedKey={tab} onSelectionChange={setTab} className="flex min-h-0 flex-1 flex-col">
         <div className="shrink-0 px-6 pt-4">
           <TabList aria-label="Request sections" type="underline" size="sm" className="w-full">
-            <Tab id="locations" label="Location & License" badge={attempted && tabErrors.locations ? tabErrors.locations : undefined} />
-            <Tab id="details" label="Details & Purpose" badge={attempted && tabErrors.details ? tabErrors.details : undefined} />
+            <Tab id="locations" label="Location & License" badge={attempt && tabErrors.locations ? tabErrors.locations : undefined} />
+            <Tab id="details" label="Details & Purpose" badge={attempt && tabErrors.details ? tabErrors.details : undefined} />
             <Tab id="review" label="Review & Submit" />
           </TabList>
         </div>
@@ -346,13 +378,18 @@ export function DlaForm({ onBack, onSubmit, renewFrom }: { onBack: () => void; o
           Back
         </Button>
         <div className="flex flex-wrap items-center gap-3">
-          {(attempted || termsAttempted) && errorCount > 0 && (
+          {(attempt || termsAttempted) && errorCount > 0 && (
             <p className="text-sm text-error-primary">
               {errorCount} {errorCount === 1 ? "field needs" : "fields need"} attention
             </p>
           )}
+          {!isEditingLive && (
+            <Button color="tertiary" onPress={saveDraft}>
+              Save draft
+            </Button>
+          )}
           <Button color="primary" onPress={submit}>
-            Submit
+            {isEditingLive ? "Save changes" : "Submit"}
           </Button>
         </div>
       </div>

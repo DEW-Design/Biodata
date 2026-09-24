@@ -124,6 +124,14 @@ interface AlertFullWidthProps {
      * content aligns with the content around it instead of centering independently.
      */
     className?: string;
+    /**
+     * Drops the outer wrapper's own edge-to-edge `border-t`/`bg-secondary`/`md:border-b` chrome
+     * (meant for a banner spanning the full viewport width). Pass this whenever `className`
+     * already supplies a self-contained shape (e.g. `rounded-lg border ...`), so that shape isn't
+     * left with the default full-bleed border/background bleeding out around or underneath it.
+     * @default false
+     */
+    contained?: boolean;
 }
 
 export const AlertFullWidth = ({
@@ -136,9 +144,10 @@ export const AlertFullWidth = ({
     actionType = "button",
     dismissLabel = "Dismiss",
     className,
+    contained = false,
 }: AlertFullWidthProps) => {
     return (
-        <div className="font-barlow relative border-t border-primary bg-secondary md:border-t-0 md:border-b">
+        <div className={cx("font-barlow relative", !contained && "border-t border-primary bg-secondary md:border-t-0 md:border-b")}>
             <div className={cx("mx-auto flex max-w-container flex-col gap-4 p-4 md:flex-row md:items-center md:gap-3 md:px-8 md:py-3", className)}>
                 <div className="flex flex-1 flex-col gap-4 md:w-0 md:flex-row md:items-center">
                     <FeaturedIcon
