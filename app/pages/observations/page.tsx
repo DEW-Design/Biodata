@@ -97,6 +97,7 @@ import { useRoleHref } from "@/lib/use-role-href";
 import { orgLabelForRole } from "@/lib/user-role";
 import { navForRole, registeredUserAccountMenu, registeredUserFooterLinks, keyHref, type NavNode } from "@/lib/registered-user-nav";
 import { cx } from "@/utils/cx";
+import { assetPath } from "@/lib/base-path";
 
 // The map search interface built for the sidebar's Observations item, per direct request: a real,
 // interactive map of South Australia (Leaflet + OpenStreetMap tiles, not a fabricated grid) that
@@ -1193,7 +1194,7 @@ function ObservationsSearch() {
           />
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
-            src="/pages/dashboard/gov-sa-dew-lockup.png"
+            src={assetPath("/pages/dashboard/gov-sa-dew-lockup.png")}
             alt="Government of South Australia, Department for Environment and Water"
             className="h-[37px] w-auto"
           />

@@ -58,6 +58,7 @@ import { orgLabelForRole } from "@/lib/user-role";
 import { navForRole, registeredUserAccountMenu, registeredUserFooterLinks, keyHref, type NavNode } from "@/lib/registered-user-nav";
 import { cx } from "@/utils/cx";
 import { projectRecordTree, type RecordNode, type RecordType } from "@/app/pages/_shared/project-record-tree";
+import { assetPath } from "@/lib/base-path";
 
 // One observation's viewing screen, on the sidebar-nav shell - same three-column chrome as
 // project-detail, forked from that file rather than shared with it (this codebase's own
@@ -920,7 +921,7 @@ function ObservationDetail() {
           </MobileNavTrigger>
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
-            src="/pages/dashboard/gov-sa-dew-lockup.png"
+            src={assetPath("/pages/dashboard/gov-sa-dew-lockup.png")}
             alt="Government of South Australia, Department for Environment and Water"
             className="h-[37px] w-auto"
           />

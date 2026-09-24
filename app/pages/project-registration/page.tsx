@@ -48,6 +48,7 @@ import { Step3PrivacyRestrictions, isStep3Valid } from "./step-3-privacy-restric
 import { SuccessScreen } from "./success-screen";
 import { initialProjectDetails, initialDataCollection, initialRestrictions } from "./types";
 import { cx } from "@/utils/cx";
+import { assetPath } from "@/lib/base-path";
 
 function ProfileMenu() {
     const [open, setOpen] = useState(false);
@@ -131,7 +132,7 @@ function ProjectRegistrationForm() {
             <header className="flex h-[90px] items-center justify-between border-b border-secondary bg-primary px-8">
                 <div className="flex items-center gap-4">
                     {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src="/pages/dashboard/gov-sa-dew-lockup.png" alt="Government of South Australia, Department for Environment and Water" className="h-[37px] w-auto" />
+                    <img src={assetPath("/pages/dashboard/gov-sa-dew-lockup.png")} alt="Government of South Australia, Department for Environment and Water" className="h-[37px] w-auto" />
                     <div className="h-6 w-px bg-secondary" />
                     <p className="text-[17px] font-semibold tracking-tight text-primary">BioData SA</p>
                     <Breadcrumb section="Projects" current="Add Project" />

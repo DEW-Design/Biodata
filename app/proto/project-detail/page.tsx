@@ -80,6 +80,7 @@ import { TreeView } from "@/components/application/tree-view/tree-view";
 import { BentoCard, MetricCard } from "@/app/pages/_shared/bento-card";
 import { MapView } from "@/app/pages/_shared/map-view";
 import { cx } from "@/utils/cx";
+import { assetPath } from "@/lib/base-path";
 
 // ── Shared data - same project as the real page, extended with the pieces this brief adds ──
 
@@ -1314,7 +1315,7 @@ export default function ProjectDetailProto() {
         <div className="flex flex-wrap items-center gap-4">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
-            src="/pages/dashboard/gov-sa-dew-lockup.png"
+            src={assetPath("/pages/dashboard/gov-sa-dew-lockup.png")}
             alt="Government of South Australia, Department for Environment and Water"
             className="h-[37px] w-auto"
           />

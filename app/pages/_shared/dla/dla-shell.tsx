@@ -22,6 +22,7 @@ import { useUserRole } from "@/lib/use-user-role";
 import { orgLabelForRole } from "@/lib/user-role";
 import { DLA_SECTION_LABEL, DSA_SECTION_LABEL, keyHref, navForRole, registeredUserFooterLinks, type NavNode } from "@/lib/registered-user-nav";
 import { cx } from "@/utils/cx";
+import { assetPath } from "@/lib/base-path";
 
 // The one shell every DLA route renders through (the request list, a request's deep dive, the new
 // request/renew form) - same "List -> deep dive" shape as DSA's own shell
@@ -183,7 +184,7 @@ export function DlaShell({
             {showStatusNav ? (close: () => void) => <StatusNav activeStatus={activeStatus} onNavigate={close} /> : undefined}
           </MobileNavTrigger>
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/pages/dashboard/gov-sa-dew-lockup.png" alt="Government of South Australia, Department for Environment and Water" className="h-[37px] w-auto" />
+          <img src={assetPath("/pages/dashboard/gov-sa-dew-lockup.png")} alt="Government of South Australia, Department for Environment and Water" className="h-[37px] w-auto" />
           <div className="h-6 w-px bg-secondary" />
           <p className="text-[17px] font-semibold tracking-tight text-primary">BioData SA</p>
           <Breadcrumb

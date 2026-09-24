@@ -29,6 +29,7 @@ import { useRoleHref } from "@/lib/use-role-href";
 import { orgLabelForRole } from "@/lib/user-role";
 import { navForRole, registeredUserAccountMenu, registeredUserFooterLinks, keyHref, type NavNode } from "@/lib/registered-user-nav";
 import { cx } from "@/utils/cx";
+import { assetPath } from "@/lib/base-path";
 
 // One icon per top-level section, for the primary icon rail below - presentation-only, so it
 // lives here rather than in lib/registered-user-nav.ts (which stays shell-agnostic; option-2's
@@ -359,7 +360,7 @@ function Dashboard() {
           </MobileNavTrigger>
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
-            src="/pages/dashboard/gov-sa-dew-lockup.png"
+            src={assetPath("/pages/dashboard/gov-sa-dew-lockup.png")}
             alt="Government of South Australia, Department for Environment and Water"
             className="h-[37px] w-auto"
           />
