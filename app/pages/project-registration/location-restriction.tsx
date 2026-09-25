@@ -7,7 +7,7 @@
 import { useState } from "react";
 import { Plus, Trash01, MarkerPin01 } from "@untitledui/icons";
 import { Input } from "@/components/base/input/input";
-import { Textarea } from "@/components/custom/textarea/textarea";
+import { TextArea } from "@/components/base/textarea/textarea";
 import { Button } from "@/components/base/buttons/button";
 import { BentoCard } from "@/app/pages/_shared/bento-card";
 import { SidePanel } from "@/app/pages/_shared/map-search/side-panel";
@@ -48,7 +48,7 @@ function LocationPickerPanel({
             <div className="flex flex-col gap-5">
                 <Input label="Specify a Location Name" placeholder="E.g., Pygmy Bluetongue Lizard nesting site" isRequired value={name} onChange={setName} />
                 <GeoExtentPicker value={extent} onChange={setExtent} />
-                <Textarea
+                <TextArea
                     label="Justification"
                     placeholder="Enter a justification..."
                     hint="Enter the reason for this restriction request."

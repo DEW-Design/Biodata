@@ -104,7 +104,21 @@ export function obfuscateCoordinate(lat: number, lon: number, radiusKm: number):
     return { lat: Number(snap(lat).toFixed(2)), lon: Number(snap(lon).toFixed(2)), radiusKm };
 }
 
+/** `source` of the whole-state search area (see `wholeStateBoundary`). */
+export const WHOLE_STATE_SOURCE = "region:sa";
+
+/**
+ * "All of South Australia" as a search area, for a keyword-only search (the header search sends a
+ * species or record term to Explore with no drawn area). A circle centred on the state that covers
+ * every record in the dataset, so it goes through the same spatial filter as any other area - no
+ * separate "no area" code path. Marked with `source` so it can be summarised by name.
+ */
+export function wholeStateBoundary(): Boundary {
+    return { id: "whole-state", source: WHOLE_STATE_SOURCE, kind: "circle", center: [-32, 135], radiusKm: 1000, label: "All of South Australia" };
+}
+
 export function boundarySummary(boundary: Boundary): string {
+    if (boundary.source === WHOLE_STATE_SOURCE) return "All of South Australia";
     if (boundary.kind === "circle") {
         const place = boundary.label ?? formatPoint(boundary.center);
         return `${boundary.radiusKm} km radius around ${place}`;

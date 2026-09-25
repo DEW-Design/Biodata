@@ -38,6 +38,7 @@ export const rawNav: NavSection[] = [
       { title: "Input", href: "/components/input", description: "Text field plus specialised variants - password, date, number, payment, tags, file upload, PIN." },
       { title: "Modal", href: "/components/modal", description: "Overlay dialog built on React Aria - Confirmation, Destructive, and free-form Form variants, plus the base ModalOverlay/Modal/Dialog primitives." },
       { title: "Progress", href: "/components/progress", description: "Linear progress bar (4 label layouts) plus circular and half-circle indicators, 5 sizes." },
+      { title: "Progress steps", href: "/components/progress-steps", description: "Multi-step progress: icon, number or featured-icon steps with text (horizontal or vertical), minimal dot rows, and a text-with-line bar." },
       { title: "Radio buttons", href: "/components/radio-buttons", description: "Single-choice selection within a group - optional hint text, horizontal/vertical orientation, two sizes." },
       { title: "Radio groups", href: "/components/radio-groups", description: "Card-style single-choice selection - icon, avatar, payment, radio, and checkbox layouts, two sizes." },
       { title: "Section headers", href: "/components/section-headers", description: "Title/subheading/actions row with a bottom border, for page and card section chrome - replaces the hand-rolled version used across /pages/*." },
@@ -60,7 +61,7 @@ export const rawNav: NavSection[] = [
   {
     title: "Patterns",
     items: [
-      { title: "Forms", href: "/patterns/forms", description: "Documentation coming soon." },
+      { title: "Forms", href: "/patterns/forms", description: "The one create/edit form pattern - FormPage header, sections, FormRow fields, Back a step / Continue footer, inline errors after a failed attempt. Add Project, DSA and DLA all use it." },
       { title: "Navigation", href: "/patterns/navigation", description: "The sidebar shell's two nav pieces - primary icon rail + contextual sidebar (side nav) and the persistent header bar (top nav)." },
       { title: "Tree selection", href: "/patterns/tree-view", description: "Multi-select file/folder tree composed from Tree view + the base Checkbox - cascading selection and indeterminate parents." },
       { title: "Empty states", href: "/patterns/empty-states", description: "Documentation coming soon." },

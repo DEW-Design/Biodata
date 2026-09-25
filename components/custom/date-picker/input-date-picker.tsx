@@ -17,12 +17,14 @@
 // wizard's Start Date/End Date/Embargo End Date fields, per direct request that every date field
 // across all three steps be "a date selector," not a type-the-digits-only field.
 
-import type { ReactNode } from "react";
+import { useContext, type ReactNode } from "react";
+import { getLocalTimeZone, today } from "@internationalized/date";
 import { Calendar as CalendarIcon, ChevronLeft, ChevronRight } from "@untitledui/icons";
 import {
     Button as AriaButton,
     Calendar,
     CalendarCell,
+    CalendarStateContext,
     CalendarGrid,
     CalendarGridBody,
     CalendarGridHeader,
@@ -46,6 +48,28 @@ export interface InputDatePickerProps<T extends DateValue = DateValue> extends O
     hint?: ReactNode;
     hideRequiredIndicator?: boolean;
     className?: string;
+}
+
+// "Today" shortcut under the calendar: picks today's date (disabled when today is outside the field's
+// min/max). Reads the surrounding Calendar's own state, so it needs no props.
+function TodayButton() {
+    const state = useContext(CalendarStateContext);
+    const now = today(getLocalTimeZone());
+    const unavailable = !state || state.isCellDisabled(now);
+    return (
+        <div className="mt-2 flex justify-center border-t border-secondary pt-2">
+            <AriaButton
+                slot={null}
+                isDisabled={unavailable}
+                onPress={() => state?.setValue(now)}
+                className={({ isDisabled }) =>
+                    cx("rounded-md px-3 py-1 text-sm font-semibold text-brand-secondary outline-focus-ring transition-colors hover:bg-brand-secondary focus-visible:outline-2", isDisabled && "pointer-events-none opacity-30")
+                }
+            >
+                Today
+            </AriaButton>
+        </div>
+    );
 }
 
 export function InputDatePicker<T extends DateValue = DateValue>({ label, hint, hideRequiredIndicator, className, ...props }: InputDatePickerProps<T>) {
@@ -130,9 +154,12 @@ export function InputDatePicker<T extends DateValue = DateValue>({ label, hint, 
                                         {(date) => (
                                             <CalendarCell
                                                 date={date}
-                                                className={({ isSelected, isDisabled, isOutsideMonth, isFocusVisible }) =>
+                                                className={({ isSelected, isDisabled, isOutsideMonth, isFocusVisible, isToday }) =>
                                                     cx(
                                                         "flex size-8 cursor-pointer items-center justify-center rounded-md text-sm text-primary outline-hidden transition-colors hover:bg-secondary",
+                                                        // Today is marked so it can always be found: bold brand text and a brand ring (a
+                                                        // selected today keeps the solid fill).
+                                                        isToday && !isSelected && "font-semibold text-brand-secondary ring-1 ring-brand ring-inset",
                                                         isSelected && "bg-brand-solid text-white hover:bg-brand-solid",
                                                         isOutsideMonth && "text-quaternary",
                                                         isDisabled && "pointer-events-none cursor-not-allowed opacity-30 hover:bg-transparent",
@@ -143,12 +170,13 @@ export function InputDatePicker<T extends DateValue = DateValue>({ label, hint, 
                                         )}
                                     </CalendarGridBody>
                                 </CalendarGrid>
+                                <TodayButton />
                             </Calendar>
                         </Dialog>
                     </Popover>
 
                     {hint && (
-                        <HintText isInvalid={isInvalid} className="text-xs">
+                        <HintText isInvalid={isInvalid}>
                             {hint}
                         </HintText>
                     )}

@@ -251,6 +251,28 @@ export const designSystemConfig: DesignSystemConfig = {
     },
   },
 
+  "progress-steps": {
+    title: "Progress steps",
+    enabled: true,
+    types: [
+      { key: "icon", label: "Icon", enabled: true },
+      { key: "number", label: "Number", enabled: true },
+      { key: "featured-icon", label: "Featured icon", enabled: true },
+    ],
+    sizes: [
+      { key: "sm", label: "SM", enabled: true },
+      { key: "md", label: "MD", enabled: true },
+    ],
+    features: {
+      playground: true,
+      iconsWithText: true,
+      minimalIcons: true,
+      textWithLine: true,
+      usage: true,
+      figma: true,
+    },
+  },
+
   "radio-buttons": {
     title: "Radio buttons",
     enabled: true,

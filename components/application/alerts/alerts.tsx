@@ -140,6 +140,21 @@ interface AlertFullWidthProps {
      * @default false
      */
     hideDismissButton?: boolean;
+    /**
+     * Drops the outer wrapper's own edge-to-edge `border-t`/`bg-secondary`/`md:border-b` chrome
+     * (meant for a banner spanning the full viewport width). Pass this whenever `className`
+     * already supplies a self-contained shape (e.g. `rounded-lg border ...`), so that shape isn't
+     * left with the default full-bleed border/background bleeding out around or underneath it.
+     * Takes precedence over `tintedBackground`.
+     * @default false
+     */
+    contained?: boolean;
+    /**
+     * Lets the title and description wrap onto as many lines as they need instead of truncating to
+     * one line at `md`. Use for an alert that lists specifics (the fields missing from a form).
+     * @default false
+     */
+    wrap?: boolean;
 }
 
 const tintMap: Record<NonNullable<AlertFullWidthProps["color"]>, { bg: string; border: string }> = {
@@ -163,11 +178,22 @@ export const AlertFullWidth = ({
     className,
     tintedBackground = false,
     hideDismissButton = false,
+    contained = false,
+    wrap = false,
 }: AlertFullWidthProps) => {
     const tone = tintedBackground ? tintMap[color] : tintMap.default;
     return (
-        <div className={cx("font-barlow relative border-t md:border-t-0 md:border-b", tone.bg, tone.border)}>
-            <div className={cx("mx-auto flex max-w-container flex-col gap-4 p-4 md:flex-row md:items-center md:gap-3 md:px-8 md:py-3", className)}>
+        <div className={cx("font-barlow relative", !contained && ["border-t md:border-t-0 md:border-b", tone.bg, tone.border])}>
+            <div
+                className={cx(
+                    "flex flex-col gap-4 md:flex-row md:items-center md:gap-3",
+                    // Full-bleed banner: centred in `max-w-container` with wide `px-8` side padding, sized for the
+                    // viewport edge. Contained card: the alert IS the box, so it gets even padding all round
+                    // (a `px-8` inside a rounded card left the icon floating far from the left edge).
+                    contained ? "p-4" : "mx-auto max-w-container p-4 md:px-8 md:py-3",
+                    className,
+                )}
+            >
                 <div className="flex flex-1 flex-col gap-4 md:w-0 md:flex-row md:items-center">
                     <FeaturedIcon
                         className="hidden md:flex"
@@ -178,8 +204,8 @@ export const AlertFullWidth = ({
                     />
 
                     <div className="flex flex-col gap-0.5 overflow-hidden lg:flex-row lg:gap-1.5">
-                        <p className="pr-8 text-sm font-semibold text-secondary md:truncate md:pr-0">{title}</p>
-                        <p className="text-sm text-tertiary md:truncate">{description}</p>
+                        <p className={cx("pr-8 text-sm font-semibold text-secondary md:pr-0", wrap ? "lg:shrink-0 lg:whitespace-nowrap" : "md:truncate")}>{title}</p>
+                        <p className={cx("text-sm text-tertiary", !wrap && "md:truncate")}>{description}</p>
                     </div>
                 </div>
 

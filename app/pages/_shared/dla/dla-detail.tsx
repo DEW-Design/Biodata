@@ -4,7 +4,7 @@ import { useState, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import type { Key } from "react-aria-components";
 import { parseDate } from "@internationalized/date";
-import { ArrowNarrowLeft, Download01, Plus, SearchLg } from "@untitledui/icons";
+import { ArrowNarrowLeft, Download01, Edit05, Plus, SearchLg } from "@untitledui/icons";
 import { AlertFullWidth } from "@/components/application/alerts/alerts";
 import { Badge } from "@/components/base/badges/badges";
 import { Button } from "@/components/base/buttons/button";
@@ -17,6 +17,7 @@ import { DestructiveModal, FormModal } from "@/components/application/modals/mod
 import { Tab, TabList, TabPanel, Tabs } from "@/components/application/tabs/tabs";
 import { toast } from "@/components/application/toast/toast";
 import { AddLocationModal } from "@/app/pages/_shared/dla/add-location-modal";
+import { RejectModal } from "@/app/pages/_shared/agreement-modals";
 import {
   dlaLevel3Projects,
   dlaLevelMeta,
@@ -24,6 +25,7 @@ import {
   dlaStatusMeta,
   formatShortDate,
   requestorName,
+  todayIso,
   type Dla,
   type DlaApproveInput,
   type DlaLocation,
@@ -115,19 +117,29 @@ function RequestorFields({ requestor }: { requestor: DlaRequestor }) {
   );
 }
 
+// Approve moves straight to Active if the chosen start date has already arrived, otherwise
+// Approved / Auto Approved until that date (agreement-status.ts) - the modal's own copy says which
+// outcome the current date field will produce, computed live as the reviewer picks a date.
 function ApproveModal({ dla, isOpen, onOpenChange, onApprove }: { dla: Dla; isOpen: boolean; onOpenChange: (open: boolean) => void; onApprove: (input: DlaApproveInput) => void }) {
   const [validFrom, setValidFrom] = useState(dla.requestPeriodFrom);
   const [validTo, setValidTo] = useState(dla.requestPeriodTo);
   const [agreementFile, setAgreementFile] = useState<{ name: string } | null>(null);
   const [isCustom, setIsCustom] = useState(false);
   const [customNote, setCustomNote] = useState("");
+  const willBeActiveNow = !!validFrom && validFrom <= todayIso();
 
   return (
     <FormModal
       isOpen={isOpen}
       onOpenChange={onOpenChange}
       title="Approve Request"
-      description="Set the agreement period and approve this request"
+      description={
+        willBeActiveNow
+          ? "The start date has already arrived, so this request moves straight to Active."
+          : validFrom
+            ? `This request moves to Approved and becomes Active on ${formatShortDate(validFrom)}.`
+            : "Set the agreement period and approve this request."
+      }
       submitLabel="Upload and Approve"
       size="sm"
       onSubmit={() => onApprove({ validFrom, validTo, agreementFile, isCustom, customNote })}
@@ -153,55 +165,27 @@ function ApproveModal({ dla, isOpen, onOpenChange, onApprove }: { dla: Dla; isOp
   );
 }
 
-function RejectModal({ dla, isOpen, onOpenChange, onReject }: { dla: Dla; isOpen: boolean; onOpenChange: (open: boolean) => void; onReject: (reason: string) => void }) {
-  const [reason, setReason] = useState("");
-  const [attempted, setAttempted] = useState(false);
-
-  return (
-    <FormModal
-      isOpen={isOpen}
-      onOpenChange={(open) => {
-        if (!open) {
-          setReason("");
-          setAttempted(false);
-        }
-        onOpenChange(open);
-      }}
-      title="Reject Request"
-      description={`Provide a reason for rejecting ${dla.id}`}
-      submitLabel="Confirm Rejection"
-      size="sm"
-      onSubmit={() => {
-        setAttempted(true);
-        if (!reason.trim()) return;
-        onReject(reason.trim());
-      }}
-    >
-      <TextArea
-        label="Rejection Reason"
-        isRequired
-        rows={3}
-        placeholder="Enter a description…"
-        value={reason}
-        onChange={setReason}
-        isInvalid={attempted && !reason.trim()}
-        hint={attempted && !reason.trim() ? "A reason is required." : undefined}
-      />
-    </FormModal>
-  );
-}
-
 export function DlaDetail({
   dla,
+  onEdit,
+  onDeleteDraft,
+  onStartReview,
+  onHold,
+  onResume,
   onApprove,
   onReject,
-  onWithdraw,
+  onCancel,
   onAddLocation,
 }: {
   dla: Dla;
+  onEdit: () => void;
+  onDeleteDraft: () => void;
+  onStartReview: () => void;
+  onHold: () => void;
+  onResume: () => void;
   onApprove: (input: DlaApproveInput) => void;
   onReject: (reason: string) => void;
-  onWithdraw: () => void;
+  onCancel: () => void;
   onAddLocation: (location: DlaLocation) => void;
 }) {
   const router = useRouter();
@@ -210,13 +194,21 @@ export function DlaDetail({
   const [tab, setTab] = useState<Key>("overview");
   const [approveOpen, setApproveOpen] = useState(false);
   const [rejectOpen, setRejectOpen] = useState(false);
-  const [withdrawOpen, setWithdrawOpen] = useState(false);
+  const [cancelConfirm, setCancelConfirm] = useState<null | "cancel" | "delete">(null);
   const [addLocationOpen, setAddLocationOpen] = useState(false);
 
   const meta = dlaStatusMeta[dla.status];
-  const canWithdraw = dla.status === "active" || dla.status === "under_review";
-  const showAgreement = dla.status === "active" || dla.status === "expired";
+  const isDraft = dla.status === "draft";
+  // Every action below is a direct toolbar button, always visible - the reviewer-only ones
+  // (Start Review/Hold/Resume/Approve/Reject) stay gated behind `dlaApproval`, same as before;
+  // Edit/Cancel are the requester's own capabilities, gated by whatever got this component to
+  // render at all (`dlaAccess`, checked by DlaShell). "For active requests only cancel option can
+  // be used" (agreement-status.ts) - Edit stops once a request is Active.
+  const canEdit = dla.status === "draft" || dla.status === "submitted" || dla.status === "under_review" || dla.status === "on_hold" || dla.status === "approved";
+  const canCancel = dla.status !== "closed" && dla.status !== "rejected" && dla.status !== "cancelled";
+  const showAgreement = dla.status === "active" || dla.status === "closed";
   const isPendingReview = dla.status === "under_review" && canApprove;
+  const hasOtherAction = canEdit || (canApprove && (dla.status === "submitted" || dla.status === "under_review" || dla.status === "on_hold"));
 
   // The gradient card's own "Agreement Period" never just says "Not set" for a request that
   // hasn't been granted yet - it falls back to what was actually requested, labelled as such, so
@@ -253,13 +245,26 @@ export function DlaDetail({
               Download PDF
             </Button>
           )}
-          {canWithdraw && (
-            <Button color={isPendingReview ? "link-destructive" : "secondary-destructive"} onPress={() => setWithdrawOpen(true)}>
-              Withdraw
+          {isDraft && (
+            <Button color="secondary-destructive" onPress={() => setCancelConfirm("delete")}>
+              Delete draft
+            </Button>
+          )}
+          {canEdit && (
+            <Button color="secondary" iconLeading={Edit05} onPress={onEdit}>
+              {isDraft ? "Edit draft" : "Edit request"}
+            </Button>
+          )}
+          {dla.status === "submitted" && canApprove && (
+            <Button color="primary" onPress={onStartReview}>
+              Start Review
             </Button>
           )}
           {isPendingReview && (
             <>
+              <Button color="secondary" onPress={onHold}>
+                Put On Hold
+              </Button>
               <Button color="secondary-destructive" onPress={() => setRejectOpen(true)}>
                 Reject
               </Button>
@@ -267,6 +272,16 @@ export function DlaDetail({
                 Approve
               </Button>
             </>
+          )}
+          {dla.status === "on_hold" && canApprove && (
+            <Button color="primary" onPress={onResume}>
+              Resume Review
+            </Button>
+          )}
+          {canCancel && !isDraft && (
+            <Button color={hasOtherAction ? "secondary-destructive" : "link-destructive"} onPress={() => setCancelConfirm("cancel")}>
+              Cancel
+            </Button>
           )}
         </div>
       </div>
@@ -302,8 +317,19 @@ export function DlaDetail({
           <AlertFullWidth
             color="warning"
             title="Under Review"
-            description={isPendingReview ? "This request needs a decision - see Approve/Reject above." : "This request is being assessed. The requester will be notified once a decision is made."}
+            description={isPendingReview ? "This request needs a decision - see Put On Hold, Reject or Approve above." : "This request is being assessed. The requester will be notified once a decision is made."}
             confirmLabel="Noted"
+            contained
+            className="max-w-none rounded-lg border border-warning-200 px-4 py-3 md:px-4"
+          />
+        )}
+        {dla.status === "on_hold" && (
+          <AlertFullWidth
+            color="warning"
+            title="On Hold"
+            description={canApprove ? "This review is paused pending information from the requester. Resume once you have what you need." : "This request is on hold pending further information. You'll be notified once the review resumes."}
+            confirmLabel="Noted"
+            contained
             className="max-w-none rounded-lg border border-warning-200 px-4 py-3 md:px-4"
           />
         )}
@@ -313,25 +339,28 @@ export function DlaDetail({
             title="Request Rejected"
             description={dla.rejectionReason || "No reason was provided."}
             confirmLabel="Noted"
+            contained
             className="max-w-none rounded-lg border border-error-200 px-4 py-3 md:px-4"
           />
         )}
-        {dla.status === "withdrawn" && (
+        {dla.status === "cancelled" && (
           <AlertFullWidth
             color="gray"
-            title="Withdrawn"
-            description="This request was withdrawn and is no longer active."
+            title="Cancelled"
+            description="This request was cancelled and is no longer active."
             confirmLabel="Noted"
+            contained
             className="max-w-none rounded-lg border border-secondary px-4 py-3 md:px-4"
           />
         )}
-        {dla.status === "expired" && (
+        {dla.status === "closed" && (
           <AlertFullWidth
             color="warning"
-            title="Licence Expired"
-            description={`This agreement expired on ${formatShortDate(dla.validTo)}. Renew to continue accessing its data locations.`}
+            title="Licence Closed"
+            description={dla.validTo ? `This agreement closed on ${formatShortDate(dla.validTo)}. Renew to continue accessing its data locations.` : "This agreement is closed. Renew to continue accessing its data locations."}
             confirmLabel="Renew Licence"
             onConfirm={() => router.push(roleHref(`/pages/dla/new?renewFrom=${dla.id}`))}
+            contained
             className="max-w-none rounded-lg border border-warning-200 px-4 py-3 md:px-4"
           />
         )}
@@ -415,18 +444,24 @@ export function DlaDetail({
       </Tabs>
 
       <ApproveModal dla={dla} isOpen={approveOpen} onOpenChange={setApproveOpen} onApprove={(input) => { onApprove(input); setApproveOpen(false); }} />
-      <RejectModal dla={dla} isOpen={rejectOpen} onOpenChange={setRejectOpen} onReject={(reason) => { onReject(reason); setRejectOpen(false); }} />
+      <RejectModal id={dla.id} isOpen={rejectOpen} onOpenChange={setRejectOpen} onReject={(reason) => { onReject(reason); setRejectOpen(false); }} />
       <AddLocationModal isOpen={addLocationOpen} onOpenChange={setAddLocationOpen} onAdd={onAddLocation} />
 
       <DestructiveModal
-        isOpen={withdrawOpen}
-        onOpenChange={setWithdrawOpen}
-        title={`Withdraw ${dla.id}?`}
-        description="This request or agreement moves to Withdrawn and can't be reversed here."
-        confirmLabel="Withdraw"
+        isOpen={cancelConfirm !== null}
+        onOpenChange={(open) => !open && setCancelConfirm(null)}
+        title={cancelConfirm === "delete" ? `Delete draft ${dla.id}?` : `Cancel ${dla.id}?`}
+        description={
+          cancelConfirm === "delete"
+            ? "The draft is removed and can't be recovered."
+            : "This request or agreement moves to Cancelled and can't be reversed here."
+        }
+        confirmLabel={cancelConfirm === "delete" ? "Delete draft" : "Cancel request"}
         onConfirm={() => {
-          setWithdrawOpen(false);
-          onWithdraw();
+          const action = cancelConfirm;
+          setCancelConfirm(null);
+          if (action === "delete") onDeleteDraft();
+          else onCancel();
         }}
       />
     </div>
@@ -434,15 +469,19 @@ export function DlaDetail({
 }
 
 const emptyCopy: Record<DlaStatus, { title: string; description: string; cta: boolean }> = {
-  active: { title: "No active agreements", description: "There are currently no active Data Licensing Agreements.", cta: false },
+  draft: { title: "No drafts", description: "Requests you save as a draft appear here until they are submitted.", cta: true },
+  submitted: { title: "No submitted requests", description: "Requests waiting for a reviewer to start their review appear here.", cta: true },
   under_review: {
     title: "No Active DLA Requests",
     description: "There are currently no Data Licensing Agreement associated with your account. Create a new request to seek approval for access to licensed data. You will be able to track the status of your request once submitted.",
     cta: true,
   },
+  on_hold: { title: "No requests on hold", description: "Requests paused pending information from the requester appear here.", cta: false },
+  approved: { title: "No approved requests", description: "Requests approved and waiting on their own start date appear here.", cta: false },
   rejected: { title: "No rejected requests", description: "Requests that weren't approved appear here.", cta: false },
-  expired: { title: "No expired agreements", description: "Agreements past their grant period appear here.", cta: false },
-  withdrawn: { title: "No withdrawn requests", description: "Requests or agreements you withdraw appear here.", cta: false },
+  active: { title: "No active agreements", description: "There are currently no active Data Licensing Agreements.", cta: false },
+  closed: { title: "No closed agreements", description: "Agreements that have run their course, automatically or manually, appear here.", cta: false },
+  cancelled: { title: "No cancelled requests", description: "Requests or agreements cancelled by the requester or an admin appear here.", cta: false },
 };
 
 // Wireframe frame "No DLAs Yet" (Figma YMproGZfrFB5jUqPHPxMhk node 33:43259) - its concentric-ring

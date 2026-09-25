@@ -21,7 +21,7 @@ import { Button } from "@/components/base/buttons/button";
 import { MultiSelect } from "@/components/base/select/multi-select";
 import { InputDatePicker } from "@/components/custom/date-picker/input-date-picker";
 import { Input } from "@/components/base/input/input";
-import { Textarea } from "@/components/custom/textarea/textarea";
+import { TextArea } from "@/components/base/textarea/textarea";
 import { TypeformCard, ChoiceTile } from "./typeform-card";
 import { EMBARGO_TYPE_OPTIONS, PROJECT_METADATA_CONCEPTS, REGISTRATION_SPECIES, SPECIES_CONCEPTS, maxEmbargoMonths, formatEmbargoDuration } from "./data";
 import { SpeciesRestrictionSection, isSpeciesEntryValid } from "./species-restriction";
@@ -155,7 +155,7 @@ export function RestrictionTypeFields({ typeKey, value, onChange }: { typeKey: R
                 {value.embargo.types.includes("other") && (
                     <Input label="Please specify" isRequired value={value.embargo.typeOther} onChange={(v) => patch({ embargo: { ...value.embargo, typeOther: v } })} />
                 )}
-                <Textarea
+                <TextArea
                     label="Reason"
                     placeholder="Provide justification for embargo"
                     isRequired
@@ -191,7 +191,7 @@ export function RestrictionTypeFields({ typeKey, value, onChange }: { typeKey: R
         return (
             <div className="flex flex-col gap-4">
                 <ConceptRows rows={value.metadata.concepts} onChange={(concepts) => patch({ metadata: { ...value.metadata, concepts } })} options={PROJECT_METADATA_CONCEPTS} />
-                <Textarea
+                <TextArea
                     label="Justification"
                     placeholder="Reasons for restrictions"
                     isRequired
@@ -203,7 +203,7 @@ export function RestrictionTypeFields({ typeKey, value, onChange }: { typeKey: R
         );
 
     return (
-        <Textarea
+        <TextArea
             label="Other Restrictions"
             placeholder="Provide reasons why this restriction is needed to this project..."
             isRequired

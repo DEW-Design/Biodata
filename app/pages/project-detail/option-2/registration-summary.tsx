@@ -254,7 +254,7 @@ export function DataCollectionCard({ collection, bare = false }: { collection: D
 
   return (
     <BentoCard>
-      <h2 className="text-md font-medium text-primary">Data Collection</h2>
+      <h2 className="text-base font-medium text-primary">Data Collection</h2>
       {body}
     </BentoCard>
   );
@@ -268,7 +268,7 @@ export function RestrictionsCard({ restrictions, bare = false }: { restrictions:
     if (bare) return emptyState;
     return (
       <BentoCard>
-        <h2 className="text-md font-medium text-primary">Privacy and Restrictions</h2>
+        <h2 className="text-base font-medium text-primary">Privacy and Restrictions</h2>
         {emptyState}
       </BentoCard>
     );
@@ -322,7 +322,7 @@ export function RestrictionsCard({ restrictions, bare = false }: { restrictions:
 
   return (
     <BentoCard>
-      <h2 className="text-md font-medium text-primary">Privacy and Restrictions</h2>
+      <h2 className="text-base font-medium text-primary">Privacy and Restrictions</h2>
       {body}
     </BentoCard>
   );

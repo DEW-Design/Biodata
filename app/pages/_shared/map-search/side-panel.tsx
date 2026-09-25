@@ -3,6 +3,7 @@
 import type { ReactNode } from "react";
 import { Dialog, Heading, Modal, ModalOverlay } from "react-aria-components";
 import { CloseButton } from "@/components/base/buttons/close-button";
+import { MODAL_Z_INDEX } from "@/lib/layers";
 import { cx } from "@/utils/cx";
 
 // A real right-anchored slide-over, not the centred `Modal`/`ModalOverlay` pair in
@@ -46,7 +47,8 @@ export function SidePanel({
       isDismissable
       className={({ isEntering, isExiting }) =>
         cx(
-          "fixed inset-0 z-50 bg-overlay/70 backdrop-blur-[2px]",
+          MODAL_Z_INDEX,
+          "fixed inset-0 bg-overlay/70 backdrop-blur-[2px]",
           isEntering && "duration-300 ease-out animate-in fade-in",
           isExiting && "duration-200 ease-in animate-out fade-out",
         )

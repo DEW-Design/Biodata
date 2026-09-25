@@ -146,9 +146,10 @@ export function DateRangeControl({ defaultValue, value: controlledValue, onChang
                   {(date) => (
                     <CalendarCell
                       date={date}
-                      className={({ isSelected, isSelectionStart, isSelectionEnd, isDisabled, isOutsideMonth, isFocusVisible }) =>
+                      className={({ isSelected, isSelectionStart, isSelectionEnd, isDisabled, isOutsideMonth, isFocusVisible, isToday }) =>
                         cx(
                           "flex size-8 cursor-pointer items-center justify-center rounded-md text-sm text-primary outline-hidden transition-colors hover:bg-secondary",
+                          isToday && !isSelected && "font-semibold text-brand-secondary ring-1 ring-brand ring-inset",
                           isSelected && "rounded-none bg-brand-50 text-brand-secondary",
                           (isSelectionStart || isSelectionEnd) && "rounded-md bg-brand-solid text-white hover:bg-brand-solid",
                           isOutsideMonth && "text-quaternary",

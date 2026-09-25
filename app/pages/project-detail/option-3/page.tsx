@@ -18,49 +18,31 @@
 // principle already applied to search-data.ts across the map search tool, option-1 and option-2.
 // Only the About tab's own layout (about-content.tsx) is genuinely new.
 
-import { Suspense, useMemo, useState, type FC, type ReactNode } from "react";
+import { Suspense, useMemo, useState, type ReactNode } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import type { DateValue } from "@internationalized/date";
-import { Button as AriaButton, Dialog, DialogTrigger } from "react-aria-components";
 import { TabList, Tab, TabPanel, Tabs as ContentTabs } from "@/components/application/tabs/tabs";
 import {
-  Upload01,
-  Plus,
-  ChevronDown,
   ArrowNarrowLeft,
   ArrowNarrowRight,
   Edit02,
-  HomeLine,
-  Folder,
-  FileLock01,
-  Feather,
-  BarChart01,
-  FileSearch01,
-  Map01,
 } from "@untitledui/icons";
 import { Button } from "@/components/base/buttons/button";
-import { Avatar } from "@/components/base/avatar/avatar";
-import { Tooltip, TooltipTrigger } from "@/components/base/tooltip/tooltip";
-import { Popover } from "@/components/base/select/popover";
 import { BadgeWithDot } from "@/components/base/badges/badges";
 import { Breadcrumb } from "@/components/scaffold/breadcrumb";
-import { GlobalProjectSearch } from "@/app/pages/_shared/global-search";
-import { GuestActionButton } from "@/app/pages/_shared/guest-action-gate";
-import { GuestAuthActions } from "@/app/pages/_shared/guest-auth-actions";
+import { PrimaryRail } from "@/app/pages/_shared/primary-rail";
+import { sectionIcons } from "@/app/pages/_shared/nav-icons";
+import { AppHeader } from "@/app/pages/_shared/app-header";
 import { MobileNavTrigger } from "@/app/pages/_shared/mobile-nav";
 import { RoleSwitcher } from "@/app/pages/_shared/role-switcher";
-import { assetPath } from "@/lib/base-path";
 import { ProjectDetailLayoutSwitcher } from "@/app/pages/_shared/project-detail-layout-switcher";
 import { SpeciesResultsView } from "@/app/pages/_shared/map-search/species-results";
 import { searchEvents } from "@/app/pages/_shared/map-search/search-data";
 
-import { useFeatureAccess } from "@/lib/use-feature-access";
 import { useUserRole } from "@/lib/use-user-role";
 import { useRoleHref } from "@/lib/use-role-href";
-import { orgLabelForRole } from "@/lib/user-role";
-import { registeredUserNav, publicUserNav, registeredUserAccountMenu, keyHref, type NavNode } from "@/lib/registered-user-nav";
-import { cx } from "@/utils/cx";
+import { registeredUserNav, publicUserNav, keyHref, type NavNode } from "@/lib/registered-user-nav";
 
 import { RecordStoreProvider, useRecordStore } from "../option-2/record-store";
 import type { DetailRecord } from "../option-2/record-fields";
@@ -73,17 +55,6 @@ import { EditColumn, type EditRequest } from "./edit-column";
 
 const PROJECT_ID = "adelaide-hills";
 const project = searchEvents.find((e) => e.id === PROJECT_ID)!;
-
-const sectionIcons: Record<string, FC<{ className?: string }>> = {
-  Home: HomeLine,
-  Projects: Folder,
-  Explore: Map01,
-  "Data Licencing Agreement (DLA)": FileLock01,
-  "Nominate Sensitive Species": Feather,
-  "Reports (Own Submissions)": BarChart01,
-  "Template Finder": FileSearch01,
-};
-
 type DetailTab = "overview" | "records" | "species";
 
 const detailTabs: { id: DetailTab; label: string }[] = [
@@ -107,28 +78,6 @@ function SectionPlaceholder({ node }: { node: NavNode }) {
         </Button>
       )}
     </div>
-  );
-}
-
-function ProfileMenu() {
-  const [open, setOpen] = useState(false);
-  return (
-    <DialogTrigger onOpenChange={setOpen}>
-      <AriaButton className="flex items-center gap-1 rounded-md outline-brand focus-visible:outline-2 focus-visible:outline-offset-2">
-        <Avatar size="md" initials="OW" alt="Olivia Wyatt" />
-        <ChevronDown className={cx("size-3.5 text-quaternary transition-transform", open && "rotate-180")} />
-      </AriaButton>
-      <Popover size="sm" className="w-48 p-1">
-        <Dialog className="outline-hidden">
-          <p className="px-3 py-2 text-xs font-semibold tracking-wide text-quaternary uppercase">Profile</p>
-          {registeredUserAccountMenu.map((item) => (
-            <p key={item} className="cursor-pointer rounded-md px-3 py-2 text-sm text-secondary hover:bg-secondary">
-              {item}
-            </p>
-          ))}
-        </Dialog>
-      </Popover>
-    </DialogTrigger>
   );
 }
 
@@ -220,7 +169,6 @@ export default function ProjectDetailOption3Page() {
 
 function ProjectDetail() {
   const router = useRouter();
-  const showOrgSwitcher = useFeatureAccess("orgSwitcher");
   const role = useUserRole();
   const isPublicUser = role === "public-user";
   const nav = isPublicUser ? publicUserNav : registeredUserNav;
@@ -274,8 +222,8 @@ function ProjectDetail() {
       {/* ── Header - identical shape to option-1/option-2's own clean, flat header (no colour
           band): an eyebrow label, the title, and a meta line - per the user's own direct
           preference against a dark banner, confirmed twice already on option-2. ── */}
-      <header className="flex min-h-16 shrink-0 flex-wrap items-center justify-between gap-x-6 gap-y-3 border-b border-secondary bg-primary px-4 py-3">
-        <div className="flex min-w-0 flex-1 flex-wrap items-center gap-4">
+      <AppHeader
+        mobileNav={
           <MobileNavTrigger
             sections={nav}
             sectionIcons={sectionIcons}
@@ -285,65 +233,18 @@ function ProjectDetail() {
               if (section) goToSection(section);
             }}
           />
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={assetPath("/pages/dashboard/gov-sa-dew-lockup.png")} alt="Government of South Australia, Department for Environment and Water" className="h-[37px] w-auto" />
-          <div className="h-6 w-px bg-secondary" />
-          <p className="text-[17px] font-semibold tracking-tight text-primary">BioData SA</p>
-          {activeSection === "Projects" ? (
-            <Breadcrumb section="Projects" current={project.name} orgLabel={showOrgSwitcher ? orgLabelForRole(role) : undefined} />
-          ) : (
-            <Breadcrumb section={activeSection === "Home" ? undefined : activeSectionNode.label} orgLabel={showOrgSwitcher ? orgLabelForRole(role) : undefined} />
-          )}
-        </div>
-        <div className="flex shrink-0 flex-wrap items-center gap-3 sm:gap-6">
-          <div className="flex flex-wrap items-center gap-3">
-            <div className="w-full sm:w-64 lg:w-[395px]">
-              <GlobalProjectSearch />
-            </div>
-            <GuestActionButton
-              icon={Plus}
-              label="Add project"
-              color="primary"
-              isGuest={isPublicUser}
-              modalTitle="Sign up to add a project"
-              modalDescription="Create a free BioData SA account to start contributing projects to South Australia's biodiversity record."
-              href="/pages/project-registration"
-            />
-            <GuestActionButton
-              icon={Upload01}
-              label="Upload dataset"
-              color="secondary"
-              isGuest={isPublicUser}
-              modalTitle="Sign up to upload a dataset"
-              modalDescription="Create a free BioData SA account to start contributing datasets to South Australia's biodiversity record."
-            />
-          </div>
-          {isPublicUser ? <GuestAuthActions /> : <ProfileMenu />}
-        </div>
-      </header>
+        }
+        renderBreadcrumb={(orgLabel) =>
+            activeSection === "Projects" ? (
+              <Breadcrumb section="Projects" current={project.name} orgLabel={orgLabel} />
+            ) : (
+              <Breadcrumb section={activeSection === "Home" ? undefined : activeSectionNode.label} orgLabel={orgLabel} />
+            )}
+      />
 
       <div className="flex flex-1 overflow-hidden">
         {/* ── Primary icon rail ── */}
-        <nav aria-label="Primary" className="hidden w-16 shrink-0 flex-col items-center gap-1 overflow-y-auto border-r border-secondary bg-secondary py-4 lg:flex">
-          {nav.map((section) => {
-            const Icon = sectionIcons[section.label];
-            const active = section.label === activeSection;
-            return (
-              <Tooltip key={section.label} title={section.label} placement="right">
-                <TooltipTrigger
-                  onPress={() => goToSection(section)}
-                  aria-label={section.label}
-                  className={cx(
-                    "relative flex size-12 items-center justify-center rounded-lg transition duration-100 ease-linear active:scale-[0.96]",
-                    active ? "bg-brand-solid text-white" : "text-quaternary hover:bg-tertiary hover:text-primary",
-                  )}
-                >
-                  {Icon && <Icon className="size-5" />}
-                </TooltipTrigger>
-              </Tooltip>
-            );
-          })}
-        </nav>
+        <PrimaryRail sections={nav} activeSection={activeSection} onSelectSection={goToSection} />
 
         <main className="flex flex-1 flex-col overflow-y-auto">
           {activeSection === "Projects" ? (

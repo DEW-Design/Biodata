@@ -30,61 +30,47 @@
 // substitute" call this build already makes for e.g. the map search's own "Go to project" action).
 
 import { Suspense, useState } from "react";
-import { Button as AriaButton, Dialog, DialogTrigger } from "react-aria-components";
+import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { ChevronDown, LogIn01, UserPlus01 } from "@untitledui/icons";
+import { LogIn01, UserPlus01 } from "@untitledui/icons";
 import { Button } from "@/components/base/buttons/button";
-import { Avatar } from "@/components/base/avatar/avatar";
-import { Popover } from "@/components/base/select/popover";
-import { Breadcrumb } from "@/components/scaffold/breadcrumb";
 import { toast } from "@/components/application/toast/toast";
 import { useUserRole } from "@/lib/use-user-role";
 import { useRoleHref } from "@/lib/use-role-href";
-import { registeredUserAccountMenu } from "@/lib/registered-user-nav";
+import { AppHeader } from "@/app/pages/_shared/app-header";
 import { RegistrationStepper } from "./stepper";
 import { Step1ProjectDetails } from "./step-1-project-details";
 import { Step2DataCollection } from "./step-2-data-collection";
 import { Step3PrivacyRestrictions, isStep3Valid } from "./step-3-privacy-restrictions";
 import { SuccessScreen } from "./success-screen";
 import { initialProjectDetails, initialDataCollection, initialRestrictions } from "./types";
-import { cx } from "@/utils/cx";
-import { assetPath } from "@/lib/base-path";
-
-function ProfileMenu() {
-    const [open, setOpen] = useState(false);
-    return (
-        <DialogTrigger onOpenChange={setOpen}>
-            <AriaButton className="flex items-center gap-1 rounded-md outline-brand focus-visible:outline-2 focus-visible:outline-offset-2">
-                <Avatar size="md" initials="OW" alt="Olivia Wyatt" />
-                <ChevronDown className={cx("size-3.5 text-quaternary transition-transform", open && "rotate-180")} />
-            </AriaButton>
-            <Popover size="sm" className="w-48 p-1">
-                <Dialog className="outline-hidden">
-                    <p className="px-3 py-2 text-xs font-semibold tracking-wide text-quaternary uppercase">Profile</p>
-                    {registeredUserAccountMenu.map((item) => (
-                        <p key={item} className="cursor-pointer rounded-md px-3 py-2 text-sm text-secondary hover:bg-secondary">
-                            {item}
-                        </p>
-                    ))}
-                </Dialog>
-            </Popover>
-        </DialogTrigger>
-    );
-}
+import { RoleSwitcher } from "@/app/pages/_shared/role-switcher";
+import { RegistrationLayoutSwitcher } from "./layout-switcher";
 
 function GuestGate() {
     const router = useRouter();
+    const roleHref = useRoleHref();
     return (
-        <div className="flex min-h-screen w-full flex-col items-center justify-center gap-4 bg-secondary p-6 text-center">
-            <p className="text-lg font-semibold text-primary">Sign up to add a project</p>
-            <p className="max-w-sm text-sm text-tertiary">Create a free BioData SA account to start contributing projects to South Australia&apos;s biodiversity record.</p>
-            <div className="mt-2 flex gap-3">
-                <Button color="secondary" iconLeading={LogIn01} onClick={() => router.push("/pages/auth/login")}>
-                    Log in
-                </Button>
-                <Button color="primary" iconLeading={UserPlus01} onClick={() => router.push("/pages/auth/signup")}>
-                    Sign up
-                </Button>
+        <div className="font-barlow flex min-h-screen w-full flex-col bg-secondary">
+            <AppHeader
+                section={
+                    <Link href={roleHref("/pages/project-list")} className="hover:text-primary">
+                        Projects
+                    </Link>
+                }
+                current="Add project"
+            />
+            <div className="flex flex-1 flex-col items-center justify-center gap-4 p-6 text-center">
+                <p className="text-lg font-semibold text-primary">Sign up to add a project</p>
+                <p className="max-w-sm text-sm text-tertiary">Create a free BioData SA account to start contributing projects to South Australia&apos;s biodiversity record.</p>
+                <div className="mt-2 flex gap-3">
+                    <Button color="secondary" iconLeading={LogIn01} onClick={() => router.push("/pages/auth/login")}>
+                        Log in
+                    </Button>
+                    <Button color="primary" iconLeading={UserPlus01} onClick={() => router.push("/pages/auth/signup")}>
+                        Sign up
+                    </Button>
+                </div>
             </div>
         </div>
     );
@@ -112,7 +98,14 @@ function ProjectRegistrationForm() {
     // fresh read here on the next stepper click is all that's needed - no reset required.
     const [reviewOnEntry, setReviewOnEntry] = useState(false);
 
-    if (isPublicUser) return <GuestGate />;
+    if (isPublicUser)
+        return (
+            <>
+                <GuestGate />
+                <RoleSwitcher />
+                <RegistrationLayoutSwitcher current="option-1" />
+            </>
+        );
 
     const goToStep = (next: 1 | 2 | 3, opts?: { review?: boolean }) => {
         setReviewOnEntry(!!opts?.review);
@@ -128,34 +121,17 @@ function ProjectRegistrationForm() {
     };
 
     return (
-        <div className="min-h-screen w-full bg-secondary">
-            <header className="flex h-[90px] items-center justify-between border-b border-secondary bg-primary px-8">
-                <div className="flex items-center gap-4">
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src={assetPath("/pages/dashboard/gov-sa-dew-lockup.png")} alt="Government of South Australia, Department for Environment and Water" className="h-[37px] w-auto" />
-                    <div className="h-6 w-px bg-secondary" />
-                    <p className="text-[17px] font-semibold tracking-tight text-primary">BioData SA</p>
-                    <Breadcrumb section="Projects" current="Add Project" />
-                </div>
-                <div className="flex items-center gap-3">
-                    {/* All 3 steps own their own per-card Back/Continue nav (see
-                        Step1ProjectDetails/Step2DataCollection/Step3PrivacyRestrictions) - no
-                        standard footer renders for any of them, so Cancel/Save Draft stay reachable here instead, the same way a
-                        Typeform-style flow keeps a persistent exit/save affordance rather than
-                        burying it behind the last screen of a sequence. */}
-                    {!created && (
-                        <>
-                            <Button color="link-gray" size="sm" onClick={() => router.back()}>
-                                Cancel
-                            </Button>
-                            <Button color="secondary" size="sm" onClick={handleSaveDraft}>
-                                Save Draft
-                            </Button>
-                        </>
-                    )}
-                    <ProfileMenu />
-                </div>
-            </header>
+        <div className="font-barlow min-h-screen w-full bg-secondary">
+            <RoleSwitcher />
+            <RegistrationLayoutSwitcher current="option-1" />
+            <AppHeader
+              section={
+                <Link href={roleHref("/pages/project-list")} className="hover:text-primary">
+                  Projects
+                </Link>
+              }
+              current="Add project"
+            />
 
             <main className="mx-auto flex max-w-5xl flex-col gap-8 px-6 py-10">
                 {created ? (
@@ -167,6 +143,16 @@ function ProjectRegistrationForm() {
                     </div>
                 ) : (
                     <>
+                        {/* Cancel/Save Draft stay reachable on every step, like a Typeform-style
+                            flow's persistent exit/save affordance. */}
+                        <div className="flex items-center justify-end gap-3">
+                            <Button color="link-gray" onClick={() => router.back()}>
+                                Cancel
+                            </Button>
+                            <Button color="secondary" onClick={handleSaveDraft}>
+                                Save Draft
+                            </Button>
+                        </div>
                         <div className="rounded-2xl border border-secondary bg-primary p-6">
                             <RegistrationStepper currentStep={step} onStepClick={(target) => goToStep(target, { review: true })} />
                         </div>

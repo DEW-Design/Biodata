@@ -1,40 +1,32 @@
 "use client";
 
-import type { FC } from "react";
 import { Suspense, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import type { Key } from "react-aria-components";
-import { Button as AriaButton, Dialog, DialogTrigger, Tabs } from "react-aria-components";
+import { Tabs } from "react-aria-components";
 import { TabList, Tab, TabPanel } from "@/components/application/tabs/tabs";
-import { Upload01, Plus, ChevronDown, ArrowNarrowRight, HomeLine, Folder, Database01, Map01, FileCheck02, FileLock01, Feather, BarChart01, FileSearch01, User01, PieChart03 } from "@untitledui/icons";
+import { ChevronDown, ArrowNarrowRight, Folder, Database01, User01, PieChart03 } from "@untitledui/icons";
 import { Button } from "@/components/base/buttons/button";
-import { Avatar } from "@/components/base/avatar/avatar";
-import { Tooltip, TooltipTrigger } from "@/components/base/tooltip/tooltip";
-import { Popover } from "@/components/base/select/popover";
-import { Breadcrumb } from "@/components/scaffold/breadcrumb";
 import { HomeTabPanels } from "@/app/pages/_shared/home-tab-panels";
 import { DataOverviewContent } from "@/app/pages/_shared/data-overview";
-import { dashboardTasks } from "@/app/pages/_shared/home-dashboard";
 import { ProjectListContent } from "@/app/pages/_shared/project-list-content";
-import { GlobalProjectSearch } from "@/app/pages/_shared/global-search";
-import { GuestActionButton } from "@/app/pages/_shared/guest-action-gate";
+import { PrimaryRail } from "@/app/pages/_shared/primary-rail";
+import { SidebarFooterLinks } from "@/app/pages/_shared/sidebar-footer-links";
+import { sectionIcons } from "@/app/pages/_shared/nav-icons";
+import { AppHeader } from "@/app/pages/_shared/app-header";
+import { ProjectActions } from "@/app/pages/_shared/project-actions";
 import { GuestAboutAside, GuestGradientCard } from "@/app/pages/_shared/guest-home";
-import { GuestAuthActions } from "@/app/pages/_shared/guest-auth-actions";
 import { MobileNavTrigger } from "@/app/pages/_shared/mobile-nav";
 import { RoleSwitcher } from "@/app/pages/_shared/role-switcher";
-import { useFeatureAccess } from "@/lib/use-feature-access";
 import { useUserRole } from "@/lib/use-user-role";
 import { useRoleHref } from "@/lib/use-role-href";
-import { orgLabelForRole } from "@/lib/user-role";
-import { navForRole, registeredUserAccountMenu, registeredUserFooterLinks, keyHref, type NavNode } from "@/lib/registered-user-nav";
+import { navForRole, keyHref, type NavNode } from "@/lib/registered-user-nav";
 import { cx } from "@/utils/cx";
-import { assetPath } from "@/lib/base-path";
 
-// Option 1 of 2: the projects list on the sidebar-nav shell (primary icon rail + contextual
-// sidebar), reusing app/pages/dashboard's three-column header/rail/sidebar chrome
-// verbatim - see that file's comment for the full rationale. See app/pages/project-list/option-2
-// for the same screen on the top-nav shell.
+// The projects list on the sidebar-nav shell (primary icon rail + contextual sidebar), reusing
+// app/pages/dashboard's three-column header/rail/sidebar chrome verbatim - see that file's comment
+// for the full rationale. (The top-nav alternative it was compared against has been deleted.)
 //
 // No Figma frame yet for a Projects list screen, so - same as the dashboard body's metric/filter/
 // map panels - this is built structurally: every contained widget (search, buttons, avatar, badge)
@@ -47,17 +39,6 @@ import { assetPath } from "@/lib/base-path";
 
 // Same icon map as dashboard - kept local (not in lib/registered-user-nav.ts) since it's
 // presentation-only and option-2's top-nav has no use for it.
-const sectionIcons: Record<string, FC<{ className?: string }>> = {
-  Home: HomeLine,
-  Projects: Folder,
-  Explore: Map01,
-  "Data Licencing Agreement (DLA)": FileLock01,
-  "Data Sharing Agreement (DSA)": FileCheck02,
-  "Nominate Sensitive Species": Feather,
-  "Reports (Own Submissions)": BarChart01,
-  "Template Finder": FileSearch01,
-};
-
 // This screen's own page key - Projects is a leaf with its own key now (see
 // lib/registered-user-nav.ts), same shape as Home, so this only matters for goToSection below
 // (deciding whether a Projects icon-rail click should navigate or stay put); the icon rail itself
@@ -124,32 +105,6 @@ function NavTree({ node, depth = 0, defaultOpen = false }: { node: NavNode; dept
   );
 }
 
-// DialogTrigger + our real Popover (react-aria) instead of a hand-rolled useState toggle - gets
-// outside-click and Escape dismissal for free, same primitive DateRangeControl already uses for
-// its overlay. Any hand-rolled dropdown (a switcher, an org-switcher when that gets built) should
-// use this, not a plain conditional div.
-function ProfileMenu() {
-  const [open, setOpen] = useState(false);
-
-  return (
-    <DialogTrigger onOpenChange={setOpen}>
-      <AriaButton className="flex items-center gap-1 rounded-md outline-brand focus-visible:outline-2 focus-visible:outline-offset-2">
-        <Avatar size="md" initials="OW" alt="Olivia Wyatt" />
-        <ChevronDown className={cx("size-3.5 text-quaternary transition-transform", open && "rotate-180")} />
-      </AriaButton>
-      <Popover size="sm" className="w-48 p-1">
-        <Dialog className="outline-hidden">
-          <p className="px-3 py-2 text-xs font-semibold tracking-wide text-quaternary uppercase">Profile</p>
-          {registeredUserAccountMenu.map((item) => (
-            <p key={item} className="cursor-pointer rounded-md px-3 py-2 text-sm text-secondary hover:bg-secondary">
-              {item}
-            </p>
-          ))}
-        </Dialog>
-      </Popover>
-    </DialogTrigger>
-  );
-}
 
 // What column 3 shows for every section besides this screen's own (Projects, here). Two honest
 // states, not one: a section either has a real page elsewhere (Home -> dashboard) - say so and
@@ -190,7 +145,6 @@ export default function ProjectListPage() {
 
 function ProjectList() {
   const router = useRouter();
-  const showOrgSwitcher = useFeatureAccess("orgSwitcher");
   // public-user reads a different, smaller nav tree entirely - see dashboard's copy of
   // this same branch for the full rationale.
   const role = useUserRole();
@@ -226,8 +180,8 @@ function ProjectList() {
     <div className="font-barlow flex h-screen flex-col overflow-hidden">
       <RoleSwitcher />
       {/* ── Header ── */}
-      <header className="flex min-h-16 shrink-0 flex-wrap items-center justify-between gap-x-6 gap-y-3 border-b border-secondary bg-primary px-4 py-3">
-        <div className="flex flex-wrap items-center gap-4">
+      <AppHeader
+        mobileNav={
           <MobileNavTrigger
             sections={nav}
             sectionIcons={sectionIcons}
@@ -303,78 +257,14 @@ function ProjectList() {
                   ))
                 : undefined}
           </MobileNavTrigger>
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src={assetPath("/pages/dashboard/gov-sa-dew-lockup.png")}
-            alt="Government of South Australia, Department for Environment and Water"
-            className="h-[37px] w-auto"
-          />
-          <div className="h-6 w-px bg-secondary" />
-          <p className="text-[17px] font-semibold tracking-tight text-primary">BioData SA</p>
-          <Breadcrumb
-            section={activeSection === "Home" ? undefined : activeSectionNode.label}
-            orgLabel={showOrgSwitcher ? orgLabelForRole(role) : undefined}
-          />
-        </div>
-        <div className="flex flex-wrap items-center gap-3 sm:gap-6">
-          <div className="flex flex-wrap items-center gap-3">
-            <div className="w-full sm:w-64 lg:w-[395px]">
-              <GlobalProjectSearch />
-            </div>
-            {/* Visible for every role, gated by click instead of by visibility for public-user -
-                see app/pages/_shared/guest-action-gate.tsx / dashboard's copy for the
-                full rationale. */}
-            <GuestActionButton
-              icon={Plus}
-              label="Add project"
-              color="primary"
-              isGuest={isPublicUser}
-              modalTitle="Sign up to add a project"
-              modalDescription="Create a free BioData SA account to start contributing projects to South Australia's biodiversity record."
-              href="/pages/project-registration"
-            />
-            <GuestActionButton
-              icon={Upload01}
-              label="Upload dataset"
-              color="secondary"
-              isGuest={isPublicUser}
-              modalTitle="Sign up to upload a dataset"
-              modalDescription="Create a free BioData SA account to start contributing datasets to South Australia's biodiversity record."
-            />
-          </div>
-          {isPublicUser ? <GuestAuthActions /> : <ProfileMenu />}
-        </div>
-      </header>
+        }
+        section={activeSection === "Home" ? undefined : activeSectionNode.label}
+      />
 
       {/* ── Primary icon rail: top-level IA (nav chrome - not pixel-matched) ── */}
       {(() => {
         const iconRail = (
-          <nav aria-label="Primary" className="hidden w-16 shrink-0 flex-col items-center gap-1 overflow-y-auto border-r border-secondary bg-secondary py-4 lg:flex">
-            {nav.map((section) => {
-              const Icon = sectionIcons[section.label];
-              const active = section.label === activeSection;
-              const badgeCount = !isPublicUser && section.label === "Home" ? dashboardTasks.length : 0;
-              return (
-                <Tooltip key={section.label} title={section.label} placement="right">
-                  <TooltipTrigger
-                    onPress={() => goToSection(section)}
-                    aria-label={section.label}
-                    className={cx(
-                      "relative flex size-12 items-center justify-center rounded-lg transition duration-100 ease-linear active:scale-[0.96]",
-                      active ? "bg-brand-solid text-white" : "text-quaternary hover:bg-tertiary hover:text-primary",
-                    )}
-                  >
-                    {Icon && <Icon className="size-5" />}
-                    {badgeCount > 0 && (
-                      <span className="absolute -top-1 -right-1 flex size-4 items-center justify-center rounded-full bg-error-solid text-[10px] font-semibold tabular-nums text-white">
-                        {badgeCount}
-                      </span>
-                    )}
-                  </TooltipTrigger>
-                </Tooltip>
-              );
-            })}
-          </nav>
+          <PrimaryRail sections={nav} activeSection={activeSection}  onSelectSection={goToSection} />
         );
 
         // public-user's Home and Projects are each a single view (see publicUserNav) - no Tabs
@@ -392,7 +282,7 @@ function ProjectList() {
           return (
             <div className="flex flex-1 overflow-hidden">
               {iconRail}
-              <GuestAboutAside sectionLabel={activeSection} />
+              <GuestAboutAside sectionLabel={activeSection} actions={activeSection === "Projects" ? <ProjectActions withTopRule={false} /> : undefined} />
 
               <main className="flex flex-1 flex-col overflow-y-auto">
                 {activeSection === "Home" ? (
@@ -430,11 +320,7 @@ function ProjectList() {
                     <Tab id="overview" label="Flora and Fauna Dashboard" icon={PieChart03} />
                   </TabList>
                 </div>
-                <div className="flex flex-col gap-2 border-t border-secondary pt-4 text-xs text-quaternary">
-                  {registeredUserFooterLinks.map((link) => (
-                    <p key={link}>{link}</p>
-                  ))}
-                </div>
+                <SidebarFooterLinks />
               </aside>
 
               {/* ── Main content: Home's tab panels render the shared real dashboard content
@@ -464,17 +350,14 @@ function ProjectList() {
                     <Tab id="projects" label="Projects" icon={Folder} />
                     <Tab id="datasets" label="Datasets" icon={Database01} />
                   </TabList>
+                  <ProjectActions />
                 </div>
-                <div className="flex flex-col gap-2 border-t border-secondary pt-4 text-xs text-quaternary">
-                  {registeredUserFooterLinks.map((link) => (
-                    <p key={link}>{link}</p>
-                  ))}
-                </div>
+                <SidebarFooterLinks />
               </aside>
 
               {/* ── Main content: Projects has this screen's own content; Datasets is unscoped ── */}
               <main className="flex flex-1 flex-col overflow-y-auto">
-                <TabPanel id="projects">
+                <TabPanel id="projects" className="flex min-h-0 flex-1 flex-col">
                   <ProjectListContent />
                 </TabPanel>
                 <TabPanel id="datasets">
@@ -495,11 +378,7 @@ function ProjectList() {
                 <p className="mb-3 text-xs font-semibold tracking-wide text-quaternary uppercase">{activeSectionNode.label}</p>
                 {activeSectionNode.items?.map((item) => <NavTree key={item.label} node={item} depth={1} />)}
               </div>
-              <div className="flex flex-col gap-2 border-t border-secondary pt-4 text-xs text-quaternary">
-                {registeredUserFooterLinks.map((link) => (
-                  <p key={link}>{link}</p>
-                ))}
-              </div>
+              <SidebarFooterLinks />
             </aside>
 
             {/* ── Main content: Home and Projects are intercepted above (their own Tabs

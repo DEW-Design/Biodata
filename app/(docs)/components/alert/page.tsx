@@ -57,6 +57,11 @@ const fullWidthProps = [
   { name: "color",        type: '"default" | "brand" | "gray" | "error" | "warning" | "success"', default: '"default"' },
   { name: "onClose",      type: "() => void",                                               default: "-" },
   { name: "onConfirm",    type: "() => void",                                               default: "-" },
+  { name: "className",    type: "string",                                                   default: "-" },
+  { name: "tintedBackground", type: "boolean",                                              default: "false" },
+  { name: "hideDismissButton", type: "boolean",                                             default: "false" },
+  { name: "contained",    type: "boolean",                                                  default: "false" },
+  { name: "wrap",         type: "boolean",                                                  default: "false" },
 ];
 
 export default function AlertPage() {

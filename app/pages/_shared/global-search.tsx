@@ -1,124 +1,281 @@
 "use client";
 
-import { useState } from "react";
+import { useContext, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import type { Key } from "react-aria-components";
-import { SearchMd } from "@untitledui/icons";
+import { ComboBoxStateContext, type Key } from "react-aria-components";
+import { Folder, SearchLg, SearchMd } from "@untitledui/icons";
 import { ComboBox } from "@/components/base/select/combobox";
-import { SelectItem } from "@/components/base/select/select-item";
+import { SelectItem, SelectSection } from "@/components/base/select/select-item";
 import { projects } from "@/app/pages/_shared/project-list-content";
+import { rootProjectForParentEventId, searchOccurrences, type SpeciesGroup } from "@/app/pages/_shared/map-search/search-data";
+import { SPECIES_GROUP_ICON } from "@/app/pages/_shared/map-search/species-group-icons";
 import { useRoleHref } from "@/lib/use-role-href";
 
-// The header search, made real - functionally scoped to projects only (that's the one type with
-// real example content), but the brief's actual scope is broader ("projects, datasets or
-// species") and the control now says so honestly, rather than narrowing its own claimed scope to
-// match what's wired up. Flagged directly by the user: the placeholder/label previously said
-// "projects" only, underselling the real intended breadth of this control. The fix isn't to
-// pretend Datasets/Species are searchable - there's no example content behind either yet, and
-// silently no-op'ing a species-name query would be its own dishonesty - it's to show them as real,
-// named, *not-yet-searchable* categories (inert rows with a "Coming soon" note) instead of omitting
-// them entirely. Same "no fake links, no fake affordances, but no hiding real scope either"
-// balance as everywhere else in this build.
+// The header search: projects and species, and how they relate. Type a species and you see it,
+// where it was recorded, and the projects that recorded it; type a project and you see it and the
+// species it holds. Anything the dropdown does not list (events, occurrences, observations,
+// artefacts) is one click away: "Search all records" opens Explore for the same term across all of
+// South Australia, where every related record shows up in its own tab
+// (app/pages/observations/page.tsx reads the `?q=` this sends).
 //
-// Built on the real ComboBox (react-aria's AriaComboBox + our Popover/SelectItem), not a
-// hand-rolled input+dropdown - the same "only base components" rule applied everywhere else in
-// this build.
+// Species come from the same occurrence data Explore searches, under the same publication rule: a
+// species is listed only when the project that recorded it is Active or Completed, so drafts and
+// projects under review never surface one. A sensitive (Level 2) species is findable by name; its
+// location is still obscured in Explore, as everywhere else.
 //
-// Status filter chips (a ToggleButtonGroup in `listboxHeader`) removed - flagged directly by the
-// user: "we don't need filters here. We'll need filters when the search results show up" - filters
-// belong on a real results view once there's something worth narrowing, not as a way to browse the
-// whole list with no query typed. Browsing-via-filter went with it; opening the tray with no query
-// now just prompts to type, nothing more.
+// Datasets still have no example content, so they stay a named "Coming soon" row rather than being
+// hidden or faked (same honesty convention as before).
+//
+// Projects with no detail page are shown but inert (`isDisabled`), so selecting one can never
+// misfire - the same convention as TaskItem/ProjectRow only linking rows with a real page, chosen
+// directly by the user over explaining "no detail page yet" in the UI.
+//
+// Built on the real ComboBox (react-aria's AriaComboBox + our Popover/SelectItem/SelectSection).
+//
+// No status filter chips here - flagged directly by the user: filters belong on a results view
+// (Explore) once there is something worth narrowing, not on a typeahead.
 const PROMPT_ID = "__prompt__";
 const NO_RESULTS_ID = "__no-results__";
+const SPECIES_PREFIX = "species:";
+const PROJECT_PREFIX = "project:";
 
-// Shown alongside the prompt/no-results states (not mixed into real project results, so they never
-// crowd out or get confused with an actual match) - the honest "this category exists, it just
-// isn't wired up yet" rows for the brief's other two search scopes.
-const scopeNoticeItems = [
-  { id: "__datasets__", label: "Datasets", supportingText: "Coming soon", isDisabled: true },
-  { id: "__species__", label: "Species", supportingText: "Coming soon", isDisabled: true },
-];
+// The named-but-not-yet-searchable category, shown with the prompt and no-results states (never
+// mixed into real matches, so it cannot be confused with one).
+const scopeNoticeItems = [{ id: "__datasets__", label: "Datasets", supportingText: "Coming soon", isDisabled: true }];
 
-// Capped list + a "Show N more results" footer once there are more matches than this - pattern
-// checked against Mobbin (Codecademy's "View all results" button, Literal's "See all search
-// results" link below a capped list) rather than inventing a pagination scheme from scratch. Lives
-// in `listboxFooter` (components/base/select/combobox.tsx), not as another selectable listbox
-// item - a real listbox item would run through `onSelectionChange` on click, which would overwrite
-// the input with its own label text and could close the popover, neither of which "reveal more
-// rows in place" should do.
-const RESULTS_LIMIT = 10;
+// Each group shows this many rows until "Show N more results" is pressed.
+const GROUP_LIMIT = 5;
 
-export function GlobalProjectSearch() {
+// Capped groups plus a "Show N more results" footer once there are more matches than fit (Mobbin:
+// Codecademy's "View all results", Literal's "See all search results"). It lives in `listboxFooter`
+// rather than as a listbox item, because a real item would run through `onSelectionChange` and
+// overwrite the input with its own label.
+//
+// Provenance comes first: the line under a species is the organisation that published it and the
+// project it was recorded in (the scientific name sits beside the common name), so where a record
+// came from is the first thing read after what it is.
+//
+// Layout follows the Mobbin search patterns (Whop, Juicebox, Langdock: results grouped under
+// headings with counts; komoot, Langdock: a short second line and the typed text in bold; Hashnode:
+// "press Enter for all results"). Species and Projects are two titled groups, each row is a title
+// with one line under it (organisation and project for a species; organisation for a project) and a
+// short label on the right, and each species carries the icon for its group (mammal, bird, reptile, amphibian, plant).
+
+interface SpeciesEntry {
+  species: string;
+  commonName: string;
+  family: string;
+  group: SpeciesGroup;
+  /** The published projects that recorded it, and the organisation behind each (same order). */
+  projectNames: string[];
+  projectOrgs: string[];
+  projectIds: string[];
+}
+
+// One entry per species (scientific name), built once from the occurrence data. Non-Biotic and
+// Community rows (no family/group) are not species and are skipped.
+const speciesIndex: SpeciesEntry[] = (() => {
+  const byName = new Map<string, SpeciesEntry>();
+  for (const o of searchOccurrences) {
+    if (!o.family || !o.group) continue;
+    const root = rootProjectForParentEventId(o.parentEventId);
+    if (!root || (root.status !== "Active" && root.status !== "Completed")) continue;
+    const entry = byName.get(o.species) ?? { species: o.species, commonName: o.commonName, family: o.family, group: o.group, projectNames: [], projectOrgs: [], projectIds: [] };
+    if (!entry.projectIds.includes(root.id)) {
+      entry.projectIds.push(root.id);
+      entry.projectNames.push(root.name);
+      entry.projectOrgs.push(root.org);
+    }
+    byName.set(o.species, entry);
+  }
+  return [...byName.values()];
+})();
+
+const matchesSpecies = (s: SpeciesEntry, q: string) => [s.commonName, s.species, s.family, s.group].some((v) => v.toLowerCase().includes(q));
+
+// Provenance leads: who published the record and in which project, before anything else. A species
+// recorded by several projects shows the first and counts the rest on the right.
+const provenanceOf = (s: SpeciesEntry) => `${s.projectOrgs[0]} · ${s.projectNames[0]}`;
+const moreProjects = (s: SpeciesEntry) => (s.projectIds.length > 1 ? `+${s.projectIds.length - 1} more` : undefined);
+
+// Enter with no row highlighted opens Explore for what was typed. It is listened for on the window
+// while the list is open (the footer only mounts then), before react-aria sees the key, because the
+// ComboBox does nothing with Enter when no row is highlighted.
+function SearchAllFooter({ term, remaining, onShowMore, onSearchAll }: { term: string; remaining: number; onShowMore: () => void; onSearchAll: () => void }) {
+  const state = useContext(ComboBoxStateContext);
+  useEffect(() => {
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key !== "Enter" || e.isComposing) return;
+      if (!state || state.selectionManager.focusedKey != null) return;
+      e.preventDefault();
+      e.stopPropagation();
+      onSearchAll();
+    };
+    window.addEventListener("keydown", onKeyDown, true);
+    return () => window.removeEventListener("keydown", onKeyDown, true);
+  }, [state, onSearchAll]);
+
+  return (
+    <div className="border-t border-secondary">
+      {remaining > 0 && (
+        <button
+          type="button"
+          onClick={onShowMore}
+          className="w-full cursor-pointer px-3 py-2.5 text-left text-sm font-medium text-brand-secondary hover:bg-secondary hover:text-brand-secondary_hover"
+        >
+          Show {remaining} more result{remaining === 1 ? "" : "s"}
+        </button>
+      )}
+      <button
+        type="button"
+        onClick={onSearchAll}
+        className="flex w-full cursor-pointer items-center gap-2 px-3 py-2.5 text-left text-sm font-medium text-brand-secondary hover:bg-secondary hover:text-brand-secondary_hover"
+      >
+        <SearchLg className="size-4 shrink-0" aria-hidden="true" />
+        <span className="min-w-0 flex-1 truncate">Search all records for &ldquo;{term}&rdquo;</span>
+        <span className="shrink-0 rounded px-1 py-px text-xs font-medium text-quaternary ring-1 ring-secondary ring-inset" aria-hidden="true">
+          Enter
+        </span>
+      </button>
+    </div>
+  );
+}
+
+export function GlobalSearch() {
   const router = useRouter();
   const roleHref = useRoleHref();
   const [query, setQuery] = useState("");
   const [showAll, setShowAll] = useState(false);
 
-  const filtered = projects.filter((project) => !query || project.name.toLowerCase().includes(query.toLowerCase()));
-  const visible = showAll ? filtered : filtered.slice(0, RESULTS_LIMIT);
-  const remaining = filtered.length - visible.length;
+  const term = query.trim();
+  const q = term.toLowerCase();
 
-  // Only "Adelaide Hills Bushland Survey" has a real `href` (project-detail) - the other
-  // 3 don't. Selecting one of those used to call `router.push(project.href ?? "/pages/project-
-  // list")`, which silently no-ops whenever you're already on that fallback page -
-  // the popover closes, the input is left showing garbled leftover text (react-aria sets the
-  // input to the selected item's textValue), and the URL never changes - reads as "nothing
-  // happens" / "broken", flagged directly by the user. Fixed via `isDisabled` on results with no
-  // real destination, so they can't be "selected" (and therefore can't misfire) at all - same
-  // convention as TaskItem/ProjectRow only linking rows with a real page. Still findable (shown,
-  // not filtered out), just inert - `SelectItem` already renders a disabled row as
-  // cursor-not-allowed + reduced opacity, which is signal enough on its own. The supporting text
-  // used to also spell out *why* ("- no detail page yet"), which read as an internal build note
-  // leaking into a screen meant to look like something a real user would use - flagged directly by
-  // the user, who chose dropping the explanation over the alternatives (a real page per project,
-  // or hiding the result outright).
-  const items = !query
-    ? [{ id: PROMPT_ID, label: "Start typing to search projects, datasets, or species", isDisabled: true }, ...scopeNoticeItems]
-    : visible.length > 0
-      ? visible.map((project) => ({
-          id: project.id,
-          label: project.name,
-          supportingText: project.org,
-          isDisabled: !project.href,
-        }))
-      : [{ id: NO_RESULTS_ID, label: `No projects found for "${query}"`, isDisabled: true }, ...scopeNoticeItems];
+  // Prefix matches on the common name first, then the rest alphabetically.
+  const speciesMatches = useMemo(
+    () =>
+      q
+        ? speciesIndex
+            .filter((s) => matchesSpecies(s, q))
+            .sort((a, b) => Number(b.commonName.toLowerCase().startsWith(q)) - Number(a.commonName.toLowerCase().startsWith(q)) || a.commonName.localeCompare(b.commonName))
+        : [],
+    [q],
+  );
+
+  // Projects: matched by name or organisation, plus the ones that recorded a matching species -
+  // the relation - each noting which species so it is clear why it is listed.
+  const projectMatches = useMemo(() => {
+    if (!q) return [];
+    const relatedTo = new Map<string, string>();
+    for (const s of speciesMatches.slice(0, GROUP_LIMIT)) for (const id of s.projectIds) if (!relatedTo.has(id)) relatedTo.set(id, s.commonName);
+    return projects
+      .filter((p) => p.name.toLowerCase().includes(q) || p.org.toLowerCase().includes(q) || relatedTo.has(p.id))
+      .map((p) => ({ project: p, viaSpecies: p.name.toLowerCase().includes(q) || p.org.toLowerCase().includes(q) ? undefined : relatedTo.get(p.id) }));
+  }, [q, speciesMatches]);
+
+  const shownSpecies = showAll ? speciesMatches : speciesMatches.slice(0, GROUP_LIMIT);
+  const shownProjects = showAll ? projectMatches : projectMatches.slice(0, GROUP_LIMIT);
+  const remaining = speciesMatches.length + projectMatches.length - shownSpecies.length - shownProjects.length;
+
+  const searchAllRecords = () => {
+    if (!term) return;
+    setQuery("");
+    router.push(roleHref(`/pages/observations?q=${encodeURIComponent(term)}`));
+  };
+
+  const hasResults = shownSpecies.length + shownProjects.length > 0;
 
   return (
     <ComboBox
-      aria-label="Search for projects, datasets or species"
-      placeholder="Search for projects, datasets or species"
+      aria-label="Search for projects and species"
+      placeholder="Search for projects and species"
       icon={SearchMd}
       shortcut={false}
+      popoverMinWidth={440}
+      popoverSize="auto"
+      // The results are already filtered above (by species, family, group, project name and
+      // organisation, and by relation). The ComboBox's own "text contains the input" filter would
+      // hide the ones that match through something other than their label, so it is turned off.
+      defaultFilter={() => true}
       inputValue={query}
       onInputChange={(value) => {
         setQuery(value);
         setShowAll(false);
       }}
-      items={items}
-      listboxFooter={
-        remaining > 0 && (
-          <button
-            type="button"
-            onClick={() => setShowAll(true)}
-            className="w-full cursor-pointer border-t border-secondary px-3 py-2.5 text-left text-sm font-medium text-brand-secondary hover:bg-secondary hover:text-brand-secondary_hover"
-          >
-            Show {remaining} more result{remaining === 1 ? "" : "s"}
-          </button>
-        )
-      }
+      listboxFooter={q && <SearchAllFooter term={term} remaining={remaining} onShowMore={() => setShowAll(true)} onSearchAll={searchAllRecords} />}
       onSelectionChange={(id: Key | null) => {
-        // PROMPT_ID/NO_RESULTS_ID and every hrefless project are `isDisabled`, so react-aria
-        // never fires a selection for them - every id that reaches here has a real `href`. The
-        // "show more" control lives outside this listbox entirely (see `listboxFooter` above), so
-        // it can never reach this handler at all.
-        const project = projects.find((p) => p.id === id);
-        if (!project?.href) return;
-        setQuery("");
-        router.push(roleHref(project.href));
+        // The prompt, the no-results row and every project with no page are `isDisabled`, so
+        // react-aria never fires a selection for them. The footer controls live outside the
+        // listbox entirely, so they cannot reach this handler.
+        const key = String(id ?? "");
+        if (key.startsWith(SPECIES_PREFIX)) {
+          const species = speciesIndex.find((s) => s.species === key.slice(SPECIES_PREFIX.length));
+          if (!species) return;
+          setQuery("");
+          router.push(roleHref(`/pages/observations?q=${encodeURIComponent(species.commonName)}`));
+          return;
+        }
+        if (key.startsWith(PROJECT_PREFIX)) {
+          const project = projects.find((p) => p.id === key.slice(PROJECT_PREFIX.length));
+          if (!project?.href) return;
+          setQuery("");
+          router.push(roleHref(project.href));
+        }
       }}
     >
-      {(item) => <SelectItem id={item.id} label={item.label} supportingText={item.supportingText} isDisabled={item.isDisabled} />}
+      {!q ? (
+        <>
+          <SelectItem id={PROMPT_ID} label="Start typing to search projects and species" isDisabled />
+          {scopeNoticeItems.map((item) => (
+            <SelectItem key={item.id} {...item} />
+          ))}
+        </>
+      ) : !hasResults ? (
+        <>
+          <SelectItem id={NO_RESULTS_ID} label={`No projects or species found for "${term}"`} isDisabled />
+          {scopeNoticeItems.map((item) => (
+            <SelectItem key={item.id} {...item} />
+          ))}
+        </>
+      ) : (
+        <>
+          {shownSpecies.length > 0 && (
+            <SelectSection title="Species" count={speciesMatches.length}>
+              {shownSpecies.map((s) => (
+                <SelectItem
+                  key={s.species}
+                  id={`${SPECIES_PREFIX}${s.species}`}
+                  label={s.commonName}
+                  textValue={s.commonName}
+                  labelSuffix={s.species}
+                  supportingText={provenanceOf(s)}
+                  trailingText={moreProjects(s)}
+                  highlight={term}
+                  icon={SPECIES_GROUP_ICON[s.group]}
+                  stacked
+                />
+              ))}
+            </SelectSection>
+          )}
+          {shownProjects.length > 0 && (
+            <SelectSection title="Projects" count={projectMatches.length}>
+              {shownProjects.map(({ project, viaSpecies }) => (
+                <SelectItem
+                  key={project.id}
+                  id={`${PROJECT_PREFIX}${project.id}`}
+                  label={project.name}
+                  textValue={project.name}
+                  supportingText={project.org}
+                  trailingText={viaSpecies ? `Has ${viaSpecies}` : undefined}
+                  highlight={term}
+                  icon={Folder}
+                  isDisabled={!project.href}
+                  stacked
+                />
+              ))}
+            </SelectSection>
+          )}
+        </>
+      )}
     </ComboBox>
   );
 }

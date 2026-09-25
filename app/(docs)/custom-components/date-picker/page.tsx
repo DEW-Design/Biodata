@@ -33,7 +33,7 @@ export default function CustomDatePickerPage() {
       <PageHeader
         section="Custom Components"
         title="Date picker"
-        description="A segmented DD/MM/YYYY field plus a real calendar-icon trigger that opens a Calendar popover. Not yet part of the design system - documented here until a stakeholder decides where (or whether) it belongs."
+        description="A segmented DD/MM/YYYY field plus a real calendar-icon trigger that opens a Calendar popover. Today is marked in the calendar (bold brand text and a brand ring) and a Today button under it picks it. Not yet part of the design system - documented here until a stakeholder decides where (or whether) it belongs."
       />
 
       <div className="mb-2 flex gap-3 rounded-xl border border-secondary bg-secondary p-5">

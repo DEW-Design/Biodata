@@ -23,7 +23,7 @@
 import { useState } from "react";
 import { Plus, Trash01, Edit05, Lock01 } from "@untitledui/icons";
 import { Input } from "@/components/base/input/input";
-import { Textarea } from "@/components/custom/textarea/textarea";
+import { TextArea } from "@/components/base/textarea/textarea";
 import { Select } from "@/components/base/select/select";
 import { MultiSelect } from "@/components/base/select/multi-select";
 import { Button } from "@/components/base/buttons/button";
@@ -138,7 +138,7 @@ export function Step2DataCollection({
                     even an "Incidental"/"Unknown" method still has real survey-technique detail
                     worth capturing. */}
                 {!!value.collectionMethod && (
-                    <Textarea
+                    <TextArea
                         label="Method details"
                         placeholder="Provide details of your survey methods such as qualitative or quantitative techniques."
                         isRequired
@@ -252,7 +252,7 @@ export function Step2DataCollection({
                 )}
 
                 {showLimitations && (
-                    <Textarea
+                    <TextArea
                         label="Limitations and biases"
                         placeholder="Only targeted native species and weeds were excluded"
                         hint="What biases were used with the methodology used."

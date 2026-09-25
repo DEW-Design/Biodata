@@ -10,7 +10,7 @@ import { Checkbox } from "@/components/base/checkbox/checkbox";
 import { Select } from "@/components/base/select/select";
 import { RadioButton, RadioGroup } from "@/components/base/radio-buttons/radio-buttons";
 import { AuthShell, AuthWordmark } from "@/app/pages/auth/_shared/auth-shell";
-import { SetupStepper } from "@/app/pages/auth/_shared/setup-stepper";
+import { Progress } from "@/components/application/progress-steps/progress-steps";
 import { BentoCard } from "@/app/pages/_shared/bento-card";
 import { cx } from "@/utils/cx";
 
@@ -103,7 +103,16 @@ function SetupProfileForm() {
         <p className="text-xl font-semibold text-primary">Setup your Profile</p>
       </div>
 
-      <SetupStepper currentStep={step} />
+      {/* Figma "Setup your Profile" progress steps (nodes 49:799 / 62:799 / 65:3164): three titled steps
+          joined by a line, over a rule. */}
+      <div className="w-full border-b border-secondary pb-4">
+        <Progress.IconsWithText
+          type="icon"
+          orientation="horizontal"
+          size="sm"
+          items={SETUP_STEPS.map((title, i) => ({ title, status: i + 1 < step ? "complete" : i + 1 === step ? "current" : "incomplete" }))}
+        />
+      </div>
 
       {step === 1 && (
         <form
@@ -315,6 +324,8 @@ function SetupProfileForm() {
     </AuthShell>
   );
 }
+
+const SETUP_STEPS = ["Your details", "Organisation details", "Privacy & Terms of Use"] as const;
 
 export default function SetupProfilePage() {
   return (

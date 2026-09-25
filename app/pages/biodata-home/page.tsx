@@ -511,7 +511,7 @@ export default function BiodataHomePage() {
               alt="Government of South Australia, Department for Environment and Water"
               className="h-[38px] w-auto"
             />
-            <div className="hidden h-6 w-px bg-secondary sm:block" />
+            <div className="hidden h-6 w-px bg-[var(--ui-border-primary)] sm:block" />
             <p className="hidden text-[17px] font-semibold tracking-tight text-primary sm:block">Biodata SA</p>
           </div>
 

@@ -22,7 +22,7 @@ function NewDsa() {
   const roleHref = useRoleHref();
 
   return (
-    <DsaShell breadcrumbCurrent="New agreement">
+    <DsaShell breadcrumbCurrent="New agreement" formSidebar>
       <DsaForm
         onBack={() => router.push(roleHref("/pages/dsa"))}
         onSaveDraft={(draft) => {
@@ -32,7 +32,7 @@ function NewDsa() {
         }}
         onSubmit={(draft) => {
           const record = saveDsa(draft, "submit");
-          toast.success("Agreement created", { description: record.id });
+          toast.success("Agreement submitted", { description: record.id });
           router.push(roleHref(`/pages/dsa/${record.id}`));
         }}
       />

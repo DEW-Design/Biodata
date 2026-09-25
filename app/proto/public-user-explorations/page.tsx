@@ -80,7 +80,7 @@ import { HomeLine, Folder, Eye, DownloadCloud02, ArrowNarrowRight, Camera01, Che
 import { Button } from "@/components/base/buttons/button";
 import { Tooltip } from "@/components/base/tooltip/tooltip";
 import { GuestActionButton } from "@/app/pages/_shared/guest-action-gate";
-import { GlobalProjectSearch } from "@/app/pages/_shared/global-search";
+import { GlobalSearch } from "@/app/pages/_shared/global-search";
 import { DataOverviewContent } from "@/app/pages/_shared/data-overview";
 import { cx } from "@/utils/cx";
 import { assetPath } from "@/lib/base-path";
@@ -152,7 +152,7 @@ function GuestHeaderStub({ actions = [] }: { actions?: GatedAction[] }) {
       </div>
       <div className="flex flex-wrap items-center gap-3">
         <div className="w-full sm:w-64 lg:w-[395px]">
-          <GlobalProjectSearch />
+          <GlobalSearch />
         </div>
         {actions.map((a) => (
           <GuestActionButton key={a.label} icon={a.icon} label={a.label} color={a.color} isGuest modalTitle={a.modalTitle} modalDescription={a.modalDescription} />

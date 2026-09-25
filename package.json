@@ -6,7 +6,10 @@
     "dev": "node node_modules/next/dist/bin/next dev",
     "build": "node node_modules/next/dist/bin/next build",
     "start": "node node_modules/next/dist/bin/next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "check:contracts": "node scripts/check-contracts.mjs",
+    "contracts:override": "node scripts/add-override.mjs",
+    "audit": "node scripts/audit.mjs"
   },
   "dependencies": {
     "@highcharts/map-collection": "^2.3.3",

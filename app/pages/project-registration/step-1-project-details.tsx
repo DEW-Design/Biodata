@@ -23,7 +23,7 @@ import { useState } from "react";
 import { Building07, User01, Plus, Trash01, Edit05, SearchLg } from "@untitledui/icons";
 import { Input } from "@/components/base/input/input";
 import { InputDatePicker } from "@/components/custom/date-picker/input-date-picker";
-import { Textarea } from "@/components/custom/textarea/textarea";
+import { TextArea } from "@/components/base/textarea/textarea";
 import { Select } from "@/components/base/select/select";
 import { Toggle } from "@/components/base/toggle/toggle";
 import { Button } from "@/components/base/buttons/button";
@@ -73,7 +73,7 @@ function ManagerOptionalFields({ manager, onChange }: { manager: ProjectManager;
     );
 }
 
-function ManagerCard({
+export function ManagerCard({
     manager,
     index,
     canRemove,
@@ -190,7 +190,7 @@ export function Step1ProjectDetails({
     if (cardIndex === 1) {
         return (
             <TypeformCard cardKey={1} step={2} totalSteps={TOTAL_QUESTIONS} kicker="Project details" title={`Tell us what "${value.shortTitle}" is about`} description="Include background, aims and objectives - when, where, what, how, why, who." nextDisabled={!cardValid[1]} onNext={next} onBack={back}>
-                <Textarea aria-label="Abstract" placeholder="E.g., Please include background, aims and objectives." rows={6} value={value.abstract} onChange={(v) => patch({ abstract: v })} autoFocus />
+                <TextArea aria-label="Abstract" placeholder="E.g., Please include background, aims and objectives." rows={6} value={value.abstract} onChange={(v) => patch({ abstract: v })} autoFocus />
             </TypeformCard>
         );
     }

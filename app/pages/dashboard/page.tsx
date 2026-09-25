@@ -1,56 +1,36 @@
 "use client";
 
-import type { FC } from "react";
 import { Suspense, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import type { Key } from "react-aria-components";
-import { Button as AriaButton, Dialog, DialogTrigger, Tabs } from "react-aria-components";
+import { Tabs } from "react-aria-components";
 import { TabList, Tab, TabPanel } from "@/components/application/tabs/tabs";
-import { Upload01, Plus, ChevronDown, ArrowNarrowRight, HomeLine, Folder, Database01, Map01, FileCheck02, FileLock01, Feather, BarChart01, FileSearch01, User01, PieChart03 } from "@untitledui/icons";
+import { ChevronDown, ArrowNarrowRight, Folder, Database01, User01, PieChart03 } from "@untitledui/icons";
 import { Button } from "@/components/base/buttons/button";
-import { Avatar } from "@/components/base/avatar/avatar";
-import { Tooltip, TooltipTrigger } from "@/components/base/tooltip/tooltip";
-import { Popover } from "@/components/base/select/popover";
-import { Breadcrumb } from "@/components/scaffold/breadcrumb";
 import { HomeTabPanels } from "@/app/pages/_shared/home-tab-panels";
 import { DataOverviewContent } from "@/app/pages/_shared/data-overview";
-import { dashboardTasks } from "@/app/pages/_shared/home-dashboard";
 import { ProjectListContent } from "@/app/pages/_shared/project-list-content";
-import { GlobalProjectSearch } from "@/app/pages/_shared/global-search";
-import { GuestActionButton } from "@/app/pages/_shared/guest-action-gate";
+import { PrimaryRail } from "@/app/pages/_shared/primary-rail";
+import { SidebarFooterLinks } from "@/app/pages/_shared/sidebar-footer-links";
+import { sectionIcons } from "@/app/pages/_shared/nav-icons";
+import { AppHeader } from "@/app/pages/_shared/app-header";
+import { ProjectActions } from "@/app/pages/_shared/project-actions";
 import { GuestAboutAside, GuestGradientCard } from "@/app/pages/_shared/guest-home";
-import { GuestAuthActions } from "@/app/pages/_shared/guest-auth-actions";
 import { MobileNavTrigger } from "@/app/pages/_shared/mobile-nav";
 import { RoleSwitcher } from "@/app/pages/_shared/role-switcher";
-import { useFeatureAccess } from "@/lib/use-feature-access";
 import { useUserRole } from "@/lib/use-user-role";
 import { useRoleHref } from "@/lib/use-role-href";
-import { orgLabelForRole } from "@/lib/user-role";
-import { navForRole, registeredUserAccountMenu, registeredUserFooterLinks, keyHref, type NavNode } from "@/lib/registered-user-nav";
+import { navForRole, keyHref, type NavNode } from "@/lib/registered-user-nav";
 import { cx } from "@/utils/cx";
-import { assetPath } from "@/lib/base-path";
 
 // One icon per top-level section, for the primary icon rail below - presentation-only, so it
 // lives here rather than in lib/registered-user-nav.ts (which stays shell-agnostic; option-2's
 // top-nav has no use for icons).
-const sectionIcons: Record<string, FC<{ className?: string }>> = {
-  Home: HomeLine,
-  Projects: Folder,
-  Explore: Map01,
-  "Data Licencing Agreement (DLA)": FileLock01,
-  "Data Sharing Agreement (DSA)": FileCheck02,
-  "Nominate Sensitive Species": Feather,
-  "Reports (Own Submissions)": BarChart01,
-  "Template Finder": FileSearch01,
-};
-
 // The canonical Registered User dashboard, on the sidebar (icon-rail + contextual-sidebar) shell -
 // per the Sept 16 layout decision, this shell direction is the one going forward, so this page lost
-// its `/option-1` suffix and folded into the plain `/pages/dashboard` route. `app/pages/dashboard/
-// option-2` (the top-nav shell alternative this was compared against) is kept in place as a record
-// of that exploration, per this codebase's "never delete a prototype/explored direction" convention
-// - it's just no longer linked to from anywhere real.
+// its `/option-1` suffix and folded into the plain `/pages/dashboard` route. The top-nav
+// alternative it was compared against (`dashboard/option-2`) has since been deleted.
 //
 // A task-first dashboard for a registered user. Personal activity stats (KPI row) stay at the top,
 // directly under the greeting - that positioning is a fixed convention, not something to relitigate
@@ -193,33 +173,6 @@ function SectionPlaceholder({ node }: { node: NavNode }) {
   );
 }
 
-// DialogTrigger + our real Popover (react-aria) instead of a hand-rolled useState toggle - gets
-// outside-click and Escape dismissal for free, same primitive DateRangeControl already uses for
-// its overlay. Any hand-rolled dropdown (a switcher, an org-switcher when that gets built) should
-// use this, not a plain conditional div - flagged directly by the user after the project switcher
-// shipped without it.
-function ProfileMenu() {
-  const [open, setOpen] = useState(false);
-
-  return (
-    <DialogTrigger onOpenChange={setOpen}>
-      <AriaButton className="flex items-center gap-1 rounded-md outline-brand focus-visible:outline-2 focus-visible:outline-offset-2">
-        <Avatar size="md" initials="OW" alt="Olivia Wyatt" />
-        <ChevronDown className={cx("size-3.5 text-quaternary transition-transform", open && "rotate-180")} />
-      </AriaButton>
-      <Popover size="sm" className="w-48 p-1">
-        <Dialog className="outline-hidden">
-          <p className="px-3 py-2 text-xs font-semibold tracking-wide text-quaternary uppercase">Profile</p>
-          {registeredUserAccountMenu.map((item) => (
-            <p key={item} className="cursor-pointer rounded-md px-3 py-2 text-sm text-secondary hover:bg-secondary">
-              {item}
-            </p>
-          ))}
-        </Dialog>
-      </Popover>
-    </DialogTrigger>
-  );
-}
 
 // User roles - see CONTEXT.md's "User roles" section. Full 6-role hierarchy is defined in
 // lib/user-role.ts, but build focus right now is just public-user (the default) and registered-user -
@@ -239,7 +192,6 @@ export default function DashboardPage() {
 
 function Dashboard() {
   const router = useRouter();
-  const showOrgSwitcher = useFeatureAccess("orgSwitcher");
   // public-user ("Guest User") reads a different, smaller nav tree entirely - not a filtered view
   // of registeredUserNav, since whole sections (DLA, Nominate Sensitive Species, Reports, Template
   // Finder) don't exist for a signed-out visitor, not just individual leaves inside them. See
@@ -281,8 +233,8 @@ function Dashboard() {
     <div className="font-barlow flex h-screen flex-col overflow-hidden">
       <RoleSwitcher />
       {/* ── Header ── */}
-      <header className="flex min-h-16 shrink-0 flex-wrap items-center justify-between gap-x-6 gap-y-3 border-b border-secondary bg-primary px-4 py-3">
-        <div className="flex flex-wrap items-center gap-4">
+      <AppHeader
+        mobileNav={
           <MobileNavTrigger
             sections={nav}
             sectionIcons={sectionIcons}
@@ -358,86 +310,14 @@ function Dashboard() {
                   ))
                 : undefined}
           </MobileNavTrigger>
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src={assetPath("/pages/dashboard/gov-sa-dew-lockup.png")}
-            alt="Government of South Australia, Department for Environment and Water"
-            className="h-[37px] w-auto"
-          />
-          <div className="h-6 w-px bg-secondary" />
-          <p className="text-[17px] font-semibold tracking-tight text-primary">BioData SA</p>
-          <Breadcrumb
-            section={activeSection === "Home" ? undefined : activeSectionNode.label}
-            orgLabel={showOrgSwitcher ? orgLabelForRole(role) : undefined}
-          />
-        </div>
-        <div className="flex flex-wrap items-center gap-3 sm:gap-6">
-          <div className="flex flex-wrap items-center gap-3">
-            <div className="w-full sm:w-64 lg:w-[395px]">
-              <GlobalProjectSearch />
-            </div>
-            {/* Creating requires an account - visible for every role including public-user (a
-                signed-out guest reaching for these is a real moment, not one to hide), but a
-                guest's click opens a sign-up invite instead of doing nothing. See
-                app/pages/_shared/guest-action-gate.tsx. Flagged directly by the user: turn the
-                "you can't do this" moment into a delight moment, not a wall. */}
-            <GuestActionButton
-              icon={Plus}
-              label="Add project"
-              color="primary"
-              isGuest={isPublicUser}
-              modalTitle="Sign up to add a project"
-              modalDescription="Create a free BioData SA account to start contributing projects to South Australia's biodiversity record."
-              href="/pages/project-registration"
-            />
-            <GuestActionButton
-              icon={Upload01}
-              label="Upload dataset"
-              color="secondary"
-              isGuest={isPublicUser}
-              modalTitle="Sign up to upload a dataset"
-              modalDescription="Create a free BioData SA account to start contributing datasets to South Australia's biodiversity record."
-            />
-          </div>
-          {isPublicUser ? <GuestAuthActions /> : <ProfileMenu />}
-        </div>
-      </header>
+        }
+        section={activeSection === "Home" ? undefined : activeSectionNode.label}
+      />
 
       {/* ── Primary icon rail: top-level IA (nav chrome - not pixel-matched) ── */}
       {(() => {
         const iconRail = (
-          <nav aria-label="Primary" className="hidden w-16 shrink-0 flex-col items-center gap-1 overflow-y-auto border-r border-secondary bg-secondary py-4 lg:flex">
-            {nav.map((section) => {
-              const Icon = sectionIcons[section.label];
-              const active = section.label === activeSection;
-              // "Needs your attention"'s count, badged on Home instead of only showing once you're
-              // already there - the same count `HomeDashboardContent` renders, not a second copy.
-              // Only shown for registered-user - that list is a signed-in registered user's own
-              // pending tasks (a draft project, a DLA request); a guest's Home has no such personal
-              // content, and biodata-admin's Home shows a different, operational content set
-              // (AdminHomeDashboardContent) that this count doesn't describe.
-              const badgeCount = role === "registered-user" && section.label === "Home" ? dashboardTasks.length : 0;
-              return (
-                <Tooltip key={section.label} title={section.label} placement="right">
-                  <TooltipTrigger
-                    onPress={() => goToSection(section)}
-                    aria-label={section.label}
-                    className={cx(
-                      "relative flex size-12 items-center justify-center rounded-lg transition duration-100 ease-linear active:scale-[0.96]",
-                      active ? "bg-brand-solid text-white" : "text-quaternary hover:bg-tertiary hover:text-primary",
-                    )}
-                  >
-                    {Icon && <Icon className="size-5" />}
-                    {badgeCount > 0 && (
-                      <span className="absolute -top-1 -right-1 flex size-4 items-center justify-center rounded-full bg-error-solid text-[10px] font-semibold tabular-nums text-white">
-                        {badgeCount}
-                      </span>
-                    )}
-                  </TooltipTrigger>
-                </Tooltip>
-              );
-            })}
-          </nav>
+          <PrimaryRail sections={nav} activeSection={activeSection}  onSelectSection={goToSection} />
         );
 
         // public-user's Home and Projects are each a single view (see publicUserNav) - no peer tab
@@ -455,7 +335,7 @@ function Dashboard() {
           return (
             <div className="flex flex-1 overflow-hidden">
               {iconRail}
-              <GuestAboutAside sectionLabel={activeSection} />
+              <GuestAboutAside sectionLabel={activeSection} actions={activeSection === "Projects" ? <ProjectActions withTopRule={false} /> : undefined} />
 
               <main className="flex flex-1 flex-col overflow-y-auto">
                 {activeSection === "Home" ? (
@@ -493,11 +373,7 @@ function Dashboard() {
                     <Tab id="overview" label="Flora and Fauna Dashboard" icon={PieChart03} />
                   </TabList>
                 </div>
-                <div className="flex flex-col gap-2 border-t border-secondary pt-4 text-xs text-quaternary">
-                  {registeredUserFooterLinks.map((link) => (
-                    <p key={link}>{link}</p>
-                  ))}
-                </div>
+                <SidebarFooterLinks />
               </aside>
 
               {/* ── Main content: Home's tab panels render the real dashboard content (shared
@@ -528,17 +404,14 @@ function Dashboard() {
                     <Tab id="projects" label="Projects" icon={Folder} />
                     <Tab id="datasets" label="Datasets" icon={Database01} />
                   </TabList>
+                  <ProjectActions />
                 </div>
-                <div className="flex flex-col gap-2 border-t border-secondary pt-4 text-xs text-quaternary">
-                  {registeredUserFooterLinks.map((link) => (
-                    <p key={link}>{link}</p>
-                  ))}
-                </div>
+                <SidebarFooterLinks />
               </aside>
 
               {/* ── Main content: Projects has this screen's own content; Datasets is unscoped ── */}
               <main className="flex flex-1 flex-col overflow-y-auto">
-                <TabPanel id="projects">
+                <TabPanel id="projects" className="flex min-h-0 flex-1 flex-col">
                   <ProjectListContent />
                 </TabPanel>
                 <TabPanel id="datasets">
@@ -559,11 +432,7 @@ function Dashboard() {
                 <p className="mb-3 text-xs font-semibold tracking-wide text-quaternary uppercase">{activeSectionNode.label}</p>
                 {activeSectionNode.items?.map((item) => <NavTree key={item.label} node={item} depth={1} />)}
               </div>
-              <div className="flex flex-col gap-2 border-t border-secondary pt-4 text-xs text-quaternary">
-                {registeredUserFooterLinks.map((link) => (
-                  <p key={link}>{link}</p>
-                ))}
-              </div>
+              <SidebarFooterLinks />
             </aside>
 
             {/* ── Main content: Home and Projects are intercepted above (their own Tabs

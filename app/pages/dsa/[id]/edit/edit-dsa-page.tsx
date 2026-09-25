@@ -26,7 +26,7 @@ function EditDsa() {
   const detailHref = roleHref(`/pages/dsa/${id}`);
 
   return (
-    <DsaShell activeStatus={dsa?.status} breadcrumbCurrent={`Edit ${id}`}>
+    <DsaShell breadcrumbCurrent={`Edit ${id}`} formSidebar>
       {dsa ? (
         <DsaForm
           key={dsa.id}
@@ -39,7 +39,7 @@ function EditDsa() {
           }}
           onSubmit={(draft) => {
             saveDsa(draft, "submit", dsa.id);
-            toast.success(dsa.status === "draft" ? "Agreement created" : "Agreement updated", { description: dsa.id });
+            toast.success(dsa.status === "draft" ? "Agreement submitted" : "Agreement updated", { description: dsa.id });
             router.push(detailHref);
           }}
         />

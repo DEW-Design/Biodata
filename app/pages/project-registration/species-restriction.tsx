@@ -12,7 +12,7 @@
 import { useMemo, useState } from "react";
 import { SearchLg, Plus, Trash01, ShieldTick, ChevronRight } from "@untitledui/icons";
 import { Input } from "@/components/base/input/input";
-import { Textarea } from "@/components/custom/textarea/textarea";
+import { TextArea } from "@/components/base/textarea/textarea";
 import { Button } from "@/components/base/buttons/button";
 import { BentoCard } from "@/app/pages/_shared/bento-card";
 import { FeaturedIcon } from "@/components/foundations/featured-icon/featured-icon";
@@ -178,7 +178,7 @@ function SpeciesPickerPanel({
 
                     {draft.scope === "selected" && <ConceptRows rows={draft.concepts} onChange={(concepts) => setDraft({ ...draft, concepts })} options={SPECIES_CONCEPTS} />}
 
-                    <Textarea
+                    <TextArea
                         label="Justification"
                         placeholder="Enter a justification..."
                         hint="Enter the reason for this restriction request."

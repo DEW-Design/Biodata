@@ -1,8 +1,7 @@
 // Registered User's real, decided IA - captured by the team ahead of the Sept 15 layout
 // decision (see the "Registered User" nav tree brief). This is the one place the tree lives;
-// app/pages/dashboard, app/pages/dashboard/option-2, and app/pages/project-list/option-{1,2} each
-// render it in their own shell's idiom (sidebar accordion vs. top-nav dropdown), but read from here
-// so the screens can't drift out of sync as the IA changes.
+// the sidebar-shell screens (app/pages/dashboard, project-list, project-detail, ...) each render it
+// in their own shell, but read from here so the screens can't drift out of sync as the IA changes.
 //
 // `key` is set only on the two items with a real page today - every other item has no page yet, so
 // it renders as inert text, same "honest, not a placeholder link" convention used elsewhere for

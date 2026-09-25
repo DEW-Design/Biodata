@@ -16,7 +16,7 @@
 // variant be judged on the same tab.
 //
 // Features reduce, they don't change fundamentally (per direct feedback): this is the registered-user
-// shell with features taken away, never a redesign. Header: same GlobalProjectSearch and Log in /
+// shell with features taken away, never a redesign. Header: same GlobalSearch and Log in /
 // Sign up, with "Add project" / "Upload dataset" removed. Home: the real Flora and Fauna Dashboard
 // exactly as it ships (all four tabs, all four cards), under a gradient card. Projects: the real
 // ProjectListContent. Only column 2 is new content, because the brief asks for it. An earlier
@@ -48,7 +48,7 @@ import { Tooltip } from "@/components/base/tooltip/tooltip";
 import { Accordion, type AccordionItemType } from "@/components/base/accordion/accordion";
 import { GuestActionButton } from "@/app/pages/_shared/guest-action-gate";
 import { DataOverviewContent } from "@/app/pages/_shared/data-overview";
-import { GlobalProjectSearch } from "@/app/pages/_shared/global-search";
+import { GlobalSearch } from "@/app/pages/_shared/global-search";
 import { ProjectListContent } from "@/app/pages/_shared/project-list-content";
 import { registeredUserFooterLinks } from "@/lib/registered-user-nav";
 import { cx } from "@/utils/cx";
@@ -93,7 +93,7 @@ function GuestHeader() {
       <div className="flex flex-wrap items-center gap-3">
         <div className="w-full sm:w-64 lg:w-[395px]">
           <Suspense fallback={null}>
-            <GlobalProjectSearch />
+            <GlobalSearch />
           </Suspense>
         </div>
         <GuestAuthActions />

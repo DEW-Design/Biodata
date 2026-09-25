@@ -23,7 +23,7 @@ import type { DateValue } from "react-aria-components";
 import { Edit02, Check, X as XIcon, Plus, Trash01 } from "@untitledui/icons";
 import { Input } from "@/components/base/input/input";
 import { InputNumber } from "@/components/base/input/input-number";
-import { Textarea } from "@/components/custom/textarea/textarea";
+import { TextArea } from "@/components/base/textarea/textarea";
 import { Select } from "@/components/base/select/select";
 import { MultiSelect } from "@/components/base/select/multi-select";
 import { RadioButton, RadioGroup } from "@/components/base/radio-buttons/radio-buttons";
@@ -101,7 +101,7 @@ function FieldControl({ spec, value, onChange }: { spec: FieldSpec; value: Field
   switch (spec.type) {
     case "textarea":
       return (
-        <Textarea
+        <TextArea
           aria-label={spec.label}
           placeholder={spec.placeholder ?? `Enter ${spec.label.toLowerCase()}…`}
           rows={3}
@@ -245,7 +245,7 @@ export function CustomPropertyEditor({ rows, editing, onChange }: { rows: Custom
             <Input label="Value" aria-label="Value" value={row.value} onChange={(v) => update(row.id, { value: v })} />
             <Button color="secondary" size="md" iconLeading={Trash01} aria-label="Remove property" isDisabled={rows.length === 1} onClick={() => remove(row.id)} />
           </div>
-          <Textarea label="Description" aria-label="Description" placeholder="Enter a description…" rows={2} value={row.description} onChange={(v) => update(row.id, { description: v })} />
+          <TextArea label="Description" aria-label="Description" placeholder="Enter a description…" rows={2} value={row.description} onChange={(v) => update(row.id, { description: v })} />
         </div>
       ))}
       <Button color="secondary" size="md" iconLeading={Plus} className="w-full" onClick={add}>

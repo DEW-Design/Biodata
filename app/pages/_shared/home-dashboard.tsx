@@ -155,7 +155,12 @@ interface TaskProgress {
 // that didn't exist in this codebase before the user pulled it in) is what's new here - used bare
 // (no built-in label), since ProgressBar's own label positions only show a percentage, not custom
 // step text like "Your action"/"Next: X".
-function TaskItem({
+// `actionHref` xor `onActionClick` - a real navigable destination, or a local callback (e.g.
+// switching a page's own view) when there's nowhere real to navigate to. Both are additive, kept
+// for the original callers here (which all use `actionHref`) - `onActionClick` was added once a
+// second real consumer (`/proto/collection-sidebar`) needed a task row whose action stays on the
+// same page instead of navigating away.
+export function TaskItem({
   title,
   detail,
   status,
@@ -163,6 +168,7 @@ function TaskItem({
   icon,
   actionLabel,
   actionHref,
+  onActionClick,
   progress,
 }: {
   title: string;
@@ -172,6 +178,7 @@ function TaskItem({
   icon: FC<{ className?: string }>;
   actionLabel?: string;
   actionHref?: string;
+  onActionClick?: () => void;
   progress?: TaskProgress;
 }) {
   return (
@@ -187,8 +194,13 @@ function TaskItem({
             <p className="text-sm text-tertiary">{detail}</p>
           </div>
         </div>
-        {actionHref && actionLabel && (
+        {actionLabel && actionHref && (
           <Button color="link-color" size="sm" href={actionHref} iconTrailing={ArrowNarrowRight} className="shrink-0">
+            {actionLabel}
+          </Button>
+        )}
+        {actionLabel && !actionHref && onActionClick && (
+          <Button color="link-color" size="sm" onPress={onActionClick} iconTrailing={ArrowNarrowRight} className="shrink-0">
             {actionLabel}
           </Button>
         )}
