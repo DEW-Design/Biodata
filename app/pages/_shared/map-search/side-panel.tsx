@@ -3,6 +3,7 @@
 import type { ReactNode } from "react";
 import { Dialog, Heading, Modal, ModalOverlay } from "react-aria-components";
 import { CloseButton } from "@/components/base/buttons/close-button";
+import { MODAL_Z_INDEX } from "@/lib/layers";
 import { cx } from "@/utils/cx";
 
 // A real right-anchored slide-over, not the centred `Modal`/`ModalOverlay` pair in
@@ -18,6 +19,7 @@ export function SidePanel({
   title,
   headerActions,
   widthClassName = "max-w-md",
+  side = "right",
   children,
 }: {
   isOpen: boolean;
@@ -31,6 +33,11 @@ export function SidePanel({
    *  label/value list). The record-detail sidebar passes a wider one to comfortably fit its
    *  Figma-matched accordion sections (label + value side by side, per row). */
   widthClassName?: string;
+  /** Which viewport edge the panel slides in from - defaults to `"right"` (every pre-existing
+   *  consumer: Customise columns, the generic column-detail panel, the record-detail sidebar).
+   *  Species mode's own "All Filters" panel is the first `"left"` consumer, matching its Figma
+   *  reference (node 2266:167054) exactly. */
+  side?: "left" | "right";
   children: ReactNode;
 }) {
   return (
@@ -40,7 +47,8 @@ export function SidePanel({
       isDismissable
       className={({ isEntering, isExiting }) =>
         cx(
-          "fixed inset-0 z-50 bg-overlay/70 backdrop-blur-[2px]",
+          MODAL_Z_INDEX,
+          "fixed inset-0 bg-overlay/70 backdrop-blur-[2px]",
           isEntering && "duration-300 ease-out animate-in fade-in",
           isExiting && "duration-200 ease-in animate-out fade-out",
         )
@@ -49,10 +57,21 @@ export function SidePanel({
       <Modal
         className={({ isEntering, isExiting }) =>
           cx(
-            "fixed inset-y-0 right-0 flex h-full w-full flex-col bg-primary shadow-xl outline-hidden",
+            "fixed inset-y-0 flex h-full w-full flex-col bg-primary shadow-xl outline-hidden",
+            side === "right" ? "right-0" : "left-0",
             widthClassName,
-            isEntering && "duration-300 ease-out animate-in slide-in-from-right-[100%]",
-            isExiting && "duration-200 ease-in animate-out slide-out-to-right-[100%]",
+            side === "right" &&
+              (isEntering
+                ? "duration-300 ease-out animate-in slide-in-from-right-[100%]"
+                : isExiting
+                  ? "duration-200 ease-in animate-out slide-out-to-right-[100%]"
+                  : ""),
+            side === "left" &&
+              (isEntering
+                ? "duration-300 ease-out animate-in slide-in-from-left-[100%]"
+                : isExiting
+                  ? "duration-200 ease-in animate-out slide-out-to-left-[100%]"
+                  : ""),
           )
         }
       >

@@ -4,6 +4,7 @@ import type React from "react";
 import { Copy01, Edit01, LogOut01, Settings01, Trash01, UserPlus01 } from "@untitledui/icons";
 import { Dropdown } from "@/components/base/dropdown/dropdown";
 import { PageHeader } from "@/components/PageHeader";
+import Link from "next/link";
 
 const Section = ({ label, children }: { label: string; children: React.ReactNode }) => (
   <div className="flex flex-wrap items-start gap-6 rounded-xl border border-secondary bg-secondary p-6">
@@ -26,7 +27,7 @@ export default function DropdownPage() {
       <h2 className="text-balance">Actions menu</h2>
       <p className="text-balance">
         The default shape - an icon, a label, nothing selectable. This is exactly what{" "}
-        <code>TableRowActionsDropdown</code> on the <a href="/components/table">Table</a> page is built from.
+        <code>TableRowActionsDropdown</code> on the <Link href="/components/table">Table</Link> page is built from.
       </p>
       <Section label="Actions">
         <Dropdown.Root>
@@ -119,7 +120,7 @@ export default function DropdownPage() {
       <p className="text-balance">
         Pass <code>avatarUrl</code> instead of <code>icon</code> for a people-picker style menu - the selection
         indicator moves to the trailing edge automatically. The avatar falls back to initials when the image 404s,
-        same as the base <a href="/components/avatar">Avatar</a> component.
+        same as the base <Link href="/components/avatar">Avatar</Link> component.
       </p>
       <Section label="Assignee picker">
         <Dropdown.Root>

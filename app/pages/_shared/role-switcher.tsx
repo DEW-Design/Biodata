@@ -1,9 +1,9 @@
 "use client";
 
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { Button as AriaButton } from "react-aria-components";
 import { Glasses01 } from "@untitledui/icons";
 import { Dropdown } from "@/components/base/dropdown/dropdown";
+import { FloatingMenuFab } from "@/app/pages/_shared/floating-fab";
 import { hasFeatureAccess, type FeatureKey } from "@/config/role-access.config";
 import { useUserRole } from "@/lib/use-user-role";
 import { USER_ROLES, type UserRole } from "@/lib/user-role";
@@ -20,6 +20,9 @@ const wholePageGates: { prefix: string; feature: FeatureKey }[] = [
   { prefix: "/pages/dla", feature: "dlaAccess" },
 ];
 
+// (Draggable via `FloatingMenuFab` - it used to be pinned bottom-right and sat on top of page
+// controls.)
+//
 // A dev tool, not a BioData SA feature - there's no real login in this exploratory build, so the
 // only way to preview a role today is hand-editing the `?userRole=` URL param, which the user
 // flagged directly as "flimsy" after doing it repeatedly to check the public-user work. A FAB
@@ -57,31 +60,21 @@ export function RoleSwitcher() {
   };
 
   return (
-    <div className="fixed right-5 bottom-5 z-50">
-      <Dropdown.Root>
-        <AriaButton
-          aria-label="Preview a different role"
-          className="flex size-12 items-center justify-center rounded-full bg-primary-solid text-white shadow-lg outline-brand transition duration-100 ease-linear hover:opacity-90 focus-visible:outline-2 focus-visible:outline-offset-2 active:scale-[0.96]"
-        >
-          <Glasses01 className="size-5" />
-        </AriaButton>
-        <Dropdown.Popover placement="top right">
-          <Dropdown.Menu
-            aria-label="Preview role"
-            selectionMode="single"
-            selectedKeys={[activeRole]}
-            onSelectionChange={(keys) => {
-              if (keys === "all") return;
-              const [role] = Array.from(keys) as UserRole[];
-              if (role) setRole(role);
-            }}
-          >
-            {roleOptions.map((item) => (
-              <Dropdown.Item key={item.id} id={item.id} label={item.label} />
-            ))}
-          </Dropdown.Menu>
-        </Dropdown.Popover>
-      </Dropdown.Root>
-    </div>
+    <FloatingMenuFab storageKey="role-switcher" defaultPosition={{ right: 20, bottom: 88 }} ariaLabel="Preview a different role" icon={Glasses01}>
+      <Dropdown.Menu
+        aria-label="Preview role"
+        selectionMode="single"
+        selectedKeys={[activeRole]}
+        onSelectionChange={(keys) => {
+          if (keys === "all") return;
+          const [role] = Array.from(keys) as UserRole[];
+          if (role) setRole(role);
+        }}
+      >
+        {roleOptions.map((item) => (
+          <Dropdown.Item key={item.id} id={item.id} label={item.label} />
+        ))}
+      </Dropdown.Menu>
+    </FloatingMenuFab>
   );
 }

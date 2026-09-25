@@ -5,10 +5,11 @@ import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import "leaflet-draw/dist/leaflet.draw.css";
 import "leaflet-draw";
-import { Circle, MapContainer, Marker, Polygon, ScaleControl, TileLayer, useMap } from "react-leaflet";
+import { Circle, CircleMarker, MapContainer, Marker, Polygon, ScaleControl, Tooltip, TileLayer, useMap } from "react-leaflet";
 import { ZoomIn, ZoomOut } from "@untitledui/icons";
 import { Button } from "@/components/base/buttons/button";
 import type { Boundary } from "./geo";
+import { assetPath } from "@/lib/base-path";
 
 // A real, working map of South Australia - OpenStreetMap tiles via Leaflet, not a fabricated grid
 // or a static image. Kept in app/pages/_shared (not components/custom) to match the precedent
@@ -24,15 +25,18 @@ import type { Boundary } from "./geo";
 // node_modules/leaflet/dist/images/ into public/leaflet/, instead of leaflet's own asset path.
 delete (L.Icon.Default.prototype as unknown as { _getIconUrl?: unknown })._getIconUrl;
 L.Icon.Default.mergeOptions({
-    iconRetinaUrl: "/leaflet/marker-icon-2x.png",
-    iconUrl: "/leaflet/marker-icon.png",
-    shadowUrl: "/leaflet/marker-shadow.png",
+    iconRetinaUrl: assetPath("/leaflet/marker-icon-2x.png"),
+    iconUrl: assetPath("/leaflet/marker-icon.png"),
+    shadowUrl: assetPath("/leaflet/marker-shadow.png"),
 });
 
 const SA_CENTER: [number, number] = [-30.5, 135.8];
+// The east edge is 152, not South Australia's own 141: fitting an area into the left of the map
+// while a panel covers the right (the second Explore layout) moves the map's centre east, and a
+// tighter bound would pull the view back and slide the fitted areas under the panel.
 const SA_MAX_BOUNDS: L.LatLngBoundsExpression = [
     [-40, 124],
-    [-23, 143],
+    [-23, 152],
 ];
 
 // The same brand teal token app/pages/_shared/map-view.tsx uses for its own "this is the
@@ -42,10 +46,10 @@ const BOUNDARY_COLOR = "var(--color-brand-600)";
 
 /** Real DEW-styled zoom controls, replacing Leaflet's own default control chrome (which doesn't
  *  follow this design system's tokens) - same real zoom behaviour, `map.zoomIn()`/`zoomOut()`. */
-function ZoomControls() {
+function ZoomControls({ position }: { position: "top-right" | "top-left" }) {
     const map = useMap();
     return (
-        <div className="absolute top-3 right-3 z-[1000] flex flex-col gap-2">
+        <div className={position === "top-left" ? "absolute top-3 left-3 z-[1000] flex flex-col gap-2" : "absolute top-3 right-3 z-[1000] flex flex-col gap-2"}>
             <Button color="secondary" size="md" iconLeading={ZoomIn} aria-label="Zoom in" onPress={() => map.zoomIn()} className="shadow-md" />
             <Button color="secondary" size="md" iconLeading={ZoomOut} aria-label="Zoom out" onPress={() => map.zoomOut()} className="shadow-md" />
         </div>
@@ -55,7 +59,15 @@ function ZoomControls() {
 /** Pans/zooms to fit every currently-active boundary at once, however each one was defined (drawn,
  *  entered as coordinates, or picked from the national park list) - one consistent "show me
  *  everything I've defined so far" behaviour regardless of source or count. */
-function FlyToBoundaries({ boundaries }: { boundaries: Boundary[] }) {
+function FlyToBoundaries({
+    boundaries,
+    paddingTopLeft = [48, 48],
+    paddingBottomRight = [48, 48],
+}: {
+    boundaries: Boundary[];
+    paddingTopLeft?: [number, number];
+    paddingBottomRight?: [number, number];
+}) {
     const map = useMap();
     const boundariesKey = JSON.stringify(boundaries);
 
@@ -75,7 +87,9 @@ function FlyToBoundaries({ boundaries }: { boundaries: Boundary[] }) {
                 bounds.extend(L.latLngBounds(boundary.points));
             }
         }
-        map.flyToBounds(bounds, { padding: [48, 48], duration: 0.6 });
+        // paddingTopLeft keeps fitted areas clear of anything floating over the map's top-left
+        // (e.g. the map search's floating panel).
+        map.flyToBounds(bounds, { paddingTopLeft, paddingBottomRight, duration: 0.6 });
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [boundariesKey, map]);
 
@@ -150,10 +164,32 @@ export interface SAMapProps {
     onBoundaryAdd: (boundary: Boundary) => void;
     activeDrawTool: "circle" | "polygon" | null;
     onDrawToolChange: (tool: "circle" | "polygon" | null) => void;
+    /** Extra fit-to-bounds padding at the top-left, for UI floating over the map. */
+    fitPaddingTopLeft?: [number, number];
+    /** Extra fit-to-bounds padding at the bottom-right, for UI floating over the map's right side
+     *  (the results panel in the second Explore layout). */
+    fitPaddingBottomRight?: [number, number];
+    /** Where the zoom buttons sit. Default top-right; the second Explore layout moves them to the
+     *  top-left because the results panel floats over the right. */
+    zoomPosition?: "top-right" | "top-left";
+    /** Draw the search areas (default true). They still steer the fit when hidden. */
+    showBoundaries?: boolean;
+    /** Result points to plot over the search areas (one dot per record). Optional. */
+    markers?: SAMapMarker[];
+    /** Called with a marker's id when its dot is clicked. */
+    onMarkerClick?: (id: string) => void;
+    /** The marker to draw larger and darker (the result card being hovered). */
+    highlightedMarkerId?: string | null;
     className?: string;
 }
 
-export default function SAMap({ boundaries, onBoundaryAdd, activeDrawTool, onDrawToolChange, className }: SAMapProps) {
+export interface SAMapMarker {
+    id: string;
+    position: [number, number];
+    label: string;
+}
+
+export default function SAMap({ boundaries, onBoundaryAdd, activeDrawTool, onDrawToolChange, fitPaddingTopLeft, fitPaddingBottomRight, zoomPosition = "top-right", showBoundaries = true, markers, onMarkerClick, highlightedMarkerId, className }: SAMapProps) {
     return (
         <div className={className}>
             <MapContainer
@@ -176,20 +212,51 @@ export default function SAMap({ boundaries, onBoundaryAdd, activeDrawTool, onDra
                 <TileLayer attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors' url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
 
                 <ScaleControl position="bottomleft" imperial={false} />
-                <ZoomControls />
+                <ZoomControls position={zoomPosition} />
                 <DrawBridge activeDrawTool={activeDrawTool} onDrawToolChange={onDrawToolChange} onBoundaryAdd={onBoundaryAdd} />
-                <FlyToBoundaries boundaries={boundaries} />
+                <FlyToBoundaries boundaries={boundaries} paddingTopLeft={fitPaddingTopLeft} paddingBottomRight={fitPaddingBottomRight} />
 
-                {boundaries.map((boundary) =>
+                {showBoundaries && boundaries.map((boundary) =>
                     boundary.kind === "circle" ? (
                         <Fragment key={boundary.id}>
                             <Circle center={boundary.center} radius={boundary.radiusKm * 1000} pathOptions={{ color: BOUNDARY_COLOR, fillColor: BOUNDARY_COLOR, fillOpacity: 0.15, weight: 2 }} />
                             <Marker position={boundary.center} />
                         </Fragment>
                     ) : (
-                        <Polygon key={boundary.id} positions={boundary.points} pathOptions={{ color: BOUNDARY_COLOR, fillColor: BOUNDARY_COLOR, fillOpacity: 0.15, weight: 2 }} />
+                        <Fragment key={boundary.id}>
+                            <Polygon positions={boundary.points} pathOptions={{ color: BOUNDARY_COLOR, fillColor: BOUNDARY_COLOR, fillOpacity: 0.15, weight: 2 }} />
+                            {/* Uploaded-shapefile polygons also get a marker (at their vertex average) so
+                                every location a shapefile added is pinned, not just its point features. */}
+                            {boundary.source?.startsWith("shapefile:") && (
+                                <Marker
+                                    position={[
+                                        boundary.points.reduce((sum, [lat]) => sum + lat, 0) / boundary.points.length,
+                                        boundary.points.reduce((sum, [, lon]) => sum + lon, 0) / boundary.points.length,
+                                    ]}
+                                />
+                            )}
+                        </Fragment>
                     ),
                 )}
+
+                {markers?.map((marker) => (
+                    <CircleMarker
+                        key={marker.id}
+                        center={marker.position}
+                        radius={marker.id === highlightedMarkerId ? 10 : 6}
+                        pathOptions={{
+                            color: "var(--ui-bg-primary)",
+                            weight: 2,
+                            fillColor: marker.id === highlightedMarkerId ? "var(--color-brand-900)" : BOUNDARY_COLOR,
+                            fillOpacity: 1,
+                        }}
+                        eventHandlers={{ click: () => onMarkerClick?.(marker.id) }}
+                    >
+                        <Tooltip direction="top" offset={[0, -6]}>
+                            {marker.label}
+                        </Tooltip>
+                    </CircleMarker>
+                ))}
             </MapContainer>
         </div>
     );

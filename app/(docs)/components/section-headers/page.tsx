@@ -178,9 +178,8 @@ import { Button } from "@/components/base/buttons/button";
       {/* ── Where it's used ── */}
       <h2 className="text-balance">Where it&apos;s used</h2>
       <p className="text-balance">
-        Replaced hand-rolled title+border-b markup in <code>app/pages/_shared/project-list-content.tsx</code>,{" "}
-        <code>app/pages/_shared/data-overview.tsx</code>, <code>app/pages/dashboard/option-2/data-overview.tsx</code>,
-        and <code>app/pages/project-list/option-2/page.tsx</code>.
+        Replaced hand-rolled title+border-b markup in <code>app/pages/_shared/project-list-content.tsx</code>{" "}
+        and <code>app/pages/_shared/data-overview.tsx</code>.
       </p>
 
       {/* ── Figma ── */}

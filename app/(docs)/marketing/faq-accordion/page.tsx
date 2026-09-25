@@ -2,6 +2,7 @@
 
 import { PageHeader } from "@/components/PageHeader";
 import { FAQAccordion01 } from "@/components/marketing/faq/faq-accordion-01";
+import Link from "next/link";
 
 export default function FAQAccordionPage() {
   return (
@@ -41,7 +42,7 @@ export default function FAQAccordionPage() {
       <p className="text-balance">Every real control inside this section is a real DEW component, not a lookalike:</p>
       <ul className="w-full list-disc pl-5 text-sm text-secondary" style={{ lineHeight: "1.9" }}>
         <li>
-          <a href="/components/accordion">Accordion</a> (<code>components/base/accordion/accordion.tsx</code>) - the
+          <Link href="/components/accordion">Accordion</Link> (<code>components/base/accordion/accordion.tsx</code>) - the
           question/answer list itself. Extracted out of this section into its own component rather than
           hand-rolling expand/collapse state locally - this section just maps its FAQ data into{" "}
           <code>AccordionItemType[]</code> and renders <code>{"<Accordion items={...} />"}</code>.

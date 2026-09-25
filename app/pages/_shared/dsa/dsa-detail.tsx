@@ -2,19 +2,21 @@
 
 import { useState, type ReactNode } from "react";
 import type { Key } from "react-aria-components";
-import { ArrowNarrowLeft, ChevronDown, Download01, Edit05, Eye, EyeOff, Mail01, Phone01, SearchLg, Trash01 } from "@untitledui/icons";
-import { Badge } from "@/components/base/badges/badges";
+import { ArrowNarrowLeft, Download01, Edit05, Eye, EyeOff, Mail01, Phone01, SearchLg, SearchMd } from "@untitledui/icons";
+import { AlertFullWidth } from "@/components/application/alerts/alerts";
+import { Badge, CountBadge } from "@/components/base/badges/badges";
 import { Button } from "@/components/base/buttons/button";
-import { Dropdown } from "@/components/base/dropdown/dropdown";
+import { Input } from "@/components/base/input/input";
 import { FeaturedIcon } from "@/components/foundations/featured-icon/featured-icon";
-import { DestructiveModal } from "@/components/application/modals/modal";
+import { ConfirmationModal, DestructiveModal } from "@/components/application/modals/modal";
 import { Tab, TabList, TabPanel, Tabs } from "@/components/application/tabs/tabs";
 import { Table, TableCard } from "@/components/application/table/table";
 import { toast } from "@/components/application/toast/toast";
 import { BentoCard } from "@/app/pages/_shared/bento-card";
+import { RejectModal } from "@/app/pages/_shared/agreement-modals";
 import { SidePanel } from "@/app/pages/_shared/map-search/side-panel";
 import { useRoleHref } from "@/lib/use-role-href";
-import { contactName, dsaScopeOptions, dsaStatusMeta, formatShortDate, type Dsa, type DsaContact, type DsaStatus, type DsaSystem } from "@/app/pages/_shared/dsa/dsa-data";
+import { contactName, dsaScopeOptions, dsaStatusMeta, formatShortDate, todayIso, type Dsa, type DsaContact, type DsaStatus, type DsaSystem } from "@/app/pages/_shared/dsa/dsa-data";
 import { cx } from "@/utils/cx";
 
 // The DSA deep dive at /pages/dsa/<id> (lo-fi frame "DSA List", right-hand pane, Figma node 3:15089),
@@ -42,6 +44,14 @@ import { cx } from "@/utils/cx";
 // Empty values say "Not provided" rather than a stray dash (CONTEXT.md, cognitive-load principles),
 // and a section for something the agreement doesn't use (no API systems) collapses to one honest
 // line instead of an empty table.
+//
+// Toolbar/action set follows the shared DSA/DLA workflow (agreement-status.ts, see CONTEXT.md's
+// "Unified DSA/DLA status model"): Edit (Draft through Approved, not once Active - "for active
+// requests only cancel option can be used"), Start Review (Submitted), Put On Hold / Resume
+// (Under Review <-> On Hold), Approve / Reject (Under Review), Cancel (anywhere before Closed).
+// DSA has no separate requester-vs-reviewer persona to gate these behind - `DsaShell` already
+// replaces all of `main` with a restricted message for every role but the one that can manage DSAs
+// at all, so every action here is always available once this component renders.
 
 function Field({ label, children }: { label: string; children: ReactNode }) {
   return (
@@ -147,27 +157,66 @@ function SystemPanelBody({ system }: { system: DsaSystem }) {
   );
 }
 
-export function DsaDetail({ dsa, onEdit, onRevoke, onDeleteDraft }: { dsa: Dsa; onEdit: () => void; onRevoke: () => void; onDeleteDraft: () => void }) {
+export function DsaDetail({
+  dsa,
+  onEdit,
+  onDeleteDraft,
+  onStartReview,
+  onHold,
+  onResume,
+  onApprove,
+  onReject,
+  onCancel,
+}: {
+  dsa: Dsa;
+  onEdit: () => void;
+  onDeleteDraft: () => void;
+  onStartReview: () => void;
+  onHold: () => void;
+  onResume: () => void;
+  onApprove: () => void;
+  onReject: (reason: string) => void;
+  onCancel: () => void;
+}) {
   const [systemOpen, setSystemOpen] = useState<DsaSystem | null>(null);
-  const [confirm, setConfirm] = useState<null | "revoke" | "delete">(null);
+  const [confirm, setConfirm] = useState<null | "cancel" | "delete" | "approve">(null);
+  const [rejectOpen, setRejectOpen] = useState(false);
   const [tab, setTab] = useState<Key>("overview");
+  const [systemSearch, setSystemSearch] = useState("");
+  const [systemPage, setSystemPage] = useState(1);
+  const [systemPageSize, setSystemPageSize] = useState(50);
   const roleHref = useRoleHref();
   const meta = dsaStatusMeta[dsa.status];
   const isDraft = dsa.status === "draft";
-  const canAct = dsa.status !== "revoked";
+  // Every action below is a direct toolbar button, always visible - the same "never behind a
+  // scroll" convention DLA's own toolbar already follows. Edit stops once an agreement is Active
+  // ("for active requests only cancel option can be used" - see agreement-status.ts); Cancel is
+  // available anywhere before Closed/Rejected/Cancelled itself.
+  const canEdit = dsa.status === "draft" || dsa.status === "submitted" || dsa.status === "under_review" || dsa.status === "on_hold" || dsa.status === "approved";
+  const canCancel = dsa.status !== "closed" && dsa.status !== "rejected" && dsa.status !== "cancelled";
+  const hasOtherAction = canEdit || dsa.status === "submitted" || dsa.status === "under_review" || dsa.status === "on_hold";
+
+  // Section header + search + table (CONTEXT.md's non-negotiable) applied at this table's own
+  // scale - a count next to its label, a real search, real numbered pagination - rather than the
+  // page-level `SectionHeader` component, which is sized for a whole screen, not a sub-card inside
+  // a detail tab.
+  const systemQuery = systemSearch.trim().toLowerCase();
+  const systemRows = systemQuery ? dsa.systems.filter((s) => [s.name, s.org.name].some((v) => v.toLowerCase().includes(systemQuery))) : dsa.systems;
+  const systemPageCount = Math.max(1, Math.ceil(systemRows.length / systemPageSize));
+  const systemCurrentPage = Math.min(systemPage, systemPageCount);
+  const pagedSystems = systemRows.slice((systemCurrentPage - 1) * systemPageSize, systemCurrentPage * systemPageSize);
 
   return (
     <div className="flex min-h-0 flex-1 flex-col overflow-y-auto">
-      {/* Back link + the real primary actions - Download PDF/Actions stay off the gradient card
-          below, same "don't put action buttons on the identity card" precedent as the Home
-          dashboard's own gradient banner (see CONTEXT.md). */}
+      {/* Back link + every real action this record can take right now, always visible - never
+          behind a scroll, matching DLA's own toolbar exactly. */}
       <div className="flex shrink-0 flex-wrap items-center justify-between gap-3 px-6 pt-6">
         <Button color="link-gray" size="sm" iconLeading={ArrowNarrowLeft} href={roleHref(`/pages/dsa?status=${dsa.status}`)}>
           Back to agreements
         </Button>
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-3">
           <Button
-            color="primary"
+            color="secondary"
             iconLeading={Download01}
             isDisabled={!dsa.agreementFile}
             onPress={() =>
@@ -178,25 +227,43 @@ export function DsaDetail({ dsa, onEdit, onRevoke, onDeleteDraft }: { dsa: Dsa; 
           >
             Download PDF
           </Button>
-          {canAct && (
-            <Dropdown.Root>
-              <Button color="secondary" iconTrailing={ChevronDown}>
-                Actions
+          {isDraft && (
+            <Button color="secondary-destructive" onPress={() => setConfirm("delete")}>
+              Delete draft
+            </Button>
+          )}
+          {canEdit && (
+            <Button color="secondary" iconLeading={Edit05} onPress={onEdit}>
+              {isDraft ? "Edit draft" : "Edit agreement"}
+            </Button>
+          )}
+          {dsa.status === "submitted" && (
+            <Button color="primary" onPress={onStartReview}>
+              Start Review
+            </Button>
+          )}
+          {dsa.status === "under_review" && (
+            <>
+              <Button color="secondary" onPress={onHold}>
+                Put On Hold
               </Button>
-              <Dropdown.Popover placement="bottom right">
-                <Dropdown.Menu
-                  aria-label="Agreement actions"
-                  onAction={(key) => {
-                    if (key === "edit") onEdit();
-                    else setConfirm(isDraft ? "delete" : "revoke");
-                  }}
-                >
-                  <Dropdown.Item id="edit" label={isDraft ? "Edit draft" : "Edit agreement"} icon={Edit05} />
-                  <Dropdown.Separator />
-                  <Dropdown.Item id="remove" label={isDraft ? "Delete draft" : "Revoke agreement"} icon={Trash01} className="**:text-error-primary" />
-                </Dropdown.Menu>
-              </Dropdown.Popover>
-            </Dropdown.Root>
+              <Button color="secondary-destructive" onPress={() => setRejectOpen(true)}>
+                Reject
+              </Button>
+              <Button color="primary" onPress={() => setConfirm("approve")}>
+                Approve
+              </Button>
+            </>
+          )}
+          {dsa.status === "on_hold" && (
+            <Button color="primary" onPress={onResume}>
+              Resume Review
+            </Button>
+          )}
+          {canCancel && (
+            <Button color={hasOtherAction ? "secondary-destructive" : "link-destructive"} onPress={() => setConfirm("cancel")}>
+              Cancel
+            </Button>
           )}
         </div>
       </div>
@@ -226,6 +293,52 @@ export function DsaDetail({ dsa, onEdit, onRevoke, onDeleteDraft }: { dsa: Dsa; 
             </MetaField>
           </div>
         </div>
+      </div>
+
+      {/* Neutral statements of fact, same convention as DLA's own status banners - DSA has no
+          separate requester persona to write differently for, so this always reads as the one
+          reviewer's own view. */}
+      <div className="shrink-0 px-6 pt-4">
+        {dsa.status === "under_review" && (
+          <AlertFullWidth
+            color="warning"
+            title="Under Review"
+            description="This agreement needs a decision - see Put On Hold, Reject or Approve above."
+            confirmLabel="Noted"
+            contained
+            className="max-w-none rounded-lg border border-warning-200 px-4 py-3 md:px-4"
+          />
+        )}
+        {dsa.status === "on_hold" && (
+          <AlertFullWidth
+            color="warning"
+            title="On Hold"
+            description="This review is paused pending information from the requester. Resume once you have what you need."
+            confirmLabel="Noted"
+            contained
+            className="max-w-none rounded-lg border border-warning-200 px-4 py-3 md:px-4"
+          />
+        )}
+        {dsa.status === "rejected" && (
+          <AlertFullWidth
+            color="error"
+            title="Agreement Rejected"
+            description={dsa.rejectionReason || "No reason was provided."}
+            confirmLabel="Noted"
+            contained
+            className="max-w-none rounded-lg border border-error-200 px-4 py-3 md:px-4"
+          />
+        )}
+        {dsa.status === "cancelled" && (
+          <AlertFullWidth
+            color="gray"
+            title="Cancelled"
+            description="This agreement was cancelled and is no longer active."
+            confirmLabel="Noted"
+            contained
+            className="max-w-none rounded-lg border border-secondary px-4 py-3 md:px-4"
+          />
+        )}
       </div>
 
       {/* Real Tabs directly under the gradient card, matching project-detail's own ContentTabs row
@@ -274,34 +387,67 @@ export function DsaDetail({ dsa, onEdit, onRevoke, onDeleteDraft }: { dsa: Dsa; 
               </span>
             </div>
             <div className="flex flex-col gap-3 p-6">
-              <p className="text-xs font-semibold tracking-wide text-quaternary uppercase">Data shared via system (API)</p>
+              <div className="flex items-center gap-2">
+                <p className="text-xs font-semibold tracking-wide text-quaternary uppercase">Data shared via system (API)</p>
+                {dsa.sharedViaSystem && dsa.systems.length > 0 && <CountBadge count={dsa.systems.length} color="gray" />}
+              </div>
               {dsa.sharedViaSystem && dsa.systems.length > 0 ? (
-                <TableCard.Root size="sm">
-                  <Table aria-label="Systems that receive data through the API">
-                    <Table.Header>
-                      <Table.Head id="system" label="System" isRowHeader />
-                      <Table.Head id="org" label="Department / agency" />
-                      <Table.Head id="action" label="Action" />
-                    </Table.Header>
-                    <Table.Body items={dsa.systems}>
-                      {(system) => (
-                        <Table.Row id={system.id} textValue={system.name}>
-                          <Table.Cell>
-                            <span className="text-sm font-medium text-primary">{system.name}</span>
-                          </Table.Cell>
-                          <Table.Cell>
-                            <span className="text-sm text-tertiary">{system.org.name}</span>
-                          </Table.Cell>
-                          <Table.Cell>
-                            <Button color="link-color" size="sm" onPress={() => setSystemOpen(system)}>
-                              View details
-                            </Button>
-                          </Table.Cell>
-                        </Table.Row>
-                      )}
-                    </Table.Body>
-                  </Table>
-                </TableCard.Root>
+                <div className="flex flex-col gap-3">
+                  <div className="w-full max-w-xs">
+                    <Input
+                      aria-label="Search systems"
+                      size="sm"
+                      icon={SearchMd}
+                      placeholder="Search system or department"
+                      value={systemSearch}
+                      onChange={(value) => {
+                        setSystemSearch(value);
+                        setSystemPage(1);
+                      }}
+                    />
+                  </div>
+                  {systemRows.length === 0 ? (
+                    <p className="py-4 text-sm text-tertiary">No systems match your search.</p>
+                  ) : (
+                    <TableCard.Root size="sm">
+                      <Table aria-label="Systems that receive data through the API">
+                        <Table.Header>
+                          <Table.Head id="system" label="System" isRowHeader />
+                          <Table.Head id="org" label="Department / agency" />
+                          <Table.Head id="action" label="Action" />
+                        </Table.Header>
+                        <Table.Body items={pagedSystems}>
+                          {(system) => (
+                            <Table.Row id={system.id} textValue={system.name}>
+                              <Table.Cell>
+                                <span className="text-sm font-medium text-primary">{system.name}</span>
+                              </Table.Cell>
+                              <Table.Cell>
+                                <span className="text-sm text-tertiary">{system.org.name}</span>
+                              </Table.Cell>
+                              <Table.Cell>
+                                <Button color="link-color" size="sm" onPress={() => setSystemOpen(system)}>
+                                  View details
+                                </Button>
+                              </Table.Cell>
+                            </Table.Row>
+                          )}
+                        </Table.Body>
+                      </Table>
+                      <TableCard.PaginationNumbered
+                        page={systemCurrentPage}
+                        pageCount={systemPageCount}
+                        onPageChange={setSystemPage}
+                        pageSize={systemPageSize}
+                        onPageSizeChange={(size) => {
+                          setSystemPageSize(size);
+                          setSystemPage(1);
+                        }}
+                        totalCount={systemRows.length}
+                      />
+                    </TableCard.Root>
+                  )}
+                </div>
               ) : (
                 <p className="text-sm text-quaternary">Not used</p>
               )}
@@ -315,35 +461,56 @@ export function DsaDetail({ dsa, onEdit, onRevoke, onDeleteDraft }: { dsa: Dsa; 
       </SidePanel>
 
       <DestructiveModal
-        isOpen={confirm !== null}
+        isOpen={confirm === "delete" || confirm === "cancel"}
         onOpenChange={(open) => !open && setConfirm(null)}
-        title={confirm === "delete" ? `Delete draft ${dsa.id}?` : `Revoke ${dsa.id}?`}
+        title={confirm === "delete" ? `Delete draft ${dsa.id}?` : `Cancel ${dsa.id}?`}
         description={
           confirm === "delete"
             ? "The draft is removed and can't be recovered."
-            : `${dsa.partner} loses access under this agreement. The agreement moves to Revoked.`
+            : `${dsa.partner || "The partner organisation"} loses access under this agreement. The agreement moves to Cancelled and can't be reversed here.`
         }
-        confirmLabel={confirm === "delete" ? "Delete draft" : "Revoke agreement"}
+        confirmLabel={confirm === "delete" ? "Delete draft" : "Cancel agreement"}
         onConfirm={() => {
           const action = confirm;
           setConfirm(null);
           if (action === "delete") onDeleteDraft();
-          else onRevoke();
+          else onCancel();
         }}
       />
+      <ConfirmationModal
+        isOpen={confirm === "approve"}
+        onOpenChange={(open) => !open && setConfirm(null)}
+        title={`Approve ${dsa.id}?`}
+        description={
+          dsa.validFrom && dsa.validFrom > todayIso()
+            ? `This agreement moves to Approved and becomes Active on ${formatShortDate(dsa.validFrom)}.`
+            : "This agreement's start date has already arrived, so it moves straight to Active."
+        }
+        confirmLabel="Approve"
+        onConfirm={() => {
+          setConfirm(null);
+          onApprove();
+        }}
+      />
+      <RejectModal id={dsa.id} isOpen={rejectOpen} onOpenChange={setRejectOpen} onReject={(reason) => { setRejectOpen(false); onReject(reason); }} />
     </div>
   );
 }
 
 const emptyCopy: Record<DsaStatus, { title: string; description: string; cta: boolean }> = {
+  draft: { title: "No drafts", description: "Agreements you save as a draft appear here until they are submitted.", cta: true },
+  submitted: { title: "No submitted agreements", description: "Agreements waiting for a reviewer to start their review appear here.", cta: true },
+  under_review: { title: "No agreements under review", description: "Agreements a reviewer is currently assessing appear here.", cta: false },
+  on_hold: { title: "No agreements on hold", description: "Agreements paused pending information from the requester appear here.", cta: false },
+  approved: { title: "No approved agreements", description: "Agreements approved and waiting on their own start date appear here.", cta: false },
+  rejected: { title: "No rejected agreements", description: "Agreements a reviewer formally rejected appear here.", cta: false },
   active: {
     title: "No active agreements",
     description: "There are no active Data Sharing Agreements. Create one to start sharing data with a partner organisation.",
     cta: true,
   },
-  inactive: { title: "No inactive agreements", description: "Agreements that are no longer in effect appear here.", cta: false },
-  revoked: { title: "No revoked agreements", description: "Agreements that have been revoked appear here.", cta: false },
-  draft: { title: "No drafts", description: "Agreements you save as a draft appear here until they are submitted.", cta: true },
+  closed: { title: "No closed agreements", description: "Agreements that have run their course, automatically or manually, appear here.", cta: false },
+  cancelled: { title: "No cancelled agreements", description: "Agreements cancelled by the requester or an admin appear here.", cta: false },
 };
 
 // Lo-fi frame "DSA Empty State" (node 3:15244). The lo-fi's concentric-ring backdrop is a

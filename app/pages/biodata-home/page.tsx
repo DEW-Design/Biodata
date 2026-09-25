@@ -5,7 +5,6 @@ import { useRouter } from "next/navigation";
 import { Fredoka } from "next/font/google";
 import Highcharts from "highcharts";
 import HighchartsReact from "highcharts-react-official";
-import { Focusable } from "react-aria-components";
 import {
   SearchMd,
   ArrowNarrowUpRight,
@@ -38,10 +37,11 @@ import {
 } from "@untitledui/icons";
 import { Button } from "@/components/base/buttons/button";
 import { Input } from "@/components/base/input/input";
-import { Tooltip } from "@/components/base/tooltip/tooltip";
 import { Dialog, DialogTrigger, Modal, ModalOverlay } from "@/components/application/modals/modal";
 import { cx } from "@/utils/cx";
 import type { UserRole } from "@/lib/user-role";
+import Link from "next/link";
+import { assetPath } from "@/lib/base-path";
 
 // ─────────────────────────────────────────────────────────────────────────
 // BioData SA public marketing home page - rebuilt directly against the real
@@ -507,32 +507,29 @@ export default function BiodataHomePage() {
             <MobileNav />
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
-              src="/pages/dashboard/gov-sa-dew-lockup.png"
+              src={assetPath("/pages/dashboard/gov-sa-dew-lockup.png")}
               alt="Government of South Australia, Department for Environment and Water"
               className="h-[38px] w-auto"
             />
-            <div className="hidden h-6 w-px bg-secondary sm:block" />
+            <div className="hidden h-6 w-px bg-[var(--ui-border-primary)] sm:block" />
             <p className="hidden text-[17px] font-semibold tracking-tight text-primary sm:block">Biodata SA</p>
           </div>
 
           <nav aria-label="Primary" className="hidden items-center gap-6 lg:flex">
             {NAV_LINKS.map((link) => (
-              <a key={link.label} href={link.href} className="text-sm font-medium text-secondary hover:text-primary">
+              <Link key={link.label} href={link.href} className="text-sm font-medium text-secondary hover:text-primary">
                 {link.label}
-              </a>
+              </Link>
             ))}
           </nav>
 
           <div className="flex items-center gap-3">
-            <Tooltip title="Coming soon - authentication isn't built yet">
-              <Focusable>
-                <span className="inline-flex">
-                  <Button color="secondary" size="sm" isDisabled>
-                    Login
-                  </Button>
-                </span>
-              </Focusable>
-            </Tooltip>
+            <Button color="secondary" size="sm" href="/pages/auth/login">
+              Login
+            </Button>
+            <Button color="secondary" size="sm" href="/pages/auth/signup">
+              Sign up
+            </Button>
             <Button color="primary" size="sm" href={DASHBOARD_ROUTE}>
               Explore
             </Button>
@@ -544,7 +541,7 @@ export default function BiodataHomePage() {
       <section className="relative overflow-hidden">
         <div aria-hidden className="absolute inset-0">
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/pages/biodata-home/hero-bg.png" alt="" className="size-full object-cover" />
+          <img src={assetPath("/pages/biodata-home/hero-bg.png")} alt="" className="size-full object-cover" />
           <div
             className="absolute inset-0 opacity-50"
             style={{ backgroundImage: "linear-gradient(174deg, rgb(74, 140, 140) 7%, rgb(13, 87, 110) 73%)" }}
@@ -710,7 +707,7 @@ export default function BiodataHomePage() {
       <section id="about" className="relative">
         <div aria-hidden className="absolute inset-0 overflow-hidden">
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/pages/biodata-home/about-bg.png" alt="" className="size-full object-cover" />
+          <img src={assetPath("/pages/biodata-home/about-bg.png")} alt="" className="size-full object-cover" />
           <div className="absolute inset-0 bg-gradient-to-t from-[rgba(10,42,51,0.72)] to-transparent" />
           <div
             className="absolute inset-0"
@@ -795,7 +792,7 @@ export default function BiodataHomePage() {
 
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
-            src="/pages/biodata-home/explore-mockup-combined.png"
+            src={assetPath("/pages/biodata-home/explore-mockup-combined.png")}
             alt="BioData SA map-based search and records table mockups"
             className="hidden w-full lg:block"
           />
@@ -810,7 +807,7 @@ export default function BiodataHomePage() {
         <div className="relative mx-auto grid max-w-[1728px] grid-cols-1 lg:grid-cols-2">
           <div className="relative hidden min-h-[600px] lg:block">
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/pages/biodata-home/contribute-photo.png" alt="A field researcher recording an observation near the water" className="absolute inset-0 size-full object-cover" />
+            <img src={assetPath("/pages/biodata-home/contribute-photo.png")} alt="A field researcher recording an observation near the water" className="absolute inset-0 size-full object-cover" />
           </div>
 
           <div className="flex flex-col gap-5 px-4 py-16 sm:px-8 lg:px-20 lg:py-24">
@@ -954,7 +951,7 @@ export default function BiodataHomePage() {
               </p>
             </div>
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/pages/biodata-home/knowledge-centre-photo.png" alt="Field survey work in South Australia" className="aspect-[1960/784] w-full rounded-2xl object-cover" />
+            <img src={assetPath("/pages/biodata-home/knowledge-centre-photo.png")} alt="Field survey work in South Australia" className="aspect-[1960/784] w-full rounded-2xl object-cover" />
           </div>
 
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
@@ -989,7 +986,7 @@ export default function BiodataHomePage() {
         <Container className="flex flex-col gap-8 md:flex-row md:items-center md:gap-20">
           <div className="relative aspect-[1536/864] flex-1">
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/pages/biodata-home/acknowledgement-art.png" alt="Aboriginal artwork" className="absolute inset-0 size-full object-cover" />
+            <img src={assetPath("/pages/biodata-home/acknowledgement-art.png")} alt="Aboriginal artwork" className="absolute inset-0 size-full object-cover" />
           </div>
           <div className="flex flex-1 flex-col gap-8">
             <h2 className="text-3xl font-bold text-secondary">Acknowledgement of Country</h2>
@@ -1019,7 +1016,7 @@ export default function BiodataHomePage() {
       <div id="site-footer" className="flex justify-center bg-[#0d576e] px-2.5 py-6">
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
-          src="/pages/biodata-home/footer-legal-strip.png"
+          src={assetPath("/pages/biodata-home/footer-legal-strip.png")}
           alt="Disclaimer, Privacy, Accessibility. This site is licensed under a Creative Commons Attribution 3.0 Australia Licence. Copyright Department for Environment and Water 2026. SA.GOV.AU, White Ribbon Workplace, Green Building Council Australia member, Reconciliation South Australia Inc."
           className="h-[74px] w-full max-w-[1282px] object-contain"
         />

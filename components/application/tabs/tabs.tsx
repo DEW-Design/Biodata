@@ -205,8 +205,11 @@ export const Tab = ({ label, children, badge, icon: Icon, className, ...otherPro
                     <span className={cx("flex items-center gap-1.5", type !== "line" && "px-0.5")}>
                         {typeof children === "function" ? children(state) : children || label}
 
-                        {/* Badge */}
-                        {badge && (
+                        {/* Badge - `badge != null && badge !== ""`, not `badge &&`: a real, valid
+                            `badge={0}` (an empty status bucket shown as a tab) is falsy, so `&&`
+                            rendered the bare text "0" next to the label instead of a zero-count
+                            pill. Caught live via /proto/collection-sidebar's own "Revoked 0" tab. */}
+                        {badge != null && badge !== "" && (
                             <Badge
                                 size="sm"
                                 type={showPillColorBadge ? "pill-color" : "modern"}

@@ -28,6 +28,7 @@ import { Button } from "@/components/base/buttons/button";
 import { Input } from "@/components/base/input/input";
 import { Cell, Column, Row, Table, TableBody, TableHeader } from "@/components/base/table/table";
 import { Inspectable, InspectorProvider, type InspectableToken } from "@/components/scaffold/token-inspector";
+import { assetPath } from "@/lib/base-path";
 
 // Figma source: https://www.figma.com/design/wer8CgO1UoCH3aQw2jQkdy/BioData-SA-High-Fidelity?node-id=1885-6177
 // "Projects" (BioData SA high-fidelity Projects screen, 1920px). The direct design-context
@@ -158,7 +159,7 @@ function SidebarNav() {
           <div className="flex items-center gap-3 rounded-md bg-white p-3 text-[12px] text-[var(--color-brand-900)]">
             <div className="relative size-11 shrink-0 overflow-hidden rounded-full">
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src="/pages/dashboard/gov-sa-dew-logo.png" alt="Government of South Australia" className="absolute top-0 left-[-2px] h-full max-w-none" />
+              <img src={assetPath("/pages/dashboard/gov-sa-dew-logo.png")} alt="Government of South Australia" className="absolute top-0 left-[-2px] h-full max-w-none" />
             </div>
             <div className="min-w-0">
               <p className="font-semibold leading-tight">Government of South Australia</p>
@@ -332,7 +333,7 @@ function ProjectDetails() {
                 <h4 className="mb-4 text-sm font-medium text-primary">Geographic scope</h4>
                 <div className="h-[220px] overflow-hidden rounded-md bg-brand-primary_alt">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src="/pages/projects/geographic-scope.png" alt="Map showing the geographic scope for the Kangaroo Island Wildlife Rehabilitation project" className="h-full w-full object-cover" />
+                  <img src={assetPath("/pages/projects/geographic-scope.png")} alt="Map showing the geographic scope for the Kangaroo Island Wildlife Rehabilitation project" className="h-full w-full object-cover" />
                 </div>
               </div>
             </div>

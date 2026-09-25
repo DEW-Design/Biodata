@@ -1,9 +1,9 @@
 "use client";
 
-import { isValidElement, useContext } from "react";
+import { Fragment, isValidElement, useContext, type ReactNode } from "react";
 import { Check } from "@untitledui/icons";
 import type { ListBoxItemProps as AriaListBoxItemProps } from "react-aria-components";
-import { ListBoxItem as AriaListBoxItem, Text as AriaText } from "react-aria-components";
+import { Header as AriaHeader, ListBoxItem as AriaListBoxItem, ListBoxSection as AriaListBoxSection, Text as AriaText } from "react-aria-components";
 import { Avatar } from "@/components/base/avatar/avatar";
 import { CheckboxBase } from "@/components/base/checkbox/checkbox";
 import { cx } from "@/utils/cx";
@@ -40,7 +40,33 @@ interface SelectItemProps extends Omit<AriaListBoxItemProps<SelectItemType>, "id
     selectionIndicator?: "checkmark" | "checkbox" | "none";
     /** The alignment of the selection indicator. */
     selectionIndicatorAlign?: "left" | "right";
+    /** Puts the supporting text on its own line under the label and truncates it with an ellipsis,
+     * instead of wrapping it beside the label. For results that carry a longer second line (a
+     * scientific name, an organisation). Default `false`, so every existing list is unchanged. */
+    stacked?: boolean;
+    /** Small italic text after the label on the same line (a scientific name). Only used with `stacked`. */
+    labelSuffix?: string;
+    /** A short label on the right of the row (a count, a relation). Only used with `stacked`. */
+    trailingText?: string;
+    /** Bolds where this text appears in the label (the characters the person typed). Only used
+     * with `stacked`. */
+    highlight?: string;
 }
+
+/** The label with the typed characters in semibold and the rest regular. */
+const highlightLabel = (label: string, highlight?: string): ReactNode => {
+    const term = highlight?.trim();
+    if (!term) return label;
+    const at = label.toLowerCase().indexOf(term.toLowerCase());
+    if (at < 0) return label;
+    return (
+        <Fragment>
+            {label.slice(0, at)}
+            <span className="font-semibold">{label.slice(at, at + term.length)}</span>
+            {label.slice(at + term.length)}
+        </Fragment>
+    );
+};
 
 export const SelectItem = ({
     label,
@@ -54,6 +80,10 @@ export const SelectItem = ({
     children,
     selectionIndicator = "checkmark",
     selectionIndicatorAlign = "right",
+    stacked = false,
+    labelSuffix,
+    trailingText,
+    highlight,
     ...props
 }: SelectItemProps) => {
     const { size } = useContext(SelectContext);
@@ -109,6 +139,22 @@ export const SelectItem = ({
                         Icon
                     ) : null}
 
+                    {stacked ? (
+                        <div className="flex w-full min-w-0 flex-1 items-center gap-3">
+                            <div className="flex min-w-0 flex-1 flex-col">
+                                <AriaText slot="label" className="truncate text-sm font-normal text-primary">
+                                    {highlightLabel(label || (typeof children === "string" ? children : ""), highlight)}
+                                    {labelSuffix && <span className="ml-2 text-xs text-quaternary italic">{labelSuffix}</span>}
+                                </AriaText>
+                                {supportingText && (
+                                    <AriaText slot="description" className="truncate text-xs text-secondary">
+                                        {supportingText}
+                                    </AriaText>
+                                )}
+                            </div>
+                            {trailingText && <span className="max-w-[40%] shrink-0 truncate text-xs text-quaternary">{trailingText}</span>}
+                        </div>
+                    ) : (
                     <div className={cx("flex w-full min-w-0 flex-1 flex-wrap", sizes[size].textContainer)}>
                         <AriaText slot="label" className={cx("truncate font-medium whitespace-nowrap text-primary", sizes[size].text)}>
                             {label || (typeof children === "function" ? children(state) : children)}
@@ -120,6 +166,7 @@ export const SelectItem = ({
                             </AriaText>
                         )}
                     </div>
+                    )}
 
                     {state.isSelected && selectionIndicator === "checkmark" && (
                         <Check aria-hidden="true" className={cx("ml-auto text-fg-brand-primary", sizes[size].check)} />
@@ -133,3 +180,23 @@ export const SelectItem = ({
         </AriaListBoxItem>
     );
 };
+
+interface SelectSectionProps {
+    /** The heading shown above the group. */
+    title: string;
+    /** A count shown beside the heading (the number of matches in this group). */
+    count?: number;
+    children: ReactNode;
+}
+
+/** A titled group of items inside a `ComboBox` or `Select` list. Use it when one list holds more
+ * than one kind of result; items outside any section still work, so a list can mix both. */
+export const SelectSection = ({ title, count, children }: SelectSectionProps) => (
+    <AriaListBoxSection>
+        <AriaHeader className="font-barlow flex items-center gap-1.5 px-3 pt-2.5 pb-1 text-xs font-semibold text-quaternary">
+            {title}
+            {count != null && <span className="font-normal text-quaternary">{count}</span>}
+        </AriaHeader>
+        {children}
+    </AriaListBoxSection>
+);

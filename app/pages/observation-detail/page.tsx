@@ -9,18 +9,12 @@ import { Button as AriaButton, Dialog, DialogTrigger, Focusable, Tabs } from "re
 import { TabList, Tab } from "@/components/application/tabs/tabs";
 import {
   SearchMd,
-  Upload01,
-  Plus,
   ChevronDown,
   ChevronSelectorVertical,
   ArrowNarrowLeft,
   ArrowNarrowRight,
-  HomeLine,
   Folder,
   Eye,
-  FileCheck02, FileLock01,
-  Feather,
-  BarChart01,
   FileSearch01,
   User01,
   PieChart03,
@@ -34,26 +28,25 @@ import {
 } from "@untitledui/icons";
 import { Input } from "@/components/base/input/input";
 import { Button } from "@/components/base/buttons/button";
-import { Avatar } from "@/components/base/avatar/avatar";
-import { Tooltip, TooltipTrigger } from "@/components/base/tooltip/tooltip";
+import { Tooltip } from "@/components/base/tooltip/tooltip";
 import { Popover } from "@/components/base/select/popover";
 import { Badge, BadgeWithDot, CountBadge } from "@/components/base/badges/badges";
-import { Cell, Column, Row, Table, TableBody, TableHeader } from "@/components/base/table/table";
+import { Table, TableCard } from "@/components/application/table/table";
 import { Accordion } from "@/components/base/accordion/accordion";
 import { TreeView } from "@/components/application/tree-view/tree-view";
 import { Breadcrumb } from "@/components/scaffold/breadcrumb";
 import { HomeTabPanels } from "@/app/pages/_shared/home-tab-panels";
-import { dashboardTasks } from "@/app/pages/_shared/home-dashboard";
-import { GlobalProjectSearch } from "@/app/pages/_shared/global-search";
-import { GuestActionButton } from "@/app/pages/_shared/guest-action-gate";
+import { PrimaryRail } from "@/app/pages/_shared/primary-rail";
+import { SidebarFooterLinks } from "@/app/pages/_shared/sidebar-footer-links";
+import { sectionIcons } from "@/app/pages/_shared/nav-icons";
+import { AppHeader } from "@/app/pages/_shared/app-header";
 import { MobileNavTrigger } from "@/app/pages/_shared/mobile-nav";
 import { RoleSwitcher } from "@/app/pages/_shared/role-switcher";
 import { MapView } from "@/app/pages/_shared/map-view";
-import { useFeatureAccess } from "@/lib/use-feature-access";
+import { LocationDetailsTable } from "@/app/pages/_shared/location-details-table";
 import { useUserRole } from "@/lib/use-user-role";
 import { useRoleHref } from "@/lib/use-role-href";
-import { orgLabelForRole } from "@/lib/user-role";
-import { navForRole, registeredUserAccountMenu, registeredUserFooterLinks, keyHref, type NavNode } from "@/lib/registered-user-nav";
+import { navForRole, keyHref, type NavNode } from "@/lib/registered-user-nav";
 import { cx } from "@/utils/cx";
 import { projectRecordTree, type RecordNode, type RecordType } from "@/app/pages/_shared/project-record-tree";
 
@@ -84,18 +77,6 @@ import { projectRecordTree, type RecordNode, type RecordType } from "@/app/pages
 // This is the VIEWING screen only. The user's own next step: "we'll build the edit an observation
 // view off the viewing an observation component design" - editing is explicitly future work, not
 // started here.
-
-const sectionIcons: Record<string, FC<{ className?: string }>> = {
-  Home: HomeLine,
-  Projects: Folder,
-  Explore: Map01,
-  "Data Licencing Agreement (DLA)": FileLock01,
-  "Data Sharing Agreement (DSA)": FileCheck02,
-  "Nominate Sensitive Species": Feather,
-  "Reports (Own Submissions)": BarChart01,
-  "Template Finder": FileSearch01,
-};
-
 function NavTree({ node, depth = 0, defaultOpen = false }: { node: NavNode; depth?: number; defaultOpen?: boolean }) {
   const [open, setOpen] = useState(defaultOpen);
   const hasChildren = !!node.items?.length;
@@ -452,28 +433,6 @@ function ChainBreadcrumb({ chain, onSelectCrumb, orgLabel }: { chain: ChainCrumb
   );
 }
 
-function ProfileMenu() {
-  const [open, setOpen] = useState(false);
-  return (
-    <DialogTrigger onOpenChange={setOpen}>
-      <AriaButton className="flex items-center gap-1 rounded-md outline-brand focus-visible:outline-2 focus-visible:outline-offset-2">
-        <Avatar size="md" initials="OW" alt="Olivia Wyatt" />
-        <ChevronDown className={cx("size-3.5 text-quaternary transition-transform", open && "rotate-180")} />
-      </AriaButton>
-      <Popover size="sm" className="w-48 p-1">
-        <Dialog className="outline-hidden">
-          <p className="px-3 py-2 text-xs font-semibold tracking-wide text-quaternary uppercase">Profile</p>
-          {registeredUserAccountMenu.map((item) => (
-            <p key={item} className="cursor-pointer rounded-md px-3 py-2 text-sm text-secondary hover:bg-secondary">
-              {item}
-            </p>
-          ))}
-        </Dialog>
-      </Popover>
-    </DialogTrigger>
-  );
-}
-
 function SectionPlaceholder({ node }: { node: NavNode }) {
   const relatedLink = node.key ? node : node.items?.find((item) => item.key);
   const roleHref = useRoleHref();
@@ -491,27 +450,6 @@ function SectionPlaceholder({ node }: { node: NavNode }) {
           Go to {relatedLink.label}
         </Button>
       )}
-    </div>
-  );
-}
-
-function GuestAuthActions() {
-  return (
-    <div className="flex items-center gap-2">
-      <Tooltip title="Coming soon - authentication isn't built yet">
-        <Focusable>
-          <span className="inline-flex">
-            <Button color="secondary" isDisabled>Log in</Button>
-          </span>
-        </Focusable>
-      </Tooltip>
-      <Tooltip title="Coming soon - authentication isn't built yet">
-        <Focusable>
-          <span className="inline-flex">
-            <Button color="primary" isDisabled>Sign up</Button>
-          </span>
-        </Focusable>
-      </Tooltip>
     </div>
   );
 }
@@ -608,30 +546,57 @@ const measurements: Measurement[] = [
   { type: "Tail Length", value: "11", unit: "cm" },
 ];
 
+// Real `TableCard`/`Table` (components/application/table/table.tsx) - was built on the bare base
+// `Table` primitive, the exact "wrong table component" bug this whole pattern check exists to
+// catch. Real numbered pagination too, matching project-list-content.tsx's own precedent of
+// showing it even at a handful of rows (Previous/Next just render disabled) rather than skipping
+// it because the row count is small. No search box here, unlike the other list/sub-list
+// instances of this fix - this table is the *value* of a single "Measurements" field inside a
+// label/value row, not its own labeled section, and a search field wouldn't fit that slot
+// honestly; flagged rather than forced in silently.
 function MeasurementsTable() {
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(50);
+  const pageCount = Math.max(1, Math.ceil(measurements.length / pageSize));
+  const currentPage = Math.min(page, pageCount);
+  const paged = measurements.slice((currentPage - 1) * pageSize, currentPage * pageSize);
+
   return (
-    <Table aria-label="Measurements">
-      <TableHeader>
-        <Column isRowHeader>Type</Column>
-        <Column>Value</Column>
-        <Column>Unit</Column>
-      </TableHeader>
-      <TableBody items={measurements}>
-        {(row) => (
-          <Row id={row.type} textValue={row.type}>
-            <Cell>
-              <span className="text-sm font-medium text-primary">{row.type}</span>
-            </Cell>
-            <Cell>
-              <span className="text-sm text-secondary">{row.value}</span>
-            </Cell>
-            <Cell>
-              <span className="text-sm text-secondary">{row.unit}</span>
-            </Cell>
-          </Row>
-        )}
-      </TableBody>
-    </Table>
+    <TableCard.Root size="sm">
+      <Table aria-label="Measurements">
+        <Table.Header>
+          <Table.Head id="type" label="Type" isRowHeader />
+          <Table.Head id="value" label="Value" />
+          <Table.Head id="unit" label="Unit" />
+        </Table.Header>
+        <Table.Body items={paged}>
+          {(row) => (
+            <Table.Row id={row.type} textValue={row.type}>
+              <Table.Cell>
+                <span className="text-sm font-medium text-primary">{row.type}</span>
+              </Table.Cell>
+              <Table.Cell>
+                <span className="text-sm text-secondary">{row.value}</span>
+              </Table.Cell>
+              <Table.Cell>
+                <span className="text-sm text-secondary">{row.unit}</span>
+              </Table.Cell>
+            </Table.Row>
+          )}
+        </Table.Body>
+      </Table>
+      <TableCard.PaginationNumbered
+        page={currentPage}
+        pageCount={pageCount}
+        onPageChange={setPage}
+        pageSize={pageSize}
+        onPageSizeChange={(size) => {
+          setPageSize(size);
+          setPage(1);
+        }}
+        totalCount={measurements.length}
+      />
+    </TableCard.Root>
   );
 }
 
@@ -726,7 +691,10 @@ const observationAccordionItems = [
         <DetailRow label="Regeneration" value="-" />
         <div className="flex flex-col gap-1 sm:flex-row sm:gap-4">
           <span className="w-56 shrink-0 text-sm text-tertiary">Measurements</span>
-          <div className="flex-1 overflow-hidden rounded-lg border border-secondary">
+          {/* No extra wrapper - `TableCard.Root` already provides its own card chrome
+              (rounded-xl, ring-1, shadow-xs). The old wrapper's own border/radius nested around
+              it, doubling the border line. */}
+          <div className="flex-1">
             <MeasurementsTable />
           </div>
         </div>
@@ -774,17 +742,23 @@ const observationAccordionItems = [
           <MapView />
         </div>
         <div className="flex flex-col gap-3">
-          <div className="flex items-center justify-between gap-3">
-            <span className="w-56 shrink-0 text-sm text-tertiary">Location Details</span>
-            <Tooltip title="Coming soon - shapefile downloads aren't wired up yet">
-              <Focusable>
-                <span className="inline-flex">
-                  <Button color="link-color" size="sm" isDisabled>
-                    Shapefile.shp
-                  </Button>
-                </span>
-              </Focusable>
-            </Tooltip>
+          {/* Same shared coordinate table as every other record type. This mock observation
+              carries no coordinates of its own, so every cell is an honest "-". The shapefile
+              link stays underneath it - still a real (not-yet-wired) attachment on this record. */}
+          <div className="flex flex-col gap-1 sm:flex-row sm:items-start sm:gap-3">
+            <span className="w-56 shrink-0 text-sm text-tertiary sm:pt-2.5">Location Details</span>
+            <div className="flex min-w-0 flex-1 flex-col items-start gap-2">
+              <LocationDetailsTable />
+              <Tooltip title="Coming soon - shapefile downloads aren't wired up yet">
+                <Focusable>
+                  <span className="inline-flex">
+                    <Button color="link-color" size="sm" isDisabled>
+                      Shapefile.shp
+                    </Button>
+                  </span>
+                </Focusable>
+              </Tooltip>
+            </div>
           </div>
           <DetailRow label="IBRA Region" value="Flinders Lofty Block" />
           <DetailRow label="IBRA Sub Region" value="Southern Lofty" />
@@ -819,7 +793,6 @@ export default function ObservationDetailPage() {
 
 function ObservationDetail() {
   const router = useRouter();
-  const showOrgSwitcher = useFeatureAccess("orgSwitcher");
   const role = useUserRole();
   const isPublicUser = role === "public-user";
   const nav = navForRole(role);
@@ -885,11 +858,8 @@ function ObservationDetail() {
     <div className="font-barlow flex h-screen flex-col overflow-hidden">
       <RoleSwitcher />
       {/* ── Header ── */}
-      <header className="flex min-h-16 shrink-0 flex-wrap items-center justify-between gap-x-6 gap-y-3 border-b border-secondary bg-primary px-4 py-3">
-        {/* min-w-0 so this block can shrink (and the breadcrumb inside it truncate) instead of
-            forcing the header's own flex-wrap to push "search + actions" onto a second row - same
-            fix as project-detail's own header, for the same reason. */}
-        <div className="flex min-w-0 flex-1 flex-wrap items-center gap-4">
+      <AppHeader
+        mobileNav={
           <MobileNavTrigger
             sections={nav}
             sectionIcons={sectionIcons}
@@ -931,78 +901,19 @@ function ObservationDetail() {
                 </>
               ))}
           </MobileNavTrigger>
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src="/pages/dashboard/gov-sa-dew-lockup.png"
-            alt="Government of South Australia, Department for Environment and Water"
-            className="h-[37px] w-auto"
-          />
-          <div className="h-6 w-px bg-secondary" />
-          <p className="text-[17px] font-semibold tracking-tight text-primary">BioData SA</p>
-          {activeSection === "Projects" ? (
-            <ChainBreadcrumb chain={recordChain} onSelectCrumb={handleTreeAction} orgLabel={showOrgSwitcher ? orgLabelForRole(role) : undefined} />
-          ) : (
-            <Breadcrumb
-              section={activeSection === "Home" ? undefined : activeSectionNode.label}
-              orgLabel={showOrgSwitcher ? orgLabelForRole(role) : undefined}
-            />
-          )}
-        </div>
-        <div className="flex shrink-0 flex-wrap items-center gap-3 sm:gap-6">
-          <div className="flex flex-wrap items-center gap-3">
-            <div className="w-full sm:w-64 lg:w-[395px]">
-              <GlobalProjectSearch />
-            </div>
-            <GuestActionButton
-              icon={Plus}
-              label="Add project"
-              color="primary"
-              isGuest={isPublicUser}
-              modalTitle="Sign up to add a project"
-              modalDescription="Create a free BioData SA account to start contributing projects to South Australia's biodiversity record."
-            />
-            <GuestActionButton
-              icon={Upload01}
-              label="Upload dataset"
-              color="secondary"
-              isGuest={isPublicUser}
-              modalTitle="Sign up to upload a dataset"
-              modalDescription="Create a free BioData SA account to start contributing datasets to South Australia's biodiversity record."
-            />
-          </div>
-          {isPublicUser ? <GuestAuthActions /> : <ProfileMenu />}
-        </div>
-      </header>
+        }
+        renderBreadcrumb={(orgLabel) =>
+            activeSection === "Projects" ? (
+              <ChainBreadcrumb chain={recordChain} onSelectCrumb={handleTreeAction} orgLabel={orgLabel} />
+            ) : (
+              <Breadcrumb section={activeSection === "Home" ? undefined : activeSectionNode.label} orgLabel={orgLabel} />
+            )}
+      />
 
       {/* ── Primary icon rail: top-level IA (nav chrome - not pixel-matched) ── */}
       {(() => {
         const iconRail = (
-          <nav aria-label="Primary" className="hidden w-16 shrink-0 flex-col items-center gap-1 overflow-y-auto border-r border-secondary bg-secondary py-4 lg:flex">
-            {nav.map((section) => {
-              const Icon = sectionIcons[section.label];
-              const active = section.label === activeSection;
-              const badgeCount = !isPublicUser && section.label === "Home" ? dashboardTasks.length : 0;
-              return (
-                <Tooltip key={section.label} title={section.label} placement="right">
-                  <TooltipTrigger
-                    onPress={() => goToSection(section)}
-                    aria-label={section.label}
-                    className={cx(
-                      "relative flex size-12 items-center justify-center rounded-lg transition duration-100 ease-linear active:scale-[0.96]",
-                      active ? "bg-brand-solid text-white" : "text-quaternary hover:bg-tertiary hover:text-primary",
-                    )}
-                  >
-                    {Icon && <Icon className="size-5" />}
-                    {badgeCount > 0 && (
-                      <span className="absolute -top-1 -right-1 flex size-4 items-center justify-center rounded-full bg-error-solid text-[10px] font-semibold tabular-nums text-white">
-                        {badgeCount}
-                      </span>
-                    )}
-                  </TooltipTrigger>
-                </Tooltip>
-              );
-            })}
-          </nav>
+          <PrimaryRail sections={nav} activeSection={activeSection}  onSelectSection={goToSection} />
         );
 
         if (activeSection === "Home") {
@@ -1017,11 +928,7 @@ function ObservationDetail() {
                     <Tab id="overview" label="Flora and Fauna Dashboard" icon={PieChart03} />
                   </TabList>
                 </div>
-                <div className="flex flex-col gap-2 border-t border-secondary pt-4 text-xs text-quaternary">
-                  {registeredUserFooterLinks.map((link) => (
-                    <p key={link}>{link}</p>
-                  ))}
-                </div>
+                <SidebarFooterLinks />
               </aside>
               <main className="flex flex-1 flex-col overflow-y-auto">
                 <HomeTabPanels />
@@ -1074,11 +981,7 @@ function ObservationDetail() {
                   activeSectionNode.items?.map((item) => <NavTree key={item.label} node={item} depth={1} />)
                 )}
               </div>
-              <div className="flex flex-col gap-2 border-t border-secondary pt-4 text-xs text-quaternary">
-                {registeredUserFooterLinks.map((link) => (
-                  <p key={link}>{link}</p>
-                ))}
-              </div>
+              <SidebarFooterLinks />
             </aside>
 
             <main className="flex flex-1 flex-col overflow-y-auto">

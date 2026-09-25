@@ -1,25 +1,15 @@
-import type { BadgeColors } from "@/components/base/badges/badge-types";
-
 // Data Sharing Agreement (DSA) model + seed data for /pages/dsa. Shaped from the Master Flows
 // lo-fi (Figma yzQY87GXoyGGGPJDnh1hmi, node 3:15901: DSA List, DSA Empty State, DSA Record form).
 // There's no backend in this build, so the page keeps this list in local state - create, edit,
-// revoke and draft all really work for the session, they just don't persist past a reload.
+// cancel and draft all really work for the session, they just don't persist past a reload.
 //
-// Status is stored, not derived from the dates: the lo-fi shows four buckets (Active, Inactive,
-// Revoked, Drafts) without saying what moves an agreement between them, so nothing here invents a
-// rule for it. The only transitions built are the ones the lo-fi's own actions imply - Save Draft
-// -> Draft, Submit -> Active, "Revoke Agreement" -> Revoked.
-
-export type DsaStatus = "active" | "inactive" | "revoked" | "draft";
-
-export const dsaStatusOrder: DsaStatus[] = ["active", "inactive", "revoked", "draft"];
-
-export const dsaStatusMeta: Record<DsaStatus, { label: string; tabLabel: string; badgeColor: BadgeColors }> = {
-  active: { label: "Active", tabLabel: "Active", badgeColor: "success" },
-  inactive: { label: "Inactive", tabLabel: "Inactive", badgeColor: "gray" },
-  revoked: { label: "Revoked", tabLabel: "Revoked", badgeColor: "error" },
-  draft: { label: "Draft", tabLabel: "Drafts", badgeColor: "warning" },
-};
+// Status now follows the shared DSA/DLA workflow model (see agreement-status.ts) - Draft, Submitted,
+// Under Review, On Hold, Approved, Rejected, Active, Closed, Cancelled, and the real transitions
+// between them, replacing the earlier lo-fi-only Active/Inactive/Revoked/Draft set (see CONTEXT.md,
+// "Unified DSA/DLA status model" for the source and every decision behind it).
+export type { AgreementStatus as DsaStatus } from "@/app/pages/_shared/agreement-status";
+export { agreementStatusOrder as dsaStatusOrder, agreementStatusMeta as dsaStatusMeta } from "@/app/pages/_shared/agreement-status";
+import type { AgreementStatus as DsaStatus } from "@/app/pages/_shared/agreement-status";
 
 export type DsaScope = "species" | "location" | "project";
 
@@ -64,6 +54,8 @@ export interface Dsa {
   sharedOffline: boolean;
   sharedViaSystem: boolean;
   systems: DsaSystem[];
+  /** Set by `rejectDsa` on the Rejected transition - never edited through the form itself. */
+  rejectionReason: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -156,6 +148,7 @@ export function emptyDsaDraft(): DsaDraft {
     sharedOffline: false,
     sharedViaSystem: false,
     systems: [],
+    rejectionReason: "",
   };
 }
 
@@ -279,6 +272,7 @@ export const seedDsas: Dsa[] = [
         refreshToken: SEED_REFRESH,
       },
     ],
+    rejectionReason: "",
     createdAt: "2026-01-30",
     updatedAt: "2026-01-30",
   },
@@ -295,6 +289,7 @@ export const seedDsas: Dsa[] = [
     sharedOffline: true,
     sharedViaSystem: false,
     systems: [],
+    rejectionReason: "",
     createdAt: "2026-01-31",
     updatedAt: "2026-02-04",
   },
@@ -323,6 +318,7 @@ export const seedDsas: Dsa[] = [
         refreshToken: SEED_REFRESH,
       },
     ],
+    rejectionReason: "",
     createdAt: "2026-01-31",
     updatedAt: "2026-01-31",
   },
@@ -339,6 +335,7 @@ export const seedDsas: Dsa[] = [
     sharedOffline: true,
     sharedViaSystem: false,
     systems: [],
+    rejectionReason: "",
     createdAt: "2026-01-31",
     updatedAt: "2026-01-31",
   },
@@ -355,12 +352,13 @@ export const seedDsas: Dsa[] = [
     sharedOffline: true,
     sharedViaSystem: false,
     systems: [],
+    rejectionReason: "",
     createdAt: "2025-11-12",
     updatedAt: "2025-11-12",
   },
   {
     id: "DSA-2024-00871",
-    status: "inactive",
+    status: "closed",
     partner: "BirdLife Australia",
     purpose: "Two-year exchange of shorebird count data for the Coorong monitoring program.",
     validFrom: "2024-07-01",
@@ -371,12 +369,13 @@ export const seedDsas: Dsa[] = [
     sharedOffline: true,
     sharedViaSystem: false,
     systems: [],
+    rejectionReason: "",
     createdAt: "2024-06-18",
     updatedAt: "2025-07-01",
   },
   {
     id: "DSA-2024-00912",
-    status: "inactive",
+    status: "closed",
     partner: "Birds SA",
     purpose: "Pilot exchange of citizen-science sightings ahead of the current agreement.",
     validFrom: "2024-09-01",
@@ -387,6 +386,7 @@ export const seedDsas: Dsa[] = [
     sharedOffline: true,
     sharedViaSystem: false,
     systems: [],
+    rejectionReason: "",
     createdAt: "2024-08-22",
     updatedAt: "2025-09-01",
   },
@@ -403,7 +403,125 @@ export const seedDsas: Dsa[] = [
     sharedOffline: true,
     sharedViaSystem: false,
     systems: [],
+    rejectionReason: "",
     createdAt: "2026-09-15",
     updatedAt: "2026-09-15",
   },
+  // Submitted through Cancelled: real examples of every stage in the shared DSA/DLA workflow (see
+  // agreement-status.ts) - none of these existed under the old Active/Inactive/Revoked/Draft set.
+  {
+    id: "DSA-2026-01410",
+    status: "submitted",
+    partner: "BirdLife Australia",
+    purpose: "Access to migratory shorebird tracking data to support a joint East Asian-Australasian Flyway reporting obligation.",
+    validFrom: "2026-11-01",
+    validTo: "2028-10-31",
+    agreementFile: { name: "BirdLife-Australia-DSA-2026-01410.pdf" },
+    requestedBy: person("Maya", "Dewitt", "example.org", "03 9347 0757"),
+    custodian,
+    sharedOffline: true,
+    sharedViaSystem: false,
+    systems: [],
+    rejectionReason: "",
+    createdAt: "2026-09-20",
+    updatedAt: "2026-09-20",
+  },
+  {
+    id: "DSA-2026-01405",
+    status: "under_review",
+    partner: "Natural Resources Kangaroo Island",
+    purpose: "Sharing post-fire vegetation recovery transects to support a joint state-of-the-island report.",
+    validFrom: "2026-10-15",
+    validTo: "2028-10-14",
+    agreementFile: { name: "Natural-Resources-KI-DSA-2026-01405.pdf" },
+    requestedBy: person("Lana", "Steiner", "example.org", "08 8553 4444"),
+    custodian,
+    sharedOffline: true,
+    sharedViaSystem: false,
+    systems: [],
+    rejectionReason: "",
+    createdAt: "2026-09-16",
+    updatedAt: "2026-09-22",
+  },
+  {
+    id: "DSA-2026-01398",
+    status: "on_hold",
+    partner: "Adelaide Hills Landcare",
+    purpose: "Site and visit records for a revised revegetation plan covering three additional sub-catchments.",
+    validFrom: "2026-11-15",
+    validTo: "2028-11-14",
+    agreementFile: { name: "Adelaide-Hills-Landcare-DSA-2026-01398.pdf" },
+    requestedBy: person("Phoenix", "Baker", "example.org", "08 8388 1234"),
+    custodian,
+    sharedOffline: true,
+    sharedViaSystem: false,
+    systems: [],
+    rejectionReason: "",
+    createdAt: "2026-09-10",
+    updatedAt: "2026-09-21",
+  },
+  {
+    id: "DSA-2026-01415",
+    status: "approved",
+    partner: "SA Museum",
+    purpose: "Specimen collection metadata exchange to support a joint taxonomic reference project.",
+    validFrom: "2026-12-01",
+    validTo: "2028-11-30",
+    agreementFile: { name: "SA-Museum-DSA-2026-01415.pdf" },
+    requestedBy: person("Olivia", "Wyatt", "example.org", "08 8271 4544"),
+    custodian,
+    sharedOffline: true,
+    sharedViaSystem: false,
+    systems: [],
+    rejectionReason: "",
+    createdAt: "2026-09-08",
+    updatedAt: "2026-09-23",
+  },
+  {
+    id: "DSA-2026-01388",
+    status: "rejected",
+    partner: "Birds SA",
+    purpose: "Bulk export of raw survey coordinates for an internal analytics pilot with no named research outcome.",
+    validFrom: "2026-10-01",
+    validTo: "2027-09-30",
+    agreementFile: { name: "Birds-SA-DSA-2026-01388.pdf" },
+    requestedBy: person("Maya", "Dewitt", "example.org", "03 9347 0757"),
+    custodian,
+    sharedOffline: true,
+    sharedViaSystem: false,
+    systems: [],
+    rejectionReason: "The stated purpose doesn't identify a specific research or reporting outcome. Please resubmit with a defined project and expected use of the exported data.",
+    createdAt: "2026-08-28",
+    updatedAt: "2026-09-05",
+  },
+  {
+    id: "DSA-2026-01372",
+    status: "cancelled",
+    partner: "Birds SA",
+    purpose: "Scoping request for a shared observation feed that the partnership decided not to proceed with.",
+    validFrom: "2026-09-01",
+    validTo: "2028-08-31",
+    agreementFile: { name: "Birds-SA-DSA-2026-01372.pdf" },
+    requestedBy: person("Phoenix", "Baker", "example.org", "08 8388 1234"),
+    custodian,
+    sharedOffline: true,
+    sharedViaSystem: false,
+    systems: [],
+    rejectionReason: "",
+    createdAt: "2026-08-10",
+    updatedAt: "2026-08-19",
+  },
 ];
+
+/** Every id /pages/dsa/[id] is pre-rendered for in the static GitHub Pages build: the seeds, plus
+ *  the next `count` ids `nextDsaId` would hand out this year and next. New DSAs live in memory only
+ *  (a reload resets to the seeds), so a session never gets far past the seed numbers - without
+ *  these, opening a just-created DSA would 404 on a static host. */
+export function staticDsaIds(count = 50): string[] {
+  const highest = seedDsas.reduce((max, item) => Math.max(max, Number(item.id.split("-")[2]) || 0), 0);
+  const year = new Date().getFullYear();
+  const upcoming = [year, year + 1].flatMap((y) =>
+    Array.from({ length: count }, (_, i) => `DSA-${y}-${String(highest + 1 + i).padStart(5, "0")}`),
+  );
+  return [...new Set([...seedDsas.map((item) => item.id), ...upcoming])];
+}

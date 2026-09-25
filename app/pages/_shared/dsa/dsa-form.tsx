@@ -1,9 +1,9 @@
 "use client";
 
-import { useState, type Key as ReactKey, type ReactNode } from "react";
+import { useState, type Key as ReactKey } from "react";
 import type { Key, Selection } from "react-aria-components";
 import { parseDate } from "@internationalized/date";
-import { ArrowLeft, Eye, EyeOff, Plus, RefreshCcw01, Trash01 } from "@untitledui/icons";
+import { Eye, EyeOff, Plus, RefreshCcw01, Trash01 } from "@untitledui/icons";
 import { Accordion, type AccordionItemType } from "@/components/base/accordion/accordion";
 import { Badge } from "@/components/base/badges/badges";
 import { Button } from "@/components/base/buttons/button";
@@ -13,9 +13,10 @@ import { InputDate } from "@/components/base/input/input-date";
 import { InputFile } from "@/components/base/input/input-file";
 import { MultiSelect } from "@/components/base/select/multi-select";
 import { TextArea } from "@/components/base/textarea/textarea";
+import { FormPage } from "@/app/pages/_shared/form-page";
+import { FormSectionList, FormSidebar, deriveSectionStatus } from "@/app/pages/_shared/form-section-list";
+import { FormRow } from "@/app/pages/_shared/form-row";
 import { ConfirmationModal, DestructiveModal } from "@/components/application/modals/modal";
-import { SectionHeader } from "@/components/application/section-headers/section-headers";
-import { Tab, TabList, TabPanel, Tabs } from "@/components/application/tabs/tabs";
 import {
   dsaScopeOptions,
   dsaStatusMeta,
@@ -36,7 +37,7 @@ import {
 // The DSA record form (lo-fi frame "Data Sharing Agreement (DSA) Record", Figma node 3:15268),
 // re-shaped to fit the shell. The lo-fi is one flat scroll of ~8 field groups plus a repeatable
 // system block - exactly the overload CONTEXT.md's cognitive-load principles call out - so it is
-// tiered into three tabs by what belongs together: Agreement (who, why, when, the signed PDF),
+// tiered into three sections (listed in column 2) by what belongs together: Agreement (who, why, when, the signed PDF),
 // Contacts (requester and DEW custodian), Data sharing (offline and/or system integrations). The
 // system block only exists once "System" is ticked, as in the lo-fi, and each system is its own
 // boxed accordion item instead of a stack of always-open cards.
@@ -50,24 +51,6 @@ const MAX_FILE_BYTES = 5 * 1024 * 1024;
 type Attempt = null | "draft" | "submit";
 
 // One lo-fi row: the group's name on the left, its fields on the right. Stacks below `lg`.
-function FormRow({ title, description, required, error, children }: { title: string; description?: string; required?: boolean; error?: string; children: ReactNode }) {
-  return (
-    <div className="grid gap-4 border-b border-secondary py-6 first:pt-0 last:border-b-0 lg:grid-cols-[220px_minmax(0,1fr)] lg:gap-10">
-      <div className="flex flex-col gap-1">
-        <p className="text-sm font-semibold text-primary">
-          {title}
-          {required && <span className="text-brand-tertiary"> *</span>}
-        </p>
-        {description && <p className="text-sm text-balance text-tertiary">{description}</p>}
-      </div>
-      <div className="flex max-w-[720px] flex-col gap-4">
-        {children}
-        {error && <p className="text-sm text-error-primary">{error}</p>}
-      </div>
-    </div>
-  );
-}
-
 function ContactFields({
   prefix,
   value,
@@ -214,6 +197,14 @@ function SystemFields({
   );
 }
 
+const DSA_TABS = ["agreement", "contacts", "sharing"] as const;
+
+const DSA_SECTIONS: Record<DsaFormTab, { title: string; description: string }> = {
+  agreement: { title: "Agreement", description: "Who the agreement is with, why, for how long, and the signed file." },
+  contacts: { title: "Contacts", description: "Who asked for the agreement and which DEW officer is responsible for it." },
+  sharing: { title: "Data sharing", description: "How the data is shared, and the systems that connect through the API." },
+};
+
 export function DsaForm({
   initial,
   onBack,
@@ -228,10 +219,19 @@ export function DsaForm({
 }) {
   const [draft, setDraft] = useState<DsaDraft>(() => {
     if (!initial) return emptyDsaDraft();
-    const { partner, purpose, validFrom, validTo, agreementFile, requestedBy, custodian, sharedOffline, sharedViaSystem, systems } = initial;
-    return structuredClone({ partner, purpose, validFrom, validTo, agreementFile, requestedBy, custodian, sharedOffline, sharedViaSystem, systems });
+    const { partner, purpose, validFrom, validTo, agreementFile, requestedBy, custodian, sharedOffline, sharedViaSystem, systems, rejectionReason } = initial;
+    return structuredClone({ partner, purpose, validFrom, validTo, agreementFile, requestedBy, custodian, sharedOffline, sharedViaSystem, systems, rejectionReason });
   });
-  const [tab, setTab] = useState<Key>("agreement");
+  const [tab, setTab] = useState<DsaFormTab>("agreement");
+  const [visited, setVisited] = useState<Set<DsaFormTab>>(new Set());
+  // Sections the person tried to leave with something missing, and whether they pressed Submit. A
+  // section they have not reached yet is never marked or counted: nothing is validated ahead of them.
+  const [blocked, setBlocked] = useState<Set<DsaFormTab>>(new Set());
+  const [submitPressed, setSubmitPressed] = useState(false);
+  const goTo = (next: DsaFormTab) => {
+    setVisited((v) => new Set(v).add(tab));
+    setTab(next);
+  };
   const [attempt, setAttempt] = useState<Attempt>(null);
   const [dirty, setDirty] = useState(false);
   const [confirmBack, setConfirmBack] = useState(false);
@@ -241,8 +241,12 @@ export function DsaForm({
   const [fileError, setFileError] = useState<string | undefined>();
 
   const isEditingLive = !!initial && initial.status !== "draft";
-  const errors: DsaErrors = attempt ? validateDsa(draft, attempt) : {};
-  const errorCount = Object.keys(errors).length;
+  const tabIndex = Math.max(0, DSA_TABS.indexOf(tab as (typeof DSA_TABS)[number]));
+  const isLastTab = tabIndex === DSA_TABS.length - 1;
+  // Inline errors appear only where the person has already tried to move on (or after Submit / Save
+  // draft), so arriving at a section they have not reached never shows it in red.
+  const rawErrors: DsaErrors = attempt ? validateDsa(draft, attempt) : {};
+  const errors: DsaErrors = attempt === "draft" || submitPressed ? rawErrors : (Object.fromEntries(Object.entries(rawErrors).filter(([path]) => blocked.has(errorTab(path)))) as DsaErrors);
   const tabErrors: Record<DsaFormTab, number> = { agreement: 0, contacts: 0, sharing: 0 };
   for (const path of Object.keys(errors)) tabErrors[errorTab(path)] += 1;
 
@@ -268,6 +272,7 @@ export function DsaForm({
 
   const submit = () => {
     setAttempt("submit");
+    setSubmitPressed(true);
     const found = validateDsa(draft, "submit");
     const first = Object.keys(found)[0];
     if (first) {
@@ -309,37 +314,65 @@ export function DsaForm({
     ),
   }));
 
-  const title = initial ? (isEditingLive ? `Edit ${initial.id}` : `Edit draft ${initial.id}`) : "Add New Data Sharing Agreement (DSA) Record";
+  // Column 2's section list: a section is complete once visited with nothing missing, and turns red only
+  // after a submit attempt found something wrong in it.
+  const sectionProblems: Record<DsaFormTab, number> = { agreement: 0, contacts: 0, sharing: 0 };
+  for (const path of Object.keys(validateDsa(draft, "submit"))) sectionProblems[errorTab(path)] += 1;
+  // Mandatory details missing from the section being viewed. Continue (and jumping ahead through
+  // column 2) will not move on while any are missing: the inline errors switch on and the
+  // "Details missing" alert lists them. Going back is always free.
+  const allProblems = Object.entries(validateDsa(draft, "submit"));
+  const currentProblems = [...new Set(allProblems.filter(([path]) => errorTab(path) === tab).map(([, message]) => message))];
+  const otherProblemCount = allProblems.length - allProblems.filter(([path]) => errorTab(path) === tab).length;
+  const proceed = (next: DsaFormTab) => {
+    if (DSA_TABS.indexOf(next) > tabIndex && currentProblems.length > 0) {
+      setAttempt("submit");
+      setBlocked((b) => new Set(b).add(tab));
+      return;
+    }
+    goTo(next);
+  };
+  const sectionItems = DSA_TABS.map((id) => ({
+    id,
+    title: DSA_SECTIONS[id].title,
+    status: deriveSectionStatus({ isCurrent: id === tab, isValid: sectionProblems[id] === 0, visited: visited.has(id), attempted: submitPressed || blocked.has(id) }),
+    detail: (submitPressed || blocked.has(id)) && sectionProblems[id] > 0 && id !== tab ? `${sectionProblems[id]} to fix` : undefined,
+  }));
+
+  const title = initial ? (isEditingLive ? `Edit ${initial.id}` : `Edit draft ${initial.id}`) : "New agreement";
 
   return (
     <div className="flex min-h-0 flex-1 flex-col">
-      <SectionHeader.Root className="shrink-0 px-6 pt-6">
-        <SectionHeader.Group>
-          <div className="flex flex-1 flex-col gap-1">
-            <div className="flex flex-wrap items-center gap-3">
-              <SectionHeader.Heading>{title}</SectionHeader.Heading>
-              {initial && (
-                <Badge size="md" color={dsaStatusMeta[initial.status].badgeColor}>
-                  {dsaStatusMeta[initial.status].label}
-                </Badge>
-              )}
-            </div>
-            <SectionHeader.Subheading>Fields marked * are required to submit. A draft only needs the institution or organisation.</SectionHeader.Subheading>
-          </div>
-        </SectionHeader.Group>
-      </SectionHeader.Root>
+      <FormSidebar>
+        <FormSectionList
+          heading="Data sharing agreement"
+          groups={[{ sections: sectionItems }]}
+          progress={{ done: sectionItems.filter((i) => i.status === "complete").length, total: DSA_TABS.length }}
+          onSelect={(id) => proceed(id as DsaFormTab)}
+        />
+      </FormSidebar>
 
-      <Tabs selectedKey={tab} onSelectionChange={setTab} className="flex min-h-0 flex-1 flex-col">
-        <div className="shrink-0 px-6 pt-4">
-          <TabList aria-label="Agreement sections" type="underline" size="sm" className="w-full">
-            <Tab id="agreement" label="Agreement" badge={attempt && tabErrors.agreement ? tabErrors.agreement : undefined} />
-            <Tab id="contacts" label="Contacts" badge={attempt && tabErrors.contacts ? tabErrors.contacts : undefined} />
-            <Tab id="sharing" label="Data sharing" badge={attempt && tabErrors.sharing ? tabErrors.sharing : undefined} />
-          </TabList>
-        </div>
-
-        <div className="min-h-0 flex-1 overflow-y-auto px-6 py-6">
-          <TabPanel id="agreement">
+        <FormPage
+          eyebrow={`${title} - Step ${tabIndex + 1} of ${DSA_TABS.length}`}
+          title={DSA_SECTIONS[tab].title}
+          badge={
+            initial && (
+              <Badge size="md" color={dsaStatusMeta[initial.status].badgeColor}>
+                {dsaStatusMeta[initial.status].label}
+              </Badge>
+            )
+          }
+          subtitle={`${DSA_SECTIONS[tab].description} Fields marked * are required to submit; a draft only needs the institution or organisation.`}
+          onCancel={goBack}
+          onSaveDraft={isEditingLive ? undefined : saveDraft}
+          onBack={tabIndex > 0 ? () => goTo(DSA_TABS[tabIndex - 1]) : undefined}
+          problems={attempt === "submit" && currentProblems.length > 0 ? { items: currentProblems, extra: submitPressed && otherProblemCount > 0 ? `${otherProblemCount} more to fix in other sections.` : undefined } : undefined}
+          primaryLabel={isLastTab ? (isEditingLive ? "Save changes" : "Submit") : "Continue"}
+          primaryIsContinue={!isLastTab}
+          onPrimary={isLastTab ? submit : () => proceed(DSA_TABS[tabIndex + 1])}
+        >
+          {tab === "agreement" && (
+<>
             <FormRow title="Data partnership with">
               <Input
                 label="Institution / organisation"
@@ -402,18 +435,22 @@ export function DsaForm({
               />
               {(fileError || errors.agreementFile) && <p className="text-sm text-error-primary">{fileError ?? errors.agreementFile}</p>}
             </FormRow>
-          </TabPanel>
+          </>
+)}
 
-          <TabPanel id="contacts">
+          {tab === "contacts" && (
+<>
             <FormRow title="Agreement requested by" description="The person at the partner organisation who asked for the agreement.">
               <ContactFields prefix="requestedBy" value={draft.requestedBy} onChange={(patch) => update({ requestedBy: { ...draft.requestedBy, ...patch } })} errors={errors} />
             </FormRow>
             <FormRow title="Agreement custodian (DEW)" description="The DEW officer responsible for this agreement.">
               <ContactFields prefix="custodian" value={draft.custodian} onChange={(patch) => update({ custodian: { ...draft.custodian, ...patch } })} errors={errors} />
             </FormRow>
-          </TabPanel>
+          </>
+)}
 
-          <TabPanel id="sharing">
+          {tab === "sharing" && (
+<>
             <FormRow title="Data shared via" required error={errors.method}>
               <Checkbox label="Offline" hint="Digital copies" isSelected={draft.sharedOffline} onChange={(v) => update({ sharedOffline: v })} />
               <Checkbox label="System" hint="API integrations" isSelected={draft.sharedViaSystem} onChange={toggleSystemMethod} />
@@ -428,31 +465,9 @@ export function DsaForm({
                 </div>
               </FormRow>
             )}
-          </TabPanel>
-        </div>
-      </Tabs>
-
-      {/* pr-20 keeps Submit clear of the RoleSwitcher FAB, which is pinned bottom-right on every /pages screen. */}
-      <div className="flex shrink-0 flex-wrap items-center justify-between gap-3 border-t border-secondary bg-primary py-4 pr-20 pl-6">
-        <Button color="link-gray" iconLeading={ArrowLeft} onPress={goBack}>
-          Back
-        </Button>
-        <div className="flex flex-wrap items-center gap-3">
-          {attempt === "submit" && errorCount > 0 && (
-            <p className="text-sm text-error-primary">
-              {errorCount} {errorCount === 1 ? "field needs" : "fields need"} attention
-            </p>
-          )}
-          {!isEditingLive && (
-            <Button color="tertiary" onPress={saveDraft}>
-              Save draft
-            </Button>
-          )}
-          <Button color="primary" onPress={submit}>
-            {isEditingLive ? "Save changes" : "Submit"}
-          </Button>
-        </div>
-      </div>
+          </>
+)}
+        </FormPage>
 
       <ConfirmationModal
         isOpen={confirmBack}

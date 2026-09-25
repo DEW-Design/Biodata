@@ -5,22 +5,16 @@ import { Suspense, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import type { Key } from "react-aria-components";
-import { Button as AriaButton, Dialog, DialogTrigger, Focusable, Tabs, ToggleButton, ToggleButtonGroup } from "react-aria-components";
+import { Button as AriaButton, Dialog, DialogTrigger, Tabs, ToggleButton, ToggleButtonGroup } from "react-aria-components";
 import { TabList, Tab, TabPanel, Tabs as ContentTabs } from "@/components/application/tabs/tabs";
 import {
   SearchMd,
-  Upload01,
-  Plus,
   ChevronDown,
   ChevronSelectorVertical,
   ArrowNarrowLeft,
   ArrowNarrowRight,
-  HomeLine,
   Folder,
   Eye,
-  FileCheck02, FileLock01,
-  Feather,
-  BarChart01,
   FileSearch01,
   User01,
   PieChart03,
@@ -40,7 +34,6 @@ import {
 } from "@untitledui/icons";
 import { Input } from "@/components/base/input/input";
 import { Button } from "@/components/base/buttons/button";
-import { Avatar } from "@/components/base/avatar/avatar";
 import { Tooltip, TooltipTrigger } from "@/components/base/tooltip/tooltip";
 import { Popover } from "@/components/base/select/popover";
 import { BadgeWithDot, CountBadge } from "@/components/base/badges/badges";
@@ -52,21 +45,30 @@ import { TreeView } from "@/components/application/tree-view/tree-view";
 import { Breadcrumb } from "@/components/scaffold/breadcrumb";
 import { FeaturedIcon } from "@/components/foundations/featured-icon/featured-icon";
 import { HomeTabPanels } from "@/app/pages/_shared/home-tab-panels";
-import { dashboardTasks } from "@/app/pages/_shared/home-dashboard";
-import { GlobalProjectSearch } from "@/app/pages/_shared/global-search";
-import { GuestActionButton } from "@/app/pages/_shared/guest-action-gate";
+import { PrimaryRail } from "@/app/pages/_shared/primary-rail";
+import { SidebarFooterLinks } from "@/app/pages/_shared/sidebar-footer-links";
+import { sectionIcons } from "@/app/pages/_shared/nav-icons";
+import { AppHeader } from "@/app/pages/_shared/app-header";
 import { ArtefactCarousel, ArtefactLightbox, type Artefact } from "@/app/pages/_shared/artefact-lightbox";
 import { MobileNavTrigger } from "@/app/pages/_shared/mobile-nav";
 import { RoleSwitcher } from "@/app/pages/_shared/role-switcher";
+import { ProjectDetailLayoutSwitcher } from "@/app/pages/_shared/project-detail-layout-switcher";
 import { BentoCard } from "@/app/pages/_shared/bento-card";
 import { MapView } from "@/app/pages/_shared/map-view";
-import { useFeatureAccess } from "@/lib/use-feature-access";
+import { LocationDetailsTable } from "@/app/pages/_shared/location-details-table";
+import { rootProjectForParentEventId, searchEvents, searchOccurrences } from "@/app/pages/_shared/map-search/search-data";
+import { RecordDetailSidebar, type DetailRecord } from "@/app/pages/_shared/map-search/record-detail";
+import { SpeciesResultsView } from "@/app/pages/_shared/map-search/species-results";
+
 import { useUserRole } from "@/lib/use-user-role";
 import { useRoleHref } from "@/lib/use-role-href";
-import { orgLabelForRole } from "@/lib/user-role";
-import { navForRole, registeredUserAccountMenu, registeredUserFooterLinks, keyHref, type NavNode } from "@/lib/registered-user-nav";
+import { navForRole, keyHref, type NavNode } from "@/lib/registered-user-nav";
 import { cx } from "@/utils/cx";
 import { projectRecordTree, type RecordNode, type RecordType } from "@/app/pages/_shared/project-record-tree";
+
+// This page's project is the same Adelaide Hills project the map search dataset models - its real
+// coordinates back the shared Location Details table in the Locations accordion.
+const adelaideHillsProject = searchEvents.find((e) => e.id === "adelaide-hills");
 
 // One project's detail view, on the sidebar-nav shell - same three-column chrome as
 // project-list (icon rail + contextual sidebar + main content), reused verbatim. Reached
@@ -85,18 +87,6 @@ import { projectRecordTree, type RecordNode, type RecordType } from "@/app/pages
 //
 // One concrete example project, not a dynamic per-ID route - same "one hardcoded instance, not a
 // generalized system yet" scope as the rest of these explorations.
-
-const sectionIcons: Record<string, FC<{ className?: string }>> = {
-  Home: HomeLine,
-  Projects: Folder,
-  Explore: Map01,
-  "Data Licencing Agreement (DLA)": FileLock01,
-  "Data Sharing Agreement (DSA)": FileCheck02,
-  "Nominate Sensitive Species": Feather,
-  "Reports (Own Submissions)": BarChart01,
-  "Template Finder": FileSearch01,
-};
-
 // The nested-records tree that lives inside this project renders with the real `TreeView`
 // component (components/application/tree-view/tree-view.tsx), composed inline where it's used
 // below - not the hand-rolled NavTree used for the registered-user IA sidebar elsewhere on this
@@ -573,29 +563,6 @@ function ChainBreadcrumb({ chain, onSelectCrumb, orgLabel }: { chain: ChainCrumb
   );
 }
 
-function ProfileMenu() {
-  const [open, setOpen] = useState(false);
-
-  return (
-    <DialogTrigger onOpenChange={setOpen}>
-      <AriaButton className="flex items-center gap-1 rounded-md outline-brand focus-visible:outline-2 focus-visible:outline-offset-2">
-        <Avatar size="md" initials="OW" alt="Olivia Wyatt" />
-        <ChevronDown className={cx("size-3.5 text-quaternary transition-transform", open && "rotate-180")} />
-      </AriaButton>
-      <Popover size="sm" className="w-48 p-1">
-        <Dialog className="outline-hidden">
-          <p className="px-3 py-2 text-xs font-semibold tracking-wide text-quaternary uppercase">Profile</p>
-          {registeredUserAccountMenu.map((item) => (
-            <p key={item} className="cursor-pointer rounded-md px-3 py-2 text-sm text-secondary hover:bg-secondary">
-              {item}
-            </p>
-          ))}
-        </Dialog>
-      </Popover>
-    </DialogTrigger>
-  );
-}
-
 // Two honest states, not one: a section either has a real page elsewhere (Home -> dashboard,
 // Projects -> project-list) - say so and link to it, don't claim it's unscoped when it
 // demonstrably isn't - or it genuinely has no page yet, which does get the "not scoped" copy.
@@ -621,29 +588,6 @@ function SectionPlaceholder({ node }: { node: NavNode }) {
           Go to {relatedLink.label}
         </Button>
       )}
-    </div>
-  );
-}
-
-// public-user's header replacement for ProfileMenu - see dashboard's copy of this exact
-// component for the full rationale (no account to show, no real auth flow built yet).
-function GuestAuthActions() {
-  return (
-    <div className="flex items-center gap-2">
-      <Tooltip title="Coming soon - authentication isn't built yet">
-        <Focusable>
-          <span className="inline-flex">
-            <Button color="secondary" isDisabled>Log in</Button>
-          </span>
-        </Focusable>
-      </Tooltip>
-      <Tooltip title="Coming soon - authentication isn't built yet">
-        <Focusable>
-          <span className="inline-flex">
-            <Button color="primary" isDisabled>Sign up</Button>
-          </span>
-        </Focusable>
-      </Tooltip>
     </div>
   );
 }
@@ -785,10 +729,9 @@ const detailAccordionItems = [
     content: (
       <div className="flex flex-col gap-3">
         <p className="text-xs font-semibold tracking-wide text-quaternary uppercase">Data Collection Location</p>
-        <DetailRow label="MGA Easting" value={NOT_PROVIDED} />
-        <DetailRow label="MGA Northing" value={NOT_PROVIDED} />
-        <DetailRow label="Latitude" value={NOT_PROVIDED} />
-        <DetailRow label="Longitude" value={NOT_PROVIDED} />
+        {/* Same shared coordinate table as every other record type - this project's real
+            coordinates come from the same Adelaide Hills project in the search dataset. */}
+        <LocationDetailsTable lat={adelaideHillsProject?.lat} lon={adelaideHillsProject?.lon} />
         <DetailRow label="Study Area Description" value={NOT_PROVIDED} flagged fieldId="study-area" />
       </div>
     ),
@@ -1019,7 +962,6 @@ export default function ProjectDetailPage() {
 
 function ProjectDetail() {
   const router = useRouter();
-  const showOrgSwitcher = useFeatureAccess("orgSwitcher");
   // public-user reads a different, smaller nav tree entirely - see dashboard's copy of
   // this same branch for the full rationale. Doesn't change this page's own "Projects" content
   // (this project's detail + records tree) - that's already a single view for every role, not the
@@ -1032,6 +974,8 @@ function ProjectDetail() {
   const [homeTab, setHomeTab] = useState<Key>("dashboard");
   const [abstractExpanded, setAbstractExpanded] = useState(false);
   const [detailTab, setDetailTab] = useState<Key>("overview");
+  const [speciesRecord, setSpeciesRecord] = useState<DetailRecord | null>(null);
+  const projectSpeciesOccurrences = useMemo(() => searchOccurrences.filter((o) => rootProjectForParentEventId(o.parentEventId)?.id === adelaideHillsProject?.id), []);
   const [recordQuery, setRecordQuery] = useState("");
   // Controlled (not the Accordion's own default uncontrolled state) so a flagged-concept click can
   // force the right section open even after this page has already mounted - see
@@ -1156,13 +1100,10 @@ function ProjectDetail() {
   return (
     <div className="font-barlow flex h-screen flex-col overflow-hidden">
       <RoleSwitcher />
+      <ProjectDetailLayoutSwitcher current="option-1" />
       {/* ── Header ── */}
-      <header className="flex min-h-16 shrink-0 flex-wrap items-center justify-between gap-x-6 gap-y-3 border-b border-secondary bg-primary px-4 py-3">
-        {/* min-w-0 so this block can actually shrink (and the breadcrumb inside it truncate)
-            instead of forcing the header's own flex-wrap to push "search + actions" onto a second
-            row - the concrete "breadcrumb breaks the layout" bug, since a deep record chain's
-            unbounded width previously had nowhere to give. */}
-        <div className="flex min-w-0 flex-1 flex-wrap items-center gap-4">
+      <AppHeader
+        mobileNav={
           <MobileNavTrigger
             sections={nav}
             sectionIcons={sectionIcons}
@@ -1204,85 +1145,19 @@ function ProjectDetail() {
                 </>
               ))}
           </MobileNavTrigger>
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src="/pages/dashboard/gov-sa-dew-lockup.png"
-            alt="Government of South Australia, Department for Environment and Water"
-            className="h-[37px] w-auto"
-          />
-          <div className="h-6 w-px bg-secondary" />
-          <p className="text-[17px] font-semibold tracking-tight text-primary">BioData SA</p>
-          {activeSection === "Projects" ? (
-            <ChainBreadcrumb
-              chain={recordChain}
-              onSelectCrumb={setSelectedRecordKey}
-              orgLabel={showOrgSwitcher ? orgLabelForRole(role) : undefined}
-            />
-          ) : (
-            <Breadcrumb
-              section={activeSection === "Home" ? undefined : activeSectionNode.label}
-              orgLabel={showOrgSwitcher ? orgLabelForRole(role) : undefined}
-            />
-          )}
-        </div>
-        <div className="flex shrink-0 flex-wrap items-center gap-3 sm:gap-6">
-          <div className="flex flex-wrap items-center gap-3">
-            <div className="w-full sm:w-64 lg:w-[395px]">
-              <GlobalProjectSearch />
-            </div>
-            {/* Visible for every role, gated by click instead of by visibility for public-user -
-                see app/pages/_shared/guest-action-gate.tsx / dashboard's copy for the
-                full rationale. */}
-            <GuestActionButton
-              icon={Plus}
-              label="Add project"
-              color="primary"
-              isGuest={isPublicUser}
-              modalTitle="Sign up to add a project"
-              modalDescription="Create a free BioData SA account to start contributing projects to South Australia's biodiversity record."
-            />
-            <GuestActionButton
-              icon={Upload01}
-              label="Upload dataset"
-              color="secondary"
-              isGuest={isPublicUser}
-              modalTitle="Sign up to upload a dataset"
-              modalDescription="Create a free BioData SA account to start contributing datasets to South Australia's biodiversity record."
-            />
-          </div>
-          {isPublicUser ? <GuestAuthActions /> : <ProfileMenu />}
-        </div>
-      </header>
+        }
+        renderBreadcrumb={(orgLabel) =>
+            activeSection === "Projects" ? (
+              <ChainBreadcrumb chain={recordChain} onSelectCrumb={setSelectedRecordKey} orgLabel={orgLabel} />
+            ) : (
+              <Breadcrumb section={activeSection === "Home" ? undefined : activeSectionNode.label} orgLabel={orgLabel} />
+            )}
+      />
 
       {/* ── Primary icon rail: top-level IA (nav chrome - not pixel-matched) ── */}
       {(() => {
         const iconRail = (
-          <nav aria-label="Primary" className="hidden w-16 shrink-0 flex-col items-center gap-1 overflow-y-auto border-r border-secondary bg-secondary py-4 lg:flex">
-            {nav.map((section) => {
-              const Icon = sectionIcons[section.label];
-              const active = section.label === activeSection;
-              const badgeCount = !isPublicUser && section.label === "Home" ? dashboardTasks.length : 0;
-              return (
-                <Tooltip key={section.label} title={section.label} placement="right">
-                  <TooltipTrigger
-                    onPress={() => goToSection(section)}
-                    aria-label={section.label}
-                    className={cx(
-                      "relative flex size-12 items-center justify-center rounded-lg transition duration-100 ease-linear active:scale-[0.96]",
-                      active ? "bg-brand-solid text-white" : "text-quaternary hover:bg-tertiary hover:text-primary",
-                    )}
-                  >
-                    {Icon && <Icon className="size-5" />}
-                    {badgeCount > 0 && (
-                      <span className="absolute -top-1 -right-1 flex size-4 items-center justify-center rounded-full bg-error-solid text-[10px] font-semibold tabular-nums text-white">
-                        {badgeCount}
-                      </span>
-                    )}
-                  </TooltipTrigger>
-                </Tooltip>
-              );
-            })}
-          </nav>
+          <PrimaryRail sections={nav} activeSection={activeSection}  onSelectSection={goToSection} />
         );
 
         // Home's two views (My BioData / Flora and Fauna Dashboard) get their own Tabs boundary, mounted
@@ -1306,11 +1181,7 @@ function ProjectDetail() {
                     <Tab id="overview" label="Flora and Fauna Dashboard" icon={PieChart03} />
                   </TabList>
                 </div>
-                <div className="flex flex-col gap-2 border-t border-secondary pt-4 text-xs text-quaternary">
-                  {registeredUserFooterLinks.map((link) => (
-                    <p key={link}>{link}</p>
-                  ))}
-                </div>
+                <SidebarFooterLinks />
               </aside>
 
               {/* ── Main content: Home's tab panels render the shared real dashboard content
@@ -1442,11 +1313,7 @@ function ProjectDetail() {
                   activeSectionNode.items?.map((item) => <NavTree key={item.label} node={item} depth={1} />)
                 )}
               </div>
-              <div className="flex flex-col gap-2 border-t border-secondary pt-4 text-xs text-quaternary">
-                {registeredUserFooterLinks.map((link) => (
-                  <p key={link}>{link}</p>
-                ))}
-              </div>
+              <SidebarFooterLinks />
             </aside>
 
             {/* ── Main content: Projects has this screen's own content - every other section is an
@@ -1466,7 +1333,7 @@ function ProjectDetail() {
                         <LayoutLeft className="size-5" />
                       </TooltipTrigger>
                     </Tooltip>
-                    <div className="hidden h-5 w-px bg-secondary lg:block" />
+                    <div className="hidden h-5 w-px bg-[var(--ui-border-primary)] lg:block" />
                     <Link
                       href={roleHref("/pages/project-list")}
                       className="flex w-fit items-center gap-1.5 text-sm font-medium text-tertiary hover:text-primary"
@@ -1519,6 +1386,7 @@ function ProjectDetail() {
                           <TabList aria-label="Project views" type="underline" size="md" className="min-w-0 flex-1 gap-6 overflow-x-auto">
                             <Tab id="overview" label="Overview" />
                             <Tab id="locations" label="Locations" />
+                            <Tab id="species" label="Species" />
                             <Tab id="data-collection" label="Data Collection Scope" />
                             <Tab id="permit" label="Permit" />
                             <Tab id="uri-doi" label="URI/DOI" />
@@ -1604,6 +1472,14 @@ function ProjectDetail() {
                                   <ContactCard title="Project Manager" contacts={projectManager} />
                                 </div>
                               </div>
+                            </TabPanel>
+
+                            {/* Species recorded in this project, the same table the Explore results use, scoped
+                                to this project's own occurrences (ported from option 2). A row opens the shared
+                                record sidebar, read-only here. */}
+                            <TabPanel id="species" className="p-6">
+                              <SpeciesResultsView rows={projectSpeciesOccurrences} onRowClick={(o) => setSpeciesRecord({ kind: "occurrence", occurrence: o })} />
+                              <RecordDetailSidebar record={speciesRecord} onClose={() => setSpeciesRecord(null)} />
                             </TabPanel>
 
                             {detailAccordionItems.map((item) => (

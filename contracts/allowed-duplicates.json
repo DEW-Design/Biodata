@@ -1,0 +1,7 @@
+{
+  "note": "Same-named components across tiers that are intentional. Anything else is a duplicate defect (CONTRACTS.md 1.7). Changing this file is an audited act (9.4).",
+  "allowed": {
+    "index": "Barrel files, not components.",
+    "table": "components/base/table is the bare primitive; components/application/table is the batteries-included TableCard. Lists MUST use the application one (CONTRACTS.md 4.2)."
+  }
+}

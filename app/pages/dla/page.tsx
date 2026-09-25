@@ -2,15 +2,19 @@
 
 import { Suspense } from "react";
 import { useSearchParams } from "next/navigation";
-import { DlaListContent } from "@/app/pages/_shared/dla/dla-list";
+import { useAgreementScope } from "@/app/pages/_shared/agreement-scope";
+import { DlaAllList, DlaBanner } from "@/app/pages/_shared/dla/dla-list";
 import { dlaStatusOrder, type DlaStatus } from "@/app/pages/_shared/dla/dla-data";
 import { DlaShell } from "@/app/pages/_shared/dla/dla-shell";
+import { useFeatureAccess } from "@/lib/use-feature-access";
 
 // /pages/dla - the Data Licencing Agreement (DLA) list, the same "list -> deep dive" pattern as
-// Projects/DSA (CONTEXT.md, "List -> deep dive"): column 2 picks a status bucket, main is a table,
-// a row opens /pages/dla/<id>. Built from the Master Flows wireframe (Figma
-// YMproGZfrFB5jUqPHPxMhk, node 33:43259) fitted into the shell - see the DLA entry in CONTEXT.md
-// for what changed and why.
+// Projects/DSA (CONTEXT.md, "List -> deep dive"). Column 2 is the My requests / All requests
+// switcher (the scope, `?scope=`; a reviewer opens on All, everyone else on My); main is one table
+// of every status with a status filter and a Status column (`?status=` seeds the filter). A row opens
+// /pages/dla/<id>. Built from the Master Flows wireframe (Figma YMproGZfrFB5jUqPHPxMhk, node
+// 33:43259); the My/All scope and all-statuses table were rolled in from /proto/collection-sidebar's
+// "My Items" - see the DLA entries in CONTEXT.md.
 export default function DlaPage() {
   return (
     <Suspense fallback={null}>
@@ -20,14 +24,17 @@ export default function DlaPage() {
 }
 
 function DlaList() {
-  const requested = useSearchParams().get("status");
-  const status: DlaStatus = dlaStatusOrder.find((s) => s === requested) ?? "active";
+  const params = useSearchParams();
+  const canReview = useFeatureAccess("dlaApproval");
+  const scope = useAgreementScope(canReview ? "all" : "mine");
+  const statusParam = params.get("status") ?? "";
+  const initialStatuses = statusParam.split(",").filter((s): s is DlaStatus => (dlaStatusOrder as string[]).includes(s));
 
   return (
-    <DlaShell activeStatus={status}>
-      <div className="min-h-0 flex-1 overflow-y-auto">
-        {/* key: switching bucket starts a fresh search and page. */}
-        <DlaListContent key={status} status={status} />
+    <DlaShell>
+      <div className="flex min-h-0 flex-1 flex-col overflow-y-auto">
+        {/* key: switching scope or following a status link starts a fresh search, filter and page. */}
+        <DlaAllList key={`${scope}:${statusParam}`} scope={scope} initialStatuses={initialStatuses} banner={<DlaBanner />} />
       </div>
     </DlaShell>
   );
