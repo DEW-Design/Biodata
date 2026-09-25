@@ -1,23 +1,21 @@
 "use client";
 
 import type { FC, ReactNode } from "react";
-import { Suspense, useMemo, useState } from "react";
+import { Suspense, useMemo, useRef, useState } from "react";
 import dynamic from "next/dynamic";
 import { useRouter, useSearchParams } from "next/navigation";
 import type { Selection } from "react-aria-components";
 import { Tabs } from "react-aria-components";
 import { TabList, Tab, TabPanel } from "@/components/application/tabs/tabs";
-import { FloatingResultsPanel } from "@/app/pages/_shared/map-search/floating-results-panel";
+import { AreaLayerList, type AreaLayerRow } from "@/app/pages/_shared/map-search/area-layers";
+import { ScrollFade } from "@/app/pages/_shared/map-search/scroll-fade";
 import { Toggle } from "@/components/base/toggle/toggle";
-import { Popover } from "@/components/base/select/popover";
-import { Dialog, DialogTrigger } from "react-aria-components";
 import { ResultCard } from "@/app/pages/_shared/map-search/result-card";
+import { SpeciesPhoto } from "@/app/pages/_shared/map-search/species-photo";
 import { SPECIES_GROUP_ICON } from "@/app/pages/_shared/map-search/species-group-icons";
 import {
-  AlertTriangle,
   ChevronDown,
   ChevronUp,
-  XClose,
   Folder,
   List as ListIcon,
   Table as TableIcon,
@@ -70,7 +68,8 @@ import { PrimaryRail } from "@/app/pages/_shared/primary-rail";
 import { SidebarFooterLinks } from "@/app/pages/_shared/sidebar-footer-links";
 import { sectionIcons } from "@/app/pages/_shared/nav-icons";
 import { AppHeader } from "@/app/pages/_shared/app-header";
-import { SA_NATIONAL_PARKS, isPointInAnyBoundary, boundarySummary, wholeStateBoundary, type Boundary } from "@/app/pages/_shared/map-search/geo";
+import { RecordPeekCard } from "@/app/pages/_shared/map-search/record-peek-card";
+import { SA_NATIONAL_PARKS, WHOLE_STATE_SOURCE, isPointInAnyBoundary, boundarySummary, wholeStateBoundary, type Boundary } from "@/app/pages/_shared/map-search/geo";
 import { SidePanel } from "@/app/pages/_shared/map-search/side-panel";
 import { parseShapefileUpload, shapefileLayerSummary, type ShapefileLayer } from "@/app/pages/_shared/map-search/shapefile";
 import {
@@ -89,6 +88,7 @@ import {
   type SearchResource,
   type ResourceType,
   type OccurrenceType,
+  type SpeciesGroup,
 } from "@/app/pages/_shared/map-search/search-data";
 import { ResultsTable, HierarchyCell, type ColumnDef, type TypeFilterOption } from "@/app/pages/_shared/map-search/results-table";
 import { MetricTile } from "@/app/pages/_shared/map-search/metric-tile";
@@ -137,7 +137,6 @@ type Method = "draw" | "coordinates" | "location" | "shapefile";
 // underlying `searchEvents` array so a Project is never counted or shown in both tabs at once.
 type EntityTab = "projects" | "events" | "occurrence" | "observations" | "resources";
 
-const methodTitle: Record<Method, string> = { draw: "Draw on the map", coordinates: "Enter coordinates", location: "Choose national parks", shapefile: "Upload a shapefile" };
 
 const methodTabs: { id: Method; label: string; icon: FC<{ className?: string }> }[] = [
   // Short labels so all 4 methods fit one row in the 480px panel.
@@ -645,9 +644,10 @@ function SectionPlaceholder({ node }: { node: NavNode }) {
 }
 
 /** "classic" is the original flow (search on the map, press Search, land on a results page).
- *  "split" is the second option: search controls in column 2, the map always in view, and the results
- *  in a floating panel over it that updates as the search area changes. Both read the same state. */
-export type ExploreLayout = "classic" | "split" | "float-grow" | "float-sheet" | "float-command";
+ *  "float" is the second option: a floating card over the map that lists the search areas as layers,
+ *  with no Search step - results appear in the same card and follow the areas live. Both read the
+ *  same state. */
+export type ExploreLayout = "classic" | "float";
 
 export function ObservationsExplore({ layout }: { layout: ExploreLayout }) {
   return (
@@ -760,11 +760,32 @@ function ObservationsSearch({ layout }: { layout: ExploreLayout }) {
   const [selectedParkIds, setSelectedParkIds] = useState<Selection>(new Set());
   const [parkRadius, setParkRadius] = useState(15);
 
-  const addManualBoundary = (boundary: Boundary) => setManualBoundaries((prev) => [...prev, boundary]);
+  // Option 3 adds areas one at a time from an "Add area" menu, not from always-open method tabs:
+  // `addingMethod` is the method whose short flow is open in the card (null when none).
+  const [addingMethod, setAddingMethod] = useState<Method | null>(null);
+  // The areas are layers: each can be hidden, renamed and resized on its own. Names are given when
+  // an area is added ("Circle 1"), so removing one never renumbers the others.
+  const [hiddenLayerIds, setHiddenLayerIds] = useState<Set<string>>(new Set());
+  const [layerNames, setLayerNames] = useState<Record<string, string>>({});
+  const [radiusOverrides, setRadiusOverrides] = useState<Record<string, number>>({});
+  const [hoveredLayerId, setHoveredLayerId] = useState<string | null>(null);
+  const [fitRequest, setFitRequest] = useState<{ key: number; boundaries: Boundary[] } | undefined>();
+  const layerCounters = useRef<Record<string, number>>({});
+  const nextLayerName = (prefix: string) => {
+    layerCounters.current[prefix] = (layerCounters.current[prefix] ?? 0) + 1;
+    return `${prefix} ${layerCounters.current[prefix]}`;
+  };
+
+  const addManualBoundary = (boundary: Boundary, name?: string) => {
+    setLayerNames((prev) => ({ ...prev, [boundary.id]: name ?? nextLayerName(boundary.kind === "circle" ? "Circle" : "Polygon") }));
+    setManualBoundaries((prev) => [...prev, boundary]);
+    setAddingMethod((current) => (current === "draw" ? null : current));
+  };
 
   const applyCoordinates = () => {
     if (lat == null || lon == null) return;
-    addManualBoundary({ id: `coord-${Date.now()}`, kind: "circle", center: [lat, lon], radiusKm: coordRadius });
+    addManualBoundary({ id: `coord-${Date.now()}`, kind: "circle", center: [lat, lon], radiusKm: coordRadius }, nextLayerName("Point"));
+    setAddingMethod(null);
     setLat(null);
     setLon(null);
     setCoordResetKey((k) => k + 1);
@@ -798,6 +819,7 @@ function ObservationsSearch({ layout }: { layout: ExploreLayout }) {
       const layer = await parseShapefileUpload(files);
       setShapefileLayers((prev) => [...prev, layer]);
       setShapefileInputKey((k) => k + 1);
+      setAddingMethod(null);
     } catch (error) {
       setShapefileError(error instanceof Error ? error.message : "We couldn't read that file.");
     } finally {
@@ -840,9 +862,67 @@ function ObservationsSearch({ layout }: { layout: ExploreLayout }) {
     [shapefileLayers, shapefileRadius],
   );
 
+  // ── The areas as layers ──
+  // One layer per thing the user added: a drawn shape, an entered point, a national park, or a
+  // shapefile (however many locations it holds). Each keeps its own name, radius and visibility.
+  // The search covers the union of the visible layers; a hidden layer is neither drawn nor searched.
+  interface AreaLayer {
+    id: string;
+    name: string;
+    detail: string;
+    boundaries: Boundary[];
+    radiusKm?: number;
+    editable: boolean;
+  }
+  const withRadius = (b: Boundary, id: string): Boundary => (b.kind === "circle" && radiusOverrides[id] !== undefined ? { ...b, radiusKm: radiusOverrides[id] } : b);
+  const km = (r: number) => Math.round(r * 10) / 10;
+  const plural = (n: number, word: string) => `${n} ${word}${n === 1 ? "" : "s"}`;
+
+  const explicitLayers = useMemo<AreaLayer[]>(() => {
+    const out: AreaLayer[] = [];
+    for (const raw of manualBoundaries) {
+      const b = withRadius(raw, raw.id);
+      const isRegion = b.source === WHOLE_STATE_SOURCE;
+      out.push({
+        id: b.id,
+        name: layerNames[b.id] ?? (isRegion ? "All of South Australia" : b.kind === "circle" ? "Circle" : "Polygon"),
+        detail: isRegion ? "Whole state" : b.kind === "circle" ? `${km(b.radiusKm)} km radius` : plural(b.points.length, "point"),
+        boundaries: [b],
+        radiusKm: b.kind === "circle" && !isRegion ? b.radiusKm : undefined,
+        editable: true,
+      });
+    }
+    for (const raw of parkBoundaries) {
+      const b = withRadius(raw, raw.id);
+      out.push({ id: b.id, name: layerNames[b.id] ?? b.label ?? "National park", detail: b.kind === "circle" ? `${km(b.radiusKm)} km radius` : "Park", boundaries: [b], radiusKm: b.kind === "circle" ? b.radiusKm : undefined, editable: true });
+    }
+    for (const layer of shapefileLayers) {
+      const boundaries = shapefileBoundaries.filter((b) => b.source === `shapefile:${layer.id}`).map((b) => withRadius(b, layer.id));
+      const parts = [layer.points.length > 0 && plural(layer.points.length, "point"), layer.polygons.length > 0 && plural(layer.polygons.length, "polygon")].filter(Boolean);
+      out.push({
+        id: layer.id,
+        name: layerNames[layer.id] ?? layer.name,
+        detail: `Shapefile · ${parts.join(", ")}`,
+        boundaries,
+        radiusKm: layer.points.length > 0 ? (radiusOverrides[layer.id] ?? shapefileRadius) : undefined,
+        editable: true,
+      });
+    }
+    return out;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [manualBoundaries, parkBoundaries, shapefileLayers, shapefileBoundaries, layerNames, radiusOverrides, shapefileRadius]);
+
+  const visibleLayers = useMemo(() => explicitLayers.filter((l) => !hiddenLayerIds.has(l.id)), [explicitLayers, hiddenLayerIds]);
+  const explicitBoundaries = useMemo(() => visibleLayers.flatMap((l) => l.boundaries), [visibleLayers]);
+
+  // A word with no area is a valid search on its own: it searches all of South Australia, shown as
+  // a row in the areas list so the scope is visible. It exists only while the keyword does and no
+  // area has been added at all (hiding every area is not the same as having none). Either half
+  // works alone, both together narrow. Option 1 keeps its explicit Search flow.
+  const impliedWholeState = layout !== "classic" && keyword.trim() !== "" && explicitLayers.length === 0;
   const boundaries = useMemo(
-    () => [...manualBoundaries, ...parkBoundaries, ...shapefileBoundaries],
-    [manualBoundaries, parkBoundaries, shapefileBoundaries],
+    () => (impliedWholeState ? [wholeStateBoundary()] : explicitBoundaries),
+    [impliedWholeState, explicitBoundaries],
   );
 
   const removeBoundary = (target: Boundary) => {
@@ -869,6 +949,9 @@ function ObservationsSearch({ layout }: { layout: ExploreLayout }) {
   // panel's list and the results header's "N search areas" disclosure so both count the same way.
   const areaEntries = useMemo(
     () => [
+      ...(impliedWholeState
+        ? [{ id: "whole-state", icon: MarkerPin02, summary: "All of South Australia", onRemove: () => setKeyword("") }]
+        : []),
       ...[...manualBoundaries, ...parkBoundaries].map((b) => ({
         id: b.id,
         icon: b.kind === "circle" ? MarkerPin02 : Pentagon,
@@ -882,7 +965,86 @@ function ObservationsSearch({ layout }: { layout: ExploreLayout }) {
         onRemove: () => setShapefileLayers((prev) => prev.filter((l) => l.id !== layer.id)),
       })),
     ],
-    [manualBoundaries, parkBoundaries, shapefileLayers],
+    [impliedWholeState, manualBoundaries, parkBoundaries, shapefileLayers],
+  );
+
+  // ── Areas list: counts and actions ──
+  // Records inside one area, counted the way the results are: spatially, with the keyword, and only
+  // from published projects (Active or Completed), plus the projects those records belong to. So a
+  // single area's number equals the total the panel shows when it is the only area.
+  const countInBoundaries = (bs: Boundary[]): number => {
+    if (bs.length === 0) return 0;
+    const published = (project?: { status: string }) => project?.status === "Active" || project?.status === "Completed";
+    const projectIds = new Set<string>();
+    let children = 0;
+    for (const e of searchEvents) {
+      const project = rootProjectOfEvent(e);
+      if (isPointInAnyBoundary([e.lat, e.lon], bs) && matchesKeyword(`${e.name} ${e.type} ${e.org}`, keyword) && published(project)) {
+        projectIds.add(project.id);
+        if (e.type !== "Project") children += 1;
+      }
+    }
+    const child = (parentEventId: string, lat: number, lon: number, text: string) => {
+      const project = rootProjectForParentEventId(parentEventId);
+      if (!isPointInAnyBoundary([lat, lon], bs) || !matchesKeyword(text, keyword) || !published(project)) return;
+      projectIds.add(project!.id);
+      children += 1;
+    };
+    for (const o of searchOccurrences) child(o.parentEventId, o.lat, o.lon, `${o.species} ${o.commonName} ${o.type}`);
+    for (const o of searchObservations) child(o.parentEventId, o.lat, o.lon, `${o.species} ${o.observerName} ${o.type}`);
+    for (const r of searchResources) child(r.parentEventId, r.lat, r.lon, `${r.name} ${r.recordName} ${r.attachedToConcept}`);
+    return children + projectIds.size;
+  };
+
+  const layerRows = useMemo<AreaLayerRow[]>(() => {
+    const rows: AreaLayerRow[] = explicitLayers.map((l) => ({
+      id: l.id,
+      name: l.name,
+      detail: l.detail,
+      count: countInBoundaries(l.boundaries),
+      hidden: hiddenLayerIds.has(l.id),
+      editable: true,
+      radiusKm: l.radiusKm,
+    }));
+    if (impliedWholeState) {
+      rows.push({ id: "whole-state", name: "All of South Australia", detail: "From your search", count: countInBoundaries([wholeStateBoundary()]), hidden: false, editable: false });
+    }
+    return rows;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [explicitLayers, hiddenLayerIds, impliedWholeState, keyword]);
+
+  const toggleLayerHidden = (id: string) =>
+    setHiddenLayerIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  const renameLayer = (id: string, name: string) => setLayerNames((prev) => ({ ...prev, [id]: name }));
+  const setLayerRadius = (id: string, km: number) => setRadiusOverrides((prev) => ({ ...prev, [id]: km }));
+  const removeLayer = (id: string) => {
+    if (id === "whole-state") return setKeyword("");
+    if (manualBoundaries.some((b) => b.id === id)) return setManualBoundaries((prev) => prev.filter((b) => b.id !== id));
+    if (shapefileLayers.some((l) => l.id === id)) return setShapefileLayers((prev) => prev.filter((l) => l.id !== id));
+    const park = parkBoundaries.find((b) => b.id === id);
+    if (park) removeBoundary(park);
+  };
+  const zoomToLayer = (id: string) => {
+    const layer = explicitLayers.find((l) => l.id === id);
+    if (layer) setFitRequest({ key: Date.now(), boundaries: layer.boundaries });
+  };
+  const highlightedBoundaryIds = useMemo(() => new Set(explicitLayers.find((l) => l.id === hoveredLayerId)?.boundaries.map((b) => b.id) ?? []), [explicitLayers, hoveredLayerId]);
+  const areasList = (
+    <AreaLayerList
+      rows={layerRows}
+      onToggleHidden={toggleLayerHidden}
+      onRename={renameLayer}
+      onRadius={setLayerRadius}
+      onRemove={removeLayer}
+      onHover={setHoveredLayerId}
+      onZoom={zoomToLayer}
+      onClearAll={clearAllBoundaries}
+    />
   );
 
   // ── Results filtering - real spatial + keyword filtering against the union of every active
@@ -1156,7 +1318,6 @@ function ObservationsSearch({ layout }: { layout: ExploreLayout }) {
   );
 
   // ── Pieces shared by both layouts ──
-  const isSplit = layout === "split";
   // "Compact" search controls (icon-row method chooser, one-line areas, no Search button) are used by
   // every layout except the original one.
   const isCompact = layout !== "classic";
@@ -1376,27 +1537,68 @@ function ObservationsSearch({ layout }: { layout: ExploreLayout }) {
                 </SidePanel>
   );
 
+  const coordinatesBody = (
+    <>
+                        <div className="grid grid-cols-2 gap-3">
+                          <InputNumber key={`lat-${coordResetKey}`} label="Latitude" placeholder="-34.93" step={0.01} minValue={-38} maxValue={-25} onChange={setLat} />
+                          <InputNumber key={`lon-${coordResetKey}`} label="Longitude" placeholder="138.60" step={0.01} minValue={129} maxValue={141} onChange={setLon} />
+                        </div>
+                        <InputNumber label="Search radius (km)" defaultValue={25} minValue={5} maxValue={300} step={5} onChange={setCoordRadius} />
+                        <Button color="secondary" size="sm" iconLeading={Plus} isDisabled={lat == null || lon == null} onPress={applyCoordinates}>
+                          Add point
+                        </Button>
+                      </>
+  );
+
+  const locationBody = (
+    <>
+                        <MultiSelect
+                          label={isCompact ? undefined : "Select location"}
+                          aria-label="National parks"
+                          placeholder="Choose one or more parks"
+                          items={parkItems}
+                          selectedKeys={selectedParkIds}
+                          onSelectionChange={setSelectedParkIds}
+                          className="w-full"
+                        >
+                          {(item) => <MultiSelect.Item {...item}>{item.label}</MultiSelect.Item>}
+                        </MultiSelect>
+                        <InputNumber label="Search radius (km)" defaultValue={15} minValue={5} maxValue={100} step={5} onChange={setParkRadius} />
+                      </>
+  );
+
+  const shapefileBody = (
+    <>
+                        <p className="text-sm text-tertiary">
+                          Upload a shapefile to search around the locations it contains. Points are searched within the radius below; polygons are searched as drawn.
+                        </p>
+                        <InputFile
+                          key={`shp-${shapefileInputKey}`}
+                          label="Shapefile"
+                          placeholder={shapefileBusy ? "Reading file…" : "Choose file(s)"}
+                          acceptedFileTypes={[".zip", ".shp", ".dbf", ".prj", ".cpg", ".geojson", ".json"]}
+                          allowsMultiple
+                          isInvalid={!!shapefileError}
+                          hint={
+                            shapefileError ??
+                            "A .zip of the shapefile, or the .shp with its .dbf and .prj selected together. GeoJSON also works. Up to 500 locations."
+                          }
+                          onChange={(files) => files && files.length > 0 && handleShapefileUpload(Array.from(files))}
+                        />
+                        <InputNumber label="Radius around each point (km)" value={shapefileRadius} minValue={1} maxValue={100} step={1} onChange={(v) => setShapefileRadius(v || 1)} />
+                      </>
+  );
+
   const methodControls = (
     <>
-                    <Tabs selectedKey={method} onSelectionChange={(key) => setMethod(key as Method)} className="flex flex-col gap-3">
-                      {isCompact ? (
-                        // Column 2 is 286px. One compact row of icon-only tabs (each with a name on
-                        // hover) and the chosen method's name below, instead of four stacked rows.
-                        <>
-                          <TabList aria-label="Boundary method" type="button-border" size="sm" fullWidth>
-                            {methodTabs.map((m) => (
-                              <Tab key={m.id} id={m.id} icon={m.icon} aria-label={m.label} />
-                            ))}
-                          </TabList>
-                          <p className="text-sm font-semibold text-primary">{methodTitle[method]}</p>
-                        </>
-                      ) : (
-                        <TabList aria-label="Boundary method" type="button-border" size="sm" fullWidth>
-                          {methodTabs.map((m) => (
-                            <Tab key={m.id} id={m.id} label={m.label} icon={m.icon} />
-                          ))}
-                        </TabList>
-                      )}
+                    <Tabs selectedKey={method} onSelectionChange={(key) => setMethod(key as Method)} orientation="horizontal" className="flex flex-col gap-3">
+                      {/* Named tabs, no icons: a bare pen, pin and upload glyph do not say which method is which,
+                          and the chosen tab already names the method, so there is no heading under it. */}
+                      <TabList aria-label="Boundary method" type="button-border" size="sm" fullWidth className="w-full">
+                        {methodTabs.map((m) => (
+                          <Tab key={m.id} id={m.id} label={m.label} icon={isCompact ? undefined : m.icon} />
+                        ))}
+                      </TabList>
 
                       <TabPanel id="draw" className={cx("flex flex-col gap-3", isCompact ? "pt-1" : "pt-4")}>
                         {!isCompact && <p className="text-sm text-tertiary">Draw as many circles or polygons as you need directly on the map to define your search area.</p>}
@@ -1420,58 +1622,24 @@ function ObservationsSearch({ layout }: { layout: ExploreLayout }) {
                             {activeDrawTool === "polygon" ? "Drawing…" : isCompact ? "Polygon" : "Draw polygon"}
                           </Button>
                         </div>
-                        {activeDrawTool && (
-                          <p className="text-xs text-tertiary">
-                            {activeDrawTool === "circle"
-                              ? "Click and drag on the map to set the centre and radius."
-                              : "Click to place each point, then double-click to finish."}
-                          </p>
-                        )}
+                        <p className="text-sm text-tertiary">
+                          {activeDrawTool === "circle"
+                            ? "Click and drag on the map to set the centre and radius."
+                            : activeDrawTool === "polygon"
+                              ? "Click to place each point, then double-click to finish."
+                              : "Pick a shape, then draw it on the map."}
+                        </p>
                       </TabPanel>
 
                       <TabPanel id="coordinates" className={cx("flex flex-col gap-3", isCompact ? "pt-1" : "pt-4")}>
-                        <div className="grid grid-cols-2 gap-3">
-                          <InputNumber key={`lat-${coordResetKey}`} label="Latitude" placeholder="-34.93" step={0.01} minValue={-38} maxValue={-25} onChange={setLat} />
-                          <InputNumber key={`lon-${coordResetKey}`} label="Longitude" placeholder="138.60" step={0.01} minValue={129} maxValue={141} onChange={setLon} />
-                        </div>
-                        <InputNumber label="Search radius (km)" defaultValue={25} minValue={1} maxValue={300} step={5} onChange={setCoordRadius} />
-                        <Button color="secondary" size="sm" iconLeading={Plus} isDisabled={lat == null || lon == null} onPress={applyCoordinates}>
-                          Add point
-                        </Button>
+                        {coordinatesBody}
                       </TabPanel>
 
                       <TabPanel id="location" className={cx("flex flex-col gap-3", isCompact ? "pt-1" : "pt-4")}>
-                        <MultiSelect
-                          label={isCompact ? undefined : "Select location"}
-                          aria-label="National parks"
-                          placeholder="Choose one or more parks"
-                          items={parkItems}
-                          selectedKeys={selectedParkIds}
-                          onSelectionChange={setSelectedParkIds}
-                          className="w-full"
-                        >
-                          {(item) => <MultiSelect.Item {...item}>{item.label}</MultiSelect.Item>}
-                        </MultiSelect>
-                        <InputNumber label="Search radius (km)" defaultValue={15} minValue={1} maxValue={100} step={5} onChange={setParkRadius} />
+                        {locationBody}
                       </TabPanel>
                       <TabPanel id="shapefile" className={cx("flex flex-col gap-3", isCompact ? "pt-1" : "pt-4")}>
-                        <p className="text-sm text-tertiary">
-                          Upload a shapefile to search around the locations it contains. Points are searched within the radius below; polygons are searched as drawn.
-                        </p>
-                        <InputFile
-                          key={`shp-${shapefileInputKey}`}
-                          label="Shapefile"
-                          placeholder={shapefileBusy ? "Reading file…" : "Choose file(s)"}
-                          acceptedFileTypes={[".zip", ".shp", ".dbf", ".prj", ".cpg", ".geojson", ".json"]}
-                          allowsMultiple
-                          isInvalid={!!shapefileError}
-                          hint={
-                            shapefileError ??
-                            "A .zip of the shapefile, or the .shp with its .dbf and .prj selected together. GeoJSON also works. Up to 500 locations."
-                          }
-                          onChange={(files) => files && files.length > 0 && handleShapefileUpload(Array.from(files))}
-                        />
-                        <InputNumber label="Radius around each point (km)" value={shapefileRadius} minValue={1} maxValue={100} step={1} onChange={(v) => setShapefileRadius(v || 1)} />
+                        {shapefileBody}
                       </TabPanel>
                     </Tabs>
     </>
@@ -1561,8 +1729,6 @@ function ObservationsSearch({ layout }: { layout: ExploreLayout }) {
   // Search controls live in column 2 and the results float over the map, so nothing redirects and
   // there is no map view / table view to switch between. There is no Search button: the results
   // follow the search area and keyword as they change.
-  const [resultsOpen, setResultsOpen] = useState(true);
-  const [resultsExpanded, setResultsExpanded] = useState(false);
 
   // One dot per record in what the panel is showing, so a row in the table and a point on the map
   // are the same record: clicking a dot opens that record, like clicking its row.
@@ -1620,6 +1786,20 @@ function ObservationsSearch({ layout }: { layout: ExploreLayout }) {
   };
   const [panelDisplay, setPanelDisplay] = useState<"list" | "table">("list");
   const [hoveredMarkerId, setHoveredMarkerId] = useState<string | null>(null);
+  // Option 3 shows a picked record as a short summary card first and opens the full record only on
+  // request. `fullRecordKey` is the record whose full view is open (compared by key, so picking a
+  // different record returns to the summary without any reset code at the call sites).
+  const [fullRecordKey, setFullRecordKey] = useState<string | null>(null);
+  const selectedKey = selectedRecord
+    ? selectedRecord.kind === "event"
+      ? `event:${selectedRecord.event.id}`
+      : selectedRecord.kind === "occurrence"
+        ? `occurrence:${selectedRecord.occurrence.id}`
+        : `observation:${selectedRecord.observation.id}`
+    : null;
+  const selectedMarkerId = layout === "float" ? selectedKey : null;
+  const peekMode = layout === "float";
+  const fullRecordOpen = !peekMode || (selectedKey != null && fullRecordKey === selectedKey);
   const LIST_STEP = 25;
   const [listLimit, setListLimit] = useState(LIST_STEP);
 
@@ -1636,6 +1816,8 @@ function ObservationsSearch({ layout }: { layout: ExploreLayout }) {
     markerId: string;
     searchText: string;
     icon: FC<{ className?: string }>;
+    /** A species photo (or its group icon on a tile) in place of the icon. */
+    thumb?: ReactNode;
     title: string;
     subtitle?: string;
     subtitleItalic?: boolean;
@@ -1643,6 +1825,8 @@ function ObservationsSearch({ layout }: { layout: ExploreLayout }) {
     trailing?: ReactNode;
     onSelect: () => void;
   }
+  const speciesThumb = (r: { species: string; commonName: string; group?: SpeciesGroup }) =>
+    r.group ? <SpeciesPhoto scientificName={r.species} alt={r.commonName} fallbackIcon={SPECIES_GROUP_ICON[r.group]} className="size-10" /> : undefined;
   const provenance = (parentEventId: string) => {
     const root = rootProjectForParentEventId(parentEventId);
     return root ? `${root.org} \u00b7 ${root.name}` : undefined;
@@ -1656,6 +1840,7 @@ function ObservationsSearch({ layout }: { layout: ExploreLayout }) {
           markerId: `occurrence:${o.id}`,
           searchText: `${o.commonName} ${o.species} ${o.family}`,
           icon: SPECIES_GROUP_ICON[o.group!],
+          thumb: speciesThumb(o),
           title: o.commonName,
           subtitle: o.species,
           subtitleItalic: true,
@@ -1696,6 +1881,7 @@ function ObservationsSearch({ layout }: { layout: ExploreLayout }) {
           markerId: `occurrence:${o.id}`,
           searchText: `${o.commonName} ${o.species} ${o.type}`,
           icon: occurrenceTypeIcon[o.type],
+          thumb: speciesThumb(o),
           title: o.commonName,
           // A Community record has no species name (a placeholder dash in the data); show nothing.
           subtitle: /^[A-Za-z]/.test(o.species) ? o.species : undefined,
@@ -1709,6 +1895,7 @@ function ObservationsSearch({ layout }: { layout: ExploreLayout }) {
           markerId: `observation:${o.id}`,
           searchText: `${o.commonName} ${o.species} ${o.observerName}`,
           icon: occurrenceTypeIcon[o.type],
+          thumb: speciesThumb(o),
           title: o.commonName,
           subtitle: o.species,
           subtitleItalic: true,
@@ -1735,34 +1922,39 @@ function ObservationsSearch({ layout }: { layout: ExploreLayout }) {
   // One row of switching: Species, then the five record types, each with its count.
   const panelTabsEl = (
     <>
-              <Tabs selectedKey={panelView} onSelectionChange={(key) => setPanelView(key as PanelView)} className="shrink-0 overflow-x-auto px-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-                <TabList aria-label="Result type" type="underline" size="sm">
-                  {panelTabs.map((t) => (
-                    <Tab key={t.id} id={t.id} label={t.label} badge={t.count} />
-                  ))}
-                </TabList>
-              </Tabs>
+              <ScrollFade className="px-4">
+                <Tabs selectedKey={panelView} onSelectionChange={(key) => setPanelView(key as PanelView)} className="min-w-max">
+                  <TabList aria-label="Result type" type="underline" size="sm">
+                    {panelTabs.map((t) => (
+                      <Tab key={t.id} id={t.id} label={t.label} badge={t.count} />
+                    ))}
+                  </TabList>
+                </Tabs>
+              </ScrollFade>
 
     </>
   );
 
   // The body of a results panel: one row of switching, one row of controls, then the list or the
   // table. Shared by every layout that shows results, so a change here lands everywhere.
-  const resultsBody = ({ display, onDisplayChange, allowTable = true, showTabs = true }: { display: "list" | "table"; onDisplayChange: (d: "list" | "table") => void; allowTable?: boolean; showTabs?: boolean }) => (
+  const resultsBody = ({ display, onDisplayChange, allowTable = true, showTabs = true, showSearch = true }: { display: "list" | "table"; onDisplayChange: (d: "list" | "table") => void; allowTable?: boolean; showTabs?: boolean; showSearch?: boolean }) => (
     <>
               {showTabs && panelTabsEl}
 
               {/* One row of controls: search, Filters (record types only; Species has its own inside
-                  the table), and List / Table. */}
+                  the table), and List / Table. The layouts with the combined search field above
+                  (`showSearch` false) have one text field only: what is typed there narrows the
+                  results, so a second box here would ask the same question twice. */}
+              {(showSearch || panelView !== "species" || allowTable) && (
               <div className="flex shrink-0 items-center gap-2 px-4 pt-3">
-                <Input icon={SearchLg} size="sm" placeholder={`Search ${panelTabs.find((t) => t.id === panelView)?.label.toLowerCase()}`} value={recordsSearch} onChange={setRecordsSearch} className="flex-1" />
+                {showSearch && <Input icon={SearchLg} size="sm" placeholder={`Search ${panelTabs.find((t) => t.id === panelView)?.label.toLowerCase()}`} value={recordsSearch} onChange={setRecordsSearch} className="flex-1" />}
                 {panelView !== "species" && (
                   <Button color="secondary" size="sm" iconLeading={FilterLines} onPress={() => setRecordsFilterPanelOpen(true)} className="shrink-0">
                     Filters{recordsFilterCount > 0 ? ` (${recordsFilterCount})` : ""}
                   </Button>
                 )}
                 {allowTable && (
-                <div className="inline-flex shrink-0 items-center gap-0.5 rounded-lg border border-secondary bg-secondary p-0.5">
+                <div className={cx("inline-flex shrink-0 items-center gap-0.5 rounded-lg border border-secondary bg-secondary p-0.5", !showSearch && "ml-auto")}>
                   {(["list", "table"] as const).map((d) => (
                     <button
                       key={d}
@@ -1781,6 +1973,7 @@ function ObservationsSearch({ layout }: { layout: ExploreLayout }) {
                 </div>
                 )}
               </div>
+              )}
               {panelView !== "species" && recordsFilterPills.length > 0 && <div className="shrink-0">{recordsFilterPillsRow}</div>}
 
               {display === "list" ? (
@@ -1793,6 +1986,7 @@ function ObservationsSearch({ layout }: { layout: ExploreLayout }) {
                         <ResultCard
                           key={c.id}
                           icon={c.icon}
+                          thumb={c.thumb}
                           title={c.title}
                           subtitle={c.subtitle}
                           subtitleItalic={c.subtitleItalic}
@@ -1816,6 +2010,7 @@ function ObservationsSearch({ layout }: { layout: ExploreLayout }) {
                     rows={filteredOccurrences}
                     onRowClick={(o) => setSelectedRecord({ kind: "occurrence", occurrence: o })}
                     onExportableRowsChange={setSpeciesExportRows}
+                    hideSearch={!showSearch}
                   />
                 </div>
               ) : (
@@ -1825,70 +2020,108 @@ function ObservationsSearch({ layout }: { layout: ExploreLayout }) {
     </>
   );
 
-  // ── Three ways to keep the floating search card on the left of the map ──
-  // The card the designer liked (option 1's) stays over the map's left; what changes is the flow
-  // after it: results appear on the same page, live, with no Search step and no redirect.
-  //   float-grow    One card. The setup folds to area chips and the same card grows a results list.
-  //   float-sheet   A small setup card, and a wide results sheet along the bottom (peek, half, full).
-  //   float-command A keyword bar with an Areas popover; the results hang beneath it as you search.
-  // Column 2 is the map's own contextual column here (layers, and the data-access notice that used
-  // to be a full-width banner), so all three keep the three-column shell.
+  // ── The floating layout (option 2) ──
+  // The card over the map's left: results appear on the same page, live, with no Search step and no
+  // redirect. One card - the setup folds to the areas list and the same card grows a results list.
+  // Column 2 is the map's own contextual column (the areas as layers, and the data-access notice that
+  // used to be a full-width banner), so it keeps the three-column shell.
   const hasAreas = boundaries.length > 0;
-  const [setupOpen, setSetupOpen] = useState(true);
-  const [sheetSnap, setSheetSnap] = useState<"peek" | "half" | "full">("half");
-  const [showAreasLayer, setShowAreasLayer] = useState(true);
   const [showDotsLayer, setShowDotsLayer] = useState(true);
-  const [areasPopoverOpen, setAreasPopoverOpen] = useState(false);
 
+  // Option 3 counts the visible layers (a hidden area is not searched); the others count every area.
+  const areaCount = layout === "float" ? visibleLayers.length + (impliedWholeState ? 1 : 0) : areaEntries.length;
   const summaryLine = (
     <>
       <span className="font-semibold text-primary">
         {totalCount} record{totalCount === 1 ? "" : "s"}
       </span>{" "}
-      across {areaEntries.length} area{areaEntries.length === 1 ? "" : "s"}
+      across {areaCount} area{areaCount === 1 ? "" : "s"}
     </>
-  );
-
-  const keywordEl = <Input icon={SearchLg} size="sm" placeholder="Species or keyword (optional)" value={keyword} onChange={setKeyword} />;
-
-  // One chip per area: what it is, and a way to take it off.
-  const areaChips = (
-    <div className="flex flex-wrap gap-1.5">
-      {areaEntries.map((entry) => (
-        <span key={entry.id} className="inline-flex max-w-full items-center gap-1 rounded-full border border-secondary bg-secondary py-0.5 pr-0.5 pl-2 text-xs text-secondary">
-          <entry.icon className="size-3.5 shrink-0 text-brand-600" />
-          <span className="max-w-[230px] truncate" title={entry.summary}>
-            {entry.summary}
-          </span>
-          <button
-            type="button"
-            aria-label={`Remove ${entry.summary}`}
-            onClick={entry.onRemove}
-            className="relative flex size-5 shrink-0 cursor-pointer items-center justify-center rounded-full text-quaternary outline-focus-ring transition duration-100 ease-linear before:absolute before:-inset-1.5 hover:bg-primary_hover hover:text-primary focus-visible:outline-2"
-          >
-            <XClose className="size-3" />
-          </button>
-        </span>
-      ))}
-      {areaEntries.length > 1 && (
-        <Button color="link-gray" size="sm" onPress={clearAllBoundaries}>
-          Clear all
-        </Button>
-      )}
-    </div>
   );
 
   const floatCard = "absolute z-[1000] flex flex-col overflow-hidden rounded-xl border border-secondary bg-primary shadow-lg";
   const rise = "motion-safe:animate-in motion-safe:fade-in motion-safe:slide-in-from-bottom-1 motion-safe:duration-200 motion-safe:ease-out";
+
+  // ── Adding an area (option 3): one menu, then a short flow for that method only ──
+  const startAdding = (key: string) => {
+    if (key === "circle" || key === "polygon") {
+      setMethod("draw");
+      setAddingMethod("draw");
+      setActiveDrawTool(key);
+      return;
+    }
+    setActiveDrawTool(null);
+    setMethod(key as Method);
+    setAddingMethod(key as Method);
+  };
+  const cancelAdding = () => {
+    setAddingMethod(null);
+    setActiveDrawTool(null);
+  };
+  const addAreaMenu = (
+    <Dropdown.Root>
+      <Button color={hasAreas || layerRows.length > 0 ? "secondary" : "primary"} size="sm" iconLeading={Plus}>
+        Add area
+      </Button>
+      <Dropdown.Popover placement="bottom right" className="w-56">
+        <Dropdown.Menu aria-label="Add a search area" onAction={(key) => startAdding(String(key))}>
+          <Dropdown.Item id="circle" label="Draw a circle" icon={Circle} />
+          <Dropdown.Item id="polygon" label="Draw a polygon" icon={Pentagon} />
+          <Dropdown.Separator />
+          <Dropdown.Item id="coordinates" label="Enter coordinates" icon={MarkerPin02} />
+          <Dropdown.Item id="location" label="Choose national parks" icon={Map02} />
+          <Dropdown.Item id="shapefile" label="Upload a shapefile" icon={UploadCloud02} />
+        </Dropdown.Menu>
+      </Dropdown.Popover>
+    </Dropdown.Root>
+  );
+  const addAreaTitle: Record<Method, string> = {
+    draw: activeDrawTool === "polygon" ? "Draw a polygon" : "Draw a circle",
+    coordinates: "Enter coordinates",
+    location: "Choose national parks",
+    shapefile: "Upload a shapefile",
+  };
+  const addAreaPanel = addingMethod && (
+    <div className={cx("flex shrink-0 flex-col gap-3 border-t border-secondary px-4 py-3", rise)}>
+      <div className="flex items-center justify-between gap-2">
+        <p className="text-sm font-semibold text-primary">{addAreaTitle[addingMethod]}</p>
+        <Button color="link-gray" size="sm" onPress={cancelAdding}>
+          {addingMethod === "location" ? "Done" : "Cancel"}
+        </Button>
+      </div>
+      {addingMethod === "draw" && (
+        <p className="text-sm text-tertiary">
+          {activeDrawTool === "polygon" ? "Click to place each point, then double-click to finish." : "Click and drag on the map to set the centre and radius."}
+        </p>
+      )}
+      {addingMethod === "coordinates" && coordinatesBody}
+      {addingMethod === "location" && locationBody}
+      {addingMethod === "shapefile" && shapefileBody}
+    </div>
+  );
+  const growSearchField = (
+    <Input icon={SearchLg} aria-label="Search species or keyword" placeholder="Search a species or keyword" value={keyword} onChange={setKeyword} />
+  );
+  const growHint = !addingMethod && !hasAreas && (
+    <p className="text-sm text-tertiary text-balance">
+      {layerRows.length > 0
+        ? "Every area is hidden. Show one in the list on the left to see results."
+        : keyword.trim()
+          ? ""
+          : "Add an area to search, or type a species to look across South Australia."}
+    </p>
+  );
 
   const floatColumn2 = (
     <aside aria-label="Explore" className="hidden w-[286px] shrink-0 flex-col justify-between overflow-y-auto border-r border-secondary bg-secondary p-4 lg:flex">
       <div className="flex flex-col gap-6">
         <div className="flex flex-col gap-3">
           <p className="text-xs font-semibold tracking-wide text-quaternary uppercase">Explore</p>
-          <p className="text-sm font-semibold text-primary">On the map</p>
-          <Toggle size="sm" label="Search areas" isSelected={showAreasLayer} onChange={setShowAreasLayer} />
-          <Toggle size="sm" label="Result dots" isSelected={showDotsLayer} onChange={setShowDotsLayer} />
+          {areasList}
+          <div className="flex flex-col gap-3 border-t border-secondary pt-3">
+            <p className="text-sm font-semibold text-primary">On the map</p>
+            <Toggle size="sm" label="Result dots" isSelected={showDotsLayer} onChange={setShowDotsLayer} />
+          </div>
         </div>
         <div className="flex flex-col gap-2 rounded-lg border border-secondary bg-primary p-3">
           <p className="text-sm font-semibold text-primary">You&apos;re viewing public data</p>
@@ -1906,7 +2139,6 @@ function ObservationsSearch({ layout }: { layout: ExploreLayout }) {
     <div className="absolute inset-0">
       <SAMap
         boundaries={boundaries}
-        showBoundaries={showAreasLayer}
         onBoundaryAdd={addManualBoundary}
         activeDrawTool={activeDrawTool}
         onDrawToolChange={setActiveDrawTool}
@@ -1914,7 +2146,9 @@ function ObservationsSearch({ layout }: { layout: ExploreLayout }) {
         fitPaddingBottomRight={padBottomRight}
         markers={showDotsLayer ? mapMarkers : undefined}
         onMarkerClick={onMarkerClick}
-        highlightedMarkerId={hoveredMarkerId}
+        highlightedMarkerId={hoveredMarkerId ?? selectedMarkerId}
+        highlightedBoundaryIds={highlightedBoundaryIds}
+        fitRequest={fitRequest}
         className="size-full"
       />
     </div>
@@ -1927,7 +2161,18 @@ function ObservationsSearch({ layout }: { layout: ExploreLayout }) {
       <main className="relative flex min-w-0 flex-1 flex-col overflow-hidden">
         <div className="relative min-h-0 flex-1 overflow-hidden">{children}</div>
         {signUpModals}
-        <RecordDetailSidebar record={selectedRecord} onClose={() => setSelectedRecord(null)} />
+        {peekMode && selectedRecord && !fullRecordOpen && (
+          <RecordPeekCard
+            record={selectedRecord}
+            onViewFull={() => setFullRecordKey(selectedKey)}
+            onClose={() => setSelectedRecord(null)}
+            className="absolute top-4 right-16 z-[1000] motion-safe:animate-in motion-safe:fade-in motion-safe:duration-150"
+          />
+        )}
+        <RecordDetailSidebar
+          record={fullRecordOpen ? selectedRecord : null}
+          onClose={() => (peekMode ? setFullRecordKey(null) : setSelectedRecord(null))}
+        />
         <ArtefactLightbox artefacts={resourceArtefacts} index={artefactIndex} onClose={() => setArtefactIndex(null)} onNavigate={setArtefactIndex} />
       </main>
     </div>
@@ -1936,7 +2181,7 @@ function ObservationsSearch({ layout }: { layout: ExploreLayout }) {
   // ── 1. Grows in place ──
   const growExplore = floatFrame(
     <>
-      {floatMap([panelDisplay === "table" ? 48 : 448, 48], [48, 48])}
+      {floatMap([panelDisplay === "table" && hasAreas ? 960 + 16 + 48 : 448, 48], [48, 48])}
       <section
         aria-label="Search the map"
         className={cx(
@@ -1948,16 +2193,12 @@ function ObservationsSearch({ layout }: { layout: ExploreLayout }) {
       >
         <div className="flex shrink-0 items-center gap-2 px-4 pt-4 pb-3">
           <h2 className="m-0! text-base! font-semibold! tracking-normal! text-primary!">Search the map</h2>
-          {hasAreas && (
-            <Button color="link-color" size="sm" className="ml-auto" iconLeading={setupOpen ? ChevronUp : Plus} onPress={() => setSetupOpen((v) => !v)}>
-              {setupOpen ? "Done" : "Add area"}
-            </Button>
-          )}
+          <div className="ml-auto">{addAreaMenu}</div>
         </div>
-        {(setupOpen || !hasAreas) && <div className={cx("shrink-0 overflow-y-auto px-4 pb-3", hasAreas && "max-h-[50%]")}>{methodControls}</div>}
-        <div className="flex shrink-0 flex-col gap-2 px-4 pb-4">
-          {hasAreas && areaChips}
-          {keywordEl}
+        {addAreaPanel && <div className="max-h-[50%] shrink-0 overflow-y-auto">{addAreaPanel}</div>}
+        <div className="flex shrink-0 flex-col gap-2 px-4 pt-1 pb-4">
+          {growSearchField}
+          {growHint}
         </div>
         {hasAreas && (
           <div className={cx("flex min-h-0 flex-1 flex-col border-t border-secondary", rise)}>
@@ -1965,184 +2206,11 @@ function ObservationsSearch({ layout }: { layout: ExploreLayout }) {
               <div className="min-w-0 flex-1 truncate">{summaryLine}</div>
               {exportControl}
             </div>
-            {resultsBody({ display: panelDisplay, onDisplayChange: setPanelDisplay })}
+            {resultsBody({ display: panelDisplay, onDisplayChange: setPanelDisplay, showSearch: false })}
           </div>
         )}
       </section>
     </>,
-  );
-
-  // ── 2. Bottom sheet ──
-  const SHEET_HEIGHT = { peek: "112px", half: "46%", full: "calc(100% - 2rem)" } as const;
-  const sheetExplore = floatFrame(
-    <>
-      {floatMap([448, 48], [48, hasAreas ? 160 : 48])}
-      <section aria-label="Search the map" className={cx(floatCard, "top-4 left-4 max-h-[calc(100%-2rem)] w-[400px] max-w-[calc(100%-2rem)]")}>
-        <div className="shrink-0 px-4 pt-4 pb-3">
-          <h2 className="m-0! text-base! font-semibold! tracking-normal! text-primary!">Search the map</h2>
-        </div>
-        <div className="flex min-h-0 flex-col gap-3 overflow-y-auto px-4 pb-4">
-          {methodControls}
-          {hasAreas && areaChips}
-          {keywordEl}
-        </div>
-      </section>
-      {hasAreas && (
-        <section
-          aria-label="Search results"
-          style={{ height: SHEET_HEIGHT[sheetSnap] }}
-          className={cx(floatCard, "inset-x-4 bottom-4 transition-[height] duration-200 ease-out motion-reduce:transition-none", rise)}
-        >
-          <div className="flex shrink-0 items-center gap-2 px-4 pt-2 pb-1">
-            <button
-              type="button"
-              aria-label={sheetSnap === "peek" ? "Open the results" : "Fold the results"}
-              onClick={() => setSheetSnap(sheetSnap === "peek" ? "half" : "peek")}
-              className="relative mx-auto h-1.5 w-10 shrink-0 cursor-pointer rounded-full bg-[var(--ui-border-primary)] outline-focus-ring before:absolute before:-inset-x-3 before:-inset-y-3 hover:bg-[var(--color-gray-400)] focus-visible:outline-2 focus-visible:outline-offset-2"
-            />
-          </div>
-          <div className="flex shrink-0 items-center gap-2 px-4 pb-1 text-sm text-tertiary">
-            <div className="min-w-0 flex-1 truncate">{summaryLine}</div>
-            {exportControl}
-            <Button color="tertiary" size="sm" iconLeading={ChevronUp} aria-label="Open the results a step" isDisabled={sheetSnap === "full"} onPress={() => setSheetSnap(sheetSnap === "peek" ? "half" : "full")} />
-            <Button color="tertiary" size="sm" iconLeading={ChevronDown} aria-label="Fold the results a step" isDisabled={sheetSnap === "peek"} onPress={() => setSheetSnap(sheetSnap === "full" ? "half" : "peek")} />
-          </div>
-          <div
-            onClickCapture={() => sheetSnap === "peek" && setSheetSnap("half")}
-            className="shrink-0"
-          >
-            {panelTabsEl}
-          </div>
-          <div inert={sheetSnap === "peek"} className="flex min-h-0 flex-1 flex-col">
-            {resultsBody({ display: "table", onDisplayChange: () => undefined, allowTable: false, showTabs: false })}
-          </div>
-        </section>
-      )}
-    </>,
-  );
-
-  // ── 3. Keyword bar with an Areas popover ──
-  const commandExplore = floatFrame(
-    <>
-      {floatMap([448, 48], [48, 48])}
-      <div className="pointer-events-none absolute top-4 bottom-4 left-4 z-[1000] flex w-[400px] max-w-[calc(100%-2rem)] flex-col gap-2">
-        <section aria-label="Search the map" className={cx(floatCard, "pointer-events-auto relative flex-row items-center gap-2 p-2")}>
-          <div className="min-w-0 flex-1">{keywordEl}</div>
-          <DialogTrigger isOpen={areasPopoverOpen} onOpenChange={setAreasPopoverOpen}>
-            <Button color={hasAreas ? "secondary" : "primary"} size="sm" iconLeading={hasAreas ? MarkerPin02 : Plus} className="shrink-0">
-              {hasAreas ? `Areas (${areaEntries.length})` : "Add area"}
-            </Button>
-            <Popover size="auto" placement="bottom start" offset={8} className="font-barlow w-[380px]">
-              <Dialog className="flex max-h-[70vh] flex-col gap-3 overflow-y-auto p-4 outline-hidden" aria-label="Search areas">
-                {methodControls}
-                {hasAreas && areaChips}
-              </Dialog>
-            </Popover>
-          </DialogTrigger>
-        </section>
-        {hasAreas ? (
-          resultsOpen ? (
-            <section aria-label="Search results" className={cx(floatCard, "pointer-events-auto relative min-h-0", rise)}>
-              <div className="flex shrink-0 items-center gap-2 px-4 pt-3 pb-2 text-sm text-tertiary">
-                <div className="min-w-0 flex-1 truncate">{summaryLine}</div>
-                {exportControl}
-                <Button color="tertiary" size="sm" iconLeading={ChevronUp} aria-label="Fold the results" onPress={() => setResultsOpen(false)} />
-              </div>
-              {resultsBody({ display: panelDisplay, onDisplayChange: setPanelDisplay, allowTable: false })}
-            </section>
-          ) : (
-            <button
-              type="button"
-              onClick={() => setResultsOpen(true)}
-              className={cx(floatCard, "pointer-events-auto relative flex-row items-center gap-2 px-4 py-2.5 text-left text-sm text-tertiary outline-focus-ring hover:bg-primary_hover focus-visible:outline-2", rise)}
-            >
-              <span className="flex-1 truncate">{summaryLine}</span>
-              <ChevronDown className="size-4 shrink-0" />
-            </button>
-          )
-        ) : (
-          <div className={cx(floatCard, "pointer-events-auto relative p-4", rise)}>
-            <p className="text-sm font-semibold text-primary">Add an area to start</p>
-            <p className="mt-1 text-sm text-tertiary">Draw on the map, enter coordinates, pick a national park or upload a shapefile. Results appear here as you search.</p>
-          </div>
-        )}
-      </div>
-    </>,
-  );
-
-  const splitExplore = (
-    <div className="flex flex-1 overflow-hidden">
-      {iconRail}
-      <aside aria-label="Search" className="hidden w-[286px] shrink-0 flex-col justify-between overflow-y-auto border-r border-secondary bg-secondary p-4 lg:flex">
-        <div className="flex flex-col gap-1">
-          <p className="mb-3 text-xs font-semibold tracking-wide text-quaternary uppercase">Search</p>
-          {searchBody}
-        </div>
-        <SidebarFooterLinks />
-      </aside>
-      <main className="flex min-w-0 flex-1 flex-col overflow-hidden">
-        <div className="relative min-h-0 flex-1 overflow-hidden">
-          <div className="absolute inset-0">
-            <SAMap
-              boundaries={boundaries}
-              onBoundaryAdd={addManualBoundary}
-              activeDrawTool={activeDrawTool}
-              onDrawToolChange={setActiveDrawTool}
-              fitPaddingTopLeft={[48, 48]}
-              fitPaddingBottomRight={boundaries.length > 0 && resultsOpen ? [(resultsExpanded ? 1080 : 500) + 48, 48] : [48, 48]}
-              zoomPosition="top-left"
-              markers={mapMarkers}
-              onMarkerClick={onMarkerClick}
-              highlightedMarkerId={hoveredMarkerId}
-              className="size-full"
-            />
-          </div>
-
-          {boundaries.length === 0 ? (
-            <div className="absolute top-4 right-4 z-[1000] max-w-xs rounded-xl border border-secondary bg-primary p-4 shadow-lg">
-              <p className="text-sm font-semibold text-primary">Add a search area to start</p>
-              <p className="mt-1 text-sm text-tertiary">Draw a circle or polygon on the map, enter coordinates, pick a national park or upload a shapefile. Results appear here.</p>
-            </div>
-          ) : (
-            <FloatingResultsPanel
-              open={resultsOpen}
-              onOpenChange={setResultsOpen}
-              expanded={resultsExpanded}
-              onExpandedChange={(next) => {
-                setResultsExpanded(next);
-                setPanelDisplay(next ? "table" : "list");
-              }}
-              count={totalCount}
-              summary={
-                <>
-                  <span className="font-semibold text-primary">
-                    {totalCount} record{totalCount === 1 ? "" : "s"}
-                  </span>{" "}
-                  across {areaEntries.length} area{areaEntries.length === 1 ? "" : "s"}
-                </>
-              }
-              actions={
-                <>
-                  {/* The "you're viewing public data" notice, shrunk from a full-width bar to a chip. */}
-                  <Tooltip title="Some records are restricted. Request a Data Licencing Agreement (DLA) for full access.">
-                    <Button color="tertiary" size="sm" iconLeading={AlertTriangle} onPress={requestDlaAccess}>
-                      Public data
-                    </Button>
-                  </Tooltip>
-                  {exportControl}
-                </>
-              }
-            >
-              {resultsBody({ display: panelDisplay, onDisplayChange: (d) => { setPanelDisplay(d); setResultsExpanded(d === "table"); } })}
-            </FloatingResultsPanel>
-          )}
-        </div>
-
-        {signUpModals}
-        <RecordDetailSidebar record={selectedRecord} onClose={() => setSelectedRecord(null)} />
-        <ArtefactLightbox artefacts={resourceArtefacts} index={artefactIndex} onClose={() => setArtefactIndex(null)} onNavigate={setArtefactIndex} />
-      </main>
-    </div>
   );
 
   return (
@@ -2178,14 +2246,8 @@ function ObservationsSearch({ layout }: { layout: ExploreLayout }) {
             <SectionPlaceholder node={activeSectionNode} />
           </main>
         </div>
-      ) : isSplit ? (
-        splitExplore
-      ) : layout === "float-grow" ? (
+      ) : layout === "float" ? (
         growExplore
-      ) : layout === "float-sheet" ? (
-        sheetExplore
-      ) : layout === "float-command" ? (
-        commandExplore
       ) : (
         <div className="flex flex-1 overflow-hidden">
           {iconRail}

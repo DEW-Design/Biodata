@@ -89,9 +89,50 @@ function FlyToBoundaries({
         }
         // paddingTopLeft keeps fitted areas clear of anything floating over the map's top-left
         // (e.g. the map search's floating panel).
-        map.flyToBounds(bounds, { paddingTopLeft, paddingBottomRight, duration: 0.6 });
+        // Padding describes what floats over the map (a card, a sheet). Cap each side at 78% of the
+        // map so an oversized panel on a small window still leaves a visible middle to fit into.
+        const size = map.getSize();
+        const capX = size.x * 0.78;
+        const capY = size.y * 0.78;
+        const tl = L.point(Math.min(paddingTopLeft[0], capX), Math.min(paddingTopLeft[1], capY));
+        const br = L.point(Math.min(paddingBottomRight[0], capX), Math.min(paddingBottomRight[1], capY));
+        map.flyToBounds(bounds, { paddingTopLeft: tl, paddingBottomRight: br, duration: 0.6 });
+        // Re-fit when the covered area changes (the card widens for Table, the sheet snaps), so the
+        // areas always land in the part of the map the user can actually see.
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [boundariesKey, map]);
+    }, [boundariesKey, map, paddingTopLeft[0], paddingTopLeft[1], paddingBottomRight[0], paddingBottomRight[1]]);
+
+    return null;
+}
+
+/** Flies to one specific set of boundaries when `request.key` changes: "zoom to this area" from the
+ *  areas list. Same padding rules as `FlyToBoundaries`, so the area lands in the visible part of
+ *  the map. */
+function FlyToRequest({
+    request,
+    paddingTopLeft = [48, 48],
+    paddingBottomRight = [48, 48],
+}: {
+    request?: { key: number; boundaries: Boundary[] };
+    paddingTopLeft?: [number, number];
+    paddingBottomRight?: [number, number];
+}) {
+    const map = useMap();
+    const key = request?.key;
+
+    useEffect(() => {
+        if (!request || request.boundaries.length === 0) return;
+        const bounds = L.latLngBounds([]);
+        for (const boundary of request.boundaries) {
+            if (boundary.kind === "circle") bounds.extend(L.latLng(boundary.center).toBounds(boundary.radiusKm * 2000));
+            else bounds.extend(L.latLngBounds(boundary.points));
+        }
+        const size = map.getSize();
+        const tl = L.point(Math.min(paddingTopLeft[0], size.x * 0.78), Math.min(paddingTopLeft[1], size.y * 0.78));
+        const br = L.point(Math.min(paddingBottomRight[0], size.x * 0.78), Math.min(paddingBottomRight[1], size.y * 0.78));
+        map.flyToBounds(bounds, { paddingTopLeft: tl, paddingBottomRight: br, duration: 0.6 });
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [key, map]);
 
     return null;
 }
@@ -159,6 +200,12 @@ function DrawBridge({
     return null;
 }
 
+/** The area being pointed at in the areas list is drawn heavier, so a row and its shape read as one. */
+function boundaryStyle(id: string, highlighted?: Set<string>) {
+    const on = highlighted?.has(id) ?? false;
+    return { color: BOUNDARY_COLOR, fillColor: BOUNDARY_COLOR, fillOpacity: on ? 0.32 : 0.15, weight: on ? 4 : 2 };
+}
+
 export interface SAMapProps {
     boundaries: Boundary[];
     onBoundaryAdd: (boundary: Boundary) => void;
@@ -180,6 +227,10 @@ export interface SAMapProps {
     onMarkerClick?: (id: string) => void;
     /** The marker to draw larger and darker (the result card being hovered). */
     highlightedMarkerId?: string | null;
+    /** Boundary ids to draw heavier (the area row being hovered in the areas list). */
+    highlightedBoundaryIds?: Set<string>;
+    /** Fly to these boundaries whenever `key` changes ("zoom to this area"). */
+    fitRequest?: { key: number; boundaries: Boundary[] };
     className?: string;
 }
 
@@ -189,7 +240,7 @@ export interface SAMapMarker {
     label: string;
 }
 
-export default function SAMap({ boundaries, onBoundaryAdd, activeDrawTool, onDrawToolChange, fitPaddingTopLeft, fitPaddingBottomRight, zoomPosition = "top-right", showBoundaries = true, markers, onMarkerClick, highlightedMarkerId, className }: SAMapProps) {
+export default function SAMap({ boundaries, onBoundaryAdd, activeDrawTool, onDrawToolChange, fitPaddingTopLeft, fitPaddingBottomRight, zoomPosition = "top-right", showBoundaries = true, markers, onMarkerClick, highlightedMarkerId, highlightedBoundaryIds, fitRequest, className }: SAMapProps) {
     return (
         <div className={className}>
             <MapContainer
@@ -215,16 +266,17 @@ export default function SAMap({ boundaries, onBoundaryAdd, activeDrawTool, onDra
                 <ZoomControls position={zoomPosition} />
                 <DrawBridge activeDrawTool={activeDrawTool} onDrawToolChange={onDrawToolChange} onBoundaryAdd={onBoundaryAdd} />
                 <FlyToBoundaries boundaries={boundaries} paddingTopLeft={fitPaddingTopLeft} paddingBottomRight={fitPaddingBottomRight} />
+                <FlyToRequest request={fitRequest} paddingTopLeft={fitPaddingTopLeft} paddingBottomRight={fitPaddingBottomRight} />
 
                 {showBoundaries && boundaries.map((boundary) =>
                     boundary.kind === "circle" ? (
                         <Fragment key={boundary.id}>
-                            <Circle center={boundary.center} radius={boundary.radiusKm * 1000} pathOptions={{ color: BOUNDARY_COLOR, fillColor: BOUNDARY_COLOR, fillOpacity: 0.15, weight: 2 }} />
+                            <Circle center={boundary.center} radius={boundary.radiusKm * 1000} pathOptions={boundaryStyle(boundary.id, highlightedBoundaryIds)} />
                             <Marker position={boundary.center} />
                         </Fragment>
                     ) : (
                         <Fragment key={boundary.id}>
-                            <Polygon positions={boundary.points} pathOptions={{ color: BOUNDARY_COLOR, fillColor: BOUNDARY_COLOR, fillOpacity: 0.15, weight: 2 }} />
+                            <Polygon positions={boundary.points} pathOptions={boundaryStyle(boundary.id, highlightedBoundaryIds)} />
                             {/* Uploaded-shapefile polygons also get a marker (at their vertex average) so
                                 every location a shapefile added is pinned, not just its point features. */}
                             {boundary.source?.startsWith("shapefile:") && (

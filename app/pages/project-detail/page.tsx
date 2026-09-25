@@ -60,6 +60,7 @@ import { rootProjectForParentEventId, searchEvents, searchOccurrences } from "@/
 import { RecordDetailSidebar, type DetailRecord } from "@/app/pages/_shared/map-search/record-detail";
 import { SpeciesResultsView } from "@/app/pages/_shared/map-search/species-results";
 
+import { ProjectCardActions } from "@/app/pages/_shared/project-card-actions";
 import { useUserRole } from "@/lib/use-user-role";
 import { useRoleHref } from "@/lib/use-role-href";
 import { navForRole, keyHref, type NavNode } from "@/lib/registered-user-nav";
@@ -1352,9 +1353,12 @@ function ProjectDetail() {
                           lives only here now - it used to be repeated in a "Project Details" rail card. */}
                       <div className="px-6 pt-4">
                         <div className="flex flex-col gap-4 rounded-2xl bg-gradient-to-b from-brand-900 via-brand-800 via-[63.942%] to-brand-700 p-6">
-                          <div className="flex flex-col gap-1">
-                            <p className="text-xs font-semibold tracking-wide text-white/70 uppercase">Project</p>
-                            <h1 className="text-2xl font-medium text-white">{PROJECT_NAME}</h1>
+                          <div className="flex items-start justify-between gap-4">
+                            <div className="flex flex-col gap-1">
+                              <p className="text-xs font-semibold tracking-wide text-white/70 uppercase">Project</p>
+                              <h1 className="text-2xl font-medium text-white">{PROJECT_NAME}</h1>
+                            </div>
+                            <ProjectCardActions projectCode={project.id} />
                           </div>
                           <div className="flex flex-wrap items-start gap-8">
                             <MetaField onDark label="Project ID">

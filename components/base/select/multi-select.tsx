@@ -287,6 +287,9 @@ const MultiSelectRoot = ({
                                     aria-label={label || "Options"}
                                     items={items}
                                     selectionMode="multiple"
+                                    // Escape closes the popover and never touches the value: react-aria's
+                                    // default ("clearSelection") wiped the whole selection on Escape.
+                                    escapeKeyBehavior="none"
                                     selectedKeys={selectedKeys}
                                     defaultSelectedKeys={defaultSelectedKeys}
                                     onSelectionChange={onSelectionChange}

@@ -149,6 +149,18 @@ export function runChecks() {
     else if (!o.designer || !o.reason || !o.approvedBy || !o.date) violations.push({ clause: "1.4", file: f, message: `Override ${o.id ?? "?"} is missing designer, date, reason or approvedBy.` });
   }
 
+  // 1.9a behaviour patterns: a multiple-selection listbox in a component must switch off react-aria's
+  // default of clearing the whole selection on Escape (Escape closes, it never changes the value).
+  for (const f of componentFiles()) {
+    const src = readFileSync(join(ROOT, f), "utf8");
+    for (const m of src.matchAll(/<(?:Aria)?ListBox\b/g)) {
+      const tag = src.slice(m.index, m.index + 900);
+      if (/selectionMode="multiple"/.test(tag) && !/escapeKeyBehavior=/.test(tag)) {
+        violations.push({ clause: "1.9a", file: f, message: 'Multiple-selection ListBox without escapeKeyBehavior="none": Escape would clear the selection (CONTRACTS.md 1.9).' });
+      }
+    }
+  }
+
   return { violations, improvements, counts };
 }
 

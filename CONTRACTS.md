@@ -164,6 +164,28 @@ has silently reverted eight already-audited files before. A new ingest is docume
 table from the real interface, Usage, Figma or an honest "not linked yet") and slotted alphabetically
 (§5.3), then passes §0.6.
 
+### §1.9 Behaviour patterns flow through every component
+
+A component behaves as the WAI-ARIA Authoring Practices pattern for its role (select and listbox,
+combobox, menu, dialog and popover, tabs, tree, table). react-aria supplies that pattern; a component
+MUST NOT ship with a library default that breaks it, and MUST NOT work around one at a call site. The
+fix goes into the component, once, so every consumer gets it (§1.3).
+
+1. **Escape closes and cancels. It never changes a committed value.** A popover, menu, dialog or
+   listbox closes on Escape; it does not clear a selection or a field's value.
+2. **Selection applies live.** A multiple selection changes as each item is toggled; closing keeps what
+   was chosen. Nothing is discarded by closing, and there is no hidden Apply.
+3. **Keyboard is complete.** Tab reaches every control in a logical order, Arrow keys move inside a
+   list, Enter or Space selects or activates, and focus returns to the trigger when an overlay closes.
+4. **Every state is real:** default, hover, focus-visible, pressed, disabled, invalid, empty, loading.
+5. **A behaviour change is tested by keyboard, not just by mouse** (Tab, Arrows, Enter, Space, Escape) in
+   a live browser on every screen that uses the component, as part of §0.6 item 4.
+
+- **Origin:** `MultiSelect` cleared its whole selection on Escape (react-aria's `clearSelection` default),
+  logged as a known gap six times before it was fixed; `Tab`'s `badge={0}` rendered a bare "0".
+- **Enforcement:** `AUTO §1.9a` (a multiple-selection `ListBox` in `components/**` without
+  `escapeKeyBehavior`), `REVIEW` for the rest.
+
 ---
 
 ## PART III - STYLE
