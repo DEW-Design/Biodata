@@ -1,5 +1,6 @@
 "use client";
 
+import { Suspense } from "react";
 import { LayoutOptionSwitcher, type LayoutOption } from "@/app/pages/_shared/layout-option-switcher";
 
 // Jump between the Explore layouts being compared. Option 1 is the original flow (search on the
@@ -16,6 +17,12 @@ const OPTIONS: LayoutOption[] = [
   { id: "option-5", label: "Option 5: keyword bar and areas popover", href: "/pages/observations/option-5" },
 ];
 
+// The switcher reads the role from the URL (useRoleHref), so it sits in its own Suspense boundary:
+// the static export needs one around anything that calls useSearchParams.
 export function ExploreLayoutSwitcher({ current }: { current: ExploreLayoutOption }) {
-  return <LayoutOptionSwitcher ariaLabel="Compare Explore layouts" options={OPTIONS} current={current} />;
+  return (
+    <Suspense fallback={null}>
+      <LayoutOptionSwitcher ariaLabel="Compare Explore layouts" options={OPTIONS} current={current} />
+    </Suspense>
+  );
 }
