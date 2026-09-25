@@ -272,6 +272,8 @@ always exists and always says something about where you are.
 
 The role switcher and the options control are `FloatingMenuFab`s: draggable, above every map overlay
 (`z-[10000]`), and MUST NOT be compensated for with padding or margin in product layout.
+Modals and slide-over panels sit above them (`z-[20000]`, `lib/layers.ts`): a modal covers everything,
+the dev tools included.
 
 ### §3.9 Navigation order
 

@@ -15,6 +15,7 @@ import { cx } from "@/utils/cx";
 //
 // z-[10000] (menu popover z-[10001]) - above every Leaflet pane and control (up to z-[1000]/[1001])
 // and above the registration flow's full-screen map overlay (z-[9999]), so a map never buries them.
+// Modals and slide-over panels sit above these (z-[20000], lib/layers.ts) - a modal covers everything.
 export const FAB_Z_INDEX = "z-[10000]";
 export const FAB_MENU_Z_INDEX = "z-[10001]";
 

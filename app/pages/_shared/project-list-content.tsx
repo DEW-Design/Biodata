@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import type { SortDescriptor } from "react-aria-components";
 import { SearchMd } from "@untitledui/icons";
 import { Avatar } from "@/components/base/avatar/avatar";
 import { Badge, CountBadge } from "@/components/base/badges/badges";
@@ -8,7 +9,9 @@ import { Input } from "@/components/base/input/input";
 import { Table, TableCard } from "@/components/application/table/table";
 import { SectionHeader } from "@/components/application/section-headers/section-headers";
 import { useRoleHref } from "@/lib/use-role-href";
-import { projects } from "@/app/pages/_shared/project-list-data";
+import { projects, type Project } from "@/app/pages/_shared/project-list-data";
+import { sortRows, type SortValue } from "@/app/pages/_shared/agreement-scope";
+import { ListFilterButton, RECENCY_OPTIONS, matchesFilters, optionsFromValues, recencyBucket, type FilterGetters, type FilterSection, type FilterSelection } from "@/app/pages/_shared/list-filter";
 
 // The real Projects list content - shared by every sidebar shell (dashboard,
 // project-list, project-detail) so clicking the Projects icon always shows this, the same
@@ -43,6 +46,47 @@ import { projects } from "@/app/pages/_shared/project-list-data";
 // existing imports keep working.
 export { projects, type Project } from "@/app/pages/_shared/project-list-data";
 
+// Filter and sort follow the pattern the DSA and DLA lists use (agreement-scope.tsx): one Filter
+// button beside the search, nothing selected meaning every status, and sortable column headers that
+// each sort by what the column means. Project ID is deliberately not sortable (an identifier, not a
+// range you scan). Status sorts by its place in the project's life (Draft, Under review, Active,
+// Completed), not alphabetically; Updated sorts by recency, parsed from its relative text.
+const projectStatusOrder = ["Draft", "Under review", "Active", "Completed"];
+
+const UNIT_DAYS: Record<string, number> = { day: 1, week: 7, month: 30, year: 365 };
+/** "3 weeks ago" is 21 days old. */
+const daysAgo = (p: Project): number | null => {
+  const m = /^(\d+)\s+(day|week|month|year)s?\s+ago$/i.exec(p.updated.trim());
+  return m ? Number(m[1]) * UNIT_DAYS[m[2].toLowerCase()] : null;
+};
+/** Negated so descending order means most recently updated first. */
+const recency = (p: Project): SortValue => {
+  const d = daysAgo(p);
+  return d == null ? null : -d;
+};
+
+// What a project can be filtered on: its columns that you would scan. (Not the ID or the name -
+// search covers those.)
+const projectFilterSections: FilterSection[] = [
+  { id: "status", label: "Status", options: projectStatusOrder.map((s) => ({ id: s, label: s })) },
+  { id: "org", label: "Organisation", searchable: true, options: optionsFromValues(projects.map((p) => p.org)) },
+  { id: "contributor", label: "Contributor", searchable: true, options: optionsFromValues(projects.map((p) => p.contributorName)) },
+  { id: "updated", label: "Updated", options: RECENCY_OPTIONS },
+];
+const projectFilterGetters: FilterGetters<Project> = {
+  status: (p) => p.status,
+  org: (p) => p.org,
+  contributor: (p) => p.contributorName,
+  updated: (p) => recencyBucket(daysAgo(p)),
+};
+const projectSortKeys: Record<string, (p: Project) => SortValue> = {
+  project: (p) => p.name,
+  org: (p) => p.org,
+  status: (p) => projectStatusOrder.indexOf(p.status),
+  contributor: (p) => p.contributorName,
+  updated: recency,
+};
+
 export function ProjectListContent() {
   const roleHref = useRoleHref();
   // Search, then real, working pagination state - matching dsa-list.tsx/dla-list.tsx's own
@@ -53,8 +97,13 @@ export function ProjectListContent() {
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(50);
+  const [filters, setFilters] = useState<FilterSelection>({});
+  const [sort, setSort] = useState<SortDescriptor>({ column: "updated", direction: "descending" });
   const query = search.trim().toLowerCase();
-  const rows = query ? projects.filter((p) => [p.code, p.name, p.org, p.contributorName].some((v) => v.toLowerCase().includes(query))) : projects;
+  const matching = projects
+    .filter((p) => matchesFilters(p, filters, projectFilterGetters))
+    .filter((p) => !query || [p.code, p.name, p.org, p.contributorName].some((v) => v.toLowerCase().includes(query)));
+  const rows = sortRows(matching, sort, projectSortKeys);
   const pageCount = Math.max(1, Math.ceil(rows.length / pageSize));
   const currentPage = Math.min(page, pageCount);
   const pagedProjects = rows.slice((currentPage - 1) * pageSize, currentPage * pageSize);
@@ -74,7 +123,7 @@ export function ProjectListContent() {
               {/* CountBadge, not Badge - a true circle, not TableCard.Header's own oval
                   padding-tuned Badge. color="brand" per the user: counters should read in the
                   primary colour, not neutral gray - see components/base/badges/badges.tsx. */}
-              <CountBadge count={projects.length} color="brand" />
+              <CountBadge count={rows.length} color="brand" />
             </div>
             <SectionHeader.Subheading>Every project you&apos;re contributing to or watching.</SectionHeader.Subheading>
           </div>
@@ -85,34 +134,54 @@ export function ProjectListContent() {
           border/padding with no breathing room above it. Flagged directly by the user off a
           screenshot: "see how close the table is to the section header?" */}
       <div className="flex min-h-0 flex-1 flex-col gap-4 p-6">
-        <div className="w-full max-w-sm">
-          <Input
-            aria-label="Search projects"
-            size="sm"
-            icon={SearchMd}
-            placeholder="Search ID, name, organisation or contributor"
-            value={search}
-            onChange={(value) => {
-              setSearch(value);
-              setPage(1);
-            }}
-          />
+        <div className="flex shrink-0 flex-wrap items-center gap-3">
+          <div className="w-full max-w-sm shrink-0">
+            <Input
+              aria-label="Search projects"
+              size="sm"
+              icon={SearchMd}
+              placeholder="Search ID, name, organisation or contributor"
+              value={search}
+              onChange={(value) => {
+                setSearch(value);
+                setPage(1);
+              }}
+            />
+          </div>
+          <div>
+            <ListFilterButton
+              sections={projectFilterSections}
+              selection={filters}
+              onChange={(next) => {
+                setFilters(next);
+                setPage(1);
+              }}
+            />
+          </div>
         </div>
         {rows.length === 0 ? (
-          <p className="py-6 text-sm text-tertiary">No projects match your search.</p>
+          <p className="py-6 text-sm text-tertiary">No projects match your search and filters.</p>
         ) : (
         <TableCard.Root className="flex min-h-48 flex-1 flex-col">
-          <Table aria-label="Projects" bodyScrollable>
+          <Table
+            aria-label="Projects"
+            bodyScrollable
+            sortDescriptor={sort}
+            onSortChange={(next) => {
+              setSort(next);
+              setPage(1);
+            }}
+          >
             <Table.Header sticky>
               {/* `label` (not children) - Table.Head only applies the design system's header treatment
                   (text-xs, semibold, text-quaternary) through its own `label` prop, the same way the
                   Explore results tables do. Plain children rendered as unstyled bold black text. */}
               <Table.Head id="code" label="Project ID" isRowHeader />
-              <Table.Head id="project" label="Project" />
-              <Table.Head id="org" label="Organisation" />
-              <Table.Head id="status" label="Status" />
-              <Table.Head id="contributor" label="Contributor" />
-              <Table.Head id="updated" label="Updated" />
+              <Table.Head id="project" label="Project" allowsSorting />
+              <Table.Head id="org" label="Organisation" allowsSorting />
+              <Table.Head id="status" label="Status" allowsSorting />
+              <Table.Head id="contributor" label="Contributor" allowsSorting />
+              <Table.Head id="updated" label="Updated" allowsSorting />
             </Table.Header>
             <Table.Body items={pagedProjects}>
               {(project) => (

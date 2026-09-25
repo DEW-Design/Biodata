@@ -104,7 +104,6 @@
     "2.3a": {
       "app/pages/_shared/map-search/search-data.ts": 17,
       "app/pages/observation-detail/page.tsx": 1,
-      "app/pages/observations/page.tsx": 1,
       "app/pages/project-detail/option-3/about-content.tsx": 1,
       "app/pages/project-detail/option-3/page.tsx": 2,
       "app/pages/project-detail/page.tsx": 1,

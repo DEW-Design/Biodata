@@ -266,7 +266,7 @@ function ProjectOverviewSection({ event }: { event: SearchEvent }) {
         <p className="text-sm font-medium text-secondary">Abstract</p>
         <p className="text-sm text-tertiary">{event.description ?? DASH}</p>
       </div>
-      <div className="h-px bg-secondary" />
+      <div className="h-px bg-[var(--ui-border-primary)]" />
       <p className="text-sm font-medium text-secondary">Geographic scope</p>
       <LocationMapPreview lat={event.lat} lon={event.lon} />
     </div>

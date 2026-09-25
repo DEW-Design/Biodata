@@ -1333,7 +1333,7 @@ function ProjectDetail() {
                         <LayoutLeft className="size-5" />
                       </TooltipTrigger>
                     </Tooltip>
-                    <div className="hidden h-5 w-px bg-secondary lg:block" />
+                    <div className="hidden h-5 w-px bg-[var(--ui-border-primary)] lg:block" />
                     <Link
                       href={roleHref("/pages/project-list")}
                       className="flex w-fit items-center gap-1.5 text-sm font-medium text-tertiary hover:text-primary"

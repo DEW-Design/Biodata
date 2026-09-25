@@ -54,7 +54,7 @@ export function AppHeader({
         {mobileNav}
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img src={assetPath("/pages/dashboard/gov-sa-dew-lockup.png")} alt="Government of South Australia, Department for Environment and Water" className="h-[37px] w-auto" />
-        <div className="h-6 w-px bg-secondary" />
+        <div className="h-6 w-px bg-[var(--ui-border-primary)]" />
         {/* Wordmark and breadcrumb share one text baseline (17px semibold beside 14px text sat on
             different baselines when both were centred in the row). */}
         <div className="flex min-w-0 flex-wrap items-baseline gap-x-4 gap-y-1">

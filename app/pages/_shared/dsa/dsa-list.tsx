@@ -1,8 +1,8 @@
 "use client";
 
 import { useState, type ReactNode } from "react";
-import type { Key, SortDescriptor } from "react-aria-components";
-import { CURRENT_USER_NAME, StatusFilterButton, sortRows, type AgreementScope, type SortValue } from "@/app/pages/_shared/agreement-scope";
+import type { SortDescriptor } from "react-aria-components";
+import { CURRENT_USER_NAME, sortRows, type AgreementScope, type SortValue } from "@/app/pages/_shared/agreement-scope";
 import { dsaStatusOrder } from "@/app/pages/_shared/dsa/dsa-data";
 
 import { Clock, Edit05, Plus, SearchMd } from "@untitledui/icons";
@@ -17,6 +17,7 @@ import { DsaEmptyState } from "@/app/pages/_shared/dsa/dsa-detail";
 import { contactName, dsaStatusMeta, formatShortDate, type Dsa, type DsaStatus } from "@/app/pages/_shared/dsa/dsa-data";
 import { useDsas } from "@/app/pages/_shared/dsa/dsa-store";
 import { TaskItem } from "@/app/pages/_shared/home-dashboard";
+import { ListFilterButton, matchesFilters, monthOptions, optionsFromValues, type FilterGetters, type FilterSection, type FilterSelection } from "@/app/pages/_shared/list-filter";
 import { useRoleHref } from "@/lib/use-role-href";
 
 // The DSA list: a table of agreements in one status bucket (chosen in column 2), each row linking to
@@ -250,19 +251,37 @@ const dsaSortKeys: Record<string, (d: Dsa) => SortValue> = {
   updated: (d) => d.updatedAt,
 };
 
+// What a data sharing agreement can be filtered on: who it is with, who asked for it, and how the
+// data is shared (offline, through a system, or both) - attributes only agreements have.
+const dsaFilterGetters: FilterGetters<Dsa> = {
+  status: (d) => d.status,
+  partner: (d) => d.partner,
+  requester: (d) => contactName(d.requestedBy),
+  sharing: (d) => [...(d.sharedOffline ? ["offline"] : []), ...(d.sharedViaSystem ? ["system"] : [])],
+  updated: (d) => d.updatedAt.slice(0, 7),
+};
+
 export function DsaAllList({ scope, initialStatuses = [], banner }: { scope: AgreementScope; initialStatuses?: DsaStatus[]; banner?: ReactNode }) {
   const all = useDsas();
   const scoped = scope === "mine" ? all.filter((d) => contactName(d.requestedBy) === CURRENT_USER_NAME) : all;
   const roleHref = useRoleHref();
   const [search, setSearch] = useState("");
-  const [statusFilter, setStatusFilter] = useState<Set<Key>>(new Set(initialStatuses));
+  const [filters, setFilters] = useState<FilterSelection>({ status: new Set<string>(initialStatuses) });
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(50);
   const [sort, setSort] = useState<SortDescriptor>({ column: "updated", direction: "descending" });
 
+  const filterSections: FilterSection[] = [
+    { id: "status", label: "Status", options: dsaStatusOrder.map((id) => ({ id, label: dsaStatusMeta[id].label })) },
+    { id: "partner", label: "Data partner", searchable: true, options: optionsFromValues(scoped.map((d) => d.partner)) },
+    { id: "requester", label: "Requested by", searchable: true, options: optionsFromValues(scoped.map((d) => contactName(d.requestedBy))) },
+    { id: "sharing", label: "Shared via", options: [{ id: "offline", label: "Offline" }, { id: "system", label: "API system" }] },
+    { id: "updated", label: "Updated", options: monthOptions(scoped.map((d) => d.updatedAt)) },
+  ];
+
   const query = search.trim().toLowerCase();
   const matching = scoped
-    .filter((d) => statusFilter.size === 0 || statusFilter.has(d.status))
+    .filter((d) => matchesFilters(d, filters, dsaFilterGetters))
     .filter((d) => !query || [d.id, d.partner, contactName(d.requestedBy)].some((v) => v.toLowerCase().includes(query)));
   const filtered = sortRows(matching, sort, dsaSortKeys);
   const pageCount = Math.max(1, Math.ceil(filtered.length / pageSize));
@@ -304,12 +323,11 @@ export function DsaAllList({ scope, initialStatuses = [], banner }: { scope: Agr
             />
           </div>
           <div>
-            <StatusFilterButton
-              order={dsaStatusOrder}
-              meta={dsaStatusMeta}
-              selected={statusFilter}
-              onChange={(keys) => {
-                setStatusFilter(keys);
+            <ListFilterButton
+              sections={filterSections}
+              selection={filters}
+              onChange={(next) => {
+                setFilters(next);
                 setPage(1);
               }}
             />

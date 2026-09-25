@@ -102,7 +102,7 @@ function TopNavDemo() {
             alt="Government of South Australia, Department for Environment and Water"
             className="h-[37px] w-auto"
           />
-          <div className="h-6 w-px bg-secondary" />
+          <div className="h-6 w-px bg-[var(--ui-border-primary)]" />
           <p className="text-[17px] font-semibold tracking-tight text-primary">BioData SA</p>
           <Breadcrumb section="Projects" current="Adelaide Hills Bushland Survey" orgLabel="DEW" />
         </div>

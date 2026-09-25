@@ -73,12 +73,12 @@
 // Filters button, left-anchored panel with real per-group categories" shape was also brought to
 // Records mode - see the Metrics-section toolbar in app/pages/observations/page.tsx.
 
-import { useEffect, useMemo, useState, type FC, type Key } from "react";
+import { useEffect, useMemo, useState, type Key } from "react";
 import type { DateRange } from "react-aria-components";
 import { Focusable } from "react-aria-components";
 import { getLocalTimeZone, parseDate, startOfWeek, today } from "@internationalized/date";
 import { FilterLines, SearchLg, Lock01, XClose } from "@untitledui/icons";
-import { PawPrint, Bird as BirdIcon, Turtle, Droplets, Leaf } from "lucide-react";
+import { SPECIES_GROUP_ICON } from "@/app/pages/_shared/map-search/species-group-icons";
 import { Button } from "@/components/base/buttons/button";
 import { Input } from "@/components/base/input/input";
 import { Checkbox } from "@/components/base/checkbox/checkbox";
@@ -100,22 +100,7 @@ import { obfuscateCoordinate } from "./geo";
 
 const GROUPS: SpeciesGroup[] = ["Mammal", "Bird", "Reptile", "Amphibian", "Plant"];
 
-// @untitledui/icons has no animal/plant-specific glyphs at all (confirmed by search) - per direct
-// feedback ("free to use relevant icons from online, not necessary to stick with DEW design
-// system"), these 5 tiles are the one deliberate exception to this codebase's usual "DEW icon set
-// only" rule, drawn from `lucide-react` (a real, already-installed dependency, added specifically
-// for this) instead of forcing a loose DEW stand-in: Mammal -> PawPrint, Bird -> Bird, Reptile ->
-// Turtle - all three literal, unambiguous matches. Amphibian has no literal icon in lucide-react
-// either (confirmed by search) - Droplets stands in for the real, defining trait (a water-dependent
-// life cycle), same honest-substitute reasoning as everywhere else in this build. Plant -> Leaf, a
-// literal match.
-const GROUP_ICON: Record<SpeciesGroup, FC<{ className?: string }>> = {
-  Mammal: PawPrint,
-  Bird: BirdIcon,
-  Reptile: Turtle,
-  Amphibian: Droplets,
-  Plant: Leaf,
-};
+const GROUP_ICON = SPECIES_GROUP_ICON;
 
 function genusOf(species: string): string {
   return species.split(" ")[0];

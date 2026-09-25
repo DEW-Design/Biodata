@@ -1,8 +1,8 @@
 "use client";
 
 import { useState, type ReactNode } from "react";
-import type { Key, SortDescriptor } from "react-aria-components";
-import { CURRENT_USER_NAME, StatusFilterButton, sortRows, type AgreementScope, type SortValue } from "@/app/pages/_shared/agreement-scope";
+import type { SortDescriptor } from "react-aria-components";
+import { CURRENT_USER_NAME, sortRows, type AgreementScope, type SortValue } from "@/app/pages/_shared/agreement-scope";
 import { dlaStatusOrder } from "@/app/pages/_shared/dla/dla-data";
 
 import { Clock, Plus, SearchMd } from "@untitledui/icons";
@@ -14,9 +14,10 @@ import { SectionHeader } from "@/components/application/section-headers/section-
 import { Table, TableCard } from "@/components/application/table/table";
 import { nearestToExpiry } from "@/app/pages/_shared/agreement-status";
 import { DlaEmptyState } from "@/app/pages/_shared/dla/dla-detail";
-import { dlaStatusMeta, formatShortDate, requestorName, type Dla, type DlaStatus } from "@/app/pages/_shared/dla/dla-data";
+import { dlaLevelMeta, dlaStatusMeta, formatShortDate, requestorName, type Dla, type DlaAccessLevel, type DlaStatus } from "@/app/pages/_shared/dla/dla-data";
 import { useDlas } from "@/app/pages/_shared/dla/dla-store";
 import { TaskItem } from "@/app/pages/_shared/home-dashboard";
+import { ListFilterButton, matchesFilters, monthOptions, optionsFromValues, type FilterGetters, type FilterSection, type FilterSelection } from "@/app/pages/_shared/list-filter";
 import { useRoleHref } from "@/lib/use-role-href";
 
 // The DLA list, same shape as DSA's own list (app/pages/_shared/dsa/dsa-list.tsx): a table of one
@@ -232,19 +233,38 @@ const dlaSortKeys: Record<string, (d: Dla) => SortValue> = {
   updated: (d) => d.updatedAt,
 };
 
+// What a data licence request can be filtered on: who is asking and for whom, and the access level
+// asked for across its locations (Level 2 standard, Level 3 enhanced) - attributes only licence
+// requests have.
+const dlaFilterGetters: FilterGetters<Dla> = {
+  status: (d) => d.status,
+  organisation: (d) => d.requestor.organisation,
+  requestor: (d) => requestorName(d.requestor),
+  level: (d) => [...new Set(d.locations.map((l) => l.level))],
+  updated: (d) => d.updatedAt.slice(0, 7),
+};
+
 export function DlaAllList({ scope, initialStatuses = [], banner }: { scope: AgreementScope; initialStatuses?: DlaStatus[]; banner?: ReactNode }) {
   const all = useDlas();
   const scoped = scope === "mine" ? all.filter((d) => requestorName(d.requestor) === CURRENT_USER_NAME) : all;
   const roleHref = useRoleHref();
   const [search, setSearch] = useState("");
-  const [statusFilter, setStatusFilter] = useState<Set<Key>>(new Set(initialStatuses));
+  const [filters, setFilters] = useState<FilterSelection>({ status: new Set<string>(initialStatuses) });
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(50);
   const [sort, setSort] = useState<SortDescriptor>({ column: "updated", direction: "descending" });
 
+  const filterSections: FilterSection[] = [
+    { id: "status", label: "Status", options: dlaStatusOrder.map((id) => ({ id, label: dlaStatusMeta[id].label })) },
+    { id: "organisation", label: "Requestor organisation", searchable: true, options: optionsFromValues(scoped.map((d) => d.requestor.organisation)) },
+    { id: "requestor", label: "Requestor", searchable: true, options: optionsFromValues(scoped.map((d) => requestorName(d.requestor))) },
+    { id: "level", label: "Access level", options: (Object.keys(dlaLevelMeta) as DlaAccessLevel[]).map((id) => ({ id, label: dlaLevelMeta[id].label })) },
+    { id: "updated", label: "Updated", options: monthOptions(scoped.map((d) => d.updatedAt)) },
+  ];
+
   const query = search.trim().toLowerCase();
   const matching = scoped
-    .filter((d) => statusFilter.size === 0 || statusFilter.has(d.status))
+    .filter((d) => matchesFilters(d, filters, dlaFilterGetters))
     .filter((d) => !query || [d.id, d.requestor.organisation, requestorName(d.requestor)].some((v) => v.toLowerCase().includes(query)));
   const filtered = sortRows(matching, sort, dlaSortKeys);
   const pageCount = Math.max(1, Math.ceil(filtered.length / pageSize));
@@ -286,12 +306,11 @@ export function DlaAllList({ scope, initialStatuses = [], banner }: { scope: Agr
             />
           </div>
           <div>
-            <StatusFilterButton
-              order={dlaStatusOrder}
-              meta={dlaStatusMeta}
-              selected={statusFilter}
-              onChange={(keys) => {
-                setStatusFilter(keys);
+            <ListFilterButton
+              sections={filterSections}
+              selection={filters}
+              onChange={(next) => {
+                setFilters(next);
                 setPage(1);
               }}
             />

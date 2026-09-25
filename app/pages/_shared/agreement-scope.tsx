@@ -1,11 +1,7 @@
 "use client";
 
 import { useRouter, useSearchParams } from "next/navigation";
-import { FilterLines } from "@untitledui/icons";
-import { Dialog, DialogTrigger, type Key, type SortDescriptor } from "react-aria-components";
-import { Button } from "@/components/base/buttons/button";
-import { Checkbox } from "@/components/base/checkbox/checkbox";
-import { Popover } from "@/components/base/select/popover";
+import type { SortDescriptor } from "react-aria-components";
 import { Tab, TabList, Tabs } from "@/components/application/tabs/tabs";
 import { useRoleHref } from "@/lib/use-role-href";
 
@@ -52,56 +48,6 @@ export function AgreementScopeNav({
         </TabList>
       </Tabs>
     </div>
-  );
-}
-
-/** The status filter for an all-statuses table: one "Filter" button (tinted while a filter is on) that
- *  opens a checklist of statuses. Nothing selected means every status is shown. */
-export function StatusFilterButton<S extends string>({
-  order,
-  meta,
-  selected,
-  onChange,
-}: {
-  order: S[];
-  meta: Record<S, { label: string }>;
-  selected: Set<Key>;
-  onChange: (keys: Set<Key>) => void;
-}) {
-  const active = selected.size > 0;
-  const toggle = (id: S, checked: boolean) => {
-    const next = new Set(selected);
-    if (checked) next.add(id);
-    else next.delete(id);
-    onChange(next);
-  };
-  return (
-    <DialogTrigger>
-      <Button
-        color="secondary"
-        size="sm"
-        iconLeading={FilterLines}
-        aria-label={active ? `Filter by status, ${selected.size} applied` : "Filter by status"}
-        className={active ? "bg-brand-50! ring-brand-100!" : undefined}
-      >
-        {active ? `Filter (${selected.size})` : "Filter"}
-      </Button>
-      <Popover size="auto" placement="bottom start" className="font-barlow w-56 p-3">
-        <Dialog className="flex flex-col gap-3 outline-hidden">
-          <div className="flex items-center justify-between">
-            <p className="text-xs font-semibold tracking-wide text-quaternary uppercase">Status</p>
-            <Button color="link-color" size="sm" onPress={() => onChange(active ? new Set() : new Set(order))}>
-              {active ? "Clear" : "Select all"}
-            </Button>
-          </div>
-          <div className="flex flex-col gap-2">
-            {order.map((id) => (
-              <Checkbox key={id} label={meta[id].label} isSelected={selected.has(id)} onChange={(checked) => toggle(id, checked)} />
-            ))}
-          </div>
-        </Dialog>
-      </Popover>
-    </DialogTrigger>
   );
 }
 

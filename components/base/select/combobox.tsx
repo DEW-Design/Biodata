@@ -29,6 +29,12 @@ interface ComboBoxProps extends Omit<AriaComboBoxProps<SelectItemType>, "childre
      * to its own label text or force-select anything the way a real (non-disabled) listbox item
      * would. */
     listboxFooter?: ReactNode;
+    /** Minimum width of the popover in px. By default the list is exactly as wide as the input, which
+     * clips a result that carries a second line. The list is never narrower than the input. */
+    popoverMinWidth?: number;
+    /** Size preset for the list's maximum height. Defaults to `size`. `"auto"` lets the list grow to
+     * its content, bounded by the space left in the window. */
+    popoverSize?: "sm" | "md" | "lg" | "auto";
     children: AriaListBoxProps<SelectItemType>["children"];
 }
 
@@ -124,6 +130,8 @@ export const ComboBox = ({
     icon,
     listboxHeader,
     listboxFooter,
+    popoverMinWidth,
+    popoverSize,
     hideRequiredIndicator,
     ...otherProps
 }: ComboBoxProps) => {
@@ -169,7 +177,7 @@ export const ComboBox = ({
                             onPointerEnter={onResize}
                         />
 
-                        <Popover size={size} triggerRef={placeholderRef} style={{ width: popoverWidth }} className={otherProps.popoverClassName}>
+                        <Popover size={popoverSize ?? size} triggerRef={placeholderRef} style={{ width: popoverWidth, minWidth: popoverMinWidth }} className={otherProps.popoverClassName}>
                             {listboxHeader}
                             <AriaListBox items={items} className="size-full outline-hidden">
                                 {children}
