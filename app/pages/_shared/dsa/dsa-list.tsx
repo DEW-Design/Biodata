@@ -1,6 +1,10 @@
 "use client";
 
 import { useState, type ReactNode } from "react";
+import type { Key, SortDescriptor } from "react-aria-components";
+import { CURRENT_USER_NAME, StatusFilterButton, sortRows, type AgreementScope, type SortValue } from "@/app/pages/_shared/agreement-scope";
+import { dsaStatusOrder } from "@/app/pages/_shared/dsa/dsa-data";
+
 import { Clock, Edit05, Plus, SearchMd } from "@untitledui/icons";
 import { Avatar } from "@/components/base/avatar/avatar";
 import { Badge, CountBadge } from "@/components/base/badges/badges";
@@ -115,8 +119,8 @@ export function DsaListContent({
   const paged = rows.slice((currentPage - 1) * pageSize, currentPage * pageSize);
 
   return (
-    <>
-      <SectionHeader.Root className="p-6">
+    <div className="flex min-h-0 flex-1 flex-col">
+      <SectionHeader.Root className="shrink-0 p-6">
         <SectionHeader.Group>
           <div className="flex flex-1 flex-col gap-1">
             <div className="flex items-center gap-2">
@@ -138,9 +142,9 @@ export function DsaListContent({
       {inStatus.length === 0 ? (
         <DsaEmptyState status={status} newHref={roleHref("/pages/dsa/new")} />
       ) : (
-        <div className="flex flex-col gap-4 p-6">
+        <div className="flex min-h-0 flex-1 flex-col gap-4 p-6">
           {banner}
-          <div className="w-full max-w-sm">
+          <div className="w-full max-w-sm shrink-0">
             <Input
               aria-label="Search agreements"
               size="sm"
@@ -156,9 +160,9 @@ export function DsaListContent({
           {rows.length === 0 ? (
             <p className="py-6 text-sm text-tertiary">No {dsaStatusMeta[status].label.toLowerCase()} agreements match your search.</p>
           ) : (
-            <TableCard.Root>
-              <Table aria-label={`${dsaStatusMeta[status].label} Data Sharing Agreements`}>
-                <Table.Header>
+            <TableCard.Root className="flex min-h-48 flex-1 flex-col">
+              <Table bodyScrollable aria-label={`${dsaStatusMeta[status].label} Data Sharing Agreements`}>
+                <Table.Header sticky>
                   {/* `label` (not children) - Table.Head only applies the header treatment to the prop. */}
                   <Table.Head id="id" label="Agreement" isRowHeader />
                   <Table.Head id="partner" label="Data partner" />
@@ -228,6 +232,148 @@ export function DsaListContent({
           )}
         </div>
       )}
-    </>
+    </div>
   );
 }
+
+// ── All statuses, scoped My / All (rolled in from /proto/collection-sidebar's "My Items") ──
+// The production list. My/All is a scope chosen in column 2 (`AgreementScopeNav`); this table shows
+// every status at once, with a status filter (`?status=` seeds it, so banner links still land on a
+// status) and a Status column. The one-bucket list above stays for the lab that still uses it.
+
+// What each sortable column sorts by. Agreement ID is deliberately not sortable (an identifier, not a
+// range you scan); Status sorts by its place in the workflow, not alphabetically.
+const dsaSortKeys: Record<string, (d: Dsa) => SortValue> = {
+  partner: (d) => d.partner,
+  status: (d) => dsaStatusOrder.indexOf(d.status),
+  requester: (d) => contactName(d.requestedBy),
+  updated: (d) => d.updatedAt,
+};
+
+export function DsaAllList({ scope, initialStatuses = [], banner }: { scope: AgreementScope; initialStatuses?: DsaStatus[]; banner?: ReactNode }) {
+  const all = useDsas();
+  const scoped = scope === "mine" ? all.filter((d) => contactName(d.requestedBy) === CURRENT_USER_NAME) : all;
+  const roleHref = useRoleHref();
+  const [search, setSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState<Set<Key>>(new Set(initialStatuses));
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(50);
+  const [sort, setSort] = useState<SortDescriptor>({ column: "updated", direction: "descending" });
+
+  const query = search.trim().toLowerCase();
+  const matching = scoped
+    .filter((d) => statusFilter.size === 0 || statusFilter.has(d.status))
+    .filter((d) => !query || [d.id, d.partner, contactName(d.requestedBy)].some((v) => v.toLowerCase().includes(query)));
+  const filtered = sortRows(matching, sort, dsaSortKeys);
+  const pageCount = Math.max(1, Math.ceil(filtered.length / pageSize));
+  const currentPage = Math.min(page, pageCount);
+  const paged = filtered.slice((currentPage - 1) * pageSize, currentPage * pageSize);
+
+  return (
+    <div className="flex min-h-0 flex-1 flex-col">
+      <SectionHeader.Root className="shrink-0 p-6">
+        <SectionHeader.Group>
+          <div className="flex flex-1 flex-col gap-1">
+            <div className="flex items-center gap-2">
+              <SectionHeader.Heading>Data Sharing Agreements</SectionHeader.Heading>
+              <CountBadge count={filtered.length} color="brand" />
+            </div>
+            <SectionHeader.Subheading>{scope === "mine" ? "Agreements you requested, across every status." : "Every agreement, across every status."}</SectionHeader.Subheading>
+          </div>
+          <SectionHeader.Actions>
+            <Button color="primary" iconLeading={Plus} href={roleHref("/pages/dsa/new")}>
+              New agreement
+            </Button>
+          </SectionHeader.Actions>
+        </SectionHeader.Group>
+      </SectionHeader.Root>
+      <div className="flex min-h-0 flex-1 flex-col gap-4 p-6">
+        {banner}
+        <div className="flex shrink-0 flex-wrap items-center gap-3">
+          <div className="w-full max-w-sm shrink-0">
+            <Input
+              aria-label="Search agreements"
+              size="sm"
+              icon={SearchMd}
+              placeholder="Search ID, organisation or requester"
+              value={search}
+              onChange={(v) => {
+                setSearch(v);
+                setPage(1);
+              }}
+            />
+          </div>
+          <div>
+            <StatusFilterButton
+              order={dsaStatusOrder}
+              meta={dsaStatusMeta}
+              selected={statusFilter}
+              onChange={(keys) => {
+                setStatusFilter(keys);
+                setPage(1);
+              }}
+            />
+          </div>
+        </div>
+        {filtered.length === 0 ? (
+          <p className="py-6 text-sm text-tertiary">No agreements match your search and filters.</p>
+        ) : (
+          <TableCard.Root className="flex min-h-48 flex-1 flex-col">
+            <Table
+              bodyScrollable
+              aria-label="Data Sharing Agreements"
+              sortDescriptor={sort}
+              onSortChange={(next) => {
+                setSort(next);
+                setPage(1);
+              }}
+            >
+              <Table.Header sticky>
+                <Table.Head id="id" label="Agreement" isRowHeader />
+                <Table.Head id="partner" label="Data partner" allowsSorting />
+                <Table.Head id="status" label="Status" allowsSorting />
+                <Table.Head id="requester" label="Requested by" allowsSorting />
+                <Table.Head id="updated" label="Updated" allowsSorting />
+              </Table.Header>
+              <Table.Body items={paged}>
+                {(dsa) => (
+                  <Table.Row id={dsa.id} href={roleHref(`/pages/dsa/${dsa.id}`)} textValue={dsa.id} className="group data-[href]:cursor-pointer">
+                    <Table.Cell>
+                      <span className="text-sm font-medium whitespace-nowrap text-primary group-hover:text-brand-700 group-hover:underline">{dsa.id}</span>
+                    </Table.Cell>
+                    <Table.Cell>
+                      <span className="text-sm text-secondary">{dsa.partner || <span className="text-quaternary">Not provided</span>}</span>
+                    </Table.Cell>
+                    <Table.Cell>
+                      <Badge size="sm" color={dsaStatusMeta[dsa.status].badgeColor}>
+                        {dsaStatusMeta[dsa.status].label}
+                      </Badge>
+                    </Table.Cell>
+                    <Table.Cell>
+                      <span className="text-sm text-secondary">{contactName(dsa.requestedBy) || <span className="text-quaternary">Not provided</span>}</span>
+                    </Table.Cell>
+                    <Table.Cell>
+                      <span className="text-sm whitespace-nowrap text-tertiary">{formatShortDate(dsa.updatedAt)}</span>
+                    </Table.Cell>
+                  </Table.Row>
+                )}
+              </Table.Body>
+            </Table>
+            <TableCard.PaginationNumbered
+              page={currentPage}
+              pageCount={pageCount}
+              onPageChange={setPage}
+              pageSize={pageSize}
+              onPageSizeChange={(size) => {
+                setPageSize(size);
+                setPage(1);
+              }}
+              totalCount={filtered.length}
+            />
+          </TableCard.Root>
+        )}
+      </div>
+    </div>
+  );
+}
+

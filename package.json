@@ -6,7 +6,10 @@
     "dev": "node node_modules/next/dist/bin/next dev",
     "build": "node node_modules/next/dist/bin/next build",
     "start": "node node_modules/next/dist/bin/next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "check:contracts": "node scripts/check-contracts.mjs",
+    "contracts:override": "node scripts/add-override.mjs",
+    "audit": "node scripts/audit.mjs"
   },
   "dependencies": {
     "@highcharts/map-collection": "^2.3.3",
@@ -20,7 +23,7 @@
     "input-otp": "^1.5.0",
     "leaflet": "^1.9.4",
     "leaflet-draw": "^1.0.4",
-    "lucide-react": "^1.37.0",
+    "lucide-react": "^1.47.0",
     "motion": "^12.43.0",
     "next": "16.3.3",
     "react": "19.2.8",

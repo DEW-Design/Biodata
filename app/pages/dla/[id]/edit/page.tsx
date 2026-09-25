@@ -28,7 +28,7 @@ function EditDla() {
   const detailHref = roleHref(`/pages/dla/${id}`);
 
   return (
-    <DlaShell activeStatus={dla?.status} breadcrumbCurrent={`Edit ${id}`}>
+    <DlaShell breadcrumbCurrent={`Edit ${id}`} formSidebar>
       {dla ? (
         <DlaForm
           key={dla.id}

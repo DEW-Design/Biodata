@@ -73,16 +73,17 @@
 // permission." Both are real, separate decisions from "which banner"/"what's in column 2" - flagged
 // here, not solved by forking the whole shared component inside a throwaway proto.
 
-import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { Suspense, useEffect, useLayoutEffect, useRef, useState } from "react";
 import type { FC, ReactNode } from "react";
 import { Focusable, type Key } from "react-aria-components";
 import { HomeLine, Folder, Eye, DownloadCloud02, ArrowNarrowRight, Camera01, Check, BookOpen01, FileCheck02 } from "@untitledui/icons";
 import { Button } from "@/components/base/buttons/button";
 import { Tooltip } from "@/components/base/tooltip/tooltip";
 import { GuestActionButton } from "@/app/pages/_shared/guest-action-gate";
-import { GlobalProjectSearch } from "@/app/pages/_shared/global-search";
+import { GlobalSearch } from "@/app/pages/_shared/global-search";
 import { DataOverviewContent } from "@/app/pages/_shared/data-overview";
 import { cx } from "@/utils/cx";
+import { assetPath } from "@/lib/base-path";
 
 // ── Shared stubs - real IA/header shape, not a design decision this lab is exploring ──
 
@@ -142,7 +143,7 @@ function GuestHeaderStub({ actions = [] }: { actions?: GatedAction[] }) {
       <div className="flex flex-wrap items-center gap-4">
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
-          src="/pages/dashboard/gov-sa-dew-lockup.png"
+          src={assetPath("/pages/dashboard/gov-sa-dew-lockup.png")}
           alt="Government of South Australia, Department for Environment and Water"
           className="h-[37px] w-auto"
         />
@@ -151,7 +152,7 @@ function GuestHeaderStub({ actions = [] }: { actions?: GatedAction[] }) {
       </div>
       <div className="flex flex-wrap items-center gap-3">
         <div className="w-full sm:w-64 lg:w-[395px]">
-          <GlobalProjectSearch />
+          <GlobalSearch />
         </div>
         {actions.map((a) => (
           <GuestActionButton key={a.label} icon={a.icon} label={a.label} color={a.color} isGuest modalTitle={a.modalTitle} modalDescription={a.modalDescription} />
@@ -484,7 +485,17 @@ function Picker({ current, setCurrent }: { current: number; setCurrent: (i: numb
   );
 }
 
-export default function PublicUserExplorationsProto() {
+// GuestActionButton reads the active role via useSearchParams, so the whole page needs a Suspense
+// boundary to prerender (same pattern as the /pages/** shells).
+export default function PublicUserExplorationsPage() {
+  return (
+    <Suspense fallback={null}>
+      <PublicUserExplorationsProto />
+    </Suspense>
+  );
+}
+
+function PublicUserExplorationsProto() {
   const [current, setCurrent] = useState(0);
   // A single effect, not the read-then-write pair other /proto labs in this codebase copy
   // (e.g. admin-dashboard-options) - that pair races on mount: the "write current to the URL"

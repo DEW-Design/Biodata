@@ -1,0 +1,42 @@
+# The design system audit (CONTRACTS.md section 9.3).
+#  - every pull request into main: contract check must pass, and the audit report is attached
+#  - every weekday evening (Adelaide time): the routine check of what is on main
+name: Design system audit
+
+on:
+  pull_request:
+    branches: ["main"]
+  schedule:
+    # 08:00 UTC, Monday to Friday: end of day in Adelaide
+    - cron: "0 8 * * 1-5"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Contract check
+        run: npm run check:contracts
+      - name: Type check
+        run: npx tsc --noEmit
+      - name: Audit report
+        if: always()
+        run: |
+          npm run audit -- --base origin/main || true
+          cat audit/audit-*.md >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: design-system-audit
+          path: audit/

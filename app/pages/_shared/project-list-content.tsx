@@ -4,11 +4,11 @@ import { useState } from "react";
 import { SearchMd } from "@untitledui/icons";
 import { Avatar } from "@/components/base/avatar/avatar";
 import { Badge, CountBadge } from "@/components/base/badges/badges";
-import type { BadgeColor } from "@/components/base/badges/badges";
 import { Input } from "@/components/base/input/input";
 import { Table, TableCard } from "@/components/application/table/table";
 import { SectionHeader } from "@/components/application/section-headers/section-headers";
 import { useRoleHref } from "@/lib/use-role-href";
+import { projects } from "@/app/pages/_shared/project-list-data";
 
 // The real Projects list content - shared by every sidebar shell (dashboard,
 // project-list, project-detail) so clicking the Projects icon always shows this, the same
@@ -39,75 +39,9 @@ import { useRoleHref } from "@/lib/use-role-href";
 // is the click/keyboard target) - same "only wire what has a real page" convention used everywhere
 // else in this build.
 //
-// One array is now the single source for both the table and the header search
-// (app/pages/_shared/global-search.tsx), instead of two hand-kept-in-sync lists.
-export interface Project {
-  id: string;
-  /** Display-only BioData project number ("BD-5039"). `id` stays the internal slug. The map search
-   *  Projects tab (map-search/search-data.ts) reads the same value, so both tables show one ID. */
-  code: string;
-  name: string;
-  href?: string;
-  org: string;
-  status: string;
-  statusColor: BadgeColor<"pill-color">;
-  contributorInitials: string;
-  contributorName: string;
-  updated: string;
-  description: string;
-}
-
-export const projects: Project[] = [
-  {
-    id: "adelaide-hills",
-    code: "BD-5039",
-    name: "Adelaide Hills Bushland Survey",
-    href: "/pages/project-detail",
-    org: "Adelaide Hills Landcare",
-    status: "Active",
-    statusColor: "success",
-    contributorInitials: "OW",
-    contributorName: "Olivia Wyatt",
-    updated: "2 days ago",
-    description: "Ongoing flora and fauna monitoring across the Adelaide Hills reserve network.",
-  },
-  {
-    id: "coorong",
-    code: "BD-5102",
-    name: "Coorong Wetlands Bird Count",
-    org: "Birds SA",
-    status: "Under review",
-    statusColor: "warning",
-    contributorInitials: "MD",
-    contributorName: "Maya Dewitt",
-    updated: "5 days ago",
-    description: "Seasonal waterbird survey data pending verification.",
-  },
-  {
-    id: "flinders",
-    code: "BD-5137",
-    name: "Flinders Ranges Reptile Atlas",
-    org: "DEW Biodiversity Team",
-    status: "Draft",
-    statusColor: "gray",
-    contributorInitials: "OW",
-    contributorName: "Olivia Wyatt",
-    updated: "1 week ago",
-    description: "Draft submission, not yet published.",
-  },
-  {
-    id: "kangaroo-island",
-    code: "BD-4988",
-    name: "Kangaroo Island Recovery Monitoring",
-    org: "Natural Resources KI",
-    status: "Completed",
-    statusColor: "blue",
-    contributorInitials: "MD",
-    contributorName: "Maya Dewitt",
-    updated: "3 weeks ago",
-    description: "Post-bushfire recovery tracking, final report submitted.",
-  },
-];
+// The project data lives in project-list-data.ts so server code can import it; re-exported here so
+// existing imports keep working.
+export { projects, type Project } from "@/app/pages/_shared/project-list-data";
 
 export function ProjectListContent() {
   const roleHref = useRoleHref();
@@ -126,13 +60,13 @@ export function ProjectListContent() {
   const pagedProjects = rows.slice((currentPage - 1) * pageSize, currentPage * pageSize);
 
   return (
-    <>
+    <div className="flex min-h-0 flex-1 flex-col">
       {/* The table used to carry its own TableCard.Header directly above this same heading -
           title "Projects" repeated, an oval gray row-count badge, and a description saying almost
           the same thing as this section's own subheading. Flagged directly by the user: the header
           doubled up, inconsistent with every other page that has exactly one section header. The
           count and description now live here instead, and nowhere else on this screen. */}
-      <SectionHeader.Root className="p-6">
+      <SectionHeader.Root className="shrink-0 p-6">
         <SectionHeader.Group>
           <div className="flex flex-1 flex-col gap-1">
             <div className="flex items-center gap-2">
@@ -150,7 +84,7 @@ export function ProjectListContent() {
       {/* p-6, not px-6 pb-6 - the table sat flush against SectionHeader's own bottom
           border/padding with no breathing room above it. Flagged directly by the user off a
           screenshot: "see how close the table is to the section header?" */}
-      <div className="flex flex-col gap-4 p-6">
+      <div className="flex min-h-0 flex-1 flex-col gap-4 p-6">
         <div className="w-full max-w-sm">
           <Input
             aria-label="Search projects"
@@ -167,9 +101,9 @@ export function ProjectListContent() {
         {rows.length === 0 ? (
           <p className="py-6 text-sm text-tertiary">No projects match your search.</p>
         ) : (
-        <TableCard.Root>
-          <Table aria-label="Projects">
-            <Table.Header>
+        <TableCard.Root className="flex min-h-48 flex-1 flex-col">
+          <Table aria-label="Projects" bodyScrollable>
+            <Table.Header sticky>
               {/* `label` (not children) - Table.Head only applies the design system's header treatment
                   (text-xs, semibold, text-quaternary) through its own `label` prop, the same way the
                   Explore results tables do. Plain children rendered as unstyled bold black text. */}
@@ -234,6 +168,6 @@ export function ProjectListContent() {
         </TableCard.Root>
         )}
       </div>
-    </>
+    </div>
   );
 }

@@ -2,6 +2,7 @@
 
 import type { ReactNode } from "react";
 import { BarChart01, Download01 } from "@untitledui/icons";
+import { cx } from "@/utils/cx";
 import { toast } from "@/components/application/toast/toast";
 
 // Column 2's "Actions" group, folded into the real DSA/DLA shells from /proto/collection-sidebar's
@@ -54,14 +55,15 @@ function CreateReportButton() {
  * screenshot as inconsistent. The same `gap-1` also makes the Export CSV/Create report rows match
  * the status list's own row-to-row spacing, not just the top gap.
  */
-export function ActionsGroup({ onExportCsv }: { onExportCsv: () => void }) {
+export function ActionsGroup({ onExportCsv, children, showCreateReport = true, withTopRule = true }: { onExportCsv: () => void; /** Off when the group is the first thing in the column. */ withTopRule?: boolean; /** Extra rows shown first, e.g. the Projects page's "Upload dataset". */ children?: ReactNode; showCreateReport?: boolean }) {
   return (
-    <div className="mt-4 flex flex-col gap-1 border-t border-secondary pt-4">
+    <div className={cx("flex flex-col gap-1", withTopRule && "mt-4 border-t border-secondary pt-4")}>
       <p className="mb-3 text-xs font-semibold tracking-wide text-quaternary uppercase">Actions</p>
+      {children}
       <ActionRow icon={Download01} onClick={onExportCsv}>
         Export CSV
       </ActionRow>
-      <CreateReportButton />
+      {showCreateReport && <CreateReportButton />}
     </div>
   );
 }

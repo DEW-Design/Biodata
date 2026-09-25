@@ -8,6 +8,7 @@ import { Button } from "@/components/base/buttons/button";
 import { Avatar } from "@/components/base/avatar/avatar";
 import { Breadcrumb } from "@/components/scaffold/breadcrumb";
 import { cx } from "@/utils/cx";
+import { assetPath } from "@/lib/base-path";
 
 // `fullBleed` breaks the card out of the docs shell's normal `max-w-5xl` reading column
 // (app/(docs)/layout.tsx) on the RIGHT only - left edge stays exactly where normal flow already
@@ -97,7 +98,7 @@ function TopNavDemo() {
         <div className="flex flex-wrap items-center gap-4">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
-            src="/pages/dashboard/gov-sa-dew-lockup.png"
+            src={assetPath("/pages/dashboard/gov-sa-dew-lockup.png")}
             alt="Government of South Australia, Department for Environment and Water"
             className="h-[37px] w-auto"
           />
@@ -140,11 +141,41 @@ export default function NavigationPatternPage() {
       <p className="text-balance">
         A <strong>64px header</strong>: logo (37px, aspect ratio locked) + product name + breadcrumb on the left, primary actions +
         profile on the right. Every canonical page (<code>/pages/dashboard</code>, <code>/pages/project-detail</code>,{" "}
-        <code>/pages/observation-detail</code>, ...) renders this same bar, just with its own section/current crumb.
+        <code>/pages/observation-detail</code>, ...) renders this same bar, just with its own section/current crumb. The right
+        side is one <strong>Add</strong> menu (a project, a data licence request, a data sharing agreement - only what the persona
+        can create), the global search, and the account control.
       </p>
       <Section label="Top nav - anatomy" fullBleed>
         <TopNavDemo />
       </Section>
+
+      <h2 className="text-balance">Shared shell components: a contract</h2>
+      <p className="text-balance">
+        The header and the icon rail are <strong>shared components, never rebuilt per screen</strong>, and they are the same for
+        every persona (a guest differs only in its account controls). This is a non-negotiable design system contract, enforced by{" "}
+        <code>npm run check:contracts</code>.
+      </p>
+      <ul>
+        <li>
+          <code>AppHeader</code> (<code>app/pages/_shared/app-header.tsx</code>): logo lockup, wordmark, breadcrumb with the
+          role-driven org pill (DEW for BioData roles, ORG for privileged roles, none otherwise), global search, the <strong>Add</strong>{" "}
+          menu, and the profile menu or Log in / Sign up. A screen passes only its mobile-nav trigger and its breadcrumb.
+        </li>
+        <li>
+          <code>CreateMenu</code> and <code>lib/create-menu.ts</code>: what the Add menu offers each persona, filtered by the
+          role-access matrix. To let a persona create something new, add one entry there.
+        </li>
+        <li>
+          <code>PrimaryRail</code> (<code>primary-rail.tsx</code>), <code>sectionIcons</code> (<code>nav-icons.ts</code>) and{" "}
+          <code>SidebarFooterLinks</code>: column 1, its one icon per section, and the Terms / Privacy / Help links at the foot of
+          column 2. Home&apos;s task badge is decided once, inside the rail.
+        </li>
+        <li>
+          Never hand-roll a <code>&lt;header&gt;</code>, a primary rail, an icon map, or copy the profile menu into a screen. The
+          check fails on any of them under <code>app/pages</code> (labs in <code>app/proto</code>, the marketing landing page and the
+          auth flow are exempt).
+        </li>
+      </ul>
 
       <h2 className="text-balance">Notes</h2>
       <ul>
@@ -160,10 +191,9 @@ export default function NavigationPatternPage() {
           confirmed spec, real DEW-sourced measurements.
         </li>
         <li>
-          <strong>Option-2 (the top-nav shell alternative - header + primary nav bar with no icon rail) has been sunset</strong> per
-          the Sept 16 2026 layout decision and is not documented here. Its code still exists (<code>dashboard/option-2</code>,{" "}
-          <code>project-list/option-2</code>) per this design system&apos;s &ldquo;never delete an explored direction&rdquo;
-          convention, but it&apos;s inert - not linked to from anywhere live, and not a pattern to build new work against.
+          <strong>Option-2 (the top-nav shell alternative - header + primary nav bar with no icon rail) has been sunset and its code
+          deleted</strong> - the sidebar shell is the one documented direction. Designers present numbered options to stakeholders
+          while a screen is still being explored; once one is chosen the others are removed.
         </li>
         <li>
           Figma source: <a href="https://www.figma.com/design/bgksKvmSaVR7ZptB98LzGr/-HI-FI--Dashboard-Explorations">-HI-FI- Dashboard Explorations</a>.{" "}

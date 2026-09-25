@@ -512,3 +512,16 @@ export const seedDsas: Dsa[] = [
     updatedAt: "2026-08-19",
   },
 ];
+
+/** Every id /pages/dsa/[id] is pre-rendered for in the static GitHub Pages build: the seeds, plus
+ *  the next `count` ids `nextDsaId` would hand out this year and next. New DSAs live in memory only
+ *  (a reload resets to the seeds), so a session never gets far past the seed numbers - without
+ *  these, opening a just-created DSA would 404 on a static host. */
+export function staticDsaIds(count = 50): string[] {
+  const highest = seedDsas.reduce((max, item) => Math.max(max, Number(item.id.split("-")[2]) || 0), 0);
+  const year = new Date().getFullYear();
+  const upcoming = [year, year + 1].flatMap((y) =>
+    Array.from({ length: count }, (_, i) => `DSA-${y}-${String(highest + 1 + i).padStart(5, "0")}`),
+  );
+  return [...new Set([...seedDsas.map((item) => item.id), ...upcoming])];
+}

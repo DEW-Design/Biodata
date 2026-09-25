@@ -1,28 +1,26 @@
 "use client";
 
-import type { FC, ReactNode } from "react";
+import type { ReactNode } from "react";
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ArrowNarrowRight, BarChart01, CheckCircle, Clock, Edit05, Feather, FileCheck02, FileLock01, FileSearch01, Folder, HomeLine, Map01, MinusCircle, PauseCircle, Plus, Send01, SlashCircle01, Upload01, XCircle } from "@untitledui/icons";
+import { ArrowNarrowRight } from "@untitledui/icons";
 import { Button } from "@/components/base/buttons/button";
-import { CountBadge } from "@/components/base/badges/badges";
-import { Tooltip, TooltipTrigger } from "@/components/base/tooltip/tooltip";
-import { Breadcrumb } from "@/components/scaffold/breadcrumb";
 import { ActionsGroup, downloadCsv } from "@/app/pages/_shared/agreement-actions";
-import { dlaStatusMeta, dlaStatusOrder, requestorName, type DlaStatus } from "@/app/pages/_shared/dla/dla-data";
+import { dlaStatusMeta, requestorName } from "@/app/pages/_shared/dla/dla-data";
 import { useDlas } from "@/app/pages/_shared/dla/dla-store";
-import { GlobalProjectSearch } from "@/app/pages/_shared/global-search";
-import { GuestActionButton } from "@/app/pages/_shared/guest-action-gate";
+import { PrimaryRail } from "@/app/pages/_shared/primary-rail";
+import { SidebarFooterLinks } from "@/app/pages/_shared/sidebar-footer-links";
+import { sectionIcons } from "@/app/pages/_shared/nav-icons";
+import { AppHeader } from "@/app/pages/_shared/app-header";
+import { FormSidebarSlotContext } from "@/app/pages/_shared/form-section-list";
+import { AgreementScopeNav } from "@/app/pages/_shared/agreement-scope";
 import { MobileNavTrigger } from "@/app/pages/_shared/mobile-nav";
-import { GuestAuthActions, ProfileMenu } from "@/app/pages/_shared/profile-menu";
 import { RoleSwitcher } from "@/app/pages/_shared/role-switcher";
 import { useFeatureAccess } from "@/lib/use-feature-access";
 import { useRoleHref } from "@/lib/use-role-href";
 import { useUserRole } from "@/lib/use-user-role";
-import { orgLabelForRole } from "@/lib/user-role";
-import { DLA_SECTION_LABEL, DSA_SECTION_LABEL, keyHref, navForRole, registeredUserFooterLinks, type NavNode } from "@/lib/registered-user-nav";
-import { cx } from "@/utils/cx";
+import { DLA_SECTION_LABEL, keyHref, navForRole, type NavNode } from "@/lib/registered-user-nav";
 
 // The one shell every DLA route renders through (the request list, a request's deep dive, the new
 // request/renew form) - same "List -> deep dive" shape as DSA's own shell
@@ -35,30 +33,6 @@ import { cx } from "@/utils/cx";
 // request is in and gets you back out. Below the status list, an "Actions" group (Export CSV /
 // Create report) is folded in from /proto/collection-sidebar's own "Actions" baseline - see
 // CONTEXT.md.
-
-const sectionIcons: Record<string, FC<{ className?: string }>> = {
-  Home: HomeLine,
-  Projects: Folder,
-  Explore: Map01,
-  [DLA_SECTION_LABEL]: FileLock01,
-  [DSA_SECTION_LABEL]: FileCheck02,
-  "Nominate Sensitive Species": Feather,
-  "Reports (Own Submissions)": BarChart01,
-  "Template Finder": FileSearch01,
-};
-
-const statusIcons: Record<DlaStatus, FC<{ className?: string }>> = {
-  draft: Edit05,
-  submitted: Send01,
-  under_review: Clock,
-  on_hold: PauseCircle,
-  approved: CheckCircle,
-  rejected: XCircle,
-  active: CheckCircle,
-  closed: SlashCircle01,
-  cancelled: MinusCircle,
-};
-
 const CURRENT_KEY = "dla";
 
 function SectionPlaceholder({ node }: { node: NavNode }) {
@@ -80,47 +54,16 @@ function SectionPlaceholder({ node }: { node: NavNode }) {
   );
 }
 
-function FooterLinks() {
-  return (
-    <div className="flex flex-col gap-2 border-t border-secondary pt-4 text-xs text-quaternary">
-      {registeredUserFooterLinks.map((link) => (
-        <p key={link}>{link}</p>
-      ))}
-    </div>
-  );
-}
-
 // Column 2's content. Also rendered inside the mobile navigation menu, where the aside is hidden.
 // `Actions` (Export CSV / Create report) below the status list is folded in directly from
 // /proto/collection-sidebar's own "Actions" baseline (see CONTEXT.md) - real navigation, real data.
-function StatusNav({ activeStatus, onNavigate }: { activeStatus?: DlaStatus; onNavigate?: () => void }) {
-  const roleHref = useRoleHref();
+function ScopeNav() {
   const dlas = useDlas();
+  const canReview = useFeatureAccess("dlaApproval");
 
   return (
     <div className="flex flex-col gap-1">
-      <p className="mb-3 text-xs font-semibold tracking-wide text-quaternary uppercase">Requests</p>
-      {dlaStatusOrder.map((status) => {
-        const Icon = statusIcons[status];
-        const active = status === activeStatus;
-        const count = dlas.filter((d) => d.status === status).length;
-        return (
-          <Link
-            key={status}
-            href={roleHref(`/pages/dla?status=${status}`)}
-            onClick={onNavigate}
-            aria-current={active ? "page" : undefined}
-            className={cx(
-              "flex items-center gap-2 rounded-md px-3 py-2 text-sm font-semibold outline-brand transition-colors duration-100 ease-linear focus-visible:outline-2 focus-visible:outline-offset-2",
-              active ? "bg-brand-secondary text-brand-secondary" : "text-quaternary hover:bg-tertiary hover:text-primary",
-            )}
-          >
-            <Icon className="size-4 shrink-0" />
-            <span className="flex-1">{dlaStatusMeta[status].tabLabel}</span>
-            <CountBadge count={count} color={active ? "brand" : "gray"} />
-          </Link>
-        );
-      })}
+      <AgreementScopeNav heading="Requests" basePath="/pages/dla" defaultScope={canReview ? "all" : "mine"} myLabel="My requests" allLabel="All requests" />
       <ActionsGroup
         onExportCsv={() =>
           downloadCsv(
@@ -135,20 +78,18 @@ function StatusNav({ activeStatus, onNavigate }: { activeStatus?: DlaStatus; onN
 }
 
 export function DlaShell({
-  activeStatus,
   breadcrumbCurrent,
+  formSidebar = false,
   children,
 }: {
-  /** The status bucket to highlight in column 2 - omit where none applies (a new request). */
-  activeStatus?: DlaStatus;
   /** The page-specific final crumb (a request ID, "New request"). When set, the section crumb becomes a link back to the list. */
   breadcrumbCurrent?: string;
+  /** A create/edit form is rendered: column 2 becomes the form's own section list (the form portals into it via `FormSidebar`) instead of the status buckets. */
+  formSidebar?: boolean;
   children: ReactNode;
 }) {
   const router = useRouter();
   const role = useUserRole();
-  const isPublicUser = role === "public-user";
-  const showOrgSwitcher = useFeatureAccess("orgSwitcher");
   const canAccess = useFeatureAccess("dlaAccess");
   const nav = navForRole(role);
   const roleHref = useRoleHref();
@@ -158,6 +99,7 @@ export function DlaShell({
   const [localSection, setLocalSection] = useState<string | null>(null);
   const activeSection = localSection ?? DLA_SECTION_LABEL;
   const otherSection = localSection ? nav.find((section) => section.label === localSection) : undefined;
+  const [formSlot, setFormSlot] = useState<HTMLElement | null>(null);
   const showStatusNav = canAccess && !otherSection;
 
   const goToSection = (section: NavNode) => {
@@ -188,8 +130,8 @@ export function DlaShell({
     <div className="font-barlow flex h-screen flex-col overflow-hidden">
       <RoleSwitcher />
       {/* ── Header: full width, above the rail + sidebar + main row ── */}
-      <header className="flex min-h-16 shrink-0 flex-wrap items-center justify-between gap-x-6 gap-y-3 border-b border-secondary bg-primary px-4 py-3">
-        <div className="flex flex-wrap items-center gap-4">
+      <AppHeader
+        mobileNav={
           <MobileNavTrigger
             sections={nav}
             sectionIcons={sectionIcons}
@@ -199,14 +141,10 @@ export function DlaShell({
               if (section) goToSection(section);
             }}
           >
-            {showStatusNav ? (close: () => void) => <StatusNav activeStatus={activeStatus} onNavigate={close} /> : undefined}
+            {showStatusNav && !formSidebar ? () => <ScopeNav /> : undefined}
           </MobileNavTrigger>
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/pages/dashboard/gov-sa-dew-lockup.png" alt="Government of South Australia, Department for Environment and Water" className="h-[37px] w-auto" />
-          <div className="h-6 w-px bg-secondary" />
-          <p className="text-[17px] font-semibold tracking-tight text-primary">BioData SA</p>
-          <Breadcrumb
-            section={
+        }
+        section={
               breadcrumbCurrent && !otherSection ? (
                 <Link href={roleHref("/pages/dla")} className="hover:text-primary">
                   {activeSection}
@@ -215,63 +153,19 @@ export function DlaShell({
                 activeSection
               )
             }
-            current={otherSection ? undefined : breadcrumbCurrent}
-            orgLabel={showOrgSwitcher ? orgLabelForRole(role) : undefined}
-          />
-        </div>
-        <div className="flex flex-wrap items-center gap-3 sm:gap-6">
-          <div className="flex flex-wrap items-center gap-3">
-            <div className="w-full sm:w-64 lg:w-[395px]">
-              <GlobalProjectSearch />
-            </div>
-            <GuestActionButton
-              icon={Plus}
-              label="Add project"
-              color="primary"
-              isGuest={isPublicUser}
-              modalTitle="Sign up to add a project"
-              modalDescription="Create a free BioData SA account to start contributing projects to South Australia's biodiversity record."
-            />
-            <GuestActionButton
-              icon={Upload01}
-              label="Upload dataset"
-              color="secondary"
-              isGuest={isPublicUser}
-              modalTitle="Sign up to upload a dataset"
-              modalDescription="Create a free BioData SA account to start contributing datasets to South Australia's biodiversity record."
-            />
-          </div>
-          {isPublicUser ? <GuestAuthActions /> : <ProfileMenu />}
-        </div>
-      </header>
+        current={otherSection ? undefined : breadcrumbCurrent}
+      />
 
       <div className="flex flex-1 overflow-hidden">
         {/* ── Primary icon rail ── */}
-        <nav aria-label="Primary" className="hidden w-16 shrink-0 flex-col items-center gap-1 overflow-y-auto border-r border-secondary bg-secondary py-4 lg:flex">
-          {nav.map((section) => {
-            const Icon = sectionIcons[section.label];
-            const active = section.label === activeSection && (canAccess || !!otherSection);
-            return (
-              <Tooltip key={section.label} title={section.label} placement="right">
-                <TooltipTrigger
-                  onPress={() => goToSection(section)}
-                  aria-label={section.label}
-                  className={cx(
-                    "relative flex size-12 items-center justify-center rounded-lg transition duration-100 ease-linear active:scale-[0.96]",
-                    active ? "bg-brand-solid text-white" : "text-quaternary hover:bg-tertiary hover:text-primary",
-                  )}
-                >
-                  {Icon && <Icon className="size-5" />}
-                </TooltipTrigger>
-              </Tooltip>
-            );
-          })}
-        </nav>
+        <PrimaryRail sections={nav} activeSection={canAccess || otherSection ? activeSection : null} onSelectSection={goToSection} />
 
         {/* ── Contextual sidebar: always present, on every route and for every role ── */}
         <aside aria-label="Section" className="hidden w-[286px] shrink-0 flex-col justify-between gap-6 overflow-y-auto border-r border-secondary bg-secondary p-4 lg:flex">
-          {showStatusNav ? (
-            <StatusNav activeStatus={activeStatus} />
+          {showStatusNav && formSidebar ? (
+            <div ref={setFormSlot} />
+          ) : showStatusNav ? (
+            <ScopeNav />
           ) : (
             <div className="flex flex-col gap-1">
               <p className="mb-3 text-xs font-semibold tracking-wide text-quaternary uppercase">{otherSection?.label ?? DLA_SECTION_LABEL}</p>
@@ -282,10 +176,12 @@ export function DlaShell({
               ))}
             </div>
           )}
-          <FooterLinks />
+          <SidebarFooterLinks />
         </aside>
 
-        <main className="flex min-h-0 flex-1 flex-col overflow-hidden">{main}</main>
+        <main className="flex min-h-0 flex-1 flex-col overflow-hidden">
+          <FormSidebarSlotContext.Provider value={formSlot}>{main}</FormSidebarSlotContext.Provider>
+        </main>
       </div>
     </div>
   );

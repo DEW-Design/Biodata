@@ -3,12 +3,25 @@
 import type { Key, ReactNode } from "react";
 import { useMemo, useState } from "react";
 import dynamic from "next/dynamic";
+import { Focusable } from "react-aria-components";
 import { ChevronSelectorVertical } from "@untitledui/icons";
 import { Accordion, type AccordionItemType } from "@/components/base/accordion/accordion";
 import { Avatar } from "@/components/base/avatar/avatar";
+import { BadgeWithDot } from "@/components/base/badges/badges";
+import { Button } from "@/components/base/buttons/button";
 import { Tooltip, TooltipTrigger } from "@/components/base/tooltip/tooltip";
+import { useRoleHref } from "@/lib/use-role-href";
 import { SidePanel } from "./side-panel";
-import type { EventType, OccurrenceType, SearchEvent, SearchObservation, SearchOccurrence } from "./search-data";
+import { LocationDetailsTable } from "@/app/pages/_shared/location-details-table";
+import {
+  rootProjectOfEvent,
+  rootProjectForParentEventId,
+  type EventType,
+  type OccurrenceType,
+  type SearchEvent,
+  type SearchObservation,
+  type SearchOccurrence,
+} from "./search-data";
 
 // The record-detail sidebar shown when a user clicks a Project/Event/Occurrence/Observation row
 // on the map search results page - built directly from the Figma "Details Container" frames
@@ -17,6 +30,17 @@ import type { EventType, OccurrenceType, SearchEvent, SearchObservation, SearchO
 // deliberately excluded - no Figma frame documents a resource sidebar, and the user's own request
 // named "project, event, occurrence and observation" only; that tab keeps the existing generic
 // column-detail SidePanel (results-table.tsx's own `detailRow` panel), unchanged.
+//
+// `ProjectSummaryHeader` (below `buildSections`) - a common, non-collapsible header shown at the
+// top of every record type's sidebar, above the Figma accordion sections, so it's always clear
+// which real Project a record belongs to. First built as a Project/Parent/Hierarchy field list,
+// then replaced per direct feedback with this eyebrow-label + title + meta-row shape instead - the
+// same real "PROJECT" eyebrow / big title / Project ID-Start Date-End Date-Status-Published by
+// meta row already established for `project-detail`'s own page header (`MetaField` there,
+// reused here as a page-local copy since it's a small, page-scoped primitive, not something this
+// codebase cross-imports between `/pages/**` files). Shows the record's own root Project -
+// `rootProjectOfEvent`/`rootProjectForParentEventId` - every field real (`code`/`name`/
+// `startDate`/`endDate`/`status`/`statusColor`/`org`), nothing fabricated.
 //
 // Every field this file renders is a real field Figma's own frames document (never an invented
 // prop) - most render an honest "-" because this build's mock data model (search-data.ts) simply
@@ -83,8 +107,8 @@ function PlaceholderFields({ labels }: { labels: string[] }) {
   return <FieldStack fields={labels.map((label) => ({ label, value: DASH }))} />;
 }
 
-/** A small, real column table (real tokens, not a hand-drawn image) - used for Project's "Data
- *  Collection Location", Site/Non-Biotic/Community's "Coordinates", and Permit's Type/No. table.
+/** A small, real column table (real tokens, not a hand-drawn image) - used for Permit's Type/No.
+ *  table and other small grids (location coordinates use the shared LocationDetailsTable).
  *  `rows` are optionally labelled on the left (Site's "Entered Value"/"GDA2020 Equivalent"); when
  *  no row carries a `label`, the leading label column is omitted entirely (Project's own single-row
  *  location table, Permit's table). */
@@ -160,27 +184,14 @@ function ObserversSection({ names = [] }: { names?: (string | undefined)[] }) {
   return <FieldStack fields={[0, 1, 2].map((i) => ({ label: `Observer ${i + 1}`, value: names[i] ?? DASH }))} />;
 }
 
-function CoordinatesTable({ lat, lon }: { lat: number; lon: number }) {
-  return (
-    <ColumnTable
-      columns={["Zone", "Easting", "Northing", "Latitude", "Longitude"]}
-      rows={[
-        { label: "Entered Value", values: [DASH, DASH, DASH, lat.toFixed(4), lon.toFixed(4)] },
-        { label: "GDA2020 Equivalent", values: [DASH, DASH, DASH, DASH, DASH] },
-      ]}
-    />
-  );
-}
-
-/** `full` adds the real Coordinates table - Figma's own two Location Information variants:
- *  Site, and Observation's Non-Biotic/Community, carry the full coordinate table; every other
- *  event/occurrence/observation type gets the simpler map-plus-fields version. */
-function LocationInformationSection({ lat, lon, full = false }: { lat: number; lon: number; full?: boolean }) {
+/** Every record type's Location Information - the map, then the shared Location Details
+ *  coordinate table (the same format everywhere: Projects, Events, Occurrences, Observations),
+ *  then the remaining location fields. */
+function LocationInformationSection({ lat, lon }: { lat: number; lon: number }) {
   return (
     <div className="flex flex-col gap-4">
       <LocationMapPreview lat={lat} lon={lon} />
-      <Field label="Location Details" value={DASH} />
-      {full && <CoordinatesTable lat={lat} lon={lon} />}
+      <Field label="Location Details" value={<LocationDetailsTable lat={lat} lon={lon} />} />
       <PlaceholderFields
         labels={["IBRA Region", "IBRA Sub Region", "Location Method", "Datum", "Reliability", "Sample Site Dimensions", "Location Comment"]}
       />
@@ -267,7 +278,7 @@ function ProjectLocationsSection({ lat, lon }: { lat: number; lon: number }) {
     <div className="flex flex-col gap-3">
       <Field
         label="Data Collection Location"
-        value={<ColumnTable columns={["MGA Easting", "MGA Northing", "Latitude", "Longitude"]} rows={[{ values: [DASH, DASH, lat.toFixed(4), lon.toFixed(4)] }]} />}
+        value={<LocationDetailsTable lat={lat} lon={lon} />}
       />
       <Field label="Study Area Description" value={DASH} />
     </div>
@@ -370,9 +381,8 @@ function buildProjectSections(event: SearchEvent): AccordionItemType[] {
 //    Temporal Details -> Observers -> Location Information -> Photopoint -> Custom Property),
 //    differing only by the type name interpolated into each label - Block/Ramble/Trap/Custom
 //    event follow the identical confirmed template. Site (node 220:47659) is the one real
-//    exception - no "Temporal Details" accordion, and its own Location Information carries the
-//    full Coordinates table (it's the root spatial record every other event type is relative to,
-//    not a child location). ──
+//    exception - no "Temporal Details" accordion. Every type's Location Information shows the same
+//    shared Location Details coordinate table (location-details-table.tsx). ──
 
 function buildEventSections(event: SearchEvent): AccordionItemType[] {
   if (event.type === "Project") return buildProjectSections(event);
@@ -387,7 +397,7 @@ function buildEventSections(event: SearchEvent): AccordionItemType[] {
   sections.push({
     id: "location",
     title: "Location Information",
-    content: <LocationInformationSection lat={event.lat} lon={event.lon} full={event.type === "Site"} />,
+    content: <LocationInformationSection lat={event.lat} lon={event.lon} />,
   });
   sections.push({ id: "photopoint", title: "Photopoint", content: <PhotopointSection /> });
   sections.push({ id: "custom", title: "Custom Property", content: <CustomPropertySection /> });
@@ -438,9 +448,9 @@ function buildOccurrenceSections(o: SearchOccurrence): AccordionItemType[] {
 // ── Observation Individual/Population/Non-Biotic/Community (nodes 220:51644/220:52233/
 //    220:44074/220:46704) - all 4 real Figma frames confirmed directly. Every type shares
 //    Details -> [type-specific sections] -> Observers -> Temporal Details -> Location Information
-//    -> Custom Property; Non-Biotic and Community both carry the full Coordinates table (they're
-//    site-level/plot-level records, not a single organism), and each has its own extra
-//    domain-specific accordions Individual/Population don't. ──
+//    -> Custom Property, with the same shared Location Details coordinate table as every other
+//    record type; Non-Biotic and Community each have their own extra domain-specific accordions
+//    Individual/Population don't. ──
 
 const INDIVIDUAL_SPECIES_FIELDS = [
   "Line",
@@ -617,7 +627,7 @@ function buildObservationSections(o: SearchObservation): AccordionItemType[] {
   sections.push({
     id: "location",
     title: "Location Information",
-    content: <LocationInformationSection lat={o.lat} lon={o.lon} full={o.type === "Non-Biotic" || o.type === "Community"} />,
+    content: <LocationInformationSection lat={o.lat} lon={o.lon} />,
   });
   sections.push({ id: "custom", title: "Custom Property", content: <CustomPropertySection /> });
   return sections;
@@ -627,6 +637,104 @@ function buildSections(record: DetailRecord): AccordionItemType[] {
   if (record.kind === "event") return buildEventSections(record.event);
   if (record.kind === "occurrence") return buildOccurrenceSections(record.occurrence);
   return buildObservationSections(record.observation);
+}
+
+// ── Common "which Project does this belong to" header, shown at the top of every record type's
+//    sidebar (Project/Site/Visit/.../Occurrence/Observation alike). ──
+
+/** The root Project this record ultimately belongs to - itself, when the record already is a root
+ *  Project. */
+function projectFor(record: DetailRecord): SearchEvent | undefined {
+  if (record.kind === "event") return rootProjectOfEvent(record.event);
+  const parentEventId = record.kind === "occurrence" ? record.occurrence.parentEventId : record.observation.parentEventId;
+  return rootProjectForParentEventId(parentEventId);
+}
+
+/** Same small "small-caps label above value" stat field `project-detail`'s own page
+ *  header (`MetaField` there) already establishes - kept as a page-local copy here rather than
+ *  cross-imported, matching this codebase's convention for small, page-scoped primitives. */
+function MetaField({ label, children }: { label: string; children: ReactNode }) {
+  return (
+    <div className="flex flex-col gap-1.5">
+      <p className="text-xs font-semibold tracking-wide text-quaternary uppercase">{label}</p>
+      <div className="text-sm text-primary">{children}</div>
+    </div>
+  );
+}
+
+function ProjectSummaryHeader({ project }: { project?: SearchEvent }) {
+  if (!project) return null;
+  return (
+    <div className="mb-6 flex flex-col gap-5 border-b border-secondary pb-6">
+      <div className="flex flex-col gap-2">
+        <p className="text-xs font-semibold tracking-wide text-quaternary uppercase">Project</p>
+        <h2 className="text-xl font-medium text-primary">{project.name}</h2>
+      </div>
+      <div className="flex flex-wrap items-start gap-x-8 gap-y-4">
+        <MetaField label="Project ID">{project.code}</MetaField>
+        <MetaField label="Start Date">{project.startDate}</MetaField>
+        <MetaField label="End Date">{project.endDate}</MetaField>
+        <MetaField label="Status">
+          <BadgeWithDot size="sm" color={project.statusColor}>
+            {project.status}
+          </BadgeWithDot>
+        </MetaField>
+        <MetaField label="Published by">{project.org}</MetaField>
+      </div>
+    </div>
+  );
+}
+
+// ── "Go to project" - the sidebar's own top-right quick action, per direct request: opens the
+//    project's own real detail page with the same record selected in that page's own TreeView. ──
+
+/** The one project with a real, dedicated detail page in this build - "Adelaide Hills Bushland
+ *  Survey" (see project-detail's own comment: "Only one project in this whole build has a
+ *  real detail page... routing every other project's own records to that same page would
+ *  misrepresent a different project as if it were that specific example"). "Go to project" only
+ *  ever navigates for real when a record's own root Project is this one. */
+const ADELAIDE_HILLS_PROJECT_ID = "adelaide-hills";
+
+/** project-detail's own `projectRecordTree` is a separate, smaller, hand-authored mock
+ *  tree with its own ids ("site"/"visit"/...) - not the same records as search-data.ts, and most of
+ *  its node codes don't correspond to any real record here (see that file's own comment on
+ *  `projectRecordTree`). Only these two nodes genuinely share a real code with a record in this
+ *  dataset - mapped here so "Go to project" can honestly pre-select a matching node in that page's
+ *  own TreeView (via its real `?select=<id>` convention, see `selectedRecordKey` there) instead of
+ *  guessing wrong. Every other record still navigates to the right real project - it just doesn't
+ *  land on a pre-selected node, which is honest, not a bug (no fabricated match). */
+const ADELAIDE_HILLS_TREE_NODE_BY_CODE: Record<string, string> = {
+  SU00501: "site", // Cleland Bushland Site
+  VU00501: "visit", // Visit VU00501
+};
+
+function GoToProjectButton({ record }: { record: DetailRecord }) {
+  const roleHref = useRoleHref();
+  const project = projectFor(record);
+  const isAdelaideHills = project?.id === ADELAIDE_HILLS_PROJECT_ID;
+
+  if (!isAdelaideHills) {
+    return (
+      <Tooltip title="This preview only has a full project page built for Adelaide Hills Bushland Survey">
+        <Focusable>
+          <span className="inline-flex">
+            <Button color="secondary" size="sm" isDisabled>
+              Go to project
+            </Button>
+          </span>
+        </Focusable>
+      </Tooltip>
+    );
+  }
+
+  const nodeId = record.kind === "event" ? ADELAIDE_HILLS_TREE_NODE_BY_CODE[record.event.code] : undefined;
+  const target = `${roleHref("/pages/project-detail")}${nodeId ? `&select=${nodeId}` : ""}`;
+
+  return (
+    <Button color="secondary" size="sm" href={target}>
+      Go to project
+    </Button>
+  );
 }
 
 /**
@@ -662,25 +770,31 @@ export function RecordDetailSidebar({ record, onClose }: { record: DetailRecord 
       widthClassName="max-w-2xl"
       headerActions={
         record && (
-          <Tooltip title={allOpen ? "Collapse all sections" : "Expand all sections"}>
-            <TooltipTrigger
-              onPress={toggleAll}
-              aria-label={allOpen ? "Collapse all sections" : "Expand all sections"}
-              className="flex size-9 shrink-0 items-center justify-center rounded-md text-quaternary outline-focus-ring transition duration-100 ease-linear hover:bg-secondary hover:text-primary"
-            >
-              <ChevronSelectorVertical className="size-4" />
-            </TooltipTrigger>
-          </Tooltip>
+          <>
+            <GoToProjectButton record={record} />
+            <Tooltip title={allOpen ? "Collapse all sections" : "Expand all sections"}>
+              <TooltipTrigger
+                onPress={toggleAll}
+                aria-label={allOpen ? "Collapse all sections" : "Expand all sections"}
+                className="flex size-9 shrink-0 items-center justify-center rounded-md text-quaternary outline-focus-ring transition duration-100 ease-linear hover:bg-secondary hover:text-primary"
+              >
+                <ChevronSelectorVertical className="size-4" />
+              </TooltipTrigger>
+            </Tooltip>
+          </>
         )
       }
     >
       {record && (
-        <Accordion
-          items={sections}
-          variant="boxed"
-          openKeys={openState.openKeys}
-          onOpenKeysChange={(keys) => setOpenState((s) => ({ ...s, openKeys: keys }))}
-        />
+        <>
+          <ProjectSummaryHeader project={projectFor(record)} />
+          <Accordion
+            items={sections}
+            variant="boxed"
+            openKeys={openState.openKeys}
+            onOpenKeysChange={(keys) => setOpenState((s) => ({ ...s, openKeys: keys }))}
+          />
+        </>
       )}
     </SidePanel>
   );

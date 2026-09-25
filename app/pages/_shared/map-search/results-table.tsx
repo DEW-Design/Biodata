@@ -2,12 +2,10 @@
 
 import type { FC, ReactNode } from "react";
 import { useMemo, useState } from "react";
-import { Button as AriaButton } from "react-aria-components";
-import { Columns03, Sliders01, SearchLg, DotsHorizontal, ChevronRight, ChevronUp, ChevronDown, ChevronSelectorVertical, XClose } from "@untitledui/icons";
+import { Columns03, Sliders01, SearchLg, ChevronRight, ChevronLeft } from "@untitledui/icons";
 import { Input } from "@/components/base/input/input";
 import { Checkbox } from "@/components/base/checkbox/checkbox";
 import { Tooltip, TooltipTrigger } from "@/components/base/tooltip/tooltip";
-import { Dropdown } from "@/components/base/dropdown/dropdown";
 import { Button } from "@/components/base/buttons/button";
 import { Table, TableCard } from "@/components/application/table/table";
 import { cx } from "@/utils/cx";
@@ -37,6 +35,15 @@ export interface ColumnDef<T> {
   /** Extra className merged onto this column's <Table.Cell> - same purpose as `headerClassName`. */
   cellClassName?: string;
   render: (row: T) => ReactNode;
+  /** A plain, comparable value for this column - backs the "All Filters" side panel's per-column
+   *  facets (app/pages/observations/page.tsx), so a filter category and its real values
+   *  can never drift from what the column itself actually shows. Deliberately separate from
+   *  `render` (which can return a Badge, an icon, a button - not something to compare/group by) and
+   *  from `searchText` (a per-row free-text haystack, not a per-column discrete value). Omitted on
+   *  a column that shouldn't be filterable (Hierarchy - a breadcrumb, not a discrete value to
+   *  select - or a column whose real data is a constant placeholder for every row, which would
+   *  produce a filter with exactly one, functionally useless option). */
+  filterValue?: (row: T) => string;
 }
 
 /** Column id for the synthetic, pinned "view action" column `ResultsTable` appends when
@@ -56,90 +63,85 @@ export interface TypeFilterOption {
 /** The interactive Hierarchy cell, matching Figma's style and per direct feedback on its exact
  *  behaviour:
  *  - `chain` is root-Project-first, ending in the record's own Event - that last segment is
- *    *always* visible (the "last level of hierarchy is the same as the Event ID" rule), never
- *    hidden by "Hide one level up"/"Hide all levels" - only the ancestors above it collapse.
- *  - The last segment is deliberately plain text, never a button - it's the row's own record,
- *    already inspectable via the row itself (click-to-open, or the ID column), so a second,
- *    identical-looking click target for it would be redundant. Every *ancestor* segment above it
- *    is a real button that opens a side panel with that specific ancestor's own details - "-" when
- *    `chain` is empty (a root Project's own Hierarchy cell, or a record attached directly to one,
- *    per `eventChain`/`hierarchyFor` in search-data.ts).
- *  - Starts collapsed to the last two levels (the record itself plus its immediate parent), not
- *    just the one non-clickable level - per direct feedback, the default state must always surface
- *    at least one clickable ancestor rather than requiring "Show one level up" before any link
- *    appears. "Show one level up" reveals one more ancestor above that at a time, "Show all levels"
- *    reveals the full chain, "Hide one level up"/"Hide all levels" collapse back down (never below
- *    the one always-shown, non-clickable level).
- *  `hiddenCount`/`detailEvent` are self-contained per cell instance - each row/column render
- *  produces its own `HierarchyCell` element, so neither state leaks across rows. */
+ *    *always* visible, never collapsed away - it's the row's own record, already inspectable via
+ *    the row itself, so it's deliberately plain text, never a button (a second, identical-looking
+ *    click target for it would be redundant). Every *ancestor* segment is a real button that opens
+ *    a side panel with that specific ancestor's own details - "-" when `chain` is empty (a root
+ *    Project's own Hierarchy cell, or a record attached directly to one, per `eventChain`/
+ *    `hierarchyFor` in search-data.ts).
+ *  - **Collapsed-breadcrumb pattern**, replacing an earlier "..." icon button that opened a
+ *    4-option dropdown menu (Show/Hide one level up, Show/Hide all) - per direct feedback that the
+ *    menu wasn't intuitive, a hidden set of options behind an ambiguous dots icon. This is the same
+ *    collapsed-ellipsis breadcrumb already familiar from GitHub's file-path breadcrumb, Finder/
+ *    Explorer's path bar, and VS Code's own breadcrumb: starts collapsed to the last two levels
+ *    (the record plus its immediate parent) with a single "···" segment standing in for whatever's
+ *    hidden above - one click expands the full chain inline, and a small "‹" segment appears at the
+ *    front to collapse it back. One clear toggle, not four buried options.
+ *  `expanded`/`detailEvent` are self-contained per cell instance - each row/column render produces
+ *  its own `HierarchyCell` element, so neither state leaks across rows. */
 export function HierarchyCell({ chain }: { chain: SearchEvent[] }) {
-  const maxHidden = Math.max(0, chain.length - 1);
-  const defaultHidden = Math.max(0, chain.length - 2);
-  const [hiddenCount, setHiddenCount] = useState(defaultHidden);
+  const [expanded, setExpanded] = useState(false);
   const [detailEvent, setDetailEvent] = useState<SearchEvent | null>(null);
 
   if (chain.length === 0) return <span className="text-sm text-tertiary">-</span>;
 
-  const visible = chain.slice(hiddenCount);
+  const canCollapse = chain.length > 2;
+  const visible = expanded || !canCollapse ? chain : chain.slice(-2);
+  const hiddenCount = chain.length - visible.length;
 
   return (
     <>
       {/* Stops the click from bubbling to the row's own onAction (which opens the record detail
           panel) - same defensive stopPropagation already used for the Resources tab's reference-
           link anchor in app/pages/observations/page.tsx's resourceColumns. */}
-      <div className="flex items-center gap-1.5" onClick={(e) => e.stopPropagation()}>
-        <Dropdown.Root>
-          <AriaButton
-            aria-label="Hierarchy options"
-            className="flex size-6 shrink-0 items-center justify-center rounded-md border border-secondary text-quaternary outline-focus-ring transition duration-100 ease-linear hover:bg-secondary hover:text-primary"
+      <div className="flex flex-wrap items-center gap-1" onClick={(e) => e.stopPropagation()} title={chain.map((event) => event.code).join(" > ")}>
+        {hiddenCount > 0 && (
+          <span className="flex items-center gap-1">
+            <button
+              type="button"
+              onClick={() => setExpanded(true)}
+              aria-label={`Show ${hiddenCount} more level${hiddenCount === 1 ? "" : "s"} of hierarchy`}
+              className="rounded px-1 text-sm font-medium text-quaternary outline-focus-ring hover:bg-secondary hover:text-secondary"
+            >
+              •••
+            </button>
+            <ChevronRight className="size-3 shrink-0 text-quaternary" />
+          </span>
+        )}
+        {visible.map((event, i) => {
+          // The last visible segment is always the chain's own final entry (the record itself,
+          // per eventChain/hierarchyFor) regardless of how many ancestors are currently shown.
+          const isRecordItself = i === visible.length - 1;
+          return (
+            <span key={event.id} className="flex items-center gap-1">
+              {i > 0 && <ChevronRight className="size-3 shrink-0 text-quaternary" />}
+              {isRecordItself ? (
+                <span className="text-sm font-medium text-secondary">{event.code}</span>
+              ) : (
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setDetailEvent(event);
+                  }}
+                  className="rounded text-sm font-medium text-brand-secondary outline-focus-ring hover:underline"
+                >
+                  {event.code}
+                </button>
+              )}
+            </span>
+          );
+        })}
+        {expanded && canCollapse && (
+          <button
+            type="button"
+            onClick={() => setExpanded(false)}
+            aria-label="Collapse hierarchy"
+            className="ml-0.5 flex size-5 shrink-0 items-center justify-center rounded text-quaternary outline-focus-ring hover:bg-secondary hover:text-secondary"
           >
-            <DotsHorizontal className="size-3.5" />
-          </AriaButton>
-          <Dropdown.Popover placement="bottom left" className="w-56">
-            <Dropdown.Menu aria-label="Hierarchy options">
-              <Dropdown.Item id="show-one" icon={ChevronUp} isDisabled={hiddenCount === 0} onAction={() => setHiddenCount((n) => Math.max(0, n - 1))}>
-                Show one level up
-              </Dropdown.Item>
-              <Dropdown.Item id="hide-one" icon={ChevronDown} isDisabled={hiddenCount === maxHidden} onAction={() => setHiddenCount((n) => Math.min(maxHidden, n + 1))}>
-                Hide one level up
-              </Dropdown.Item>
-              <Dropdown.Item id="show-all" icon={ChevronSelectorVertical} isDisabled={hiddenCount === 0} onAction={() => setHiddenCount(0)}>
-                Show all levels
-              </Dropdown.Item>
-              <Dropdown.Item id="hide-all" icon={XClose} isDisabled={hiddenCount === maxHidden} onAction={() => setHiddenCount(maxHidden)}>
-                Hide all levels
-              </Dropdown.Item>
-            </Dropdown.Menu>
-          </Dropdown.Popover>
-        </Dropdown.Root>
-
-        <div className="flex flex-wrap items-center gap-1" title={chain.map((event) => event.code).join(" > ")}>
-          {visible.map((event, i) => {
-            // The last visible segment is always the chain's own final entry (the record itself,
-            // per eventChain/hierarchyFor) regardless of how many ancestors are currently shown -
-            // `visible` only ever trims from the front, so its own last element never changes.
-            const isRecordItself = i === visible.length - 1;
-            return (
-              <span key={event.id} className="flex items-center gap-1">
-                {i > 0 && <ChevronRight className="size-3 shrink-0 text-quaternary" />}
-                {isRecordItself ? (
-                  <span className="text-sm font-medium text-secondary">{event.code}</span>
-                ) : (
-                  <button
-                    type="button"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setDetailEvent(event);
-                    }}
-                    className="rounded text-sm font-medium text-brand-secondary outline-focus-ring hover:underline"
-                  >
-                    {event.code}
-                  </button>
-                )}
-              </span>
-            );
-          })}
-        </div>
+            <ChevronLeft className="size-3.5" />
+          </button>
+        )}
       </div>
 
       {/* Same rich, Figma-matched sidebar a row click on the main table opens (record-detail.tsx)
@@ -170,6 +172,9 @@ export function ResultsTable<T extends { id: string }>({
   showHeaderColumnCustomizer = false,
   onRowClick,
   size = "md",
+  searchValue,
+  onSearchChange,
+  hideSearchBox = false,
 }: {
   ariaLabel: string;
   columns: ColumnDef<T>[];
@@ -201,10 +206,22 @@ export function ResultsTable<T extends { id: string }>({
   onRowClick?: (row: T) => void;
   /** Row/header density. Defaults to "md" so every results tab matches the Projects page's own table. */
   size?: "xs" | "sm" | "md";
+  /** Controls the search box from outside instead of this component's own internal state - pass
+   *  both together (omit either and this component falls back to its original, fully self-
+   *  contained behaviour, unaffected). Species mode uses this to fold its own search input into a
+   *  shared toolbar card alongside its filter dropdowns, per a real Figma reference - see
+   *  species-results.tsx. */
+  searchValue?: string;
+  onSearchChange?: (value: string) => void;
+  /** When true, this component doesn't render its own `<Input>` search box at all - the caller
+   *  renders one elsewhere, wired to `searchValue`/`onSearchChange` above, so there's exactly one
+   *  real search box, not two. Meaningless without both of those also set. @default false */
+  hideSearchBox?: boolean;
 }) {
   const [visibleIds, setVisibleIds] = useState<Set<string>>(() => new Set(columns.filter((c) => c.defaultVisible !== false).map((c) => c.id)));
   const [activeType, setActiveTypeState] = useState<string>("all");
-  const [keyword, setKeywordState] = useState("");
+  const [internalKeyword, setInternalKeyword] = useState("");
+  const keyword = searchValue !== undefined ? searchValue : internalKeyword;
   const [customizeOpen, setCustomizeOpen] = useState(false);
   const [detailRow, setDetailRow] = useState<T | null>(null);
   const [page, setPage] = useState(1);
@@ -220,7 +237,8 @@ export function ResultsTable<T extends { id: string }>({
     setPage(1);
   };
   const setKeyword = (value: string) => {
-    setKeywordState(value);
+    if (onSearchChange) onSearchChange(value);
+    else setInternalKeyword(value);
     setPage(1);
   };
   const setPageSize = (size: number) => {
@@ -358,16 +376,18 @@ export function ResultsTable<T extends { id: string }>({
         </div>
       )}
 
-      <div className="flex shrink-0 items-center gap-2">
-        <Input icon={SearchLg} placeholder="Search" value={keyword} onChange={setKeyword} className="flex-1" />
-        {!showHeaderColumnCustomizer && (
-          <Tooltip title="Customise columns">
-            <TooltipTrigger onPress={() => setCustomizeOpen(true)} aria-label="Customise columns" className="flex size-10 shrink-0 items-center justify-center rounded-lg border border-secondary text-quaternary transition duration-100 ease-linear hover:bg-secondary hover:text-primary">
-              <Sliders01 className="size-4" />
-            </TooltipTrigger>
-          </Tooltip>
-        )}
-      </div>
+      {!(hideSearchBox && showHeaderColumnCustomizer) && (
+        <div className="flex shrink-0 items-center gap-2">
+          {!hideSearchBox && <Input icon={SearchLg} placeholder="Search" value={keyword} onChange={setKeyword} className="flex-1" />}
+          {!showHeaderColumnCustomizer && (
+            <Tooltip title="Customise columns">
+              <TooltipTrigger onPress={() => setCustomizeOpen(true)} aria-label="Customise columns" className="flex size-10 shrink-0 items-center justify-center rounded-lg border border-secondary text-quaternary transition duration-100 ease-linear hover:bg-secondary hover:text-primary">
+                <Sliders01 className="size-4" />
+              </TooltipTrigger>
+            </Tooltip>
+          )}
+        </div>
+      )}
 
       {/* min-h-0 flex-1 - takes exactly the space left over after the chip row/search box above,
           so the table region below (and, via `bodyScrollable`, its rows specifically) scrolls

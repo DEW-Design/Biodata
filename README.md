@@ -56,6 +56,7 @@ The docs site (`app/(docs)`) is organized into three sections: **primitives** (d
 | [Input](/components/input) | Text field plus specialised variants - password, date, number, payment, tags, file upload, PIN. |
 | [Modal](/components/modal) | Overlay dialog built on React Aria - Confirmation, Destructive, and free-form Form variants, plus the base ModalOverlay/Modal/Dialog primitives. |
 | [Progress](/components/progress) | Linear progress bar (4 label layouts) plus circular and half-circle indicators, 5 sizes. |
+| [Progress steps](/components/progress-steps) | Multi-step progress: icon, number or featured-icon steps with text (horizontal or vertical), minimal dot rows, and a text-with-line bar. |
 | [Radio buttons](/components/radio-buttons) | Single-choice selection within a group - optional hint text, horizontal/vertical orientation, two sizes. |
 | [Radio groups](/components/radio-groups) | Card-style single-choice selection - icon, avatar, payment, radio, and checkbox layouts, two sizes. |
 | [Section headers](/components/section-headers) | Title/subheading/actions row with a bottom border, for page and card section chrome - replaces the hand-rolled version used across /pages/*. |
@@ -71,7 +72,7 @@ The docs site (`app/(docs)`) is organized into three sections: **primitives** (d
 
 | Pattern | Description |
 | --- | --- |
-| [Forms](/patterns/forms) | 🚧 Documentation coming soon. |
+| [Forms](/patterns/forms) | The one create/edit form pattern: FormPage header, sections, FormRow fields, Back a step / Continue footer, inline errors after a failed attempt. |
 | [Navigation](/patterns/navigation) | The sidebar shell's two nav pieces - primary icon rail + contextual sidebar (side nav) and the persistent header bar (top nav). |
 | [Tree selection](/patterns/tree-view) | Multi-select file/folder tree composed from Tree view + the base Checkbox - cascading selection and indeterminate parents. |
 | [Empty states](/patterns/empty-states) | 🚧 Documentation coming soon. |

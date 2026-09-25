@@ -28,7 +28,7 @@ function NewDla() {
   const renewFrom = useDla(renewFromId);
 
   return (
-    <DlaShell breadcrumbCurrent={renewFrom ? `Renew ${renewFrom.id}` : "New request"}>
+    <DlaShell breadcrumbCurrent={renewFrom ? `Renew ${renewFrom.id}` : "New request"} formSidebar>
       <DlaForm
         renewFrom={renewFrom}
         onBack={() => router.push(roleHref("/pages/dla"))}

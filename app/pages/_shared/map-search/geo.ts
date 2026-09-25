@@ -89,7 +89,36 @@ function formatPoint([lat, lon]: [number, number]): string {
     return `${lat.toFixed(2)}, ${lon.toFixed(2)}`;
 }
 
+/** Deliberately reduces a coordinate's precision for a sensitive/`"Level 2"` species record (see
+ *  `LicenceLevel` in search-data.ts) - snaps both lat and lon to the centre of a grid cell sized to
+ *  the requested radius (≈111km per degree of latitude, close enough for this illustrative build's
+ *  own already-approximate coordinates - see `NationalPark`'s own doc comment on that convention),
+ *  rather than adding random jitter. Deterministic and honestly reproducible: the same input always
+ *  obfuscates to the same output, unlike a random offset that would silently "wander" a sensitive
+ *  species' displayed location on every render. This is the same real BDBSA mechanic already
+ *  documented in CONTEXT.md's "BDBSA domain research" - a sensitive species' precise location is
+ *  withheld even when the rest of its project is public. */
+export function obfuscateCoordinate(lat: number, lon: number, radiusKm: number): { lat: number; lon: number; radiusKm: number } {
+    const gridDeg = radiusKm / 111;
+    const snap = (value: number) => Math.round(value / gridDeg) * gridDeg;
+    return { lat: Number(snap(lat).toFixed(2)), lon: Number(snap(lon).toFixed(2)), radiusKm };
+}
+
+/** `source` of the whole-state search area (see `wholeStateBoundary`). */
+export const WHOLE_STATE_SOURCE = "region:sa";
+
+/**
+ * "All of South Australia" as a search area, for a keyword-only search (the header search sends a
+ * species or record term to Explore with no drawn area). A circle centred on the state that covers
+ * every record in the dataset, so it goes through the same spatial filter as any other area - no
+ * separate "no area" code path. Marked with `source` so it can be summarised by name.
+ */
+export function wholeStateBoundary(): Boundary {
+    return { id: "whole-state", source: WHOLE_STATE_SOURCE, kind: "circle", center: [-32, 135], radiusKm: 1000, label: "All of South Australia" };
+}
+
 export function boundarySummary(boundary: Boundary): string {
+    if (boundary.source === WHOLE_STATE_SOURCE) return "All of South Australia";
     if (boundary.kind === "circle") {
         const place = boundary.label ?? formatPoint(boundary.center);
         return `${boundary.radiusKm} km radius around ${place}`;

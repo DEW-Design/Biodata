@@ -16,7 +16,7 @@
 // variant be judged on the same tab.
 //
 // Features reduce, they don't change fundamentally (per direct feedback): this is the registered-user
-// shell with features taken away, never a redesign. Header: same GlobalProjectSearch and Log in /
+// shell with features taken away, never a redesign. Header: same GlobalSearch and Log in /
 // Sign up, with "Add project" / "Upload dataset" removed. Home: the real Flora and Fauna Dashboard
 // exactly as it ships (all four tabs, all four cards), under a gradient card. Projects: the real
 // ProjectListContent. Only column 2 is new content, because the brief asks for it. An earlier
@@ -48,10 +48,12 @@ import { Tooltip } from "@/components/base/tooltip/tooltip";
 import { Accordion, type AccordionItemType } from "@/components/base/accordion/accordion";
 import { GuestActionButton } from "@/app/pages/_shared/guest-action-gate";
 import { DataOverviewContent } from "@/app/pages/_shared/data-overview";
-import { GlobalProjectSearch } from "@/app/pages/_shared/global-search";
+import { GlobalSearch } from "@/app/pages/_shared/global-search";
 import { ProjectListContent } from "@/app/pages/_shared/project-list-content";
 import { registeredUserFooterLinks } from "@/lib/registered-user-nav";
 import { cx } from "@/utils/cx";
+import Link from "next/link";
+import { assetPath } from "@/lib/base-path";
 
 const GUIDES_HREF = "/pages/biodata-home#knowledge-centre";
 
@@ -81,7 +83,7 @@ function GuestHeader() {
       <div className="flex flex-wrap items-center gap-4">
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
-          src="/pages/dashboard/gov-sa-dew-lockup.png"
+          src={assetPath("/pages/dashboard/gov-sa-dew-lockup.png")}
           alt="Government of South Australia, Department for Environment and Water"
           className="h-[37px] w-auto"
         />
@@ -91,7 +93,7 @@ function GuestHeader() {
       <div className="flex flex-wrap items-center gap-3">
         <div className="w-full sm:w-64 lg:w-[395px]">
           <Suspense fallback={null}>
-            <GlobalProjectSearch />
+            <GlobalSearch />
           </Suspense>
         </div>
         <GuestAuthActions />
@@ -115,9 +117,9 @@ function IconRail({ section, onSection }: { section: Section; onSection: (s: Sec
       {railSections.map(({ id, label, icon: Icon, href }) => {
         const inactive = "text-quaternary hover:bg-tertiary hover:text-primary";
         return href ? (
-          <a key={id} href={href} aria-label={label} title={label} className={cx(base, inactive)}>
+          <Link key={id} href={href} aria-label={label} title={label} className={cx(base, inactive)}>
             <Icon className="size-5" />
-          </a>
+          </Link>
         ) : (
           <button
             key={id}
@@ -520,7 +522,17 @@ function Picker({ current, setCurrent }: { current: number; setCurrent: (i: numb
   );
 }
 
-export default function PublicUserProto() {
+// GuestActionButton reads the active role via useSearchParams, so the whole page needs a Suspense
+// boundary to prerender (same pattern as the /pages/** shells).
+export default function PublicUserPage() {
+  return (
+    <Suspense fallback={null}>
+      <PublicUserProto />
+    </Suspense>
+  );
+}
+
+function PublicUserProto() {
   const [current, setCurrent] = useState(0);
   const [tab, setTab] = useState<Key>("overview");
   const [section, setSection] = useState<Section>("home");

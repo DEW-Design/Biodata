@@ -9,6 +9,7 @@ import { Circle, MapContainer, Marker, Polygon, ScaleControl, TileLayer, useMap 
 import { ZoomIn, ZoomOut } from "@untitledui/icons";
 import { Button } from "@/components/base/buttons/button";
 import type { Boundary } from "./geo";
+import { assetPath } from "@/lib/base-path";
 
 // A real, working map of South Australia - OpenStreetMap tiles via Leaflet, not a fabricated grid
 // or a static image. Kept in app/pages/_shared (not components/custom) to match the precedent
@@ -24,9 +25,9 @@ import type { Boundary } from "./geo";
 // node_modules/leaflet/dist/images/ into public/leaflet/, instead of leaflet's own asset path.
 delete (L.Icon.Default.prototype as unknown as { _getIconUrl?: unknown })._getIconUrl;
 L.Icon.Default.mergeOptions({
-    iconRetinaUrl: "/leaflet/marker-icon-2x.png",
-    iconUrl: "/leaflet/marker-icon.png",
-    shadowUrl: "/leaflet/marker-shadow.png",
+    iconRetinaUrl: assetPath("/leaflet/marker-icon-2x.png"),
+    iconUrl: assetPath("/leaflet/marker-icon.png"),
+    shadowUrl: assetPath("/leaflet/marker-shadow.png"),
 });
 
 const SA_CENTER: [number, number] = [-30.5, 135.8];
@@ -55,7 +56,7 @@ function ZoomControls() {
 /** Pans/zooms to fit every currently-active boundary at once, however each one was defined (drawn,
  *  entered as coordinates, or picked from the national park list) - one consistent "show me
  *  everything I've defined so far" behaviour regardless of source or count. */
-function FlyToBoundaries({ boundaries }: { boundaries: Boundary[] }) {
+function FlyToBoundaries({ boundaries, paddingTopLeft = [48, 48] }: { boundaries: Boundary[]; paddingTopLeft?: [number, number] }) {
     const map = useMap();
     const boundariesKey = JSON.stringify(boundaries);
 
@@ -75,7 +76,9 @@ function FlyToBoundaries({ boundaries }: { boundaries: Boundary[] }) {
                 bounds.extend(L.latLngBounds(boundary.points));
             }
         }
-        map.flyToBounds(bounds, { padding: [48, 48], duration: 0.6 });
+        // paddingTopLeft keeps fitted areas clear of anything floating over the map's top-left
+        // (e.g. the map search's floating panel).
+        map.flyToBounds(bounds, { paddingTopLeft, paddingBottomRight: [48, 48], duration: 0.6 });
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [boundariesKey, map]);
 
@@ -150,10 +153,12 @@ export interface SAMapProps {
     onBoundaryAdd: (boundary: Boundary) => void;
     activeDrawTool: "circle" | "polygon" | null;
     onDrawToolChange: (tool: "circle" | "polygon" | null) => void;
+    /** Extra fit-to-bounds padding at the top-left, for UI floating over the map. */
+    fitPaddingTopLeft?: [number, number];
     className?: string;
 }
 
-export default function SAMap({ boundaries, onBoundaryAdd, activeDrawTool, onDrawToolChange, className }: SAMapProps) {
+export default function SAMap({ boundaries, onBoundaryAdd, activeDrawTool, onDrawToolChange, fitPaddingTopLeft, className }: SAMapProps) {
     return (
         <div className={className}>
             <MapContainer
@@ -178,7 +183,7 @@ export default function SAMap({ boundaries, onBoundaryAdd, activeDrawTool, onDra
                 <ScaleControl position="bottomleft" imperial={false} />
                 <ZoomControls />
                 <DrawBridge activeDrawTool={activeDrawTool} onDrawToolChange={onDrawToolChange} onBoundaryAdd={onBoundaryAdd} />
-                <FlyToBoundaries boundaries={boundaries} />
+                <FlyToBoundaries boundaries={boundaries} paddingTopLeft={fitPaddingTopLeft} />
 
                 {boundaries.map((boundary) =>
                     boundary.kind === "circle" ? (
@@ -187,7 +192,19 @@ export default function SAMap({ boundaries, onBoundaryAdd, activeDrawTool, onDra
                             <Marker position={boundary.center} />
                         </Fragment>
                     ) : (
-                        <Polygon key={boundary.id} positions={boundary.points} pathOptions={{ color: BOUNDARY_COLOR, fillColor: BOUNDARY_COLOR, fillOpacity: 0.15, weight: 2 }} />
+                        <Fragment key={boundary.id}>
+                            <Polygon positions={boundary.points} pathOptions={{ color: BOUNDARY_COLOR, fillColor: BOUNDARY_COLOR, fillOpacity: 0.15, weight: 2 }} />
+                            {/* Uploaded-shapefile polygons also get a marker (at their vertex average) so
+                                every location a shapefile added is pinned, not just its point features. */}
+                            {boundary.source?.startsWith("shapefile:") && (
+                                <Marker
+                                    position={[
+                                        boundary.points.reduce((sum, [lat]) => sum + lat, 0) / boundary.points.length,
+                                        boundary.points.reduce((sum, [, lon]) => sum + lon, 0) / boundary.points.length,
+                                    ]}
+                                />
+                            )}
+                        </Fragment>
                     ),
                 )}
             </MapContainer>

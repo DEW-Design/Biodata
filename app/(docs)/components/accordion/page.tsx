@@ -8,6 +8,7 @@ import { ContextualConfigPanel } from "@/components/ContextualConfigPanel";
 import { ScaffoldCheckbox, ScaffoldLabel } from "@/components/scaffold/controls";
 import { isFeatureEnabled } from "@/config/design-system.config";
 import { useConfig } from "@/lib/config-context";
+import Link from "next/link";
 
 const Section = ({ label, children }: { label: string; children: React.ReactNode }) => (
   <div className="flex flex-wrap items-center gap-6 rounded-xl border border-secondary bg-secondary p-6">
@@ -215,10 +216,10 @@ export default function AccordionPage() {
       {/* ── Where it's used ── */}
       <h2 className="text-balance">Where it&apos;s used</h2>
       <p className="text-balance">
-        <a href="/marketing/faq-accordion">Marketing / FAQ accordion</a> composes this component for its
+        <Link href="/marketing/faq-accordion">Marketing / FAQ accordion</Link> composes this component for its
         question/answer list, rather than hand-rolling its own expand/collapse state. The <code>boxed</code> variant
         is used for the per-section cards in the record-detail sidebar on{" "}
-        <a href="/pages/observations">Observations</a>.
+        <Link href="/pages/observations">Observations</Link>.
       </p>
 
       {/* ── Figma ── */}

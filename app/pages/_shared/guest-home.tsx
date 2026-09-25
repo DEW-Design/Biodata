@@ -6,7 +6,7 @@ import type { Key } from "react-aria-components";
 import { ArrowNarrowUpRight, BookOpen01, CheckVerified01, Download02, PlayCircle, ShieldTick, UserPlus01 } from "@untitledui/icons";
 import { Button } from "@/components/base/buttons/button";
 import { GuestActionButton } from "@/app/pages/_shared/guest-action-gate";
-import { registeredUserFooterLinks } from "@/lib/registered-user-nav";
+import { SidebarFooterLinks } from "@/app/pages/_shared/sidebar-footer-links";
 
 // public-user's Home/Projects content, folded in from `/proto/public-user` (the "Reference" column-2
 // variant the user picked, of the three compared there - Disclosure and How it works are the other
@@ -137,11 +137,12 @@ const aboutParagraphs = [
 // The "Reference" variant from `/proto/public-user` - everything visible at once, no interaction,
 // picked over Disclosure (a boxed Accordion) and How it works (a 3-step narrative), both still in
 // the lab as the record of what else was considered.
-export function GuestAboutAside({ sectionLabel }: { sectionLabel: string }): ReactNode {
+export function GuestAboutAside({ sectionLabel, actions }: { sectionLabel: string; /** An "Actions" group shown first, above the About copy - the Projects section passes its own. */ actions?: ReactNode }): ReactNode {
   return (
     <aside aria-label="Section" className="hidden w-[286px] shrink-0 flex-col justify-between gap-6 overflow-y-auto border-r border-secondary bg-secondary p-4 lg:flex">
       <div className="flex flex-col gap-6">
         <p className="text-xs font-semibold tracking-wide text-quaternary uppercase">{sectionLabel}</p>
+        {actions && <div className="border-b border-secondary pb-6">{actions}</div>}
         <section className="flex flex-col gap-2">
           <h2 className="text-base font-semibold text-primary">What is BioData SA?</h2>
           {aboutParagraphs.map((p) => (
@@ -158,11 +159,7 @@ export function GuestAboutAside({ sectionLabel }: { sectionLabel: string }): Rea
           </Button>
         </section>
       </div>
-      <div className="flex flex-col gap-2 border-t border-secondary pt-4 text-xs text-quaternary">
-        {registeredUserFooterLinks.map((link) => (
-          <p key={link}>{link}</p>
-        ))}
-      </div>
+      <SidebarFooterLinks />
     </aside>
   );
 }

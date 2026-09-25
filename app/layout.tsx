@@ -4,6 +4,7 @@ import "./globals.css";
 import { Agentation } from "agentation";
 import { Toaster } from "@/components/application/toast/toast";
 import { ConfigProvider } from "@/lib/config-context";
+import { AppRouterProvider } from "@/components/app-router-provider";
 
 // Geist dresses the docs site chrome (sidebar, headings, prose).
 const geist = Geist({
@@ -39,11 +40,13 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={`${geist.variable} ${geistMono.variable} ${barlow.variable} font-sans`} suppressHydrationWarning>
-        <ConfigProvider>
-          {children}
-          <Toaster />
-          {process.env.NODE_ENV === "development" && <Agentation />}
-        </ConfigProvider>
+        <AppRouterProvider>
+          <ConfigProvider>
+            {children}
+            <Toaster />
+            {process.env.NODE_ENV === "development" && <Agentation />}
+          </ConfigProvider>
+        </AppRouterProvider>
       </body>
     </html>
   );

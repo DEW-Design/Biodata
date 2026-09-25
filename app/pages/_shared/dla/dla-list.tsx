@@ -1,9 +1,13 @@
 "use client";
 
 import { useState, type ReactNode } from "react";
+import type { Key, SortDescriptor } from "react-aria-components";
+import { CURRENT_USER_NAME, StatusFilterButton, sortRows, type AgreementScope, type SortValue } from "@/app/pages/_shared/agreement-scope";
+import { dlaStatusOrder } from "@/app/pages/_shared/dla/dla-data";
+
 import { Clock, Plus, SearchMd } from "@untitledui/icons";
 import { Avatar } from "@/components/base/avatar/avatar";
-import { CountBadge } from "@/components/base/badges/badges";
+import { Badge, CountBadge } from "@/components/base/badges/badges";
 import { Button } from "@/components/base/buttons/button";
 import { Input } from "@/components/base/input/input";
 import { SectionHeader } from "@/components/application/section-headers/section-headers";
@@ -107,8 +111,8 @@ export function DlaListContent({
   const paged = rows.slice((currentPage - 1) * pageSize, currentPage * pageSize);
 
   return (
-    <>
-      <SectionHeader.Root className="p-6">
+    <div className="flex min-h-0 flex-1 flex-col">
+      <SectionHeader.Root className="shrink-0 p-6">
         <SectionHeader.Group>
           <div className="flex flex-1 flex-col gap-1">
             <div className="flex items-center gap-2">
@@ -130,9 +134,9 @@ export function DlaListContent({
       {inStatus.length === 0 ? (
         <DlaEmptyState status={status} newHref={roleHref("/pages/dla/new")} />
       ) : (
-        <div className="flex flex-col gap-4 p-6">
+        <div className="flex min-h-0 flex-1 flex-col gap-4 p-6">
           {banner}
-          <div className="w-full max-w-sm">
+          <div className="w-full max-w-sm shrink-0">
             <Input
               aria-label="Search requests"
               size="sm"
@@ -148,9 +152,9 @@ export function DlaListContent({
           {rows.length === 0 ? (
             <p className="py-6 text-sm text-tertiary">No {dlaStatusMeta[status].label.toLowerCase()} requests match your search.</p>
           ) : (
-            <TableCard.Root>
-              <Table aria-label={`${dlaStatusMeta[status].label} Data Licencing Agreements`}>
-                <Table.Header>
+            <TableCard.Root className="flex min-h-48 flex-1 flex-col">
+              <Table bodyScrollable aria-label={`${dlaStatusMeta[status].label} Data Licencing Agreements`}>
+                <Table.Header sticky>
                   {/* `label` (not children) - Table.Head only applies the header treatment to the prop. */}
                   <Table.Head id="id" label="Request" isRowHeader />
                   <Table.Head id="requestor" label="Requestor" />
@@ -210,6 +214,154 @@ export function DlaListContent({
           )}
         </div>
       )}
-    </>
+    </div>
   );
 }
+
+// ── All statuses, scoped My / All (rolled in from /proto/collection-sidebar's "My Items") ──
+// The production list. My/All is a scope chosen in column 2 (`AgreementScopeNav`); this table shows
+// every status at once, with a status filter (`?status=` seeds it, so banner links still land on a
+// status) and a Status column. The one-bucket list above stays for the lab that still uses it.
+
+// What each sortable column sorts by. Request ID is deliberately not sortable (it is an identifier,
+// not something you scan a range of); Status sorts by its place in the workflow, not alphabetically.
+const dlaSortKeys: Record<string, (d: Dla) => SortValue> = {
+  requestor: (d) => requestorName(d.requestor),
+  status: (d) => dlaStatusOrder.indexOf(d.status),
+  locations: (d) => d.locations[0]?.name ?? null,
+  updated: (d) => d.updatedAt,
+};
+
+export function DlaAllList({ scope, initialStatuses = [], banner }: { scope: AgreementScope; initialStatuses?: DlaStatus[]; banner?: ReactNode }) {
+  const all = useDlas();
+  const scoped = scope === "mine" ? all.filter((d) => requestorName(d.requestor) === CURRENT_USER_NAME) : all;
+  const roleHref = useRoleHref();
+  const [search, setSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState<Set<Key>>(new Set(initialStatuses));
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(50);
+  const [sort, setSort] = useState<SortDescriptor>({ column: "updated", direction: "descending" });
+
+  const query = search.trim().toLowerCase();
+  const matching = scoped
+    .filter((d) => statusFilter.size === 0 || statusFilter.has(d.status))
+    .filter((d) => !query || [d.id, d.requestor.organisation, requestorName(d.requestor)].some((v) => v.toLowerCase().includes(query)));
+  const filtered = sortRows(matching, sort, dlaSortKeys);
+  const pageCount = Math.max(1, Math.ceil(filtered.length / pageSize));
+  const currentPage = Math.min(page, pageCount);
+  const paged = filtered.slice((currentPage - 1) * pageSize, currentPage * pageSize);
+
+  return (
+    <div className="flex min-h-0 flex-1 flex-col">
+      <SectionHeader.Root className="shrink-0 p-6">
+        <SectionHeader.Group>
+          <div className="flex flex-1 flex-col gap-1">
+            <div className="flex items-center gap-2">
+              <SectionHeader.Heading>Data Licencing Agreements</SectionHeader.Heading>
+              <CountBadge count={filtered.length} color="brand" />
+            </div>
+            <SectionHeader.Subheading>{scope === "mine" ? "Requests you submitted, across every status." : "Every request, across every status."}</SectionHeader.Subheading>
+          </div>
+          <SectionHeader.Actions>
+            <Button color="primary" iconLeading={Plus} href={roleHref("/pages/dla/new")}>
+              New request
+            </Button>
+          </SectionHeader.Actions>
+        </SectionHeader.Group>
+      </SectionHeader.Root>
+      <div className="flex min-h-0 flex-1 flex-col gap-4 p-6">
+        {banner}
+        <div className="flex shrink-0 flex-wrap items-center gap-3">
+          <div className="w-full max-w-sm shrink-0">
+            <Input
+              aria-label="Search requests"
+              size="sm"
+              icon={SearchMd}
+              placeholder="Search ID, organisation or requestor"
+              value={search}
+              onChange={(v) => {
+                setSearch(v);
+                setPage(1);
+              }}
+            />
+          </div>
+          <div>
+            <StatusFilterButton
+              order={dlaStatusOrder}
+              meta={dlaStatusMeta}
+              selected={statusFilter}
+              onChange={(keys) => {
+                setStatusFilter(keys);
+                setPage(1);
+              }}
+            />
+          </div>
+        </div>
+        {filtered.length === 0 ? (
+          <p className="py-6 text-sm text-tertiary">No requests match your search and filters.</p>
+        ) : (
+          <TableCard.Root className="flex min-h-48 flex-1 flex-col">
+            <Table
+              bodyScrollable
+              aria-label="Data Licencing Agreements"
+              sortDescriptor={sort}
+              onSortChange={(next) => {
+                setSort(next);
+                setPage(1);
+              }}
+            >
+              <Table.Header sticky>
+                <Table.Head id="id" label="Request" isRowHeader />
+                <Table.Head id="requestor" label="Requestor" allowsSorting />
+                <Table.Head id="status" label="Status" allowsSorting />
+                <Table.Head id="locations" label="Locations" allowsSorting />
+                <Table.Head id="updated" label="Updated" allowsSorting />
+              </Table.Header>
+              <Table.Body items={paged}>
+                {(dla) => (
+                  <Table.Row id={dla.id} href={roleHref(`/pages/dla/${dla.id}`)} textValue={dla.id} className="group data-[href]:cursor-pointer">
+                    <Table.Cell>
+                      <span className="text-sm font-medium whitespace-nowrap text-primary group-hover:text-brand-700 group-hover:underline">{dla.id}</span>
+                    </Table.Cell>
+                    <Table.Cell>
+                      <div className="flex flex-col">
+                        <span className="text-sm text-secondary">{requestorName(dla.requestor) || <span className="text-quaternary">Not provided</span>}</span>
+                        <span className="text-xs text-quaternary">{dla.requestor.organisation}</span>
+                      </div>
+                    </Table.Cell>
+                    <Table.Cell>
+                      <Badge size="sm" color={dlaStatusMeta[dla.status].badgeColor}>
+                        {dlaStatusMeta[dla.status].label}
+                      </Badge>
+                    </Table.Cell>
+                    <Table.Cell>
+                      <span className="text-sm text-tertiary">
+                        {dla.locations[0]?.name ?? "No locations"}
+                        {dla.locations.length > 1 ? ` +${dla.locations.length - 1} more` : ""}
+                      </span>
+                    </Table.Cell>
+                    <Table.Cell>
+                      <span className="text-sm whitespace-nowrap text-tertiary">{formatShortDate(dla.updatedAt)}</span>
+                    </Table.Cell>
+                  </Table.Row>
+                )}
+              </Table.Body>
+            </Table>
+            <TableCard.PaginationNumbered
+              page={currentPage}
+              pageCount={pageCount}
+              onPageChange={setPage}
+              pageSize={pageSize}
+              onPageSizeChange={(size) => {
+                setPageSize(size);
+                setPage(1);
+              }}
+              totalCount={filtered.length}
+            />
+          </TableCard.Root>
+        )}
+      </div>
+    </div>
+  );
+}
+

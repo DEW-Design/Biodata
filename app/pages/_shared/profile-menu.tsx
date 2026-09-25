@@ -1,12 +1,10 @@
 "use client";
 
 import { useState } from "react";
-import { Button as AriaButton, Dialog, DialogTrigger, Focusable } from "react-aria-components";
+import { Button as AriaButton, Dialog, DialogTrigger } from "react-aria-components";
 import { ChevronDown } from "@untitledui/icons";
 import { Avatar } from "@/components/base/avatar/avatar";
-import { Button } from "@/components/base/buttons/button";
 import { Popover } from "@/components/base/select/popover";
-import { Tooltip } from "@/components/base/tooltip/tooltip";
 import { registeredUserAccountMenu } from "@/lib/registered-user-nav";
 import { cx } from "@/utils/cx";
 
@@ -37,32 +35,5 @@ export function ProfileMenu() {
         </Dialog>
       </Popover>
     </DialogTrigger>
-  );
-}
-
-// public-user's header replacement for ProfileMenu - no account to show, and no real auth flow in
-// this build, so both buttons are disabled with a "coming soon" tooltip.
-export function GuestAuthActions() {
-  return (
-    <div className="flex items-center gap-2">
-      <Tooltip title="Coming soon - authentication isn't built yet">
-        <Focusable>
-          <span className="inline-flex">
-            <Button color="secondary" isDisabled>
-              Log in
-            </Button>
-          </span>
-        </Focusable>
-      </Tooltip>
-      <Tooltip title="Coming soon - authentication isn't built yet">
-        <Focusable>
-          <span className="inline-flex">
-            <Button color="primary" isDisabled>
-              Sign up
-            </Button>
-          </span>
-        </Focusable>
-      </Tooltip>
-    </div>
   );
 }
