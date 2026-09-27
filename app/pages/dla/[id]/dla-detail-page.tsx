@@ -5,7 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 import { toast } from "@/components/application/toast/toast";
 import { DlaDetail, DlaNotFound } from "@/app/pages/_shared/dla/dla-detail";
 import { DlaShell } from "@/app/pages/_shared/dla/dla-shell";
-import { addDlaLocation, approveDla, cancelDla, deleteDla, holdDlaReview, rejectDla, resumeDlaReview, startDlaReview, useDla } from "@/app/pages/_shared/dla/dla-store";
+import { addDlaLocation, approveDla, cancelDla, deleteDla, holdDlaReview, rejectDla, resumeDlaReview, startDlaReview, useDla, useDlasHydrated } from "@/app/pages/_shared/dla/dla-store";
 import { useRoleHref } from "@/lib/use-role-href";
 
 // /pages/dla/<id> - one request's deep dive, step two of the list -> deep dive pattern. Column 2
@@ -21,6 +21,7 @@ export default function DlaDetailPage() {
 function DlaDeepDive() {
   const { id } = useParams<{ id: string }>();
   const dla = useDla(id);
+  const hydrated = useDlasHydrated();
   const router = useRouter();
   const roleHref = useRoleHref();
 
@@ -66,7 +67,7 @@ function DlaDeepDive() {
           }}
         />
       ) : (
-        <DlaNotFound id={id} />
+        hydrated ? <DlaNotFound id={id} /> : null
       )}
     </DlaShell>
   );

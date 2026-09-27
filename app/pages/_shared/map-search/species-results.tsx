@@ -89,9 +89,17 @@ import { SidePanel } from "./side-panel";
 import { MetricTile } from "./metric-tile";
 import { ResultsTable, type ColumnDef } from "./results-table";
 import {
+  clearSpeciesFilters,
+  setSelectedAuthorities,
+  setSelectedFamilies,
+  setSelectedGenera,
+  setSelectedLicences,
+  setSelectedSpecies,
+  useSpeciesFilters,
+} from "./species-filter-store";
+import {
   type SearchOccurrence,
   type SpeciesGroup,
-  type LicenceLevel,
   kingdomForGroup,
   rootProjectForParentEventId,
   siteNameForParentEventId,
@@ -273,11 +281,9 @@ export function SpeciesResultsView({
   const [panelOpen, setPanelOpen] = useState(false);
   const [openSections, setOpenSections] = useState<Set<Key>>(new Set(["species"]));
 
-  const [selectedFamilies, setSelectedFamilies] = useState<Set<string>>(new Set());
-  const [selectedGenera, setSelectedGenera] = useState<Set<string>>(new Set());
-  const [selectedSpecies, setSelectedSpecies] = useState<Set<string>>(new Set());
-  const [selectedAuthorities, setSelectedAuthorities] = useState<Set<string>>(new Set());
-  const [selectedLicences, setSelectedLicences] = useState<Set<LicenceLevel>>(new Set());
+  // Persisted (localStorage, via zustand) - see species-filter-store.ts for what's kept here and
+  // what deliberately isn't (the date range, the search areas themselves, transient UI state).
+  const { selectedFamilies, selectedGenera, selectedSpecies, selectedAuthorities, selectedLicences } = useSpeciesFilters();
   const [dateFilterOn, setDateFilterOn] = useState(false);
   const [dateRange, setDateRange] = useState<DateRange | null>(null);
 
@@ -395,11 +401,7 @@ export function SpeciesResultsView({
   };
 
   const clearAllFilters = () => {
-    setSelectedFamilies(new Set());
-    setSelectedGenera(new Set());
-    setSelectedSpecies(new Set());
-    setSelectedAuthorities(new Set());
-    setSelectedLicences(new Set());
+    clearSpeciesFilters();
     setDateFilterOn(false);
   };
 

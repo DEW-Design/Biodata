@@ -46,7 +46,7 @@ const hardRules = [
     name: "table fits the viewport",
     test: (s) => /<TableCard\.Root\b/.test(s) && !/\bbodyScrollable\b/.test(s),
     // Tables embedded in a detail tab: the page is the scroll container there, and rows are few.
-    allow: ["_shared/dsa/dsa-detail.tsx", "observation-detail/page.tsx"],
+    allow: ["_shared/dsa/dsa-detail.tsx", "observation-detail/page.tsx", "_shared/user-management/um-detail.tsx"],
     message: "A collection table without bodyScrollable. Every collection screen's table fits the viewport: header, search and pagination stay put and only the rows scroll (Table bodyScrollable + Table.Header sticky, see CONTRACTS.md 4.2).",
   },
 ];

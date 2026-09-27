@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Edit03, Eye, EyeOff, SearchLg, Sliders01, Trash01 } from "@untitledui/icons";
 import { Button } from "@/components/base/buttons/button";
+import { CountBadge } from "@/components/base/badges/badges";
 import { Dropdown } from "@/components/base/dropdown/dropdown";
 import { Input } from "@/components/base/input/input";
 import { InputNumber } from "@/components/base/input/input-number";
@@ -52,8 +53,9 @@ export function AreaLayerList({
   return (
     <div className="flex flex-col gap-2">
       <div className="flex items-center justify-between gap-2">
-        <p className="text-sm font-semibold text-primary">
-          Search areas{rows.length > 0 && <span className="ml-1.5 font-normal text-tertiary">{rows.length}</span>}
+        <p className="flex items-center gap-1.5 text-sm font-semibold text-primary">
+          Search areas
+          {rows.length > 0 && <CountBadge count={rows.length} />}
         </p>
         {rows.length > 1 && (
           <button type="button" onClick={onClearAll} className="cursor-pointer rounded px-1 text-xs font-medium text-tertiary outline-focus-ring hover:text-primary focus-visible:outline-2">

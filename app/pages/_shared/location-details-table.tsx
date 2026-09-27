@@ -1,5 +1,7 @@
 "use client";
 
+import { cx } from "@/utils/cx";
+
 // The one "Location Details" coordinate table every record type shows (Projects, Events,
 // Occurrences, Observations) - per direct request, one format everywhere: rows Zone / Easting /
 // Northing / Latitude / Longitude, columns Coordinate / Entered Value / GDA2020 Equivalent.
@@ -65,8 +67,12 @@ export function LocationDetailsTable({ lat, lon }: { lat?: number; lon?: number 
             <table className="w-full text-sm">
                 <thead>
                     <tr className="bg-secondary">
-                        {["Coordinate", "Entered Value", "GDA2020 Equivalent"].map((h) => (
-                            <th key={h} className="px-4 py-2.5 text-left text-sm font-normal whitespace-nowrap text-quaternary">
+                        {/* Matches the real Table.Head convention (components/application/table/table.tsx:
+                            text-xs font-semibold text-quaternary), not an ad hoc size/weight for this one
+                            hand-rolled table - the two value columns are numeric, so their headers sit
+                            right-aligned over the values they label. */}
+                        {["Coordinate", "Entered Value", "GDA2020 Equivalent"].map((h, i) => (
+                            <th key={h} className={cx("px-4 py-2.5 text-xs font-semibold whitespace-nowrap text-quaternary", i === 0 ? "text-left" : "text-right")}>
                                 {h}
                             </th>
                         ))}
@@ -76,8 +82,8 @@ export function LocationDetailsTable({ lat, lon }: { lat?: number; lon?: number 
                     {rows.map((r) => (
                         <tr key={r.coordinate}>
                             <td className="px-4 py-3 font-medium whitespace-nowrap text-primary">{r.coordinate}</td>
-                            <td className="px-4 py-3 whitespace-nowrap text-tertiary">{r.entered}</td>
-                            <td className="px-4 py-3 whitespace-nowrap text-tertiary">{r.gda2020}</td>
+                            <td className="px-4 py-3 text-right whitespace-nowrap text-tertiary tabular-nums">{r.entered}</td>
+                            <td className="px-4 py-3 text-right whitespace-nowrap text-tertiary tabular-nums">{r.gda2020}</td>
                         </tr>
                     ))}
                 </tbody>

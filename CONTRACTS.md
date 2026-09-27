@@ -82,6 +82,31 @@ A change to `components/**`, a page, a token, or a `/test-*` screen is done only
 
 - **Enforcement:** `REVIEW` (item 3 is `AUTO`).
 
+### §0.7 Proactive, not reactive
+
+Anticipate what the designer will need; do not wait to be told or corrected.
+
+1. **Read the brief against what is already decided before planning.** The role-access matrix
+   (`config/role-access.config.ts`), `CONTEXT.md`, these contracts and existing patterns are applied
+   without being reminded: who can see the feature, which shell and pattern it uses, which components
+   exist, which data is real.
+2. **Surface before it is found.** A plan or report names, up front: conflicts between sources (a
+   wireframe vs the role model, the IA vs the data), fabricated or placeholder content that would need
+   replacing (§0.3), missing states, knock-on effects on other screens and personas, and build risks
+   (static export, hydration, performance).
+3. **Check your own output against these contracts before presenting it.** A violation the designer
+   catches in review is a failure of this clause, even when it is then fixed.
+4. **Close with the next move.** Every task ends with the open decisions and the recommended next step,
+   not only a summary of what changed.
+
+- **Boundary with §0.4:** proactive means raising, recommending, and fixing what is unambiguously inside
+  the approved scope (a sibling bug, a missing guard, a stale doc line). It never means building beyond
+  the approved scope: anything out of bounds is proposed with a recommendation and waits for approval.
+- **Origin:** a User Management brief where the designer had to point out that the feature is
+  BioData Admin only, a fact already in the role model and `CONTEXT.md`; and repeated rounds where
+  contract violations were caught by the designer in review instead of being raised first.
+- **Enforcement:** `REVIEW`.
+
 ---
 
 ## PART II - COMPONENTS

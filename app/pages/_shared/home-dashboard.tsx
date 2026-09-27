@@ -442,6 +442,7 @@ function AdminQueueCard({ queue }: { queue: (typeof adminApprovalQueues)[number]
 }
 
 function AdminHomeDashboardContent() {
+  const roleHref = useRoleHref();
   return (
     <>
       {/* Same gradient banner template as HomeDashboardContent's - see that component's own
@@ -466,7 +467,7 @@ function AdminHomeDashboardContent() {
       <div className="flex flex-col gap-3 px-6 pb-6">
         <h2 className="text-lg font-medium text-primary">Quick actions</h2>
         <div className="flex flex-wrap items-center gap-2">
-          <DisabledQuickAction icon={UserCheck01} label="User Management" note="Coming soon - user management isn't built yet" />
+          <QuickAction icon={UserCheck01} label="User Management" href={roleHref("/pages/user-management")} />
           <DisabledQuickAction icon={BarChartSquare01} label="Reports" note="Coming soon - reporting isn't built yet" />
           <DisabledQuickAction icon={Database01} label="Control Vocal" note="Coming soon - controlled vocabulary management isn't built yet" />
         </div>

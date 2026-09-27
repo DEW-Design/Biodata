@@ -624,3 +624,15 @@ body {
   font-size: 12px;
   color: var(--ui-text-tertiary);
 }
+
+/* ─────────────────────────────────────────────────────────────────────
+   leaflet-draw override
+   ───────────────────────────────────────────────────────────────────── */
+/* leaflet-draw's own floating "Click to start drawing shape." tooltip follows the cursor,
+   unstyled (a stock dark box, no DEW tokens) and gets clipped against the viewport edge near the
+   top of the map. app/pages/_shared/map-search/sa-map.tsx already shows a real, on-brand hint
+   (the same instructional copy) in its own search card, so this stock library default is
+   suppressed rather than styled - one real hint, not two disagreeing ones. */
+.leaflet-draw-tooltip {
+  display: none !important;
+}

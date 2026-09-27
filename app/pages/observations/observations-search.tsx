@@ -5,11 +5,10 @@ import { Suspense, useMemo, useRef, useState } from "react";
 import dynamic from "next/dynamic";
 import { useRouter, useSearchParams } from "next/navigation";
 import type { Selection } from "react-aria-components";
-import { Tabs } from "react-aria-components";
+import { Dialog, DialogTrigger, Tabs } from "react-aria-components";
 import { TabList, Tab, TabPanel } from "@/components/application/tabs/tabs";
 import { AreaLayerList, type AreaLayerRow } from "@/app/pages/_shared/map-search/area-layers";
 import { ScrollFade } from "@/app/pages/_shared/map-search/scroll-fade";
-import { Toggle } from "@/components/base/toggle/toggle";
 import { ResultCard } from "@/app/pages/_shared/map-search/result-card";
 import { SpeciesPhoto } from "@/app/pages/_shared/map-search/species-photo";
 import { SPECIES_GROUP_ICON } from "@/app/pages/_shared/map-search/species-group-icons";
@@ -47,6 +46,7 @@ import {
   File04,
   Plus,
   FileLock01,
+  Settings01,
 } from "@untitledui/icons";
 import { Button } from "@/components/base/buttons/button";
 import { Dropdown } from "@/components/base/dropdown/dropdown";
@@ -57,6 +57,8 @@ import { Input } from "@/components/base/input/input";
 import { InputNumber } from "@/components/base/input/input-number";
 import { InputFile } from "@/components/base/input/input-file";
 import { MultiSelect } from "@/components/base/select/multi-select";
+import { Popover } from "@/components/base/select/popover";
+import { Toggle } from "@/components/base/toggle/toggle";
 import { SectionHeader } from "@/components/application/section-headers/section-headers";
 import { AlertFullWidth } from "@/components/application/alerts/alerts";
 import { Accordion, type AccordionItemType } from "@/components/base/accordion/accordion";
@@ -725,6 +727,23 @@ function ObservationsSearch({ layout }: { layout: ExploreLayout }) {
   // Project/Event/Occurrence/Observation row, per direct request. Lifted to page level (not local
   // to ResultsTable) so it persists correctly regardless of which tab's table triggered it.
   const [selectedRecord, setSelectedRecord] = useState<DetailRecord | null>(null);
+  const [panRequest, setPanRequest] = useState<{ key: number; point: [number, number] } | undefined>();
+  // Selecting a record also centres its dot in the map's visible area, not just opens its card - per
+  // direct feedback that a clicked record's dot could end up hidden under the results panel or
+  // crammed at the map's raw edge right next to the peek card. Pan-only (see PanToRecord in
+  // sa-map.tsx), never a zoom change. Every real "a user picked this record" call site below goes
+  // through this instead of calling setSelectedRecord directly, so the centring can't be missed on
+  // one path and not another.
+  const selectRecord = (record: DetailRecord) => {
+    setSelectedRecord(record);
+    const point: [number, number] =
+      record.kind === "event"
+        ? [record.event.lat, record.event.lon]
+        : record.kind === "occurrence"
+          ? [record.occurrence.lat, record.occurrence.lon]
+          : [record.observation.lat, record.observation.lon];
+    setPanRequest({ key: Date.now(), point });
+  };
   // The Artefacts and Attachments tab's own row click - opens the exact same artefact preview
   // modal project-detail uses (app/pages/_shared/artefact-lightbox.tsx), per direct
   // request, rather than the generic column-detail panel every other tab still falls back to for
@@ -1436,7 +1455,7 @@ function ObservationsSearch({ layout }: { layout: ExploreLayout }) {
                       rowTextValue={(e) => e.name}
                       searchText={(e) => `${e.code} ${e.name} ${e.org}`}
                       viewActionLabel="View Project"
-                      onRowClick={(e) => setSelectedRecord({ kind: "event", event: e })}
+                      onRowClick={(e) => selectRecord({ kind: "event", event: e })}
                       searchValue={recordsSearch}
                       onSearchChange={setRecordsSearch}
                       hideSearchBox
@@ -1454,7 +1473,7 @@ function ObservationsSearch({ layout }: { layout: ExploreLayout }) {
                       emptyLabel="events"
                       rowTextValue={(e) => e.name}
                       searchText={(e) => `${e.id} ${e.name} ${e.type} ${e.org}`}
-                      onRowClick={(e) => setSelectedRecord({ kind: "event", event: e })}
+                      onRowClick={(e) => selectRecord({ kind: "event", event: e })}
                       searchValue={recordsSearch}
                       onSearchChange={setRecordsSearch}
                       hideSearchBox
@@ -1473,7 +1492,7 @@ function ObservationsSearch({ layout }: { layout: ExploreLayout }) {
                       rowTextValue={(o) => o.commonName}
                       searchText={(o) => `${o.id} ${o.commonName} ${o.species} ${o.type}`}
                       showHeaderColumnCustomizer
-                      onRowClick={(o) => setSelectedRecord({ kind: "occurrence", occurrence: o })}
+                      onRowClick={(o) => selectRecord({ kind: "occurrence", occurrence: o })}
                       searchValue={recordsSearch}
                       onSearchChange={setRecordsSearch}
                       hideSearchBox
@@ -1490,7 +1509,7 @@ function ObservationsSearch({ layout }: { layout: ExploreLayout }) {
                       emptyLabel="observations"
                       rowTextValue={(o) => o.commonName}
                       searchText={(o) => `${o.id} ${o.commonName} ${o.species} ${o.observerName} ${o.type}`}
-                      onRowClick={(o) => setSelectedRecord({ kind: "observation", observation: o })}
+                      onRowClick={(o) => selectRecord({ kind: "observation", observation: o })}
                       searchValue={recordsSearch}
                       onSearchChange={setRecordsSearch}
                       hideSearchBox
@@ -1755,13 +1774,13 @@ function ObservationsSearch({ layout }: { layout: ExploreLayout }) {
     const id = rest.join(":");
     if (kind === "event") {
       const event = searchEvents.find((e) => e.id === id);
-      if (event) setSelectedRecord({ kind: "event", event });
+      if (event) selectRecord({ kind: "event", event });
     } else if (kind === "occurrence") {
       const occurrence = searchOccurrences.find((o) => o.id === id);
-      if (occurrence) setSelectedRecord({ kind: "occurrence", occurrence });
+      if (occurrence) selectRecord({ kind: "occurrence", occurrence });
     } else if (kind === "observation") {
       const observation = searchObservations.find((o) => o.id === id);
-      if (observation) setSelectedRecord({ kind: "observation", observation });
+      if (observation) selectRecord({ kind: "observation", observation });
     } else if (kind === "resource") {
       const index = filteredResources.findIndex((r) => r.id === id);
       if (index >= 0) setArtefactIndex(index);
@@ -1846,7 +1865,7 @@ function ObservationsSearch({ layout }: { layout: ExploreLayout }) {
           subtitleItalic: true,
           meta: provenance(o.parentEventId),
           trailing: restrictedBadge(o.licenceLevel),
-          onSelect: () => setSelectedRecord({ kind: "occurrence", occurrence: o }),
+          onSelect: () => selectRecord({ kind: "occurrence", occurrence: o }),
         }));
       case "projects":
         return filteredProjects.map((e) => ({
@@ -1862,7 +1881,7 @@ function ObservationsSearch({ layout }: { layout: ExploreLayout }) {
               {e.status}
             </Badge>
           ),
-          onSelect: () => setSelectedRecord({ kind: "event", event: e }),
+          onSelect: () => selectRecord({ kind: "event", event: e }),
         }));
       case "events":
         return filteredEvents.map((e) => ({
@@ -1873,7 +1892,7 @@ function ObservationsSearch({ layout }: { layout: ExploreLayout }) {
           title: e.name,
           subtitle: e.type,
           meta: e.endDate ? `${e.startDate} to ${e.endDate}` : `From ${e.startDate}`,
-          onSelect: () => setSelectedRecord({ kind: "event", event: e }),
+          onSelect: () => selectRecord({ kind: "event", event: e }),
         }));
       case "occurrence":
         return filteredOccurrences.map((o) => ({
@@ -1887,7 +1906,7 @@ function ObservationsSearch({ layout }: { layout: ExploreLayout }) {
           subtitle: /^[A-Za-z]/.test(o.species) ? o.species : undefined,
           subtitleItalic: true,
           meta: `${o.type} \u00b7 ${o.date}`,
-          onSelect: () => setSelectedRecord({ kind: "occurrence", occurrence: o }),
+          onSelect: () => selectRecord({ kind: "occurrence", occurrence: o }),
         }));
       case "observations":
         return filteredObservations.map((o) => ({
@@ -1900,7 +1919,7 @@ function ObservationsSearch({ layout }: { layout: ExploreLayout }) {
           subtitle: o.species,
           subtitleItalic: true,
           meta: `${o.type} \u00b7 ${o.date}`,
-          onSelect: () => setSelectedRecord({ kind: "observation", observation: o }),
+          onSelect: () => selectRecord({ kind: "observation", observation: o }),
         }));
       case "resources":
         return filteredResources.map((r, i) => ({
@@ -1954,7 +1973,11 @@ function ObservationsSearch({ layout }: { layout: ExploreLayout }) {
                   </Button>
                 )}
                 {allowTable && (
-                <div className={cx("inline-flex shrink-0 items-center gap-0.5 rounded-lg border border-secondary bg-secondary p-0.5", !showSearch && "ml-auto")}>
+                /* size-9 (36px) buttons in a p-1 wrapper (44px total) - was size-7 (28px), well under
+                   the 44px touch-target guideline with no text label to widen the hit area. Matches
+                   the neighbouring Filters button's own 36px height so the row reads as one aligned
+                   toolbar instead of a shorter control tucked beside taller ones. */
+                <div className={cx("inline-flex shrink-0 items-center gap-0.5 rounded-lg border border-secondary bg-secondary p-1", !showSearch && "ml-auto")}>
                   {(["list", "table"] as const).map((d) => (
                     <button
                       key={d}
@@ -1963,7 +1986,7 @@ function ObservationsSearch({ layout }: { layout: ExploreLayout }) {
                       aria-pressed={display === d}
                       onClick={() => onDisplayChange(d)}
                       className={cx(
-                        "flex size-7 items-center justify-center rounded-md transition duration-100 ease-linear",
+                        "flex size-9 items-center justify-center rounded-md transition duration-100 ease-linear",
                         display === d ? "bg-primary text-brand-secondary shadow-xs" : "text-tertiary hover:text-secondary",
                       )}
                     >
@@ -2008,7 +2031,7 @@ function ObservationsSearch({ layout }: { layout: ExploreLayout }) {
                 <div className="min-h-0 flex-1 overflow-hidden px-4 pt-3 pb-4">
                   <SpeciesResultsView
                     rows={filteredOccurrences}
-                    onRowClick={(o) => setSelectedRecord({ kind: "occurrence", occurrence: o })}
+                    onRowClick={(o) => selectRecord({ kind: "occurrence", occurrence: o })}
                     onExportableRowsChange={setSpeciesExportRows}
                     hideSearch={!showSearch}
                   />
@@ -2112,24 +2135,24 @@ function ObservationsSearch({ layout }: { layout: ExploreLayout }) {
     </p>
   );
 
+  // "On the map" (the Result dots toggle) moved into the floating card's own summary row, next to
+  // the zoom buttons - both are map display controls, and read better docked to the map they
+  // control than sitting in this column, per direct feedback. That leaves a gap between the areas
+  // list and the footer links this column always had - the public-data card now sits at the
+  // bottom of it (`mt-auto`), close to the footer, instead of floating right under the areas list
+  // with empty space below it.
   const floatColumn2 = (
-    <aside aria-label="Explore" className="hidden w-[286px] shrink-0 flex-col justify-between overflow-y-auto border-r border-secondary bg-secondary p-4 lg:flex">
-      <div className="flex flex-col gap-6">
-        <div className="flex flex-col gap-3">
-          <p className="text-xs font-semibold tracking-wide text-quaternary uppercase">Explore</p>
-          {areasList}
-          <div className="flex flex-col gap-3 border-t border-secondary pt-3">
-            <p className="text-sm font-semibold text-primary">On the map</p>
-            <Toggle size="sm" label="Result dots" isSelected={showDotsLayer} onChange={setShowDotsLayer} />
-          </div>
-        </div>
-        <div className="flex flex-col gap-2 rounded-lg border border-secondary bg-primary p-3">
-          <p className="text-sm font-semibold text-primary">You&apos;re viewing public data</p>
-          <p className="text-sm text-tertiary">Some records are restricted. Request a Data Licencing Agreement (DLA) for full access.</p>
-          <Button color="secondary" size="sm" className="self-start" onPress={requestDlaAccess}>
-            {isPublicUser ? "Sign up for access" : "Go to DLA"}
-          </Button>
-        </div>
+    <aside aria-label="Explore" className="hidden w-[286px] shrink-0 flex-col gap-4 overflow-y-auto border-r border-secondary bg-secondary p-4 lg:flex">
+      <div className="flex flex-col gap-3">
+        <p className="text-xs font-semibold tracking-wide text-quaternary uppercase">Explore</p>
+        {areasList}
+      </div>
+      <div className="mt-auto flex flex-col gap-2 rounded-lg border border-secondary bg-primary p-3">
+        <p className="text-sm font-semibold text-primary">You&apos;re viewing public data</p>
+        <p className="text-sm text-tertiary">Some records are restricted. Request a Data Licencing Agreement (DLA) for full access.</p>
+        <Button color="secondary" size="sm" className="self-start" onPress={requestDlaAccess}>
+          {isPublicUser ? "Sign up for access" : "Go to DLA"}
+        </Button>
       </div>
       <SidebarFooterLinks />
     </aside>
@@ -2149,6 +2172,7 @@ function ObservationsSearch({ layout }: { layout: ExploreLayout }) {
         highlightedMarkerId={hoveredMarkerId ?? selectedMarkerId}
         highlightedBoundaryIds={highlightedBoundaryIds}
         fitRequest={fitRequest}
+        panRequest={panRequest}
         className="size-full"
       />
     </div>
@@ -2166,7 +2190,13 @@ function ObservationsSearch({ layout }: { layout: ExploreLayout }) {
             record={selectedRecord}
             onViewFull={() => setFullRecordKey(selectedKey)}
             onClose={() => setSelectedRecord(null)}
-            className="absolute top-4 right-16 z-[1000] motion-safe:animate-in motion-safe:fade-in motion-safe:duration-150"
+            // Zoom lives back on the map's own top-right corner (real map chrome belongs on the
+            // map, per the Mobbin research - zoom never shares a container with a results row or a
+            // layer toggle in any real map-search product). The card docks directly under that
+            // pill instead of racing it for the same corner - top-[101px] clears ZoomControls'
+            // own ~76px height plus its top-4 inset, with a ~9px gap, same as this session's
+            // earlier, already-verified docked-cluster layout.
+            className="absolute top-[101px] right-4 z-[1000] motion-safe:animate-in motion-safe:fade-in motion-safe:duration-150"
           />
         )}
         <RecordDetailSidebar
@@ -2204,6 +2234,27 @@ function ObservationsSearch({ layout }: { layout: ExploreLayout }) {
           <div className={cx("flex min-h-0 flex-1 flex-col border-t border-secondary", rise)}>
             <div className="flex shrink-0 items-center gap-2 px-4 pt-3 pb-2 text-sm text-tertiary">
               <div className="min-w-0 flex-1 truncate">{summaryLine}</div>
+              {/* Zoom moved back onto the map itself (its own top-right corner, real map chrome
+                  belongs on the map - see floatMap/RecordPeekCard above), so this row is down to
+                  the two things that actually differ per search: what the map displays, and
+                  exporting the results. "Result dots" is the one display toggle today, but it's
+                  not the last one this will ever need - rather than grow this row by one icon
+                  every time, it lives behind a single "Map settings" button, same restraint this
+                  row's own controls already got once (a bare Toggle + a boxed zoom pair + a naked
+                  icon, unified into one tray, then most of that tray moved onto the map). */}
+              <DialogTrigger>
+                <Button color="secondary" size="sm" iconLeading={Settings01} aria-label="Map settings" />
+                {/* Toggle's own label wrapper is `w-max` (sizes to its content, not its parent) -
+                    fine in a form with room to spare, but it lets a hint line overflow a narrow
+                    popover instead of wrapping. w-72 gives the hint enough room to sit on one
+                    line without touching that shared component. */}
+                <Popover size="auto" placement="bottom end" className="font-barlow w-72">
+                  <Dialog className="flex flex-col gap-1 p-4 outline-hidden">
+                    <p className="text-sm font-semibold text-primary">Map settings</p>
+                    <Toggle label="Result dots" hint="A dot for every matching record" isSelected={showDotsLayer} onChange={setShowDotsLayer} className="mt-2" />
+                  </Dialog>
+                </Popover>
+              </DialogTrigger>
               {exportControl}
             </div>
             {resultsBody({ display: panelDisplay, onDisplayChange: setPanelDisplay, showSearch: false })}
@@ -2417,7 +2468,7 @@ function ObservationsSearch({ layout }: { layout: ExploreLayout }) {
                   <div className="min-h-0 flex-1 overflow-hidden p-6 pt-4">
                     <SpeciesResultsView
                       rows={filteredOccurrences}
-                      onRowClick={(o) => setSelectedRecord({ kind: "occurrence", occurrence: o })}
+                      onRowClick={(o) => selectRecord({ kind: "occurrence", occurrence: o })}
                       onExportableRowsChange={setSpeciesExportRows}
                     />
                   </div>

@@ -6,7 +6,7 @@ import { toast } from "@/components/application/toast/toast";
 import { DsaNotFound } from "@/app/pages/_shared/dsa/dsa-detail";
 import { DsaForm } from "@/app/pages/_shared/dsa/dsa-form";
 import { DsaShell } from "@/app/pages/_shared/dsa/dsa-shell";
-import { saveDsa, useDsa } from "@/app/pages/_shared/dsa/dsa-store";
+import { saveDsa, useDsa, useDsasHydrated } from "@/app/pages/_shared/dsa/dsa-store";
 import { useRoleHref } from "@/lib/use-role-href";
 
 // /pages/dsa/<id>/edit - the same record form, opened on an existing agreement or draft.
@@ -21,6 +21,7 @@ export default function EditDsaPage() {
 function EditDsa() {
   const { id } = useParams<{ id: string }>();
   const dsa = useDsa(id);
+  const hydrated = useDsasHydrated();
   const router = useRouter();
   const roleHref = useRoleHref();
   const detailHref = roleHref(`/pages/dsa/${id}`);
@@ -44,7 +45,7 @@ function EditDsa() {
           }}
         />
       ) : (
-        <DsaNotFound id={id} />
+        hydrated ? <DsaNotFound id={id} /> : null
       )}
     </DsaShell>
   );
