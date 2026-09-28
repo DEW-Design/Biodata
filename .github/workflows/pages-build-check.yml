@@ -1,0 +1,44 @@
+# Builds the site exactly as the Pages deploy does, on every pull request into main, so a build that
+# would fail on main fails on the pull request instead. It does not deploy anything. Mark the
+# "Pages build" job as a required check in the branch rules to block a merge on it.
+#
+# Why: the deploy workflow (nextjs.yml) only runs after a push to main, and the design system audit
+# does not build the site, so a static-export error (a dynamic route with no generateStaticParams,
+# a useSearchParams caller outside Suspense) used to surface only after the merge.
+name: Pages build check
+
+on:
+  pull_request:
+    branches: ["main"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pages-build-check-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  pages-build:
+    name: Pages build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+      - name: Restore Next.js cache
+        uses: actions/cache@v4
+        with:
+          path: .next/cache
+          key: ${{ runner.os }}-nextjs-check-${{ hashFiles('**/package-lock.json') }}-${{ hashFiles('**.[jt]s', '**.[jt]sx') }}
+          restore-keys: |
+            ${{ runner.os }}-nextjs-check-${{ hashFiles('**/package-lock.json') }}-
+      - run: npm ci
+      - name: Build (static export, as deployed)
+        run: npx --no-install next build
+        env:
+          # The same sub-path the deploy uses (https://<org>.github.io/<repo>).
+          PAGES_BASE_PATH: /${{ github.event.repository.name }}

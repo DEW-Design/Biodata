@@ -6,7 +6,7 @@ import { toast } from "@/components/application/toast/toast";
 import { DlaNotFound } from "@/app/pages/_shared/dla/dla-detail";
 import { DlaForm } from "@/app/pages/_shared/dla/dla-form";
 import { DlaShell } from "@/app/pages/_shared/dla/dla-shell";
-import { saveDla, useDla } from "@/app/pages/_shared/dla/dla-store";
+import { saveDla, useDla, useDlasHydrated } from "@/app/pages/_shared/dla/dla-store";
 import { useRoleHref } from "@/lib/use-role-href";
 
 // /pages/dla/<id>/edit - the same record form, opened on an existing request or draft. New once
@@ -23,6 +23,7 @@ export default function EditDlaPage() {
 function EditDla() {
   const { id } = useParams<{ id: string }>();
   const dla = useDla(id);
+  const hydrated = useDlasHydrated();
   const router = useRouter();
   const roleHref = useRoleHref();
   const detailHref = roleHref(`/pages/dla/${id}`);
@@ -46,7 +47,7 @@ function EditDla() {
           }}
         />
       ) : (
-        <DlaNotFound id={id} />
+        hydrated ? <DlaNotFound id={id} /> : null
       )}
     </DlaShell>
   );

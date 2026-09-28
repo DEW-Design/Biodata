@@ -201,7 +201,11 @@ export function DataOverviewContent({
 
   return (
     <>
-      <SectionHeader.Root className="p-8">
+      {/* p-6, matching every other real SectionHeader.Root consumer (project-list, DSA, DLA,
+          form-page, observations) and the p-6 wrapper the gradient card sits in one level up -
+          this was the one p-8 outlier, which put its left edge 8px further in than the gradient
+          card and the tab list/metric grid below it. */}
+      <SectionHeader.Root className="shrink-0 p-6">
         <SectionHeader.Group>
           <div className="flex flex-1 flex-col gap-1">
             <SectionHeader.Heading>Flora and Fauna Dashboard</SectionHeader.Heading>

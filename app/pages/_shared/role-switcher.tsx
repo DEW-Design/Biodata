@@ -18,6 +18,7 @@ import { USER_ROLES, type UserRole } from "@/lib/user-role";
 const wholePageGates: { prefix: string; feature: FeatureKey }[] = [
   { prefix: "/pages/dsa", feature: "dsaManagement" },
   { prefix: "/pages/dla", feature: "dlaAccess" },
+  { prefix: "/pages/user-management", feature: "userManagement" },
 ];
 
 // (Draggable via `FloatingMenuFab` - it used to be pinned bottom-right and sat on top of page

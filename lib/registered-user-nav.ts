@@ -11,10 +11,11 @@ import type { UserRole } from "@/lib/user-role";
 
 export const DSA_SECTION_LABEL = "Data Sharing Agreement (DSA)";
 export const DLA_SECTION_LABEL = "Data Licencing Agreement (DLA)";
+export const USER_MANAGEMENT_SECTION_LABEL = "User Management";
 
 export interface NavNode {
   label: string;
-  key?: "dashboard" | "project-list" | "observations" | "dsa" | "dla";
+  key?: "dashboard" | "project-list" | "observations" | "dsa" | "dla" | "user-management";
   items?: NavNode[];
 }
 
@@ -115,12 +116,19 @@ export const publicUserNav: NavNode[] = [
 // entry. DSA is a keyed leaf like Home/Projects/Explore/DLA (the agreement list lives in the page's
 // own contextual sidebar, not as nav `items`).
 //
-// NOT yet the full admin IA - see CONTEXT.md, "BioData Admin IA cross-check": User Management, Ctrl
-// Vocab, Reports (All Users), Voucher/Notification/Taxonomy management, Home's admin labels and
-// Nominate Sensitive Species nesting under Observations are all still to reconcile.
-export const biodataAdminNav: NavNode[] = registeredUserNav.flatMap((section) =>
-  section.label === DLA_SECTION_LABEL ? [section, { label: DSA_SECTION_LABEL, key: "dsa" as const }] : [section],
-);
+// User Management (users, roles, permissions - /pages/user-management) slots between Explore and
+// DLA, per the designer (Sept 27 2026).
+//
+// NOT yet the full admin IA - see CONTEXT.md, "BioData Admin IA cross-check": Ctrl Vocab, Reports
+// (All Users), Voucher/Notification/Taxonomy management, Home's admin labels and Nominate Sensitive
+// Species nesting under Observations are all still to reconcile.
+export const biodataAdminNav: NavNode[] = [
+  ...registeredUserNav.flatMap((section): NavNode[] => {
+    if (section.key === "observations") return [section, { label: USER_MANAGEMENT_SECTION_LABEL, key: "user-management" }];
+    if (section.label === DLA_SECTION_LABEL) return [section, { label: DSA_SECTION_LABEL, key: "dsa" }];
+    return [section];
+  }),
+];
 
 /** The one nav tree a role's shell reads - see each tree's own comment for how they differ. */
 export function navForRole(role: UserRole): NavNode[] {

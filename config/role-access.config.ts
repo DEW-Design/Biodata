@@ -23,7 +23,7 @@
 import type { UserRole } from "@/lib/user-role";
 
 /** One entry per gated product feature. Add a key as a feature is actually gated - don't pre-populate speculatively. */
-export type FeatureKey = "orgSwitcher" | "metricCardCustomization" | "dsaManagement" | "dlaAccess" | "dlaApproval";
+export type FeatureKey = "orgSwitcher" | "metricCardCustomization" | "dsaManagement" | "dlaAccess" | "dlaApproval" | "userManagement";
 
 /** Feature -> the roles (besides biodata-admin, which always passes) allowed to see it. */
 export const roleAccessMatrix: Record<FeatureKey, UserRole[]> = {
@@ -54,6 +54,12 @@ export const roleAccessMatrix: Record<FeatureKey, UserRole[]> = {
   // requester can still withdraw their own request/agreement regardless of this feature - that's
   // ownership, not an admin privilege, and isn't gated here.
   dlaApproval: [],
+  // User Management (/pages/user-management) - users, roles and permissions. BioData Admin only for
+  // now, per direct decision: BioData Admin manages DEW. A Privileged Admin manages their own
+  // organisation's users too, but that organisation-scoped view isn't built yet (logged in
+  // CONTEXT.md) - add "privileged-admin" here only when it is. Empty array, not an omitted key, for
+  // the same reason as dsaManagement.
+  userManagement: [],
 };
 
 /**

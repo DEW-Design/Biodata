@@ -46,7 +46,7 @@ const hardRules = [
     name: "table fits the viewport",
     test: (s) => /<TableCard\.Root\b/.test(s) && !/\bbodyScrollable\b/.test(s),
     // Tables embedded in a detail tab: the page is the scroll container there, and rows are few.
-    allow: ["_shared/dsa/dsa-detail.tsx", "observation-detail/page.tsx"],
+    allow: ["_shared/dsa/dsa-detail.tsx", "observation-detail/page.tsx", "_shared/user-management/um-detail.tsx"],
     message: "A collection table without bodyScrollable. Every collection screen's table fits the viewport: header, search and pagination stay put and only the rows scroll (Table bodyScrollable + Table.Header sticky, see CONTRACTS.md 4.2).",
   },
 ];
@@ -147,6 +147,18 @@ export function runChecks() {
     const o = overridden.get(f);
     if (!o) violations.push({ clause: "1.4", file: f, message: "New component with no designer override in contracts/overrides.json. A new component is a designer decision (CONTRACTS.md 1.4)." });
     else if (!o.designer || !o.reason || !o.approvedBy || !o.date) violations.push({ clause: "1.4", file: f, message: `Override ${o.id ?? "?"} is missing designer, date, reason or approvedBy.` });
+  }
+
+  // 1.9a behaviour patterns: a multiple-selection listbox in a component must switch off react-aria's
+  // default of clearing the whole selection on Escape (Escape closes, it never changes the value).
+  for (const f of componentFiles()) {
+    const src = readFileSync(join(ROOT, f), "utf8");
+    for (const m of src.matchAll(/<(?:Aria)?ListBox\b/g)) {
+      const tag = src.slice(m.index, m.index + 900);
+      if (/selectionMode="multiple"/.test(tag) && !/escapeKeyBehavior=/.test(tag)) {
+        violations.push({ clause: "1.9a", file: f, message: 'Multiple-selection ListBox without escapeKeyBehavior="none": Escape would clear the selection (CONTRACTS.md 1.9).' });
+      }
+    }
   }
 
   return { violations, improvements, counts };

@@ -1,6 +1,6 @@
 import type { FC } from "react";
-import { BarChart01, Feather, FileCheck02, FileLock01, FileSearch01, Folder, HomeLine, Map01 } from "@untitledui/icons";
-import { DLA_SECTION_LABEL, DSA_SECTION_LABEL } from "@/lib/registered-user-nav";
+import { BarChart01, Feather, FileCheck02, FileLock01, FileSearch01, Folder, HomeLine, Map01, Users01 } from "@untitledui/icons";
+import { DLA_SECTION_LABEL, DSA_SECTION_LABEL, USER_MANAGEMENT_SECTION_LABEL } from "@/lib/registered-user-nav";
 
 // The one icon per primary-nav section, for the icon rail and the mobile menu on every screen.
 // Adding a section to `lib/registered-user-nav.ts` means adding its icon here, once - never a
@@ -14,4 +14,5 @@ export const sectionIcons: Record<string, FC<{ className?: string }>> = {
   "Nominate Sensitive Species": Feather,
   "Reports (Own Submissions)": BarChart01,
   "Template Finder": FileSearch01,
+  [USER_MANAGEMENT_SECTION_LABEL]: Users01,
 };

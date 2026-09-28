@@ -1,47 +1,35 @@
 "use client";
 
-import { useState, type FC } from "react";
+import type { FC } from "react";
 import { useRouter } from "next/navigation";
-import { ChevronDown, FileCheck02, FileLock01, Folder, Plus } from "@untitledui/icons";
+import { ChevronDown, FileCheck02, FileLock01, Folder, Plus, UserPlus01 } from "@untitledui/icons";
 import { Button } from "@/components/base/buttons/button";
 import { Dropdown } from "@/components/base/dropdown/dropdown";
-import { SignUpPromptModal } from "@/app/pages/_shared/guest-action-gate";
 import { createMenuItemsForRole, type CreateItemId } from "@/lib/create-menu";
 import { useRoleHref } from "@/lib/use-role-href";
 import { useUserRole } from "@/lib/use-user-role";
 
 // The header's single "Add" button (Jira-style "+ Create"): one control that opens the things this
 // persona can create - a project, a DLA request, a DSA - instead of a separate button per thing.
-// What appears comes from `lib/create-menu.ts` and the role-access matrix. A guest keeps the
-// visible-but-gated rule: the same button, and clicking it opens the sign-up invite.
+// What appears comes from `lib/create-menu.ts` and the role-access matrix.
+//
+// A guest gets nothing here, not a visible-but-gated button - reversed per direct feedback back to
+// the earlier "hidden outright" behaviour (the same button + sign-up-invite version was tried and
+// is now reverted a second time). Since AppHeader is the one shared header every screen renders
+// (CONTRACTS.md 3.1-3.5), this hides it for public-user everywhere, not just Explore.
 const itemIcons: Record<CreateItemId, FC<{ className?: string }>> = {
   project: Folder,
   dla: FileLock01,
   dsa: FileCheck02,
+  user: UserPlus01,
 };
 
 export function CreateMenu() {
   const role = useUserRole();
   const router = useRouter();
   const roleHref = useRoleHref();
-  const [signUpOpen, setSignUpOpen] = useState(false);
 
-  if (role === "public-user") {
-    return (
-      <>
-        <Button color="primary" iconLeading={Plus} onClick={() => setSignUpOpen(true)}>
-          Add
-        </Button>
-        <SignUpPromptModal
-          isOpen={signUpOpen}
-          onOpenChange={setSignUpOpen}
-          icon={Plus}
-          title="Sign up to add to BioData SA"
-          description="Create a free BioData SA account to add projects and request data licences for South Australia's biodiversity record."
-        />
-      </>
-    );
-  }
+  if (role === "public-user") return null;
 
   const items = createMenuItemsForRole(role);
   return (

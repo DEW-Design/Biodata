@@ -5,7 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 import { toast } from "@/components/application/toast/toast";
 import { DsaDetail, DsaNotFound } from "@/app/pages/_shared/dsa/dsa-detail";
 import { DsaShell } from "@/app/pages/_shared/dsa/dsa-shell";
-import { approveDsa, cancelDsa, deleteDsa, holdDsaReview, rejectDsa, resumeDsaReview, startDsaReview, useDsa } from "@/app/pages/_shared/dsa/dsa-store";
+import { approveDsa, cancelDsa, deleteDsa, holdDsaReview, rejectDsa, resumeDsaReview, startDsaReview, useDsa, useDsasHydrated } from "@/app/pages/_shared/dsa/dsa-store";
 import { useRoleHref } from "@/lib/use-role-href";
 
 // /pages/dsa/<id> - one agreement's deep dive, step two of the list -> deep dive pattern. Column 2
@@ -21,6 +21,7 @@ export default function DsaDetailPage() {
 function DsaDeepDive() {
   const { id } = useParams<{ id: string }>();
   const dsa = useDsa(id);
+  const hydrated = useDsasHydrated();
   const router = useRouter();
   const roleHref = useRoleHref();
 
@@ -62,7 +63,7 @@ function DsaDeepDive() {
           }}
         />
       ) : (
-        <DsaNotFound id={id} />
+        hydrated ? <DsaNotFound id={id} /> : null
       )}
     </DsaShell>
   );

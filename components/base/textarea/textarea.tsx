@@ -30,10 +30,13 @@ export const TextAreaBase = ({ className, size = "md", ...props }: TextAreaBaseP
             }
             className={(state) =>
                 cx(
-                    "w-full scroll-py-3 rounded-lg bg-primary text-primary shadow-xs ring-1 ring-primary transition duration-100 ease-linear ring-inset placeholder:text-placeholder autofill:rounded-lg autofill:text-primary focus:outline-hidden",
+                    "w-full scroll-py-2 rounded-lg bg-primary text-primary shadow-xs ring-1 ring-primary transition duration-100 ease-linear ring-inset placeholder:text-placeholder autofill:rounded-lg autofill:text-primary focus:outline-hidden",
 
-                    size === "sm" && "p-3 text-sm",
-                    size === "md" && "px-3.5 py-3 text-base",
+                    // Match Input's real rendered type and padding (14px, px-3 py-2) so a textarea sits
+                    // level with the fields around it. Input's "md" asks for the undefined `text-md`
+                    // and so renders at 14px; the textarea's own `text-base` (16px) was the mismatch.
+                    size === "sm" && "px-3 py-2 text-sm",
+                    size === "md" && "px-3 py-2 text-sm",
 
                     // Resize handle
                     "[&::-webkit-resizer]:bg-(image:--resize-handle-bg) [&::-webkit-resizer]:bg-contain dark:[&::-webkit-resizer]:bg-(image:--resize-handle-bg-dark)",
