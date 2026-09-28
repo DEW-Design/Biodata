@@ -8,7 +8,7 @@ import type { UserRole } from "@/lib/user-role";
 // public-user is deliberately not filtered here: a guest sees the same "Add" button and gets the
 // sign-up invite instead of a menu (see `CreateMenu`), so nothing they could create is hidden.
 
-export type CreateItemId = "project" | "dla" | "dsa";
+export type CreateItemId = "project" | "dla" | "dsa" | "user";
 
 export interface CreateMenuItem {
   id: CreateItemId;
@@ -23,6 +23,7 @@ export const createMenuItems: CreateMenuItem[] = [
   { id: "project", label: "Project", href: "/pages/project-registration" },
   { id: "dla", label: "Data licence request (DLA)", href: "/pages/dla/new", feature: "dlaAccess" },
   { id: "dsa", label: "Data sharing agreement (DSA)", href: "/pages/dsa/new", feature: "dsaManagement" },
+  { id: "user", label: "User", href: "/pages/user-management/users/new", feature: "userManagement" },
 ];
 
 export function createMenuItemsForRole(role: UserRole): CreateMenuItem[] {

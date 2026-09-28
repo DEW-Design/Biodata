@@ -188,7 +188,7 @@ export const TagSelectBase = ({
                             />
 
                             <Popover size={size} triggerRef={placeholderRef} style={{ width: popoverWidth }} className={props?.popoverClassName}>
-                                <AriaListBox selectionMode="multiple" className="size-full outline-hidden">
+                                <AriaListBox selectionMode="multiple" escapeKeyBehavior="none" className="size-full outline-hidden">
                                     {children}
                                 </AriaListBox>
                             </Popover>

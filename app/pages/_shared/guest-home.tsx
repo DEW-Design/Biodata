@@ -143,7 +143,7 @@ export function GuestAboutAside({ sectionLabel, actions }: { sectionLabel: strin
       <div className="flex flex-col gap-6">
         <p className="text-xs font-semibold tracking-wide text-quaternary uppercase">{sectionLabel}</p>
         {actions && <div className="border-b border-secondary pb-6">{actions}</div>}
-        <section className="flex flex-col gap-2">
+        <section className="flex flex-col gap-3">
           <h2 className="text-base font-semibold text-primary">What is BioData SA?</h2>
           {aboutParagraphs.map((p) => (
             <p key={p} className="text-sm text-pretty text-tertiary">

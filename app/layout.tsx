@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Barlow, Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { Agentation } from "agentation";
+import { InterfaceKit } from "interface-kit/react";
 import { Toaster } from "@/components/application/toast/toast";
 import { ConfigProvider } from "@/lib/config-context";
 import { AppRouterProvider } from "@/components/app-router-provider";
@@ -45,6 +46,7 @@ export default function RootLayout({
             {children}
             <Toaster />
             {process.env.NODE_ENV === "development" && <Agentation />}
+            {process.env.NODE_ENV === "development" && <InterfaceKit />}
           </ConfigProvider>
         </AppRouterProvider>
       </body>

@@ -7,9 +7,9 @@ import "leaflet-draw/dist/leaflet.draw.css";
 import "leaflet-draw";
 import { Circle, CircleMarker, MapContainer, Marker, Polygon, ScaleControl, Tooltip, TileLayer, useMap } from "react-leaflet";
 import { ZoomIn, ZoomOut } from "@untitledui/icons";
-import { Button } from "@/components/base/buttons/button";
 import type { Boundary } from "./geo";
 import { assetPath } from "@/lib/base-path";
+import { cx } from "@/utils/cx";
 
 // A real, working map of South Australia - OpenStreetMap tiles via Leaflet, not a fabricated grid
 // or a static image. Kept in app/pages/_shared (not components/custom) to match the precedent
@@ -38,20 +38,58 @@ const SA_MAX_BOUNDS: L.LatLngBoundsExpression = [
     [-40, 124],
     [-23, 152],
 ];
+// Leaflet's own fit-to-bounds zoom (`getBoundsZoom`) is clamped to `[minZoom, maxZoom]` *before* the
+// pan offset for a lopsided panel is computed - if a wide search area needs to zoom out further than
+// `minZoom` allows to actually fit next to a wide panel, the offset gets computed at too-tight a zoom
+// and overshoots by hundreds of real kilometres, which `maxBounds` then clamps to its own edge -
+// "locked to Australia" with the area nowhere near where it landed. A low floor here just gives the
+// fit its own room to work; `maxBounds` is still what stops the map wandering off South Australia.
+const MIN_ZOOM = 3;
 
 // The same brand teal token app/pages/_shared/map-view.tsx uses for its own "this is the
 // highlighted area" state, reused here for the same semantic (the current search boundary) so the
 // two map widgets read consistently if a user sees both.
 const BOUNDARY_COLOR = "var(--color-brand-600)";
 
-/** Real DEW-styled zoom controls, replacing Leaflet's own default control chrome (which doesn't
- *  follow this design system's tokens) - same real zoom behaviour, `map.zoomIn()`/`zoomOut()`. */
+/** A single compact zoom pill (+ over -, one shared border and a thin divider) rather than two
+ *  separate floating buttons - real DEW tokens, not the full `Button` component, since nothing in
+ *  `components/base/**` draws a merged two-cell pill like this (same "compose from tokens when no
+ *  real component matches" precedent as this file's own boundary chips elsewhere in the search
+ *  UI). Replaces Leaflet's own default zoom chrome, which never carried this design system's
+ *  tokens to begin with. Both docking corners sit at a 16px inset (`top-4`/`right-4`/`left-4`),
+ *  not the previous 12px - `right-4` is what lets `RecordPeekCard` (observations-search.tsx)
+ *  share this exact edge and stack directly under the pill instead of racing it for the same
+ *  corner. The focus ring is drawn inset (`ring-inset`), the same technique `Table.Head` already
+ *  uses for adjacent cells, so it never bleeds into the neighbouring button. */
+/** Hands the real Leaflet map instance up to a parent rendered outside the `<MapContainer>` tree
+ *  (e.g. zoom buttons living inside a floating results panel instead of on the map itself) -
+ *  `useMap()` only works for a `MapContainer` descendant, so this is the one place that reads it
+ *  and forwards it out via a plain callback. */
+function MapReady({ onMapReady }: { onMapReady?: (map: L.Map) => void }) {
+    const map = useMap();
+    useEffect(() => {
+        onMapReady?.(map);
+    }, [map, onMapReady]);
+    return null;
+}
+
 function ZoomControls({ position }: { position: "top-right" | "top-left" }) {
     const map = useMap();
+    const buttonClass =
+        "flex size-9 items-center justify-center text-tertiary outline-hidden transition-colors duration-100 ease-linear hover:bg-primary_hover hover:text-secondary active:bg-secondary focus-visible:z-10 focus-visible:ring-2 focus-visible:ring-focus-ring focus-visible:ring-inset";
     return (
-        <div className={position === "top-left" ? "absolute top-3 left-3 z-[1000] flex flex-col gap-2" : "absolute top-3 right-3 z-[1000] flex flex-col gap-2"}>
-            <Button color="secondary" size="md" iconLeading={ZoomIn} aria-label="Zoom in" onPress={() => map.zoomIn()} className="shadow-md" />
-            <Button color="secondary" size="md" iconLeading={ZoomOut} aria-label="Zoom out" onPress={() => map.zoomOut()} className="shadow-md" />
+        <div
+            className={cx(
+                "absolute top-4 z-[1000] flex flex-col overflow-hidden rounded-lg border border-secondary bg-primary shadow-md",
+                position === "top-left" ? "left-4" : "right-4",
+            )}
+        >
+            <button type="button" aria-label="Zoom in" onClick={() => map.zoomIn()} className={cx(buttonClass, "border-b border-secondary")}>
+                <ZoomIn className="size-4" />
+            </button>
+            <button type="button" aria-label="Zoom out" onClick={() => map.zoomOut()} className={buttonClass}>
+                <ZoomOut className="size-4" />
+            </button>
         </div>
     );
 }
@@ -89,9 +127,93 @@ function FlyToBoundaries({
         }
         // paddingTopLeft keeps fitted areas clear of anything floating over the map's top-left
         // (e.g. the map search's floating panel).
-        map.flyToBounds(bounds, { paddingTopLeft, paddingBottomRight, duration: 0.6 });
+        // Padding describes what floats over the map (a card, a sheet). Leaflet's own fit-to-bounds
+        // math (`_getBoundsCenterZoom`) turns a lopsided padding straight into a pixel offset applied
+        // at whatever zoom it lands on - when that offset is large and the zoom got floored at
+        // `minZoom` (too little room left to actually fit the area), the offset overshoots into real
+        // distances of hundreds of kilometres, and `maxBounds` then clamps the view to its own edge
+        // instead of the area itself - the exact "point ends up on the wrong side of the state" bug
+        // this was flagged for. Capped at 50% of the map (not 78%) so a wide panel never eats more
+        // than half the room to fit into, keeping the offset - and the risk of hitting maxBounds -
+        // small regardless of how the panel is sized.
+        const size = map.getSize();
+        const capX = size.x * 0.5;
+        const capY = size.y * 0.5;
+        const tl = L.point(Math.min(paddingTopLeft[0], capX), Math.min(paddingTopLeft[1], capY));
+        const br = L.point(Math.min(paddingBottomRight[0], capX), Math.min(paddingBottomRight[1], capY));
+        map.flyToBounds(bounds, { paddingTopLeft: tl, paddingBottomRight: br, duration: 0.6 });
+        // Re-fit when the covered area changes (the card widens for Table, the sheet snaps), so the
+        // areas always land in the part of the map the user can actually see.
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [boundariesKey, map]);
+    }, [boundariesKey, map, paddingTopLeft[0], paddingTopLeft[1], paddingBottomRight[0], paddingBottomRight[1]]);
+
+    return null;
+}
+
+/** Flies to one specific set of boundaries when `request.key` changes: "zoom to this area" from the
+ *  areas list. Same padding rules as `FlyToBoundaries`, so the area lands in the visible part of
+ *  the map. */
+function FlyToRequest({
+    request,
+    paddingTopLeft = [48, 48],
+    paddingBottomRight = [48, 48],
+}: {
+    request?: { key: number; boundaries: Boundary[] };
+    paddingTopLeft?: [number, number];
+    paddingBottomRight?: [number, number];
+}) {
+    const map = useMap();
+    const key = request?.key;
+
+    useEffect(() => {
+        if (!request || request.boundaries.length === 0) return;
+        const bounds = L.latLngBounds([]);
+        for (const boundary of request.boundaries) {
+            if (boundary.kind === "circle") bounds.extend(L.latLng(boundary.center).toBounds(boundary.radiusKm * 2000));
+            else bounds.extend(L.latLngBounds(boundary.points));
+        }
+        const size = map.getSize();
+        // Same 50% cap as FlyToBoundaries above, same reason.
+        const tl = L.point(Math.min(paddingTopLeft[0], size.x * 0.5), Math.min(paddingTopLeft[1], size.y * 0.5));
+        const br = L.point(Math.min(paddingBottomRight[0], size.x * 0.5), Math.min(paddingBottomRight[1], size.y * 0.5));
+        map.flyToBounds(bounds, { paddingTopLeft: tl, paddingBottomRight: br, duration: 0.6 });
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [key, map]);
+
+    return null;
+}
+
+/** Centres one point - a clicked record's own dot - in the map's currently *visible* area whenever
+ *  `request.key` changes, per direct feedback ("if I click on a species or a record, the dot needs
+ *  to be centred always"): a dot sitting under the results panel, or crammed at the map's raw edge
+ *  next to the peek card, isn't actually visible even though it's technically "on screen". Deliberately
+ *  pan-only, not `flyToBounds` - the zoom level is left exactly as the user set it; only the centre
+ *  moves. Uses the same padding-offset maths Leaflet's own `_getBoundsCenterZoom` uses internally
+ *  (see `FlyToBoundaries` above) but applies it directly at the map's *current* zoom instead of
+ *  computing a new one, so a record click can never itself trigger a zoom change. */
+function PanToRecord({
+    request,
+    paddingTopLeft = [48, 48],
+    paddingBottomRight = [48, 48],
+}: {
+    request?: { key: number; point: [number, number] };
+    paddingTopLeft?: [number, number];
+    paddingBottomRight?: [number, number];
+}) {
+    const map = useMap();
+    const key = request?.key;
+
+    useEffect(() => {
+        if (!request) return;
+        const zoom = map.getZoom();
+        const size = map.getSize();
+        const tl = L.point(Math.min(paddingTopLeft[0], size.x * 0.5), Math.min(paddingTopLeft[1], size.y * 0.5));
+        const br = L.point(Math.min(paddingBottomRight[0], size.x * 0.5), Math.min(paddingBottomRight[1], size.y * 0.5));
+        const paddingOffset = br.subtract(tl).divideBy(2);
+        const center = map.unproject(map.project(request.point, zoom).add(paddingOffset), zoom);
+        map.flyTo(center, zoom, { duration: 0.5 });
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [key, map]);
 
     return null;
 }
@@ -159,6 +281,12 @@ function DrawBridge({
     return null;
 }
 
+/** The area being pointed at in the areas list is drawn heavier, so a row and its shape read as one. */
+function boundaryStyle(id: string, highlighted?: Set<string>) {
+    const on = highlighted?.has(id) ?? false;
+    return { color: BOUNDARY_COLOR, fillColor: BOUNDARY_COLOR, fillOpacity: on ? 0.32 : 0.15, weight: on ? 4 : 2 };
+}
+
 export interface SAMapProps {
     boundaries: Boundary[];
     onBoundaryAdd: (boundary: Boundary) => void;
@@ -172,6 +300,13 @@ export interface SAMapProps {
     /** Where the zoom buttons sit. Default top-right; the second Explore layout moves them to the
      *  top-left because the results panel floats over the right. */
     zoomPosition?: "top-right" | "top-left";
+    /** Draw the on-map zoom pill (default true). The floating Explore layout turns this off and
+     *  drives the same map instance from its own zoom buttons inside the results panel instead
+     *  (via `onMapReady`), per direct feedback that on-map buttons weren't earning their corner. */
+    showZoomControls?: boolean;
+    /** Called once with the real Leaflet map instance, so a parent rendered outside this
+     *  component's own `<MapContainer>` tree can drive it directly (zoom, pan, ...). */
+    onMapReady?: (map: L.Map) => void;
     /** Draw the search areas (default true). They still steer the fit when hidden. */
     showBoundaries?: boolean;
     /** Result points to plot over the search areas (one dot per record). Optional. */
@@ -180,6 +315,14 @@ export interface SAMapProps {
     onMarkerClick?: (id: string) => void;
     /** The marker to draw larger and darker (the result card being hovered). */
     highlightedMarkerId?: string | null;
+    /** Boundary ids to draw heavier (the area row being hovered in the areas list). */
+    highlightedBoundaryIds?: Set<string>;
+    /** Fly to these boundaries whenever `key` changes ("zoom to this area"). */
+    fitRequest?: { key: number; boundaries: Boundary[] };
+    /** Centre this point whenever `key` changes ("a record was selected") - pans only, never
+     *  changes zoom, so the same click that opens a record's summary card also brings its dot
+     *  into the visible area instead of leaving it wherever it happened to already be. */
+    panRequest?: { key: number; point: [number, number] };
     className?: string;
 }
 
@@ -189,13 +332,31 @@ export interface SAMapMarker {
     label: string;
 }
 
-export default function SAMap({ boundaries, onBoundaryAdd, activeDrawTool, onDrawToolChange, fitPaddingTopLeft, fitPaddingBottomRight, zoomPosition = "top-right", showBoundaries = true, markers, onMarkerClick, highlightedMarkerId, className }: SAMapProps) {
+export default function SAMap({
+    boundaries,
+    onBoundaryAdd,
+    activeDrawTool,
+    onDrawToolChange,
+    fitPaddingTopLeft,
+    fitPaddingBottomRight,
+    zoomPosition = "top-right",
+    showZoomControls = true,
+    onMapReady,
+    showBoundaries = true,
+    markers,
+    onMarkerClick,
+    highlightedMarkerId,
+    highlightedBoundaryIds,
+    fitRequest,
+    panRequest,
+    className,
+}: SAMapProps) {
     return (
         <div className={className}>
             <MapContainer
                 center={SA_CENTER}
                 zoom={6}
-                minZoom={5}
+                minZoom={MIN_ZOOM}
                 maxZoom={16}
                 maxBounds={SA_MAX_BOUNDS}
                 maxBoundsViscosity={1}
@@ -212,19 +373,22 @@ export default function SAMap({ boundaries, onBoundaryAdd, activeDrawTool, onDra
                 <TileLayer attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors' url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
 
                 <ScaleControl position="bottomleft" imperial={false} />
-                <ZoomControls position={zoomPosition} />
+                {showZoomControls && <ZoomControls position={zoomPosition} />}
+                <MapReady onMapReady={onMapReady} />
                 <DrawBridge activeDrawTool={activeDrawTool} onDrawToolChange={onDrawToolChange} onBoundaryAdd={onBoundaryAdd} />
                 <FlyToBoundaries boundaries={boundaries} paddingTopLeft={fitPaddingTopLeft} paddingBottomRight={fitPaddingBottomRight} />
+                <FlyToRequest request={fitRequest} paddingTopLeft={fitPaddingTopLeft} paddingBottomRight={fitPaddingBottomRight} />
+                <PanToRecord request={panRequest} paddingTopLeft={fitPaddingTopLeft} paddingBottomRight={fitPaddingBottomRight} />
 
                 {showBoundaries && boundaries.map((boundary) =>
                     boundary.kind === "circle" ? (
                         <Fragment key={boundary.id}>
-                            <Circle center={boundary.center} radius={boundary.radiusKm * 1000} pathOptions={{ color: BOUNDARY_COLOR, fillColor: BOUNDARY_COLOR, fillOpacity: 0.15, weight: 2 }} />
+                            <Circle center={boundary.center} radius={boundary.radiusKm * 1000} pathOptions={boundaryStyle(boundary.id, highlightedBoundaryIds)} />
                             <Marker position={boundary.center} />
                         </Fragment>
                     ) : (
                         <Fragment key={boundary.id}>
-                            <Polygon positions={boundary.points} pathOptions={{ color: BOUNDARY_COLOR, fillColor: BOUNDARY_COLOR, fillOpacity: 0.15, weight: 2 }} />
+                            <Polygon positions={boundary.points} pathOptions={boundaryStyle(boundary.id, highlightedBoundaryIds)} />
                             {/* Uploaded-shapefile polygons also get a marker (at their vertex average) so
                                 every location a shapefile added is pinned, not just its point features. */}
                             {boundary.source?.startsWith("shapefile:") && (

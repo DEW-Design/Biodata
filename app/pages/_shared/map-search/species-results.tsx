@@ -89,9 +89,17 @@ import { SidePanel } from "./side-panel";
 import { MetricTile } from "./metric-tile";
 import { ResultsTable, type ColumnDef } from "./results-table";
 import {
+  clearSpeciesFilters,
+  setSelectedAuthorities,
+  setSelectedFamilies,
+  setSelectedGenera,
+  setSelectedLicences,
+  setSelectedSpecies,
+  useSpeciesFilters,
+} from "./species-filter-store";
+import {
   type SearchOccurrence,
   type SpeciesGroup,
-  type LicenceLevel,
   kingdomForGroup,
   rootProjectForParentEventId,
   siteNameForParentEventId,
@@ -247,6 +255,7 @@ export function SpeciesResultsView({
   rows,
   onRowClick,
   onExportableRowsChange,
+  hideSearch = false,
 }: {
   /** The page's own already spatially + keyword filtered occurrence rows (`filteredOccurrences`
    *  in app/pages/observations/page.tsx) - Species mode narrows this further to rows with
@@ -263,17 +272,18 @@ export function SpeciesResultsView({
    *  export control itself. `EXPORT_HEADERS`/`exportRowFor` are exported below for the page to
    *  reuse verbatim, so the exported file's columns can never drift from what this view computes. */
   onExportableRowsChange?: (rows: SearchOccurrence[]) => void;
+  /** Hide this view's own search box (the page already has one search field that narrows these
+   *  rows), leaving the All Filters button. Default off, so every other caller is unchanged. */
+  hideSearch?: boolean;
 }) {
   const [activeGroup, setActiveGroup] = useState<SpeciesGroup | null>(null);
   const [tableSearch, setTableSearch] = useState("");
   const [panelOpen, setPanelOpen] = useState(false);
   const [openSections, setOpenSections] = useState<Set<Key>>(new Set(["species"]));
 
-  const [selectedFamilies, setSelectedFamilies] = useState<Set<string>>(new Set());
-  const [selectedGenera, setSelectedGenera] = useState<Set<string>>(new Set());
-  const [selectedSpecies, setSelectedSpecies] = useState<Set<string>>(new Set());
-  const [selectedAuthorities, setSelectedAuthorities] = useState<Set<string>>(new Set());
-  const [selectedLicences, setSelectedLicences] = useState<Set<LicenceLevel>>(new Set());
+  // Persisted (localStorage, via zustand) - see species-filter-store.ts for what's kept here and
+  // what deliberately isn't (the date range, the search areas themselves, transient UI state).
+  const { selectedFamilies, selectedGenera, selectedSpecies, selectedAuthorities, selectedLicences } = useSpeciesFilters();
   const [dateFilterOn, setDateFilterOn] = useState(false);
   const [dateRange, setDateRange] = useState<DateRange | null>(null);
 
@@ -391,11 +401,7 @@ export function SpeciesResultsView({
   };
 
   const clearAllFilters = () => {
-    setSelectedFamilies(new Set());
-    setSelectedGenera(new Set());
-    setSelectedSpecies(new Set());
-    setSelectedAuthorities(new Set());
-    setSelectedLicences(new Set());
+    clearSpeciesFilters();
     setDateFilterOn(false);
   };
 
@@ -553,8 +559,8 @@ export function SpeciesResultsView({
           keeps its own `shrink-0`/`min-w-[220px]` so it never gets squeezed and naturally lands on
           the right since the input has already claimed the rest of the row. ── */}
       <div className="flex shrink-0 items-center gap-3 rounded-lg bg-primary shadow-xs">
-        <Input icon={SearchLg} placeholder="Search" value={tableSearch} onChange={setTableSearch} className="flex-1" />
-        <Button color="secondary" size="md" iconLeading={FilterLines} onPress={openPanel} className="min-w-[220px] shrink-0 justify-center">
+        {!hideSearch && <Input icon={SearchLg} placeholder="Search" value={tableSearch} onChange={setTableSearch} className="flex-1" />}
+        <Button color="secondary" size="md" iconLeading={FilterLines} onPress={openPanel} className={hideSearch ? "ml-auto shrink-0" : "min-w-[220px] shrink-0 justify-center"}>
           All Filters{anyFilterActive ? ` (${activeFilterCount})` : ""}
         </Button>
       </div>

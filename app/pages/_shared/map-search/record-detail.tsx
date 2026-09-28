@@ -708,12 +708,20 @@ const ADELAIDE_HILLS_TREE_NODE_BY_CODE: Record<string, string> = {
   VU00501: "visit", // Visit VU00501
 };
 
+/** The real project page for a record, with the record pre-selected in its tree where the two
+ *  datasets share a code, or `null` when the record's project has no page in this preview (only
+ *  Adelaide Hills does). The path only; callers add the role through `useRoleHref`. */
+export function projectDetailPath(record: DetailRecord): string | null {
+  if (projectFor(record)?.id !== ADELAIDE_HILLS_PROJECT_ID) return null;
+  const nodeId = record.kind === "event" ? ADELAIDE_HILLS_TREE_NODE_BY_CODE[record.event.code] : undefined;
+  return `/pages/project-detail${nodeId ? `?select=${nodeId}` : ""}`;
+}
+
 function GoToProjectButton({ record }: { record: DetailRecord }) {
   const roleHref = useRoleHref();
-  const project = projectFor(record);
-  const isAdelaideHills = project?.id === ADELAIDE_HILLS_PROJECT_ID;
+  const path = projectDetailPath(record);
 
-  if (!isAdelaideHills) {
+  if (!path) {
     return (
       <Tooltip title="This preview only has a full project page built for Adelaide Hills Bushland Survey">
         <Focusable>
@@ -727,11 +735,8 @@ function GoToProjectButton({ record }: { record: DetailRecord }) {
     );
   }
 
-  const nodeId = record.kind === "event" ? ADELAIDE_HILLS_TREE_NODE_BY_CODE[record.event.code] : undefined;
-  const target = `${roleHref("/pages/project-detail")}${nodeId ? `&select=${nodeId}` : ""}`;
-
   return (
-    <Button color="secondary" size="sm" href={target}>
+    <Button color="secondary" size="sm" href={roleHref(path)}>
       Go to project
     </Button>
   );
