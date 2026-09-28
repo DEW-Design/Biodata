@@ -18,7 +18,7 @@ import { AppHeader } from "@/app/pages/_shared/app-header";
 import { ProjectActions } from "@/app/pages/_shared/project-actions";
 import { GuestAboutAside, GuestGradientCard } from "@/app/pages/_shared/guest-home";
 import { MobileNavTrigger } from "@/app/pages/_shared/mobile-nav";
-import { PrototypeTools } from "@/app/pages/_shared/prototype-tools/prototype-tools";
+import { PrototypeTools } from "@/app/_prototype-tools/prototype-tools";
 import { useUserRole } from "@/lib/use-user-role";
 import { useRoleHref } from "@/lib/use-role-href";
 import { navForRole, keyHref, type NavNode } from "@/lib/registered-user-nav";
@@ -282,7 +282,7 @@ function ProjectList() {
           return (
             <div className="flex flex-1 overflow-hidden">
               {iconRail}
-              <GuestAboutAside sectionLabel={activeSection} actions={activeSection === "Projects" ? <ProjectActions withTopRule={false} /> : undefined} />
+              <GuestAboutAside sectionLabel={activeSection} about={activeSection === "Projects" ? "projects" : "platform"} actions={activeSection === "Projects" ? <ProjectActions withTopRule={false} /> : undefined} />
 
               <main className="flex flex-1 flex-col overflow-y-auto">
                 {activeSection === "Home" ? (

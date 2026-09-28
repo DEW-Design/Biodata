@@ -3,7 +3,7 @@
 // Add Project, second layout: the three-column structure every other screen here uses. Column 1 is
 // the primary icon rail, column 2 is the section list (progress + where you are + what needs
 // attention), column 3 is the form for the current section. Compared against the first layout (one
-// question per card, no rail or sidebar) with the floating options control - see CONTEXT.md.
+// question per card, no rail or sidebar) with the floating options control - see context/decisions/2026-09-25-02-add-project-gets-a-second-layout-at-pages.md.
 //
 // What changed from the first layout, and why:
 // - Related fields share a screen (project name + abstract + dates; owner + contact; role + team)

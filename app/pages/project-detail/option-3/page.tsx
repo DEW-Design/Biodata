@@ -35,7 +35,7 @@ import { PrimaryRail } from "@/app/pages/_shared/primary-rail";
 import { sectionIcons } from "@/app/pages/_shared/nav-icons";
 import { AppHeader } from "@/app/pages/_shared/app-header";
 import { MobileNavTrigger } from "@/app/pages/_shared/mobile-nav";
-import { PrototypeTools } from "@/app/pages/_shared/prototype-tools/prototype-tools";
+import { PrototypeTools } from "@/app/_prototype-tools/prototype-tools";
 import { ProjectDetailLayoutSwitcher } from "@/app/pages/_shared/project-detail-layout-switcher";
 import { SpeciesResultsView } from "@/app/pages/_shared/map-search/species-results";
 import { searchEvents } from "@/app/pages/_shared/map-search/search-data";

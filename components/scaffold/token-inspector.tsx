@@ -1,14 +1,14 @@
 "use client";
 
 /**
- * Scaffold-native hover inspector for generated screens (see CONTEXT.md,
+ * Scaffold-native hover inspector for generated screens (see .claude/rules/ref-ingest.md,
  * "Generated screens"). Lets a reviewer hover any element on a reconstructed
  * screen and see exactly which DEW component rendered it and which
  * `--ui-*`/`--color-*` tokens it resolved to - a manual cross-check that
  * nothing was hardcoded outside the token chain.
  *
  * Standard infrastructure for every `/test-*` generated screen (see
- * CONTEXT.md, "Generated screens - hover inspector convention") - wrap the
+ * .claude/rules/ref-ingest.md, "Generated screens" (the hover token-inspector bullet)) - wrap the
  * page in `<InspectorProvider>` and wrap each element you want inspectable
  * in `<Inspectable>`. The floating toggle button it renders lets a reviewer
  * turn the overlay off entirely to see the screen clean.

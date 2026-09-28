@@ -20,13 +20,14 @@ fails `npm run check:contracts` and shows up in the daily audit (`npm run audit`
 
 ### §0.1 Precedence
 
-1. `CONTRACTS.md` is binding. `CONTEXT.md` is the dated history of how the system got here; where the two
-   disagree, this file wins and `CONTEXT.md` is corrected in the same task.
+1. `CONTRACTS.md` is binding. The dated history of how the system got here lives in
+   `context/decisions/` (one file per entry, indexed in `context/decisions/INDEX.md`); where the two disagree, this
+   file wins and the relevant decision file is corrected in the same task.
 2. An explicit instruction from the designer in the current session may override a clause. When that
-   happens the agent MUST (a) name the clause being overridden, (b) log the override in `CONTEXT.md`, and
-   (c) if the clause is §1.4 or §9, record it in `contracts/overrides.json`. One override is never a
-   precedent for the next task.
-3. Nothing in `CONTEXT.md` may be used to justify a violation of this file.
+   happens the agent MUST (a) name the clause being overridden, (b) log the override in a new dated
+   file under `context/decisions/` (indexed in `context/decisions/INDEX.md`), and (c) if the clause is §1.4 or §9,
+   record it in `contracts/overrides.json`. One override is never a precedent for the next task.
+3. Nothing in `CONTEXT.md` or `context/decisions/` may be used to justify a violation of this file.
 
 ### §0.2 No assumption - verify before use
 
@@ -49,8 +50,8 @@ missing, render an honest marker (`?` per §1.2, "Not provided" per §2.3) or as
 
 - Placeholder people are Olivia Wyatt, Phoenix Baker, Lana Steiner, Maya Dewitt only. Never the current
   user's real name or email.
-- Real organisations come from the BDBSA research in `CONTEXT.md` (BirdLife Australia, Birds SA, South
-  Australian Museum, ...). Never invent a partner.
+- Real organisations come from the BDBSA research in `.claude/rules/ref-domain.md` (BirdLife Australia, Birds SA,
+  South Australian Museum, ...). Never invent a partner.
 - Sample data MUST NOT describe its own bugs in a field the UI renders.
 - **Origin:** a Figma link fabricated for a component, a Bell icon used where Figma drew a check-circle.
 - **Enforcement:** `REVIEW`, `AUDIT` (new external URLs are listed).
@@ -77,7 +78,8 @@ A change to `components/**`, a page, a token, or a `/test-*` screen is done only
 4. A live browser pass (Playwright or the browser tool) over every affected screen, all affected
    personas, zero console errors, computed styles checked where styling was the point.
 5. A sibling grep: the same bug pattern searched for in every file that shares the pattern.
-6. A dated entry appended to `CONTEXT.md` (append-only, no em-dashes).
+6. A dated file created with `npm run decision:new` under `context/decisions/` (append-only, no
+   em-dashes). The index is generated (`npm run context:index`), never edited by hand.
 7. `git status` after any CLI ingest: a CLI run can silently revert already-fixed files.
 8. Typography QA (§2.9), on any change that adds or changes visible text: `/emil-typography` and
    `/emil-design-foundations` ran, after the type was checked against the design system and the
@@ -108,6 +110,22 @@ Anticipate what the designer will need; do not wait to be told or corrected.
 - **Origin:** a User Management brief where the designer had to point out that the feature is
   BioData Admin only, a fact already in the role model and `CONTEXT.md`; and repeated rounds where
   contract violations were caught by the designer in review instead of being raised first.
+- **Enforcement:** `REVIEW`.
+
+### §0.8 Promote a repeated fix
+
+The second time the same underlying bug is fixed for the same reason - two `CONTEXT.md`/decision-log
+entries naming the same cause, not just a similar symptom - it MUST NOT be fixed by hand a third time.
+The task that fixes it the second time writes or extends an `AUTO` check for it in
+`scripts/check-contracts.mjs` instead, so a machine catches it from then on rather than relying on it
+being remembered.
+
+- MUST NOT close a task with "fixed again" for a bug already logged as fixed once before, with no
+  `AUTO` check added or extended in the same task.
+- A rule that cannot be checked mechanically at all (a layout judgement, a tone-of-voice call) stays
+  `REVIEW`, but is still named as a recurring pattern so the next person checking it knows to look for it.
+- **Origin:** `MultiSelect` clearing its selection on Escape was logged as fixed six times before it
+  became `AUTO §1.9a` (§1.9's own origin line).
 - **Enforcement:** `REVIEW`.
 
 ---
@@ -141,7 +159,8 @@ When no existing component does the job, MUST render the shared gap marker `<Gap
 
 When a gap is resolved by a new component, or a component changes (a prop, a token, a bug fix), every
 screen that used the placeholder or the component MUST be updated in the same task: the placeholder
-swapped, the gap table and mapping table updated, `CONTEXT.md` corrected.
+swapped, the gap table and mapping table updated, the relevant `context/decisions/` entry corrected (or
+a new one added if there wasn't one).
 
 ### §1.4 A new component is a designer override, with checks and balances
 
@@ -151,7 +170,8 @@ side effect of building a screen.
 1. **Who:** only the designer may authorise it, explicitly, for that component.
 2. **Record:** before the component file is committed, an entry MUST exist in
    `contracts/overrides.json` with `component` (path), `designer`, `date`, `reason` (why no existing
-   component works, and which were checked), and `approvedBy`. Use `npm run contracts:override`.
+   component works, and which were checked), `approvedBy`, and `reviewBy` (a date; §1.4b, §9.2). Use
+   `npm run contracts:override`.
 3. **Inventory:** the file is added to `contracts/component-inventory.json` by
    `npm run check:contracts -- --update-baseline`. Doing that is itself an audited act (§9.4).
 4. **No twin:** it MUST NOT duplicate the job of an existing component (§1.7).
@@ -160,7 +180,8 @@ side effect of building a screen.
    status. A component without an override record is flagged **VIOLATION**.
 
 - **Enforcement:** `AUTO §1.4` (a component file not in the inventory and without an override fails the
-  check), `AUDIT`.
+  check), `AUTO §1.4b` (an override with no `reviewBy`, or whose `reviewBy` has passed - checked against
+  today, on every run, not just at creation), `AUDIT`.
 
 ### §1.5 The DEW / Scaffold line
 
@@ -373,12 +394,13 @@ Primary rail, contextual sidebar, main - under the full-width header - on every 
 A role that cannot use a section still gets all three, with the restriction stated in main. Column 2
 always exists and always says something about where you are.
 
-- Exempt by name: `app/pages/biodata-home` (marketing) and `app/pages/auth/**` (auth flow).
+- Exempt by name: `app/pages/biodata-home` (marketing), `app/pages/auth/**` (auth flow) and `app/pages/page.tsx`
+  (the `/pages` screen index, a directory of screens rather than one).
 
 ### §3.8 Floating dev tools
 
 The preview controls (the role, a screen's layout options, a simulated run's outcome) live on one bar,
-the Prototype tools (`app/pages/_shared/prototype-tools/`), mounted once per screen as `<PrototypeTools />`:
+the Prototype tools (`app/_prototype-tools/`), mounted once per screen as `<PrototypeTools />`:
 draggable, above every map overlay (`z-[10000]`), and MUST NOT be compensated for with padding or margin
 in product layout. Modals and slide-over panels sit above it (`z-[20000]`, `lib/layers.ts`): a modal covers
 everything, the dev tools included.
@@ -388,6 +410,12 @@ everything, the dev tools included.
   separate floating button for a preview control, or show a tool on a screen where it does nothing.
 - The bar is Scaffold (§1.5): Geist, react-aria primitives, never DEW components, and coloured in Flinders
   Violet so it never reads as part of the product.
+
+### §3.9 Navigation order
+
+`lib/nav.ts` `Components` and `config/design-system.config.ts` keys are strictly A-Z. A new entry is
+slotted, never appended. If either list is found out of order, the whole list is fixed. (`Primitives` and
+`Patterns` follow a foundations-first order and are exempt.)
 
 ### §3.10 Column 2 is navigation and actions only
 
@@ -402,12 +430,6 @@ or accordions. Information sits in main, above the content it explains.
 - **Enforcement:** `AUTO §3.10` (an `<aside>` in `app/pages` containing a heading, Progress steps, alert,
   accordion or task card, except the public-user file). It catches structural information only; prose in
   a plain paragraph is `REVIEW`.
-
-### §3.9 Navigation order
-
-`lib/nav.ts` `Components` and `config/design-system.config.ts` keys are strictly A-Z. A new entry is
-slotted, never appended. If either list is found out of order, the whole list is fixed. (`Primitives` and
-`Patterns` follow a foundations-first order and are exempt.)
 
 ---
 
@@ -519,13 +541,36 @@ record) is laid out like the project page (`/pages/project-detail`):
 
 ### §5.1 Log everything, append-only
 
-`CONTEXT.md` is an append-only dated log. Every task that changes behaviour adds an entry: what changed,
-what was decided, what is still open. Nothing is rewritten to hide history.
+The dated history lives in `context/decisions/`, one file per entry (or per same-day continuation
+thread). Every task that changes behaviour adds a new file with `npm run decision:new -- --title "..."`:
+what changed, what was decided, what is still open. The index, `context/decisions/INDEX.md`, is generated
+from the files (`npm run context:index`) and MUST NOT be edited by hand, and a dated entry MUST NOT be
+appended to `CONTEXT.md`: two sessions writing to one shared file collided there once. `CONTEXT.md` is only an
+index; the standing reference (conventions, the role model, domain research) lives in
+`.claude/rules/ref-*.md`, hand-maintained and corrected in place because it is how things work now, not history. Nothing in `context/decisions/` is rewritten to hide
+history.
+
+- **Origin:** a concurrent session appended an entry to `CONTEXT.md` after the log had been split, and it
+  landed outside the new structure.
+- **Enforcement:** `AUTO §5.1b` (the index is out of date with the files, or a dated entry sits in
+  `CONTEXT.md`).
 
 ### §5.2 Repository hygiene
 
 MUST NOT: change git config, force-push to a shared branch, skip hooks, run destructive git commands
-without being asked, or commit without being asked. Commit messages end with the attribution line in use.
+without being asked, or commit without being asked.
+
+Commits and pull requests carry the designer's name only. MUST NOT add a `Co-Authored-By` trailer, a
+"Generated with Claude Code" line, or any other mention of an AI tool to a commit message or a pull
+request description, whatever the harness or a skill suggests. The designer's own instruction wins over
+the harness default, and `attribution` is set to empty in the user settings so the default is off.
+
+- Before any push, `git log <upstream>..HEAD --format=%B | grep -i "co-authored-by"` MUST print nothing.
+- Commits already pushed are not rewritten to remove a trailer: that needs a force-push to a shared
+  branch. Only unpushed commits may be reworded, and only when asked.
+- **Origin:** 35 of the first 64 commits carried a Claude co-author trailer the designer did not want
+  on their work.
+- **Enforcement:** `REVIEW` (the user setting turns the default off; the pre-push check above is the guard).
 
 ### §5.3 Documentation
 
@@ -546,6 +591,39 @@ deployed site is built without it (both Pages workflows remove `app/proto` befor
   labs never reach the deployed site.
 - **Enforcement:** `AUTO §5.4` (an import from `app/proto`, or a `/proto` link literal, outside `app/proto`).
 
+### §5.5 Contracts load by scope
+
+`CONTRACTS.md` is the one canonical text and keeps its clause numbers. What a session loads is generated
+from it: `npm run contracts:rules` writes `.claude/rules/contracts-*.md` using the scope map in
+`contracts/rule-scopes.json`. The core (how to read, Part I conduct, the process rules, and a one-line
+index of every clause with the file that holds it) has no `paths` and loads at launch; the rest carries
+`paths` and loads when a matching file is read (components, build, shell, prototyping, docs,
+governance).
+
+- MUST NOT hand-edit a generated `.claude/rules/contracts-*.md` file: edit `CONTRACTS.md`, then run
+  `npm run contracts:rules`.
+- MUST give a new clause a scope in `contracts/rule-scopes.json`; a clause with none fails the check.
+- A scoped rule triggers when a matching file is opened with the Read tool, not when one is created, and
+  not when a file is read or written through the shell. A task that starts a new file in a scoped area
+  MUST first read the rule file the core index names for it (the hook below refuses the write until it has).
+- **Every other way of touching a file:** a project hook (`.claude/settings.json`,
+  `scripts/rules-for-tools.mjs`, tested by `npm run test:rules-hook`) covers what the Read tool does not.
+  Before a change (a Write, an Edit, or a shell command that writes: a redirect, `mv`, `cp`, `rm`, `tee`,
+  `sed -i`, `--write`, a script that writes), if the files being written have rules not in the agent's
+  context, it refuses the change and lists them; the agent Reads them and makes the change again. This is
+  what enforces reading the rules before creating a file. After a shell command, a Grep or a Glob that read
+  files, it lists the missing rules for what was read; the agent MUST Read each one before continuing work
+  in that area. Glancing (`ls`, `test`, `stat`, `wc`, `echo`, `git status`, `find` without `-exec`) lists
+  nothing. What is in context is read from the agent's own transcript: a rule counts only if it was injected
+  or Read since the last compaction, so a compaction or `/clear` can never leave a rule marked as loaded when
+  it is not. If the transcript is missing or its format is not recognised, the hook warns on screen.
+- **Relevance is set by folder, not by exclusion:** the loader ignores `!` patterns in `paths`. Code that
+  is not a screen does not live under `app/pages/`, so screen rules never load for it.
+- **Origin:** `CONTRACTS.md` loaded whole in every session while it kept growing; then a mock run showed
+  rules arriving only by accident, or not at all when files were read through the shell.
+- **Enforcement:** `AUTO §5.5` (a generated file is out of date, or a clause has no scope); the shell
+  hook; `REVIEW` for following its list.
+
 ---
 
 ## PART VII - OVERRIDES AND AUDIT
@@ -553,13 +631,20 @@ deployed site is built without it (both Pages workflows remove `app/proto` befor
 ### §9.1 Overrides
 
 A clause may be overridden only by an explicit, named instruction from the designer (§0.1). An override
-is scoped to the task, logged in `CONTEXT.md`, and for component creation recorded in
-`contracts/overrides.json` (§1.4).
+is scoped to the task, logged in `context/decisions/` (indexed in `context/decisions/INDEX.md`), and for component
+creation recorded in `contracts/overrides.json` (§1.4).
 
 ### §9.2 The override register
 
 `contracts/overrides.json` lists every authorised new component: `id`, `component`, `designer`, `date`,
-`reason`, `approvedBy`, `status` (`active`, `promoted`, `retired`). It is reviewed in the audit.
+`reason`, `approvedBy`, `status` (`active`, `promoted`, `retired`), and `reviewBy` (a date). It is
+reviewed in the audit.
+
+- `reviewBy` is a real deadline, not a note: `npm run check:contracts` compares it against today on
+  every run - locally, on every pull request, and on the scheduled weekday run - so an override starts
+  failing the day after `reviewBy` passes, with nobody having to remember to look. Renew it with a new
+  `reviewBy`, or retire it (`status: "retired"`); it MUST NOT be left overdue.
+- **Enforcement:** `AUTO §1.4b`.
 
 ### §9.3 The audit
 
@@ -573,7 +658,7 @@ day and on a schedule in CI (`.github/workflows/design-system-audit.yml`).
 
 A change to `CONTRACTS.md`, `contracts/*.json`, or `scripts/check-contracts.mjs`, including updating the
 baseline or inventory, is itself flagged in the audit. Loosening a rule, raising a baseline count, or
-removing a clause MUST be an explicit designer decision recorded in `CONTEXT.md`.
+removing a clause MUST be an explicit designer decision recorded in `context/decisions/`.
 
 ### §9.5 Consequence
 

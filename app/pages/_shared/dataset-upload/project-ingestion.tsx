@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { Database01 } from "@untitledui/icons";
-import { useRegisterTool } from "@/app/pages/_shared/prototype-tools/tools";
+import { useRegisterTool } from "@/app/_prototype-tools/tools";
 import { datasetStatusFor, datasetStatusMeta } from "@/app/pages/_shared/dataset-upload/dataset-data";
 import { restartIngestion, setDatasetStatus, useDatasets } from "@/app/pages/_shared/dataset-upload/dataset-store";
 import { runLengthMs, rowsFromSize, viewAt, type Outcome } from "@/app/pages/_shared/dataset-upload/ingestion";

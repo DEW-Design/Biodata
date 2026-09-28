@@ -2,7 +2,7 @@ import type { BadgeColors } from "@/components/base/badges/badge-types";
 
 // Shared status model for both DSA and DLA, sourced directly from the business's "DLA/DSA Users
 // Workflow Status" reference sheet and the follow-up Slack thread that resolved every open
-// question against it (see CONTEXT.md, "Unified DSA/DLA status model" for the source and the
+// question against it (see context/decisions/2026-09-24-04-unified-dsa-dla-status-model-rolled-straight-into.md, "Unified DSA/DLA status model" for the source and the
 // reasoning behind each answer below). DSA and DLA used to run two independently-invented status
 // sets (DSA: active/inactive/revoked/draft; DLA: active/under_review/rejected/expired/withdrawn) -
 // this file is the one shared vocabulary both now use.

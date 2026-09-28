@@ -18,7 +18,7 @@ import { useConfig } from "@/lib/config-context";
 
 // Scaffold-styled trigger content for Tooltip demos - reuses the real `TooltipTrigger`
 // (needed for correct hover/focus wiring per react-aria) but with Scaffold's own visual
-// classes, not a real DEW `Button`, per CONTEXT.md's "DEW vs. Scaffold" rule: a trigger
+// classes, not a real DEW `Button`, per .claude/rules/ref-ingest.md, "DEW vs. Scaffold" rule: a trigger
 // used to operate a demo is Scaffold even though a real Button component exists.
 const scaffoldTriggerClass =
   "inline-flex h-max w-max cursor-pointer items-center gap-1.5 rounded-lg border border-secondary bg-primary px-3 py-2 text-sm font-medium text-secondary shadow-xs transition-colors active:scale-[0.98] hover:bg-secondary";

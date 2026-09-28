@@ -6,9 +6,9 @@
 // implementation dumps every child (observations, occurrences, transects, quadrats, blocks,
 // rambles, traps, custom events) as flat siblings under one Site node, which doesn't scale to the
 // thousands of records a real project could have. This is the same cognitive-overload problem
-// already being designed against elsewhere (see CONTEXT.md's "Design principles (cognitive load)"
+// already being designed against elsewhere (see .claude/rules/ref-shell.md, "Design principles (cognitive load)"
 // section). KEPT after promotion (per the user: never delete explorations - they're the evidence
-// that all the options were actually considered, not just the one that shipped). See CONTEXT.md's
+// that all the options were actually considered, not just the one that shipped). See context/archive/exploratory-layouts-history.md,
 // entry for where "Grouped by Type + Search" landed in the real page.
 
 import type { FC, ReactNode } from "react";
@@ -402,7 +402,7 @@ function VariantGroupedByType() {
 // type buckets > records, each capped with "+N more" - but now a search box filters across the
 // whole hierarchy first, and only the buckets/branches actually containing a match expand. Search
 // narrows the tree; grouping keeps what's left legible once it does. This is the direction promoted
-// into the real page (see CONTEXT.md). ──
+// into the real page (see context/archive/exploratory-layouts-history.md). ──
 function VariantGroupedSearch() {
   const [query, setQuery] = useState("");
   const filtered = useMemo(() => filterTree(projectTree, query), [query]);

@@ -47,7 +47,7 @@ import { cx } from "@/utils/cx";
 // and a section for something the agreement doesn't use (no API systems) collapses to one honest
 // line instead of an empty table.
 //
-// Toolbar/action set follows the shared DSA/DLA workflow (agreement-status.ts, see CONTEXT.md's
+// Toolbar/action set follows the shared DSA/DLA workflow (agreement-status.ts, see context/decisions/2026-09-24-04-unified-dsa-dla-status-model-rolled-straight-into.md,
 // "Unified DSA/DLA status model"): Edit (Draft through Approved, not once Active - "for active
 // requests only cancel option can be used"), Start Review (Submitted), Put On Hold / Resume
 // (Under Review <-> On Hold), Approve / Reject (Under Review), Cancel (anywhere before Closed).

@@ -8,7 +8,7 @@ import { emptyConceptRow, type ConceptValueRow } from "@/app/pages/project-regis
 
 // Sensitive species nominations (Master Flows lo-fi, Figma YMproGZfrFB5jUqPHPxMhk node 1401:10936):
 // one species per nomination, what should be protected (all of its data, or selected attributes),
-// and why. Reviewed by BioData Admin (the sensitive species panel). See CONTEXT.md, "Nominate
+// and why. Reviewed by BioData Admin (the sensitive species panel). See context/decisions/2026-09-28-09-nominate-sensitive-species-built-per-direct-request-from.md, "Nominate
 // Sensitive Species".
 
 export { formatShortDate, todayIso };

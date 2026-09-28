@@ -113,7 +113,7 @@ export function rejectDla(id: string, rejectionReason: string) {
 }
 
 /** Cancel is available to the requester or an admin, at any point before Closed - "Withdraw" was
- *  the pre-workflow term for this same action (see CONTEXT.md, "Unified DSA/DLA status model"). */
+ *  the pre-workflow term for this same action (see context/decisions/2026-09-24-04-unified-dsa-dla-status-model-rolled-straight-into.md, "Unified DSA/DLA status model"). */
 export function cancelDla(id: string) {
   const dlas = useDlaStore.getState().dlas;
   commit(dlas.map((d) => (d.id === id ? { ...d, status: "cancelled", updatedAt: todayIso() } : d)));
@@ -125,7 +125,7 @@ export function deleteDla(id: string) {
 }
 
 /** The deep dive's own "+ Add Location" on an active agreement - appends directly, no separate
- *  per-location approval sub-flow (a documented simplification, see CONTEXT.md). */
+ *  per-location approval sub-flow (a documented simplification, see context/decisions/2026-09-23-03-data-licencing-agreement-dla-workflow-built-at-pages.md). */
 export function addDlaLocation(id: string, location: DlaLocation) {
   const dlas = useDlaStore.getState().dlas;
   commit(dlas.map((d) => (d.id === id ? { ...d, locations: [...d.locations, location], updatedAt: todayIso() } : d)));

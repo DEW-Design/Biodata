@@ -10,7 +10,7 @@ import { useFeatureAccess } from "@/lib/use-feature-access";
 
 // /pages/nominations - sensitive species nominations, the list step of "list -> record". Built from
 // the Master Flows lo-fi (Figma YMproGZfrFB5jUqPHPxMhk node 1401:10936), which only drew the form;
-// the list, record page and review steps follow the DLA pattern (CONTEXT.md, "Nominate Sensitive
+// the list, record page and review steps follow the DLA pattern (context/decisions/2026-09-28-09-nominate-sensitive-species-built-per-direct-request-from.md, "Nominate Sensitive
 // Species"). The panel (nominationReview) switches between My and All nominations (`?scope=`);
 // everyone else only ever sees their own. `?status=` seeds the status filter.
 export default function NominationsPage() {

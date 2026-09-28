@@ -94,7 +94,7 @@
 // - **The ingested JSON is rooted at a single Project object, not a bare array of top-level
 //   records** - normalised per the user's own reference diagram ("this is the structure"): Project
 //   -> Event-Site -> Event-Visit -> Observation, one root, everything else nested under it. Matches
-//   the real BDBSA model directly (see this file's own model comment above / CONTEXT.md's "BDBSA
+//   the real BDBSA model directly (see this file's own model comment above / .claude/rules/ref-domain.md, "BDBSA
 //   domain research": "all data entered into the BDBSA must be assigned to a project number" -
 //   Project is the mandatory top-level container, not a peer of the Events it holds). The Structure
 //   tree gained the same single Project root (`PROJECT_NODE_ID`, label `PROJECT_LABEL` - the real

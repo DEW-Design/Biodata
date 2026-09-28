@@ -3,12 +3,12 @@ import type { Boundary } from "@/app/pages/_shared/map-search/geo";
 
 // Data Licencing Agreement (DLA) model + seed data for /pages/dla. Shaped from the Master Flows
 // wireframe (Figma YMproGZfrFB5jUqPHPxMhk, node 33:43259: No DLAs Yet / Request-Renew / View /
-// Approve-Reject), re-fitted to the shell the same way DSA was - see CONTEXT.md, "Data Licencing
+// Approve-Reject), re-fitted to the shell the same way DSA was - see context/decisions/2026-09-23-03-data-licencing-agreement-dla-workflow-built-at-pages.md, "Data Licencing
 // Agreement (DLA)" for the full mapping and every deliberate departure from the wireframe.
 //
 // Status now follows the shared DSA/DLA workflow model (see agreement-status.ts) - Draft, Submitted,
 // Under Review, On Hold, Approved, Rejected, Active, Closed, Cancelled - replacing the wireframe's
-// own narrower Active/Under Review/Rejected/Expired/Withdrawn set (see CONTEXT.md, "Unified
+// own narrower Active/Under Review/Rejected/Expired/Withdrawn set (see context/decisions/2026-09-24-04-unified-dsa-dla-status-model-rolled-straight-into.md, "Unified
 // DSA/DLA status model" for the source and every decision behind it). Two real, new capabilities
 // this brought to DLA specifically: a request can now be saved as a Draft before submitting (the
 // wireframe's own form had no draft step at all), and Submitted/Under Review are now distinct
@@ -17,7 +17,7 @@ export type { AgreementStatus as DlaStatus } from "@/app/pages/_shared/agreement
 export { agreementStatusOrder as dlaStatusOrder, agreementStatusMeta as dlaStatusMeta } from "@/app/pages/_shared/agreement-status";
 import type { AgreementStatus as DlaStatus } from "@/app/pages/_shared/agreement-status";
 
-// Level 1 (public, no DLA needed) is the tier already documented sitewide (see CONTEXT.md's "BDBSA
+// Level 1 (public, no DLA needed) is the tier already documented sitewide (see .claude/rules/ref-domain.md, "BDBSA
 // domain research" and Explore's own access banner) - it never appears here because a Level 1
 // location doesn't need a DLA in the first place. A DLA only ever grants one of these two:
 export type DlaAccessLevel = "level2" | "level3";

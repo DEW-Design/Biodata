@@ -23,7 +23,7 @@ import { SidebarFooterLinks } from "@/app/pages/_shared/sidebar-footer-links";
 // this same aside for both sections (only the eyebrow label differs), so both real shells do too.
 // Only Home gets the gradient card - Projects renders the real `ProjectListContent` directly under
 // it, same as the lab and the "features reduce, they don't change fundamentally" decision this
-// whole persona follows (CONTEXT.md).
+// whole persona follows (context/decisions/2026-09-21-04-the-public-user-experience-is-the-registered-experience.md).
 //
 // Every claim in the card copy is one BioData SA already makes about itself (who contributes, what
 // records are for, that every record belongs to a project) - no invented numbers, no urgency, no
@@ -134,30 +134,69 @@ const aboutParagraphs = [
   "Records date back to 1974 and come from government surveys, universities, conservation organisations and citizen scientists.",
 ];
 
+// Projects (per page feedback: "what I need is to see what projects are and why BioData SA stands
+// out", then "consolidate stats nicely... too much text"). Plain sentences in the same body style as
+// Home's "What is BioData SA?", not a stat card: the design system has no stat component, and a card
+// composed from BentoCard was a lookalike (CONTRACTS 1.2), rejected by the designer. "What is a
+// project?" is from the BDBSA research (every record is assigned to a project). The figures are the
+// landing page's own (/pages/biodata-home hero: 6.8M+ records, 640,000+ species, 240+ contributors;
+// About: "Trusted since 1974"). The project count is left out: the landing page gives two figures.
+const projectParagraph =
+  "A survey, study or monitoring program, run by a person or an organisation. Every record in BioData SA belongs to one.";
+
+const standOutParagraph =
+  "6.8M+ records of 640,000+ species, going back to 1974, from 240+ contributors. Curated by DEW scientists.";
+
 // The "Reference" variant from `/proto/public-user` - everything visible at once, no interaction,
 // picked over Disclosure (a boxed Accordion) and How it works (a 3-step narrative), both still in
-// the lab as the record of what else was considered.
-export function GuestAboutAside({ sectionLabel, actions }: { sectionLabel: string; /** An "Actions" group shown first, above the About copy - the Projects section passes its own. */ actions?: ReactNode }): ReactNode {
+// the lab as the record of what else was considered. On Projects it explains projects instead.
+export function GuestAboutAside({
+  sectionLabel,
+  about = "platform",
+  actions,
+}: {
+  sectionLabel: string;
+  /** "platform" (Home): what BioData SA is, and guides. "projects": what a project is, and why BioData SA stands out. */
+  about?: "platform" | "projects";
+  /** An "Actions" group, shown under the first explainer ("What is ...?"), the same order on Home and Projects. The Projects section passes its own. */
+  actions?: ReactNode;
+}): ReactNode {
   return (
     <aside aria-label="Section" className="hidden w-[286px] shrink-0 flex-col justify-between gap-6 overflow-y-auto border-r border-secondary bg-secondary p-4 lg:flex">
       <div className="flex flex-col gap-6">
         <p className="text-xs font-semibold tracking-wide text-quaternary uppercase">{sectionLabel}</p>
-        {actions && <div className="border-b border-secondary pb-6">{actions}</div>}
-        <section className="flex flex-col gap-3">
-          <h2 className="text-base font-semibold text-primary">What is BioData SA?</h2>
-          {aboutParagraphs.map((p) => (
-            <p key={p} className="text-sm text-pretty text-tertiary">
-              {p}
-            </p>
-          ))}
-        </section>
-        <section className="flex flex-col gap-4">
-          <h2 className="text-base font-semibold text-primary">Guides</h2>
-          <GuideList guides={[guideCatalog.gettingStarted, guideCatalog.videos, guideCatalog.policies, guideCatalog.downloads]} />
-          <Button color="link-color" size="sm" href={GUIDES_HREF} iconTrailing={ArrowNarrowUpRight} className="self-start">
-            Open resources and user guides
-          </Button>
-        </section>
+        {about === "projects" ? (
+          <>
+            <section className="flex flex-col gap-3">
+              <h2 className="text-base font-semibold text-primary">What is a project?</h2>
+              <p className="text-sm text-pretty text-tertiary">{projectParagraph}</p>
+            </section>
+            <section className="flex flex-col gap-3">
+              <h2 className="text-base font-semibold text-primary">Why BioData SA stands out</h2>
+              <p className="text-sm text-pretty text-tertiary">{standOutParagraph}</p>
+            </section>
+            {actions && <div className="border-y border-secondary py-6">{actions}</div>}
+          </>
+        ) : (
+          <>
+            <section className="flex flex-col gap-3">
+              <h2 className="text-base font-semibold text-primary">What is BioData SA?</h2>
+              {aboutParagraphs.map((p) => (
+                <p key={p} className="text-sm text-pretty text-tertiary">
+                  {p}
+                </p>
+              ))}
+            </section>
+            {actions && <div className="border-y border-secondary py-6">{actions}</div>}
+            <section className="flex flex-col gap-4">
+              <h2 className="text-base font-semibold text-primary">Guides</h2>
+              <GuideList guides={[guideCatalog.gettingStarted, guideCatalog.videos, guideCatalog.policies, guideCatalog.downloads]} />
+              <Button color="link-color" size="sm" href={GUIDES_HREF} iconTrailing={ArrowNarrowUpRight} className="self-start">
+                Open resources and user guides
+              </Button>
+            </section>
+          </>
+        )}
       </div>
       <SidebarFooterLinks />
     </aside>

@@ -12,7 +12,7 @@ import { FormSidebarSlotContext } from "@/app/pages/_shared/form-section-list";
 import { MobileNavTrigger } from "@/app/pages/_shared/mobile-nav";
 import { sectionIcons } from "@/app/pages/_shared/nav-icons";
 import { PrimaryRail } from "@/app/pages/_shared/primary-rail";
-import { PrototypeTools } from "@/app/pages/_shared/prototype-tools/prototype-tools";
+import { PrototypeTools } from "@/app/_prototype-tools/prototype-tools";
 import { SidebarFooterLinks } from "@/app/pages/_shared/sidebar-footer-links";
 import { projectDetailsPath } from "@/app/pages/_shared/project-routes";
 import type { SearchEvent } from "@/app/pages/_shared/map-search/search-data";

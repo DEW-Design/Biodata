@@ -67,8 +67,7 @@ starting - this skill enforces those, it doesn't restate them.
 
 Static grep tells you what a component's class list *says*; it doesn't tell you what a browser
 *renders* - the whole reason `--color-gray-950` and the dead `text-md` gap both slipped through prior
-static passes. This repo has no Playwright dependency committed on purpose (see CONTEXT.md's own
-"Playwright installed for the session only, removed after" convention throughout) - follow the same
+static passes. This repo has no Playwright dependency committed on purpose (see the "Playwright installed for the session only, removed after" convention throughout `context/decisions/`) - follow the same
 pattern:
 
 ```bash
@@ -107,7 +106,7 @@ dependency.
   confirmation), a numbered conflicts list with exact `file:line` citations, and a decision table for
   anything that isn't a same-role-different-treatment mechanical fix (new palettes, contrast changes,
   anything touching a shared component used in more than a couple of places).
-- Append a dated, append-only entry to `CONTEXT.md` (no em-dashes) summarising what ran, what was
+- Create a dated decision file with `npm run decision:new` (no em-dashes; never append to `CONTEXT.md`) summarising what ran, what was
   found, what was fixed on sight versus flagged, and the open decisions - CONTRACTS §0.7's "close with
   the next move," not just a dump of findings.
 - Don't commit unless asked (CONTRACTS §5.2).

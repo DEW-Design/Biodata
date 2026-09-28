@@ -42,7 +42,7 @@ const ROLE_NAMES: Record<UserRole, { label: string; description?: string }> = {
   "public-user": { label: "Public user", description: "Signed out" },
 };
 
-// The screens the bar has to be right on, each with exactly the tools it has (CONTEXT.md, Sept 29
+// The screens the bar has to be right on, each with exactly the tools it has (context/decisions/2026-09-29-07-proto-tools-status-bar-refined-for-approval-not.md, Sept 29
 // 2026 table). Layout labels are the ones each screen's own switcher uses today.
 type Screen = {
   id: string;

@@ -44,7 +44,7 @@ const initials = (first: string, last: string) => `${first[0] ?? ""}${last[0] ??
 
 /**
  * Column-3 banner (via `DlaListContent`'s own `banner` prop) - folded in directly from
- * /proto/collection-sidebar's own "Actions" baseline (see CONTEXT.md). Real `TaskItem`, not
+ * /proto/collection-sidebar's own "Actions" baseline (see context/decisions/2026-09-24-05-proto-collection-sidebar-s-actions-group-and-its.md). Real `TaskItem`, not
  * `AlertFullWidth` - see `DsaBanner` in dsa-list.tsx for the same reasoning. Renders nothing when
  * there's nothing to say.
  */

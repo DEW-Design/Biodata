@@ -1,0 +1,27 @@
+# 2026-09-29 - ref-shell trimmed to current practice, rule loading benchmarked
+
+- **Sept 29 2026: `.claude/rules/ref-shell.md` trimmed from 30.8 KB to 8.5 KB, current practice only, per the designer ("trim the screen building reference"). Rule loading benchmarked before and after the restructure, and the model checked against a real run.**
+  - **Stale claims the trim removed (checked against the code first, CONTRACTS 0.2):**
+    - Routes that no longer exist: the `dashboard/option-1`, `project-list/option-1` and `project-detail/option-1` shells.
+    - Column 2 of a collection as status buckets. It is now a My / All scope switch (`AgreementScopeNav`), with status as a filter in main.
+    - Record pages opening with an ID, badge and actions. §4.6 now requires `RecordBackLink`, `RecordHero` and tabs.
+    - Stores that reset on reload. They are now zustand `persist` stores via `zustand-persist.ts`.
+    - The registered-user dashboard "not yet built". Home now surfaces DLA requests and nominations.
+  - **Kept:** the cognitive-load principles, what a `/pages/**` screen is, the build hierarchy, the collection pattern (rewritten to today's shells, lists, record pages, forms and stores), a pointer to §2.6, the three backlog items, and the dashboard scope.
+    - Section headings keep their old names, so the seven code comments that cite them by name still resolve.
+  - **History preserved:** the whole pre-trim file is copied verbatim to `context/archive/ref-shell-history.md` (checked with `diff`). `CONTEXT.md` indexes it.
+  - **Sibling fix:** the DSA and DLA shell comments still described column 2 as status buckets, contradicting their own code; both corrected.
+  - **Benchmark:**
+    - Before, `CLAUDE.md` imported all of `CONTRACTS.md` and `CONTEXT.md`: 909 KB (about 233k tokens) at launch, for every task.
+    - After: 22 KB at launch, plus the scoped rules the task's files match.
+    - Measured per task: question 22 KB, contracts work 24 KB, record page 52 KB, lab 53 KB, map search 63 KB, doc page 64 KB, component 66 KB, new screen 81 KB (103 KB before this trim). That is a 91% to 98% saving.
+    - The model (`/tmp/rule-bench.mjs`, the loader's glob matching) was checked against a fresh subagent that only Read the five Template Finder files. Its transcript's `nested_memory` entries were exactly the seven rules the model predicted.
+  - **Open gaps (reported, not built):**
+    - `ref-roles.md` carries false claims (the nav tree "has no role branching"; `navForRole` exists) and dead `option-1` routes.
+    - `ref-ingest.md` (26 KB) still carries history and loads on every component and doc task.
+    - Grep, Glob and creating a new file with Write load no rules.
+    - Shell rules arrive after the command.
+    - Incidental path mentions (an existence check) produce listings.
+    - Nothing checks that listed rules were actually Read.
+  - **Verified:** `eslint --max-warnings=0` on the two shell files, `npm run check:contracts` clean.
+  - Not committed.

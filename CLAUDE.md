@@ -1,3 +1,2 @@
 @AGENTS.md
-@CONTRACTS.md
 @CONTEXT.md

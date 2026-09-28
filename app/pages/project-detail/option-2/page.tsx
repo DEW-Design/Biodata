@@ -48,7 +48,7 @@ import { PrimaryRail } from "@/app/pages/_shared/primary-rail";
 import { sectionIcons } from "@/app/pages/_shared/nav-icons";
 import { AppHeader } from "@/app/pages/_shared/app-header";
 import { MobileNavTrigger } from "@/app/pages/_shared/mobile-nav";
-import { PrototypeTools } from "@/app/pages/_shared/prototype-tools/prototype-tools";
+import { PrototypeTools } from "@/app/_prototype-tools/prototype-tools";
 import { MapView } from "@/app/pages/_shared/map-view";
 import { SpeciesResultsView } from "@/app/pages/_shared/map-search/species-results";
 import { searchEvents } from "@/app/pages/_shared/map-search/search-data";
@@ -386,7 +386,7 @@ function ProjectDetail() {
             (records-view.tsx), and a plain section list mirroring the Tabs below it was dropped
             entirely per direct feedback - it doubled the same navigation the Tabs already give,
             the same "no contextual sidebar" shape this build's own guest single-view layout
-            already established elsewhere (see CONTEXT.md's "User roles" section). ── */}
+            already established elsewhere (see .claude/rules/ref-roles.md, "User roles" section). ── */}
         <main className="flex flex-1 flex-col overflow-y-auto">
           {activeSection === "Projects" ? (
             <div className="flex flex-col gap-6 p-6">

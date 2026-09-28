@@ -1,0 +1,28 @@
+# 2026-09-29 - Shell commands now point to the rules for the files they touch
+
+- **Sept 29 2026: shell commands now point to the rules for the files they touch, closing the gap left open in the two entries before this one ("yes, start shell-read gap").**
+  - **Problem:** Claude Code loads a scoped rule only when a matching file is opened with the Read tool. A file read or changed through the shell (`cat`, `sed`, `grep -r`, a node or python script) loaded nothing, so work done through scripts could skip the contracts for its area.
+  - **Changed:**
+    - `.claude/settings.json` (new): a `PostToolUse` hook on `Bash` runs `scripts/rules-for-shell.mjs`.
+    - `scripts/rules-for-shell.mjs` (new) finds the repo paths a command names, matches them against every scoped rule's `paths`, and tells the agent which rule files to Read. It never blocks a command; on any error it exits silently.
+    - **A pointer, not the contents.** Claude Code cuts a large hook payload to a short preview (one command touching several areas matched 55 KB of rules), and the hook cannot see what the Read tool already loaded. The hook lists the files; the agent Reads each one not already in context.
+    - **Each rule is named once per agent.** State is kept in a temp file keyed by session and `agent_id`, because subagents share the session id but not the context.
+    - **Only real work counts:**
+      - On the command line, a folder counts (`grep -r x app/pages` is work in that area).
+      - A heredoc fed to an interpreter (python, node, bash) counts only for paths that are existing files. The script opens files, but prose inside its strings only mentions folders.
+      - A heredoc fed to anything else (`cat > file`, `tee`) is text being written and counts for nothing.
+      - Parens are trimmed from a token, not split on, so route groups (`app/(docs)/...`) match.
+    - Governance scope narrowed from `.claude/**` to `.claude/settings.json`, so reading a rule file no longer loads the governance clauses.
+    - CONTRACTS.md §5.5 now says a scoped rule triggers on the Read tool (not on creating a file, not on shell reads), and that the agent MUST Read each rule file the hook lists that is not already in context. Rules regenerated with `npm run contracts:rules`.
+  - **Found while testing:** a python heredoc editing CONTRACTS.md whose text mentioned `app/pages/` and "components" made the hook list seven unrelated rule files. That led to the heredoc rules above. `head "app/(docs)/..."` matched nothing because parens split the path. That led to the paren fix.
+  - **Verified:**
+    - `eslint --max-warnings=0` on the script, and `npm run check:contracts` clean.
+    - Pipe tests covered prose heredoc (nothing), script heredoc opening `app/proto/tools/page.tsx` (build, prototyping, ref-scaffold), `grep -rn x components/base` (build, components, ref-ingest, ref-scaffold), `cat > file` heredoc naming a real file (nothing), `head "app/(docs)/components/tooltip/page.tsx"` (build, docs, ref-ingest, ref-scaffold), `$(wc -l lib/nav.ts)` (docs, ref-ingest), and `(cd app/proto && ls)` (build, prototyping, ref-scaffold).
+    - Live in session, the hook fired on a shell read of a doc page and named only `contracts-docs.md`, the one rule not yet sent.
+    - Earlier, a fresh subagent working only through `sed` was told to Read build, components, ref-ingest and ref-scaffold, then prototyping, and a repeated command named nothing.
+  - **Limits:**
+    - The hook runs after a command, so the rules arrive after the first shell read of an area, not before it.
+    - A path built at runtime (a variable, a glob expanded by a script) is not seen.
+    - A new session loads the hook only if `.claude/settings.json` is present when it starts.
+  - **Still open:** `ref-shell.md` and `ref-ingest.md` still carry history and should be trimmed to current practice.
+  - Not committed.

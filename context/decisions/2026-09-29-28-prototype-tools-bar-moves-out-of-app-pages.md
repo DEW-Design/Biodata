@@ -1,0 +1,12 @@
+# 2026-09-29 - Prototype tools bar moves out of app/pages so screen rules stop loading for it
+
+- **Sept 29 2026: the Prototype tools bar moves from `app/pages/_shared/prototype-tools/` to `app/_prototype-tools/`, so only the rules relevant to it load, per the designer ("I won't load math skills for a p.e. class").**
+  - **Problem:** the bar is dev tooling, not a screen, but its folder sat under `app/pages/`, so reading it also loaded the screen rules (`contracts-shell.md`, `ref-shell.md`, about 43 KB: header, rail, forms, lists, cognitive load). Irrelevant load is noise, the same risk as a missing rule.
+  - **Tested first, not assumed (CONTRACTS 0.2):** a throwaway rule with `paths: ["app/proto/tools/**", "!app/proto/tools/variants.tsx"]` still loaded when `variants.tsx` was read, so the rule loader ignores `!` exclusions. The test rule was deleted. Narrowing by exclusion is not an option; relevance has to come from where a file lives.
+  - **Changed:**
+    - `git mv` of the folder to `app/_prototype-tools/` (a private folder: Next.js does not route `_` folders). Every import updated (the 18 screens and shells that mount `<PrototypeTools />`, `layout-option-switcher.tsx`, `project-ingestion.tsx`, the `/proto/tools` lab).
+    - Scopes: `prototyping` (§3.8, §4.4) now lists `app/pages/**`, `app/proto/**`, `app/_prototype-tools/**`, `lib/layers.ts`; `ref-scaffold.md` and `ref-roles.md` point at the new folder. CONTRACTS.md §3.8's path is updated and the rules regenerated (`npm run contracts:rules`). History files under `context/decisions/` keep the old path, as written.
+  - **Verified:** `tsc`, `eslint --max-warnings=0` on every file that imports or lives in the moved folder, and `npm run check:contracts` clean. Live: the bar renders on Home (role only), Explore option 2 and Add Project option 2 (Layout and role), and DSA as admin, zero console errors. A fresh subagent reading the bar, then a lab file, loaded contracts-build, contracts-prototyping, ref-scaffold and ref-roles, and no screen rules; reading `app/pages/dashboard/page.tsx` then added exactly contracts-shell and ref-shell.
+  - **Rule going forward:** a rule's relevance is decided by folder placement. Code that is not a screen does not live under `app/pages/`.
+  - **Still open:** reading a file through a shell command loads no rules (deferred by the designer, next). `ref-shell.md` and `ref-ingest.md` still carry history and should be trimmed to current practice.
+  - Not committed.

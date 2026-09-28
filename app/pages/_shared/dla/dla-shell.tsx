@@ -16,7 +16,7 @@ import { AppHeader } from "@/app/pages/_shared/app-header";
 import { FormSidebarSlotContext } from "@/app/pages/_shared/form-section-list";
 import { AgreementScopeNav } from "@/app/pages/_shared/agreement-scope";
 import { MobileNavTrigger } from "@/app/pages/_shared/mobile-nav";
-import { PrototypeTools } from "@/app/pages/_shared/prototype-tools/prototype-tools";
+import { PrototypeTools } from "@/app/_prototype-tools/prototype-tools";
 import { useFeatureAccess } from "@/lib/use-feature-access";
 import { useRoleHref } from "@/lib/use-role-href";
 import { useUserRole } from "@/lib/use-user-role";
@@ -24,15 +24,13 @@ import { DLA_SECTION_LABEL, keyHref, navForRole, type NavNode } from "@/lib/regi
 
 // The one shell every DLA route renders through (the request list, a request's deep dive, the new
 // request/renew form) - same "List -> deep dive" shape as DSA's own shell
-// (app/pages/_shared/dsa/dsa-shell.tsx), which this file mirrors closely. See CONTEXT.md, "Data
+// (app/pages/_shared/dsa/dsa-shell.tsx), which this file mirrors closely. See context/decisions/2026-09-23-03-data-licencing-agreement-dla-workflow-built-at-pages.md, "Data
 // Licencing Agreement (DLA)".
 //
-// Column 2 is the request status buckets (see agreement-status.ts's shared DSA/DLA workflow -
-// Draft/Submitted/Under Review/Approved/Rejected/Active/On Hold/Closed/Cancelled) as links back to
-// the list - on the list it's the filter, on a deep dive or the form it shows which bucket the
-// request is in and gets you back out. Below the status list, an "Actions" group (Export CSV /
-// Create report) is folded in from /proto/collection-sidebar's own "Actions" baseline - see
-// CONTEXT.md.
+// Column 2 is the My requests / All requests switcher (`AgreementScopeNav`, `?scope=`) and, below it,
+// the "Actions" group (Export CSV / Create report), folded in from /proto/collection-sidebar's own
+// "Actions" baseline - see context/decisions/2026-09-24-05-proto-collection-sidebar-s-actions-group-and-its.md.
+// Status is a filter on the list (`?status=` seeds it), not a place in column 2.
 const CURRENT_KEY = "dla";
 
 function SectionPlaceholder({ node }: { node: NavNode }) {
@@ -56,7 +54,7 @@ function SectionPlaceholder({ node }: { node: NavNode }) {
 
 // Column 2's content. Also rendered inside the mobile navigation menu, where the aside is hidden.
 // `Actions` (Export CSV / Create report) below the status list is folded in directly from
-// /proto/collection-sidebar's own "Actions" baseline (see CONTEXT.md) - real navigation, real data.
+// /proto/collection-sidebar's own "Actions" baseline (see context/decisions/2026-09-24-05-proto-collection-sidebar-s-actions-group-and-its.md) - real navigation, real data.
 function ScopeNav() {
   const dlas = useDlas();
   const canReview = useFeatureAccess("dlaApproval");
@@ -84,7 +82,7 @@ export function DlaShell({
 }: {
   /** The page-specific final crumb (a request ID, "New request"). When set, the section crumb becomes a link back to the list. */
   breadcrumbCurrent?: string;
-  /** A create/edit form is rendered: column 2 becomes the form's own section list (the form portals into it via `FormSidebar`) instead of the status buckets. */
+  /** A create/edit form is rendered: column 2 becomes the form's own section list (the form portals into it via `FormSidebar`) instead of the scope switcher. */
   formSidebar?: boolean;
   children: ReactNode;
 }) {

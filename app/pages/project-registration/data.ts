@@ -13,7 +13,7 @@ export const ROLE_OF_WORK_OPTIONS = [
 ];
 
 // The same placeholder persona set this build already uses everywhere a "who's involved" list
-// needs real, recognisable-as-fake names - never invented fresh ones (see CONTEXT.md's
+// needs real, recognisable-as-fake names - never invented fresh ones (see context/decisions/2026-09-00-avatar-build-known-gaps.md,
 // "Placeholder person convention").
 export const PERSONA_OPTIONS = [
     { id: "olivia-wyatt", label: "Olivia Wyatt" },

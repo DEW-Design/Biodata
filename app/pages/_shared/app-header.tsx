@@ -12,7 +12,7 @@ import { useUserRole } from "@/lib/use-user-role";
 import { orgLabelForRole } from "@/lib/user-role";
 
 // THE header. Every real /pages/** screen renders this and nothing else at the top - never a
-// hand-rolled `<header>` (see CONTEXT.md, "Final check": the header contract). It owns everything
+// hand-rolled `<header>` (see context/archive/final-check.md, "Final check": the header contract). It owns everything
 // that must not differ between screens: the logo lockup, the BioData SA wordmark, the breadcrumb
 // with its role-driven org pill, the global search, the "Add" menu, and the account controls
 // (profile menu for a signed-in persona, Log in / Sign up for a guest). A screen supplies only what

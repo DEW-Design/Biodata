@@ -31,7 +31,7 @@ import {
 
 // The DLA record form (wireframe "New request", Figma
 // YMproGZfrFB5jUqPHPxMhk node 33:43259), re-shaped to fit the shell the same way DSA's own form
-// was - see CONTEXT.md, "Data Licencing Agreement (DLA)". The wireframe's own numbered-circle
+// was - see context/decisions/2026-09-23-03-data-licencing-agreement-dla-workflow-built-at-pages.md, "Data Licencing Agreement (DLA)". The wireframe's own numbered-circle
 // stepper (1 Location & License -> 2 Details & Purpose -> 3 Review & Submit) is rebuilt as the
 // shared form pattern (FormPage + a FormSectionList in column 2, CONTRACTS.md 4.1) that every form
 // here uses, not a bespoke stepper or tabs.

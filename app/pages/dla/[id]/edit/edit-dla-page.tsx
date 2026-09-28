@@ -10,7 +10,7 @@ import { saveDla, useDla, useDlasHydrated } from "@/app/pages/_shared/dla/dla-st
 import { useRoleHref } from "@/lib/use-role-href";
 
 // /pages/dla/<id>/edit - the same record form, opened on an existing request or draft. New once
-// DLA gained a real Draft status of its own (see CONTEXT.md, "Unified DSA/DLA status model") -
+// DLA gained a real Draft status of its own (see context/decisions/2026-09-24-04-unified-dsa-dla-status-model-rolled-straight-into.md, "Unified DSA/DLA status model") -
 // mirrors app/pages/dsa/[id]/edit/page.tsx exactly.
 export default function EditDlaPage() {
   return (

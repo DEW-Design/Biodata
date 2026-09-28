@@ -42,7 +42,7 @@ import { cx } from "@/utils/cx";
 // YMproGZfrFB5jUqPHPxMhk node 33:43259), rebuilt on the same information arrangement DSA and
 // project-detail both use - a gradient identity card, a toolbar carrying every real action (never
 // behind a scroll), then real Tabs (Overview / Locations & Access / Agreement) instead of the
-// wireframe's own flat two-pane layout or a same-weight card stack. See CONTEXT.md, "Data
+// wireframe's own flat two-pane layout or a same-weight card stack. See context/decisions/2026-09-23-03-data-licencing-agreement-dla-workflow-built-at-pages.md, "Data
 // Licencing Agreement (DLA)".
 //
 // Unlike DSA (two contacts - requester and DEW custodian, so a persistent side rail of ContactCards

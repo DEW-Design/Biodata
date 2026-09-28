@@ -1,0 +1,113 @@
+{
+  "note": "Which generated rule file holds each CONTRACTS.md clause (CONTRACTS.md 5.5). A clause has exactly one home, chosen as the broadest scope it matters in. Every clause must be listed. Changing this file is an audited act (9.4).",
+  "groups": {
+    "core": {
+      "paths": null,
+      "summary": "Always loaded: how to read, conduct, process, and the clause index."
+    },
+    "build": {
+      "paths": [
+        "/app/**",
+        "/components/**"
+      ],
+      "summary": "Tokens, type, copy, icons, Figma, components in use, behaviour patterns."
+    },
+    "components": {
+      "paths": [
+        "/components/**"
+      ],
+      "summary": "Creating or changing a component: override, duplicates, ingest hygiene, ambient leaks."
+    },
+    "shell": {
+      "paths": [
+        "app/pages/**",
+        "lib/create-menu.ts",
+        "lib/registered-user-nav.ts",
+        "config/role-access.config.ts"
+      ],
+      "summary": "The persona shell and page patterns: header, rail, columns, forms, lists, record pages, floating panels."
+    },
+    "prototyping": {
+      "paths": [
+        "app/pages/**",
+        "app/proto/**",
+        "app/_prototype-tools/**",
+        "lib/layers.ts"
+      ],
+      "summary": "Prototype tools bar and competing layout options: what previews on a screen, and how options are presented and retired."
+    },
+    "docs": {
+      "paths": [
+        "app/*docs*/**",
+        "lib/nav.ts",
+        "config/design-system.config.ts",
+        "/README.md"
+      ],
+      "summary": "Doc pages, generated /test-* screens, navigation order."
+    },
+    "governance": {
+      "paths": [
+        "/CONTRACTS.md",
+        "/contracts/**",
+        "/scripts/**",
+        "/.github/**",
+        ".claude/settings.json"
+      ],
+      "summary": "Changing the contracts, overrides, audit and the checks themselves."
+    }
+  },
+  "clauses": {
+    "0.1": "core",
+    "0.2": "core",
+    "0.3": "core",
+    "0.4": "core",
+    "0.5": "core",
+    "0.6": "core",
+    "0.7": "core",
+    "0.8": "core",
+    "1.1": "build",
+    "1.2": "build",
+    "1.3": "build",
+    "1.5": "build",
+    "1.6": "build",
+    "1.9": "build",
+    "1.4": "components",
+    "1.7": "components",
+    "1.8": "components",
+    "2.1": "build",
+    "2.2": "build",
+    "2.3": "build",
+    "2.4": "build",
+    "2.5": "build",
+    "2.6": "build",
+    "2.9": "build",
+    "2.7": "components",
+    "2.8": "shell",
+    "3.1": "shell",
+    "3.2": "shell",
+    "3.3": "shell",
+    "3.4": "shell",
+    "3.5": "shell",
+    "3.6": "shell",
+    "3.7": "shell",
+    "3.8": "prototyping",
+    "3.10": "shell",
+    "3.9": "docs",
+    "4.1": "shell",
+    "4.2": "shell",
+    "4.3": "shell",
+    "4.4": "prototyping",
+    "4.6": "shell",
+    "4.5": "docs",
+    "5.1": "core",
+    "5.2": "core",
+    "5.4": "core",
+    "5.5": "core",
+    "5.3": "docs",
+    "9.1": "governance",
+    "9.2": "governance",
+    "9.3": "governance",
+    "9.4": "governance",
+    "9.5": "core"
+  }
+}

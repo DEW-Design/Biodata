@@ -227,7 +227,7 @@ function CreateReportButton() {
   return (
     <button
       type="button"
-      onClick={() => toast.brand("Reports aren't wired up yet", { description: "Report generation isn't stored in this preview - see CONTEXT.md's Admin IA cross-check." })}
+      onClick={() => toast.brand("Reports aren't wired up yet", { description: "Report generation isn't stored in this preview - see context/decisions/2026-09-22-06-biodata-admin-ia-cross-check.md, Admin IA cross-check." })}
       className={shortcutRowClassName}
     >
       <BarChart01 className="size-4 shrink-0" />
@@ -360,7 +360,7 @@ function DlaBanner({ dlas, roleHrefBase, onViewStatus }: { dlas: Dla[]; roleHref
 // ── "My Items" column 3: My/All is a scope, not a status bucket, so this variant's own table
 // shows every status at once instead of the real `DsaListContent`/`DlaListContent` (which are
 // built around exactly one status bucket, per the "no Status column, column 2 already says the
-// bucket" contract in CONTEXT.md). A real `MultiSelect` status filter (defaulting to no
+// bucket" contract in context/decisions/2026-09-24-03-proto-collection-sidebar-grew-the-two-queued-directions.md). A real `MultiSelect` status filter (defaulting to no
 // selection = every status shown) plus a real Status `Badge` column replace that contract here,
 // since there is no longer a single bucket for a Status column to be redundant with. Proto-local,
 // not a change to the real list components - same "build a local mirror for an unvalidated

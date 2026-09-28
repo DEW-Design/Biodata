@@ -57,7 +57,7 @@ import { SPECIES_GROUP_COLOR } from "./species-group-icons";
 // multi-column stat/measurement grids (Occurrence's "Measurements" table, Observation
 // Community's "Overstorey Measurements" reading pairs) are flattened into plain label rows rather
 // than reproduced as exact multi-column tables - a deliberate simplification given none of this
-// build's data ever populates them, logged in CONTEXT.md rather than silently done.
+// build's data ever populates them, logged in context/decisions/2026-09-16-01-layout-decision-the-sidebar-icon-rail-contextual-sidebar.md rather than silently done.
 
 const LocationMap = dynamic(() => import("./sa-map"), {
   ssr: false,

@@ -9,7 +9,7 @@
 //
 // Structural reference: Figma file YMproGZfrFB5jUqPHPxMhk ("Biodata Wireframe Presentation" - the
 // same file already treated as ground truth for this build's real Project -> Site -> Visit ->
-// Occurrence data model, see CONTEXT.md's "BDBSA domain research"), node 2266:175012, three
+// Occurrence data model, see .claude/rules/ref-domain.md, "BDBSA domain research"), node 2266:175012, three
 // instances of "Observation_Map and Table View" (51:119524 base state, 2266:167054 the "All
 // Filters" panel open, 2266:170314 a compact state). A wireframe, not a styled reference - per this
 // codebase's own established rule for this specific file, it documents real IA/interaction shape

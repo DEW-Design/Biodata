@@ -3,7 +3,7 @@
 import type React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Settings01 } from "@untitledui/icons";
+import { LayoutGrid01, Settings01 } from "@untitledui/icons";
 import { cn } from "@/lib/utils";
 import { useNav } from "@/lib/use-nav";
 
@@ -48,6 +48,8 @@ export function Sidebar() {
       <div className="px-3 pt-4 flex flex-col gap-0.5">
         <NavLink href="/" active={pathname === "/"} label="Overview" />
         <NavLink href="/config" active={pathname === "/config"} label="Config" icon={Settings01} />
+        {/* The /pages screen index ("Launch prototype" sits top right, in the docs layout). */}
+        <NavLink href="/pages" active={false} label="All screens" icon={LayoutGrid01} />
       </div>
 
       {/* Sections */}

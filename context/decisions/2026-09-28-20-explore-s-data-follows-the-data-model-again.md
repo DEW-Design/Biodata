@@ -1,0 +1,26 @@
+# 2026-09-28 - Explore's data follows the data model again: every observation belongs to its occurrence, per designer feedback off a screenshot of a project records tree ("this is a grave violation of the data model... Emu sitting as a what?").
+
+- **Sept 28 2026: Explore's data follows the data model again: every observation belongs to its occurrence, per designer feedback off a screenshot of a project records tree ("this is a grave violation of the data model... Emu sitting as a what?").** The tree showed a Quandong occurrence with an Emu observation and a Quandong observation beside it, as siblings. The confirmed model is Project > Site > Visit > Occurrence > Observation. An occurrence parents exactly one observation of the same species and type.
+  - **Two breaks in `search-data.ts`:**
+    - `SearchObservation` had no link to its occurrence, only a `parentEventId`. Trees could only list observations beside whatever occurrences shared the event.
+    - The Emu's two records disagreed. The occurrence sat directly on the Kangaroo Island project; the observation sat on its site.
+  - **Found by checking every record against the model:**
+    - Three more occurrences sat directly on a project instead of a site: Western Grey Kangaroo, Fairy Tern and Yellow-footed Rock-wallaby.
+    - Five observations were a day off their occurrence.
+    - Most observations were a few hundred metres from their occurrence.
+  - **Data fixes:**
+    - `SearchObservation.occurrenceId` is new and required.
+    - All 23 observations are linked one-to-one to their occurrence. Each repeats its occurrence's event, date and coordinates, so it can never be filed apart from it.
+    - The four project-root occurrences moved to their project's site: Western Grey Kangaroo to SU00501, Fairy Tern to SU00503, Rock-wallaby to SU00504, Emu to SU00505. Their artefacts (`res-1`, `res-3`, `res-6`, `res-8`) moved with them.
+    - Nothing else about a record changed.
+  - **New helper:** `observationOfOccurrence` in `search-data.ts`.
+  - **Trees:**
+    - The generated project page's records tree (`project-details-view.tsx`) nests each observation under its occurrence and opens occurrences by default, so the observation shows.
+    - Project-detail option 2's tree (`records-view.tsx`) nests the same way.
+    - Adelaide Hills' own page already used the model (`project-record-tree.ts`), so it is unchanged.
+  - **Knock-on:** Explore's Hierarchy column and record panel for those four records now show their site in the chain, and counts are unchanged.
+  - **Verified:**
+    - A script check over the whole dataset: 23 occurrences, each with exactly one observation that matches species, type, event, date, place, group and licence level. No occurrence sits on a project. Every artefact sits on its record's event.
+    - Live on the Kangaroo Island project page: Emu and Quandong each show their own observation beneath them. Option 2's tree shows occurrence > observation at every level.
+    - Zero console errors. `tsc`, `eslint --max-warnings=0` on touched files, `npm run check:contracts` and the Pages build pass.
+  - **Concurrent work:** another session was rewriting `project-details-view.tsx` (record pages) at the same time. The tree change is in their version. Not committed.

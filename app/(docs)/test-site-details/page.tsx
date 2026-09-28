@@ -20,7 +20,7 @@ import { Inspectable, InspectorProvider, type InspectableToken } from "@/compone
 // Photopoint, Additional Details) - read-only view mapped 1:1, edit view built
 // from the field-type annotations Figma attaches to each row (data-annotations
 // in the pulled design context, e.g. "Ctrl vocab", "Yes/No", "Number Text Field").
-// Per CONTEXT.md's "Generated screens" rules: real DEW components only, gaps
+// Per .claude/rules/ref-ingest.md, "Generated screens" rules: real DEW components only, gaps
 // flagged with a visible marker in place, never faked or silently dropped.
 
 // ─────────────────────────────────────────────────────────────────────────

@@ -1,0 +1,13 @@
+# 2026-09-29 - Labs and the Prototype tools bar load their own rules on purpose
+
+- **Sept 29 2026: labs and the Prototype tools bar load their own rules on purpose, per the designer ("load stuff relevant to the task. If it's arriving by accident or not loading, that means something's wrong. That's a risk to my work").**
+  - **What a mock run found:** a task on `/proto/tools` got §3.8 (the tools bar) and §4.4 (options) only because the lab happens to import a file from `app/pages/_shared/prototype-tools/`; `app/proto/**` had no rule file of its own. The DEW vs Scaffold reference (the lab builds Scaffold) loaded only through an unrelated `components/**` read. `ref-roles.md` still described the deleted `RoleSwitcher` floating button as current, so an agent building tool options could have rebuilt it.
+  - **Changed (a tightening, flagged under §9.4):**
+    - New scope group `prototyping` in `contracts/rule-scopes.json` (paths `app/pages/**`, `app/proto/**`, `lib/layers.ts`), holding §3.8 and §4.4, moved out of `shell`. Regenerated with `npm run contracts:rules`: `.claude/rules/contracts-prototyping.md`; the core index names it. Pages still get both clauses (the paths include `app/pages/**`); labs now get them directly.
+    - "DEW vs. Scaffold" moved verbatim from `ref-ingest.md` to a new `.claude/rules/ref-scaffold.md`, scoped to `components/**`, doc pages, `app/proto/**` and `app/pages/_shared/prototype-tools/**`. `ref-ingest.md` keeps a pointer. `CONTEXT.md`'s index lists the new file.
+    - `ref-roles.md`: the RoleSwitcher history is replaced by how a role is previewed now (the "Viewing as" tool on the Prototype tools bar, the whole-page gates that send a blocked role Home, the role names), with one line saying the floating button was deleted and must not be rebuilt.
+  - **Verified:** a fresh subagent reading only `app/proto/tools/page.tsx` received contracts-build, contracts-prototyping and ref-scaffold on that first read, so §3.8, §4.4 and the Scaffold reference arrive without touching any shared file; reading `prototype-tools/status-bar.tsx` then added contracts-shell, ref-roles and ref-shell; no loaded file presents `RoleSwitcher` as current. `npm run check:contracts` passes (including §5.5, generated files in date).
+  - **Still open:**
+    - Reading a file through a shell command (`cat`, `sed`) loads no rules; only the Read tool does. Deferred by the designer, to be handled next.
+    - `ref-shell.md` (31 KB) still loads for `app/pages/_shared/prototype-tools/**` because it matches `app/pages/**`; most of it is about screens, not the tools bar. Trimming or narrowing it is the next saving.
+  - Not committed.
