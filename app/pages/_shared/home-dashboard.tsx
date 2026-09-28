@@ -400,11 +400,11 @@ function KnowledgeBaseSection() {
 // admin-only layout, so the two personas stay one codebase to maintain, not two. Flagged directly
 // by the user: "we need to keep a consistent shell - that's so that development is easier."
 // Content grounded in the real admin IA (project_biodata_admin_scope memory: User Management, DLA
-// approve/reject, Reports, Control Vocal) - numbers are realistic-scale placeholders (247 pending
+// approve/reject, Control Vocabulary, Reports) - numbers are realistic-scale placeholders (247 pending
 // user access requests, not 3), the same "worst content survives" rule used everywhere else in
 // this build, since an admin's cognitive-overload risk is different from a registered user's.
 //
-// None of User Management/Reports/Control Vocal/the approvals queue have a real page yet - every
+// User Management has a real page; Control Vocabulary, Reports and the approvals queue do not yet - each
 // action here is disabled with a "Coming soon" tooltip, same honest-gap convention as
 // DisabledQuickAction above, not a dead link.
 const adminApprovalQueues: { id: string; label: string; count: number; icon: FC<{ className?: string }>; description: string }[] = [
@@ -468,8 +468,8 @@ function AdminHomeDashboardContent() {
         <h2 className="text-lg font-medium text-primary">Quick actions</h2>
         <div className="flex flex-wrap items-center gap-2">
           <QuickAction icon={UserCheck01} label="User Management" href={roleHref("/pages/user-management")} />
+          <DisabledQuickAction icon={Database01} label="Control Vocabulary" note="Coming soon - controlled vocabulary management isn't built yet" />
           <DisabledQuickAction icon={BarChartSquare01} label="Reports" note="Coming soon - reporting isn't built yet" />
-          <DisabledQuickAction icon={Database01} label="Control Vocal" note="Coming soon - controlled vocabulary management isn't built yet" />
         </div>
       </div>
 
