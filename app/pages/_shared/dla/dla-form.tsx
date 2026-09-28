@@ -12,7 +12,7 @@ import { TextArea } from "@/components/base/textarea/textarea";
 import { FormPage } from "@/app/pages/_shared/form-page";
 import { FormSectionList, FormSidebar, deriveSectionStatus } from "@/app/pages/_shared/form-section-list";
 import { FormRow } from "@/app/pages/_shared/form-row";
-import { ConfirmationModal } from "@/components/application/modals/modal";
+import { DestructiveModal } from "@/components/application/modals/modal";
 import { AddLocationModal } from "@/app/pages/_shared/dla/add-location-modal";
 import {
   dlaLevel3Projects,
@@ -251,7 +251,7 @@ export function DlaForm({
               </div>
               <div>
                 <Button color="secondary" size="md" iconLeading={Plus} onPress={() => setAddLocationOpen(true)}>
-                  Add Location
+                  Add location
                 </Button>
               </div>
             </FormRow>
@@ -411,13 +411,18 @@ export function DlaForm({
 
       <AddLocationModal isOpen={addLocationOpen} onOpenChange={setAddLocationOpen} onAdd={(location) => update({ locations: [...draft.locations, location] })} />
 
-      <ConfirmationModal
+      <DestructiveModal
         isOpen={confirmBack}
         onOpenChange={setConfirmBack}
         title="Discard your request?"
-        description="You have unsaved changes to this request. Going back will lose them."
+        description={isEditingLive ? "You have unsaved changes to this request. Leaving now will lose them." : "You have unsaved changes to this request. Save a draft to keep them, or discard them."}
         confirmLabel="Discard changes"
         cancelLabel="Keep editing"
+        secondaryLabel={isEditingLive ? undefined : "Save draft"}
+        onSecondary={() => {
+          setConfirmBack(false);
+          saveDraft();
+        }}
         onConfirm={() => {
           setConfirmBack(false);
           onBack();

@@ -26,7 +26,7 @@ export const projects: Project[] = [
     id: "adelaide-hills",
     code: "BD-5039",
     name: "Adelaide Hills Bushland Survey",
-    href: "/pages/project-detail",
+    href: "/pages/project-list/adelaide-hills/project-details",
     org: "Adelaide Hills Landcare",
     status: "Active",
     statusColor: "success",
@@ -38,6 +38,7 @@ export const projects: Project[] = [
   {
     id: "coorong",
     code: "BD-5102",
+    href: "/pages/project-list/coorong/project-details",
     name: "Coorong Wetlands Bird Count",
     org: "Birds SA",
     status: "Under review",
@@ -50,6 +51,7 @@ export const projects: Project[] = [
   {
     id: "flinders",
     code: "BD-5137",
+    href: "/pages/project-list/flinders/project-details",
     name: "Flinders Ranges Reptile Atlas",
     org: "DEW Biodiversity Team",
     status: "Draft",
@@ -62,6 +64,7 @@ export const projects: Project[] = [
   {
     id: "kangaroo-island",
     code: "BD-4988",
+    href: "/pages/project-list/kangaroo-island/project-details",
     name: "Kangaroo Island Recovery Monitoring",
     org: "Natural Resources KI",
     status: "Completed",

@@ -25,7 +25,7 @@ import { Suspense, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { LogIn01, UserPlus01 } from "@untitledui/icons";
 import { Button } from "@/components/base/buttons/button";
-import { ConfirmationModal } from "@/components/application/modals/modal";
+import { DestructiveModal } from "@/components/application/modals/modal";
 import { toast } from "@/components/application/toast/toast";
 import { useRoleHref } from "@/lib/use-role-href";
 import { useUserRole } from "@/lib/use-user-role";
@@ -184,13 +184,18 @@ function RegistrationFlow() {
     <>
       <RegistrationShell sidebar={sidebar}>{main}</RegistrationShell>
       <RegistrationLayoutSwitcher current="option-2" />
-      <ConfirmationModal
+      <DestructiveModal
         isOpen={confirmCancel}
         onOpenChange={setConfirmCancel}
         title="Discard this project?"
-        description="You have unsaved details. Leaving now will lose them."
+        description="You have unsaved details. Save a draft to keep them, or discard them."
         confirmLabel="Discard project"
         cancelLabel="Keep editing"
+        secondaryLabel="Save draft"
+        onSecondary={() => {
+          setConfirmCancel(false);
+          handleSaveDraft();
+        }}
         onConfirm={() => {
           setConfirmCancel(false);
           router.push(roleHref("/pages/project-list"));

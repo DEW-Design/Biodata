@@ -39,7 +39,7 @@ function DsaDeepDive() {
           }}
           onStartReview={() => {
             startDsaReview(dsa.id);
-            toast.success("Review started", { description: `${dsa.id} is now Under Review.` });
+            toast.success("Review started", { description: `${dsa.id} is now under review.` });
           }}
           onHold={() => {
             holdDsaReview(dsa.id);
@@ -47,7 +47,7 @@ function DsaDeepDive() {
           }}
           onResume={() => {
             resumeDsaReview(dsa.id);
-            toast.success("Review resumed", { description: `${dsa.id} is Under Review again.` });
+            toast.success("Review resumed", { description: `${dsa.id} is under review again.` });
           }}
           onApprove={() => {
             approveDsa(dsa.id);

@@ -122,7 +122,7 @@ function MapFullscreenOverlay({
                     // and bleeding straight through it (confirmed live: the small map rendered on
                     // top of the "full screen" one). This overlay needs to sit above every Leaflet
                     // pane on the page, not just above ordinary page content.
-                    "fixed inset-0 z-[9999] bg-overlay/70",
+                    "fixed inset-0 z-[9999] bg-overlay",
                     isEntering && "duration-300 ease-out animate-in fade-in",
                     isExiting && "duration-200 ease-in animate-out fade-out",
                 )

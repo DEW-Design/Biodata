@@ -1,15 +1,15 @@
 "use client";
 
-import { Fragment, useEffect, useRef } from "react";
+import { Fragment, useEffect, useRef, useState } from "react";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import "leaflet-draw/dist/leaflet.draw.css";
 import "leaflet-draw";
-import { Circle, CircleMarker, MapContainer, Marker, Polygon, ScaleControl, Tooltip, TileLayer, useMap } from "react-leaflet";
-import { ZoomIn, ZoomOut } from "@untitledui/icons";
+import { Circle, CircleMarker, MapContainer, Marker, Polygon, ScaleControl, Tooltip, TileLayer, useMap, useMapEvents } from "react-leaflet";
 import type { Boundary } from "./geo";
 import { assetPath } from "@/lib/base-path";
 import { cx } from "@/utils/cx";
+import { MapZoomButtons } from "./map-zoom-buttons";
 
 // A real, working map of South Australia - OpenStreetMap tiles via Leaflet, not a fabricated grid
 // or a static image. Kept in app/pages/_shared (not components/custom) to match the precedent
@@ -57,14 +57,76 @@ const BOUNDARY_COLOR = "var(--color-brand-600)";
  *  real component matches" precedent as this file's own boundary chips elsewhere in the search
  *  UI). Replaces Leaflet's own default zoom chrome, which never carried this design system's
  *  tokens to begin with. Both docking corners sit at a 16px inset (`top-4`/`right-4`/`left-4`),
- *  not the previous 12px - `right-4` is what lets `RecordPeekCard` (observations-search.tsx)
- *  share this exact edge and stack directly under the pill instead of racing it for the same
- *  corner. The focus ring is drawn inset (`ring-inset`), the same technique `Table.Head` already
+ *  the same inset as the floating cards over the map. The focus ring is drawn inset (`ring-inset`), the same technique `Table.Head` already
  *  uses for adjacent cells, so it never bleeds into the neighbouring button. */
 /** Hands the real Leaflet map instance up to a parent rendered outside the `<MapContainer>` tree
  *  (e.g. zoom buttons living inside a floating results panel instead of on the map itself) -
  *  `useMap()` only works for a `MapContainer` descendant, so this is the one place that reads it
  *  and forwards it out via a plain callback. */
+// The latest keyboard set-up for each dot layer, re-run whenever Leaflet (re)creates the dot's
+// element: a layer can be removed and added again (React runs effects twice in development, and a
+// dot is re-added when the map redraws), and each add makes a new SVG element.
+const dotSetup = new WeakMap<L.Path, () => void>();
+const dotBound = new WeakSet<L.Path>();
+
+/** Makes a dot a real control for keyboard and screen-reader users: focusable in tab order, named
+ *  by its label, opened with Enter or Space (the same as a click). Leaflet draws dots as bare SVG
+ *  paths, which are neither. Runs again on every (re)add, and the ref callback is new on every
+ *  render, so the key handler is always the latest one. */
+function keyboardDot(label: string, activate: () => void) {
+    return (layer: L.Path | null) => {
+        if (!layer) return;
+        const attach = () => {
+            const el = layer.getElement();
+            if (!el) return;
+            el.setAttribute("tabindex", "0");
+            el.setAttribute("role", "button");
+            el.setAttribute("aria-label", label);
+            (el as SVGElement).onkeydown = (e: KeyboardEvent) => {
+                if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault();
+                    activate();
+                }
+            };
+        };
+        dotSetup.set(layer, attach);
+        if (!dotBound.has(layer)) {
+            dotBound.add(layer);
+            layer.on("add", () => dotSetup.get(layer)?.());
+        }
+        attach();
+    };
+}
+
+/** A restricted record's blurred area. Drawn at its real size once zoomed in, but never smaller
+ *  than 14px across the radius, so it stays visible at state-wide zoom instead of blurring to
+ *  nothing. Pixel-sized (a CircleMarker), so it re-sizes itself on every zoom. */
+function FuzzyArea({ marker, highlighted, onClick }: { marker: SAMapMarker; highlighted: boolean; onClick?: () => void }) {
+    const map = useMap();
+    const [zoom, setZoom] = useState(() => map.getZoom());
+    useMapEvents({ zoomend: () => setZoom(map.getZoom()) });
+    const metersPerPixel = (40075016.686 * Math.cos((marker.position[0] * Math.PI) / 180)) / 2 ** (zoom + 8);
+    const radius = Math.max(14, ((marker.fuzzyRadiusKm ?? 0) * 1000) / metersPerPixel);
+    return (
+        <CircleMarker
+            ref={onClick ? keyboardDot(marker.label, onClick) : undefined}
+            center={marker.position}
+            radius={radius}
+            pathOptions={{
+                className: "map-fuzzy-area",
+                stroke: false,
+                fillColor: markerFill(marker, highlighted),
+                fillOpacity: highlighted ? 0.7 : 0.5,
+            }}
+            eventHandlers={{ click: () => onClick?.() }}
+        >
+            <Tooltip direction="top" sticky>
+                {marker.label}
+            </Tooltip>
+        </CircleMarker>
+    );
+}
+
 function MapReady({ onMapReady }: { onMapReady?: (map: L.Map) => void }) {
     const map = useMap();
     useEffect(() => {
@@ -75,23 +137,7 @@ function MapReady({ onMapReady }: { onMapReady?: (map: L.Map) => void }) {
 
 function ZoomControls({ position }: { position: "top-right" | "top-left" }) {
     const map = useMap();
-    const buttonClass =
-        "flex size-9 items-center justify-center text-tertiary outline-hidden transition-colors duration-100 ease-linear hover:bg-primary_hover hover:text-secondary active:bg-secondary focus-visible:z-10 focus-visible:ring-2 focus-visible:ring-focus-ring focus-visible:ring-inset";
-    return (
-        <div
-            className={cx(
-                "absolute top-4 z-[1000] flex flex-col overflow-hidden rounded-lg border border-secondary bg-primary shadow-md",
-                position === "top-left" ? "left-4" : "right-4",
-            )}
-        >
-            <button type="button" aria-label="Zoom in" onClick={() => map.zoomIn()} className={cx(buttonClass, "border-b border-secondary")}>
-                <ZoomIn className="size-4" />
-            </button>
-            <button type="button" aria-label="Zoom out" onClick={() => map.zoomOut()} className={buttonClass}>
-                <ZoomOut className="size-4" />
-            </button>
-        </div>
-    );
+    return <MapZoomButtons map={map} className={cx("absolute top-4 z-[1000]", position === "top-left" ? "left-4" : "right-4")} />;
 }
 
 /** Pans/zooms to fit every currently-active boundary at once, however each one was defined (drawn,
@@ -330,6 +376,18 @@ export interface SAMapMarker {
     id: string;
     position: [number, number];
     label: string;
+    /** A restricted (Level 2) record: drawn as a soft, blurred area of this radius around a
+     *  generalised `position` instead of a precise dot, so the map never pins a sensitive species. */
+    fuzzyRadiusKm?: number;
+    /** Fill colour (a token var), e.g. the record's species group; brand when omitted. */
+    color?: string;
+}
+
+/** A dot's fill: its own colour, or brand. A highlighted dot keeps its colour (so the group still
+ *  reads) and gets a dark ring instead; a plain brand dot darkens as before. */
+function markerFill(marker: SAMapMarker, highlighted: boolean): string {
+    if (marker.color) return marker.color;
+    return highlighted ? "var(--color-brand-900)" : BOUNDARY_COLOR;
 }
 
 export default function SAMap({
@@ -353,6 +411,17 @@ export default function SAMap({
 }: SAMapProps) {
     return (
         <div className={className}>
+            {/* The blur for restricted areas (`.map-fuzzy-area` in globals.css). Sized relative to
+                each area's own box, so the edge stays soft at every zoom level. */}
+            {markers?.some((marker) => marker.fuzzyRadiusKm) && (
+                <svg aria-hidden width="0" height="0" style={{ position: "absolute" }}>
+                    <defs>
+                        <filter id="map-fuzzy-blur" x="-0.5" y="-0.5" width="2" height="2" filterUnits="objectBoundingBox" primitiveUnits="objectBoundingBox">
+                            <feGaussianBlur stdDeviation="0.14" />
+                        </filter>
+                    </defs>
+                </svg>
+            )}
             <MapContainer
                 center={SA_CENTER}
                 zoom={6}
@@ -403,15 +472,24 @@ export default function SAMap({
                     ),
                 )}
 
-                {markers?.map((marker) => (
+                {markers?.map((marker) =>
+                    marker.fuzzyRadiusKm ? (
+                        <FuzzyArea
+                            key={marker.id}
+                            marker={marker}
+                            highlighted={marker.id === highlightedMarkerId}
+                            onClick={onMarkerClick ? () => onMarkerClick(marker.id) : undefined}
+                        />
+                    ) : (
                     <CircleMarker
                         key={marker.id}
+                        ref={onMarkerClick ? keyboardDot(marker.label, () => onMarkerClick(marker.id)) : undefined}
                         center={marker.position}
                         radius={marker.id === highlightedMarkerId ? 10 : 6}
                         pathOptions={{
-                            color: "var(--ui-bg-primary)",
+                            color: marker.color && marker.id === highlightedMarkerId ? "var(--ui-text-primary)" : "var(--ui-bg-primary)",
                             weight: 2,
-                            fillColor: marker.id === highlightedMarkerId ? "var(--color-brand-900)" : BOUNDARY_COLOR,
+                            fillColor: markerFill(marker, marker.id === highlightedMarkerId),
                             fillOpacity: 1,
                         }}
                         eventHandlers={{ click: () => onMarkerClick?.(marker.id) }}
@@ -420,7 +498,8 @@ export default function SAMap({
                             {marker.label}
                         </Tooltip>
                     </CircleMarker>
-                ))}
+                    ),
+                )}
             </MapContainer>
         </div>
     );

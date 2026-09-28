@@ -28,8 +28,8 @@ export const agreementStatusOrder: AgreementStatus[] = ["draft", "submitted", "u
 export const agreementStatusMeta: Record<AgreementStatus, { label: string; tabLabel: string; badgeColor: BadgeColors }> = {
   draft: { label: "Draft", tabLabel: "Drafts", badgeColor: "gray" },
   submitted: { label: "Submitted", tabLabel: "Submitted", badgeColor: "brand" },
-  under_review: { label: "Under Review", tabLabel: "Under Review", badgeColor: "warning" },
-  on_hold: { label: "On Hold", tabLabel: "On Hold", badgeColor: "warning" },
+  under_review: { label: "Under review", tabLabel: "Under review", badgeColor: "warning" },
+  on_hold: { label: "On hold", tabLabel: "On hold", badgeColor: "warning" },
   approved: { label: "Approved", tabLabel: "Approved", badgeColor: "brand" },
   rejected: { label: "Rejected", tabLabel: "Rejected", badgeColor: "error" },
   active: { label: "Active", tabLabel: "Active", badgeColor: "success" },

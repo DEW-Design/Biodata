@@ -333,6 +333,8 @@
   --ui-bg-warning-secondary:   var(--color-warning-100);
   --ui-bg-success-solid:       var(--color-success-600);
   --ui-bg-success-secondary:   var(--color-success-100);
+  /* The dim behind a modal or slide-over panel: black at 40% (designer's call, Sept 28 2026; not yet checked against a Figma frame). */
+  --ui-bg-overlay:             rgb(0 0 0 / 0.4);
 
   /* Foreground / Text */
   --ui-text-primary:                 var(--color-gray-900);
@@ -444,6 +446,7 @@
 @utility bg-error-secondary     { background-color: var(--ui-bg-error-secondary); }
 @utility bg-warning-solid       { background-color: var(--ui-bg-warning-solid); }
 @utility bg-warning-secondary   { background-color: var(--ui-bg-warning-secondary); }
+@utility bg-overlay             { background-color: var(--ui-bg-overlay); }
 @utility bg-success-solid       { background-color: var(--ui-bg-success-solid); }
 @utility bg-success-secondary   { background-color: var(--ui-bg-success-secondary); }
 
@@ -635,4 +638,22 @@ body {
    suppressed rather than styled - one real hint, not two disagreeing ones. */
 .leaflet-draw-tooltip {
   display: none !important;
+}
+
+/* A restricted (Level 2) record on the map: a soft blurred area at its generalised position, never
+   a precise dot (app/pages/_shared/map-search/sa-map.tsx, `SAMapMarker.fuzzyRadiusKm`). The blur is
+   an SVG filter reference rather than a CSS `blur()` function so it renders the same on Leaflet's
+   SVG paths in every browser; the filter itself is defined once in `sa-map.tsx`. */
+.map-fuzzy-area {
+  filter: url(#map-fuzzy-blur);
+  cursor: pointer;
+}
+
+/* A map dot that has keyboard focus (app/pages/_shared/map-search/sa-map.tsx, `keyboardDot`):
+   a dark ring drawn on the dot itself, since an SVG path has no usable outline. */
+.leaflet-interactive:focus-visible {
+  outline: none;
+  stroke: var(--ui-text-primary);
+  stroke-width: 3px;
+  stroke-opacity: 1;
 }

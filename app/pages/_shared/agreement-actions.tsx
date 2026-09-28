@@ -38,7 +38,7 @@ function CreateReportButton() {
   return (
     <ActionRow
       icon={BarChart01}
-      onClick={() => toast.brand("Reports aren't wired up yet", { description: "Report generation isn't stored in this preview - see CONTEXT.md's Admin IA cross-check." })}
+      onClick={() => toast.brand("Reports aren't wired up yet", { description: "Reports can't be generated in this preview yet." })}
     >
       Create report
     </ActionRow>

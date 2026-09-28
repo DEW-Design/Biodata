@@ -1,26 +1,27 @@
 "use client";
 
-import { useEffect, type FC } from "react";
+import { useEffect } from "react";
 import { ArrowNarrowRight, Lock01, XClose } from "@untitledui/icons";
 import { Badge } from "@/components/base/badges/badges";
 import { Button } from "@/components/base/buttons/button";
 import { cx } from "@/utils/cx";
-import { SpeciesPhoto } from "@/app/pages/_shared/map-search/species-photo";
+import { SpeciesPhotoCarousel } from "@/app/pages/_shared/map-search/species-photo-carousel";
 import { speciesImage } from "@/app/pages/_shared/map-search/species-images";
-import { SPECIES_GROUP_ICON } from "@/app/pages/_shared/map-search/species-group-icons";
-import { rootProjectForParentEventId, rootProjectOfEvent, eventTypeIcon } from "@/app/pages/_shared/map-search/search-data";
+import { eventTypeIcon, hasScientificName, rootProjectForParentEventId, rootProjectOfEvent } from "@/app/pages/_shared/map-search/search-data";
 import { projectDetailPath, type DetailRecord } from "@/app/pages/_shared/map-search/record-detail";
 import { useRoleHref } from "@/lib/use-role-href";
+import { useUserRole } from "@/lib/use-user-role";
+import type { UserRole } from "@/lib/user-role";
+import { recordAccess } from "@/app/pages/_shared/map-search/record-access";
 
 /**
  * A record on the map, at a glance: what it is, where it came from and the three facts you decide
- * on, with one way in to the full record. That is the project's own page (`/pages/project-detail`,
- * with the record pre-selected in its tree where it can be) or, for a project with no page in this
- * preview, the full `RecordDetailSidebar`. The full record is long; opening it for every dot or row
+ * on, with one way in: "Show in project" opens the record's project page on its Species tab with
+ * the record open (`/pages/project-list/[id]/project-details/...`). The full record is long; opening it for every dot or row
  * covers the map and shows far more than a first look needs, so this card sits in for it. Not
  * modal: the map and results stay usable behind it, and picking another record swaps the card.
  */
-export function RecordPeekCard({ record, onViewFull, onClose, className }: { record: DetailRecord; onViewFull: () => void; onClose: () => void; className?: string }) {
+export function RecordPeekCard({ record, onClose, className }: { record: DetailRecord; onClose: () => void; className?: string }) {
   // Escape closes and never changes anything else (CONTRACTS 1.9).
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => e.key === "Escape" && onClose();
@@ -29,10 +30,9 @@ export function RecordPeekCard({ record, onViewFull, onClose, className }: { rec
   }, [onClose]);
 
   const roleHref = useRoleHref();
-  // The full record is the project's own page. Only one project has a page in this preview, so
-  // every other record falls back to the full sidebar rather than a dead link.
+  const role = useUserRole();
   const detailPath = projectDetailPath(record);
-  const view = describe(record);
+  const view = describe(record, role);
   const Icon = view.icon;
 
   return (
@@ -50,21 +50,18 @@ export function RecordPeekCard({ record, onViewFull, onClose, className }: { rec
       >
         <XClose className="size-4" />
       </button>
+      {/* The card never scrolls. The photo is the part that gives way: square when there is room,
+          shorter (cropped, never squashed, never under 120px) when the card is height-bounded by the
+          map's right-hand column, so the name, facts and "Show in project" show in full. Only in a
+          window too short for even that do the details scroll, as a last resort. Its huge shrink
+          factor makes it absorb the whole shortfall before the details lose a line. */}
       {view.photo && (
         // Full-bleed: the card clips the photo, so its top corners are the card's own radius. An
         // inset photo could not be concentric here (outer radius 12px is smaller than the 16px
         // padding, so inner = outer - padding would be negative).
-        <figure className="m-0 flex flex-col">
-          <SpeciesPhoto scientificName={view.photo.scientificName} alt={view.photo.alt} fallbackIcon={view.photo.fallbackIcon} className="h-36 w-full rounded-none outline-0" />
-          <figcaption className="px-4 pt-2 text-xs text-tertiary">
-            Photo: {view.photo.credit.creator}, {view.photo.credit.licence},{" "}
-            <a href={view.photo.credit.sourceUrl} target="_blank" rel="noreferrer" className="underline outline-focus-ring underline-offset-2 hover:text-secondary focus-visible:outline-2">
-              Atlas of Living Australia
-            </a>
-          </figcaption>
-        </figure>
+        <SpeciesPhotoCarousel scientificName={view.photo.scientificName} alt={view.photo.alt} className="min-h-[168px] shrink-[1000]" />
       )}
-      <div className="flex flex-col gap-3 p-4">
+      <div className="flex min-h-0 shrink flex-col gap-3 overflow-y-auto p-4">
       <div className="flex items-start gap-3">
         {Icon && !view.photo && (
           <span className="mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-lg bg-secondary text-fg-quaternary">
@@ -92,20 +89,18 @@ export function RecordPeekCard({ record, onViewFull, onClose, className }: { rec
       {view.restricted && (
         <p className="flex items-center gap-1.5 text-sm text-tertiary">
           <Lock01 className="size-4 shrink-0" />
-          Location is approximate. Full precision needs a data licence agreement.
+          Location is approximate. Full precision needs a Data Licencing Agreement (DLA).
         </p>
       )}
 
-      <Button
-        color="primary"
-        size="md"
-        className="w-full"
-        iconTrailing={ArrowNarrowRight}
-        {...(detailPath ? { href: roleHref(detailPath) } : { onPress: onViewFull })}
-      >
-        View full record
-      </Button>
       </div>
+      {detailPath && (
+        <div className="shrink-0 border-t border-secondary p-4">
+          <Button color="primary" size="md" className="w-full" iconTrailing={ArrowNarrowRight} href={roleHref(detailPath)}>
+            Show in project
+          </Button>
+        </div>
+      )}
     </section>
   );
 }
@@ -119,10 +114,10 @@ interface PeekView {
   icon?: React.FC<{ className?: string }>;
   restricted?: boolean;
   /** A reference photo for a species that has one; the header icon is dropped when it is shown. */
-  photo?: { scientificName: string; alt: string; fallbackIcon: FC<{ className?: string }>; credit: { creator: string; licence: string; sourceUrl: string } };
+  photo?: { scientificName: string; alt: string };
 }
 
-function describe(record: DetailRecord): PeekView {
+function describe(record: DetailRecord, role: UserRole): PeekView {
   if (record.kind === "event") {
     const e = record.event;
     const project = rootProjectOfEvent(e);
@@ -133,7 +128,7 @@ function describe(record: DetailRecord): PeekView {
       provenance: e.type === "Project" ? e.org : `${project.org} · ${project.name}`,
       facts: [
         { label: "ID", value: e.code },
-        { label: "Started", value: e.startDate },
+        { label: "Start date", value: e.startDate },
         ...(e.type === "Project" ? [{ label: "Status", value: <Badge color={e.statusColor} size="sm">{e.status}</Badge> }] : []),
         { label: "Region", value: e.region },
       ],
@@ -146,14 +141,14 @@ function describe(record: DetailRecord): PeekView {
   return {
     eyebrow: `${isOcc ? "Occurrence" : "Observation"} · ${r.type}`,
     title: r.commonName,
-    subtitle: r.species,
+    subtitle: hasScientificName(r.species) ? r.species : undefined,
     provenance: project ? `${project.org} · ${project.name}` : undefined,
     facts: [
       { label: "Date", value: r.date },
       { label: "Region", value: r.region },
       ...(isOcc ? [{ label: "Count", value: record.occurrence.count ?? "Not provided" }] : [{ label: "Observer", value: record.observation.observerName }]),
     ],
-    restricted: r.licenceLevel === "Level 2",
-    photo: image && r.group ? { scientificName: r.species, alt: r.commonName, fallbackIcon: SPECIES_GROUP_ICON[r.group], credit: image } : undefined,
+    restricted: recordAccess(r, role) === "generalised",
+    photo: image ? { scientificName: r.species, alt: r.commonName } : undefined,
   };
 }

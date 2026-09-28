@@ -69,7 +69,7 @@ function ScopeNav() {
           downloadCsv(
             "data-licencing-agreements.csv",
             ["ID", "Requestor", "Status", "Valid to"],
-            dlas.map((d) => [d.id, requestorName(d.requestor), dlaStatusMeta[d.status].tabLabel, d.validTo]),
+            dlas.map((d) => [d.id, requestorName(d.requestor), dlaStatusMeta[d.status].label, d.validTo]),
           )
         }
       />

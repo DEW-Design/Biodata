@@ -21,7 +21,20 @@ const rel = (f) => relative(ROOT, f).split(sep).join("/");
 const PAGES = join(ROOT, "app", "pages");
 const PAGE_EXEMPT = [["biodata-home"], ["auth"], ["projects", "page.tsx"], ["projectsv2", "page.tsx"]];
 
+// 3.10: column 2 (the contextual <aside>) holds navigation and actions only. Explanatory content in
+// it (steps, headings, alerts, accordions, task cards) belongs in main, above the content it explains.
+const asideBlocks = (s) => [...s.matchAll(/^[ \t]*<aside\b[\s\S]*?<\/aside>/gm)].map((m) => m[0]);
+const ASIDE_INFO = /<h[1-6]\b|<Progress\.|<Accordion\b|<AlertFullWidth\b|<AlertFloating\b|<TaskItem\b/;
+
 const hardRules = [
+  {
+    id: "3.10",
+    name: "column 2 is navigation and actions",
+    test: (s) => asideBlocks(s).some((b) => ASIDE_INFO.test(b)),
+    // The one exception is the signed-out visitor's column 2 (public-user): what BioData SA is, and guides.
+    allow: ["_shared/guest-home.tsx"],
+    message: "Explanatory content (heading, steps, alert, accordion or task card) inside the column 2 <aside>. Column 2 is navigation and actions only; put information in main above the content (CONTRACTS.md 3.10). Only the public-user column 2 is exempt.",
+  },
   { id: "3.1", name: "header", test: (s) => /<header[\s>]/.test(s), allow: ["_shared/app-header.tsx"], message: 'Hand-rolled <header>. Render <AppHeader /> from "@/app/pages/_shared/app-header".' },
   { id: "3.2", name: "primary rail", test: (s) => /aria-label="Primary"/.test(s), allow: ["_shared/primary-rail.tsx", "_shared/mobile-nav.tsx"], message: 'Hand-rolled primary rail. Render <PrimaryRail /> from "@/app/pages/_shared/primary-rail".' },
   { id: "3.3", name: "section icon map", test: (s) => /const sectionIcons\b/.test(s), allow: ["_shared/nav-icons.ts"], message: 'Local sectionIcons map. Import { sectionIcons } from "@/app/pages/_shared/nav-icons".' },

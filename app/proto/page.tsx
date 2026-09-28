@@ -68,6 +68,10 @@ const PROTO_LABS: ProtoEntry[] = [
     route: "public-user-explorations",
     description: "Turning the guest dashboard into an account-creation nudge. Superseded by /proto/public-user.",
   },
+  {
+    route: "dataset-ingestion",
+    description: "Where a dataset's ingestion progress lives on the project page: a notice, a card in the records tree, or a chip. Simulated run.",
+  },
 ];
 
 const protoSortKeys: Record<string, (p: ProtoEntry) => SortValue> = {

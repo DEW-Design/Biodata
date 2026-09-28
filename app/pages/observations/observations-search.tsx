@@ -1,7 +1,7 @@
 "use client";
 
 import type { FC, ReactNode } from "react";
-import { Suspense, useMemo, useRef, useState } from "react";
+import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import dynamic from "next/dynamic";
 import { useRouter, useSearchParams } from "next/navigation";
 import type { Selection } from "react-aria-components";
@@ -9,15 +9,15 @@ import { Dialog, DialogTrigger, Tabs } from "react-aria-components";
 import { TabList, Tab, TabPanel } from "@/components/application/tabs/tabs";
 import { AreaLayerList, type AreaLayerRow } from "@/app/pages/_shared/map-search/area-layers";
 import { ScrollFade } from "@/app/pages/_shared/map-search/scroll-fade";
-import { ResultCard } from "@/app/pages/_shared/map-search/result-card";
-import { SpeciesPhoto } from "@/app/pages/_shared/map-search/species-photo";
-import { SPECIES_GROUP_ICON } from "@/app/pages/_shared/map-search/species-group-icons";
+import { OTHER_RECORD_COLOR, SPECIES_GROUP_COLOR, SPECIES_GROUP_ICON, SPECIES_GROUP_ORDER } from "@/app/pages/_shared/map-search/species-group-icons";
+import { MapLegend, type LegendItem } from "@/app/pages/_shared/map-search/map-legend";
+import type { SAMapMarker } from "@/app/pages/_shared/map-search/sa-map";
+import { MapZoomButtons } from "@/app/pages/_shared/map-search/map-zoom-buttons";
+import type { Map as LeafletMap } from "leaflet";
 import {
   ChevronDown,
   ChevronUp,
   Folder,
-  List as ListIcon,
-  Table as TableIcon,
   Eye,
   Activity,
   Target05,
@@ -47,6 +47,7 @@ import {
   Plus,
   FileLock01,
   Settings01,
+  RefreshCcw01,
 } from "@untitledui/icons";
 import { Button } from "@/components/base/buttons/button";
 import { Dropdown } from "@/components/base/dropdown/dropdown";
@@ -70,8 +71,7 @@ import { PrimaryRail } from "@/app/pages/_shared/primary-rail";
 import { SidebarFooterLinks } from "@/app/pages/_shared/sidebar-footer-links";
 import { sectionIcons } from "@/app/pages/_shared/nav-icons";
 import { AppHeader } from "@/app/pages/_shared/app-header";
-import { RecordPeekCard } from "@/app/pages/_shared/map-search/record-peek-card";
-import { SA_NATIONAL_PARKS, WHOLE_STATE_SOURCE, isPointInAnyBoundary, boundarySummary, wholeStateBoundary, type Boundary } from "@/app/pages/_shared/map-search/geo";
+import { SA_NATIONAL_PARKS, WHOLE_STATE_SOURCE, isPointInAnyBoundary, boundarySummary, obfuscateCoordinate, wholeStateBoundary, type Boundary } from "@/app/pages/_shared/map-search/geo";
 import { SidePanel } from "@/app/pages/_shared/map-search/side-panel";
 import { parseShapefileUpload, shapefileLayerSummary, type ShapefileLayer } from "@/app/pages/_shared/map-search/shapefile";
 import {
@@ -82,8 +82,12 @@ import {
   eventChain,
   hierarchyFor,
   eventTypeIcon,
+  hasEndDate,
+  hasScientificName,
   rootProjectOfEvent,
   rootProjectForParentEventId,
+  findOccurrence,
+  findObservation,
   type SearchEvent,
   type SearchOccurrence,
   type SearchObservation,
@@ -97,6 +101,12 @@ import { MetricTile } from "@/app/pages/_shared/map-search/metric-tile";
 import { SpeciesResultsView, EXPORT_HEADERS, exportRowFor } from "@/app/pages/_shared/map-search/species-results";
 import { downloadCsv, downloadExcel, printAsPdf } from "@/app/pages/_shared/map-search/export-utils";
 import { RecordDetailSidebar, type DetailRecord } from "@/app/pages/_shared/map-search/record-detail";
+import { RecordPeekCard } from "@/app/pages/_shared/map-search/record-peek-card";
+import { ResultCard } from "@/app/pages/_shared/map-search/result-card";
+import { SpeciesPhoto } from "@/app/pages/_shared/map-search/species-photo";
+import { hasFeatureAccess } from "@/config/role-access.config";
+import { artefactAccess, generalisedKm, recordAccess } from "@/app/pages/_shared/map-search/record-access";
+import { readExploreSearch, saveExploreSearch, useExploreSearchHydrated } from "@/app/pages/_shared/map-search/explore-search-store";
 import { ArtefactLightbox, type Artefact, type ArtefactType } from "@/app/pages/_shared/artefact-lightbox";
 import { useUserRole } from "@/lib/use-user-role";
 import { useRoleHref } from "@/lib/use-role-href";
@@ -654,9 +664,18 @@ export type ExploreLayout = "classic" | "float";
 export function ObservationsExplore({ layout }: { layout: ExploreLayout }) {
   return (
     <Suspense fallback={null}>
-      <ObservationsSearch layout={layout} />
+      <HydratedObservationsSearch layout={layout} />
     </Suspense>
   );
+}
+
+/** Waits for the saved search (explore-search-store.ts) to load, so the page opens on it rather
+ *  than opening empty and then jumping. Nothing is prerendered here anyway: the page reads the URL,
+ *  so it only renders in the browser. */
+function HydratedObservationsSearch({ layout }: { layout: ExploreLayout }) {
+  const hydrated = useExploreSearchHydrated();
+  if (!hydrated) return null;
+  return <ObservationsSearch layout={layout} />;
 }
 
 function ObservationsSearch({ layout }: { layout: ExploreLayout }) {
@@ -671,6 +690,11 @@ function ObservationsSearch({ layout }: { layout: ExploreLayout }) {
   // drawn area, the whole-state area stands in, so the same spatial + keyword filtering runs.
   const urlQuery = useSearchParams().get("q");
   const [appliedQuery, setAppliedQuery] = useState(urlQuery);
+  // The saved search (shared by both options), unless a new header search asks for a different term.
+  const [restored] = useState(() => {
+    const saved = readExploreSearch();
+    return saved && (urlQuery == null || saved.query === urlQuery) ? saved : null;
+  });
   const activeSectionNode = nav.find((section) => section.label === activeSection) ?? nav[0];
 
   const goToSection = (section: NavNode) => {
@@ -690,20 +714,23 @@ function ObservationsSearch({ layout }: { layout: ExploreLayout }) {
   // `parkRadius`) and turned into their own circle boundaries reactively via `parkBoundaries`
   // below, so changing the radius or the selection recomputes just those, never touching a
   // manually drawn shape or entered point.
-  const [mode, setMode] = useState<"search" | "results">(urlQuery ? "results" : "search");
+  const [mode, setMode] = useState<"search" | "results">(restored?.mode ?? (urlQuery ? "results" : "search"));
   // Floating search panel over the full-width map - collapsible so the whole map is visible.
   const [searchPanelOpen, setSearchPanelOpen] = useState(true);
   // Results header's "N search areas" disclosure - lists each area so the user can see what was searched.
   const [showSearchAreas, setShowSearchAreas] = useState(false);
   const [method, setMethod] = useState<Method>("draw");
-  const [manualBoundaries, setManualBoundaries] = useState<Boundary[]>(() => (urlQuery ? [wholeStateBoundary()] : []));
+  const [manualBoundaries, setManualBoundaries] = useState<Boundary[]>(() => restored?.manualBoundaries ?? (urlQuery ? [wholeStateBoundary()] : []));
   const [activeDrawTool, setActiveDrawTool] = useState<"circle" | "polygon" | null>(null);
-  const [keyword, setKeyword] = useState(urlQuery ?? "");
-  const [entityTab, setEntityTab] = useState<EntityTab>("projects");
+  const [keyword, setKeyword] = useState(restored?.keyword ?? urlQuery ?? "");
+  const [entityTab, setEntityTab] = useState<EntityTab>((restored?.entityTab as EntityTab | undefined) ?? "projects");
   // Species mode vs. the existing Projects/Events/Occurrences/Observations/Artefacts record-by-
   // record view (app/pages/_shared/map-search/species-results.tsx), per direct request - an
-  // additive sibling view, not a replacement. Defaults to "records" so first load is unchanged.
-  const [viewMode, setViewMode] = useState<"records" | "species">(urlQuery ? "species" : "records");
+  // additive sibling view, not a replacement. Option 1 opens on "records" as it always has; option 2
+  // opens on Species (species first, per the designer).
+  // Option 2 always opens on Species (non-negotiable, per the designer): it does not inherit the tab
+  // from the saved search, which option 1 shares and which defaults to Records > Projects there.
+  const [viewMode, setViewMode] = useState<"records" | "species">(layout === "float" ? "species" : (restored?.viewMode ?? (urlQuery ? "species" : "records")));
   // Records mode's own shared search box + "All Filters" panel, per direct request ("do the same
   // for Records as well... there will be an All Filters button which will show the side bar on the
   // left"). One search term/facet selection shared across all 5 entity tabs, same "page-level, not
@@ -727,6 +754,8 @@ function ObservationsSearch({ layout }: { layout: ExploreLayout }) {
   // Project/Event/Occurrence/Observation row, per direct request. Lifted to page level (not local
   // to ResultsTable) so it persists correctly regardless of which tab's table triggered it.
   const [selectedRecord, setSelectedRecord] = useState<DetailRecord | null>(null);
+  // The Leaflet map, for the zoom buttons the float layout lays out itself (see growExplore).
+  const [mapInstance, setMapInstance] = useState<LeafletMap | null>(null);
   const [panRequest, setPanRequest] = useState<{ key: number; point: [number, number] } | undefined>();
   // Selecting a record also centres its dot in the map's visible area, not just opens its card - per
   // direct feedback that a clicked record's dot could end up hidden under the results panel or
@@ -776,20 +805,20 @@ function ObservationsSearch({ layout }: { layout: ExploreLayout }) {
   // field is left alone so it carries over for the next point.
   const [coordResetKey, setCoordResetKey] = useState(0);
 
-  const [selectedParkIds, setSelectedParkIds] = useState<Selection>(new Set());
-  const [parkRadius, setParkRadius] = useState(15);
+  const [selectedParkIds, setSelectedParkIds] = useState<Selection>(() => restored?.selectedParkIds ?? new Set());
+  const [parkRadius, setParkRadius] = useState(restored?.parkRadius ?? 15);
 
   // Option 3 adds areas one at a time from an "Add area" menu, not from always-open method tabs:
   // `addingMethod` is the method whose short flow is open in the card (null when none).
   const [addingMethod, setAddingMethod] = useState<Method | null>(null);
   // The areas are layers: each can be hidden, renamed and resized on its own. Names are given when
   // an area is added ("Circle 1"), so removing one never renumbers the others.
-  const [hiddenLayerIds, setHiddenLayerIds] = useState<Set<string>>(new Set());
-  const [layerNames, setLayerNames] = useState<Record<string, string>>({});
-  const [radiusOverrides, setRadiusOverrides] = useState<Record<string, number>>({});
+  const [hiddenLayerIds, setHiddenLayerIds] = useState<Set<string>>(() => restored?.hiddenLayerIds ?? new Set());
+  const [layerNames, setLayerNames] = useState<Record<string, string>>(() => restored?.layerNames ?? {});
+  const [radiusOverrides, setRadiusOverrides] = useState<Record<string, number>>(() => restored?.radiusOverrides ?? {});
   const [hoveredLayerId, setHoveredLayerId] = useState<string | null>(null);
   const [fitRequest, setFitRequest] = useState<{ key: number; boundaries: Boundary[] } | undefined>();
-  const layerCounters = useRef<Record<string, number>>({});
+  const layerCounters = useRef<Record<string, number>>(restored ? { ...restored.layerCounters } : {});
   const nextLayerName = (prefix: string) => {
     layerCounters.current[prefix] = (layerCounters.current[prefix] ?? 0) + 1;
     return `${prefix} ${layerCounters.current[prefix]}`;
@@ -825,11 +854,35 @@ function ObservationsSearch({ layout }: { layout: ExploreLayout }) {
   // Uploaded shapefiles - each file stays one grouped entry (one row in the areas list, removed as
   // a whole), expanded into real boundaries below: a circle of `shapefileRadius` around each point
   // (the map's own marker shows each point) and each polygon as drawn.
-  const [shapefileLayers, setShapefileLayers] = useState<ShapefileLayer[]>([]);
-  const [shapefileRadius, setShapefileRadius] = useState(5);
+  const [shapefileLayers, setShapefileLayers] = useState<ShapefileLayer[]>(() => restored?.shapefileLayers ?? []);
+  const [shapefileRadius, setShapefileRadius] = useState(restored?.shapefileRadius ?? 5);
   const [shapefileError, setShapefileError] = useState<string | null>(null);
   const [shapefileBusy, setShapefileBusy] = useState(false);
   const [shapefileInputKey, setShapefileInputKey] = useState(0);
+
+  // Save the search whenever it changes (explore-search-store.ts), so a reload, "Back to results"
+  // and switching option keep it. Option 2 has no search/results screens; it saves "results" once
+  // there is an area, so option 1 opens on the same results.
+  useEffect(() => {
+    const hasAreas =
+      manualBoundaries.length > 0 || shapefileLayers.length > 0 || selectedParkIds === "all" || selectedParkIds.size > 0;
+    saveExploreSearch({
+      query: appliedQuery,
+      manualBoundaries,
+      selectedParkIds,
+      parkRadius,
+      shapefileLayers,
+      shapefileRadius,
+      keyword,
+      hiddenLayerIds,
+      layerNames,
+      radiusOverrides,
+      layerCounters: { ...layerCounters.current },
+      viewMode,
+      entityTab,
+      mode: layout === "classic" ? mode : hasAreas ? "results" : "search",
+    });
+  }, [layout, appliedQuery, manualBoundaries, selectedParkIds, parkRadius, shapefileLayers, shapefileRadius, keyword, hiddenLayerIds, layerNames, radiusOverrides, viewMode, entityTab, mode]);
 
   const handleShapefileUpload = async (files: File[]) => {
     setShapefileBusy(true);
@@ -963,6 +1016,30 @@ function ObservationsSearch({ layout }: { layout: ExploreLayout }) {
     setShapefileLayers([]);
   };
 
+  // "New search": back to an empty map, as if Explore had just been opened (the saved search is
+  // replaced by the empty one). Also drops a header-search term from the URL, so a reload does not
+  // bring that search back.
+  const hasSearch =
+    keyword.trim() !== "" || manualBoundaries.length > 0 || shapefileLayers.length > 0 || selectedParkIds === "all" || selectedParkIds.size > 0;
+  const startNewSearch = () => {
+    clearAllBoundaries();
+    setKeyword("");
+    setHiddenLayerIds(new Set());
+    setLayerNames({});
+    setRadiusOverrides({});
+    layerCounters.current = {};
+    setAddingMethod(null);
+    setActiveDrawTool(null);
+    setRecordsSearch("");
+    setViewMode(layout === "float" ? "species" : "records");
+    setEntityTab("projects");
+    setMode("search");
+    if (urlQuery) {
+      setAppliedQuery(null);
+      router.replace(roleHref(layout === "float" ? "/pages/observations/option-2" : "/pages/observations"));
+    }
+  };
+
   // What the user thinks of as "a search area": each drawn/entered shape and each selected park is
   // one, but an uploaded shapefile is one area however many locations it holds. Used by the search
   // panel's list and the results header's "N search areas" disclosure so both count the same way.
@@ -987,6 +1064,24 @@ function ObservationsSearch({ layout }: { layout: ExploreLayout }) {
     [impliedWholeState, manualBoundaries, parkBoundaries, shapefileLayers],
   );
 
+  // Option 2: adding an area (drawn, entered, a park, a shapefile) always shows the Species tab,
+  // whatever tab was open, so a new search leads with species (per the designer). Detected by a new
+  // area id appearing, adjusted during render rather than in an effect.
+  const areaIdsKey = [...manualBoundaries.map((b) => b.id), ...(selectedParkIds === "all" ? ["park:all"] : [...selectedParkIds].map((id) => `park:${id}`)), ...shapefileLayers.map((l) => l.id)].join("|");
+  const [prevAreaIdsKey, setPrevAreaIdsKey] = useState(areaIdsKey);
+  if (areaIdsKey !== prevAreaIdsKey) {
+    const before = new Set(prevAreaIdsKey ? prevAreaIdsKey.split("|") : []);
+    const added = areaIdsKey.split("|").some((id) => id && !before.has(id));
+    setPrevAreaIdsKey(areaIdsKey);
+    if (added && layout === "float" && viewMode !== "species") setViewMode("species");
+  }
+
+  // What this role may see (record-access.ts): a public user never sees restricted (Level 2+)
+  // records, so they are left out of every count, tab, dot and export below.
+  const visibleOccurrences = useMemo(() => searchOccurrences.filter((o) => recordAccess(o, role) !== "hidden"), [role]);
+  const visibleObservations = useMemo(() => searchObservations.filter((o) => recordAccess(o, role) !== "hidden"), [role]);
+  const visibleResources = useMemo(() => searchResources.filter((r) => artefactAccess(r, role) !== "hidden"), [role]);
+
   // ── Areas list: counts and actions ──
   // Records inside one area, counted the way the results are: spatially, with the keyword, and only
   // from published projects (Active or Completed), plus the projects those records belong to. So a
@@ -1009,9 +1104,9 @@ function ObservationsSearch({ layout }: { layout: ExploreLayout }) {
       projectIds.add(project!.id);
       children += 1;
     };
-    for (const o of searchOccurrences) child(o.parentEventId, o.lat, o.lon, `${o.species} ${o.commonName} ${o.type}`);
-    for (const o of searchObservations) child(o.parentEventId, o.lat, o.lon, `${o.species} ${o.observerName} ${o.type}`);
-    for (const r of searchResources) child(r.parentEventId, r.lat, r.lon, `${r.name} ${r.recordName} ${r.attachedToConcept}`);
+    for (const o of visibleOccurrences) child(o.parentEventId, o.lat, o.lon, `${o.species} ${o.commonName} ${o.type}`);
+    for (const o of visibleObservations) child(o.parentEventId, o.lat, o.lon, `${o.species} ${o.observerName} ${o.type}`);
+    for (const r of visibleResources) child(r.parentEventId, r.lat, r.lon, `${r.name} ${r.recordName} ${r.attachedToConcept}`);
     return children + projectIds.size;
   };
 
@@ -1092,19 +1187,19 @@ function ObservationsSearch({ layout }: { layout: ExploreLayout }) {
         touched.add(rootProjectOfEvent(e).id);
       }
     }
-    for (const o of searchOccurrences) {
+    for (const o of visibleOccurrences) {
       if (isPointInAnyBoundary([o.lat, o.lon], boundaries) && matchesKeyword(`${o.species} ${o.commonName} ${o.type}`, keyword)) {
         const project = rootProjectForParentEventId(o.parentEventId);
         if (project) touched.add(project.id);
       }
     }
-    for (const o of searchObservations) {
+    for (const o of visibleObservations) {
       if (isPointInAnyBoundary([o.lat, o.lon], boundaries) && matchesKeyword(`${o.species} ${o.observerName} ${o.type}`, keyword)) {
         const project = rootProjectForParentEventId(o.parentEventId);
         if (project) touched.add(project.id);
       }
     }
-    for (const r of searchResources) {
+    for (const r of visibleResources) {
       if (isPointInAnyBoundary([r.lat, r.lon], boundaries) && matchesKeyword(`${r.name} ${r.recordName} ${r.attachedToConcept}`, keyword)) {
         const project = rootProjectForParentEventId(r.parentEventId);
         if (project) touched.add(project.id);
@@ -1118,7 +1213,7 @@ function ObservationsSearch({ layout }: { layout: ExploreLayout }) {
     return new Set(
       searchEvents.filter((e) => e.type === "Project" && touched.has(e.id) && (e.status === "Active" || e.status === "Completed")).map((e) => e.id),
     );
-  }, [boundaries, keyword]);
+  }, [boundaries, keyword, visibleOccurrences, visibleObservations, visibleResources]);
 
   // "pre-facet" - spatial + keyword + matchingProjectIds only, same as before this round. The
   // Records-mode "All Filters" panel (see below) layers two more real facets - Region and
@@ -1141,33 +1236,33 @@ function ObservationsSearch({ layout }: { layout: ExploreLayout }) {
   );
   const preFacetOccurrences = useMemo(
     () =>
-      searchOccurrences.filter(
+      visibleOccurrences.filter(
         (o) =>
           isPointInAnyBoundary([o.lat, o.lon], boundaries) &&
           matchesKeyword(`${o.species} ${o.commonName} ${o.type}`, keyword) &&
           matchingProjectIds.has(rootProjectForParentEventId(o.parentEventId)?.id ?? ""),
       ),
-    [boundaries, keyword, matchingProjectIds],
+    [boundaries, keyword, matchingProjectIds, visibleOccurrences],
   );
   const preFacetObservations = useMemo(
     () =>
-      searchObservations.filter(
+      visibleObservations.filter(
         (o) =>
           isPointInAnyBoundary([o.lat, o.lon], boundaries) &&
           matchesKeyword(`${o.species} ${o.observerName} ${o.type}`, keyword) &&
           matchingProjectIds.has(rootProjectForParentEventId(o.parentEventId)?.id ?? ""),
       ),
-    [boundaries, keyword, matchingProjectIds],
+    [boundaries, keyword, matchingProjectIds, visibleObservations],
   );
   const preFacetResources = useMemo(
     () =>
-      searchResources.filter(
+      visibleResources.filter(
         (r) =>
           isPointInAnyBoundary([r.lat, r.lon], boundaries) &&
           matchesKeyword(`${r.name} ${r.recordName} ${r.attachedToConcept}`, keyword) &&
           matchingProjectIds.has(rootProjectForParentEventId(r.parentEventId)?.id ?? ""),
       ),
-    [boundaries, keyword, matchingProjectIds],
+    [boundaries, keyword, matchingProjectIds, visibleResources],
   );
 
   const toggleColumnFilterValue = (tab: EntityTab, columnId: string, value: string, checked: boolean) => {
@@ -1316,7 +1411,10 @@ function ObservationsSearch({ layout }: { layout: ExploreLayout }) {
       return;
     }
     const headers = viewMode === "species" ? EXPORT_HEADERS : recordsExportHeaders[entityTab];
-    const rowsOut = viewMode === "species" ? speciesExportRows.map(exportRowFor) : recordsExportRows();
+    // Option 2 has no species table to report its rows, so it exports the species list it shows.
+    const speciesRowsOut = layout === "float" ? filteredOccurrences.filter((o) => o.family && o.group) : speciesExportRows;
+    const rowsOut =
+      viewMode === "species" ? speciesRowsOut.map((o) => exportRowFor(o, recordAccess(o, role) === "generalised")) : recordsExportRows();
     const baseName = viewMode === "species" ? "biodata-sa-species-search" : `biodata-sa-${entityTab}-search`;
     const title =
       viewMode === "species" ? "BioData SA - Species Search Results" : `BioData SA - ${entityTabs.find((t) => t.id === entityTab)?.label} Results`;
@@ -1582,7 +1680,7 @@ function ObservationsSearch({ layout }: { layout: ExploreLayout }) {
                         >
                           {(item) => <MultiSelect.Item {...item}>{item.label}</MultiSelect.Item>}
                         </MultiSelect>
-                        <InputNumber label="Search radius (km)" defaultValue={15} minValue={5} maxValue={100} step={5} onChange={setParkRadius} />
+                        <InputNumber label="Search radius (km)" defaultValue={parkRadius} minValue={5} maxValue={100} step={5} onChange={setParkRadius} />
                       </>
   );
 
@@ -1714,7 +1812,7 @@ function ObservationsSearch({ layout }: { layout: ExploreLayout }) {
     <>
       {methodControls}
       {areaList}
-                    <Input icon={SearchLg} placeholder="Species or keyword (optional)" value={keyword} onChange={setKeyword} className="mt-4" />
+                    <Input icon={SearchLg} placeholder="Species or keyword (optional)" value={keyword} onChange={setKeyword} className="mt-4" onClear={() => setKeyword("")} clearLabel="Clear search" />
 
                     {!isCompact && (
                       <Button color="primary" size="md" className="mt-4 w-full" isDisabled={boundaries.length === 0} onPress={runSearch}>
@@ -1724,16 +1822,25 @@ function ObservationsSearch({ layout }: { layout: ExploreLayout }) {
     </>
   );
 
+  // The data-access notice, worded for who is looking (record-access.ts): a public user is told
+  // restricted records are left out; other signed-in roles that restricted locations are only
+  // approximate. BioData Admin sees all data, so gets no notice.
+  const seesAllData = hasFeatureAccess("restrictedData", role);
+  const accessNoticeTitle = isPublicUser ? "You're viewing public data" : "Some locations are approximate";
+  const accessNoticeBody = isPublicUser
+    ? "Sensitive records are not shown. Sign up and request a Data Licencing Agreement (DLA) to see them."
+    : "Sensitive species are shown only to an approximate area. Request a Data Licencing Agreement (DLA) for full access.";
+
   const dlaBanner = (
     <>
-                {!dlaBannerDismissed && (
+                {!dlaBannerDismissed && !seesAllData && (
                   <div className="shrink-0">
                     <AlertFullWidth
                       color="warning"
                       tintedBackground
                       hideDismissButton
-                      title="You're viewing public data"
-                      description="Some records are restricted. Request a Data Licencing Agreement (DLA) for full access."
+                      title={accessNoticeTitle}
+                      description={accessNoticeBody}
                       confirmLabel={isPublicUser ? "Sign up for access" : "Go to DLA"}
                       onConfirm={requestDlaAccess}
                       onClose={() => setDlaBannerDismissed(true)}
@@ -1751,27 +1858,72 @@ function ObservationsSearch({ layout }: { layout: ExploreLayout }) {
 
   // One dot per record in what the panel is showing, so a row in the table and a point on the map
   // are the same record: clicking a dot opens that record, like clicking its row.
-  const mapMarkers = useMemo(() => {
+  // One dot per plotted record, coloured by species group (the same groups and order as the Species
+  // tiles) on the Species, Occurrences, Observations and Artefacts tabs; an artefact takes its
+  // record's group. A record with no species group (Non-biotic, Community) is "Other", grey.
+  // Projects and events stay brand, one colour, so they get no key. `legendKey` feeds the key on
+  // the map (only what is plotted is listed).
+  type ExploreMarker = SAMapMarker & { legendKey?: SpeciesGroup | "Other" };
+  const mapMarkers = useMemo<ExploreMarker[] | undefined>(() => {
     if (!isCompact) return undefined;
-    const pt = (id: string, lat: number, lon: number, label: string) => ({ id, position: [lat, lon] as [number, number], label });
-    if (viewMode === "species") return filteredOccurrences.map((o) => pt(`occurrence:${o.id}`, o.lat, o.lon, o.commonName));
+    const pt = (id: string, lat: number, lon: number, label: string): ExploreMarker => ({ id, position: [lat, lon], label });
+    const groupStyle = (group: SpeciesGroup | undefined) => ({
+      legendKey: group ?? ("Other" as const),
+      color: group ? SPECIES_GROUP_COLOR[group] : OTHER_RECORD_COLOR,
+    });
+    // A restricted (Level 2) record is never pinned: it becomes a soft, blurred area around its
+    // generalised position (the same generalisation the record page shows), so the map cannot give
+    // away where a sensitive species is.
+    const fuzzyPt = (id: string, lat: number, lon: number, label: string, km: number | null, group: SpeciesGroup | undefined): ExploreMarker => {
+      if (!km) return { ...pt(id, lat, lon, label), ...groupStyle(group) };
+      const area = obfuscateCoordinate(lat, lon, km);
+      return { id, position: [area.lat, area.lon], label: `${label} - location restricted to about ${km} km`, fuzzyRadiusKm: km, ...groupStyle(group) };
+    };
+    const recordPt = (kind: "occurrence" | "observation", o: SearchOccurrence | SearchObservation) =>
+      fuzzyPt(`${kind}:${o.id}`, o.lat, o.lon, o.commonName, generalisedKm(o, role), o.group);
+    // An artefact sits where its record was made (a nest-mound photo is at the nest), so an artefact
+    // of a restricted record is blurred the same way, and takes its record's colour.
+    const artefactPt = (r: SearchResource) => {
+      const record = findOccurrence(r.recordId) ?? findObservation(r.recordId);
+      return fuzzyPt(`resource:${r.id}`, r.lat, r.lon, r.name, record ? generalisedKm(record, role) : null, record?.group);
+    };
+    // The Species tab lists species only, so it plots only records that are a species.
+    if (viewMode === "species") return filteredOccurrences.filter((o) => o.family && o.group).map((o) => recordPt("occurrence", o));
     switch (entityTab) {
       case "projects":
         return filteredProjects.map((e) => pt(`event:${e.id}`, e.lat, e.lon, e.name));
       case "events":
         return filteredEvents.map((e) => pt(`event:${e.id}`, e.lat, e.lon, e.name));
       case "occurrence":
-        return filteredOccurrences.map((o) => pt(`occurrence:${o.id}`, o.lat, o.lon, o.commonName));
+        return filteredOccurrences.map((o) => recordPt("occurrence", o));
       case "observations":
-        return filteredObservations.map((o) => pt(`observation:${o.id}`, o.lat, o.lon, o.commonName));
+        return filteredObservations.map((o) => recordPt("observation", o));
       case "resources":
-        return filteredResources.map((r) => pt(`resource:${r.id}`, r.lat, r.lon, r.name));
+        return filteredResources.map(artefactPt);
     }
-  }, [isCompact, viewMode, entityTab, filteredProjects, filteredEvents, filteredOccurrences, filteredObservations, filteredResources]);
+  }, [isCompact, viewMode, entityTab, filteredProjects, filteredEvents, filteredOccurrences, filteredObservations, filteredResources, role]);
 
+  // The key to the dots: each species group in view (in the Species tiles' order), then "Other",
+  // then the blurred area when a restricted record is plotted. Empty for projects and events.
+  const legendItems = useMemo<LegendItem[]>(() => {
+    if (!mapMarkers || !mapMarkers.some((m) => m.legendKey)) return [];
+    const present = new Set(mapMarkers.map((m) => m.legendKey));
+    const items: LegendItem[] = SPECIES_GROUP_ORDER.filter((g) => present.has(g)).map((g) => ({ id: g, label: g, color: SPECIES_GROUP_COLOR[g] }));
+    if (present.has("Other")) items.push({ id: "other", label: "Other record", color: OTHER_RECORD_COLOR });
+    if (mapMarkers.some((m) => m.fuzzyRadiusKm)) items.push({ id: "restricted", label: "Restricted (approximate)", color: OTHER_RECORD_COLOR, fuzzy: true });
+    return items;
+  }, [mapMarkers]);
+
+  // Dots exist only in option 2. A dot opens what its card opens: the record's summary card (with
+  // "Show in project"), or the artefact viewer for an artefact.
   const onMarkerClick = (markerId: string) => {
     const [kind, ...rest] = markerId.split(":");
     const id = rest.join(":");
+    if (kind === "resource") {
+      const index = filteredResources.findIndex((r) => r.id === id);
+      if (index >= 0) setArtefactIndex(index);
+      return;
+    }
     if (kind === "event") {
       const event = searchEvents.find((e) => e.id === id);
       if (event) selectRecord({ kind: "event", event });
@@ -1781,21 +1933,21 @@ function ObservationsSearch({ layout }: { layout: ExploreLayout }) {
     } else if (kind === "observation") {
       const observation = searchObservations.find((o) => o.id === id);
       if (observation) selectRecord({ kind: "observation", observation });
-    } else if (kind === "resource") {
-      const index = filteredResources.findIndex((r) => r.id === id);
-      if (index >= 0) setArtefactIndex(index);
     }
   };
 
   // Short tab labels so six tabs share the panel.
   const panelTabLabel: Record<EntityTab, string> = { projects: "Projects", events: "Events", occurrence: "Occurrences", observations: "Observations", resources: "Artefacts" };
 
-  // ── The panel: a short list first, the full table on request ──
-  // One level of switching (Species, then the five record types) instead of a Species/Records
-  // toggle over a tab row; List shows cards (a title and two short lines), Table is the full grid.
+  // ── The panel: one row of tabs, then the list ──
+  // Species first, then the five record types, each with its count; the list shows short cards (a
+  // title and two lines). A card or its dot opens the record's summary card on the map, whose "Show
+  // in project" opens the record on its project's page.
   type PanelView = "species" | EntityTab;
   const panelView: PanelView = viewMode === "species" ? "species" : entityTab;
   const setPanelView = (next: PanelView) => {
+    // The summary card belongs to the tab it was opened from; switching tabs closes it.
+    if (next !== panelView) setSelectedRecord(null);
     if (next === "species") setViewMode("species");
     else {
       setViewMode("records");
@@ -1803,22 +1955,18 @@ function ObservationsSearch({ layout }: { layout: ExploreLayout }) {
     }
     setListLimit(LIST_STEP);
   };
-  const [panelDisplay, setPanelDisplay] = useState<"list" | "table">("list");
   const [hoveredMarkerId, setHoveredMarkerId] = useState<string | null>(null);
-  // Option 3 shows a picked record as a short summary card first and opens the full record only on
-  // request. `fullRecordKey` is the record whose full view is open (compared by key, so picking a
-  // different record returns to the summary without any reset code at the call sites).
-  const [fullRecordKey, setFullRecordKey] = useState<string | null>(null);
-  const selectedKey = selectedRecord
+  const selectedMarkerId = selectedRecord
     ? selectedRecord.kind === "event"
       ? `event:${selectedRecord.event.id}`
       : selectedRecord.kind === "occurrence"
         ? `occurrence:${selectedRecord.occurrence.id}`
         : `observation:${selectedRecord.observation.id}`
     : null;
-  const selectedMarkerId = layout === "float" ? selectedKey : null;
-  const peekMode = layout === "float";
-  const fullRecordOpen = !peekMode || (selectedKey != null && fullRecordKey === selectedKey);
+  // The summary card shows only while its record is one of the active tab's results, so a changed
+  // tab, keyword or area never leaves a card for a record that is no longer listed.
+  const peekVisible = !!selectedMarkerId && !!mapMarkers?.some((m) => m.id === selectedMarkerId);
+
   const LIST_STEP = 25;
   const [listLimit, setListLimit] = useState(LIST_STEP);
 
@@ -1828,12 +1976,10 @@ function ObservationsSearch({ layout }: { layout: ExploreLayout }) {
     ...entityTabs.map((t) => ({ id: t.id as PanelView, label: panelTabLabel[t.id], count: countFor(t.id) })),
   ];
 
-  // Cards for the current view. `searchText` is what the panel search matches; `markerId` ties a
-  // card to its dot on the map.
+  // Cards for the current view. `markerId` ties a card to its dot on the map.
   interface CardItem {
     id: string;
     markerId: string;
-    searchText: string;
     icon: FC<{ className?: string }>;
     /** A species photo (or its group icon on a tile) in place of the icon. */
     thumb?: ReactNode;
@@ -1850,28 +1996,32 @@ function ObservationsSearch({ layout }: { layout: ExploreLayout }) {
     const root = rootProjectForParentEventId(parentEventId);
     return root ? `${root.org} \u00b7 ${root.name}` : undefined;
   };
-  const restrictedBadge = (level?: string) => (level === "Level 2" ? <Badge size="sm" color="warning">Restricted</Badge> : undefined);
+  // "Restricted" only where the location is actually generalised for this role (record-access.ts).
+  const restrictedBadge = (r: SearchOccurrence | SearchObservation) =>
+    recordAccess(r, role) === "generalised" ? (
+      <Badge size="sm" color="warning">
+        Restricted
+      </Badge>
+    ) : undefined;
   const cardItems: CardItem[] = (() => {
     switch (panelView) {
       case "species":
         return speciesRows.map((o) => ({
           id: o.id,
           markerId: `occurrence:${o.id}`,
-          searchText: `${o.commonName} ${o.species} ${o.family}`,
           icon: SPECIES_GROUP_ICON[o.group!],
           thumb: speciesThumb(o),
           title: o.commonName,
           subtitle: o.species,
           subtitleItalic: true,
           meta: provenance(o.parentEventId),
-          trailing: restrictedBadge(o.licenceLevel),
+          trailing: restrictedBadge(o),
           onSelect: () => selectRecord({ kind: "occurrence", occurrence: o }),
         }));
       case "projects":
         return filteredProjects.map((e) => ({
           id: e.id,
           markerId: `event:${e.id}`,
-          searchText: `${e.code} ${e.name} ${e.org}`,
           icon: Folder,
           title: e.name,
           subtitle: e.org,
@@ -1887,45 +2037,43 @@ function ObservationsSearch({ layout }: { layout: ExploreLayout }) {
         return filteredEvents.map((e) => ({
           id: e.id,
           markerId: `event:${e.id}`,
-          searchText: `${e.code} ${e.name} ${e.type}`,
           icon: eventTypeIcon[e.type],
           title: e.name,
           subtitle: e.type,
-          meta: e.endDate ? `${e.startDate} to ${e.endDate}` : `From ${e.startDate}`,
+          meta: hasEndDate(e.endDate) ? `${e.startDate} to ${e.endDate}` : `From ${e.startDate}`,
           onSelect: () => selectRecord({ kind: "event", event: e }),
         }));
       case "occurrence":
         return filteredOccurrences.map((o) => ({
           id: o.id,
           markerId: `occurrence:${o.id}`,
-          searchText: `${o.commonName} ${o.species} ${o.type}`,
           icon: occurrenceTypeIcon[o.type],
           thumb: speciesThumb(o),
           title: o.commonName,
-          // A Community record has no species name (a placeholder dash in the data); show nothing.
-          subtitle: /^[A-Za-z]/.test(o.species) ? o.species : undefined,
+          // A Non-biotic or Community record has no species name (a dash in the data); show nothing.
+          subtitle: hasScientificName(o.species) ? o.species : undefined,
           subtitleItalic: true,
           meta: `${o.type} \u00b7 ${o.date}`,
+          trailing: restrictedBadge(o),
           onSelect: () => selectRecord({ kind: "occurrence", occurrence: o }),
         }));
       case "observations":
         return filteredObservations.map((o) => ({
           id: o.id,
           markerId: `observation:${o.id}`,
-          searchText: `${o.commonName} ${o.species} ${o.observerName}`,
           icon: occurrenceTypeIcon[o.type],
           thumb: speciesThumb(o),
           title: o.commonName,
-          subtitle: o.species,
+          subtitle: hasScientificName(o.species) ? o.species : undefined,
           subtitleItalic: true,
           meta: `${o.type} \u00b7 ${o.date}`,
+          trailing: restrictedBadge(o),
           onSelect: () => selectRecord({ kind: "observation", observation: o }),
         }));
       case "resources":
         return filteredResources.map((r, i) => ({
           id: r.id,
           markerId: `resource:${r.id}`,
-          searchText: `${r.name} ${r.recordName} ${r.attachedToConcept}`,
           icon: resourceTypeIcon[r.type],
           title: r.name,
           subtitle: r.type,
@@ -1934,9 +2082,6 @@ function ObservationsSearch({ layout }: { layout: ExploreLayout }) {
         }));
     }
   })();
-  const listQuery = recordsSearch.trim().toLowerCase();
-  const listItems = listQuery ? cardItems.filter((c) => c.searchText.toLowerCase().includes(listQuery)) : cardItems;
-
 
   // One row of switching: Species, then the five record types, each with its count.
   const panelTabsEl = (
@@ -1954,92 +2099,38 @@ function ObservationsSearch({ layout }: { layout: ExploreLayout }) {
     </>
   );
 
-  // The body of a results panel: one row of switching, one row of controls, then the list or the
-  // table. Shared by every layout that shows results, so a change here lands everywhere.
-  const resultsBody = ({ display, onDisplayChange, allowTable = true, showTabs = true, showSearch = true }: { display: "list" | "table"; onDisplayChange: (d: "list" | "table") => void; allowTable?: boolean; showTabs?: boolean; showSearch?: boolean }) => (
+  // The body of option 2's results: the tabs, then the list. What is typed in the search field
+  // narrows the results.
+  const resultsBody = (
     <>
-              {showTabs && panelTabsEl}
-
-              {/* One row of controls: search, Filters (record types only; Species has its own inside
-                  the table), and List / Table. The layouts with the combined search field above
-                  (`showSearch` false) have one text field only: what is typed there narrows the
-                  results, so a second box here would ask the same question twice. */}
-              {(showSearch || panelView !== "species" || allowTable) && (
-              <div className="flex shrink-0 items-center gap-2 px-4 pt-3">
-                {showSearch && <Input icon={SearchLg} size="sm" placeholder={`Search ${panelTabs.find((t) => t.id === panelView)?.label.toLowerCase()}`} value={recordsSearch} onChange={setRecordsSearch} className="flex-1" />}
-                {panelView !== "species" && (
-                  <Button color="secondary" size="sm" iconLeading={FilterLines} onPress={() => setRecordsFilterPanelOpen(true)} className="shrink-0">
-                    Filters{recordsFilterCount > 0 ? ` (${recordsFilterCount})` : ""}
-                  </Button>
-                )}
-                {allowTable && (
-                /* size-9 (36px) buttons in a p-1 wrapper (44px total) - was size-7 (28px), well under
-                   the 44px touch-target guideline with no text label to widen the hit area. Matches
-                   the neighbouring Filters button's own 36px height so the row reads as one aligned
-                   toolbar instead of a shorter control tucked beside taller ones. */
-                <div className={cx("inline-flex shrink-0 items-center gap-0.5 rounded-lg border border-secondary bg-secondary p-1", !showSearch && "ml-auto")}>
-                  {(["list", "table"] as const).map((d) => (
-                    <button
-                      key={d}
-                      type="button"
-                      aria-label={d === "list" ? "Show as a list" : "Show as a table"}
-                      aria-pressed={display === d}
-                      onClick={() => onDisplayChange(d)}
-                      className={cx(
-                        "flex size-9 items-center justify-center rounded-md transition duration-100 ease-linear",
-                        display === d ? "bg-primary text-brand-secondary shadow-xs" : "text-tertiary hover:text-secondary",
-                      )}
-                    >
-                      {d === "list" ? <ListIcon className="size-4" /> : <TableIcon className="size-4" />}
-                    </button>
-                  ))}
-                </div>
-                )}
-              </div>
-              )}
-              {panelView !== "species" && recordsFilterPills.length > 0 && <div className="shrink-0">{recordsFilterPillsRow}</div>}
-
-              {display === "list" ? (
-                <div className="mt-2 min-h-0 flex-1 overflow-y-auto px-2 pb-3">
-                  {listItems.length === 0 ? (
-                    <p className="px-3 py-6 text-sm text-tertiary">Nothing matches. Try clearing the search or a filter.</p>
-                  ) : (
-                    <>
-                      {listItems.slice(0, listLimit).map((c) => (
-                        <ResultCard
-                          key={c.id}
-                          icon={c.icon}
-                          thumb={c.thumb}
-                          title={c.title}
-                          subtitle={c.subtitle}
-                          subtitleItalic={c.subtitleItalic}
-                          meta={c.meta}
-                          trailing={c.trailing}
-                          onSelect={c.onSelect}
-                          onHoverChange={(hovered) => setHoveredMarkerId(hovered ? c.markerId : null)}
-                        />
-                      ))}
-                      {listItems.length > listLimit && (
-                        <Button color="link-color" size="sm" className="mx-3 mt-2" onPress={() => setListLimit((n) => n + LIST_STEP)}>
-                          Show {Math.min(LIST_STEP, listItems.length - listLimit)} more
-                        </Button>
-                      )}
-                    </>
-                  )}
-                </div>
-              ) : panelView === "species" ? (
-                <div className="min-h-0 flex-1 overflow-hidden px-4 pt-3 pb-4">
-                  <SpeciesResultsView
-                    rows={filteredOccurrences}
-                    onRowClick={(o) => selectRecord({ kind: "occurrence", occurrence: o })}
-                    onExportableRowsChange={setSpeciesExportRows}
-                    hideSearch={!showSearch}
-                  />
-                </div>
-              ) : (
-                <div className="min-h-0 flex-1 overflow-hidden px-4 pt-3 pb-4">{recordTables}</div>
-              )}
-              {panelView !== "species" && recordsFilterPanel}
+      {panelTabsEl}
+      <div className="mt-2 min-h-0 flex-1 overflow-y-auto px-2 pb-3">
+        {cardItems.length === 0 ? (
+          <p className="px-3 py-6 text-sm text-balance text-tertiary">Nothing of this kind here. Try a larger area, a different word or another tab.</p>
+        ) : (
+          <>
+            {cardItems.slice(0, listLimit).map((c) => (
+              <ResultCard
+                key={c.id}
+                icon={c.icon}
+                thumb={c.thumb}
+                title={c.title}
+                subtitle={c.subtitle}
+                subtitleItalic={c.subtitleItalic}
+                meta={c.meta}
+                trailing={c.trailing}
+                onSelect={c.onSelect}
+                onHoverChange={(hovered) => setHoveredMarkerId(hovered ? c.markerId : null)}
+              />
+            ))}
+            {cardItems.length > listLimit && (
+              <Button color="link-color" size="sm" className="mx-3 mt-2" onPress={() => setListLimit((n) => n + LIST_STEP)}>
+                Show {Math.min(LIST_STEP, cardItems.length - listLimit)} more
+              </Button>
+            )}
+          </>
+        )}
+      </div>
     </>
   );
 
@@ -2050,6 +2141,23 @@ function ObservationsSearch({ layout }: { layout: ExploreLayout }) {
   // used to be a full-width banner), so it keeps the three-column shell.
   const hasAreas = boundaries.length > 0;
   const [showDotsLayer, setShowDotsLayer] = useState(true);
+  // The map key's own one-line width, measured, so the search card can widen to line up with it (per
+  // the designer: "increase panel width to match labels width"). The two sit in different rows, so
+  // CSS alone cannot tie them. 0 when the key is not shown.
+  const [keyWidth, setKeyWidth] = useState(0);
+  const keyObserver = useRef<ResizeObserver | null>(null);
+  // Stable, so React attaches it once when the key appears and detaches it once when it goes.
+  const measureKey = useCallback((el: HTMLDivElement | null) => {
+    keyObserver.current?.disconnect();
+    keyObserver.current = null;
+    if (!el) {
+      setKeyWidth(0);
+      return;
+    }
+    const observer = new ResizeObserver(([entry]) => setKeyWidth(entry.borderBoxSize[0]?.inlineSize ?? entry.contentRect.width));
+    observer.observe(el);
+    keyObserver.current = observer;
+  }, []);
 
   // Option 3 counts the visible layers (a hidden area is not searched); the others count every area.
   const areaCount = layout === "float" ? visibleLayers.length + (impliedWholeState ? 1 : 0) : areaEntries.length;
@@ -2062,7 +2170,7 @@ function ObservationsSearch({ layout }: { layout: ExploreLayout }) {
     </>
   );
 
-  const floatCard = "absolute z-[1000] flex flex-col overflow-hidden rounded-xl border border-secondary bg-primary shadow-lg";
+  const floatCard = "flex flex-col overflow-hidden rounded-xl border border-secondary bg-primary shadow-lg";
   const rise = "motion-safe:animate-in motion-safe:fade-in motion-safe:slide-in-from-bottom-1 motion-safe:duration-200 motion-safe:ease-out";
 
   // ── Adding an area (option 3): one menu, then a short flow for that method only ──
@@ -2123,7 +2231,7 @@ function ObservationsSearch({ layout }: { layout: ExploreLayout }) {
     </div>
   );
   const growSearchField = (
-    <Input icon={SearchLg} aria-label="Search species or keyword" placeholder="Search a species or keyword" value={keyword} onChange={setKeyword} />
+    <Input icon={SearchLg} aria-label="Search species or keyword" placeholder="Search a species or keyword" value={keyword} onChange={setKeyword} onClear={() => setKeyword("")} clearLabel="Clear search" />
   );
   const growHint = !addingMethod && !hasAreas && (
     <p className="text-sm text-tertiary text-balance">
@@ -2147,13 +2255,15 @@ function ObservationsSearch({ layout }: { layout: ExploreLayout }) {
         <p className="text-xs font-semibold tracking-wide text-quaternary uppercase">Explore</p>
         {areasList}
       </div>
-      <div className="mt-auto flex flex-col gap-2 rounded-lg border border-secondary bg-primary p-3">
-        <p className="text-sm font-semibold text-primary">You&apos;re viewing public data</p>
-        <p className="text-sm text-tertiary">Some records are restricted. Request a Data Licencing Agreement (DLA) for full access.</p>
-        <Button color="secondary" size="sm" className="self-start" onPress={requestDlaAccess}>
-          {isPublicUser ? "Sign up for access" : "Go to DLA"}
-        </Button>
-      </div>
+      {!seesAllData && (
+        <div className="mt-auto flex flex-col gap-2 rounded-lg border border-secondary bg-primary p-3">
+          <p className="text-sm font-semibold text-balance text-primary">{accessNoticeTitle}</p>
+          <p className="text-sm text-balance text-tertiary">{accessNoticeBody}</p>
+          <Button color="secondary" size="sm" className="self-start" onPress={requestDlaAccess}>
+            {isPublicUser ? "Sign up for access" : "Go to DLA"}
+          </Button>
+        </div>
+      )}
       <SidebarFooterLinks />
     </aside>
   );
@@ -2173,6 +2283,8 @@ function ObservationsSearch({ layout }: { layout: ExploreLayout }) {
         highlightedBoundaryIds={highlightedBoundaryIds}
         fitRequest={fitRequest}
         panRequest={panRequest}
+        showZoomControls={false}
+        onMapReady={setMapInstance}
         className="size-full"
       />
     </div>
@@ -2185,24 +2297,6 @@ function ObservationsSearch({ layout }: { layout: ExploreLayout }) {
       <main className="relative flex min-w-0 flex-1 flex-col overflow-hidden">
         <div className="relative min-h-0 flex-1 overflow-hidden">{children}</div>
         {signUpModals}
-        {peekMode && selectedRecord && !fullRecordOpen && (
-          <RecordPeekCard
-            record={selectedRecord}
-            onViewFull={() => setFullRecordKey(selectedKey)}
-            onClose={() => setSelectedRecord(null)}
-            // Zoom lives back on the map's own top-right corner (real map chrome belongs on the
-            // map, per the Mobbin research - zoom never shares a container with a results row or a
-            // layer toggle in any real map-search product). The card docks directly under that
-            // pill instead of racing it for the same corner - top-[101px] clears ZoomControls'
-            // own ~76px height plus its top-4 inset, with a ~9px gap, same as this session's
-            // earlier, already-verified docked-cluster layout.
-            className="absolute top-[101px] right-4 z-[1000] motion-safe:animate-in motion-safe:fade-in motion-safe:duration-150"
-          />
-        )}
-        <RecordDetailSidebar
-          record={fullRecordOpen ? selectedRecord : null}
-          onClose={() => (peekMode ? setFullRecordKey(null) : setSelectedRecord(null))}
-        />
         <ArtefactLightbox artefacts={resourceArtefacts} index={artefactIndex} onClose={() => setArtefactIndex(null)} onNavigate={setArtefactIndex} />
       </main>
     </div>
@@ -2211,19 +2305,35 @@ function ObservationsSearch({ layout }: { layout: ExploreLayout }) {
   // ── 1. Grows in place ──
   const growExplore = floatFrame(
     <>
-      {floatMap([panelDisplay === "table" && hasAreas ? 960 + 16 + 48 : 448, 48], [48, 48])}
+      {floatMap([448, 48], [48, 48])}
+      {/* Every floating panel on the map is laid out by this one layer, never positioned on its own:
+          a left column holding the search card with the map key at its foot, and a right column
+          holding the zoom buttons and the picked record's summary card. Panels in a flex layout
+          cannot overlap. The key sits on the left so the summary card gets the right column's full
+          height and never needs to scroll. Where the map is too narrow for both columns side by
+          side (below 648px) the right column moves under the left one. The bottom padding keeps the map's scale bar
+          (bottom-left) and attribution (bottom-right) clear. The layer lets clicks through to the
+          map; each panel takes its own. */}
+      <div className="pointer-events-none absolute inset-0 z-[1000] @container" style={{ ["--key-w" as string]: `${keyWidth}px` }}>
+        <div className="flex size-full flex-col gap-4 p-4 pb-9">
+        <div className="flex min-h-0 flex-1 flex-col gap-4 @min-[648px]:flex-row">
+      {/* 400px, or the key's width when it is wider, so the two line up; flex-1 still lets it give way
+          to the summary card's column when the map is narrow. */}
+      <div className="flex min-h-0 w-full flex-col items-start gap-3 @max-[647px]:min-h-[72px] @max-[647px]:shrink-[1000] @min-[648px]:w-auto @min-[648px]:max-w-[max(400px,var(--key-w))] @min-[648px]:min-w-[280px] @min-[648px]:flex-1">
       <section
         aria-label="Search the map"
-        className={cx(
-          floatCard,
-          "top-4 left-4 max-h-[calc(100%-2rem)] transition-[width] duration-200 ease-out motion-reduce:transition-none",
-          panelDisplay === "table" && hasAreas && "bottom-4",
-          panelDisplay === "table" && hasAreas ? "w-[min(960px,calc(100%-2rem))]" : "w-[400px] max-w-[calc(100%-2rem)]",
-        )}
+        className={cx(floatCard, "pointer-events-auto min-h-0 w-full shrink @max-[647px]:min-h-[72px]")}
       >
-        <div className="flex shrink-0 items-center gap-2 px-4 pt-4 pb-3">
-          <h2 className="m-0! text-base! font-semibold! tracking-normal! text-primary!">Search the map</h2>
-          <div className="ml-auto">{addAreaMenu}</div>
+        <div className="flex shrink-0 flex-wrap items-center gap-x-2 gap-y-1 px-4 pt-4 pb-3">
+          <h2 className="m-0! text-base! font-semibold! tracking-normal! whitespace-nowrap text-primary!">Search the map</h2>
+          <div className="ml-auto flex items-center gap-3">
+            {hasSearch && (
+              <Button color="link-gray" size="sm" iconLeading={RefreshCcw01} onPress={startNewSearch}>
+                New search
+              </Button>
+            )}
+            {addAreaMenu}
+          </div>
         </div>
         {addAreaPanel && <div className="max-h-[50%] shrink-0 overflow-y-auto">{addAreaPanel}</div>}
         <div className="flex shrink-0 flex-col gap-2 px-4 pt-1 pb-4">
@@ -2235,7 +2345,7 @@ function ObservationsSearch({ layout }: { layout: ExploreLayout }) {
             <div className="flex shrink-0 items-center gap-2 px-4 pt-3 pb-2 text-sm text-tertiary">
               <div className="min-w-0 flex-1 truncate">{summaryLine}</div>
               {/* Zoom moved back onto the map itself (its own top-right corner, real map chrome
-                  belongs on the map - see floatMap/RecordPeekCard above), so this row is down to
+                  belongs on the map - see floatMap above), so this row is down to
                   the two things that actually differ per search: what the map displays, and
                   exporting the results. "Result dots" is the one display toggle today, but it's
                   not the last one this will ever need - rather than grow this row by one icon
@@ -2257,10 +2367,36 @@ function ObservationsSearch({ layout }: { layout: ExploreLayout }) {
               </DialogTrigger>
               {exportControl}
             </div>
-            {resultsBody({ display: panelDisplay, onDisplayChange: setPanelDisplay, showSearch: false })}
+            {resultsBody}
           </div>
         )}
       </section>
+      </div>
+          <div className="flex min-h-0 flex-col items-end gap-3 @min-[648px]:ml-auto @min-[648px]:w-[320px] @min-[648px]:shrink-0">
+            <MapZoomButtons map={mapInstance} className="pointer-events-auto shrink-0" />
+            {/* A picked record shows as a short summary card, not a slide-in panel; its "Show in
+                project" opens the record on its project's page. Artefacts open in the viewer, a
+                modal. */}
+            {peekVisible && selectedRecord && (
+              <RecordPeekCard
+                record={selectedRecord}
+                onClose={() => setSelectedRecord(null)}
+                className="pointer-events-auto min-h-0 w-full max-w-none shrink motion-safe:animate-in motion-safe:fade-in motion-safe:duration-150"
+              />
+            )}
+          </div>
+        </div>
+        {/* The key has its own row along the bottom of the map, below both columns, so it can sit on
+            one line instead of wrapping inside the search card's 400px column (per the designer). On
+            a narrow map it becomes a two-column grid; when the panels stack there is no room for both
+            the key and an open summary card, so the key steps aside until the card is closed. */}
+        {showDotsLayer && legendItems.length > 0 && (
+          <div ref={measureKey} className={cx("max-w-full shrink-0 self-start", peekVisible && "@max-[647px]:hidden")}>
+            <MapLegend title="Species group" items={legendItems} />
+          </div>
+        )}
+        </div>
+      </div>
     </>,
   );
 
@@ -2331,9 +2467,11 @@ function ObservationsSearch({ layout }: { layout: ExploreLayout }) {
                     what's defined so far) rather than swapping it for a separate button - the card
                     stays the same object in the same place, just folded, with Search still one
                     click away once areas exist. */}
+                {/* Stops short of the map's zoom buttons (right-16 below lg, where it would otherwise
+                    span the width) and of the scale bar (bottom), so no floating panel overlaps. */}
                 <section
                   aria-label="Search biodiversity records"
-                  className="absolute top-4 right-4 left-4 z-[1000] flex max-h-[calc(100%-2rem)] flex-col overflow-hidden rounded-xl border border-secondary bg-primary shadow-lg lg:right-auto lg:w-[480px]"
+                  className="absolute top-4 right-16 left-4 z-[1000] flex max-h-[calc(100%-3.25rem)] flex-col overflow-hidden rounded-xl border border-secondary bg-primary shadow-lg lg:right-auto lg:w-[480px]"
                 >
                   <div className="flex shrink-0 items-start gap-3 p-4">
                     <button
@@ -2409,9 +2547,14 @@ function ObservationsSearch({ layout }: { layout: ExploreLayout }) {
                     read as one coherent header instead of two stacked, unrelated rows. */}
                 <SectionHeader.Root className="shrink-0 p-6">
                   <div className="flex flex-col gap-2">
-                    <Button color="link-gray" size="sm" iconLeading={ArrowNarrowLeft} onPress={() => setMode("search")} className="self-start">
-                      Edit search
-                    </Button>
+                    <div className="flex items-center gap-4">
+                      <Button color="link-gray" size="sm" iconLeading={ArrowNarrowLeft} onPress={() => setMode("search")}>
+                        Edit search
+                      </Button>
+                      <Button color="link-gray" size="sm" iconLeading={RefreshCcw01} onPress={startNewSearch}>
+                        New search
+                      </Button>
+                    </div>
                     <SectionHeader.Group>
                       <div className="flex flex-1 flex-col gap-1">
                         <SectionHeader.Heading>Search results</SectionHeader.Heading>
@@ -2506,7 +2649,7 @@ function ObservationsSearch({ layout }: { layout: ExploreLayout }) {
                     same right-hand SidePanel it always has) rather than an empty leftover row where
                     its own search box used to be. ── */}
                 <div className="flex shrink-0 items-center gap-3 px-6 pt-4">
-                  <Input icon={SearchLg} placeholder="Search" value={recordsSearch} onChange={setRecordsSearch} className="flex-1" />
+                  <Input icon={SearchLg} placeholder="Search" value={recordsSearch} onChange={setRecordsSearch} className="flex-1" onClear={() => setRecordsSearch("")} clearLabel="Clear search" />
                   <Button
                     color="secondary"
                     size="md"

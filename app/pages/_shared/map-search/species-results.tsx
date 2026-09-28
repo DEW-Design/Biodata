@@ -101,10 +101,12 @@ import {
   type SearchOccurrence,
   type SpeciesGroup,
   kingdomForGroup,
+  restrictedRadiusKm,
   rootProjectForParentEventId,
   siteNameForParentEventId,
 } from "./search-data";
 import { obfuscateCoordinate } from "./geo";
+import { isRestricted, recordAccess, useRecordAccess } from "./record-access";
 
 const GROUPS: SpeciesGroup[] = ["Mammal", "Bird", "Reptile", "Amphibian", "Plant"];
 
@@ -132,11 +134,13 @@ function matchesSearch(haystack: string, term: string): boolean {
  *  birds obfuscate to a tighter 5km, everything else to 10km. Both are real examples the user's own
  *  ask named ("5km radius or 10km radius etc"), not arbitrary. */
 function obfuscationRadiusFor(o: SearchOccurrence): number {
-  return o.group === "Bird" ? 5 : 10;
+  return restrictedRadiusKm(o) ?? 10;
 }
 
-function coordinateText(o: SearchOccurrence): string {
-  if (o.licenceLevel === "Level 2") {
+/** `generalise`: show the location only to within the restriction radius (every role but BioData
+ *  Admin, see record-access.ts). */
+function coordinateText(o: SearchOccurrence, generalise: boolean): string {
+  if (generalise && isRestricted(o)) {
     const radius = obfuscationRadiusFor(o);
     const { lat, lon } = obfuscateCoordinate(o.lat, o.lon, radius);
     return `${lat.toFixed(2)}, ${lon.toFixed(2)} (± ${radius} km)`;
@@ -144,20 +148,20 @@ function coordinateText(o: SearchOccurrence): string {
   return `${o.lat.toFixed(2)}, ${o.lon.toFixed(2)}`;
 }
 
-function CoordinateCell({ o }: { o: SearchOccurrence }) {
-  if (o.licenceLevel === "Level 2") {
+function CoordinateCell({ o, generalise }: { o: SearchOccurrence; generalise: boolean }) {
+  if (generalise && isRestricted(o)) {
     return (
       <Tooltip title="Precise location withheld - this species is sensitive, per BioData SA's DLA policy">
         <Focusable>
           <div className="flex w-max items-center gap-1.5">
             <Lock01 className="size-3.5 shrink-0 text-fg-quaternary" />
-            <span className="text-sm whitespace-nowrap text-tertiary">{coordinateText(o)}</span>
+            <span className="text-sm whitespace-nowrap text-tertiary">{coordinateText(o, true)}</span>
           </div>
         </Focusable>
       </Tooltip>
     );
   }
-  return <span className="text-sm whitespace-nowrap text-tertiary">{coordinateText(o)}</span>;
+  return <span className="text-sm whitespace-nowrap text-tertiary">{coordinateText(o, false)}</span>;
 }
 
 // Exported so the page's own header-row export control (app/pages/observations/page.tsx)
@@ -177,7 +181,9 @@ export const EXPORT_HEADERS = [
   "Identified By",
 ];
 
-export function exportRowFor(o: SearchOccurrence): string[] {
+/** `generalise` defaults to true, so an export never gives away a precise restricted location
+ *  unless the caller has checked the role may see it. */
+export function exportRowFor(o: SearchOccurrence, generalise = true): string[] {
   return [
     o.species,
     o.commonName,
@@ -186,7 +192,7 @@ export function exportRowFor(o: SearchOccurrence): string[] {
     rootProjectForParentEventId(o.parentEventId)?.name ?? "-",
     siteNameForParentEventId(o.parentEventId) ?? "-",
     o.region,
-    coordinateText(o),
+    coordinateText(o, generalise),
     o.date,
     o.lastSurveyed,
     authorityFor(o),
@@ -293,7 +299,12 @@ export function SpeciesResultsView({
   // Real species only - the two Non-Biotic/Community occurrence rows have no `family`/`group` at
   // all (see SearchOccurrence's own doc comment in search-data.ts), so this filter is also the
   // "is this actually a species" check.
-  const speciesRows = useMemo(() => rows.filter((o): o is SearchOccurrence & { family: string; group: SpeciesGroup } => Boolean(o.family && o.group)), [rows]);
+  // Also leaves out what this role may not see (a public user sees Level 1 only; record-access.ts).
+  const { role, access } = useRecordAccess();
+  const speciesRows = useMemo(
+    () => rows.filter((o): o is SearchOccurrence & { family: string; group: SpeciesGroup } => Boolean(o.family && o.group) && recordAccess(o, role) !== "hidden"),
+    [rows, role],
+  );
 
   const familyOptions = useMemo(() => [...new Set(speciesRows.map((o) => o.family))].sort(), [speciesRows]);
   const genusOptions = useMemo(() => [...new Set(speciesRows.map((o) => genusOf(o.species)))].sort(), [speciesRows]);
@@ -417,7 +428,7 @@ export function SpeciesResultsView({
     },
     { id: "site", label: "Site Name", render: (o) => <span className="text-sm text-tertiary">{siteNameForParentEventId(o.parentEventId) ?? "-"}</span> },
     { id: "location", label: "Location Name", render: (o) => <span className="text-sm text-tertiary">{o.region}</span> },
-    { id: "coordinates", label: "Coordinates", render: (o) => <CoordinateCell o={o} /> },
+    { id: "coordinates", label: "Coordinates", render: (o) => <CoordinateCell o={o} generalise={access(o) === "generalised"} /> },
     { id: "date", label: "Date Identified", render: (o) => <span className="text-sm whitespace-nowrap text-tertiary">{o.date}</span> },
     { id: "lastSurveyed", label: "Last Surveyed", render: (o) => <span className="text-sm whitespace-nowrap text-tertiary">{o.lastSurveyed}</span> },
     { id: "authority", label: "Identified by", render: (o) => <span className="text-sm text-tertiary">{authorityFor(o)}</span> },
@@ -437,7 +448,7 @@ export function SpeciesResultsView({
       title: "Species",
       content: (
         <div className="flex flex-col gap-3">
-          <Input icon={SearchLg} placeholder="Search Species" value={speciesSearch} onChange={setSpeciesSearch} />
+          <Input icon={SearchLg} placeholder="Search Species" value={speciesSearch} onChange={setSpeciesSearch} onClear={() => setSpeciesSearch("")} clearLabel="Clear search" />
           <CheckboxList
             items={filteredSpeciesOptions.map(([species, commonName]) => ({
               id: species,
@@ -459,7 +470,7 @@ export function SpeciesResultsView({
       title: "Family",
       content: (
         <div className="flex flex-col gap-3">
-          <Input icon={SearchLg} placeholder="Search Family" value={familySearch} onChange={setFamilySearch} />
+          <Input icon={SearchLg} placeholder="Search Family" value={familySearch} onChange={setFamilySearch} onClear={() => setFamilySearch("")} clearLabel="Clear search" />
           <CheckboxList
             items={filteredFamilyOptions.map((f) => ({ id: f, label: f }))}
             selected={selectedFamilies}
@@ -559,7 +570,7 @@ export function SpeciesResultsView({
           keeps its own `shrink-0`/`min-w-[220px]` so it never gets squeezed and naturally lands on
           the right since the input has already claimed the rest of the row. ── */}
       <div className="flex shrink-0 items-center gap-3 rounded-lg bg-primary shadow-xs">
-        {!hideSearch && <Input icon={SearchLg} placeholder="Search" value={tableSearch} onChange={setTableSearch} className="flex-1" />}
+        {!hideSearch && <Input icon={SearchLg} placeholder="Search" value={tableSearch} onChange={setTableSearch} className="flex-1" onClear={() => setTableSearch("")} clearLabel="Clear search" />}
         <Button color="secondary" size="md" iconLeading={FilterLines} onPress={openPanel} className={hideSearch ? "ml-auto shrink-0" : "min-w-[220px] shrink-0 justify-center"}>
           All Filters{anyFilterActive ? ` (${activeFilterCount})` : ""}
         </Button>

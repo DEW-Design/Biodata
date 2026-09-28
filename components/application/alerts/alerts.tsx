@@ -141,11 +141,11 @@ interface AlertFullWidthProps {
      */
     hideDismissButton?: boolean;
     /**
-     * Drops the outer wrapper's own edge-to-edge `border-t`/`bg-secondary`/`md:border-b` chrome
-     * (meant for a banner spanning the full viewport width). Pass this whenever `className`
-     * already supplies a self-contained shape (e.g. `rounded-lg border ...`), so that shape isn't
-     * left with the default full-bleed border/background bleeding out around or underneath it.
-     * Takes precedence over `tintedBackground`.
+     * Renders the alert as a self-contained card instead of a full-width banner: a rounded box
+     * with a 1px border and a background tinted by `color`, with even padding. The card's look is
+     * decided here, once; callers pass no border, background, radius or padding classes, so every
+     * contained alert in the product looks the same (CONTRACTS 1.9: fix in the component, never
+     * at the call site). Takes precedence over `tintedBackground`.
      * @default false
      */
     contained?: boolean;
@@ -182,27 +182,56 @@ export const AlertFullWidth = ({
     wrap = false,
 }: AlertFullWidthProps) => {
     const tone = tintedBackground ? tintMap[color] : tintMap.default;
-    return (
-        <div className={cx("font-barlow relative", !contained && ["border-t md:border-t-0 md:border-b", tone.bg, tone.border])}>
-            <div
-                className={cx(
-                    "flex flex-col gap-4 md:flex-row md:items-center md:gap-3",
-                    // Full-bleed banner: centred in `max-w-container` with wide `px-8` side padding, sized for the
-                    // viewport edge. Contained card: the alert IS the box, so it gets even padding all round
-                    // (a `px-8` inside a rounded card left the icon floating far from the left edge).
-                    contained ? "p-4" : "mx-auto max-w-container p-4 md:px-8 md:py-3",
-                    className,
-                )}
-            >
-                <div className="flex flex-1 flex-col gap-4 md:w-0 md:flex-row md:items-center">
-                    <FeaturedIcon
-                        className="hidden md:flex"
-                        icon={iconMap[color]}
-                        color={color === "default" ? "gray" : color}
-                        theme={color === "default" ? "modern" : "outline"}
-                        size="md"
-                    />
+    const icon = (
+        <FeaturedIcon
+            className="hidden md:flex"
+            icon={iconMap[color]}
+            color={color === "default" ? "gray" : color}
+            theme={color === "default" ? "modern" : "outline"}
+            size="md"
+        />
+    );
+    const actions = (onConfirm || (onClose && !hideDismissButton)) && (
+        <div className={cx("flex gap-3", actionType === "button" ? "flex-col-reverse md:flex-row" : "flex-row")}>
+            {onClose && !hideDismissButton && (
+                <Button onClick={onClose} color={actionType === "button" ? "secondary" : "link-gray"} size="sm">
+                    {dismissLabel}
+                </Button>
+            )}
+            {onConfirm && (
+                <Button onClick={onConfirm} color={actionType === "button" ? "primary" : "link-color"} size="sm">
+                    {confirmLabel}
+                </Button>
+            )}
+        </div>
+    );
 
+    // Contained card: the icon at the top left, then the title with the description under it at full
+    // width, then the actions as a row beneath the text (the floating alert's layout). Laying the
+    // title and description side by side squeezed the description into a narrow second column.
+    if (contained) {
+        return (
+            <div className={cx("font-barlow relative flex items-start gap-3 rounded-lg border p-4", tintMap[color].bg, tintMap[color].border, className)}>
+                {icon}
+                {/* The title's first line centres on the icon: the outline icon is a 20px box; the default
+                    colour's "modern" icon is 40px, so its text starts 10px lower. */}
+                <div className={cx("flex min-w-0 flex-1 flex-col gap-3", color === "default" && "md:pt-2.5")}>
+                    <div className="flex flex-col gap-1">
+                        <p className={cx("text-sm font-semibold text-balance text-secondary", onClose && "pr-8")}>{title}</p>
+                        {description && <p className={cx("text-sm text-balance text-tertiary", !wrap && "md:truncate")}>{description}</p>}
+                    </div>
+                    {actions}
+                </div>
+                {onClose && <CloseButton onClick={onClose} size="sm" label={dismissLabel} className="absolute top-2 right-2" />}
+            </div>
+        );
+    }
+
+    return (
+        <div className={cx("font-barlow relative border-t md:border-t-0 md:border-b", tone.bg, tone.border)}>
+            <div className={cx("mx-auto flex max-w-container flex-col gap-4 p-4 md:flex-row md:items-center md:gap-3 md:px-8 md:py-3", className)}>
+                <div className="flex flex-1 flex-col gap-4 md:w-0 md:flex-row md:items-center">
+                    {icon}
                     <div className="flex flex-col gap-0.5 overflow-hidden lg:flex-row lg:gap-1.5">
                         <p className={cx("pr-8 text-sm font-semibold text-secondary md:pr-0", wrap ? "lg:shrink-0 lg:whitespace-nowrap" : "md:truncate")}>{title}</p>
                         <p className={cx("text-sm text-tertiary", !wrap && "md:truncate")}>{description}</p>
@@ -211,19 +240,7 @@ export const AlertFullWidth = ({
 
                 {(onConfirm || onClose) && (
                     <div className="flex gap-2">
-                        <div className={cx("flex w-full gap-3", actionType === "button" ? "flex-col-reverse md:flex-row" : "flex-row")}>
-                            {onClose && !hideDismissButton && (
-                                <Button onClick={onClose} color={actionType === "button" ? "secondary" : "link-gray"} size="sm">
-                                    {dismissLabel}
-                                </Button>
-                            )}
-                            {onConfirm && (
-                                <Button onClick={onConfirm} color={actionType === "button" ? "primary" : "link-color"} size="sm">
-                                    {confirmLabel}
-                                </Button>
-                            )}
-                        </div>
-
+                        {actions}
                         {onClose && <CloseButton onClick={onClose} size="sm" label={dismissLabel} className="absolute top-2 right-2 shrink-0 md:static" />}
                     </div>
                 )}

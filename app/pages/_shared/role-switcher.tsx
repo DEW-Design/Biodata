@@ -15,10 +15,12 @@ import { USER_ROLES, type UserRole } from "@/lib/user-role";
 // short list rather than inferred from nav-tree membership - project-detail/observation-detail are
 // real, unrestricted pages with no nav key of their own, so "not a nav key" isn't the same signal
 // as "this role can't view it".
-const wholePageGates: { prefix: string; feature: FeatureKey }[] = [
+const wholePageGates: { prefix?: string; pattern?: RegExp; feature: FeatureKey }[] = [
   { prefix: "/pages/dsa", feature: "dsaManagement" },
   { prefix: "/pages/dla", feature: "dlaAccess" },
   { prefix: "/pages/user-management", feature: "userManagement" },
+  { prefix: "/pages/nominations", feature: "nominationAccess" },
+  { pattern: /^\/pages\/project-list\/[^/]+\/upload$/, feature: "datasetUpload" },
 ];
 
 // (Draggable via `FloatingMenuFab` - it used to be pinned bottom-right and sat on top of page
@@ -51,7 +53,7 @@ export function RoleSwitcher() {
     // switcher is a live preview tool, so it re-routes to Home instead. Flagged directly by the
     // user off a screenshot: switching to public-user while on a DSA record showed the restricted
     // page rather than taking them somewhere they could actually explore.
-    const isBlocked = wholePageGates.some(({ prefix, feature }) => pathname.startsWith(prefix) && !hasFeatureAccess(feature, role));
+    const isBlocked = wholePageGates.some(({ prefix, pattern, feature }) => (prefix ? pathname.startsWith(prefix) : pattern?.test(pathname)) && !hasFeatureAccess(feature, role));
     const targetPath = isBlocked ? "/pages/dashboard" : pathname;
     // A blocked redirect starts a clean query string (dropping e.g. DSA's own `?status=`) rather
     // than carrying params that mean nothing on the destination page.

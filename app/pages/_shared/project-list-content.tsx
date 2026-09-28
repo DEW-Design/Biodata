@@ -146,6 +146,11 @@ export function ProjectListContent() {
                 setSearch(value);
                 setPage(1);
               }}
+              onClear={() => {
+                setSearch("");
+                setPage(1);
+              }}
+              clearLabel="Clear search"
             />
           </div>
           <div>

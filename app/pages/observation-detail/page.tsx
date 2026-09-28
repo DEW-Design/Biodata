@@ -49,6 +49,7 @@ import { useRoleHref } from "@/lib/use-role-href";
 import { navForRole, keyHref, type NavNode } from "@/lib/registered-user-nav";
 import { cx } from "@/utils/cx";
 import { projectRecordTree, type RecordNode, type RecordType } from "@/app/pages/_shared/project-record-tree";
+import { projects as listProjects } from "@/app/pages/_shared/project-list-data";
 
 // One observation's viewing screen, on the sidebar-nav shell - same three-column chrome as
 // project-detail, forked from that file rather than shared with it (this codebase's own
@@ -296,12 +297,8 @@ function renderGroupedNode(n: RecordNode, currentKey: string): ReactNode {
 const recordChain = findRecordChain(projectRecordTree, CURRENT_RECORD_ID)!;
 const focusedExpandedKeys = recordChain.map((c) => c.id);
 
-const switcherProjects = [
-  { name: "Adelaide Hills Bushland Survey", href: "/pages/project-detail" },
-  { name: "Coorong Wetlands Bird Count" },
-  { name: "Flinders Ranges Reptile Atlas" },
-  { name: "Kangaroo Island Recovery Monitoring" },
-];
+// The same projects as the Projects list, each opening its own project page.
+const switcherProjects: { name: string; href?: string }[] = listProjects.map((p) => ({ name: p.name, href: p.href }));
 
 function ProjectSwitcher() {
   const roleHref = useRoleHref();
@@ -317,7 +314,7 @@ function ProjectSwitcher() {
       </AriaButton>
       <Popover size="auto" className="w-72 p-2">
         <Dialog className="outline-hidden">
-          <Input size="sm" placeholder="Find project…" icon={SearchMd} value={query} onChange={setQuery} />
+          <Input size="sm" placeholder="Find project…" icon={SearchMd} value={query} onChange={setQuery} onClear={() => setQuery("")} clearLabel="Clear search" />
           <div className="mt-1 flex max-h-60 flex-col overflow-y-auto">
             {filtered.length === 0 && <p className="px-2 py-2 text-sm text-tertiary">No projects found.</p>}
             {filtered.map((project) =>
@@ -958,6 +955,8 @@ function ObservationDetail() {
                       value={recordQuery}
                       onChange={setRecordQuery}
                       aria-label="Search records"
+                      onClear={() => setRecordQuery("")}
+                      clearLabel="Clear search"
                     />
                     {recordQuery && filteredRecordForest.length === 0 ? (
                       <div className="flex flex-col items-center gap-2 px-2 py-6 text-center">

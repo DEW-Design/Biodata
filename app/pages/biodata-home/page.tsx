@@ -252,7 +252,9 @@ const fredoka = Fredoka({ subsets: ["latin"], weight: ["500", "600"], variable: 
 const LANDING_ROLE: UserRole = "public-user";
 const publicUserHref = (path: string) => `${path}?userRole=${LANDING_ROLE}`;
 
-const EXPLORE_ROUTE = publicUserHref("/pages/project-list");
+// Explore is the records search (/pages/observations), the same place the header search sends a
+// species; the hero search carries what was typed there as `?q=`.
+const EXPLORE_ROUTE = publicUserHref("/pages/observations");
 const DASHBOARD_ROUTE = publicUserHref("/pages/dashboard");
 
 const NAV_LINKS: { label: string; href: string }[] = [
@@ -495,7 +497,8 @@ export default function BiodataHomePage() {
 
   const runSearch = (e: FormEvent) => {
     e.preventDefault();
-    router.push(EXPLORE_ROUTE);
+    const term = heroQuery.trim();
+    router.push(term ? `/pages/observations?q=${encodeURIComponent(term)}&userRole=${LANDING_ROLE}` : EXPLORE_ROUTE);
   };
 
   return (
@@ -525,7 +528,7 @@ export default function BiodataHomePage() {
 
           <div className="flex items-center gap-3">
             <Button color="secondary" size="sm" href="/pages/auth/login">
-              Login
+              Log in
             </Button>
             <Button color="secondary" size="sm" href="/pages/auth/signup">
               Sign up
@@ -583,6 +586,8 @@ export default function BiodataHomePage() {
                   placeholder='Try: "Red Kangaroo in Deep Creek National Park" or "Study on Rare Rodents"'
                   value={heroQuery}
                   onChange={setHeroQuery}
+                  onClear={() => setHeroQuery("")}
+                  clearLabel="Clear search"
                 />
               </div>
               <Button type="submit" color="primary" size="lg" iconTrailing={ArrowNarrowUpRight}>

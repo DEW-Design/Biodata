@@ -299,6 +299,33 @@ export default function AlertPage() {
               </div>
             </>
           )}
+
+          <h3 className="text-balance">Contained</h3>
+          <p className="text-balance">
+            Pass <code>contained</code> for an alert that sits among other content, such as a form or a record page: a rounded card with a border and a
+            background tinted by <code>color</code>. The card&apos;s look comes from the component; don&apos;t add border, background or padding classes.
+            Add <code>wrap</code> when the description is longer than a line.
+          </p>
+          <div className="flex flex-col gap-3">
+            <AlertFullWidth
+              contained
+              wrap
+              color="brand"
+              title="This species already has an open nomination"
+              description="NSS-2026-00004 was returned for more information."
+              confirmLabel="View nomination"
+              actionType="link"
+              onConfirm={() => {}}
+            />
+            <AlertFullWidth
+              contained
+              wrap
+              color="error"
+              title="Details missing"
+              description="Complete these to continue: Project name, Abstract, Start date."
+              confirmLabel=""
+            />
+          </div>
         </>
       )}
 

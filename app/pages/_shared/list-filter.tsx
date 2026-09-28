@@ -70,7 +70,7 @@ function FilterSectionBlock({ section, selected, onChange }: { section: FilterSe
   return (
     <div className="flex flex-col gap-2">
       <p className="text-xs font-semibold tracking-wide text-quaternary uppercase">{section.label}</p>
-      {searchable && <Input aria-label={`Search ${section.label.toLowerCase()}`} size="sm" icon={SearchMd} placeholder="Search" value={search} onChange={setSearch} />}
+      {searchable && <Input aria-label={`Search ${section.label.toLowerCase()}`} size="sm" icon={SearchMd} placeholder="Search" value={search} onChange={setSearch} onClear={() => setSearch("")} clearLabel="Clear search" />}
       <div className="flex flex-col gap-2">
         {options.map((o) => (
           <Checkbox key={o.id} label={o.label} isSelected={selected.has(o.id)} onChange={(checked) => toggle(o.id, checked)} />

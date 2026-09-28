@@ -90,10 +90,13 @@ export function formatEmbargoDuration(months: number): string {
 //   dateRange - Figma's "Select dates" pickers (Start/End Date), as a From/To pair
 //   text      - a free-text field (Permit number, storage location, Other)
 //   none      - the whole field is withheld, no value to pick (comments, attached images)
+//   areas     - a set of areas (drawn, uploaded, picked or entered) whose records are obscured; the
+//               caller renders the area editor under the row (`renderBelow`) and keeps the areas'
+//               ids in the row's `values`, so validity and labels still work here
 // Option lists are illustrative where Figma leaves the dropdown unpopulated ("Please Select"),
 // except where this build already has a real list (people, collection methods, institutions). ──
 
-export type ConceptValueType = "text" | "select" | "multi" | "boolean" | "dateRange" | "none";
+export type ConceptValueType = "text" | "select" | "multi" | "boolean" | "dateRange" | "none" | "areas";
 
 export interface ConceptOption {
     id: string;

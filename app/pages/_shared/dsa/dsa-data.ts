@@ -239,7 +239,7 @@ export const seedDsas: Dsa[] = [
   {
     id: "DSA-2025-01348",
     status: "active",
-    partner: "SA Museum",
+    partner: "South Australian Museum",
     purpose: "Monitoring biodiversity health, assessing threatened species distribution, and conducting collaborative regional ecology research.",
     validFrom: "2025-07-12",
     validTo: "2027-07-12",
@@ -256,7 +256,7 @@ export const seedDsas: Dsa[] = [
         scopes: ["species", "location"],
         canRead: true,
         canWrite: false,
-        org: { name: "SA Museum", ...person("Phoenix", "Baker", "example.org", "08 8207 7500") },
+        org: { name: "South Australian Museum", ...person("Phoenix", "Baker", "example.org", "08 8207 7500") },
         accessToken: SEED_ACCESS,
         refreshToken: SEED_REFRESH,
       },
@@ -342,7 +342,7 @@ export const seedDsas: Dsa[] = [
   {
     id: "DSA-2025-01290",
     status: "active",
-    partner: "Natural Resources Kangaroo Island",
+    partner: "Natural Resources KI",
     purpose: "Supply of island-wide occurrence data for fire recovery monitoring and threatened species management.",
     validFrom: "2025-05-20",
     validTo: "2027-05-19",
@@ -429,7 +429,7 @@ export const seedDsas: Dsa[] = [
   {
     id: "DSA-2026-01405",
     status: "under_review",
-    partner: "Natural Resources Kangaroo Island",
+    partner: "Natural Resources KI",
     purpose: "Sharing post-fire vegetation recovery transects to support a joint state-of-the-island report.",
     validFrom: "2026-10-15",
     validTo: "2028-10-14",
@@ -463,7 +463,7 @@ export const seedDsas: Dsa[] = [
   {
     id: "DSA-2026-01415",
     status: "approved",
-    partner: "SA Museum",
+    partner: "South Australian Museum",
     purpose: "Specimen collection metadata exchange to support a joint taxonomic reference project.",
     validFrom: "2026-12-01",
     validTo: "2028-11-30",

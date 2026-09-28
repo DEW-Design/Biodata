@@ -156,6 +156,11 @@ export function DsaListContent({
                 setSearch(value);
                 setPage(1);
               }}
+              onClear={() => {
+                setSearch("");
+                setPage(1);
+              }}
+              clearLabel="Clear search"
             />
           </div>
           {rows.length === 0 ? (
@@ -320,6 +325,11 @@ export function DsaAllList({ scope, initialStatuses = [], banner }: { scope: Agr
                 setSearch(v);
                 setPage(1);
               }}
+              onClear={() => {
+                setSearch("");
+                setPage(1);
+              }}
+              clearLabel="Clear search"
             />
           </div>
           <div>

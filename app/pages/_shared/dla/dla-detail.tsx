@@ -4,7 +4,9 @@ import { useState, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import type { Key } from "react-aria-components";
 import { parseDate } from "@internationalized/date";
-import { ArrowNarrowLeft, Download01, Edit05, Plus, SearchLg } from "@untitledui/icons";
+import { ArrowNarrowLeft, Download01, Edit05, PauseCircle, Plus, SearchLg, SlashCircle01, Trash01, CheckCircle } from "@untitledui/icons";
+import { RecordActionBar, type RecordAction } from "@/app/pages/_shared/record-action-bar";
+import { RecordBackLink, RecordHero } from "@/app/pages/_shared/record-hero";
 import { AlertFullWidth } from "@/components/application/alerts/alerts";
 import { Badge } from "@/components/base/badges/badges";
 import { Button } from "@/components/base/buttons/button";
@@ -132,7 +134,9 @@ function ApproveModal({ dla, isOpen, onOpenChange, onApprove }: { dla: Dla; isOp
     <FormModal
       isOpen={isOpen}
       onOpenChange={onOpenChange}
-      title="Approve Request"
+      icon={CheckCircle}
+      iconColor="success"
+      title="Approve request"
       description={
         willBeActiveNow
           ? "The start date has already arrived, so this request moves straight to Active."
@@ -208,7 +212,22 @@ export function DlaDetail({
   const canCancel = dla.status !== "closed" && dla.status !== "rejected" && dla.status !== "cancelled";
   const showAgreement = dla.status === "active" || dla.status === "closed";
   const isPendingReview = dla.status === "under_review" && canApprove;
-  const hasOtherAction = canEdit || (canApprove && (dla.status === "submitted" || dla.status === "under_review" || dla.status === "on_hold"));
+
+  // One primary (the next workflow step), the natural alternative beside it, everything else in the
+  // "More actions" menu (RecordActionBar). A requester with no workflow step still sees Edit.
+  const isReviewer = canApprove && (dla.status === "submitted" || dla.status === "under_review" || dla.status === "on_hold");
+  const editAction: RecordAction = { id: "edit", label: isDraft ? "Edit draft" : "Edit request", icon: Edit05, onPress: onEdit };
+  const actions: { primary?: RecordAction; secondary: RecordAction[]; menu: RecordAction[] } = { secondary: [], menu: [] };
+  if (isDraft) actions.primary = editAction;
+  else if (dla.status === "submitted" && canApprove) actions.primary = { id: "start", label: "Start review", onPress: onStartReview };
+  else if (dla.status === "under_review" && canApprove) actions.primary = { id: "approve", label: "Approve", onPress: () => setApproveOpen(true) };
+  else if (dla.status === "on_hold" && canApprove) actions.primary = { id: "resume", label: "Resume review", onPress: onResume };
+  if (showAgreement) actions.secondary.push({ id: "download", label: "Download PDF", icon: Download01, isDisabled: !dla.agreementFile, onPress: () => toast.brand("Download isn't wired up yet", { description: "Agreement files aren't stored in this preview, so there is no file to download." }) });
+  if (dla.status === "under_review" && canApprove) actions.secondary.push({ id: "reject", label: "Reject", onPress: () => setRejectOpen(true) });
+  if (canEdit && !isDraft) (isReviewer ? actions.menu : actions.secondary).push(editAction);
+  if (dla.status === "under_review" && canApprove) actions.menu.unshift({ id: "hold", label: "Put on hold", icon: PauseCircle, onPress: onHold });
+  if (isDraft) actions.menu.push({ id: "delete", label: "Delete draft", icon: Trash01, destructive: true, onPress: () => setCancelConfirm("delete") });
+  if (canCancel && !isDraft) actions.menu.push({ id: "cancel", label: "Cancel request", icon: SlashCircle01, destructive: true, onPress: () => setCancelConfirm("cancel") });
 
   // The gradient card's own "Agreement Period" never just says "Not set" for a request that
   // hasn't been granted yet - it falls back to what was actually requested, labelled as such, so
@@ -223,124 +242,58 @@ export function DlaDetail({
 
   return (
     <div className="flex min-h-0 flex-1 flex-col overflow-y-auto">
-      {/* Every action this page can take lives here, always visible, never behind a scroll - an
-          admin's whole reason for opening an Under Review request is to decide on it, so Approve/
-          Reject sit right where the identity card is, not after everything else on the page. */}
-      <div className="flex shrink-0 flex-wrap items-center justify-between gap-3 px-6 pt-6">
-        <Button color="link-gray" size="sm" iconLeading={ArrowNarrowLeft} href={roleHref(`/pages/dla?status=${dla.status}`)}>
-          Back to requests
-        </Button>
-        <div className="flex flex-wrap items-center gap-3">
-          {showAgreement && (
-            <Button
-              color="secondary"
-              iconLeading={Download01}
-              isDisabled={!dla.agreementFile}
-              onPress={() =>
-                toast.brand("Download isn't wired up yet", {
-                  description: "Agreement files aren't stored in this preview, so there is no file to download.",
-                })
-              }
-            >
-              Download PDF
-            </Button>
-          )}
-          {isDraft && (
-            <Button color="secondary-destructive" onPress={() => setCancelConfirm("delete")}>
-              Delete draft
-            </Button>
-          )}
-          {canEdit && (
-            <Button color="secondary" iconLeading={Edit05} onPress={onEdit}>
-              {isDraft ? "Edit draft" : "Edit request"}
-            </Button>
-          )}
-          {dla.status === "submitted" && canApprove && (
-            <Button color="primary" onPress={onStartReview}>
-              Start Review
-            </Button>
-          )}
-          {isPendingReview && (
-            <>
-              <Button color="secondary" onPress={onHold}>
-                Put On Hold
-              </Button>
-              <Button color="secondary-destructive" onPress={() => setRejectOpen(true)}>
-                Reject
-              </Button>
-              <Button color="primary" onPress={() => setApproveOpen(true)}>
-                Approve
-              </Button>
-            </>
-          )}
-          {dla.status === "on_hold" && canApprove && (
-            <Button color="primary" onPress={onResume}>
-              Resume Review
-            </Button>
-          )}
-          {canCancel && !isDraft && (
-            <Button color={hasOtherAction ? "secondary-destructive" : "link-destructive"} onPress={() => setCancelConfirm("cancel")}>
-              Cancel
-            </Button>
-          )}
-        </div>
-      </div>
+      {/* Laid out like the project page: a Back link, then the identity card with the actions at its
+          top right (the next step as a button, the rest in "..."), always in view. */}
+      <RecordBackLink href={roleHref("/pages/dla")}>Back to requests</RecordBackLink>
 
-      <div className="shrink-0 px-6 pt-4">
-        <div className="flex flex-col gap-4 rounded-2xl bg-gradient-to-b from-brand-900 via-brand-800 via-[63.942%] to-brand-700 p-6">
-          <div className="flex flex-col gap-1">
-            <p className="text-xs font-semibold tracking-wide text-white/70 uppercase">Data Licencing Agreement</p>
-            <h1 className="text-2xl font-medium text-white">{dla.id}</h1>
-          </div>
-          <div className="flex flex-wrap items-start gap-8">
-            <MetaField onDark label="Requestor">
-              {dla.requestor.organisation || "Not provided"}
-            </MetaField>
-            <MetaField onDark label="Agreement Period">
-              {periodSummary}
-            </MetaField>
-            <MetaField onDark label="Status">
-              <Badge size="sm" color={meta.badgeColor}>
-                {meta.label}
-              </Badge>
-            </MetaField>
-          </div>
-        </div>
-      </div>
+      <RecordHero eyebrow="Data Licencing Agreement" title={dla.id} actions={<RecordActionBar onDark {...actions} />}>
+        <MetaField onDark label="Requestor">
+          {dla.requestor.organisation || "Not provided"}
+        </MetaField>
+        <MetaField onDark label="Agreement Period">
+          {periodSummary}
+        </MetaField>
+        <MetaField onDark label="Status">
+          <Badge size="sm" color={meta.badgeColor}>
+            {meta.label}
+          </Badge>
+        </MetaField>
+      </RecordHero>
 
       {/* Neutral statements of fact, not addressed to "you" - this page is read by both the
           requester and (for Under Review) the admin who's about to act on it, and copy written in
           the requester's voice ("you'll be contacted") doesn't make sense for the latter. The
-          decision itself is the toolbar's Approve/Reject, not a banner telling the reader to wait. */}
-      <div className="shrink-0 px-6 pt-4">
-        {dla.status === "under_review" && (
+          decision itself is the card's Approve/Reject, not a banner telling the reader to wait; a
+          reviewer gets no Under Review banner, since the badge and the card's actions already say it. */}
+      <div className="shrink-0 px-6 pt-4 empty:hidden">
+        {dla.status === "under_review" && !isPendingReview && (
           <AlertFullWidth
             color="warning"
-            title="Under Review"
-            description={isPendingReview ? "This request needs a decision - see Put On Hold, Reject or Approve above." : "This request is being assessed. The requester will be notified once a decision is made."}
+            title="Under review"
+            description="This request is being assessed. The requester will be notified once a decision is made."
             confirmLabel="Noted"
             contained
-            className="max-w-none rounded-lg border border-warning-200 px-4 py-3 md:px-4"
+            wrap
           />
         )}
         {dla.status === "on_hold" && (
           <AlertFullWidth
             color="warning"
-            title="On Hold"
+            title="On hold"
             description={canApprove ? "This review is paused pending information from the requester. Resume once you have what you need." : "This request is on hold pending further information. You'll be notified once the review resumes."}
             confirmLabel="Noted"
             contained
-            className="max-w-none rounded-lg border border-warning-200 px-4 py-3 md:px-4"
+            wrap
           />
         )}
         {dla.status === "rejected" && (
           <AlertFullWidth
             color="error"
-            title="Request Rejected"
+            title="Rejected"
             description={dla.rejectionReason || "No reason was provided."}
             confirmLabel="Noted"
             contained
-            className="max-w-none rounded-lg border border-error-200 px-4 py-3 md:px-4"
+            wrap
           />
         )}
         {dla.status === "cancelled" && (
@@ -350,18 +303,18 @@ export function DlaDetail({
             description="This request was cancelled and is no longer active."
             confirmLabel="Noted"
             contained
-            className="max-w-none rounded-lg border border-secondary px-4 py-3 md:px-4"
+            wrap
           />
         )}
         {dla.status === "closed" && (
           <AlertFullWidth
-            color="warning"
-            title="Licence Closed"
+            color="gray"
+            title="Closed"
             description={dla.validTo ? `This agreement closed on ${formatShortDate(dla.validTo)}. Renew to continue accessing its data locations.` : "This agreement is closed. Renew to continue accessing its data locations."}
-            confirmLabel="Renew Licence"
+            confirmLabel="Renew licence"
             onConfirm={() => router.push(roleHref(`/pages/dla/new?renewFrom=${dla.id}`))}
             contained
-            className="max-w-none rounded-lg border border-warning-200 px-4 py-3 md:px-4"
+            wrap
           />
         )}
       </div>
@@ -406,7 +359,7 @@ export function DlaDetail({
                 <h2 className="text-sm font-semibold text-primary">Data Locations &amp; License Categories</h2>
                 {dla.status === "active" && (
                   <Button color="secondary" size="sm" iconLeading={Plus} onPress={() => setAddLocationOpen(true)}>
-                    Add Location
+                    Add location
                   </Button>
                 )}
               </div>
@@ -515,7 +468,7 @@ export function DlaNotFound({ id }: { id: string }) {
     <div className="flex flex-1 flex-col items-center justify-center gap-3 p-12 text-center">
       <h1 className="text-lg font-medium text-primary">Request not found</h1>
       <p className="max-w-sm text-sm text-balance text-tertiary">
-        There is no request {id}. In this preview, requests you create are kept only until the page is reloaded.
+        There is no request {id}. It may have been deleted, or created in another browser.
       </p>
       <Button color="link-color" size="sm" href={roleHref("/pages/dla")} iconLeading={ArrowNarrowLeft}>
         Back to requests

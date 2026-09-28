@@ -8,20 +8,23 @@ import type { UserRole } from "@/lib/user-role";
 // public-user is deliberately not filtered here: a guest sees the same "Add" button and gets the
 // sign-up invite instead of a menu (see `CreateMenu`), so nothing they could create is hidden.
 
-export type CreateItemId = "project" | "dla" | "dsa" | "user";
+export type CreateItemId = "project" | "dataset" | "dla" | "nomination" | "dsa" | "user";
 
 export interface CreateMenuItem {
   id: CreateItemId;
   label: string;
-  /** Where picking it goes. The active `userRole` is carried forward by `useRoleHref`. */
-  href: string;
+  /** Where picking it goes. The active `userRole` is carried forward by `useRoleHref`. Omit when the
+   *  item needs a choice first: Dataset asks which project, which `CreateMenu` handles itself. */
+  href?: string;
   /** Omit for an item every signed-in persona gets. */
   feature?: FeatureKey;
 }
 
 export const createMenuItems: CreateMenuItem[] = [
   { id: "project", label: "Project", href: "/pages/project-registration" },
+  { id: "dataset", label: "Dataset", feature: "datasetUpload" },
   { id: "dla", label: "Data licence request (DLA)", href: "/pages/dla/new", feature: "dlaAccess" },
+  { id: "nomination", label: "Sensitive species nomination", href: "/pages/nominations/new", feature: "nominationAccess" },
   { id: "dsa", label: "Data sharing agreement (DSA)", href: "/pages/dsa/new", feature: "dsaManagement" },
   { id: "user", label: "User", href: "/pages/user-management/users/new", feature: "userManagement" },
 ];

@@ -16,7 +16,7 @@ import { TextArea } from "@/components/base/textarea/textarea";
 import { FormPage } from "@/app/pages/_shared/form-page";
 import { FormSectionList, FormSidebar, deriveSectionStatus } from "@/app/pages/_shared/form-section-list";
 import { FormRow } from "@/app/pages/_shared/form-row";
-import { ConfirmationModal, DestructiveModal } from "@/components/application/modals/modal";
+import { DestructiveModal } from "@/components/application/modals/modal";
 import {
   dsaScopeOptions,
   dsaStatusMeta,
@@ -469,13 +469,18 @@ export function DsaForm({
 )}
         </FormPage>
 
-      <ConfirmationModal
+      <DestructiveModal
         isOpen={confirmBack}
         onOpenChange={setConfirmBack}
         title="Discard your changes?"
-        description="You have unsaved changes to this agreement. Going back will lose them."
+        description={isEditingLive ? "You have unsaved changes to this agreement. Leaving now will lose them." : "You have unsaved changes to this agreement. Save a draft to keep them, or discard them."}
         confirmLabel="Discard changes"
         cancelLabel="Keep editing"
+        secondaryLabel={isEditingLive ? undefined : "Save draft"}
+        onSecondary={() => {
+          setConfirmBack(false);
+          saveDraft();
+        }}
         onConfirm={() => {
           setConfirmBack(false);
           onBack();

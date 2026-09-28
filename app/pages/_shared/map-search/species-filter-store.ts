@@ -15,15 +15,8 @@ import type { LicenceLevel } from "./search-data";
 //   instances (methods like `.compare()`/`.add()`, not just plain data) - round-tripping them
 //   through JSON and rebuilding real instances on read is a second, separate problem from the
 //   plain-string Sets below, and this feature doesn't need it to be useful.
-// - The search areas themselves (drawn shapes, park picks, uploaded shapefiles -
-//   `manualBoundaries`/`selectedParkIds`/`shapefileLayers` in observations-search.tsx) are NOT
-//   persisted here either, on purpose. That state is tightly wound around this page's own
-//   `?q=`-from-the-header-search reset logic (see that file's "A new `?q=` ... replaces the
-//   current search" block) and Leaflet's own map lifecycle - after 25+ rounds of hard-won fixes to
-//   that exact file (see CONTEXT.md), reworking it to rehydrate from localStorage on top of that
-//   existing render-time reset logic is real, separate work, not a drop-in. Without it, a filter
-//   restored here has nothing to apply to until the user re-runs a search - an honest limitation,
-//   not a bug, until that follow-up is asked for.
+// - The search areas, keyword and tab are saved too, in their own store
+//   (explore-search-store.ts, added Sept 28 2026), so a restored filter has a search to apply to.
 // - `activeGroup`/`tableSearch`/`panelOpen`/`openSections`/`familySearch`/`speciesSearch` are
 //   transient UI state (which tile is active, what's mid-typing, whether a panel happens to be
 //   open) - the same "persist the real selections, not incidental UI state" call dsa-store.ts and

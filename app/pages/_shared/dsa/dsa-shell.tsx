@@ -69,7 +69,7 @@ function ScopeNav() {
           downloadCsv(
             "data-sharing-agreements.csv",
             ["ID", "Data partner", "Status", "Valid to"],
-            dsas.map((d) => [d.id, d.partner, dsaStatusMeta[d.status].tabLabel, d.validTo]),
+            dsas.map((d) => [d.id, d.partner, dsaStatusMeta[d.status].label, d.validTo]),
           )
         }
       />

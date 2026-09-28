@@ -268,6 +268,20 @@ components, build, QA, document.
 A component MUST render identically inside and outside `.prose-doc`. Headings and paragraphs inside a
 component carry explicit `!` overrides where the doc-site globals would otherwise leak in.
 
+### §2.8 Floating panels never overlap
+
+Two floating elements on the same surface (map controls, a summary card, a map key, a search card,
+the map's scale bar and attribution) MUST NOT cover each other, at any window size.
+
+- MUST lay out floating panels that share a surface in one layout (a flex column or row), not
+  position each one on its own with offsets that only work at one size.
+- A panel that can grow (a card with a photo, a results list) MUST be height-bounded by that layout
+  and scroll inside itself; its primary action stays reachable.
+- Where there is not room for panels side by side, they stack; they never overlap.
+- **Exception:** the floating dev tools (§3.8) are draggable and are not product layout.
+- **Origin:** Explore option 2's record summary card grew down over the "Species group" map key.
+- **Enforcement:** `REVIEW` (a live pass measuring panel boxes at several window sizes, §0.6 item 4).
+
 ---
 
 ## PART IV - THE SHELL (persona-consistent)
@@ -322,6 +336,20 @@ The role switcher and the options control are `FloatingMenuFab`s: draggable, abo
 Modals and slide-over panels sit above them (`z-[20000]`, `lib/layers.ts`): a modal covers everything,
 the dev tools included.
 
+### §3.10 Column 2 is navigation and actions only
+
+The contextual sidebar (column 2) holds where you are and what you can do from here: a section label, a
+list or tree or scope switch that moves you around, the Actions group (export, report), and the footer
+links. It MUST NOT hold information: no explanatory copy, no steps or explainers, no alerts, task cards
+or accordions. Information sits in main, above the content it explains.
+
+- **Exception:** the public-user (signed-out visitor) column 2, which explains what BioData SA is and
+  points to guides (`GuestAboutAside`). No other persona and no other screen.
+- **Origin:** the nominations list put a "How a nomination is reviewed" steps explainer in column 2.
+- **Enforcement:** `AUTO §3.10` (an `<aside>` in `app/pages` containing a heading, Progress steps, alert,
+  accordion or task card, except the public-user file). It catches structural information only; prose in
+  a plain paragraph is `REVIEW`.
+
 ### §3.9 Navigation order
 
 `lib/nav.ts` `Components` and `config/design-system.config.ts` keys are strictly A-Z. A new entry is
@@ -338,8 +366,8 @@ Every create or edit form (Add Project option 2, DSA, DLA, and any new one) MUST
 (`app/pages/_shared/form-page.tsx`) with fields laid out in `<FormRow>`. Documented at `/patterns/forms`.
 
 1. **Header:** an optional eyebrow, the title (with a status badge for an existing record), a one-line
-   subtitle, and the header actions **Cancel** and **Save draft**. Save draft is omitted when a draft makes
-   no sense (editing a live record).
+   subtitle, and one **close button (X)** at the top right (`CloseButton`, labelled "Close form"): the way out
+   of the form. The header describes the step; it MUST NOT hold any other action.
 2. **Sections live in column 2.** A form with more than about two or three field groups is split into
    sections, and the sections are listed in the contextual sidebar as a `FormSectionList` (rendered into the
    shell through `FormSidebar`), which is the real **vertical Progress steps** component
@@ -357,11 +385,13 @@ Every create or edit form (Add Project option 2, DSA, DLA, and any new one) MUST
    arriving at it never shows it in red. The one exception is Submit, which checks the whole form. Column 2 marks the sections that still need attention, with a
    count. The alert and the inline errors are the only feedback; MUST NOT add a second message for the
    same fact.
-5. **Footer:** **Back a step** (secondary, left arrow icon) on the left, hidden on the first section. The
-   primary action on the right: **Continue** (right arrow icon) to move on, or the final action (**Submit**,
-   **Create project**, **Save changes**) on the last section. 
-6. **Leaving:** Cancel asks before discarding unsaved changes (`ConfirmationModal`), and says what will be
-   lost.
+5. **Footer:** every action, where the task ends. **Back a step** (secondary, left arrow icon) on the left,
+   hidden on the first section. On the right, **Save draft** (secondary), then the primary action:
+   **Continue** (right arrow icon) to move on, or the final action (**Submit**, **Create project**, **Save
+   changes**) on the last section. Save draft is omitted when a draft makes no sense (editing a live record).
+   Toasts are lifted clear of this footer everywhere (`TOAST_OFFSET`), so they never cover its buttons.
+6. **Leaving:** the close button asks before discarding unsaved changes (`ConfirmationModal`), and says
+   what will be lost.
 7. **Controls:** real DEW components only (`Input`, `TextArea`, `Select`, `MultiSelect`, `RadioGroup`,
    `Checkbox`, `Accordion`). No bespoke choice tiles.
 8. **Draft:** a draft needs only what identifies the record; submit validates the rest.
@@ -412,6 +442,23 @@ explored. When a direction is chosen the others are deleted. A comparison is pre
 `/test-*` screens prove a Figma frame maps onto the library: every contained widget is real or `<Gap>`,
 they ship the token inspector, and their own content is Barlow. `/pages/*` screens have none of that
 apparatus.
+
+### §4.6 Record pages follow the project page
+
+Every record page (a project, a DLA, a DSA, a nomination, a user, role or permission, and any new
+record) is laid out like the project page (`/pages/project-detail`):
+
+1. A Back link on its own above the card (`RecordBackLink`).
+2. The gradient identity card (`RecordHero`): eyebrow, title, a row of label/value facts, and the
+   record's actions at its top right (`RecordActionBar onDark`): one button for the next step, every
+   other action in the "..." menu, destructive ones below a divider.
+3. Optionally, one notice saying where the record stands and who acts next.
+4. Underline `Tabs`, each panel a bordered card of label/value rows (`RecordRow`).
+
+- MUST NOT put a record's actions in a bar above the card, or stack its content without tabs.
+- **Origin:** the nomination record page shipped with its actions above the card and no tabs, after
+  the designer had already asked for every record page to follow the project page.
+- **Enforcement:** `REVIEW`.
 
 ---
 

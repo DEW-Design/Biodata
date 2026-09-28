@@ -207,25 +207,24 @@ function TreeNode({ node, currentKey }: { node: EventTreeNode; currentKey: strin
       <TreeView.ItemContent icon={Icon} className={highlight}>
         {node.event.name}
       </TreeView.ItemContent>
+      {/* Occurrence > Observation: each occurrence parents its one observation, never a sibling. */}
       {node.occurrences.map((o) => {
         const oKey = `occurrence-${o.id}`;
         const OIcon = occurrenceTypeIcon[o.type];
+        const ob = node.observations.find((x) => x.occurrenceId === o.id);
+        const obKey = ob ? `observation-${ob.id}` : null;
         return (
           <TreeView.Item key={oKey} id={oKey} textValue={`Occurrence ${o.commonName}`}>
             <TreeView.ItemContent icon={OIcon} className={oKey === currentKey ? "bg-brand-50 text-brand-secondary" : undefined}>
               {`Occurrence · ${o.commonName}`}
             </TreeView.ItemContent>
-          </TreeView.Item>
-        );
-      })}
-      {node.observations.map((o) => {
-        const obKey = `observation-${o.id}`;
-        const OIcon = occurrenceTypeIcon[o.type];
-        return (
-          <TreeView.Item key={obKey} id={obKey} textValue={`Observation ${o.commonName}`}>
-            <TreeView.ItemContent icon={OIcon} className={obKey === currentKey ? "bg-brand-50 text-brand-secondary" : undefined}>
-              {`Observation · ${o.commonName}`}
-            </TreeView.ItemContent>
+            {ob && obKey && (
+              <TreeView.Item key={obKey} id={obKey} textValue={`Observation ${ob.commonName}`}>
+                <TreeView.ItemContent icon={occurrenceTypeIcon[ob.type]} className={obKey === currentKey ? "bg-brand-50 text-brand-secondary" : undefined}>
+                  {`Observation · ${ob.commonName}`}
+                </TreeView.ItemContent>
+              </TreeView.Item>
+            )}
           </TreeView.Item>
         );
       })}
@@ -283,7 +282,7 @@ export function RecordsView({
   return (
     <div className="flex flex-col gap-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <Input icon={SearchLg} placeholder="Search this project's records…" value={query} onChange={setQuery} className="max-w-md flex-1" />
+        <Input icon={SearchLg} placeholder="Search this project's records…" value={query} onChange={setQuery} className="max-w-md flex-1" onClear={() => setQuery("")} clearLabel="Clear search" />
         <div className="flex shrink-0 items-center gap-1 rounded-lg border border-secondary bg-secondary p-1">
           <button
             type="button"

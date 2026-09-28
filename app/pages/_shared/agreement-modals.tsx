@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useState, type FC } from "react";
+import { XCircle } from "@untitledui/icons";
 import { TextArea } from "@/components/base/textarea/textarea";
 import { FormModal } from "@/components/application/modals/modal";
 
@@ -8,7 +9,33 @@ import { FormModal } from "@/components/application/modals/modal";
 // step (see agreement-status.ts), and the reject reason is the same shape either way: a required
 // free-text explanation. Previously duplicated as DLA's own `RejectModal`; DSA needed the identical
 // thing once it gained the same review step, so this is the one shared version both import.
-export function RejectModal({ id, isOpen, onOpenChange, onReject }: { id: string; isOpen: boolean; onOpenChange: (open: boolean) => void; onReject: (reason: string) => void }) {
+export function RejectModal({
+  id,
+  isOpen,
+  onOpenChange,
+  onReject,
+  title = "Reject Request",
+  description,
+  submitLabel = "Confirm Rejection",
+  fieldLabel = "Rejection Reason",
+  placeholder = "Enter a description…",
+  icon = XCircle,
+  iconColor = "error",
+}: {
+  id: string;
+  isOpen: boolean;
+  onOpenChange: (open: boolean) => void;
+  onReject: (reason: string) => void;
+  /** The copy below is optional so the same "a reason is required" modal serves other decisions (a nomination returned for more information). */
+  title?: string;
+  description?: string;
+  submitLabel?: string;
+  fieldLabel?: string;
+  placeholder?: string;
+  /** The featured icon above the title (Untitled UI's form modals always carry one). */
+  icon?: FC<{ className?: string }>;
+  iconColor?: "error" | "gray" | "warning";
+}) {
   const [reason, setReason] = useState("");
   const [attempted, setAttempted] = useState(false);
 
@@ -22,9 +49,11 @@ export function RejectModal({ id, isOpen, onOpenChange, onReject }: { id: string
         }
         onOpenChange(open);
       }}
-      title="Reject Request"
-      description={`Provide a reason for rejecting ${id}`}
-      submitLabel="Confirm Rejection"
+      icon={icon}
+      iconColor={iconColor}
+      title={title}
+      description={description ?? `Provide a reason for rejecting ${id}`}
+      submitLabel={submitLabel}
       size="sm"
       onSubmit={() => {
         setAttempted(true);
@@ -33,10 +62,10 @@ export function RejectModal({ id, isOpen, onOpenChange, onReject }: { id: string
       }}
     >
       <TextArea
-        label="Rejection Reason"
+        label={fieldLabel}
         isRequired
         rows={3}
-        placeholder="Enter a description…"
+        placeholder={placeholder}
         value={reason}
         onChange={setReason}
         isInvalid={attempted && !reason.trim()}

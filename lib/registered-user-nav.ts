@@ -12,10 +12,11 @@ import type { UserRole } from "@/lib/user-role";
 export const DSA_SECTION_LABEL = "Data Sharing Agreement (DSA)";
 export const DLA_SECTION_LABEL = "Data Licencing Agreement (DLA)";
 export const USER_MANAGEMENT_SECTION_LABEL = "User Management";
+export const NOMINATION_SECTION_LABEL = "Nominate Sensitive Species";
 
 export interface NavNode {
   label: string;
-  key?: "dashboard" | "project-list" | "observations" | "dsa" | "dla" | "user-management";
+  key?: "dashboard" | "project-list" | "observations" | "dsa" | "dla" | "nominations" | "user-management";
   items?: NavNode[];
 }
 
@@ -73,10 +74,10 @@ export const registeredUserNav: NavNode[] = [
   // (DLA)". Not in `publicUserNav` below - a signed-out guest has no DLA of their own to request or
   // manage, same reasoning as DSA being admin-only.
   { label: DLA_SECTION_LABEL, key: "dla" },
-  {
-    label: "Nominate Sensitive Species",
-    items: [{ label: "Nominate Sensitive Species" }],
-  },
+  // A keyed leaf like DLA: /pages/nominations lists the person's own nominations (the panel sees
+  // them all), "Nominate a new species" starts one, a row opens its record. See CONTEXT.md,
+  // "Nominate Sensitive Species".
+  { label: NOMINATION_SECTION_LABEL, key: "nominations" },
   {
     label: "Reports (Own Submissions)",
     items: [{ label: "Application and System Reports" }],
