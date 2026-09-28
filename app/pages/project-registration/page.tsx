@@ -44,7 +44,7 @@ import { Step2DataCollection } from "./step-2-data-collection";
 import { Step3PrivacyRestrictions, isStep3Valid } from "./step-3-privacy-restrictions";
 import { SuccessScreen } from "./success-screen";
 import { initialProjectDetails, initialDataCollection, initialRestrictions } from "./types";
-import { RoleSwitcher } from "@/app/pages/_shared/role-switcher";
+import { PrototypeTools } from "@/app/pages/_shared/prototype-tools/prototype-tools";
 import { RegistrationLayoutSwitcher } from "./layout-switcher";
 
 function GuestGate() {
@@ -102,7 +102,7 @@ function ProjectRegistrationForm() {
         return (
             <>
                 <GuestGate />
-                <RoleSwitcher />
+                <PrototypeTools />
                 <RegistrationLayoutSwitcher current="option-1" />
             </>
         );
@@ -122,7 +122,7 @@ function ProjectRegistrationForm() {
 
     return (
         <div className="font-barlow min-h-screen w-full bg-secondary">
-            <RoleSwitcher />
+            <PrototypeTools />
             <RegistrationLayoutSwitcher current="option-1" />
             <AppHeader
               section={

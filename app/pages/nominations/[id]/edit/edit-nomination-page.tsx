@@ -36,7 +36,7 @@ function EditNomination() {
     <NominationShell breadcrumbCurrent={`Edit ${id}`} formSidebar>
       {nomination && !editable ? (
         <div className="flex flex-1 flex-col items-center justify-center gap-3 p-12 text-center">
-          <h1 className="text-lg font-medium text-primary">This nomination can&apos;t be edited</h1>
+          <h1 className="text-lg font-semibold text-primary">This nomination can&apos;t be edited</h1>
           <p className="max-w-sm text-sm text-balance text-tertiary">Only the nominator can edit a nomination, and only before the panel starts its review or after it is returned for more information.</p>
           <Button color="link-color" size="sm" href={detailHref} iconLeading={ArrowNarrowLeft}>
             Back to {nomination.id}

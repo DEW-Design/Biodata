@@ -652,7 +652,7 @@ export function UmNotFound({ kind, id, backHref }: { kind: "user" | "role" | "pe
   const roleHref = useRoleHref();
   return (
     <div className="flex flex-1 flex-col items-center justify-center gap-3 p-12 text-center">
-      <h1 className="text-lg font-medium text-primary">{kind[0]!.toUpperCase() + kind.slice(1)} not found</h1>
+      <h1 className="text-lg font-semibold text-primary">{kind[0]!.toUpperCase() + kind.slice(1)} not found</h1>
       <p className="max-w-sm text-sm text-balance text-tertiary">There is no {kind} {id}. Records you add are kept in this browser only.</p>
       <Button color="link-color" size="sm" href={roleHref(backHref)} iconLeading={ArrowNarrowLeft}>
         Back to {kind}s

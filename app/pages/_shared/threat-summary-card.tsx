@@ -27,7 +27,7 @@ export function ThreatSummaryCard({ summary, isPinned, onTogglePin }: { summary:
   return (
     <BentoCard className="flex-1">
       <div className="flex items-start justify-between gap-2">
-        <h2 className="text-sm font-medium text-primary">{title}</h2>
+        <h2 className="text-sm font-semibold text-primary">{title}</h2>
         <button
           type="button"
           onClick={onTogglePin}

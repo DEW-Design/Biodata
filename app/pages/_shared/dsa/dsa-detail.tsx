@@ -87,7 +87,7 @@ function ContactCard({ title, orgLabel, contact }: { title: string; orgLabel?: s
   return (
     <BentoCard className="flex-1">
       <div className="flex flex-col gap-0.5">
-        <h2 className="text-sm font-medium text-primary">{title}</h2>
+        <h2 className="text-sm font-semibold text-primary">{title}</h2>
         {orgLabel && <p className="text-sm text-tertiary">{orgLabel}</p>}
       </div>
       <div className="flex flex-col gap-1 border-t border-secondary pt-4">
@@ -483,7 +483,7 @@ export function DsaNotFound({ id }: { id: string }) {
   const roleHref = useRoleHref();
   return (
     <div className="flex flex-1 flex-col items-center justify-center gap-3 p-12 text-center">
-      <h1 className="text-lg font-medium text-primary">Agreement not found</h1>
+      <h1 className="text-lg font-semibold text-primary">Agreement not found</h1>
       <p className="max-w-sm text-sm text-balance text-tertiary">
         There is no agreement {id}. It may have been deleted, or created in another browser.
       </p>

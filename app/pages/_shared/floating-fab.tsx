@@ -6,8 +6,10 @@ import { Button as AriaButton } from "react-aria-components";
 import { Dropdown } from "@/components/base/dropdown/dropdown";
 import { cx } from "@/utils/cx";
 
-// The floating dev-tool button behind `RoleSwitcher` and `LayoutOptionSwitcher`: a round FAB that
-// opens a menu, and can be dragged anywhere on screen. Fixed corners kept landing on top of page
+// A round, draggable dev-tool button that opens a menu. The product screens no longer use it: their
+// preview tools live on the Prototype tools bar (prototype-tools/, 29 Sept 2026). It remains for the
+// /proto/dataset-ingestion lab's own controls, and can go when that lab does.
+// Originally the button behind the role switcher and layout options, and can be dragged anywhere on screen. Fixed corners kept landing on top of page
 // controls (a form's Continue button, a table's pagination), and a padding hack on every footer to
 // dodge them is the wrong fix - so the person previewing moves the button instead. The position
 // (offset from the right and bottom edges, so it survives a window resize) is remembered per FAB

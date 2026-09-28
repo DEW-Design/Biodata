@@ -16,7 +16,7 @@ import { sectionIcons } from "@/app/pages/_shared/nav-icons";
 import { AppHeader } from "@/app/pages/_shared/app-header";
 import { FormSidebarSlotContext } from "@/app/pages/_shared/form-section-list";
 import { MobileNavTrigger } from "@/app/pages/_shared/mobile-nav";
-import { RoleSwitcher } from "@/app/pages/_shared/role-switcher";
+import { PrototypeTools } from "@/app/pages/_shared/prototype-tools/prototype-tools";
 import { useFeatureAccess } from "@/lib/use-feature-access";
 import { useRoleHref } from "@/lib/use-role-href";
 import { useUserRole } from "@/lib/use-user-role";
@@ -37,7 +37,7 @@ function SectionPlaceholder({ node }: { node: NavNode }) {
   const roleHref = useRoleHref();
   return (
     <div className="flex flex-1 flex-col items-center justify-center gap-3 p-12 text-center">
-      <h1 className="text-lg font-medium text-primary">{node.label}</h1>
+      <h1 className="text-lg font-semibold text-primary">{node.label}</h1>
       <p className="max-w-sm text-sm text-tertiary">
         {relatedLink ? "This section has its own page - it isn't embedded here." : "This section's content hasn't been scoped yet - only its place in the navigation is decided so far."}
       </p>
@@ -113,7 +113,7 @@ export function NominationShell({
   else if (!canAccess)
     main = (
       <div className="flex flex-1 flex-col items-center justify-center gap-3 p-12 text-center">
-        <h1 className="text-lg font-medium text-primary">{NOMINATION_SECTION_LABEL}</h1>
+        <h1 className="text-lg font-semibold text-primary">{NOMINATION_SECTION_LABEL}</h1>
         <p className="max-w-sm text-sm text-balance text-tertiary">Nominating a sensitive species needs a free BioData SA account. Create one to nominate a species and follow its review.</p>
         <Button color="link-color" size="sm" href={roleHref("/pages/dashboard")} iconTrailing={ArrowNarrowRight}>
           Go to Home
@@ -123,7 +123,7 @@ export function NominationShell({
 
   return (
     <div className="font-barlow flex h-screen flex-col overflow-hidden">
-      <RoleSwitcher />
+      <PrototypeTools />
       <AppHeader
         mobileNav={
           <MobileNavTrigger

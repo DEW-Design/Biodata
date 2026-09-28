@@ -79,6 +79,9 @@ A change to `components/**`, a page, a token, or a `/test-*` screen is done only
 5. A sibling grep: the same bug pattern searched for in every file that shares the pattern.
 6. A dated entry appended to `CONTEXT.md` (append-only, no em-dashes).
 7. `git status` after any CLI ingest: a CLI run can silently revert already-fixed files.
+8. Typography QA (§2.9), on any change that adds or changes visible text: `/emil-typography` and
+   `/emil-design-foundations` ran, after the type was checked against the design system and the
+   patterns already on the web app. The report names what was checked and what was measured.
 
 - **Enforcement:** `REVIEW` (item 3 is `AUTO`).
 
@@ -224,8 +227,23 @@ Colour, spacing, radius, shadow and type come from the `--ui-*` layer in `app/gl
   `bg-quaternary`, `bg-border-secondary`, `border-secondary_hover`, `border-l-brand-solid`,
   `border-error-subtle`, `selected:` variants, `ring-offset-bg-primary`. Add the utility to `globals.css`
   first if it is genuinely needed.
-- **Enforcement:** `AUTO §2.1` (known-dead classes and hard-coded colours, ratcheted against
-  `contracts/baseline.json`: existing debt may not grow).
+- **Every colour primitive traces to Figma, not invention.** `app/globals.css`'s `--color-*` scales
+  MUST match the real "DS - Foundations" Figma file's Colors page (`llQ4DndM7U0la4qg6MttC5`, node
+  `5225:371288`) exactly, recorded in `contracts/figma-colours.json`. A primitive that drifts from
+  that reference is fixed at the token the moment it's found, not left - `--color-gray-950` carried
+  Untitled UI's stock value for weeks with no real value to check it against; fixed 29 Sept 2026 once
+  one existed, and both doc pages that had copied its old hex as documentation text were fixed in the
+  same sibling grep. MUST NOT invent a hex value, approximate one by eye, or bring in a whole new
+  named palette Figma documents but nothing yet uses (e.g. Flinders Violet, Horizon Blue) as a side
+  effect of building a screen - that's a designer decision, same tier as a new component (§1.4).
+- **A hardcoded colour that matches nothing in `contracts/figma-colours.json` at all was invented, not
+  just mis-placed** - a harder violation than hardcoding a real token's value inline. Exempt:
+  `components/foundations/payment-icons/**`, third-party payment-brand logos whose hex is each
+  brand's own trademark, not a DEW colour choice.
+- **Enforcement:** `AUTO §2.1a` (known-dead classes), `AUTO §2.1b` (hard-coded colour, ratcheted
+  against `contracts/baseline.json`: existing debt may not grow), `AUTO §2.1c` (a primitive drifted
+  from `contracts/figma-colours.json` - hard, never ratcheted), `AUTO §2.1d` (a colour literal
+  matching nothing in `contracts/figma-colours.json` - ratcheted).
 
 ### §2.2 Typefaces
 
@@ -282,6 +300,34 @@ the map's scale bar and attribution) MUST NOT cover each other, at any window si
 - **Origin:** Explore option 2's record summary card grew down over the "Species group" map key.
 - **Enforcement:** `REVIEW` (a live pass measuring panel boxes at several window sizes, §0.6 item 4).
 
+### §2.9 Type hierarchy
+
+A correct type hierarchy is non-negotiable and is right the first time. An agent MUST NOT generate a
+type layer: a size, weight, colour, case, tracking or line-height combination that no source has
+already defined. Every piece of text takes its treatment from the first of these that answers, in this
+order, and the order is not skipped:
+
+1. **The design system.** The `/primitives/typography` scale and weights, the text colour tokens, and the
+   text the component itself already sets (`SectionHeader.Heading`, `Badge`, `Table.Head`, `HintText`,
+   `Label`). Text inside a real component is never restyled at the call site (§1.9).
+2. **Patterns already on the web app.** Find the sibling that plays the same role (a popover title, a
+   card heading, a field hint, a table cell, a count) and copy its classes exactly. One role has one
+   treatment everywhere: the same role MUST NOT be medium in one place and semibold in another.
+3. **Emil's skills.** `/emil-typography` and `/emil-design-foundations` judge the result: hierarchy
+   (one focal point, everything else recedes), scale steps, weights, tabular numbers on changing
+   figures, `text-balance`, line length, contrast, and sentence case.
+
+- If all three are silent, ask one precise question (§0.4). MUST NOT invent a layer to fill the gap.
+- Every change that adds or changes visible text runs both skills as part of QA (§0.6 item 8), with
+  computed styles measured in a live browser (`getComputedStyle`, not the class list): family, size,
+  weight, colour and contrast, tabular figures where a number changes.
+- The report says which design system entry and which existing pattern each new layer was taken from.
+  A layer with no source named is a violation, however good it looks.
+- **Origin:** the ingestion popover's tree-card heading was medium where its sibling popover heading
+  was semibold; a small "where" line sat between two larger lines and broke the hierarchy; `TextArea`
+  rendered 16px beside a 14px `Input`; the typography docs and the components disagree on caption weight.
+- **Enforcement:** `REVIEW` (the two skills at §0.6 item 8); `AUTO §2.1` already fails the dead `text-md`.
+
 ---
 
 ## PART IV - THE SHELL (persona-consistent)
@@ -331,10 +377,17 @@ always exists and always says something about where you are.
 
 ### §3.8 Floating dev tools
 
-The role switcher and the options control are `FloatingMenuFab`s: draggable, above every map overlay
-(`z-[10000]`), and MUST NOT be compensated for with padding or margin in product layout.
-Modals and slide-over panels sit above them (`z-[20000]`, `lib/layers.ts`): a modal covers everything,
-the dev tools included.
+The preview controls (the role, a screen's layout options, a simulated run's outcome) live on one bar,
+the Prototype tools (`app/pages/_shared/prototype-tools/`), mounted once per screen as `<PrototypeTools />`:
+draggable, above every map overlay (`z-[10000]`), and MUST NOT be compensated for with padding or margin
+in product layout. Modals and slide-over panels sit above it (`z-[20000]`, `lib/layers.ts`): a modal covers
+everything, the dev tools included.
+
+- A tool shows only where it applies: the role is always there, and any other tool is added by the code
+  that owns it (`useRegisterTool`), only while it is on screen and has something to do. MUST NOT add a
+  separate floating button for a preview control, or show a tool on a screen where it does nothing.
+- The bar is Scaffold (§1.5): Geist, react-aria primitives, never DEW components, and coloured in Flinders
+  Violet so it never reads as part of the product.
 
 ### §3.10 Column 2 is navigation and actions only
 
@@ -479,6 +532,19 @@ without being asked, or commit without being asked. Commit messages end with the
 A component has a doc page in the template order (Playground, Variants, API from the real interface,
 Usage, Figma). A pattern has a doc page under `/patterns`. Docs and the README table stay 1:1 with
 `lib/nav.ts`.
+
+### §5.4 Labs never ship
+
+`app/proto/**` is where screens are explored (options, variants, lab controls). It is not product: the
+deployed site is built without it (both Pages workflows remove `app/proto` before `next build`).
+
+- MUST NOT import anything from `app/proto` outside `app/proto`. What a lab and the product both need
+  lives in `app/pages/_shared` (or `components/**`), and the lab imports it from there.
+- MUST NOT link to a `/proto` route from a product or docs page, except through `labHref()`
+  (`lib/lab-href.ts`), which shows the link in development and removes it in production.
+- **Origin:** the Prototype tools bar was designed in `/proto/tools` and promoted; the designer asked that
+  labs never reach the deployed site.
+- **Enforcement:** `AUTO §5.4` (an import from `app/proto`, or a `/proto` link literal, outside `app/proto`).
 
 ---
 

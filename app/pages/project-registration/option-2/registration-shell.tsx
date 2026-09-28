@@ -11,7 +11,7 @@ import { SidebarFooterLinks } from "@/app/pages/_shared/sidebar-footer-links";
 import { sectionIcons } from "@/app/pages/_shared/nav-icons";
 import { AppHeader } from "@/app/pages/_shared/app-header";
 import { MobileNavTrigger } from "@/app/pages/_shared/mobile-nav";
-import { RoleSwitcher } from "@/app/pages/_shared/role-switcher";
+import { PrototypeTools } from "@/app/pages/_shared/prototype-tools/prototype-tools";
 import { useRoleHref } from "@/lib/use-role-href";
 import { useUserRole } from "@/lib/use-user-role";
 import { keyHref, navForRole, type NavNode } from "@/lib/registered-user-nav";
@@ -51,7 +51,7 @@ export function RegistrationShell({
 
   return (
     <div className="font-barlow flex h-screen flex-col overflow-hidden">
-      <RoleSwitcher />
+      <PrototypeTools />
       {/* ── Header: full width, above the rail + sidebar + main row ── */}
       <AppHeader
         mobileNav={
@@ -100,7 +100,7 @@ export function RegistrationShell({
         <main className="flex min-h-0 flex-1 flex-col overflow-hidden">
           {otherSection ? (
             <div className="flex flex-1 flex-col items-center justify-center gap-3 p-12 text-center">
-              <h1 className="text-lg font-medium text-primary">{otherSection.label}</h1>
+              <h1 className="text-lg font-semibold text-primary">{otherSection.label}</h1>
               <p className="max-w-sm text-sm text-tertiary">This section&apos;s content hasn&apos;t been scoped yet - only its place in the navigation is decided so far.</p>
               <Button color="link-color" size="sm" href={roleHref("/pages/project-list")} iconTrailing={ArrowNarrowRight}>
                 Go to Projects

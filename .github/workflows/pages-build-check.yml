@@ -37,6 +37,9 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-nextjs-check-${{ hashFiles('**/package-lock.json') }}-
       - run: npm ci
+      - name: Leave out the labs, as the deploy does
+        # app/proto holds design labs, not product: they never ship (CONTRACTS.md §5.4).
+        run: rm -rf app/proto
       - name: Build (static export, as deployed)
         run: npx --no-install next build
         env:

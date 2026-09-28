@@ -2,8 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { Database01 } from "@untitledui/icons";
-import { Dropdown } from "@/components/base/dropdown/dropdown";
-import { FloatingMenuFab } from "@/app/pages/_shared/floating-fab";
+import { useRegisterTool } from "@/app/pages/_shared/prototype-tools/tools";
 import { datasetStatusFor, datasetStatusMeta } from "@/app/pages/_shared/dataset-upload/dataset-data";
 import { restartIngestion, setDatasetStatus, useDatasets } from "@/app/pages/_shared/dataset-upload/dataset-store";
 import { runLengthMs, rowsFromSize, viewAt, type Outcome } from "@/app/pages/_shared/dataset-upload/ingestion";
@@ -18,12 +17,13 @@ import { IngestionChip } from "@/app/pages/_shared/dataset-upload/ingestion-view
 /** How long the "records added" chip stays after a successful run. */
 const SUCCESS_VISIBLE_MS = 60_000;
 
-const OUTCOMES: { id: Outcome; label: string }[] = [
-  { id: "success", label: "Succeeds" },
-  { id: "partial", label: "Some rows can't be placed" },
-  { id: "fail-model", label: "Fails: file doesn't match the model" },
-  { id: "fail-map", label: "Fails: rows don't fit this project" },
-  { id: "fail-save", label: "Fails: our side (retry works)" },
+// The "Upload result" tool on the Prototype tools bar: how this dataset's simulated ingestion ends.
+const OUTCOMES: { id: Outcome; label: string; short?: string; description: string }[] = [
+  { id: "success", label: "Succeeds", description: "Every row is added" },
+  { id: "partial", label: "Some rows can't be placed", short: "Partly added", description: "The rest are added" },
+  { id: "fail-model", label: "Fails: the file doesn't match the data model", short: "Fails: wrong format", description: "Nothing is added" },
+  { id: "fail-map", label: "Fails: the rows don't fit this project", short: "Fails: rows don't fit", description: "Nothing is added" },
+  { id: "fail-save", label: "Fails on our side", short: "Fails: our side", description: "Try again works" },
 ];
 
 export function ProjectIngestionChip({ projectId }: { projectId: string }) {
@@ -59,44 +59,41 @@ export function ProjectIngestionChip({ projectId }: { projectId: string }) {
     if (datasetId && target && datasetStatus !== target) setDatasetStatus(datasetId, target);
   }, [datasetId, datasetStatus, target]);
 
+  // Only a project with a dataset has an ingestion to preview, so only then is the tool on the bar.
+  useRegisterTool(
+    dataset
+      ? {
+          id: "ingestion",
+          label: "How the upload ends",
+          barLabel: "Upload result",
+          icon: Database01,
+          options: OUTCOMES,
+          value: outcome,
+          onChange: (id) => {
+            restartIngestion(dataset.id, id as Outcome);
+            setNow(Date.now());
+          },
+          override: outcome === "success" ? undefined : "Forced outcome",
+        }
+      : null,
+  );
+
   if (!dataset || !view || !subject) return null;
   const expired = view.done && outcome === "success" && now > endsAt + SUCCESS_VISIBLE_MS;
   const statusMeta = datasetStatusMeta[target ?? dataset.status];
 
+  if (expired) return null;
   return (
-    <>
-      {!expired && (
-        <IngestionChip
-          view={view}
-          projectId={projectId}
-          title={`Uploading files against ${dataset.projectCode}`}
-          datasetStatus={{ label: statusMeta.label, color: statusMeta.badgeColor }}
-          // A fault on our side is transient: the second attempt succeeds.
-          onRetry={() => {
-            restartIngestion(dataset.id, "success");
-            setNow(Date.now());
-          }}
-        />
-      )}
-      {/* A preview tool, like the role switcher: sets how this dataset's ingestion ends and runs it again. */}
-      <FloatingMenuFab storageKey="ingestion-outcome" defaultPosition={{ right: 20, bottom: 148 }} ariaLabel="Ingestion outcome (preview)" icon={Database01}>
-        <Dropdown.Menu
-          aria-label="How this ingestion ends"
-          selectionMode="single"
-          selectedKeys={[outcome]}
-          onSelectionChange={(keys) => {
-            if (keys === "all") return;
-            const [id] = Array.from(keys) as Outcome[];
-            if (!id) return;
-            restartIngestion(dataset.id, id);
-            setNow(Date.now());
-          }}
-        >
-          {OUTCOMES.map((o) => (
-            <Dropdown.Item key={o.id} id={o.id} label={o.label} />
-          ))}
-        </Dropdown.Menu>
-      </FloatingMenuFab>
-    </>
+    <IngestionChip
+      view={view}
+      projectId={projectId}
+      title={`Uploading files against ${dataset.projectCode}`}
+      datasetStatus={{ label: statusMeta.label, color: statusMeta.badgeColor }}
+      // A fault on our side is transient: the second attempt succeeds.
+      onRetry={() => {
+        restartIngestion(dataset.id, "success");
+        setNow(Date.now());
+      }}
+    />
   );
 }

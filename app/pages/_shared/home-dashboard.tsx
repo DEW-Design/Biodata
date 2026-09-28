@@ -384,7 +384,7 @@ function FeaturedProjectsSection({ roleHref }: { roleHref: (path: string) => str
   return (
     <div className="flex flex-col gap-3">
       <div className="flex items-center justify-between gap-2">
-        <h2 className="text-lg font-medium text-primary">Featured Projects</h2>
+        <h2 className="text-lg font-semibold text-primary">Featured Projects</h2>
         <Button color="link-color" size="sm" href={roleHref("/pages/project-list")} iconTrailing={ArrowNarrowRight}>
           View all projects
         </Button>
@@ -401,7 +401,7 @@ function FeaturedProjectsSection({ roleHref }: { roleHref: (path: string) => str
 function KnowledgeBaseSection() {
   return (
     <div className="flex flex-col gap-3">
-      <h2 className="text-lg font-medium text-primary">Knowledge Base</h2>
+      <h2 className="text-lg font-semibold text-primary">Knowledge Base</h2>
       <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
         {knowledgeBaseItems.map((item) => (
           <KnowledgeBaseCard key={item.title} {...item} />
@@ -501,7 +501,7 @@ function AdminHomeDashboardContent() {
             {/* "Jane" - the sanctioned placeholder persona for the biodata-admin role, parallel to
                 "Olivia Wyatt" for registered-user (see CONTEXT.md's "Placeholder person convention") -
                 never the real current user's name. */}
-            <h1 className="text-2xl font-medium text-white">Hi, Jane</h1>
+            <h1 className="text-2xl font-semibold text-white">Hi, Jane</h1>
             <p className="text-md text-white">Platform activity at a glance</p>
           </div>
           <div className="flex flex-wrap items-start gap-x-6 gap-y-4">
@@ -513,7 +513,7 @@ function AdminHomeDashboardContent() {
       </div>
 
       <div className="flex flex-col gap-3 px-6 pb-6">
-        <h2 className="text-lg font-medium text-primary">Quick actions</h2>
+        <h2 className="text-lg font-semibold text-primary">Quick actions</h2>
         <div className="flex flex-wrap items-center gap-2">
           <QuickAction icon={UserCheck01} label="User Management" href={roleHref("/pages/user-management")} />
           <DisabledQuickAction icon={Database01} label="Control Vocabulary" note="Coming soon - controlled vocabulary management isn't built yet" />
@@ -541,7 +541,7 @@ function AdminHomeDashboardContent() {
           </div>
         </div>
         <div className="flex flex-col gap-3">
-          <h2 className="text-lg font-medium text-primary">Also pending</h2>
+          <h2 className="text-lg font-semibold text-primary">Also pending</h2>
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             {alsoPending.map((queue) => (
               <AdminQueueCard key={queue.id} queue={queue} />
@@ -664,7 +664,7 @@ export function HomeDashboardContent() {
       <div className="p-6">
         <div className="flex flex-col gap-8 rounded-2xl bg-gradient-to-b from-brand-900 via-brand-800 via-[63.942%] to-brand-700 p-6">
           <div className="flex flex-col gap-1">
-            <h1 className="text-2xl font-medium text-white">Hi, Olivia</h1>
+            <h1 className="text-2xl font-semibold text-white">Hi, Olivia</h1>
             <p className="text-md text-white">Your activity at a glance</p>
           </div>
           <div className="flex flex-wrap items-start gap-x-6 gap-y-4">
@@ -679,7 +679,7 @@ export function HomeDashboardContent() {
           split dashboard/option-2 uses (a gradient card for identity/stats, a plain section
           underneath for actions). ── */}
       <div className="flex flex-col gap-3 px-6 pb-6">
-        <h2 className="text-lg font-medium text-primary">Quick actions</h2>
+        <h2 className="text-lg font-semibold text-primary">Quick actions</h2>
         <div className="flex flex-wrap items-center gap-2">
           <QuickAction icon={Folder} label="Manage projects & datasets" href={roleHref("/pages/project-list")} />
           <QuickAction icon={FileLock01} label="Request new DLA" href={roleHref("/pages/dla/new")} />
@@ -693,7 +693,7 @@ export function HomeDashboardContent() {
         )}
         <div className="flex flex-col gap-3">
           <div className="flex items-center gap-2">
-            <h2 className="text-lg font-medium text-primary">Needs your attention</h2>
+            <h2 className="text-lg font-semibold text-primary">Needs your attention</h2>
             {/* CountBadge, not Badge - a padding-tuned Badge still rendered as an oval, not a
                 circle. Flagged directly by the user: bring in the true-circle counter pattern
                 already used elsewhere (the icon rail's notification dot) instead of another

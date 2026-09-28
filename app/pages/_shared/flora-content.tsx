@@ -95,13 +95,13 @@ export function FloraContent() {
             <MetricCard value="9,064" label="Total flora species" />
           </div>
           <BentoCard>
-            <h2 className="text-sm font-medium text-primary">Flora type</h2>
+            <h2 className="text-sm font-semibold text-primary">Flora type</h2>
             <PieChart data={floraTypeBreakdown} ariaLabel="Flora records by flora type" />
           </BentoCard>
         </div>
 
         <BentoCard className="w-full gap-1 lg:flex-1">
-          <h2 className="text-sm font-medium text-primary">Number of flora records per mapsheet</h2>
+          <h2 className="text-sm font-semibold text-primary">Number of flora records per mapsheet</h2>
           <p className="text-xs text-tertiary">South Australia</p>
           <div className="mt-2 flex flex-1 flex-col">
             <MapView />

@@ -33,7 +33,7 @@ function ProjectSummaryHeader({ project }: { project: SearchEvent }) {
     <div className="mb-6 flex flex-col gap-5 border-b border-secondary pb-6">
       <div className="flex flex-col gap-2">
         <p className="text-xs font-semibold tracking-wide text-quaternary uppercase">Project</p>
-        <h2 className="text-xl font-medium text-primary">{project.name}</h2>
+        <h2 className="text-xl font-semibold text-primary">{project.name}</h2>
       </div>
       <div className="flex flex-wrap items-start gap-x-8 gap-y-4">
         <MetaField label="Project ID">{project.code}</MetaField>

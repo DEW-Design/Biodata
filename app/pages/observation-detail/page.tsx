@@ -41,7 +41,7 @@ import { SidebarFooterLinks } from "@/app/pages/_shared/sidebar-footer-links";
 import { sectionIcons } from "@/app/pages/_shared/nav-icons";
 import { AppHeader } from "@/app/pages/_shared/app-header";
 import { MobileNavTrigger } from "@/app/pages/_shared/mobile-nav";
-import { RoleSwitcher } from "@/app/pages/_shared/role-switcher";
+import { PrototypeTools } from "@/app/pages/_shared/prototype-tools/prototype-tools";
 import { MapView } from "@/app/pages/_shared/map-view";
 import { LocationDetailsTable } from "@/app/pages/_shared/location-details-table";
 import { useUserRole } from "@/lib/use-user-role";
@@ -436,7 +436,7 @@ function SectionPlaceholder({ node }: { node: NavNode }) {
 
   return (
     <div className="flex flex-1 flex-col items-center justify-center gap-3 p-12 text-center">
-      <h1 className="text-lg font-medium text-primary">{node.label}</h1>
+      <h1 className="text-lg font-semibold text-primary">{node.label}</h1>
       <p className="max-w-sm text-sm text-tertiary">
         {relatedLink
           ? "This section has its own page - it isn't embedded here."
@@ -853,7 +853,7 @@ function ObservationDetail() {
 
   return (
     <div className="font-barlow flex h-screen flex-col overflow-hidden">
-      <RoleSwitcher />
+      <PrototypeTools />
       {/* ── Header ── */}
       <AppHeader
         mobileNav={
@@ -998,7 +998,7 @@ function ObservationDetail() {
 
                   <div className="flex flex-col gap-1 p-6 pb-0">
                     <p className="text-xs font-semibold tracking-wide text-quaternary uppercase">Observation</p>
-                    <h1 className="text-2xl font-medium text-primary">{observation.name}</h1>
+                    <h1 className="text-2xl font-semibold text-primary">{observation.name}</h1>
                   </div>
 
                   <div className="flex flex-wrap items-start gap-8 border-b border-secondary p-6">

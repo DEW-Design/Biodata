@@ -12,7 +12,7 @@ import { FormSidebarSlotContext } from "@/app/pages/_shared/form-section-list";
 import { MobileNavTrigger } from "@/app/pages/_shared/mobile-nav";
 import { sectionIcons } from "@/app/pages/_shared/nav-icons";
 import { PrimaryRail } from "@/app/pages/_shared/primary-rail";
-import { RoleSwitcher } from "@/app/pages/_shared/role-switcher";
+import { PrototypeTools } from "@/app/pages/_shared/prototype-tools/prototype-tools";
 import { SidebarFooterLinks } from "@/app/pages/_shared/sidebar-footer-links";
 import { projectDetailsPath } from "@/app/pages/_shared/project-routes";
 import type { SearchEvent } from "@/app/pages/_shared/map-search/search-data";
@@ -56,7 +56,7 @@ export function UploadShell({ project, children }: { project?: SearchEvent; chil
   } else if (!canUpload) {
     main = (
       <div className="flex flex-1 flex-col items-center justify-center gap-3 p-12 text-center">
-        <h1 className="text-lg font-medium text-primary">Upload dataset</h1>
+        <h1 className="text-lg font-semibold text-primary">Upload dataset</h1>
         <p className="max-w-sm text-sm text-balance text-tertiary">Uploading a dataset needs a free BioData SA account. Create one to add datasets to {project.name}.</p>
         <Button color="link-color" size="sm" href={roleHref(projectDetailsPath(project.id))} iconTrailing={ArrowNarrowRight}>
           Go to the project
@@ -67,7 +67,7 @@ export function UploadShell({ project, children }: { project?: SearchEvent; chil
 
   return (
     <div className="font-barlow flex h-screen flex-col overflow-hidden">
-      <RoleSwitcher />
+      <PrototypeTools />
       <AppHeader
         mobileNav={
           <MobileNavTrigger

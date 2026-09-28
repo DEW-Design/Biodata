@@ -18,7 +18,10 @@ import { useUserRole } from "@/lib/use-user-role";
 // task; the "..." menu holds the quieter ones (Export CSV). A guest still sees both and gets the
 // sign-up invite on click, the same visible-but-gated rule as the header's Add menu. "Upload dataset"
 // opens the project's upload page (/pages/project-list/<id>/upload) for every signed-in role. While a
-// dataset is being ingested, its progress chip sits first in the row (project-ingestion.tsx).
+// dataset is being ingested, its progress chip sits first in the row (project-ingestion.tsx), for
+// signed-in roles only: a public user can't upload, so an upload's progress isn't theirs to see (and
+// with no chip, the Prototype tools bar has no "Upload result" tool for them either). They still see
+// "Upload dataset", which opens the sign-up prompt.
 export function ProjectCardActions({ projectId, projectCode }: { projectId: string; projectCode: string }) {
   const router = useRouter();
   const roleHref = useRoleHref();
@@ -41,7 +44,7 @@ export function ProjectCardActions({ projectId, projectCode }: { projectId: stri
   return (
     <>
       <div className="flex shrink-0 items-center gap-2">
-        <ProjectIngestionChip projectId={projectId} />
+        {!isGuest && <ProjectIngestionChip projectId={projectId} />}
         <Button color="secondary" size="sm" iconLeading={Upload01} onPress={upload}>
           Upload dataset
         </Button>

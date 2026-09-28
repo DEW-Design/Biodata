@@ -24,9 +24,13 @@
 
   /* ── Neutral (Gray) palette ── */
   /* DEW's warm-gray scale, not Untitled UI's stock cool one - confirmed via 5 independent
-     Figma frames (Input, Checkbox/Radio, Avatar, Badge, Button; see CONTEXT.md's Known gaps).
-     11 of 12 steps confirmed; 950 is unconfirmed and left as Untitled UI's stock value since
-     nothing in this codebase reads it. */
+     Figma frames (Input, Checkbox/Radio, Avatar, Badge, Button; see CONTEXT.md's Known gaps),
+     and again 29 Sept 2026 against the real "DS - Foundations" file's own Colors page
+     (llQ4DndM7U0la4qg6MttC5, node 5225:371288), which is authoritative and gave a real 950
+     value for the first time - all 12 steps now confirmed. 950 was Untitled UI's stock cool
+     value (#0C111D) until this pass; it is real, read by `--ui-bg-primary-solid` and
+     `--ui-fill-bg-primary-solid` (the near-black solid fills - FloatingMenuFab, etc.), so the
+     old "nothing in this codebase reads it" note was wrong on both counts. */
   --color-gray-25:  #FCFCFC;
   --color-gray-50:  #F8F8F7;
   --color-gray-100: #F2F2F1;
@@ -38,7 +42,7 @@
   --color-gray-700: #585451;
   --color-gray-800: #423E3B;
   --color-gray-900: #2E2925;
-  --color-gray-950: #0C111D;
+  --color-gray-950: #1A1715;
 
   /* ── Brand (Primary) - DEW Marine Teal ── */
   --color-brand-25:  #F6FBFC;
@@ -67,6 +71,23 @@
   --color-accent-800: #3B7272;
   --color-accent-900: #2A5555;
   --color-accent-950: #162D2D;
+
+  /* ── Flinders Violet ── the DS - Foundations "Secondary colors" violet, exact from Figma
+     (contracts/figma-colours.json). Ingested 29 Sept 2026 for one job only, per designer
+     decision: the Prototype tools status bar, a dev tool that must read as "not the product".
+     Not a product accent (CONTRACTS.md 2.1). */
+  --color-flinders-violet-25:  #FAFAFB;
+  --color-flinders-violet-50:  #F4F4F7;
+  --color-flinders-violet-100: #E7E6EB;
+  --color-flinders-violet-200: #D4D2DA;
+  --color-flinders-violet-300: #B8B4BF;
+  --color-flinders-violet-400: #8A8699;
+  --color-flinders-violet-500: #716C86;
+  --color-flinders-violet-600: #65607B;
+  --color-flinders-violet-700: #5C5873;
+  --color-flinders-violet-800: #4A465D;
+  --color-flinders-violet-900: #353242;
+  --color-flinders-violet-950: #1D1B24;
 
   /* ── Error ── */
   --color-error-25:  #FFFBFA;
@@ -533,6 +554,10 @@
 html {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  /* Barlow now loads a real italic (see app/layout.tsx) - this stops the
+     browser faking a slant or a weight we never loaded, so a missing font
+     file shows up as a visible gap instead of a quietly-wrong imitation. */
+  font-synthesis: none;
 }
 
 body {

@@ -82,7 +82,7 @@ export function GuestGradientCard({ tab }: { tab: Key }) {
     <div className="rounded-2xl bg-gradient-to-b from-brand-900 via-brand-800 via-[63.942%] to-brand-700 p-8">
       <motion.div key={String(tab)} {...swap} className="flex flex-wrap items-center justify-between gap-x-8 gap-y-5">
         <div className="flex min-h-[84px] max-w-[640px] flex-col gap-1">
-          <h1 className="text-2xl font-medium text-balance text-white">{ask.headline}</h1>
+          <h1 className="text-2xl font-semibold text-balance text-white">{ask.headline}</h1>
           <p className="text-base text-pretty text-white/80">{ask.body}</p>
         </div>
         <GuestActionButton icon={UserPlus01} label="Create a free account" color="secondary" isGuest modalTitle={ask.modalTitle} modalDescription={ask.modalDescription} />

@@ -35,7 +35,7 @@ import { PrimaryRail } from "@/app/pages/_shared/primary-rail";
 import { sectionIcons } from "@/app/pages/_shared/nav-icons";
 import { AppHeader } from "@/app/pages/_shared/app-header";
 import { MobileNavTrigger } from "@/app/pages/_shared/mobile-nav";
-import { RoleSwitcher } from "@/app/pages/_shared/role-switcher";
+import { PrototypeTools } from "@/app/pages/_shared/prototype-tools/prototype-tools";
 import { ProjectDetailLayoutSwitcher } from "@/app/pages/_shared/project-detail-layout-switcher";
 import { SpeciesResultsView } from "@/app/pages/_shared/map-search/species-results";
 import { searchEvents } from "@/app/pages/_shared/map-search/search-data";
@@ -68,7 +68,7 @@ function SectionPlaceholder({ node }: { node: NavNode }) {
   const roleHref = useRoleHref();
   return (
     <div className="flex flex-1 flex-col items-center justify-center gap-3 p-12 text-center">
-      <h1 className="text-lg font-medium text-primary">{node.label}</h1>
+      <h1 className="text-lg font-semibold text-primary">{node.label}</h1>
       <p className="max-w-sm text-sm text-tertiary">
         {relatedLink ? "This section has its own page - it isn't embedded here." : "This section's content hasn't been scoped yet - only its place in the navigation is decided so far."}
       </p>
@@ -117,7 +117,7 @@ function ProjectHero({ onEditRequest }: { onEditRequest: (req: EditRequest) => v
     <div className="group relative flex flex-col gap-4">
       <div className="flex flex-col gap-1">
         <p className="text-xs font-semibold tracking-wide text-quaternary uppercase">Project</p>
-        <h1 className="text-2xl font-medium text-primary sm:text-3xl">{project.name}</h1>
+        <h1 className="text-2xl font-semibold text-primary sm:text-3xl">{project.name}</h1>
       </div>
       <div className="flex flex-wrap items-start gap-x-8 gap-y-3 border-b border-secondary pb-5">
         <MetaField label="Project ID">{project.code}</MetaField>
@@ -217,7 +217,7 @@ function ProjectDetail() {
 
   return (
     <div className="font-barlow flex h-screen flex-col overflow-hidden">
-      <RoleSwitcher />
+      <PrototypeTools />
       <ProjectDetailLayoutSwitcher current="option-2" />
       {/* ── Header - identical shape to option-1/option-2's own clean, flat header (no colour
           band): an eyebrow label, the title, and a meta line - per the user's own direct

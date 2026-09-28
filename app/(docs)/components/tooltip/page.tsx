@@ -301,10 +301,10 @@ export default function TooltipPage() {
         </thead>
         <tbody>
           {[
-            { part: "Surface",          token: "bg-primary-solid",             value: "gray-950 (#0C111D)" },
+            { part: "Surface",          token: "bg-primary-solid",             value: "gray-950 (#1A1715)" },
             { part: "Title text",       token: "text-white",                   value: "#ffffff" },
             { part: "Description text", token: "text-tooltip-supporting-text", value: "gray-400 (#B5B2AF)" },
-            { part: "Arrow fill",       token: "fill-bg-primary-solid",        value: "gray-950 (#0C111D)" },
+            { part: "Arrow fill",       token: "fill-bg-primary-solid",        value: "gray-950 (#1A1715)" },
           ].map((r) => (
             <tr key={r.part}>
               <td style={{ color: "var(--ui-text-secondary)" }}>{r.part}</td>

@@ -16,7 +16,7 @@ import { MobileNavTrigger } from "@/app/pages/_shared/mobile-nav";
 import { sectionIcons } from "@/app/pages/_shared/nav-icons";
 import { PrimaryRail } from "@/app/pages/_shared/primary-rail";
 import { ProjectCardActions } from "@/app/pages/_shared/project-card-actions";
-import { RoleSwitcher } from "@/app/pages/_shared/role-switcher";
+import { PrototypeTools } from "@/app/pages/_shared/prototype-tools/prototype-tools";
 import { SidebarFooterLinks } from "@/app/pages/_shared/sidebar-footer-links";
 import { Breadcrumb } from "@/components/scaffold/breadcrumb";
 import { buildSections, recordTitle, type DetailRecord } from "@/app/pages/_shared/map-search/record-detail";
@@ -158,7 +158,7 @@ function ProjectShell({ project, record = null, children }: { project: SearchEve
 
   return (
     <div className="font-barlow flex h-screen flex-col overflow-hidden">
-      <RoleSwitcher />
+      <PrototypeTools />
       <AppHeader
         mobileNav={
           <MobileNavTrigger
@@ -241,7 +241,7 @@ export function ProjectDetailsView({ project, notice }: { project: SearchEvent; 
           <div className="flex items-start justify-between gap-4">
             <div className="flex flex-col gap-1">
               <p className="m-0 text-xs font-semibold tracking-wide text-white/70 uppercase">Project</p>
-              <h1 className="m-0 text-2xl font-medium text-balance text-white">{project.name}</h1>
+              <h1 className="m-0 text-2xl font-semibold text-balance text-white">{project.name}</h1>
             </div>
             <ProjectCardActions projectId={project.id} projectCode={project.code} />
           </div>
@@ -374,7 +374,7 @@ export function ProjectNotFound() {
   };
   return (
     <div className="font-barlow flex h-screen flex-col overflow-hidden">
-      <RoleSwitcher />
+      <PrototypeTools />
       <AppHeader section="Projects" current="Project not found" />
       <div className="flex flex-1 overflow-hidden">
         <PrimaryRail sections={nav} activeSection="Projects" onSelectSection={goToSection} />

@@ -141,7 +141,7 @@ export function DataOwnerCard({
           <Avatar size="md" initials={`${details.dataOwnerContacts[0]?.firstName?.[0] ?? ""}${details.dataOwnerContacts[0]?.lastName?.[0] ?? ""}`} />
         )}
         <div className="flex flex-col gap-0.5">
-          <h2 className="text-sm font-medium text-primary">{heading}</h2>
+          <h2 className="text-sm font-semibold text-primary">{heading}</h2>
           <p className="text-sm text-tertiary">{details.dataOwnerType === "organisation" ? details.dataOwnerOrgName : "Individual"}</p>
         </div>
       </div>
@@ -165,7 +165,7 @@ export function ProjectManagersCard({
 }) {
   return (
     <BentoCard className={cx("min-w-0", hoverable && "transition-colors group-hover:bg-primary_hover")}>
-      <h2 className="text-sm font-medium text-primary">Project Manager{managers.length > 1 ? "/s" : ""}</h2>
+      <h2 className="text-sm font-semibold text-primary">Project Manager{managers.length > 1 ? "/s" : ""}</h2>
       <div className="flex flex-col gap-4 border-t border-secondary pt-4">
         {managers.map((m) => (
           <div key={m.id} className="flex min-w-0 flex-col gap-1">
@@ -254,7 +254,7 @@ export function DataCollectionCard({ collection, bare = false }: { collection: D
 
   return (
     <BentoCard>
-      <h2 className="text-base font-medium text-primary">Data Collection</h2>
+      <h2 className="text-base font-semibold text-primary">Data Collection</h2>
       {body}
     </BentoCard>
   );
@@ -268,7 +268,7 @@ export function RestrictionsCard({ restrictions, bare = false }: { restrictions:
     if (bare) return emptyState;
     return (
       <BentoCard>
-        <h2 className="text-base font-medium text-primary">Privacy and Restrictions</h2>
+        <h2 className="text-base font-semibold text-primary">Privacy and Restrictions</h2>
         {emptyState}
       </BentoCard>
     );
@@ -322,7 +322,7 @@ export function RestrictionsCard({ restrictions, bare = false }: { restrictions:
 
   return (
     <BentoCard>
-      <h2 className="text-base font-medium text-primary">Privacy and Restrictions</h2>
+      <h2 className="text-base font-semibold text-primary">Privacy and Restrictions</h2>
       {body}
     </BentoCard>
   );

@@ -66,16 +66,79 @@ const hardRules = [
 
 // ---------------------------------------------------------------- ratchet rules
 const SCAN_DIRS = ["app", "components", "lib", "config"];
-const SCAN_SKIP = [/^app\/proto\//, /^app\/globals\.css$/, /^node_modules\//];
+// components/foundations/payment-icons/**: third-party payment-brand logo SVGs (Visa, Mastercard,
+// PayPal, ...). Their hardcoded hex is each brand's own trademarked colour, required exact - not a
+// DEW colour choice, so it's not "invented" or "hardcoded instead of tokenised" in any sense CONTRACTS
+// 2.1 means. Out of scope for every colour rule, same tier as the /proto exemption below.
+const SCAN_SKIP = [/^app\/proto\//, /^app\/globals\.css$/, /^node_modules\//, /^components\/foundations\/payment-icons\//];
 const DEAD = /\b(?:text-md|bg-quaternary|bg-border-secondary|border-secondary_hover|border-l-brand-solid|border-error-subtle|ring-offset-bg-primary)\b/;
 const isComment = (line) => /^\s*(\/\/|\/\*|\*|\{\/\*)/.test(line);
+
+// 2.1c/2.1d: colour is never invented. contracts/figma-colours.json is the real DS - Foundations
+// file's own Colors page, extracted via the Figma MCP - see CONTRACTS.md 2.1 and that file's own
+// "note". Flattened once into a lowercase hex set so a hardcoded literal can be checked against it.
+const FIGMA_COLOURS = readJson("contracts/figma-colours.json", null);
+const FIGMA_HEX_SET = FIGMA_COLOURS
+  ? new Set(
+      [
+        ...Object.values(FIGMA_COLOURS.base ?? {}),
+        ...Object.values(FIGMA_COLOURS.semantic ?? {}),
+        ...Object.values(FIGMA_COLOURS.primitives ?? {}).flatMap((p) => Object.values(p.steps ?? {})),
+      ].map((h) => h.toLowerCase()),
+    )
+  : null;
+
+function coloursInLine(line) {
+  const out = [];
+  for (const m of line.matchAll(/#([0-9a-fA-F]{6})\b/g)) out.push(`#${m[1].toLowerCase()}`);
+  for (const m of line.matchAll(/rgba?\(\s*(\d{1,3})\s*,\s*(\d{1,3})\s*,\s*(\d{1,3})\s*(?:,[^)]+)?\)/g)) {
+    const [, r, g, b] = m;
+    out.push(`#${[r, g, b].map((x) => Math.min(255, Number(x)).toString(16).padStart(2, "0")).join("")}`);
+  }
+  return out;
+}
 
 const ratchetRules = [
   { id: "2.1a", name: "dead utility class", test: (line) => DEAD.test(line) && !isComment(line) },
   { id: "2.1b", name: "hard-coded colour", test: (line) => !isComment(line) && (/#[0-9a-fA-F]{6}\b|#[0-9a-fA-F]{8}\b/.test(line) || /\brgba?\(/.test(line)) },
+  {
+    id: "2.1d",
+    name: "invented colour",
+    test: (line) => {
+      if (isComment(line) || !FIGMA_HEX_SET) return false;
+      return coloursInLine(line).some((c) => !FIGMA_HEX_SET.has(c));
+    },
+  },
   { id: "2.3a", name: "em-dash", test: (line) => /—/.test(line) },
   { id: "2.3b", name: "arrow character", test: (line) => /[←-↓⇒]/.test(line) },
 ];
+
+// 2.1c: app/globals.css's own --color-* primitives must match contracts/figma-colours.json exactly.
+// Hard, never ratcheted - a primitive is either the real Figma value or it's wrong; there is no
+// legitimate "existing debt" tier for the design system's own declared source of truth drifting from
+// its source. See CONTRACTS.md 2.1's own --color-gray-950 origin line.
+function checkPrimitiveDrift() {
+  const violations = [];
+  if (!FIGMA_COLOURS) return violations;
+  const cssPath = join(ROOT, "app", "globals.css");
+  if (!existsSync(cssPath)) return violations;
+  const css = readFileSync(cssPath, "utf8");
+  for (const [name, def] of Object.entries(FIGMA_COLOURS.primitives)) {
+    if (!def.cssVar) continue; // documented in Figma, not yet ingested - nothing to check
+    const escaped = def.cssVar.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    for (const [step, hex] of Object.entries(def.steps)) {
+      const m = css.match(new RegExp(`${escaped}${step}:\\s*(#[0-9a-fA-F]{6})`, "i"));
+      if (m && m[1].toLowerCase() !== hex.toLowerCase()) {
+        violations.push({
+          clause: "2.1c",
+          file: "app/globals.css",
+          message: `${def.cssVar}${step} is ${m[1]}, the DS - Foundations Figma file (${name}) gives ${hex}. Fix the primitive to match, don't leave it drifted.`,
+        });
+      }
+    }
+  }
+  return violations;
+}
 
 // ---------------------------------------------------------------- component inventory (hard, 1.4)
 const COMPONENT_TIERS = ["base", "application", "foundations", "marketing", "custom", "scaffold"];
@@ -151,6 +214,9 @@ export function runChecks() {
     }
   }
 
+  // 2.1c: primitives must match the real Figma Colors page, hard, zero tolerance
+  violations.push(...checkPrimitiveDrift());
+
   // component inventory
   const inventory = new Set(readJson("contracts/component-inventory.json", { files: [] }).files);
   const overrides = readJson("contracts/overrides.json", { overrides: [] }).overrides;
@@ -171,6 +237,24 @@ export function runChecks() {
       if (/selectionMode="multiple"/.test(tag) && !/escapeKeyBehavior=/.test(tag)) {
         violations.push({ clause: "1.9a", file: f, message: 'Multiple-selection ListBox without escapeKeyBehavior="none": Escape would clear the selection (CONTRACTS.md 1.9).' });
       }
+    }
+  }
+
+  // 5.4 labs never ship: the deployed build removes app/proto, so nothing outside it may import from it
+  // (the build would break) or link to it (the link would 404). A dev-only link goes through
+  // lib/lab-href.ts, which returns null in production.
+  const LAB_IMPORT = /from\s+["'](?:@\/app\/proto\/|(?:\.\.\/)+proto\/)/;
+  const LAB_LINK = /["'`]\/proto(?:\/|["'`?#])/;
+  for (const dir of ["app", "components", "lib", "config"]) {
+    for (const file of walk(join(ROOT, dir))) {
+      const r = rel(file);
+      if (r.startsWith("app/proto/") || r === "lib/lab-href.ts" || !/\.tsx?$/.test(r)) continue;
+      const lines = readFileSync(file, "utf8").split("\n");
+      lines.forEach((line, i) => {
+        if (isComment(line)) return;
+        if (LAB_IMPORT.test(line)) violations.push({ clause: "5.4", file: `${r}:${i + 1}`, message: "Imports from app/proto. Labs are left out of the deployed build, so production code must never depend on one; move what is shared into app/pages/_shared (CONTRACTS.md 5.4)." });
+        else if (LAB_LINK.test(line)) violations.push({ clause: "5.4", file: `${r}:${i + 1}`, message: "Links to a /proto lab. Labs aren't deployed, so the link would 404; use labHref() from lib/lab-href.ts, which hides it in production (CONTRACTS.md 5.4)." });
+      });
     }
   }
 

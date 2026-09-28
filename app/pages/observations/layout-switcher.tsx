@@ -9,8 +9,8 @@ import { LayoutOptionSwitcher, type LayoutOption } from "@/app/pages/_shared/lay
 export type ExploreLayoutOption = "option-1" | "option-2";
 
 const OPTIONS: LayoutOption[] = [
-  { id: "option-1", label: "Option 1: search, then results page", href: "/pages/observations" },
-  { id: "option-2", label: "Option 2: floating card, areas as layers", href: "/pages/observations/option-2" },
+  { id: "option-1", label: "Option 1", description: "Search, then a results page", href: "/pages/observations" },
+  { id: "option-2", label: "Option 2", description: "Floating card, areas as layers", href: "/pages/observations/option-2" },
 ];
 
 // The switcher reads the role from the URL (useRoleHref), so it sits in its own Suspense boundary:
@@ -18,7 +18,7 @@ const OPTIONS: LayoutOption[] = [
 export function ExploreLayoutSwitcher({ current }: { current: ExploreLayoutOption }) {
   return (
     <Suspense fallback={null}>
-      <LayoutOptionSwitcher ariaLabel="Compare Explore layouts" options={OPTIONS} current={current} />
+      <LayoutOptionSwitcher ariaLabel="Explore layout to show" options={OPTIONS} current={current} />
     </Suspense>
   );
 }

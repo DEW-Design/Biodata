@@ -175,7 +175,7 @@ function EditableCard({
     children
   ) : (
     <BentoCard className="transition-colors group-hover:bg-primary_hover">
-      <h2 className="text-sm font-medium text-primary">{heading ?? title}</h2>
+      <h2 className="text-sm font-semibold text-primary">{heading ?? title}</h2>
       {children}
     </BentoCard>
   );
@@ -683,7 +683,7 @@ function ProjectDetailsCard({ children }: { children: ReactNode }) {
         <div className="flex size-10 shrink-0 items-center justify-center rounded-full bg-tertiary">
           <File02 className="size-5 text-quaternary" />
         </div>
-        <h2 className="text-sm font-medium text-primary">Project Details</h2>
+        <h2 className="text-sm font-semibold text-primary">Project Details</h2>
       </div>
       <div className="flex flex-col gap-4 border-t border-secondary pt-4">{children}</div>
     </div>
@@ -968,7 +968,7 @@ export function AboutContent({
 
         {stage === "restrictions" && (
           <BentoCard>
-            <h2 className="text-sm font-medium text-primary">Privacy and Restrictions</h2>
+            <h2 className="text-sm font-semibold text-primary">Privacy and Restrictions</h2>
             <RestrictionsSection restrictions={restrictions} onSave={setRestrictions} onEditRequest={onEditRequest} />
           </BentoCard>
         )}

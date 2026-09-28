@@ -57,7 +57,7 @@ export function RecordHero({
         <div className="flex items-start justify-between gap-4">
           <div className="flex min-w-0 flex-col gap-1">
             <p className="m-0 text-xs font-semibold tracking-wide text-white/70 uppercase">{eyebrow}</p>
-            <h1 className="m-0 text-2xl font-medium text-balance text-white">{title}</h1>
+            <h1 className="m-0 text-2xl font-semibold text-balance text-white">{title}</h1>
             {subtitle && <div className="text-sm text-white/80">{subtitle}</div>}
             {description && <p className="m-0 max-w-3xl text-sm text-balance text-white/80">{description}</p>}
           </div>

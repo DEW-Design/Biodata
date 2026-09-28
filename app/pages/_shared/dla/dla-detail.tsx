@@ -466,7 +466,7 @@ export function DlaNotFound({ id }: { id: string }) {
   const roleHref = useRoleHref();
   return (
     <div className="flex flex-1 flex-col items-center justify-center gap-3 p-12 text-center">
-      <h1 className="text-lg font-medium text-primary">Request not found</h1>
+      <h1 className="text-lg font-semibold text-primary">Request not found</h1>
       <p className="max-w-sm text-sm text-balance text-tertiary">
         There is no request {id}. It may have been deleted, or created in another browser.
       </p>

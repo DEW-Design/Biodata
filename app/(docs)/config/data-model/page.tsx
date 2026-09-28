@@ -10,6 +10,7 @@ import { Checkbox } from "@/components/base/checkbox/checkbox";
 import { Table, TableHeader, Column, TableBody, Row, Cell } from "@/components/base/table/table";
 import { Accordion } from "@/components/base/accordion/accordion";
 import { VALID_TYPES_BY_KIND, FIELD_SCHEMA, KNOWN_GAPS, BDBSA_KEY_CROSSWALK, type RecordKind } from "@/config/data-model-schema";
+import { labHref } from "@/lib/lab-href";
 
 // "This begs to be more visual... let's have another route /config/data-model - so everything is
 // visible and transparent. If any changes need to be made, they can sit here." Per the user
@@ -205,6 +206,9 @@ export default function DataModelConfigPage() {
     }),
   );
 
+  // The sandbox is a lab, so the link only exists in development (labs aren't deployed).
+  const sandboxHref = labHref("data-model-stress-test");
+
   return (
     <div className="prose-doc">
       <PageHeader
@@ -219,9 +223,11 @@ export default function DataModelConfigPage() {
           <Button size="sm" color="secondary" iconLeading={Download01} onClick={downloadDataModelWorkbook}>
             Download Excel template
           </Button>
-          <Button size="sm" color="secondary" href="/proto/data-model-stress-test">
-            Open the ingestion sandbox
-          </Button>
+          {sandboxHref && (
+            <Button size="sm" color="secondary" href={sandboxHref}>
+              Open the ingestion sandbox
+            </Button>
+          )}
         </div>
       </div>
 

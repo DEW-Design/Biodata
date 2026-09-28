@@ -7,10 +7,10 @@ import { LayoutOptionSwitcher, type LayoutOption } from "@/app/pages/_shared/lay
 export type RegistrationLayout = "option-1" | "option-2";
 
 const OPTIONS: LayoutOption[] = [
-  { id: "option-1", label: "Option 1", href: "/pages/project-registration" },
-  { id: "option-2", label: "Option 2", href: "/pages/project-registration/option-2" },
+  { id: "option-1", label: "Option 1", description: "One question per card", href: "/pages/project-registration" },
+  { id: "option-2", label: "Option 2", description: "Sections in column 2", href: "/pages/project-registration/option-2" },
 ];
 
 export function RegistrationLayoutSwitcher({ current }: { current: RegistrationLayout }) {
-  return <LayoutOptionSwitcher ariaLabel="Compare Add Project layouts" options={OPTIONS} current={current} />;
+  return <LayoutOptionSwitcher ariaLabel="Add Project layout to show" options={OPTIONS} current={current} />;
 }

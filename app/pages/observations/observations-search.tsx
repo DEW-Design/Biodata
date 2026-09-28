@@ -65,7 +65,7 @@ import { AlertFullWidth } from "@/components/application/alerts/alerts";
 import { Accordion, type AccordionItemType } from "@/components/base/accordion/accordion";
 import { Tooltip } from "@/components/base/tooltip/tooltip";
 import { MobileNavTrigger } from "@/app/pages/_shared/mobile-nav";
-import { RoleSwitcher } from "@/app/pages/_shared/role-switcher";
+import { PrototypeTools } from "@/app/pages/_shared/prototype-tools/prototype-tools";
 import { SignUpPromptModal } from "@/app/pages/_shared/guest-action-gate";
 import { PrimaryRail } from "@/app/pages/_shared/primary-rail";
 import { SidebarFooterLinks } from "@/app/pages/_shared/sidebar-footer-links";
@@ -640,7 +640,7 @@ function SectionPlaceholder({ node }: { node: NavNode }) {
 
   return (
     <div className="flex flex-1 flex-col items-center justify-center gap-3 p-12 text-center">
-      <h1 className="text-lg font-medium text-primary">{node.label}</h1>
+      <h1 className="text-lg font-semibold text-primary">{node.label}</h1>
       <p className="max-w-sm text-sm text-tertiary">
         {relatedLink
           ? "This section has its own page - it isn't embedded here."
@@ -2402,7 +2402,7 @@ function ObservationsSearch({ layout }: { layout: ExploreLayout }) {
 
   return (
     <div className="font-barlow flex h-screen flex-col overflow-hidden">
-      <RoleSwitcher />
+      <PrototypeTools />
       {/* ── Header ── */}
       <AppHeader
         mobileNav={

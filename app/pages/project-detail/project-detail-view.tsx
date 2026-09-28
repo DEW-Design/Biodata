@@ -52,7 +52,7 @@ import { AppHeader } from "@/app/pages/_shared/app-header";
 import { ArtefactLightbox, type Artefact } from "@/app/pages/_shared/artefact-lightbox";
 import { ArtefactTable } from "@/app/pages/_shared/artefact-table";
 import { MobileNavTrigger } from "@/app/pages/_shared/mobile-nav";
-import { RoleSwitcher } from "@/app/pages/_shared/role-switcher";
+import { PrototypeTools } from "@/app/pages/_shared/prototype-tools/prototype-tools";
 import { ProjectDetailLayoutSwitcher } from "@/app/pages/_shared/project-detail-layout-switcher";
 import { BentoCard } from "@/app/pages/_shared/bento-card";
 import { MapView } from "@/app/pages/_shared/map-view";
@@ -383,7 +383,7 @@ function SelectedRecordPanel({ crumb, onBack }: { crumb: ChainCrumb; onBack: () 
   return (
     <div className="flex flex-1 flex-col items-center justify-center gap-3 p-12 text-center">
       <FeaturedIcon icon={Icon} color="brand" theme="modern" size="lg" />
-      <h1 className="text-lg font-medium text-primary">{crumb.label}</h1>
+      <h1 className="text-lg font-semibold text-primary">{crumb.label}</h1>
       <p className="max-w-sm text-sm text-tertiary">
         This record&apos;s own detail view isn&apos;t built yet - only Observation OBS094 · Individual has one so far
         (app/pages/observation-detail).
@@ -575,7 +575,7 @@ function SectionPlaceholder({ node }: { node: NavNode }) {
 
   return (
     <div className="flex flex-1 flex-col items-center justify-center gap-3 p-12 text-center">
-      <h1 className="text-lg font-medium text-primary">{node.label}</h1>
+      <h1 className="text-lg font-semibold text-primary">{node.label}</h1>
       <p className="max-w-sm text-sm text-tertiary">
         {relatedLink
           ? "This section has its own page - it isn't embedded here."
@@ -631,7 +631,7 @@ function DetailRow({ label, value, flagged = false, fieldId }: { label: string; 
 function DetailSection({ title, children }: { title: string; children: ReactNode }) {
   return (
     <div className="flex flex-col gap-4 rounded-lg border border-secondary p-6">
-      <h2 className="text-base font-medium text-primary">{title}</h2>
+      <h2 className="text-base font-semibold text-primary">{title}</h2>
       <div className="flex flex-col gap-3">{children}</div>
     </div>
   );
@@ -657,7 +657,7 @@ function ContactCard({ title, orgLabel, contacts }: { title: string; orgLabel?: 
   return (
     <BentoCard className="flex-1">
       <div className="flex flex-col gap-0.5">
-        <h2 className="text-sm font-medium text-primary">{title}</h2>
+        <h2 className="text-sm font-semibold text-primary">{title}</h2>
         {orgLabel && <p className="text-sm text-tertiary">{orgLabel}</p>}
       </div>
       <div className="flex flex-col gap-4 border-t border-secondary pt-4">
@@ -1105,7 +1105,7 @@ function ProjectDetail({ notice }: ProjectDetailProps) {
 
   return (
     <div className="font-barlow flex h-screen flex-col overflow-hidden">
-      <RoleSwitcher />
+      <PrototypeTools />
       <ProjectDetailLayoutSwitcher current="option-1" />
       {/* ── Header ── */}
       <AppHeader
@@ -1363,7 +1363,7 @@ function ProjectDetail({ notice }: ProjectDetailProps) {
                           <div className="flex items-start justify-between gap-4">
                             <div className="flex flex-col gap-1">
                               <p className="text-xs font-semibold tracking-wide text-white/70 uppercase">Project</p>
-                              <h1 className="text-2xl font-medium text-white">{PROJECT_NAME}</h1>
+                              <h1 className="text-2xl font-semibold text-white">{PROJECT_NAME}</h1>
                             </div>
                             <ProjectCardActions projectId={adelaideHillsProject?.id ?? "adelaide-hills"} projectCode={project.id} />
                           </div>

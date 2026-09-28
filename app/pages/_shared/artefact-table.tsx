@@ -60,7 +60,7 @@ export function ArtefactTable({ artefacts, onOpen }: { artefacts: Artefact[]; on
   return (
     <div className="flex flex-col gap-4">
       <div className="flex items-center gap-2">
-        <h2 className="m-0! text-sm! font-medium! tracking-normal! text-primary!">Artefacts &amp; Attachments</h2>
+        <h2 className="m-0! text-sm! font-semibold! tracking-normal! text-primary!">Artefacts &amp; Attachments</h2>
         <CountBadge count={rows.length} color="brand" />
       </div>
       <div className="flex flex-wrap items-center gap-3">
