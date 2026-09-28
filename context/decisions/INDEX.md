@@ -176,3 +176,4 @@ Not imported into every session on purpose: read or grep it when a task needs hi
 - [2026-09-29] commits use the designer's work email, chosen knowingly despite public repos - `2026-09-29-33-commits-use-the-designer-s-work-email-chosen.md`
 - [2026-09-29] ref-roles rewritten to current practice, and writes wait for their rules - `2026-09-29-34-ref-roles-rewritten-to-current-practice-and-writes.md`
 - [2026-09-29] All rule-loading gaps closed, loader matching measured, before and after benchmark - `2026-09-29-35-all-rule-loading-gaps-closed-loader-matching-measured.md`
+- [2026-09-29] Everything since 62d5015 pushed to sai-wips as 8e91c36 - `2026-09-29-36-everything-since-62d5015-pushed-to-sai-wips-as.md`
