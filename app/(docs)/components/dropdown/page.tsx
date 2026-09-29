@@ -168,7 +168,7 @@ import { Dropdown } from "@/components/base/dropdown/dropdown";
             { name: "Dropdown.DotsButton", notes: "Ready-made vertical-dots trigger button. Use any AriaButton-compatible element instead if you need a different trigger." },
             { name: "Dropdown.Popover", notes: "React Aria PopoverProps. className sets width, e.g. \"w-56\"." },
             { name: "Dropdown.Menu", notes: "React Aria MenuProps - selectionMode, selectedKeys/defaultSelectedKeys, onSelectionChange." },
-            { name: "Dropdown.Item", notes: "label, icon, avatarUrl, addon (trailing text), selectionIndicator (\"checkmark\" | \"checkbox\" | \"radio\" | \"toggle\" | \"none\"), unstyled (opt out of default styling for a fully custom row)." },
+            { name: "Dropdown.Item", notes: "label, icon, avatarUrl, addon (trailing text), selectionIndicator (\"checkmark\" | \"checkbox\" | \"radio\" | \"toggle\" | \"none\"), unstyled (opt out of default styling for a fully custom row), destructive (error-coloured label, icon and hover, for delete or remove; put it last, after a Dropdown.Separator)." },
             { name: "Dropdown.Section / SectionHeader", notes: "React Aria MenuSection/Header - groups items under a label." },
             { name: "Dropdown.Separator", notes: "Hairline divider between items or sections." },
           ].map((r) => (

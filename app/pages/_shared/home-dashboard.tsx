@@ -31,6 +31,7 @@ import { BentoCard } from "@/app/pages/_shared/bento-card";
 import { projects } from "@/app/pages/_shared/project-list-content";
 import { cx } from "@/utils/cx";
 import { useRoleHref } from "@/lib/use-role-href";
+import { FlaggedConceptsHomeQueue } from "@/app/pages/project-detail/option-2/flagged-home-queue";
 import { useUserRole } from "@/lib/use-user-role";
 
 // The real Home/BioData Dashboard content - the single source every sidebar shell
@@ -500,6 +501,7 @@ function AdminHomeDashboardContent() {
             ))}
           </div>
         </div>
+        <FlaggedConceptsHomeQueue />
       </div>
     </>
   );

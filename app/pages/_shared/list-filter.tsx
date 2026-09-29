@@ -20,6 +20,9 @@ import { Popover } from "@/components/base/select/popover";
 export interface FilterOption {
   id: string;
   label: string;
+  /** Sub-options (two levels, e.g. Events > Site, Visit). The parent's checkbox selects or clears
+   *  all of them and shows "some" when only part is selected; only the children's ids are stored. */
+  children?: FilterOption[];
 }
 
 export interface FilterSection {
@@ -72,9 +75,29 @@ function FilterSectionBlock({ section, selected, onChange }: { section: FilterSe
       <p className="text-xs font-semibold tracking-wide text-quaternary uppercase">{section.label}</p>
       {searchable && <Input aria-label={`Search ${section.label.toLowerCase()}`} size="sm" icon={SearchMd} placeholder="Search" value={search} onChange={setSearch} />}
       <div className="flex flex-col gap-2">
-        {options.map((o) => (
-          <Checkbox key={o.id} label={o.label} isSelected={selected.has(o.id)} onChange={(checked) => toggle(o.id, checked)} />
-        ))}
+        {options.map((o) =>
+          o.children ? (
+            <div key={o.id} className="flex flex-col gap-2">
+              <Checkbox
+                label={o.label}
+                isSelected={o.children.every((c) => selected.has(c.id))}
+                isIndeterminate={o.children.some((c) => selected.has(c.id)) && !o.children.every((c) => selected.has(c.id))}
+                onChange={(checked) => {
+                  const next = new Set(selected);
+                  o.children!.forEach((c) => (checked ? next.add(c.id) : next.delete(c.id)));
+                  onChange(next);
+                }}
+              />
+              <div className="flex flex-col gap-2 pl-6">
+                {o.children.map((c) => (
+                  <Checkbox key={c.id} label={c.label} isSelected={selected.has(c.id)} onChange={(checked) => toggle(c.id, checked)} />
+                ))}
+              </div>
+            </div>
+          ) : (
+            <Checkbox key={o.id} label={o.label} isSelected={selected.has(o.id)} onChange={(checked) => toggle(o.id, checked)} />
+          ),
+        )}
         {options.length === 0 && <p className="text-sm text-tertiary">No matches</p>}
       </div>
     </div>

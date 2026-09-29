@@ -1,211 +1,141 @@
 "use client";
 
-// A second, deliberately different take on the project detail screen - built to compare directly
-// against project-detail (per direct request: "Create this as a new page. so we can
-// compare old option and new option"). Two Figma references grounded this rebuild:
-// wer8CgO1UoCH3aQw2jQkdy node 1938:35405 (the real tree/table view toggle in this screen's own
-// top-right corner, and its dark project-identity band) and node 2526:58529 (15 "Details
-// Container" frames, one per Event/Occurrence/Observation sub-type, each stacking a read-only view
-// of a section directly above a real, editable version of the same fields - see
-// field-editor.tsx/record-fields.tsx for how that view/edit pattern was generalised into one
-// reusable system instead of 15 bespoke forms).
+// Project detail, Option 2 (route /pages/project-detail/option-2). Until 29 Sept 2026 this was
+// "Option 3, version 3" (/pages/project-detail/option-4/v3); the other explorations were deleted when
+// it was chosen. Kept below as it was written, with the old route names:
 //
-// What's new here, not just restyled:
-//  - A dark gradient identity banner (the same real `bg-gradient-to-b from-brand-900 ...` token
-//    treatment `home-dashboard.tsx`'s own greeting banner already established - not a raw hex
-//    clone of Figma's own dark header) replaces option-1's flat meta row + separate rail card,
-//    carrying the project's identity and its 4 headline counts in one glance.
-//  - Records and Species are real, first-class tabs (matching the map search tool's own Records/
-//    Species split, per direct request to bring that pattern here) instead of a tree buried in the
-//    contextual sidebar - the sidebar tree from option-1 is gone; the same tree now lives inside
-//    the Records tab, next to a real Table view, toggled by the same tree/table icon pair Figma's
-//    own reference shows top-right of that tab.
-//  - Every record - the project's own top-level fields (Details tab) and any Event/Occurrence/
-//    Observation opened from the Records or Species tab - can actually be edited, not just viewed.
-//    No real backend exists anywhere in this build, so an edit commits into this page's own
-//    session-only record store (record-store.tsx) rather than a server, honestly flagged in the
-//    save toast, same convention as project-registration's own "Save Draft".
+// Project detail, Option 3 in the layout switcher (route /pages/project-detail/option-4). Same shell
+// as Option 2: icon rail, the Projects list's column 2 (Projects / Datasets, Actions, footer links)
+// and the gradient project header. The main area is new and has three tabs:
 //
-// Same one concrete project as option-1 (Adelaide Hills Bushland Survey) - now sourced from the
-// real, shared map-search dataset (search-data.ts) instead of a second hand-authored mock, so this
-// page and the map search tool can never disagree about the same project's own records.
+//  - Project: the whole registration (Overview, Data collection and storage, Privacy and
+//    restrictions) as one readable page with an "On this page" list (project-tab.tsx).
+//  - Survey records: every event, occurrence and observation in a tree or a table, beside a record
+//    inspector that shows the selected record's metadata grouped by Darwin Core class
+//    (records-explorer.tsx, record-inspector.tsx).
+//  - Artefacts and attachments: every file attached to a record, each linked back to its record.
+//
+// Everyone but public users can edit: project metadata on the Project tab and each record's metadata
+// in the inspector, through one shared card and edit flow (editable-section.tsx). Edits are kept for
+// the session (edit-store.tsx). The records are this page's own Darwin Core-shaped dataset
+// (survey-data.ts). Column 2 is the same for every persona, with project guides below the actions
+// (projects-guide.tsx).
 
-import { Suspense, useMemo, useState, type FC, type ReactNode } from "react";
+import { Suspense, useMemo, useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { TabList, Tab, TabPanel, Tabs as ContentTabs } from "@/components/application/tabs/tabs";
+import { useRouter, useSearchParams } from "next/navigation";
+import {
+  TabList,
+  Tab,
+  TabPanel,
+  Tabs as ContentTabs,
+} from "@/components/application/tabs/tabs";
 import {
   ArrowNarrowLeft,
   ArrowNarrowRight,
-  File02,
-  Database01,
-  Shield01,
+  LayoutLeft,
 } from "@untitledui/icons";
 import { Button } from "@/components/base/buttons/button";
 import { BadgeWithDot } from "@/components/base/badges/badges";
+import { AlertFullWidth } from "@/components/application/alerts/alerts";
+import { Tooltip, TooltipTrigger } from "@/components/base/tooltip/tooltip";
 import { Breadcrumb } from "@/components/scaffold/breadcrumb";
 import { PrimaryRail } from "@/app/pages/_shared/primary-rail";
 import { sectionIcons } from "@/app/pages/_shared/nav-icons";
 import { AppHeader } from "@/app/pages/_shared/app-header";
 import { MobileNavTrigger } from "@/app/pages/_shared/mobile-nav";
 import { RoleSwitcher } from "@/app/pages/_shared/role-switcher";
-import { MapView } from "@/app/pages/_shared/map-view";
-import { SpeciesResultsView } from "@/app/pages/_shared/map-search/species-results";
-import { searchEvents } from "@/app/pages/_shared/map-search/search-data";
-
+import { ProjectDetailLayoutSwitcher } from "@/app/pages/_shared/project-detail-layout-switcher";
+import { ProjectCardActions } from "@/app/pages/_shared/project-card-actions";
+import {
+  ArtefactLightbox,
+  type Artefact,
+} from "@/app/pages/_shared/artefact-lightbox";
+import { ArtefactsView } from "./artefacts-view";
+import { ReviewScreen, useLiveEntries, useReviewItems } from "./review-view";
+import { useCanReview } from "./field-notes";
+import { allFiles, recordFieldKeys, useFieldNotes } from "./field-notes-store";
 import { useUserRole } from "@/lib/use-user-role";
 import { useRoleHref } from "@/lib/use-role-href";
-import { registeredUserNav, publicUserNav, keyHref, type NavNode } from "@/lib/registered-user-nav";
-import { cx } from "@/utils/cx";
+import { navForRole, keyHref, type NavNode } from "@/lib/registered-user-nav";
+import { ProjectTab, formatDay } from "./project-tab";
+import { SpeciesView, useProjectSpecies } from "./species-view";
+import {
+  ProjectsSidebar,
+  type ProjectScope,
+} from "@/app/pages/_shared/projects-sidebar";
+import { projects } from "@/app/pages/_shared/project-list-data";
+import { CURRENT_USER_NAME } from "@/app/pages/_shared/agreement-scope";
+import { EditStoreProvider, useEditStore } from "./edit-store";
+import {
+  RecordsExplorer,
+  filterForKind,
+  type KindFilter,
+  type RecordsView,
+} from "./records-explorer";
+import type { FilterSelection } from "@/app/pages/_shared/list-filter";
 
-import { RecordStoreProvider, useRecordStore } from "./record-store";
-import { FieldSection, emptyCustomPropertyRow, type CustomPropertyRow } from "./field-editor";
-import { buildSections, type DetailRecord } from "./record-fields";
-import { RecordEditPanel } from "./record-panel";
-import { RecordsView } from "./records-view";
-import { projectOccurrences } from "./project-scope";
-import { registrationDataCollection, registrationProjectDetails, registrationRestrictions } from "./project-registration-data";
-import { DataCollectionCard, DataOwnerCard, GeographicExtentSummary, IdentificationRow, ProjectManagersCard, RestrictionsCard, permitTypeLabel } from "./registration-summary";
+type DetailTab = "project" | "records" | "species" | "artefacts";
 
-const PROJECT_ID = "adelaide-hills";
-const project = searchEvents.find((e) => e.id === PROJECT_ID)!;
-type DetailTab = "overview" | "records" | "species";
+const PROJECT = { code: "BD-5039" };
 
-const detailTabs: { id: DetailTab; label: string }[] = [
-  { id: "overview", label: "About" },
-  { id: "records", label: "Records" },
-  { id: "species", label: "Species" },
-];
-
-// ── Project information stages - mirrors the real Add Project wizard's own 3 steps
-//    (project-registration/stepper.tsx's STEPS) exactly by name/order, per direct request: "We
-//    have three stages and we collect different kind of information in each level. I want the
-//    same information collected in the same sort of grouping in the project homepage." A left
-//    sidebar (not the wizard's own horizontal stepper - this is a static viewer, not a flow to
-//    step through in order) lets a reader jump straight to the group they care about instead of
-//    scrolling one long page; the selected stage renders inside a card styled after the wizard's
-//    own big rounded question card (see StageCard below) per the follow-up ask to "reflect the
-//    card view (Typeform) style." ──
-
-type OverviewStage = "identification" | "data-collection" | "restrictions";
-
-const OVERVIEW_STAGES: { id: OverviewStage; label: string; icon: FC<{ className?: string }>; kicker: string; title: string; description: string }[] = [
-  {
-    id: "identification",
-    label: "Overview",
-    icon: File02,
-    kicker: "Project Details",
-    title: "Project Identification",
-    description: "Basic information about the project, including title, description, and who owns and manages it.",
-  },
-  {
-    id: "data-collection",
-    label: "Data Collection and Storage",
-    icon: Database01,
-    kicker: "Data Collection",
-    title: "Data Collection and Storage",
-    description: "Types of data collected, storage methods, and any relevant handling procedures.",
-  },
-  {
-    id: "restrictions",
-    label: "Privacy and Restrictions",
-    icon: Shield01,
-    kicker: "Privacy",
-    title: "Privacy and Restrictions",
-    description: "Visibility, embargo, and data-sharing options controlling who can access this project's data.",
-  },
-];
-
-function OverviewStageNav({ active, onSelect }: { active: OverviewStage; onSelect: (id: OverviewStage) => void }) {
+function MetaField({
+  label,
+  children,
+}: {
+  label: string;
+  children: React.ReactNode;
+}) {
   return (
-    <nav aria-label="Project information" className="flex w-full shrink-0 flex-col gap-1 rounded-2xl border border-secondary bg-secondary p-2 lg:w-64">
-      {OVERVIEW_STAGES.map((stage) => {
-        const Icon = stage.icon;
-        const isActive = stage.id === active;
-        return (
-          <button
-            key={stage.id}
-            type="button"
-            onClick={() => onSelect(stage.id)}
-            aria-current={isActive ? "true" : undefined}
-            className={cx(
-              "flex items-start gap-3 rounded-lg px-3 py-2.5 text-left transition-colors",
-              isActive ? "bg-primary shadow-xs ring-1 ring-[var(--color-brand-500)]" : "hover:bg-primary/60",
-            )}
-          >
-            <Icon className={cx("mt-0.5 size-4 shrink-0", isActive ? "text-brand-tertiary" : "text-fg-quaternary")} />
-            <span className={cx("text-sm font-medium", isActive ? "text-brand-tertiary" : "text-tertiary")}>{stage.label}</span>
-          </button>
-        );
-      })}
-    </nav>
-  );
-}
-
-function StageCard({ stage, children }: { stage: (typeof OVERVIEW_STAGES)[number]; children: ReactNode }) {
-  return (
-    <div className="min-w-0 flex-1 rounded-2xl border border-secondary bg-primary p-6 sm:p-8">
-      <div className="flex flex-col gap-1 border-b border-secondary pb-6">
-        <span className="text-xs font-semibold tracking-wide text-brand-tertiary uppercase">{stage.kicker}</span>
-        <h2 className="text-xl font-semibold text-primary sm:text-2xl">{stage.title}</h2>
-        <p className="text-sm text-tertiary">{stage.description}</p>
-      </div>
-      <div className="flex flex-col gap-4 pt-6">{children}</div>
+    <div className="flex flex-col gap-1">
+      <p className="text-xs font-semibold tracking-wide text-white/70 uppercase">
+        {label}
+      </p>
+      <div className="text-sm text-white">{children}</div>
     </div>
   );
 }
 
-function OverviewSection() {
-  const [stage, setStage] = useState<OverviewStage>("identification");
-  const activeStage = OVERVIEW_STAGES.find((s) => s.id === stage)!;
-
+function ProjectHero() {
+  const { project } = useEditStore();
+  const d = project.details;
+  const status = project.status;
+  const statusColor =
+    status === "Active"
+      ? "success"
+      : status === "Under review"
+        ? "warning"
+        : "gray";
   return (
-    <div className="flex flex-col gap-4 lg:flex-row lg:items-start">
-      <OverviewStageNav active={stage} onSelect={setStage} />
-      <StageCard stage={activeStage}>
-        {stage === "identification" && (
-          <>
-            <IdentificationRow details={registrationProjectDetails} />
-            <div>
-              <p className="mb-2 text-xs font-semibold tracking-wide text-quaternary uppercase">Abstract</p>
-              <p className="text-sm text-secondary">{registrationProjectDetails.abstract}</p>
-            </div>
-            <div className="flex flex-col gap-4 border-t border-secondary pt-4 sm:flex-row">
-              <div className="min-w-0 flex-1">
-                <DataOwnerCard details={registrationProjectDetails} />
-              </div>
-              <div className="min-w-0 flex-1">
-                <ProjectManagersCard managers={registrationProjectDetails.projectManagers} />
-              </div>
-            </div>
-          </>
-        )}
-
-        {stage === "data-collection" && (
-          <>
-            <div>
-              <p className="mb-2 text-xs font-semibold tracking-wide text-quaternary uppercase">Geographic Extent</p>
-              <GeographicExtentSummary collection={registrationDataCollection} />
-              <div className="mt-3 min-h-[200px] overflow-hidden rounded-lg border border-secondary">
-                <MapView />
-              </div>
-            </div>
-            <div className="border-t border-secondary pt-4">
-              <DataCollectionCard collection={registrationDataCollection} bare />
-            </div>
-            <div className="border-t border-secondary pt-4">
-              <h3 className="mb-3 text-sm font-medium text-primary">Permit &amp; Identifiers</h3>
-              <PermitAndUriFields />
-            </div>
-            <div className="border-t border-secondary pt-4">
-              <h3 className="mb-3 text-sm font-medium text-primary">Custom Property</h3>
-              <CustomPropertyFields />
-            </div>
-          </>
-        )}
-
-        {stage === "restrictions" && <RestrictionsCard restrictions={registrationRestrictions} bare />}
-      </StageCard>
+    <div className="flex flex-col gap-4 rounded-2xl bg-gradient-to-b from-brand-900 via-brand-800 via-[63.942%] to-brand-700 p-6">
+      <div className="flex items-start justify-between gap-4">
+        <div className="flex flex-col gap-1">
+          <p className="text-xs font-semibold tracking-wide text-white/70 uppercase">
+            Project
+          </p>
+          <h1 className="text-2xl font-medium text-white">{d.shortTitle}</h1>
+        </div>
+        <ProjectCardActions projectCode={PROJECT.code} />
+      </div>
+      <div className="flex flex-wrap items-start gap-8">
+        <MetaField label="Project ID">{PROJECT.code}</MetaField>
+        <MetaField label="Start Date">
+          {formatDay(d.startDate) || "Not provided"}
+        </MetaField>
+        <MetaField label="End Date">
+          {d.endDate ? formatDay(d.endDate) : "Ongoing"}
+        </MetaField>
+        <MetaField label="Status">
+          <BadgeWithDot size="sm" color={statusColor}>
+            {status}
+          </BadgeWithDot>
+        </MetaField>
+        <MetaField label="Published by">
+          {d.dataOwnerType === "organisation"
+            ? d.dataOwnerOrgName
+            : `${d.dataOwnerContacts[0]?.firstName ?? ""} ${d.dataOwnerContacts[0]?.lastName ?? ""}`.trim()}
+        </MetaField>
+      </div>
     </div>
   );
 }
@@ -217,10 +147,17 @@ function SectionPlaceholder({ node }: { node: NavNode }) {
     <div className="flex flex-1 flex-col items-center justify-center gap-3 p-12 text-center">
       <h1 className="text-lg font-medium text-primary">{node.label}</h1>
       <p className="max-w-sm text-sm text-tertiary">
-        {relatedLink ? "This section has its own page - it isn't embedded here." : "This section's content hasn't been scoped yet - only its place in the navigation is decided so far."}
+        {relatedLink
+          ? "This section has its own page - it isn't embedded here."
+          : "This section's content hasn't been scoped yet - only its place in the navigation is decided so far."}
       </p>
       {relatedLink && (
-        <Button color="link-color" size="sm" href={roleHref(keyHref(relatedLink.key!))} iconTrailing={ArrowNarrowRight}>
+        <Button
+          color="link-color"
+          size="sm"
+          href={roleHref(keyHref(relatedLink.key!))}
+          iconTrailing={ArrowNarrowRight}
+        >
           Go to {relatedLink.label}
         </Button>
       )}
@@ -228,135 +165,156 @@ function SectionPlaceholder({ node }: { node: NavNode }) {
   );
 }
 
-// ── Hero banner - a single compact row (not a tall stacked block) carrying the project's identity
-//    and its 4 headline counts in one glance. Still the same real dark-gradient token treatment
-//    home-dashboard.tsx's own greeting banner already established (bg-gradient-to-b from-brand-900
-//    via-brand-800 to brand-700) - only the internal layout changed, per direct feedback that the
-//    original stacked version ("title" / "meta row" / divider / "stat row") took up too much
-//    vertical space before any real content was visible - the dark gradient treatment tried
-//    first went further than asked and was flagged directly off a screenshot ("I like this way of
-//    the project header and not the green bar"), pointing at option-1's own plain header instead.
-//    This is now that same plain, light treatment: an eyebrow label, the title, and a meta row
-//    with a bottom rule, no colour block at all - not a restyled dark banner. The 4 headline
-//    counts that used to sit in this header are gone rather than relocated - they're already
-//    real, live numbers on the Records tab's own metric tiles a click away, and repeating them
-//    here would be the same "same fact, two treatments" duplication this file's own cognitive-load
-//    principles warn against. ──
-
-function MetaField({ label, children }: { label: string; children: ReactNode }) {
-  return (
-    <div className="flex flex-col gap-1">
-      <p className="text-xs font-semibold tracking-wide text-quaternary uppercase">{label}</p>
-      <div className="text-sm text-primary">{children}</div>
-    </div>
-  );
-}
-
-function ProjectHero() {
-  return (
-    <div className="flex flex-col gap-4">
-      <div className="flex flex-col gap-1">
-        <p className="text-xs font-semibold tracking-wide text-quaternary uppercase">Project</p>
-        <h1 className="text-2xl font-medium text-primary sm:text-3xl">{project.name}</h1>
-      </div>
-      <div className="flex flex-wrap items-start gap-x-8 gap-y-3 border-b border-secondary pb-5">
-        <MetaField label="Project ID">{project.code}</MetaField>
-        <MetaField label="Start Date">{project.startDate}</MetaField>
-        <MetaField label="End Date">{project.endDate}</MetaField>
-        <MetaField label="Status">
-          <BadgeWithDot size="sm" color={project.statusColor}>
-            {project.status}
-          </BadgeWithDot>
-        </MetaField>
-        <MetaField label="Published by">{project.org}</MetaField>
-      </div>
-    </div>
-  );
-}
-
-// ── Permit / URI-DOI / Custom Property - the one part of the Overview tab that stays genuinely
-//    editable (through the same FieldSection/record-store system every Tree/Table/Species row
-//    uses), seeded from the real registration data above rather than left blank. Everything else
-//    in the Overview tab (focus areas, targeted species, data owner, restrictions...) is read-only
-//    display - editing those would mean rebuilding the wizard's own multi-select/contact-list UI a
-//    second time inline, a much bigger lift than this pass's actual ask (show the information
-//    well), so that's deliberately out of scope for now. ──
-
-function PermitAndUriFields() {
-  const store = useRecordStore();
-  const record: DetailRecord = { kind: "event", event: project };
-  const sections = buildSections(record);
-  const permitSection = sections.find((s) => s.id === "permit");
-  const uriSection = sections.find((s) => s.id === "uri-doi");
-  const permit = registrationDataCollection.permits[0];
-
-  const permitKey = `event-${project.id}:permit`;
-  const uriKey = `event-${project.id}:uri-doi`;
-  const permitValues = { permitType: permitTypeLabel(permit?.type ?? null), permitNo: permit?.number ?? "", ...store.getSection(permitKey) };
-  const uriValues = { uriDoi: registrationDataCollection.uriDoi, ...store.getSection(uriKey) };
-
-  return (
-    <div className="flex flex-col gap-4">
-      {permitSection && <FieldSection fields={permitSection.fields ?? []} values={permitValues} onSave={(next) => store.setSection(permitKey, next)} />}
-      <div className="border-t border-secondary pt-4">
-        {uriSection && <FieldSection fields={uriSection.fields ?? []} values={uriValues} onSave={(next) => store.setSection(uriKey, next)} />}
-      </div>
-    </div>
-  );
-}
-
-function CustomPropertyFields() {
-  const store = useRecordStore();
-  const storeKey = `event-${project.id}:custom`;
-  return (
-    <FieldSection
-      fields={[]}
-      values={{}}
-      onSave={() => {}}
-      customProperty={{
-        rows: store.getCustomRows(storeKey, [emptyCustomPropertyRow(1)]) as CustomPropertyRow[],
-        onChange: (rows) => store.setCustomRows(storeKey, rows),
-      }}
-    />
-  );
-}
-
-export default function ProjectDetailOption2Page() {
+export default function ProjectDetailOption4V3Page() {
   return (
     <Suspense fallback={null}>
-      <RecordStoreProvider>
-        <ProjectDetail />
-      </RecordStoreProvider>
+      <ProjectDetailWithEdits />
     </Suspense>
+  );
+}
+
+function ProjectDetailWithEdits() {
+  const canEdit = useUserRole() !== "public-user";
+  return (
+    <EditStoreProvider canEdit={canEdit}>
+      <ProjectDetail />
+    </EditStoreProvider>
   );
 }
 
 function ProjectDetail() {
   const router = useRouter();
   const role = useUserRole();
-  const isPublicUser = role === "public-user";
-  const nav = isPublicUser ? publicUserNav : registeredUserNav;
+  const nav = navForRole(role);
   const roleHref = useRoleHref();
   const [activeSection, setActiveSection] = useState("Projects");
-  const [detailTab, setDetailTab] = useState<DetailTab>("overview");
-  const [speciesPanelRecord, setSpeciesPanelRecord] = useState<DetailRecord | null>(null);
-  const activeSectionNode = nav.find((section) => section.label === activeSection) ?? nav[0];
-
-  const projectSpeciesOccurrences = useMemo(() => projectOccurrences(project.id), []);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [detailTab, setDetailTab] = useState<DetailTab>("project");
+  const [selectedId, setSelectedId] = useState<string | null>("su1");
+  const [recordFilter, setRecordFilter] = useState<FilterSelection>({});
+  const [recordsView, setRecordsView] = useState<RecordsView>("tree");
+  const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
+  const { project, records, recordById } = useEditStore();
+  const species = useProjectSpecies();
+  // Reviewing flagged concepts is an admin's job (BioData Admin, Privileged Admin). It is management
+  // work, not a view of the records, so it is its own screen (`?view=review`, same route so the
+  // session's edits stay), opened from a banner in Survey records or from the admin's Home.
+  const canReview = useCanReview();
+  const openReviews = useReviewItems().open.length;
+  const liveEntries = useLiveEntries();
+  const searchParams = useSearchParams();
+  const reviewing = canReview && searchParams.get("view") === "review";
+  const reviewItem = searchParams.get("item");
+  const basePath = "/pages/project-detail/option-2";
+  const openReview = () => router.push(roleHref(`${basePath}?view=review`));
+  const closeReview = () => {
+    setDetailTab("records");
+    router.push(roleHref(basePath));
+  };
+  // Which list this project sits in: "My projects" when the signed-in person contributes to it.
+  const projectScope: ProjectScope =
+    projects.find((p) => p.code === "BD-5039")?.contributorName ===
+    CURRENT_USER_NAME
+      ? "mine"
+      : "all";
+  // Artefacts and attachments belong to a property: every file attached to a field, from the
+  // persisted field-notes store, shaped for the shared artefact viewer.
+  const notes = useFieldNotes();
+  const artefacts = useMemo(
+    () =>
+      allFiles(notes).flatMap(({ recordId, key, file }) => {
+        const rec = recordById(recordId);
+        // Only files on a field the record still has.
+        if (!rec || !recordFieldKeys(rec).has(key)) return [];
+        const field = key.slice(key.indexOf(":") + 1);
+        const a: Artefact & { recordId: string; fieldKey: string } = {
+          fieldKey: key,
+          id: file.id,
+          recordId,
+          title: file.name,
+          type: file.kind,
+          size: file.size || "Link",
+          recordLabel: `${rec.name} · ${field}`,
+          metaTitle: file.name,
+          created: file.date,
+          creator: file.addedBy,
+          objectId: `AHL:${rec.code}:${file.id.toUpperCase()}`,
+          description: `Attached to "${field}" on ${rec.type} ${rec.code}, ${rec.name}.`,
+          format: {
+            image: "image/jpeg",
+            pdf: "application/pdf",
+            spreadsheet: "application/vnd.ms-excel",
+            video: "video/mp4",
+            link: "text/uri-list",
+          }[file.kind],
+          identifierUrl: file.url ?? "https://data.environment.sa.gov.au",
+          licenseUrl: "https://creativecommons.org/licenses/by/4.0/",
+          publisher: "Adelaide Hills Landcare",
+          rightsHolder: "Adelaide Hills Landcare",
+          dcType: {
+            image: "StillImage",
+            pdf: "Text",
+            spreadsheet: "Dataset",
+            video: "MovingImage",
+            link: "InteractiveResource",
+          }[file.kind],
+          bioDataId: `BD5039-${rec.code}`,
+        };
+        return [a];
+      }),
+    [notes, recordById],
+  );
+  const projectTitle = project.details.shortTitle;
+  const activeSectionNode =
+    nav.find((section) => section.label === activeSection) ?? nav[0];
 
   const goToSection = (section: NavNode) => {
-    const relatedLink = section.key ? section : section.items?.find((item) => item.key);
-    if (relatedLink?.key) {
-      router.push(roleHref(keyHref(relatedLink.key)));
-    } else {
-      setActiveSection(section.label);
-    }
+    const relatedLink = section.key
+      ? section
+      : section.items?.find((item) => item.key);
+    if (relatedLink?.key) router.push(roleHref(keyHref(relatedLink.key)));
+    else setActiveSection(section.label);
   };
+
+  const goToRecords = (kind: KindFilter, recordId?: string) => {
+    setRecordFilter(filterForKind(kind));
+    if (recordId) setSelectedId(recordId);
+    setDetailTab("records");
+  };
+
+  // "Open record" from an artefact goes to the record and to the field the file is attached to.
+  const [focusField, setFocusField] = useState<{
+    recordId: string;
+    key: string;
+    nonce: number;
+  } | null>(null);
+  // A counter, not a timestamp, so opening the same field twice still counts as a new jump.
+  const [focusSeq, setFocusSeq] = useState(0);
+  const openRecord = (id: string, fieldKey?: string) => {
+    setRecordFilter({});
+    setSelectedId(id);
+    setDetailTab("records");
+    setRecordsView("tree");
+    const nonce = focusSeq + 1;
+    setFocusSeq(nonce);
+    setFocusField(fieldKey ? { recordId: id, key: fieldKey, nonce } : null);
+  };
+
+  // "Go to record" from the all-projects Flagged concepts page arrives as `?record=<id>&field=<key>`:
+  // open that record in Survey records at the field, once per link (adjusted during render).
+  const recordParam = searchParams.get("record");
+  const fieldParam = searchParams.get("field");
+  const [openedFromUrl, setOpenedFromUrl] = useState<string | null>(null);
+  const urlTarget = recordParam ? `${recordParam}|${fieldParam ?? ""}` : null;
+  if (urlTarget && urlTarget !== openedFromUrl) {
+    setOpenedFromUrl(urlTarget);
+    openRecord(recordParam!, fieldParam ?? undefined);
+  }
 
   return (
     <div className="font-barlow flex h-screen flex-col overflow-hidden">
       <RoleSwitcher />
-      {/* ── Header ── */}
+      <ProjectDetailLayoutSwitcher current="option-2" />
       <AppHeader
         mobileNav={
           <MobileNavTrigger
@@ -370,71 +328,193 @@ function ProjectDetail() {
           />
         }
         renderBreadcrumb={(orgLabel) =>
-            activeSection === "Projects" ? (
-              <Breadcrumb section="Projects" current={project.name} orgLabel={orgLabel} />
-            ) : (
-              <Breadcrumb section={activeSection === "Home" ? undefined : activeSectionNode.label} orgLabel={orgLabel} />
-            )}
+          activeSection === "Projects" && reviewing ? (
+            <Breadcrumb
+              section={
+                <span className="flex items-center gap-2">
+                  Projects
+                  <span className="text-quaternary">/</span>
+                  <button
+                    type="button"
+                    onClick={closeReview}
+                    className="text-tertiary hover:text-primary"
+                  >
+                    {projectTitle}
+                  </button>
+                </span>
+              }
+              current="Flagged concepts"
+              orgLabel={orgLabel}
+            />
+          ) : activeSection === "Projects" ? (
+            <Breadcrumb
+              section="Projects"
+              current={projectTitle}
+              orgLabel={orgLabel}
+            />
+          ) : (
+            <Breadcrumb
+              section={
+                activeSection === "Home" ? undefined : activeSectionNode.label
+              }
+              orgLabel={orgLabel}
+            />
+          )
+        }
       />
 
       <div className="flex flex-1 overflow-hidden">
-        {/* ── Primary icon rail ── */}
-        <PrimaryRail sections={nav} activeSection={activeSection} onSelectSection={goToSection} />
+        <PrimaryRail
+          sections={nav}
+          activeSection={activeSection}
+          onSelectSection={goToSection}
+        />
 
-        {/* ── Main content - no secondary contextual sidebar. The nested-records tree that used to
-            live in a persistent aside now lives inside the Records tab's own Tree view
-            (records-view.tsx), and a plain section list mirroring the Tabs below it was dropped
-            entirely per direct feedback - it doubled the same navigation the Tabs already give,
-            the same "no contextual sidebar" shape this build's own guest single-view layout
-            already established elsewhere (see CONTEXT.md's "User roles" section). ── */}
-        <main className="flex flex-1 flex-col overflow-y-auto">
-          {activeSection === "Projects" ? (
-            <div className="flex flex-col gap-6 p-6">
-              <div className="flex flex-wrap items-center justify-between gap-2">
-                <Link href={roleHref("/pages/project-list")} className="flex w-fit items-center gap-1.5 text-sm font-medium text-tertiary hover:text-primary">
-                  <ArrowNarrowLeft className="size-4" />
-                  Back to projects
-                </Link>
-                <Link href={roleHref("/pages/project-detail")} className="flex w-fit items-center gap-1.5 text-sm font-medium text-tertiary hover:text-primary">
-                  Comparing layouts · View Option 1
-                  <ArrowNarrowRight className="size-4" />
-                </Link>
-              </div>
+        {reviewing ? (
+          <ReviewScreen
+            key={reviewItem ?? "review"}
+            entries={liveEntries}
+            initialItem={reviewItem}
+            exitLabel="Back to survey records"
+            onExit={closeReview}
+            onGoToRecord={(entry) => {
+              router.push(roleHref(basePath));
+              if (entry.live) openRecord(entry.live.recordId, entry.live.key);
+            }}
+          />
+        ) : (
+          <>
+            {/* ── Column 2: the Projects list's own column (My projects / All projects, Actions, guides) ── */}
+            {activeSection === "Projects" && !sidebarCollapsed && (
+              <ProjectsSidebar
+                sectionLabel={activeSectionNode.label}
+                scope={projectScope}
+                onScopeChange={(scope) =>
+                  router.push(roleHref(`/pages/project-list?scope=${scope}`))
+                }
+              />
+            )}
 
-              <ProjectHero />
+            <main className="flex min-w-0 flex-1 flex-col overflow-y-auto">
+              {activeSection === "Projects" ? (
+                <div className="flex flex-col gap-6 p-6">
+                  <div className="flex items-center gap-3">
+                    <Tooltip
+                      title={sidebarCollapsed ? "Show sidebar" : "Hide sidebar"}
+                    >
+                      <TooltipTrigger
+                        onPress={() => setSidebarCollapsed((c) => !c)}
+                        aria-label={
+                          sidebarCollapsed ? "Show sidebar" : "Hide sidebar"
+                        }
+                        className="hidden size-8 items-center justify-center rounded-md text-quaternary outline-focus-ring transition duration-100 ease-linear hover:bg-tertiary hover:text-primary focus-visible:outline-2 lg:flex"
+                      >
+                        <LayoutLeft className="size-5" />
+                      </TooltipTrigger>
+                    </Tooltip>
+                    <div className="hidden h-5 w-px bg-[var(--ui-border-primary)] lg:block" />
+                    <Link
+                      href={roleHref("/pages/project-list")}
+                      className="flex w-fit items-center gap-1.5 text-sm font-medium text-tertiary hover:text-primary"
+                    >
+                      <ArrowNarrowLeft className="size-4" />
+                      Back to projects
+                    </Link>
+                  </div>
 
-              <ContentTabs selectedKey={detailTab} onSelectionChange={(key) => setDetailTab(key as DetailTab)} className="flex flex-1 flex-col">
-                <TabList aria-label="Project views" type="underline" size="md" className="gap-6">
-                  {detailTabs.map((t) => (
-                    <Tab key={t.id} id={t.id} label={t.label} />
-                  ))}
-                </TabList>
+                  <ProjectHero />
 
-                {/* ── About: every piece of project-level information the real registration
-                    wizard collects (project-registration/**), grouped into the exact same 3
-                    stages that wizard steps through - Project Identification / Data Collection
-                    and Storage / Privacy and Restrictions - via a left sidebar next to a single
-                    Typeform-styled card, per direct request to mirror that flow's own grouping
-                    and card language on the read-only project page. See OverviewSection above. ── */}
-                <TabPanel id="overview" className="pt-4">
-                  <OverviewSection />
-                </TabPanel>
+                  <ContentTabs
+                    selectedKey={detailTab}
+                    onSelectionChange={(key) => setDetailTab(key as DetailTab)}
+                    className="flex flex-col"
+                  >
+                    <TabList
+                      aria-label="Project views"
+                      type="underline"
+                      size="md"
+                      className="gap-6"
+                    >
+                      <Tab id="project" label="Project" />
+                      <Tab
+                        id="records"
+                        label="Survey records"
+                        badge={records.length}
+                      />
+                      <Tab
+                        id="species"
+                        label="Species"
+                        badge={species.length}
+                      />
+                      <Tab
+                        id="artefacts"
+                        label="Artefacts and attachments"
+                        badge={artefacts.length}
+                      />
+                    </TabList>
 
-                <TabPanel id="records" className="pt-4">
-                  <RecordsView project={project} />
-                </TabPanel>
+                    <TabPanel id="project" className="pt-6">
+                      <ProjectTab
+                        layout="v3"
+                        artefactCount={artefacts.length}
+                        onGoToRecords={goToRecords}
+                        onGoToArtefacts={() => setDetailTab("artefacts")}
+                      />
+                    </TabPanel>
 
-                <TabPanel id="species" className="pt-4">
-                  <SpeciesResultsView rows={projectSpeciesOccurrences} onRowClick={(o) => setSpeciesPanelRecord({ kind: "occurrence", occurrence: o })} />
-                  <RecordEditPanel record={speciesPanelRecord} project={project} onClose={() => setSpeciesPanelRecord(null)} />
-                </TabPanel>
-              </ContentTabs>
-            </div>
-          ) : (
-            <SectionPlaceholder node={activeSectionNode} />
-          )}
-        </main>
+                    <TabPanel id="records" className="flex flex-col gap-4 pt-4">
+                      {canReview && openReviews > 0 && (
+                        <AlertFullWidth
+                          contained
+                          tintedBackground
+                          wrap
+                          color="warning"
+                          actionType="link"
+                          className="max-w-none rounded-lg border border-warning-200 bg-warning-25 px-4 py-3"
+                          title={`${openReviews} flagged concept${openReviews === 1 ? "" : "s"}`}
+                          description={`need${openReviews === 1 ? "s" : ""} review across this project`}
+                          confirmLabel="Review"
+                          onConfirm={openReview}
+                        />
+                      )}
+                      <RecordsExplorer
+                        focusField={focusField}
+                        selectedId={selectedId}
+                        onSelect={setSelectedId}
+                        filter={recordFilter}
+                        onFilterChange={setRecordFilter}
+                        view={recordsView}
+                        onViewChange={setRecordsView}
+                      />
+                    </TabPanel>
+
+                    <TabPanel id="species" className="pt-6">
+                      <SpeciesView onOpenRecord={(id) => openRecord(id)} />
+                    </TabPanel>
+
+                    <TabPanel id="artefacts" className="pt-6">
+                      <ArtefactsView
+                        artefacts={artefacts}
+                        onOpen={setLightboxIndex}
+                        onOpenRecord={openRecord}
+                      />
+                    </TabPanel>
+                  </ContentTabs>
+                </div>
+              ) : (
+                <SectionPlaceholder node={activeSectionNode} />
+              )}
+            </main>
+          </>
+        )}
       </div>
+
+      <ArtefactLightbox
+        artefacts={artefacts}
+        index={lightboxIndex}
+        onClose={() => setLightboxIndex(null)}
+        onNavigate={setLightboxIndex}
+      />
     </div>
   );
 }

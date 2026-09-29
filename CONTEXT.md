@@ -6926,3 +6926,758 @@ user owns and edits directly, not something to restructure without asking.
 - **Sept 27 2026: User Management moved in the BioData Admin nav, per direct instruction ("User management slots between Explore and DLA").** It had been appended after Template Finder. `biodataAdminNav` (`lib/registered-user-nav.ts`) now inserts it right after Explore (`key: "observations"`), so the admin rail and the mobile menu read Home, Projects, Explore, User Management, DLA, DSA, Nominate Sensitive Species, Reports, Template Finder. Every other persona's nav is unchanged. Verified on the dev server's rendered HTML for admin and for registered user. `tsc`, `eslint` and `npm run check:contracts` are clean. The UM flow audit is still waiting on the designer's answers, so none of its recommendations have been built. Not committed.
 - **Sept 27 2026: everything since `e22c5df` pushed to `sai-wips` on DEW-Design/Biodata as `8c555ba`, per direct instruction.** Covers User Management phase 1, zustand persistence and hydration gating, the `/proto` index, the Explore option 2 map tidy-ups, CONTRACTS.md §0.7, and the dev-only `interface-kit` toolbar in `app/layout.tsx` (added outside this session, included as found). Checked before pushing: `tsc`, `eslint --max-warnings=0`, `npm run check:contracts` and the real Pages build (`PAGES_BASE_PATH=/Biodata next build`) all pass. The push was a fast-forward. The `saimaniganahalli` token has no write access to that repo, so the push used the `saimaniganahalli1` account; git config was not changed. This log line is committed separately afterwards.
 - **Sept 28 2026: the admin Home quick actions now read User Management, Control Vocabulary, Reports, per page feedback.** "Control Vocal" was a typo for Control Vocabulary; it is renamed, and the three actions are reordered in `AdminHomeDashboardContent` (`app/pages/_shared/home-dashboard.tsx`). The file comment that said User Management had no page was out of date and is corrected. Control Vocabulary and Reports are still disabled, each with its "Coming soon" tooltip. The typo remains in `/proto/admin-dashboard-options`, an exempt lab, and was left alone there. `tsc`, `eslint` and `npm run check:contracts` are clean. The admin dashboard's rendered HTML shows the new order. Not committed.
+- **Sept 28 2026: project-detail option-3 (shown as "Option 2" in the layout switcher) gets option-1's gradient header and the Projects list's column 2, per direct request, on branch `mohan-wips`.** The flat eyebrow/title/meta-row header is replaced by option-1's gradient identity card: eyebrow, title, Upload dataset and the "..." menu (`ProjectCardActions`), then Project ID, Start Date, End Date, Status and Published by on dark. Dates now read "2 Nov 2025" and "Ongoing" instead of ISO strings and an em-dash. Start Date, End Date and Status stay editable through a hover-only edit icon beside the card's actions, which opens the docked edit column as before. Above the card, the LayoutLeft toggle, a divider and "Back to projects" match option-1; here the toggle hides column 2. Column 2 is the same as `/pages/project-list`: Projects/Datasets vertical tabs, the Actions group (Export CSV, Create report) and footer links. Datasets shows the same "not scoped yet" placeholder the list page shows, and guests get `GuestAboutAside` with the Actions group. The rail now uses `navForRole`, so admin sees the same rail items as on the list page (it used the registered-user tree before). Verified live for biodata-admin and public-user (hover edit icon, sidebar collapse and restore, Datasets and back), with zero console errors; `tsc`, `eslint` and `npm run check:contracts` are clean. Not committed.
+- **Sept 28 2026: project detail Option 3 at `/pages/project-detail/option-4` (branch `mohan-wips`), a fresh main-area layout, per direct request.** It uses the same shell as Option 2: icon rail, the Projects list's column 2, the "Back to projects" row and the gradient header. The layout switcher now lists three options. Main has three tabs:
+  - **Project:** the whole registration on one readable page. It opens with "Survey at a glance" (event, occurrence, observation and artefact counts, plus a chip per event type), then Overview, Data collection and storage (map, coordinate table, focus areas, targeted species, method, permits, URI/DOI) and Privacy and restrictions. An "On this page" list on the right follows the scroll. The cards are reused from option-2's `registration-summary.tsx` and `project-registration-data.ts`.
+  - **Survey records:** a Tree/Table toggle, record-type filter (All, Events, Occurrences, Observations), search, and a record inspector beside the list. Tree and table share one selection. The tree keeps a match's parents visible when filtered. The inspector shows the record's path (clickable), photo for species (ALA credit), type description, "Within this record" children, attachments, and metadata grouped like the BDBSA Details Container frames (Figma `wer8CgO1UoCH3aQw2jQkdy` node `1610:47608`, reference only). A "Darwin Core terms" toggle shows the `dwc:` term under each label where a real term exists. Observations show a MeasurementOrFact table.
+  - **Artefacts and attachments:** each artefact opens the shared lightbox, and "Open record" jumps to its record.
+  - **Data (`option-4/survey-data.ts`, page-local):** 26 records for BD-5039 covering every event type (Site, Visit, Transect, Quadrat, Block, Ramble, Trap, Custom event), both occurrence types and all four observation types, with realistic names and SA species. It is kept separate from `search-data.ts` so Explore does not change, so its counts differ from Option 2's.
+  - **Restricted-species rule:** the Southern Brown Bandicoot is under the project's species restriction, so its records show a warning and its coordinates are rounded to 0.1 degrees in the map and table.
+  - Read-only; editing lives in Option 2.
+  - No Mobbin tool was available this session, so the patterns come from known products rather than a Mobbin search: GBIF dataset/occurrence pages, Finder's preview column, Linear's side panel, and docs "On this page" lists.
+  - Verified live for biodata-admin and public-user (tree, table, filters, search, inspector for a site, a restricted occurrence and a community observation, artefacts, the scroll-following list), with zero console errors. `tsc`, `eslint` and `npm run check:contracts` are clean. Not committed.
+- **Sept 28 2026: project detail Option 3 (`/pages/project-detail/option-4`): one edit pattern, the same column 2 for everyone, and project guides, per direct request (branch `mohan-wips`).**
+  - **Column 2 is identical for every persona:** Projects/Datasets, then Actions (Export CSV, Create report), then a new "What is a project?" block with project guides (Getting started, Video tutorials, Policies, Downloads; `option-4/projects-guide.tsx`) styled like the guest "What is BioData SA?" block.
+    - Guests keep the gated-click rule: Export CSV and Create report open the sign-up invite.
+    - `ProjectActions` gained an opt-in `sameForEveryone` prop and `ActionsGroup` an `onCreateReport` prop, both additive. The Projects list, DSA, DLA and User Management are unchanged.
+    - The guide copy is drafted from the BDBSA facts in this file, not sourced. There are no guide pages yet, so the rows are not links.
+  - **"Survey at a glance"** now shows only the four counts (Events, Occurrences, Observations, Artefacts and attachments); the event-type chip row is gone.
+  - **One edit experience (`option-4/editable-section.tsx`):** every project card (Project details, Published by, Project managers, Geographic extent, Focus/species/method, Permits and identifiers, Embargo, Species restriction) and every metadata section of every event, occurrence and observation is the same card.
+    - "Edit" turns the card's own values into fields in place, and the card gets a brand ring and an "Editing" line.
+    - Cancel or Escape discards; Save changes commits and shows a toast.
+    - Only one card is open at a time; the others' Edit buttons are disabled until it closes. Picking another record closes an open edit.
+    - IDs, record type, parent and datum stay read-only with a lock.
+    - In the narrow record inspector the fields stack under their labels; on the Project tab the label stays on the left so nothing moves.
+    - Field kinds are text, textarea and select; select is used only where the current value is one of the options.
+  - **Who can edit:** everyone except `public-user`, who sees the same cards with no Edit buttons.
+  - **Edits are session-only** (`option-4/edit-store.tsx`, a React context).
+    - Edits flow through: the project short title, dates and status drive the header, the breadcrumb and the tree root, and an edited site, visit or species name updates the tree, table and inspector.
+    - The accordion in the inspector was replaced by these cards.
+    - Pattern references: per-section in-place edit as in Stripe's customer page, GitHub settings and Linear project details. No Mobbin tool was available this session.
+  - **Verified live:** registered-user edited and saved the project title (header, breadcrumb and tree root updated) and a site name (tree and inspector updated). Public-user saw no Edit buttons, the same column 2, and the Create report invite. Zero console errors; `tsc`, `eslint` and `npm run check:contracts` are clean.
+  - **Not covered:** adding or removing records, adding a second manager or restriction, redrawing the geographic extent on the map (it is edited as centre and radius), and dates as free text rather than date pickers. Not committed.
+- **Sept 28 2026: project detail Option 3 (`/pages/project-detail/option-4`) edit flow rebuilt around the Add Project registration, per direct request (branch `mohan-wips`).** The inline, per-card edit from earlier the same day is replaced; `editable-section.tsx` is deleted.
+  - **Grounding:** both registration layouts were walked (`/pages/project-registration` and `/option-2`). Option 2's six sections (Project basics, Data owner, Project team, Extent and focus, Method and details, Restrictions) plus one section per restriction kind are the unit of editing here. Their forms (`SectionFields`), rules (`isSectionValid`, `missingFields`) and state shape (`FormState`) are reused unchanged, so every add and remove registration offers (contacts, managers, permits, targeted species, species, locations, concepts, logo) works in edit too.
+  - **Layout: one edit drawer for everything (`option-4/edit-drawer.tsx`).** A wide right-hand panel holding a real `FormPage`, with a top bar naming what is edited and a full-screen toggle. Cancel, Escape or an outside click with unsaved changes asks "Discard your changes?"; Save changes validates with the same "Details missing" alert and inline errors as registration.
+    - A drawer, not inline, because several edits here are too big for a card (the map picker, repeatable managers and permits, species and location pickers, measurement lists), and one container scales to all of them.
+    - Pattern references: Notion side peek, the Airtable expanded record, GOV.UK "check your answers, then change". No Mobbin tool was available.
+  - **Project tab (`project-tab.tsx`)** reads like registration's Review page, grouped by the same three steps. Each card has Edit, which opens the same registration section in the drawer (`project-edit.tsx`).
+    - Project basics also carries the project's Status, which registration does not have.
+    - Ticking a new kind of restriction takes you straight to that restriction's own section.
+    - Each restriction card has Remove, confirmed with "Keep restriction" / "Remove restriction".
+    - An unfinished section shows "Details needed" and an "Add details" button.
+    - The header, breadcrumb and tree root all follow the saved project.
+  - **Records** (`record-form.tsx`, `record-rules.ts`, `record-inspector.tsx`): the inspector is read-only, with Edit, Add inside and Delete.
+    - Edit opens the record's form in the same drawer: name and date, one `FormRow` per metadata section with IDs, type, parent and datum locked, coordinates (locked for restricted species), plus add and remove for observers, measurements (MeasurementOrFact), custom properties and attachments.
+    - Add inside offers only what the hierarchy allows: Project > Site > Visit > sampling event > Occurrence (Individual, Population) or Observation (Non-biotic, Community); an Occurrence takes one Observation of its own type. The new record gets its next ID and opens in the same form with only name, date and, for an occurrence, scientific name required.
+    - Delete is confirmed and says how many records and attachments inside it go too.
+  - **State:** project, records and attachments live in a session store (`edit-store.tsx`); nothing persists past a reload.
+  - **Verified with a headless Playwright pass** (installed in the scratchpad, not the project) as registered-user:
+    - Added a manager; an empty project name was blocked with the "Details missing" alert; Cancel with changes asked first and discarded.
+    - Ticking Locations chained into the Location restrictions drawer; removed Embargo.
+    - Added a Koala occurrence under the quadrat (empty save blocked first); added and removed a measurement; deleted the quadrat (the dialog said "6 records inside it").
+    - As public-user: no Edit, Add or Delete anywhere.
+    - Zero console errors. `tsc`, `eslint` and `npm run check:contracts` are clean.
+    - The Chrome extension tab froze when a script opened a drawer; the same step passed headlessly in 10 ms, so it was treated as a tooling issue.
+  - **Known:**
+    - The date picker shows MM/DD in en-US browsers (pre-existing).
+    - Dev-tool buttons can sit over the drawer's Save button (draggable).
+    - Records cannot be moved to another parent.
+    - Attachments added in the drawer have no real upload.
+  - Not committed.
+- **Sept 28 2026: a "Version" floating button on project detail Option 3, to compare the previous and current edit experiences, per direct request (branch `mohan-wips`).** The earlier inline, per-card edit version was never committed, so it was rebuilt from this session's history into its own route, `/pages/project-detail/option-4/previous` (`option-4/previous/`: page, edit store, editable section, project tab, record inspector, records explorer). It reuses the shared dataset, guides and record icons from the parent folder. The current version stays at `/pages/project-detail/option-4`.
+  - `option-4/version-switcher.tsx` is the same draggable `FloatingMenuFab` as the role and layout switchers, sitting above them (`bottom: 208`, clock icon). It offers "Previous: inline edit" and "Current: edit drawer", with a checkmark on the current one, and keeps the role in the URL.
+  - Verified headlessly: the button is on both pages; switching goes to each route and back; inline edit still works on the previous page (the saved title updates the header, and no drawer opens). Zero console errors; `tsc`, `eslint` and `npm run check:contracts` are clean.
+  - When a version is chosen, delete the other (CONTRACTS 4.4). Not committed.
+- **Sept 28 2026: project detail Option 3 current version keeps the previous version's page and edits every card in the drawer; roles live on the data owner's contacts (CONTRACTS §4.6 added), per direct instruction (branch `mohan-wips`).**
+  - **The Project tab is the previous (inline) version's page again**: Survey at a glance; Overview (Project details, Published by, Project managers); Data collection and storage (Geographic extent; Focus, species and method; Permits and identifiers); Privacy and restrictions (one card per restriction: Embargo, Species restriction, Location restriction, Project metadata restriction, Other restriction).
+    - Same titles, rows and look. The only change is that each card's Edit opens that card's form in the edit drawer.
+    - The registration-grouped "Step 1 of 3" view, the "Project team" card and its "Registered by (role)" row are gone.
+  - **Card forms (`project-edit.tsx`)** are built from the registration's own pieces:
+    - Project details: `SectionFields("basics")` plus Status.
+    - Published by: data owner type, organisation, logo, and a list of contacts each with name, role, email, phone and team, with add and remove; the first contact is the primary.
+    - Project managers: `ManagerCard`, add, remove, primary.
+    - Geographic extent: `GeoExtentPicker`.
+    - Focus, species and method: focus areas, targeted species, method, method details, limitations.
+    - Permits and identifiers: permits with add and remove, URI/DOI.
+    - Each restriction: `SectionFields(key)`.
+    - "Add restriction" in the Privacy and restrictions header ticks new kinds and chains straight into the first new one's form. Each restriction card has Remove.
+  - **Roles:** `ContactPerson` gained optional `role`/`roleOther` (additive; registration unchanged). The first contact's role falls back to, and is written back to, `roleOfWork`, so registration's rules still hold. Published by shows "name · role" for every contact.
+  - **CONTRACTS §4.6:**
+    - A role belongs to each data owner contact and is shown and edited with that contact.
+    - No separate "your role" or "Registered by" field or row, and no "Project team" card, on project detail or its edit flows.
+    - Nothing is added to a screen beyond what the designer approved or the source defines.
+    - `AUTO §4.6` in `scripts/check-contracts.mjs` fails any "Registered by" label under `app/pages`; it was checked by planting one (caught) and removing it.
+    - Open for the designer: the Add Project registration still asks "Your role" in its Project team section.
+  - **"On this page" is card-level**: each section lists its cards, the active card follows the scroll, and its section is emphasised. A clicked item stays active while the page scrolls to it; before, a card near the bottom handed "active" to the last item.
+  - **Records:** as in the previous version, every metadata card in the record inspector has its own Edit. It opens the record's form in the drawer, scrolled to that section. Add inside and Delete stay under the title.
+  - **Dropped:** the previous version's Geographic extent "Study area" row, which had no registration field behind it (§0.3). The extent now shows the centre and radius from the registered boundary.
+  - **Verified headlessly** (registered-user, 1600px):
+    - Card titles and section titles match the previous version; "On this page" nests the cards; no "Registered by" or "Project team" anywhere.
+    - Clicking "Permits and identifiers" in "On this page" keeps it active.
+    - Added a second Published by contact with the role Research, shown as "Lana Steiner · Research".
+    - Add restriction then Other restrictions chained and saved.
+    - The site record shows 5 section Edit buttons, and Edit Photopoint opens scrolled to Photopoint.
+    - Public-user sees no Edit and no Add restriction. Zero console errors; `tsc`, `eslint` and `npm run check:contracts` are clean.
+  - Not committed.
+- **Sept 28 2026: Survey records tab on project detail Option 3 (current version): filter instead of tabs, accordions with Edit, no Darwin Core terms, full screen, per direct instruction (branch `mohan-wips`).**
+  - **Filter, not tabs.** The All records / Events / Occurrences / Observations segmented tabs are replaced by the same `ListFilterButton` the Projects, DSA and DLA lists use, with one two-level "Record type" section:
+    - Events: Site, Visit, Transect, Quadrat, Block, Ramble, Trap, Custom event.
+    - Occurrences: Individual, Population.
+    - Observations: Individual, Population, Non-biotic, Community.
+    - `ListFilterButton` gained optional nested `children` on `FilterOption` (additive; every existing list is unchanged). A parent's checkbox selects or clears all its types and shows the mixed state when only some are on; only the type ids (`kind:type`) are stored.
+    - The Survey at a glance counts now open Survey records with that kind's types ticked (`filterForKind`).
+  - **Accordions are back** in the record inspector, as in the first version (`Accordion variant="compact"`, every section open to start). Each section's header has its own Edit beside the toggle.
+    - This is a new additive, optional `action` on `AccordionItemType`, rendered as a sibling of the header button (no nested buttons), in the compact and boxed variants. Items without it render as before. The Accordion docs API table now lists `action` and the `compact` variant.
+  - **Removed:** the "Metadata" heading with its "Darwin Core terms" toggle, and every `dwc:` term under labels and in the measurement note.
+  - **Full screen:** a full-screen button at the top of the inspector, and a double-click on a tree item or table row, open that record's details in a full-window view (`record-fullscreen.tsx`) with a wide centred column. "Exit full screen", the close button and Escape return to the list. Edit from full screen opens the drawer on top.
+  - **Bugs found and fixed while testing:**
+    - A double-click on a table row opened the project summary because the lookup matched a cell's `data-key`. It now looks for the row.
+    - The section accordion and the edit drawer shared a React key.
+  - **Verified headlessly** (registered-user):
+    - The tabs are gone and no Darwin Core text is left; 5 section headers each have Edit.
+    - Ticking Occurrences shows "Filter (2)" and exactly the 7 occurrences; Population only shows 4 rows.
+    - A double-click opens Superb Fairywren full screen; the inspector's button opens full screen too, and Edit from full screen opens the drawer scrolled to that section.
+    - Zero console errors; `tsc`, `eslint` and `npm run check:contracts` are clean.
+  - **Known:** the full-screen close button sits under the dev toolbar's floating button (Exit full screen and Escape both work). The component change to `Accordion` is additive and will be listed in the next audit.
+  - Not committed.
+- **Sept 28 2026: project detail Option 3, version 3 (`/pages/project-detail/option-4/v3`), added to the Version floating button as "Version 3: full-screen edit", per direct instruction (branch `mohan-wips`).** The Project tab is the current version's. Only the Survey records tab changes (`option-4/v3/`):
+  - **Resizable:** a vertical separator between the list and the details panel can be dragged, moved with the arrow keys or double-clicked to reset (panel at least 340px, list at least 360px), so either side can be widened.
+  - **Tree-style header:** the type's icon (or the species photo), the name, then the type in muted text, then ID and date. There is no Event/Occurrence badge and no type description.
+  - **All actions together:** one toolbar at the top of the panel holds, on the right, Edit, Add (only the types allowed inside this record), More (Delete record, confirmed with what goes with it) and full screen. The record path sits on the left.
+  - **Clean metadata:** one Edit for the whole record, and every section is an accordion that starts closed.
+  - **"Within this record" and attachments reworked:** "Contains" is a row of small chips (icon, name, muted type) that go down a level on click; more than 6 fold behind "+N more". "Files" are tiles (type icon, name, size) that open the viewer.
+  - **Editing is full screen and inline** (`record-inline-editor.tsx`): Edit, or Add, opens the record full screen with every section as a card (brand ring, label left, field right), the treatment of the first inline version.
+    - Lists grow and shrink in place: observers, measurements as one row of four fields each, custom properties and files.
+    - A sticky Cancel / Save bar; the "Details missing" alert on save.
+    - While editing, Escape and outside clicks are ignored, and Cancel with changes asks first.
+    - A new record joins the list only on save.
+    - The draft logic is shared with the drawer version (`record-form.tsx` exports `toDraft`, `fromDraft`, `missingFor`, `isPlainRow`, `attachmentFromFile` and the field rules).
+  - **Designer override of CONTRACTS §4.1** (named per §0.1): the v3 record editor is an edit form that does not render `FormPage`, because the designer asked for inline editing on the record's own cards. It is scoped to this version. `AUTO §4.1` does not fire because the editor does not use `FormRow`.
+  - **Found while testing:** `w-4` computes to 0px in this repo and is used nowhere else, so the resize handle rendered 0px wide and couldn't be grabbed. It now uses `w-[16px]`. Worth adding `w-4` to the §2.1 dead-class list after a check of the compiled CSS.
+  - **Verified headlessly:**
+    - The Version menu lists all three.
+    - The v3 toolbar is Edit, Add, More and full screen; there's no badge; all sections start closed; Contains and Files show.
+    - Dragging the handle takes the panel from 440 to 648 px, and the arrow keys move it too.
+    - Full screen then Edit, rename the site, Save: the new name is in the full-screen view and the tree.
+    - Add then Visit: an empty save shows "Details missing: Name"; saving with a name shows the new visit.
+    - Escape is ignored while editing; Cancel asks "Discard your changes?".
+    - The guest toolbar is only full screen.
+    - Zero console errors; `tsc`, `eslint` and `npm run check:contracts` are clean.
+  - Not committed.
+- **Sept 28 2026: version 3 of project detail Option 3 refined (v3 only, `/pages/project-detail/option-4/v3`), per direct feedback (branch `mohan-wips`).**
+  - **"Contains" and "Files" removed** from the details panel for every record.
+  - **Toolbar reworked:** the row of Edit / Add / More / full-screen buttons read as clumsy.
+    - The toolbar is now the record path on the left and two icons on the right: one Actions menu ("..."), and full screen.
+    - The menu holds everything you can do to the record in sections: Edit record; Add inside, listing only the types allowed; Delete record. The pattern is Linear's and Notion's single "..." menu.
+    - Guests see only full screen.
+  - **The path no longer runs under the icons:** past two steps, the middle folds into a "..." menu listing the hidden ancestors. Verified: the path ends at 1322px and the actions start at 1493px on a deep record.
+  - **A small edit icon beside each accordion's chevron** (Accordion `action`) opens full-screen inline edit scrolled to that section's card (`focusSection`, card ids `inline-section-*`). The Actions menu's "Edit record" opens it at the top. All accordions start closed.
+  - **Field notes** (`v3/annotations.ts`, example data kept beside v3, not in the shared dataset): any field or measurement can carry a flag (questionable, with reason, who and when), comments, and attached files, alone or together.
+    - After the value, small indicators show them: a flag, a comment count, a file count.
+    - A flagged row has a warning edge. Choosing a noted row opens its notes in place: the flag banner, the comments, and the file chips.
+    - A closed section's header shows its totals, so notes are findable without opening every section.
+    - Examples: Southern Brown Bandicoot "Sex" has all three; Cleland site "Reliability" has a flag and a comment; "Description" has a file; Fairywren "Quantity" has a comment and a file; Bandicoot capture "Body mass" has a flag and a file; others have one comment.
+    - Pattern references: Airtable and Google Sheets cell comments, kept inside the row.
+    - Notes are shown, not yet editable.
+  - **Filter:** while a filter or search is on, parent rows shown only as context are disabled in the tree (`disabledKeys`), so they can't be picked. Verified: 11 disabled context rows, and clicking one leaves the selection unchanged.
+  - **Verified headlessly:** everything above, with zero console errors; `tsc`, `eslint` and `npm run check:contracts` are clean.
+  - **Open:** adding, resolving and replying to flags or comments, and attaching files to a single field, in edit mode, is not built yet.
+  - Not committed.
+- **Sept 28 2026: project detail option 3, version 3 (`/pages/project-detail/option-4/v3`): property-level notes that persist, a new full-screen record view, and layout fixes. Per page feedback.** Only v3 changed. The previous and current versions are untouched.
+  - **Field notes (flags, comments, attachments) belong to a property and persist.** New zustand store `v3/field-notes-store.ts`. It is persisted to localStorage as `biodata-project-field-notes`, using the shared `zustand-persist` helpers (`skipHydration` plus `useRehydrate`). Notes are keyed by record and by `section:label`.
+  - **How a note is added:** hovering a field row shows a note icon, and choosing the row opens its notes underneath it (`v3/field-notes.tsx`). The panel shows:
+    - a flag with its reason, who raised it and when, and a Resolve action;
+    - the comments, which the author can delete;
+    - the attached files.
+  - The composer has a Comment/Flag switch, a text box, Post, and Attach file. A row with notes shows small flag, comment and file indicators, and a flagged row gets a warning edge. Guests can read notes but not add them.
+  - **Artefacts and attachments are modelled at property level.** The four seeded artefacts are now attached to specific fields: a photopoint, a trap protocol, and two measurements. The Artefacts tab lists every field file, so its count now changes as files are attached.
+  - **Record edits themselves are still session-only.** Only notes persist. "Record status" in the request was ambiguous and was read as a field flag; a separate record status was not added.
+  - **Full-screen record view, rebuilt** (`v3/record-full-view.tsx`), after the full record pages in Linear and GBIF:
+    - a sticky top bar with the path, Actions and Exit;
+    - a main column with a large header and every section as an open card, each with a hover edit icon;
+    - a sticky right column with a Record summary, the location map, and "Notes on this record", which lists every noted field and jumps to it.
+  - **Smaller fixes:**
+    - The records Filter button now sits after the search box.
+    - The accordion edit icon sits before the chevron and appears on hover. This uses a new additive `actionPlacement="beforeChevron"` on `Accordion`, which is added to its docs API table.
+    - Field rows share one inset, so the hover fill no longer touches the text.
+    - Project tab card edits are icon-only in v3 and are revealed on hover.
+    - The project tab fills the width when the sidebar is collapsed. `ProjectTab` gained `layout` and `artefactCount` props; the current version is unchanged.
+  - **Verified live (headless Playwright, registered user and guest):**
+    - Filter sits after search.
+    - The accordion edit icon is hidden when idle, shows on hover, and sits before the chevron.
+    - A comment, a flag and a file were added to "Site comment" and survived a reload.
+    - The Artefacts count went from 7 to 8.
+    - The full view renders, and its notes list jumps to fields.
+    - The card width goes from 938 to 1224px with the sidebar hidden.
+    - The guest sees no edit icons and no composer.
+    - Zero console errors. `tsc`, `eslint` and `npm run check:contracts` are clean.
+  - **Known:** the dev-only interface-kit toolbar draws over the full view's top-right Exit button. Not committed.
+- **Sept 28 2026: one toolbar search width (CONTRACTS §4.2c), and version 3 of project detail Option 3 edits one card at a time with a "Fields shown" checklist, per direct feedback (branch `mohan-wips`).**
+  - **§4.2c, one search width.** New shared `ToolbarSearch` (`app/pages/_shared/toolbar-search.tsx`; page-shared, not `components/**`): 384px (`max-w-sm`), small, `SearchMd`, with Filter directly after it.
+    - The Projects list, DSA and DLA lists (both kinds each), User Management lists, and all three Survey records explorers (previous, current, v3) now use it. The explorers' search used to grow to fill the row.
+    - `AUTO §4.2c` (`scripts/check-contracts.mjs`) fails a file that has a `ListFilterButton` and a hand-rolled `Input` with a search icon. It was checked by planting one (caught) and removing it.
+    - Open, not decided: Explore's results search (made full width on the designer's instruction earlier) and project-detail option 2's `max-w-md` records search. Neither has a Filter button, so the check does not cover them.
+  - **Tree expand and collapse.** The two "Expand all / Collapse all" links left the toolbar. The tree now has a slim header of its own, with the record count and one icon toggle (double chevrons, with a tooltip): collapse when everything is open, expand otherwise, following the VS Code explorer and GitHub file tree. It hides while a filter or search is on, because the tree then opens to the matches. No Mobbin tool was available this session.
+  - **The note tabs match the Tree / Table switch.** Its classes moved to `v3/segmented.ts` and are used by both.
+  - **Notes are added only in edit mode.**
+    - When viewing, a field shows its note indicators, which read the notes in place, and, on hover, an edit icon (anyone who can edit). The icon opens that field's card in edit mode, scrolled to and focused on the field.
+    - In edit mode, "Notes" under a field opens three tabs: Comment (add; the author can edit or delete their own), Flag (reason; Resolve), and Attach (a file, or a reference link with a title). `FieldFileKind` gained `link` with a `url`.
+    - **A field that is itself a comment (a "Site comment") takes no notes and is edited as a value only.** This is my reading of "record comment can only be edited and not added". Confirm it.
+  - **One card in edit mode, in the full view** (`v3/record-full-view.tsx`, `v3/card-editor.tsx`).
+    - A card's edit icon, a field's edit icon, or Actions > Edit record puts just that card in edit mode. Other cards stay as they are, dimmed, and their edit icons hide.
+    - Cancel and Save changes sit in a sticky footer ("Editing Site details · Unsaved changes"). Cancel with changes asks first, as does Exit full screen. Escape and outside clicks do nothing while editing.
+    - Save commits the record, its notes and its fields shown together, and shows "Details missing" if something required is empty.
+    - Adding a new record still uses the all-cards editor (`record-inline-editor.tsx`).
+    - The §4.1 designer override logged earlier for v3 still applies.
+  - **"Fields shown"** (`v3/visibility-panel.tsx`, `v3/field-visibility-store.ts`, persisted as `biodata-project-field-visibility`) replaces the right-hand column while a card is in edit mode.
+    - It lists every category with a checkbox (checked, partly checked or clear), a count, and a fold; each category's fields are listed under it with their own checkboxes.
+    - It has "Find a field", Show all and Hide all. The category being edited opens first and is tinted.
+    - Unticked fields leave the details panel and the full view, and a category with none left disappears. A hidden field is marked "Hidden" in edit mode.
+    - Primary identifiers (a label ending in "ID", except "Legacy …") are locked as always shown.
+    - Visibility is saved per record. Whether it should instead apply to every record of a type is for the designer.
+    - Patterns: Airtable "Hide fields" and Notion property visibility, built from DEW `Checkbox` (indeterminate), `Input` and `Button`.
+  - **Verified headlessly** (registered-user and public-user, 1600px):
+    - Search is 384px with Filter 12px after it on v3 and on the Projects list.
+    - The tree toggle collapses and expands.
+    - Hovering a field shows its edit icon; view mode has no composer and reads notes.
+    - A field's edit opens the full view with that card editing and the field focused, the checklist and the footer. The tabs are Comment, Flag and Attach, and "Site comment" has no Notes.
+    - I added a comment and a link and hid Legacy site ID, then saved; after a reload the notes and the hidden field held.
+    - Cancel with changes asks first. The guest sees no edit icons.
+    - Zero console errors. `tsc`, `eslint --max-warnings=0` and `npm run check:contracts` are clean.
+  - Not committed.
+- **Sept 28 2026: version 3 of project detail Option 3, round two, per direct feedback (branch `mohan-wips`).**
+  - **Decisions from the designer:**
+    - A field that is itself a record comment ("Site comment") is edited as a value; no notes pile up on it.
+    - Hiding fields is per record.
+    - **Which fields can never be hidden is not known yet.** The designer will supply it. Until then the provisional lock stays (`ALWAYS_SHOWN`: a primary "…ID", not "Legacy …"). A memory records this, so it is asked about rather than changed unasked. The list can be handed over as plain field labels per record type.
+  - **Consistent treatments:**
+    - The focused edit row lost its brand-25 fill (plain now).
+    - The note panels are a plain bordered box instead of a grey fill.
+    - Hover rows (field rows, checklist rows) now inset their content by 12px, with no negative-margin bleed. The accordion clipped the bleed, so text sat 2px from the fill.
+  - **Breadcrumbs start with the project, not a link:** a folder icon and "BD-5039" (`ProjectCrumb` in `record-inspector.tsx`, used by all three versions and by v3's project header).
+  - **Actions menu:**
+    - Edit record; a divider; "Add inside" as Events, Occurrences and Observations, each a submenu of its types (the Record type filter's grouping, react-aria `SubmenuTrigger`); a divider; Delete record in the error colour.
+    - `Dropdown.Item` gained an additive `destructive` prop (error label, icon and hover), documented in the Dropdown docs API table.
+    - **Found and fixed:** `Dropdown.Separator` used the dead `bg-border-secondary`, so every dropdown divider in the app was invisible. It now uses the border token (`AUTO §2.1a` count 1 to 0).
+  - **Edit record opens every card in edit mode.** A card or field icon opens just that card.
+  - **Edit returns to where it started:** from the side panel, full-screen editing closes back to the panel on Save or Cancel; from the full view, it stays in the full view.
+  - **Questionable values** (the business term, shown with the flag icon):
+    - Only a BioData Admin can mark a value questionable (with the reason) or resolve it. Other editors see it read only; their note tabs are Comment and Attach.
+    - The admin resolves it where they read it, in the view (field notes, then Resolve), as well as in edit mode.
+    - Copy: "Marked questionable", "Mark questionable", the "Questionable" tab.
+  - **Type icons (option-4 only, lucide-react):**
+    - Events: Site MapPinned, Visit CalendarCheck2, Transect Route, Quadrat Grid2x2, Block SquareDashed, Ramble Footprints, Trap Box, Custom event Shapes.
+    - Occurrences: Individual LocateFixed, Population ChartScatter.
+    - Observations: Individual ScanEye, Population Binoculars, Non-biotic Mountain, Community Trees.
+    - Explore keeps its Figma icons.
+  - **Project tab edits inline in v3:**
+    - The card's own form (the drawer's exact fields and rules) opens inside the card, with "Editing" and the brand border, and Cancel and Save changes in a footer that stays in view.
+    - The other cards dim and lose their icons. Add restriction opens as an inline card.
+    - The current version still uses the drawer.
+    - Designer override of CONTRACTS 4.1 (no `FormPage`), as for records, logged here.
+  - **Verified headlessly** (registered-user and biodata-admin):
+    - The breadcrumb reads "BD-5039" with no link; 26 lucide icons show in the tree.
+    - The menu reads Edit record | Events (submenu Visit) | Delete record in red, with 2 dividers.
+    - Edit record puts 5 of 5 cards in edit mode, and Cancel returns to the panel; a field edit then Save returns to the panel with the new value.
+    - Row text is inset 12px, and a full-view edit then Cancel stays full screen.
+    - The admin resolves Reliability from the view, and the admin tabs are Comment | Questionable | Attach.
+    - The Project details card edits inline with no dialog; Add restriction is inline.
+    - Zero console errors. `tsc`, `eslint --max-warnings=0` and `npm run check:contracts` are clean.
+  - **Proposed, not built (for the designer):**
+    - Keep a resolved history ("Resolved by Jane Harlow, 2 Oct") rather than deleting the flag.
+    - Ask for an optional resolution note.
+    - Show questionable values in a review list (a count on the record and a filter "Has questionable values" in Survey records).
+    - Let the record's contributor reply to the reason as a comment.
+  - Not committed.
+- **Sept 28 2026: project detail Option 3, version 3, round three, per direct feedback (branch `mohan-wips`).**
+  - **New contract clause, CONTRACTS §4.7 "Editing in place on a detail page":**
+    - how an edit is entered;
+    - one editing treatment;
+    - Cancel and Save in one sticky page footer, never inside a card;
+    - asking before discarding changes, and returning to the view the edit started from;
+    - "Fields shown" while editing.
+    - §4.1 now lists this as its exemption. `REVIEW` only.
+  - **Hierarchy, decided by the designer:**
+    - Site holds Visits, sampling events, Occurrences and Observations.
+    - A Visit holds only Occurrences and Observations: no event is ever in a Visit.
+    - Sampling events hold Occurrences and Observations.
+    - An Occurrence holds one Observation of its own type.
+    - Nothing goes inside an Observation.
+    - The sample data was re-parented to match: all six sampling events now sit under their Site. This shared data affects all three versions.
+    - "Add inside" offers Events, Occurrences and Observations as submenus of their types, filtered by these rules.
+  - **Questionable:** marked and resolved by a BioData Admin or a Privileged Admin. Resolving is now a small check icon, needs a reason, and keeps the reason as a "Resolved: …" comment.
+  - **Record path:**
+    - The breadcrumb's first step (folder icon, BD-5039) is clickable again.
+    - The tree root reads "Project".
+  - **Expanding and collapsing:**
+    - The details panel has an expand / collapse-all toggle for its sections, shared with the tree (`ExpandAllToggle`).
+    - The full view's cards are collapsible, with the same toggle.
+  - **Artefacts and attachments:** a Cards / Table switch, with search and a Type filter (`v3/artefacts-view.tsx`). It lists only what is attached to record fields.
+  - **Adding a record:** a new record opens in the full-view layout, with every card in edit mode, "Fields shown", and an "Add <type>" footer. It returns to where it started. `record-inline-editor.tsx` was deleted.
+  - **Project tab, v3:**
+    - Cancel and Save moved to a sticky page footer.
+    - Every field row and contact (except restrictions) has a hover edit icon that opens its card focused on that field.
+    - An edited card spans the full row.
+  - **Verified headlessly** (registered user and privileged admin). Zero console errors. `tsc`, `eslint` and `check:contracts` are clean.
+  - Not committed.
+- **Sept 28 2026: project detail Option 3, version 3, round E: notes in tabs, one comment per field, resolve with a reason, the project as a record, jump to a field from an artefact, per direct feedback (branch `mohan-wips`).**
+  - **Field notes in view mode use the same three tabs as edit mode** (Comment, Questionable, Attachments; `NotesPanel` in `v3/field-notes.tsx`). The whole field row is now one button that opens and closes its notes (with a chevron). Before, only the small indicator icons did this. The edit icon stays a separate button. The tab opened first follows the content: Questionable if flagged, otherwise Comment, otherwise Attachments. In a narrow side panel the tabs share the width equally and drop their icons (container queries on the panel); a small warning dot on Questionable marks a flag. Pattern references: the Airtable field description and a spreadsheet cell note (no Mobbin tool was available this session).
+  - **One comment per field.** With no comment you can add one, once; after that it can only be edited, never added to, and the add box is gone. The hint says so. A record's own comment field (e.g. "Site comment") takes no notes.
+  - **Questionable:** only biodata-admin and privileged-admin can mark or resolve it. Resolve is a link-style text button ("Resolve"), not an icon. It asks "Why is it resolved?", and the reason is required. The resolution is kept (`FieldNotes.resolved`: reason, who, when, the original flag reason) and shown as a "Last resolved" line.
+  - **Observations of all four types** (Individual, Population, Non-biotic, Community) can be added wherever observations can be added.
+  - **Project tab:** Status is the first row of Project details. The inline-edit Cancel/Save footer spans the main column edge to edge.
+  - **The project is a record in the Survey records table** (first row, type "Project", ID BD-5039). "Project" is a type in the Events filter. Choosing it shows the project summary.
+  - **Artefacts:** "Open record" now goes to the exact field the file is attached to. It switches to Survey records, selects the record, opens that field's section, scrolls it into view and plays a short brand highlight (Web Animations, token colours only).
+  - **Verified headlessly:** everything above, plus the notes tabs fitting a 400px panel. Zero console errors; `tsc`, `eslint` and `npm run check:contracts` are clean.
+  - **Open:** (1) the current (drawer) version's Add inside is still one flat list; say if it should get the same Events/Occurrences/Observations submenus. (2) The list of fields that can never be hidden is still to come from the designer (the provisional lock is `ALWAYS_SHOWN`).
+  - Not committed.
+- **Sept 28 2026: project detail Option 3, version 3, round F, per direct feedback (branch `mohan-wips`).**
+  - **Field notes show only what has data (view mode).** The Comment, Questionable and Attachments tabs appear only when that kind of note exists on the field. With one kind, there are no tabs: a small heading (icon and name) sits over the content. With two or three kinds, there are that many tabs. Edit mode still offers every tab the person can add to (Questionable only for BioData Admin and Privileged Admin, or when the field already has one).
+  - **Narrow panels:** below a 320px notes panel (container query `@xs`), the tabs are icon-only, share the width and keep their name as the accessible label. From 320px they show icon and name.
+  - **A gap above the notes panel.** It no longer butts against the field row.
+  - **"Open record" is now "Go to record"** in the Artefacts cards and table (v3), and in the intro copy.
+  - **The details panel's scrollbar starts under its header,** like the tree beside it. The panel is a flex column: the header (path, actions, full screen) stays fixed and only the body scrolls. The header was sticky inside a scrolling panel before.
+  - **Anything can be added directly under the project:** Add inside at project level now offers every event type (Site, Visit, Transect, Quadrat, Block, Ramble, Trap, Custom event), both occurrence types and all four observation types. `childOptions(null)` in `record-rules.ts` is shared, so the drawer version's project-level add changes too. Rules under a record are unchanged.
+  - **Verified headlessly (biodata-admin):**
+    - Reliability shows 2 tabs (Comment, Questionable); Description shows only an "Attachments" heading with no tabs.
+    - With the panel at 340px, the tabs are icon-only.
+    - The panel's scroller starts 50px below the panel top (under the header).
+    - The project menu lists Events (8), Occurrences (2) and Observations (4).
+    - 8 "Go to record" links and no "Open record".
+    - Zero console errors. `tsc`, `eslint --max-warnings=0` and `npm run check:contracts` are clean.
+  - Not committed.
+- **Sept 28 2026: Site fields and field types from Figma, and field-type rules for every survey record, per direct instruction (branch `mohan-wips`).** Source: Figma `YMproGZfrFB5jUqPHPxMhk`, node `1970:143519` ("Site Details Container / Edit"). Each field in the frame carries an annotation that names its type, and those annotations were followed exactly. The designer's standing rule: **anything given for one record type applies to every event, occurrence and observation**. The rule is saved as a memory, and the rules live in one shared file (`option-4/field-schema.ts`), so the next record types reuse them.
+  - **Site fields (in Figma order):**
+    - **Site details:**
+      - Site ID and Legacy site ID: system generated, locked.
+      - Site name, Description, Site grouping, Specific property details: text.
+      - Altitude: number.
+      - Mud map: Yes/No.
+      - Paddock: text.
+      - Site comment: text area.
+    - **Observers:** multi-select.
+    - **Location information:**
+      - Location details: the location picker.
+      - IBRA region and IBRA subregion: derived.
+      - Location method, Datum and Reliability: controlled vocabulary.
+      - Sample site dimensions: two values with a unit.
+      - Location comment: text area.
+    - **Photopoint:**
+      - Photopoint marker present: Yes/No.
+      - Photopoint disc number: text.
+      - Photopoint direction: number in degrees.
+    - **Custom properties:** the existing editor, not Figma's version.
+    - Removed from the site: Established date and Locality. A site has no date field in the frame; its date stays as a record date and is not edited.
+    - `siteSections()` in `survey-data.ts` is the one builder for seeded and new sites.
+  - **Field-type rules (`field-schema.ts`, controls in `v3/field-controls.tsx`), for every record:**
+    - **Location:** the project's own location picker (`GeoExtentPicker`: shapefile, draw, list, coordinates). A record's location must sit inside the project area and inside its nearest ancestor's location.
+      - A location outside those areas is **blocked with a warning** (designer decision). The previous location stays, the coordinate fields snap back, and a warning names the area it fell outside. The allowed areas are always listed under the picker.
+      - Records now keep their picked shape (`SurveyRecord.location`), and the maps draw it.
+    - **Picker changes (additive):**
+      - Shapefile uploads are now read for real (`parseShapefileUpload`), so they give a real shape to check. The first polygon is used, or a small circle around the first point.
+      - The coordinate fields now show the stored point.
+      - New optional props: `defaultRadiusKm`, `compactTabs` and `referenceBoundaries`. Registration's behaviour is unchanged apart from these improvements.
+    - **Controlled vocabulary** (a dropdown with a disabled box beside it): a code `Select`, with each option showing its description, plus a disabled `Input` that shows the chosen code's description. In view mode it reads "GPS · Hand-held GPS".
+      - The code lists are **illustrative** until the Control Vocabulary module supplies the real ones.
+      - Datum is no longer locked. Existing Location method and Reliability values were converted to codes.
+    - **Numbers:** the DEW `InputNumber`.
+    - **Number with a fixed unit:** the unit is written inside the field by the number formatter ("45°"), with the range as a hint ("In degrees, 0 to 359").
+    - **Two values with a unit:** length × width, then a unit select (m, km).
+    - No Mobbin tool was available this session. The pattern follows the inline units of Stripe and Shopify and native unit formatting.
+    - **Yes/No:** horizontal `RadioGroup` (Yes / No), not a dropdown. Both options stay visible and one click answers, so the designer's preference stands.
+    - **No input box in Figma** means system generated and locked.
+    - **IBRA region and subregion** are worked out from the location, both while editing and on save (`fromDraft`).
+      - The IBRA names are real IBRA 7 names; the boundaries are **approximate latitude and longitude boxes**, per the designer ("come up with region names").
+      - The Adelaide Hills sites resolve to Flinders Lofty Block / Mount Lofty Ranges.
+    - **Observers:** a `MultiSelect` of people on every record.
+  - **Verified headlessly (biodata-admin):**
+    - Site view: "GPS · Hand-held GPS", "1 · Within 10 m", "100 × 100 m", "45°".
+    - Edit record lists exactly the Figma rows.
+    - Coordinates outside the project are blocked with the warning, and the field snaps back.
+    - Inside coordinates are taken, and IBRA updates.
+    - Mud map No, direction 90° and method DGPS saved and read back as "DGPS · Differential GPS" and "90°".
+    - A Visit moved outside its site is blocked with the site named.
+    - A new site at project level gets the full Figma field set.
+    - Zero console errors. `tsc`, `eslint --max-warnings=0` and `npm run check:contracts` are clean.
+  - **Open:**
+    1. Altitude has no unit in Figma ("Number Text Field"), so it shows a bare number. Should it be metres?
+    2. The current (drawer) version's record form still types Datum as free text and uses its own coordinate inputs; only v3 got the new controls.
+    3. The location picker's draw map has no outline of the allowed area yet (the picker supports `referenceBoundaries`, but the map draws every shape the same way).
+  - Not committed.
+- **Sept 28 2026: project detail Option 3 v3, Site round 2, per direct feedback (branch `mohan-wips`).**
+  - **Field types come from the Figma components, not the annotations** (designer: "only refer the field type in the Figma and not annotation"). Re-read node `1970:143519` by component:
+    - Every type matched what was built, except **Photopoint disc number**. It is an 80px input with "00", so it is now a number (`192`, `193`).
+    - The earlier CONTEXT entry's "annotation" wording is superseded.
+  - **Allowed area outline:**
+    - `SAMap` gained an additive `outlines` prop: dashed, no fill, no pin, included in the map's fit so the whole allowed area is in view.
+    - `GeoExtentPicker` passes `referenceBoundaries` to it, on both the inline draw map and its full-screen map.
+    - The survey location field passes the project area and the parent's location. Its hint names them and says the dashed outline is the allowed area.
+  - **"Full screen" on every map:** new `v3/record-map.tsx` (`RecordMap`) is the record's read-only map with the picker's "Full screen" button top left. It opens a full-window map with "Exit full screen". It is used in the details panel's Location information and in the expanded view's Location side card, which stays as it was.
+  - **The expanded view shows what was entered:** the Location information card now has a "Location details" row and the coordinate table (Entered Value and GDA2020 Equivalent), in both the panel and the expanded view.
+    - The row is how and what was entered, e.g. "Drawn on the map · circle, 500 m radius" (`locationSummary`).
+    - The row takes notes like any field, including in edit mode.
+  - **Field notes are one card per kind, stacked** (Comment, then Questionable, then Attachments), replacing the tabs.
+    - When viewing, only cards with data show. In edit mode, every card the person can add to shows.
+    - The Questionable card carries the warning tint and reads "Marked questionable". The inner box is gone, so boxes are not nested.
+    - The orange left edge on a questionable row is removed.
+  - **Custom properties:**
+    - The section is hidden when a record has none, in the panel and the expanded view. It shows in edit mode so properties can be added.
+    - Each custom property row is now a field row in edit mode, with Notes (comment, questionable, attachments) once it has a name.
+  - "Recorded by" now reads "Olivia Wyatt, Maya Dewitt" (was pipe-separated).
+  - **Verified headlessly (biodata-admin):**
+    - The panel lists no Custom properties section.
+    - Location information shows the full-screen map button, the Location details row and the table, and Full screen opens the map dialog.
+    - Reliability notes show two stacked cards (Comment, Questionable) with no tabs and no left edge.
+    - The expanded view has no Custom card, shows the entered-value table and has full-screen buttons.
+    - Adding a custom property gives it Notes, and the section appears after saving.
+    - The draw map shows the dashed 12 km project outline around the site.
+    - Zero console errors. `tsc`, `eslint --max-warnings=0` and `npm run check:contracts` are clean.
+  - Not committed.
+- **Sept 28 2026: project detail Option 3 v3, notes as a menu in edit mode, and five fixes, per direct feedback (branch `mohan-wips`).**
+  - **Edit-mode notes are one "Add note" menu per field** (`FieldNotesEditor`, `v3/field-notes.tsx`), replacing the three stacked editors.
+    - Pattern: Notion and Airtable keep field actions behind one button, and spreadsheet "Insert note" works the same way. No Mobbin tool was available.
+    - The menu offers only what applies now:
+      - Add comment, or Edit comment once one exists (one comment per field).
+      - Mark questionable, or Resolve questionable when flagged (BioData Admin and Privileged Admin only).
+      - Attach a file, which opens the file picker directly.
+      - Add a link.
+    - Picking one opens a single small editor under the field with Cancel and a named action. Notes already on the field are listed compactly underneath (questionable in the warning tint, the comment, file chips with remove), with the note indicators beside the button.
+    - View mode keeps the stacked cards.
+  - **Location details divider:** the table belongs to Location details, so the row's line now sits under the table. `FieldRow` gained an additive `divider` prop; the row and the table are wrapped in one bordered block.
+  - **One highlight for every jump to a field.** New `v3/flash.ts` (`flashElement`) is used by:
+    - "Go to record" from an artefact.
+    - Editing a field from the details panel: the expanded view opens in edit mode and flashes that field.
+    - Every item in "Notes on this record", which also opens a folded card first.
+    - The new Observers link in the Record summary.
+  - **The breadcrumb shows the current record**, as "SU00501 · Cleland Stringybark Woodland" in medium weight with `aria-current="page"`, in the details panel and the expanded view.
+  - **Dates show only where the record type has a date field** (`hasDateField` in `field-schema.ts`): the panel header, the Record summary, and the Survey records table's Date column. A site shows none.
+  - **Record summary Observers:** the first name and "+N more", as a link that jumps to the Observers field with the highlight, instead of the full list.
+  - **Verified headlessly (biodata-admin):**
+    - The breadcrumb reads "BD-5039 › SU00501 · Cleland Stringybark Woodland".
+    - The divider sits under the table.
+    - Editing Reliability from the panel flashes it in the expanded view.
+    - The note menu for an admin on a flagged field reads "Edit comment | Resolve questionable | Attach a file | Add a link", and adding a link lists it under the field.
+    - The site summary has no Date and shows "Olivia Wyatt +1 more".
+    - Clicking a note and the Observers link both flash the field.
+    - Zero console errors. `tsc`, `eslint --max-warnings=0` and `npm run check:contracts` are clean.
+  - Not committed.
+- **Sept 28 2026: project detail Option 3 v3, field notes redone as cards with a hover menu, and editable from the view, per direct feedback (branch `mohan-wips`).** No Mobbin tool was available this session. Patterns:
+  - Google Docs and Figma comment cards (a Resolve button plus a "..." menu for Edit and Remove).
+  - Notion and Airtable field actions behind a "..." that appears on hover.
+  - **Each field has a "..." menu, shown on hover or focus** (`FieldNoteMenu`), in view and edit mode alike. It offers only what applies now:
+    - "Add comment", only while the field has none (one comment per field; after that it is edited on its card).
+    - "Mark questionable", for BioData Admin and Privileged Admin, while the field is not flagged.
+    - "Attach a file", which opens the file picker straight away.
+    - "Add a link".
+    - Picking one opens a single card with its editor under the field.
+    - In view mode the edit pencil stays beside it.
+  - **Notes are cards** (`FieldNotesArea`):
+    - **Comment:** text, author and date. A "..." menu offers Edit (inline) and Remove, with an inline "Remove this comment? It can't be undone." confirmation.
+    - **Questionable** (warning tint): the reason, who and when. For admins, a visible Resolve button (asks "Why is it resolved?") and a "..." menu with Edit and Remove.
+    - **Resolved** (muted): the reason, who, when, and what it had been questioned as.
+    - **Attachments:** file and link chips with remove.
+    - The author and date line sits under the text, so it never truncates in the narrow panel.
+  - **Notes can be added, edited, resolved and removed from the view screen**, by anyone who can edit the record. Changes are saved at once (new `fieldNotesActions.setFieldNotes`). In edit mode the same cards write to the draft, saved with the record. A guest sees the cards read only and no menus.
+  - Replaced and deleted: the view-mode stacked read-only cards and tabs (`NotesPanel`), and the edit-mode "Add note" link menu (`FieldNotesEditor`).
+  - **Verified headlessly (biodata-admin, then public-user):**
+    - The menu on a field without notes reads "Add comment | Mark questionable | Attach a file | Add a link". Once a comment exists, "Add comment" drops out.
+    - A comment added from the view survived a reload, then was edited and removed after confirmation.
+    - Reliability was resolved with a reason and shows the Resolved card.
+    - In edit mode, the Paddock hover menu added a link to the draft.
+    - The guest sees no field menus.
+    - Zero console errors. `tsc`, `eslint --max-warnings=0` and `npm run check:contracts` are clean.
+  - Not committed.
+- **Sept 28 2026: note icons changed, per direct feedback (branch `mohan-wips`).**
+  - A field's note menu opens from a small add button (`Plus`, labelled "Add a note to <field>"), shown on hover or focus. It was a horizontal "...".
+  - Each note card's Edit / Remove menu uses a vertical menu icon (`DotsVertical`), shown only while the card is hovered or focused, or while its menu is open.
+  - Resolve stays a visible text button on the questionable card.
+  - Verified headlessly: the card menu's opacity is 0 when idle and 1 on hover; add, edit, remove and resolve flows unchanged; zero console errors. `tsc`, `eslint` and `check:contracts` are clean. Not committed.
+- **Sept 28 2026: vertical menu icon everywhere on the record, per direct feedback (branch `mohan-wips`).** The field's note menu trigger is now the vertical menu icon (`DotsVertical`, "<field> options"), still shown only on hover or focus, not the add (+) icon. The record's Actions menu in the details panel and the expanded view (shared `ActionsMenu`) uses the same vertical icon instead of the horizontal one, so fields, note cards and records match. Verified headlessly: the menus still open and add, edit and remove work; zero console errors; `tsc`, `eslint` and `check:contracts` are clean. Not committed.
+- **Sept 28 2026: menus flip instead of shrinking; note markers beside the field name, per direct feedback (branch `mohan-wips`).**
+  - **The shared `Dropdown` popover keeps its full height** (`min-h-fit` in `components/base/dropdown/dropdown.tsx`). When there isn't room below the trigger, react-aria places the menu above (or beside) it instead of shrinking it into a small scrolling box, an anti-pattern flagged by the designer. The fix is in the component, so every dropdown in the app gets it (CONTRACTS 1.9).
+    - Known limit: a menu taller than the space both above and below would overflow the window. Every menu in the app is short.
+    - Verified headlessly (1600x900): a field menu whose trigger sits at y 792 opened with placement top, full height (160px) and no scroll; the record Actions menu near the top still opens downward (placement bottom).
+  - **A field's note markers** (questionable flag, comment, attachments count and the expand chevron) now sit right after the field name, not after the value (`FieldRow`, `v3/field-notes.tsx`). Verified: the label column reads "Reliability" with the markers, and the value column "1 · Within 10 m".
+  - Zero console errors. `tsc`, `eslint --max-warnings=0` and `npm run check:contracts` are clean. Not committed.
+- **Sept 28 2026: project detail Option 3, version 3: every other event type built from its Figma frame, and a new trap effort editor, per direct instruction (branch `mohan-wips`).**
+  - **Source:** the "Details Container / Edit" frames in `YMproGZfrFB5jUqPHPxMhk`, read for their component types only (the Site rules apply to all records):
+    - Visit `1970:143761`, Transect `1970:143999`, Quadrat `1970:144274`, Block `1970:144564`, Ramble `1970:144861`, Trap `1970:145237`, Custom event `1970:145642`.
+  - **Shared builder:** a new `eventSections` in `survey-data.ts` builds every event except Site; `createRecord` uses it too, so new records match the seeds.
+    - **Details:** ID (system), name, description, source ID and comment.
+    - **Type-specific fields:** Visit adds Legacy visit ID and Visit sequence number (system, the visit's place among its site's visits). Custom event adds Event array.
+    - **Labels follow Figma:** "Transect name", "Trap array name", "Event ID". `eventLabels()` supplies them, and `nameRow` uses them.
+  - **Temporal details:**
+    - **Start date:** the record's date, required.
+    - **End date:** new `date` field type; can't be before the start date.
+    - **Duration:** new `duration` field type, three numbers (days, hours, mins), stored as "2d 3h 30m" and read as "2 days, 3 hours, 30 mins".
+    - **Date accuracy:** a new controlled vocabulary (D, M, Y, S, U). It is illustrative, not sourced.
+  - **Remaining sections:**
+    - Observers on every event except Trap.
+    - Location information (the Site's location fields and picker) on every event except Visit: the Visit frame has none.
+    - Photopoint.
+    - Custom properties.
+    - The old rows that were not in Figma (Event type, Parent event, Sampling protocol, Sample size, Sampling effort, Season, Time) are gone. The seeds were rewritten to the new fields.
+  - **Trap effort (`v3/trap-effort.tsx`, not from Figma, per the designer's table):**
+    - **Adding:** trap types are added one after another, like custom properties. "Add trap type" is a menu of the trap types not used yet: Elliott, Pitfall, Hair tube, Harp, Dip net, Seine net, eFishing, Fishing line.
+    - **Two lists per trap type:** Effort and Specs. Each has its own "Add" menu listing only the variables of that group that aren't on it yet:
+      - Effort: Number of traps, Duration, Hauls.
+      - Specs: Dimension - length, Voltage, Frequency, Duty cycle, Wave form.
+    - **Lines:** a line is the variable, a value (a number, or text for Wave form) and a unit.
+      - The unit follows the variable: a choice when there are several (Duration: nights, hours, minutes, months), fixed when there is one (cm, volts, Hz, %), none for a count.
+      - Each trap type takes notes like any field.
+    - **Viewed:** Effort then Specs, in one aligned list.
+    - **Vocabularies (`TRAP_TYPES`, `TRAP_VARIABLES` in `field-schema.ts`):** illustrative until the Control Vocabulary module exists. Which variable belongs to which group, and each variable's units, are my reading of the table.
+  - **Verified headlessly:** the sections for a visit, a transect, the trap and the custom event match Figma. I added Harp to the trap, with Duration 3 nights and Dimension - length 180 cm, and saved; the view reads it back. A new visit gets exactly the Figma fields. The current and previous versions still load. Zero console errors; `tsc`, `eslint --max-warnings=0` and `npm run check:contracts` are clean.
+  - **Open:**
+    - Confirm the trap vocabularies, groups and units.
+    - Whether Visit should really have no location of its own.
+    - After a save the page behind the full view is left scrolled (scrollY 400); not yet traced.
+  - Not committed.
+- **Sept 28 2026: trap effort simplified to fixed fields per trap type, from the designer's table, per direct feedback (branch `mohan-wips`).** This replaces the Effort and Specs lists with their per-list "Add" menus from the round before.
+  - **Reading the table:**
+    - Each trap type has its own fixed fields.
+    - Only Elliott and eFishing have specs, and they differ.
+    - A type can appear twice (two fishing-line sets).
+  - **Picking the trap type is the only choice**: its fields come with it.
+  - **Fields per type** (`TRAP_TYPE_FIELDS` and `TRAP_FIELDS` in `field-schema.ts`):
+    - Elliott: number of traps, duration, and size (length × width × height, cm). Width and height are added beside the table's length, per the designer ("other specs for Elliott related to dimensions").
+    - Pitfall, Hair tube, Harp, Fishing line: number of traps and duration.
+    - Dip net: duration.
+    - Seine net: hauls.
+    - eFishing: voltage (volts), frequency (Hz), duty cycle (%, max 100) and wave form (AC, DC, Pulsed DC).
+    - Duration's unit is chosen from minutes, hours, nights and months.
+  - **Model:** `TrapEntry` is `{ trapType, values }`.
+  - **Viewed:** a trap type reads as two short lines, e.g. "20 traps · 4 nights" and "30 × 8 × 9 cm (L × W × H)" (`trapSummary`).
+  - **Edited:** one row of labelled fields per group. "Effort" and "Specs" are named only when a type has both. Elliott's size is one control with three numbers.
+  - **Adding types:** "Add trap type" lists every type, marking the two that come "with specs". A repeated type is numbered ("Fishing line 2", via `trapLabels`) for its notes key and its visibility key. Every field is required on save.
+  - **Seed:** the seeded trap now matches the table (Elliott 20 traps, 4 nights, 30 × 8 × 9 cm; Pitfall 6 traps, 4 nights), and the trap event runs 14 to 18 Oct 2025.
+  - **Verified headlessly:**
+    - The view reads "20 traps · 4 nights | 30 × 8 × 9 cm (L × W × H)".
+    - I added Seine net, eFishing and two Fishing lines, filled them in and saved; "Fishing line 2" is shown.
+    - Screenshots checked. Zero console errors; `tsc`, `eslint --max-warnings=0` and `npm run check:contracts` are clean.
+  - **Open:**
+    - The wave form options and the Elliott width and height are my additions.
+    - Whether every field should be required, or a blank allowed, is unconfirmed.
+  - Not committed.
+- **Sept 28 2026: trap effort takes several durations, and specs are added one at a time, per direct feedback on the round above (branch `mohan-wips`).**
+  - **Model:** `TrapEntry` is now `{ trapType, values (number of traps, hauls), durations[], specs[] }`, in `field-schema.ts`. New helpers: `newTrapEntry`, `trapMissing`, `trapSpecsFor` and `readTrapSpec`.
+  - **Adding a trap type:**
+    - Number of traps and Hauls stay single values; they show as soon as the trap type is added, when the type has them.
+    - A new trap type starts with one duration. "Add duration" adds more (value and unit). Once there are two, each can be removed.
+    - Specs (Elliott and eFishing only) start empty. "Add spec" lists only the type's specs not yet added (Elliott: length, width, height in cm; eFishing: voltage, frequency, duty cycle, wave form). Each spec is its own row with a remove button.
+  - **Viewed:** "20 traps · 4 nights · 2 hours", then "Length 30 cm · Width 8 cm". The combined Elliott size control from the previous round is gone.
+  - **Seed:** Elliott has 20 traps, 4 nights and a 30 cm length; Pitfall has 6 traps and 4 nights.
+  - **Save:** every field shown and every added row needs a value.
+  - **Verified headlessly:**
+    - Added a 2-hour duration and a width to Elliott; the Add spec menu offered only Width and Height.
+    - Saved; the view reads "20 traps · 4 nights · 2 hours | Length 30 cm · Width 8 cm".
+    - eFishing starts with "No specs added yet."
+    - Zero console errors. `tsc`, `eslint --max-warnings=0` and `npm run check:contracts` are clean.
+  - Not committed.
+- **Sept 28 2026: trap effort editor alignment cleaned up, per direct feedback off a screenshot (branch `mohan-wips`).** Each trap type is now one label-and-field grid (`grid-cols-[8rem_minmax(0,1fr)]` in `v3/trap-effort.tsx`).
+  - Every label (Number of traps, Duration, Length and so on) sits in a fixed left column.
+  - Every input, "Add duration" and "Add spec" start on the same edge; measured at 641px for every trap type.
+  - "Effort" and "Specs" headings span the grid.
+  - The duration number and unit are fixed-width boxes (96px and 128px), so a row with a remove button no longer shrinks them.
+  - Screenshot checked. Zero console errors; `tsc`, `eslint --max-warnings=0` and `npm run check:contracts` are clean. Not committed.
+- **Sept 28 2026: delete icons show on hover only; adding durations checked, per direct feedback (branch `mohan-wips`).**
+  - **Delete icons appear only on hover or keyboard focus:**
+    - In trap effort, a duration or spec row's delete shows with its row (`group/traprow`), and a trap type's own delete shows with the whole trap type (`group/editrow`).
+    - The same treatment now applies to the measurement and custom property rows in `v3/card-editor.tsx`, so every delete icon in edit mode behaves the same way.
+  - **"You cannot add multiple durations": not reproduced on a fresh load.**
+    - "Add duration" added rows on a new trap type (Harp went to 3 durations) and on the seeded Pitfall, and removing one worked.
+    - The likeliest cause is trap data held in the page from before the trap model changed. `toDraft` now copes with an entry that has no durations or specs list. A page reload clears the old data.
+  - **Verified headlessly:**
+    - Idle: every delete icon has opacity 0.
+    - Hovering Pitfall shows only Pitfall's delete; hovering the Length row shows only its delete.
+    - Zero console errors. `tsc`, `eslint --max-warnings=0` and `npm run check:contracts` are clean.
+  - Not committed.
+- **Sept 29 2026: trap durations are one per unit, added like specs, and the read view is a small aligned list, per direct feedback (branch `mohan-wips`).**
+  - **"Add duration" is a menu of the units not yet used:** minutes, hours, days, nights, months. "Days" was added per the designer.
+    - Each duration row is a number (at least 1), its unit as fixed text, and a delete icon that shows on hover.
+    - The same unit can't be added twice.
+    - A new trap type starts with no durations. A type that has durations needs at least one before it saves.
+  - **Older data with a repeated unit** is folded to the first one when edited (`toDraft`) and when read.
+  - **Read view:** a small aligned list (Number of traps / Duration / Hauls / each spec, label then value). Several durations read one per line ("4 nights", then "2 hours"), and values never break across lines in the narrow panel. This replaces the "·"-separated sentence, which wrapped mid-list and showed "nights" twice.
+  - **Verified headlessly:**
+    - The menu offered Minutes, Hours, Days, Months for a trap that already had nights; after Hours was added, Minutes, Days, Months.
+    - Saved; the panel reads "Number of traps 20 | Duration 4 nights, 2 hours | Length 30 cm". Screenshot checked.
+    - Zero console errors. `tsc`, `eslint --max-warnings=0` and `npm run check:contracts` are clean.
+  - Not committed.
+- **Sept 29 2026: trap effort grouped under three headings, per direct feedback ("Effort: No. of traps / Duration: days or nights... / Specs: length or width..."; branch `mohan-wips`).**
+  - **Each trap type is laid out in groups:**
+    - **Effort:** number of traps, or hauls.
+    - **Duration:** one row per unit, labelled with the unit ("Nights", "Days"), then "Add duration".
+    - **Specs:** one row per spec, then "Add spec".
+  - Each heading shows only when the type has that group, so eFishing has only Specs.
+  - An empty Duration or Specs group reads "None added" beside its Add button. This also fixes the misaligned lone "Duration" label.
+  - Delete labels now name the trap type ("Remove Elliott nights"), so two trap types never share one.
+  - **Verified headlessly:**
+    - Elliott reads Effort / Duration (Nights 4, Days 2) / Specs (Length 30 cm); Pitfall reads Effort / Duration; a new eFishing reads Specs, None added.
+    - A duration's delete shows only on hover of its row.
+    - Screenshots checked. Zero console errors. `tsc`, `eslint --max-warnings=0` and `npm run check:contracts` are clean.
+  - Not committed.
+- **Sept 29 2026: trap effort groups lose "None added", per direct feedback (branch `mohan-wips`).** "Add duration" and "Add spec" now sit directly under their group's rows, aligned with the labels. An empty group is its heading with the Add button right below it; eFishing reads "Specs, Add spec". Verified headlessly with a screenshot: zero console errors; `tsc`, `eslint --max-warnings=0` and `npm run check:contracts` are clean. Not committed.
+- **Sept 29 2026: project detail option 3 v3: editing several cards at once, whole-row notes, no false note markers, the folded breadcrumb, and tinted note chips, per direct feedback (branch `mohan-wips`).**
+  - **Several cards can be edited at once in the full view.**
+    - While one card is in edit mode, every other card keeps its edit icon (and its field edit icons) at full opacity. Clicking one adds that card to the same edit.
+    - The session holds a list of cards (`sectionIds`) and one shared draft, so Cancel and Save cover them all.
+    - The footer names every card being edited. The "Fields shown" panel follows the last card opened.
+    - The earlier dimming of the other cards is removed.
+    - CONTRACTS §4.7's "the other cards dim and hide their edit icons" no longer describes v3. This is a designer instruction; the clause text is left for the designer to update.
+  - **Notes cover the whole row in edit mode** (`EditRow`, `v3/card-editor.tsx`).
+    - The "..." menu (comment, questionable, attach) sits at the row's right edge and shows when any part of the row is hovered, the label included.
+    - The notes and the composer span the full row under the label and the field, not just the value column: measured 636px wide in a 686px row.
+  - **No false note markers.** The seeded example notes on the transect and the trap sat on fields the Figma rebuild removed ("Sampling effort", "Sampling protocol"), so section headers showed a comment or file the record visibly didn't have.
+    - The seed now puts them on fields that exist: the transect comment on Start date, the trap layout PDF on the Elliott trap effort.
+    - The notes store moved to version 2, with a migration that moves the same keys in data already saved in the browser.
+    - New `recordFieldKeys(record)`: section header counts, the Artefacts tab and "Notes on this record" now count only notes on fields the record still has.
+  - **Breadcrumb:** in compact views (the details panel), only the project and the current record show; every step between folds into one "..." menu, e.g. "BD-5039 › ... › OC00504 · Southern Brown Bandicoot". Full screen still shows the whole path.
+  - **Note markers are tinted chips of one shape** (`NOTE_TONE` in `v3/field-notes.tsx`): questionable in warning orange, comments in light blue (`utility-blue`), attachments in light purple (`utility-purple`). They are used on field rows, section headers and "Notes on this record".
+  - **An expanded field row gets a subtle `bg-secondary` background**, in view mode when its notes are open and in edit mode when it has notes or a composer open.
+  - **Verified headlessly:**
+    - An old saved note on "Sampling protocol" moved to Trap effort ("Trap details" shows nothing, "Trap effort" shows 1 file).
+    - Both breadcrumbs as described.
+    - The attachment chip background computes to purple-50, and an open row to gray-50.
+    - Four other cards kept their edit icons while Trap effort was being edited; Photopoint joined, giving 2 cards in edit mode at full opacity.
+    - The row menu shows when the label is hovered.
+    - Zero console errors. `tsc`, `eslint --max-warnings=0` and `npm run check:contracts` are clean.
+  - Not committed.
+- **Sept 29 2026: CONTRACTS §4.7 updated for editing several cards at once; note markers made quiet; open rows lose their lines, per direct feedback (branch `mohan-wips`).**
+  - **§4.7** (designer decision): item 2 no longer says the other cards dim and hide their edit icons. The new item 3, "More than one card at a time", says the other cards stay at full strength and keep their edit icons, opening another joins the same edit, and they MUST NOT be dimmed or locked. The footer covers every card in edit mode. The items after it are renumbered, and the Origin line records the change. It is a change to the contract file, so the next audit lists it (§9.4). It adds a behaviour, it doesn't loosen a check.
+  - **Note markers are plain small icons with no backgrounds** (`NOTE_TONE` / `NOTE_MARK`). Comments and attachments are the grey of other secondary icons (`fg-quaternary`). Only questionable is coloured, with the warning icon colour (`fg-warning-primary`), because it asks a reviewer to act. The blue and purple chips from the round before are gone. The same markers are used on field rows, section headers and "Notes on this record".
+  - **An open row is one tinted band with no lines** (`FieldRow` and `EditRow`). Its own bottom line turns transparent, and it moves up 1px to cover the row above's line. Measured: the open row's top is 1px above the previous row's bottom, and its bottom border is transparent.
+  - Screenshot checked. Zero console errors. `tsc`, `eslint --max-warnings=0` and `npm run check:contracts` are clean. Not committed.
+- **Sept 29 2026: project detail Option 3 v3, occurrences and observations rebuilt from Figma, with landscape context scores and overstorey designed, per direct request (branch `mohan-wips`).** Source: Figma `YMproGZfrFB5jUqPHPxMhk`: Occurrence Individual `1970:145957`, Occurrence Population `1970:146253`, Observation Individual `1970:148058`, Population `1970:148456`, Non-biotic `1970:146612`, Community `1970:147303`; view reference for scores `1970:147032`; voucher prefix `1970:145909`. Field types come from the Figma components, not the annotations.
+  - **Sections (`survey-data.ts`, `occurrenceSections` and `observationSections`, shared by the seeds and by new records in `record-rules.ts`):**
+    - **Occurrence:** Occurrence details (ID, Legacy sighting #, Species seq no. system; name; description; Taxonomic type; NSX code & species; Occurrence status; comment), Temporal details, Observers, Voucher (Individual only), Location, Custom properties.
+    - **Observation Individual:** details, then Species (Line; the code-and-description fields Life form, Collection method, Strata, Macro and Micro habitat; Activity; Association dominance; Sex; Regeneration; Measurements in place; Gravid?; Teats; Vagina; Pouch status; No. in pouch; Testes; Animal and Plant life stage; Planted/Released).
+    - **Population:** Number observed first, Is annual herb?, Cover/abundance, no measurements.
+    - **Non-biotic:** details (Fire scars, bare earth and litter %, Climatic condition, Disturbance impact as Muir and canopy codes), Land and surfaces (slope and aspect in degrees, ten selects, comment), Landscape context scores (cover and block shape, plus number of landform features), Environmental conditions (air temperature max and min with a unit).
+    - **Community:** details (conditions, formation, Disturbance impact with status, Assemblage information, Upper stratum, Ephemerals), Landscape context scores (all five factors, landform features, wetland feature), Overstorey measurements, Tree health (crown extent and density % with their scores worked out, DBH in mm, eight selects).
+    - The name row is now `details:Occurrence name` / `details:Observation name`; an occurrence's scientific name comes from its NSX code.
+  - **New field types (`field-schema.ts`, controls in `v3/field-controls.tsx`, option lists in `field-options.ts`):** select, multi-select, people, repeatable code tables ("Add another", code plus read-only description, delete on hover), number with a chosen unit, voucher images, species, the voucher number with its prefix, and calculated scores. Every option list is illustrative until the Control Vocabulary module supplies real ones.
+  - **Voucher number:** the view reads "[prefix] [number]" ("SAM 24518"); in edit the prefix sits in a locked box in front of the number and follows the institution (South Australian Museum SAM, State Herbarium of South Australia AD, their real acronyms).
+  - **Landscape context scores (`landscape.ts`, `v3/landscape-view.tsx`, `v3/landscape-editor.tsx`):**
+    - **View:** a total card (points of the maximum, a bar, %, and the IBRA association and subregion when a factor uses them), then one line per factor with what was entered or worked out, a strip of every band with the matched one filled, and its points.
+    - **Edit:** the same total card updates live; each factor shows its subtitle, points, inputs, locked "Calculated" values (block area from the record's location, the perimeter to area ratio, the IBRA % remaining) and its band strip.
+    - **Rules followed where Figma disagrees with itself:** the cover bands skip 50 to 75%, so the top band is >50 to 100% at 0.08; the example total (1.16 of 1.25) doesn't match its parts, so the total is the sum of the factors and the maximum the sum of their top points (0.29 for Community, 0.11 for Non-biotic). IBRA % remaining figures are the Figma example for Aldinga / Mount Lofty Ranges and illustrative elsewhere.
+  - **Overstorey (added by me, per the designer's request):** Canopy type is a dropdown (Tree, Mallee, Tall shrub, Shrub, Grass, Sedge); Projected foliage cover is a % with its structural class worked out beside it (Specht classes). The averages (height, crown depth, canopy diameter, gaps), crown separation ratio (average gap over average canopy diameter) and reading count are worked out from a readings table (add, remove on hover).
+  - **Notes store version 3** moves the example notes onto the new fields (Sex, the count and Body mass to the observations' Species section; Identified by to the voucher's Determiners). Fields shown and note markers include the landscape factors and overstorey rows.
+  - **Shared data:** the current (drawer) and previous (inline) versions read the same records. They were kept working (rows and measurements both shown, names renamed) but still use their own plain controls, so they show "24518" without the prefix and the code tables as raw text.
+  - **Verified headlessly (biodata-admin):** every section renders for Community, Non-biotic, Individual and Population. Community scores 0.19 of 0.29. Raising vegetation cover to 60% moves the total to 0.23 live and saves as "60% cover · 0.08 pts". Adding a 30 m reading moves the height average to 21.3 m. Changing the institution changes the prefix SAM to AD. Measurements edit in place with type and unit dropdowns. All three versions load with zero console errors. `tsc`, `eslint --max-warnings=0` and `npm run check:contracts` are clean.
+  - **Open:** (1) confirm Canopy type and Projected foliage cover; (2) the real IBRA association and % remaining figures; (3) whether the Figma "1.25 max" means a different scoring scale; (4) Occurrence Population is labelled "Species Seq #" in Figma and is shown as "Species seq no." like Individual; (5) the older versions' plain controls. Not committed.
+- **Sept 29 2026: Tree health moved from Community to Individual observations, per designer correction (branch `mohan-wips`).**
+  - `observationSections` (`survey-data.ts`) builds one Tree health section and adds it to Individual observations, after Species. Community now ends at Overstorey measurements.
+  - The example tree health values on the Community seed (OB00504) were dropped.
+  - The Individual seeds are all animals (bandicoot, echidna, possum), so their Tree health reads "Not provided". Crown extent and crown density scores still show once a value is entered.
+  - Verified headlessly: Community shows Observation details, Landscape context scores, Overstorey, Observers, Temporal, Location. Bandicoot and Echidna show Tree health after Species. Zero console errors; `tsc`, `eslint --max-warnings=0` and `npm run check:contracts` are clean. Not committed.
+- **Sept 29 2026: a tree added as an Individual record so Tree health has real sample values, per designer approval (branch `mohan-wips`).**
+  - New Individual occurrence OC00508, South Australian Blue Gum (tree 7), under the stringybark quadrat (QR00501).
+  - It holds OB00510, "Blue gum tree 7 health check": Individual, *Eucalyptus leucoxylon*, with Species filled in for a tree (life form T, upper stratum, woodland, mature and flowering, co-dominant) and the tree health values that used to sit on the Community record. No measurements, because the illustrative measurement list has no tree types.
+  - Verified headlessly: the observation's Tree health reads crown extent 62% (score 4 · 51 to 75%), crown density 45% (score 3 · 26 to 50%), DBH 340 mm and the eight selects; the occurrence opens as OC00508 with its species; zero console errors; `tsc`, `eslint --max-warnings=0` and `npm run check:contracts` are clean. Not committed.
+- **Sept 29 2026: project detail Option 3 v3: empty fields are left out of the view, and system fields have no edit icon, per direct feedback (branch `mohan-wips`).**
+  - **Empty fields hidden when viewing, for every record type:**
+    - The details panel and the full view show only fields with a value (`rowHasValue` in `field-schema.ts`). "Not provided" no longer appears in view mode.
+    - A section with nothing to show is left out too (`sectionHasContent` in `v3/field-visibility-store.ts`), for example Tree health on an animal observation.
+    - A field that carries notes still shows, so its notes stay reachable.
+    - Landscape scores: factors not entered are left out, and the total card shows only once a factor has been entered. Overstorey: canopy type, foliage cover, averages and readings each show only when there is a value.
+    - Edit mode is unchanged: "Edit record" still shows every field and section, so empty ones can be filled in.
+  - **System and worked-out fields have no edit icon** in view mode (`isLockedRow`: IDs, Legacy IDs, sequence numbers, IBRA region and subregion, crown scores). `FieldRow` gained an additive `editable` prop (default true). The notes menu stays on them.
+  - Verified headlessly: the bandicoot observation, the Cleland site and the blue gum observation show no "Not provided" in the panel or the full view; the bandicoot observation has no Tree health section when viewed but has it in Edit record; no edit icon on any ID, IBRA or score field. Zero console errors; `tsc`, `eslint --max-warnings=0` and `npm run check:contracts` are clean. Not committed.
+- **Sept 29 2026: Project managers now sits below Published by on the Project tab, per direct feedback (branch `mohan-wips`).** The two cards were side by side from `xl`; they now stack full width (`project-tab.tsx`, shared by the current and v3 versions; the previous version is unchanged). Verified headlessly at 1792px: both headings start at x 395, Published by at y 1040 and Project managers at y 1271; zero console errors; `tsc` and `eslint` clean. Not committed.
+- **Sept 29 2026: long dropdown lists are searchable, per direct feedback off the NSX code & species field (branch `mohan-wips`).**
+  - **Component (additive, CONTRACTS 1.6):** `MultiSelect` gained `selectionMode?: "multiple" | "single"` (default `multiple`, so every existing caller is unchanged). Single mode is the same control Observers uses (search box in the popover) with one choice: the trigger shows the chosen item's label and supporting text, picking closes the popover and returns focus to the trigger, and there is no Reset / Select all footer. Escape still closes without changing the value (1.9). The component will be listed as changed in the next audit.
+  - **Where (v3 records, `SearchSelect` in `v3/field-controls.tsx`):** NSX code & species; every code-and-description field (Location method, Reliability, Date accuracy, Life form, Collection method, Strata, Macro and Micro habitat, Sex, Cover/abundance); the code columns of the code tables (Muir, canopy, disturbance, upper stratum); and any plain list with more than 7 options (`LONG_LIST`, e.g. Soil texture class). Short fixed lists stay a plain `Select`. The search also matches a code's description ("rock" finds RK · Under rock).
+  - A memory records the rule so it is applied to new fields elsewhere too.
+  - Verified headlessly by keyboard: "gum" narrows species to P01937 · Eucalyptus leucoxylon, ArrowDown and Enter pick it and close the popover, the field reads the code, name and common name, and Escape keeps the value; Micro habitat "rock" finds RK and fills the description box. Zero console errors; `tsc`, `eslint --max-warnings=0` and `npm run check:contracts` are clean. Not committed.
+  - **Open:** other forms (Add Project, DSA, DLA) still have plain selects that could grow (organisations, institutions); not changed.
+- **Sept 29 2026: empty and unticked fields are left out of edit mode too, per direct feedback (branch `mohan-wips`).**
+  - **In edit mode, a field with no value is not shown.** Every edit session starts with the record's empty fields unticked in "Fields shown" (`emptyFieldKeys` in `v3/field-visibility-store.ts`, judged on the values when the edit starts, so clearing a field while typing doesn't make it vanish). Ticking an empty field in "Fields shown" adds it to its card to be filled in; this is now how an empty field is added.
+  - **Unticking a field removes it from the edit card**, not just marks it: `EditRow` returns nothing for a hidden field, and the "Hidden" label is gone. It stays off the record when viewed too.
+  - **Always shown, cannot be unticked:** identifiers (as before) and what a record needs: its name, start date and, for an occurrence, the species (`REQUIRED_FIELD`).
+  - **A card with nothing to edit is left out** (`sectionShownInEdit`), e.g. Tree health on an animal observation under "Edit record"; ticking one of its fields brings the card back. List cards (location, trap effort, measurements-only, custom properties) always show, so things can be added to them.
+  - **On save** only a choice to hide a field that has a value is kept; empty fields are left out by the rule anyway.
+  - The checklist copy now reads "Tick a field to add it to the record, untick it to take it away. Empty fields start unticked."
+  - **Knock-on:** a new record opens with only its non-empty fields (its ID, name, start date, observers and any default like Photopoint marker present); everything else is added through "Fields shown".
+  - Verified headlessly: the echidna occurrence's Description (empty) is absent in edit and unticked; ticking it adds the row; unticking Occurrence comment removes it from the card and, after save, from the view; the bandicoot's "Edit record" shows no Tree health card until DBH is ticked; a new Visit opens with ID, name, sequence, start date, observers and photopoint marker. Zero console errors; `tsc`, `eslint --max-warnings=0` and `npm run check:contracts` are clean. Not committed.
+- **Sept 29 2026: project detail is down to two options, the Projects column is My projects / All projects, and Option 2 gains a Species tab, per direct instruction (branch `mohan-wips`).**
+  - **Two options (CONTRACTS 4.4, designer's choice):** Option 1 (`/pages/project-detail`) is unchanged. Option 2 (`/pages/project-detail/option-2`) is what was "Option 3, version 3" (`/pages/project-detail/option-4/v3`).
+    - **Deleted:** the old Option 2 (`project-detail/option-2`, the About tab with the record store), the old Option 3 page (`project-detail/option-3`), and Option 3's previous (inline) and current (drawer) versions with their routes.
+    - **Also removed:** the Version floating button (clock icon). The layout switcher lists Option 1 and Option 2.
+    - **Restructure:** the v3 files were flattened into `project-detail/option-2/`. The shared files v3 needed were kept (survey data, record rules, edit store, project tab and its drawer forms), and `project-registration-data.ts` moved in from the old Option 2. The old routes (`option-3`, `option-4`, `option-4/v3`) now 404.
+    - **Backups:** the deleted files are backed up in the session scratchpad. The old Option 2 and Option 3 are also in git history, except the uncommitted edits to Option 3.
+  - **Column 2, Projects list and project detail Option 2 alike (`_shared/projects-sidebar.tsx`, new, page-shared):**
+    - **Scope:** My projects / All projects replaces Projects / Datasets, using the same vertical tabs as DLA's My requests / All requests. Sentence case matches that convention.
+    - **Below the scope:** the Actions group, then "What is a project?" and the project guides (`projects-guide.tsx`, moved to `_shared`), then the footer links.
+    - **List page:** the scope is in its URL (`?scope=mine|all`, default All projects). "My projects" lists the projects the signed-in person contributes to (the placeholder Olivia Wyatt). The list heading reads My projects or All projects.
+    - **Detail page:** the switcher shows which list the project is in (Adelaide Hills is My projects). Picking a scope opens the list in that scope.
+    - **Guests:** they see All projects only, and now get this column on the Projects list too, instead of "What is BioData SA?".
+    - **Unchanged:** Datasets is gone from the list page. Option 1's column, the Projects section inside Home, and the mobile menu's Home tabs are unchanged.
+  - **Species tab (`project-detail/option-2/species-view.tsx`), right after Survey records, Option 2 only:**
+    - **Source:** one entry per species this project recorded, from its occurrences in Survey records. Family and group were added to `NSX_SPECIES` (real families).
+    - **Tiles:** the group tiles from Option 2's Species view are kept as quick filters.
+    - **Toolbar:** the same as Survey records and Artefacts: the Cards / Table switch, the 384px search and the Filter button. The Filter covers Family, Occurrence type, Site and Access.
+    - **Cards:** photo (ALA), names, family and group, records, sites, last recorded, and a Restricted badge where a location is generalised.
+    - **Table:** the same columns, sortable and paginated.
+    - **Go to record:** it opens the occurrence in Survey records; a species with several occurrences offers them in a menu.
+  - **Verified headlessly:**
+    - Registered and guest column 2 on the list, and "My projects" sets `scope=mine` and narrows the list.
+    - The detail column shows My projects selected, and the tabs read Project, Survey records 28, Species 7, Artefacts 7.
+    - Species: 7 cards; the Mammal tile gives 3; the Table has 7 rows; Go to record on the echidna opens OC00506 in Survey records; the blue gum's menu lists OC00502 and OC00508.
+    - The old routes 404, and Option 1 still renders its records column.
+    - Zero console errors; `tsc`, `eslint --max-warnings=0` and `npm run check:contracts` are clean. Not committed.
+  - **Open:** the Projects section inside Home (`/pages/dashboard`) still shows Projects / Datasets. Say if it should switch too.
+- **Sept 29 2026: Home's Projects section uses the My projects / All projects column, and project detail Option 2 gets a "Questionable values" review queue for admins, per direct request (branch `mohan-wips`).**
+  - **Projects column:** the Projects section inside `/pages/dashboard` now renders the shared `ProjectsSidebar` and `ProjectListContent` with a scope, for every persona. Guests see All projects only (confirmed correct by the designer). Datasets is gone there too, and the mobile menu's two rows read My projects / All projects. Labels are sentence case, the same as DLA's "My requests" / "All requests". In practice the rail's Projects opens `/pages/project-list`, which already had this column; the in-dashboard branch was brought in line so the two can't drift.
+  - **Questionable values (`project-detail/option-2/review-view.tsx`), Option 2 only; Option 1 untouched:**
+    - **Who:** a tab after Artefacts and attachments, shown only to BioData Admin and Privileged Admin (the roles that can mark and resolve, `useCanReview`). Its badge is the open count, so the number to bring to zero is always visible.
+    - **Summary line:** "7 open across 6 records · the oldest has waited 12 months".
+    - **Toolbar:** Open / Resolved switch with counts (the page's segmented style), the 384px search, and Filter (Record, Section, Marked by or Resolved by).
+    - **Queue and detail, side by side:** the queue lists the oldest first; each row shows the field, the record code and name with its type icon, the reason and how long it has waited. Up/Down (or j/k) move through it.
+    - **Detail:** record, field, section, current value, the questionable card (the same warning tint as on the record), the field's comment and files, "Go to record" (opens it in Survey records and highlights the field), and a pinned footer: "Why is it resolved?" (required), quick reasons (Value confirmed, Value corrected, Not an issue), Fix value, Resolve.
+    - **Resolve:** the same action as on the record (the reason is kept with the field). The next item opens, and the toast has Undo.
+    - **Fix value:** opens the record full screen with that field's card in edit mode, and comes back to the queue on save or cancel.
+    - **Resolved:** lists the resolution reason, who, when and what had been questioned.
+    - **Patterns:** no Mobbin tool was available this session, so these come from known products, not a Mobbin search: Linear Triage and GitHub review conversations (queue beside the item in focus, keyboard, next item opens), Figma and Google Docs comments (Open / Resolved, resolved kept with a reason), Sentry issues (count and age), Gmail (Undo).
+  - **Data:** the notes store is version 4. It adds five more example flags (the blue gum stand count, the quadrat's location method, the yacca cover class, the spotlighting duration) and two resolved ones (the visit's date accuracy, the froglet occurrence status), only where a field has no notes yet.
+  - **Verified headlessly:** 7 open across 6 records; keyboard Down twice lands on "3 of 7"; a quick reason plus Resolve drops the count to 6 and opens the next item, and Undo restores 7; Resolved shows 2; Go to record opens Survey records; Fix value opens the full view with the Reliability card editing, and Cancel returns. Registered and public users have no tab. Zero console errors; `tsc`, `eslint --max-warnings=0` and `npm run check:contracts` are clean. Not committed.
+  - **Open:** a flag marker on the tree and table rows, a "Has questionable values" filter in Survey records, and a portfolio-wide queue across all projects (for an admin's Home) are natural next steps, not built.
+- **Sept 29 2026: flagged concepts move out of the tab into a management screen; markers and a filter in Survey records; a queue on the admin's Home, per direct feedback ("not happy with questionable values as a new tab... more of a management stuff... show something like this [banner] and take to the management screen like what you did for DSA"; branch `mohan-wips`).**
+  - **The "Questionable values" tab is gone.** Survey records now opens with an admin-only banner (the real `AlertFullWidth`, contained, warning tint): "N flagged concepts need review across this project · Review".
+  - **Review is a management screen (`review-view.tsx`, `ReviewScreen`), laid out like the DSA form:**
+    - **URL:** `/pages/project-detail/option-2?view=review`, the same route, so the session's record edits stay. It is shown only to BioData Admin and Privileged Admin; for anyone else the parameter is ignored.
+    - **Breadcrumb:** Projects / Adelaide Hills Bushland Survey (a link back) / Flagged concepts.
+    - **Column 2 is the queue:**
+      - "Back to survey records" and a progress bar with "N open across N records · N resolved".
+      - An Open / Resolved switch, and the items: field, record, how long each has waited. Up/Down move through the list.
+    - **Main is a real `FormPage` with `FormRow`s (CONTRACTS 4.1):**
+      - Record, with Go to record.
+      - Current value, with Fix value (the record full screen with that card in edit mode, back to the queue on save or cancel).
+      - Why it was flagged; notes on the field.
+      - "Why is it resolved?", with quick reasons.
+      - The footer has Back a step (previous) and Resolve. An empty reason shows the form's "Details missing" alert. Resolve opens the next item, and the toast offers Undo. On Resolved, the primary action is Next.
+  - **Survey records:**
+    - A quiet flag with a count sits on every tree and table row that has open flagged concepts, shown to everyone who can see the record.
+    - Filter gained a "Review" section with "Has flagged concepts". It showed 6 of 28 records, each with its parents as context in the tree.
+  - **Admin Home (`flagged-home-queue.tsx`, in `AdminHomeDashboardContent`):**
+    - A "Flagged concepts" section after Also pending: the count and the age of the oldest, the five waiting longest (field, record, project, reason, age), each linking to the review screen with that item open (`&item=`), "N more in the review queue", and Review all.
+    - Only BD-5039 has survey records in this preview, so every item comes from it; the list names the project, ready for more.
+    - It reads the persisted notes with the seed records, so record edits made on project detail (session only) don't reach Home.
+  - **Verified headlessly (biodata-admin):**
+    - Tabs are Project, Survey records, Species, Artefacts.
+    - The banner reads "7 flagged concepts"; 6 rows carry markers; the filter gives 6 of 28.
+    - Review opens with `?view=review` on "Reliability, 1 of 7 open".
+    - An empty Resolve shows the alert; Value confirmed plus Resolve gives "1 of 6 open · 3 resolved".
+    - Back returns to Survey records.
+    - Home lists 5 with "2 more"; its Sex link opens the review on Sex.
+    - Registered users see markers but no banner, and `?view=review` does nothing for them.
+    - Zero console errors; `tsc`, `eslint --max-warnings=0` and `npm run check:contracts` are clean.
+  - **Known:** the banner shows the alert component's own warning icon, not a flag (changing it would be a component change). Privileged Admin can review but has no admin Home, so the Home queue is BioData Admin only. Not committed.
+- **Sept 29 2026: one page for flagged concepts across every project, `/pages/flagged-concepts`, per direct request ("a page to manage all flagged concepts of all projects... filter by project"; branch `mohan-wips`).**
+  - **The page:** the same review screen as a single project's (`ReviewScreen`, `project-detail/option-2/review-view.tsx`, now project-agnostic), with the project filter on. Column 2 is the queue grouped by project, with a Projects `MultiSelect` above it ("All projects" when nothing is picked); main is the `FormPage` for the item in focus, with a Project row. The filter is in the URL (`?project=BD-5039,BD-4988`) and `?item=` opens a given item. BioData Admin and Privileged Admin only; anyone else gets the three-column shell with the restriction in main.
+  - **Data:** BD-5039's items come live from the field-notes store. The other projects have no record detail yet, so their flagged concepts are example entries in a new persisted store (`flagged-portfolio.ts`, `biodata-flagged-portfolio`), on real projects from the Projects list with illustrative record codes and wording. For those, Go to record and Fix value are disabled with a tooltip; resolving works and survives a reload.
+  - **Admin Home:** the Flagged concepts section now counts every project ("16 values marked questionable across 6 projects"), and "Review all" and each item open the new page. BD-5039's own banner and review screen are unchanged. A live item's Go to record from the new page opens project detail at that record and field (`?record=&field=`).
+  - **Fixed:** a lint error in `project-detail/option-2/page.tsx` (`Date.now()` in render for the go-to-field nonce; now a counter).
+  - Verified: `tsc`, `eslint --max-warnings=0`, `npm run check:contracts` and the Pages build pass; headless pass: Home lists 5 items and links to the page, the link opens "1 of 16 open", `?project=BD-5102` narrows to 2, a registered user sees the restriction, zero console errors.

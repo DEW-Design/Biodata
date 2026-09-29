@@ -366,7 +366,8 @@ Every create or edit form (Add Project option 2, DSA, DLA, and any new one) MUST
    `Checkbox`, `Accordion`). No bespoke choice tiles.
 8. **Draft:** a draft needs only what identifies the record; submit validates the rest.
 
-- **Exempt:** Add Project option 1 (a stakeholder option, one question per card).
+- **Exempt:** Add Project option 1 (a stakeholder option, one question per card), and editing in place on a
+  detail page's own cards, which follows §4.7 instead.
 - **Enforcement:** `AUTO §4.1` (a file that uses `FormRow` must import `FormPage`), `AUTO §4.1b` (a `FormPage` screen must not use tabs).
 
 ### §4.2 Lists and tables
@@ -395,6 +396,21 @@ under a sticky header, and the numbered pagination stays pinned at the bottom.
 - **Enforcement:** `AUTO §4.2b` (a screen using `TableCard.Root` without `bodyScrollable` fails, except the
   embedded tables listed in the script), `REVIEW` for the layout chain.
 
+**One search width (§4.2c).** The search box in a collection toolbar (the row of search, then Filter,
+then any view or tree controls, above a list, table or tree) is the same everywhere.
+
+- MUST render `<ToolbarSearch>` (`app/pages/_shared/toolbar-search.tsx`): 384px wide (`max-w-sm`), shrinking
+  only on a narrow screen, small size, the `SearchMd` icon. Filter sits directly after it.
+- MUST NOT let the toolbar search grow to fill the row (`flex-1`), or give it its own width.
+- **Open, not decided:** Explore's results search (`/pages/observations`) was made full width on the
+  designer's instruction before this rule existed, and project-detail option 2's records search is
+  `max-w-md`. Neither has a Filter button beside it, so the check does not catch them; bringing them in
+  line is for the designer to decide.
+- **Origin:** the Survey records toolbar on project detail Option 3 grew its search to the full row while the
+  Projects, DSA, DLA and User Management lists all used 384px.
+- **Enforcement:** `AUTO §4.2c` (a file with a `ListFilterButton` whose search is a hand-rolled `Input` with a
+  search icon fails), `REVIEW` for toolbars without a Filter button.
+
 ### §4.3 Cognitive load
 
 More than five or six field groups needs tiering. A conditional field is conditional in the UI. One focal
@@ -412,6 +428,51 @@ explored. When a direction is chosen the others are deleted. A comparison is pre
 `/test-*` screens prove a Figma frame maps onto the library: every contained widget is real or `<Gap>`,
 they ship the token inspector, and their own content is Barlow. `/pages/*` screens have none of that
 apparatus.
+
+### §4.6 Roles belong to the data owner's contacts; show only what is approved
+
+A project's data owner (shown as **Published by**) has one or more contacts, and every one of those
+contacts carries its own **role** (role or type of work). The role is part of that contact.
+
+1. The role MUST be shown with its contact (name, then "· role"), and edited with that contact.
+2. MUST NOT show a separate "your role", "registered by", "Registered by (role)" or similar field or
+   row, and MUST NOT add a "Project team" card, on project detail or in its edit flows. Project managers
+   have their own card and their own roles.
+3. MUST NOT add a field, row, card, section or label to a screen that the designer did not approve or
+   the source does not define, even when it seems helpful. A new label is a question (§0.4), not a
+   decision.
+
+- **Origin:** a "Project team" card with a "Registered by (role)" row appeared on project detail
+  Option 3 after the role had already been placed with the data owner's contact, a correction the
+  designer had made more than once.
+- **Open, not decided:** the Add Project registration still asks "Your role" in its Project team
+  section; whether that question moves to the data owner's contact in registration is for the designer.
+- **Enforcement:** `AUTO §4.6` (a "Registered by" label under `app/pages` fails), `REVIEW` for the rest.
+
+### §4.7 Editing in place on a detail page
+
+Where a detail page (a record, a project) is edited on its own cards rather than in a form, every edit
+behaves the same way, on every card and every page.
+
+1. **Entry:** a card's edit icon edits that card; a field's edit icon (on hover or focus) edits its card,
+   scrolled to and focused on that field; "Edit record" (or the page's equivalent) edits every card. A new
+   record opens the same way, every card in edit mode.
+2. **One treatment:** a card in edit mode has the brand border and brand-50 halo and says "Editing". The field
+   rows use the same label-left layout as when viewed.
+3. **More than one card at a time:** while a card is in edit mode, the other cards stay at full strength and keep
+   their edit icons; opening another adds it to the same edit. MUST NOT dim or lock the other cards.
+4. **Actions in one place:** Cancel and Save changes (or "Add <type>" for a new record) sit in one sticky footer
+   across the bottom of the page, reading "Editing <cards> · Unsaved changes", and cover every card in edit mode.
+   MUST NOT put them inside a card or repeat them per card.
+5. **Leaving:** Cancel or Exit with unsaved changes asks first. Save and Cancel return to the view the edit was
+   started from (a side panel stays a side panel, a full view stays a full view).
+6. **Visibility:** where a record's fields can be hidden, the right-hand column becomes the "Fields shown"
+   checklist while a card is in edit mode, and for a new record.
+
+- **Origin:** Project details kept Cancel and Save inside the card while record editing had them in a page
+  footer; the designer caught the difference ("Consistency is the key"). Item 3 replaced "the other cards dim and
+  hide their edit icons" on 29 Sept 2026, by designer decision, after locking the other cards got in the way.
+- **Enforcement:** `REVIEW`.
 
 ---
 

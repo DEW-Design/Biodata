@@ -22,6 +22,11 @@ export interface ContactPerson {
      *  display-only detail a caller can set directly on seed data, same as `ProjectManager.
      *  organisation` already supports per manager. */
     organisation?: string;
+    /** This contact's role or type of work (a `ROLE_OF_WORK_OPTIONS` id). Every data owner contact has
+     *  one. Optional and additive: the registration wizard still records the first contact's role as
+     *  `ProjectDetailsState.roleOfWork`; project detail reads `role ?? roleOfWork` for that contact. */
+    role?: string | null;
+    roleOther?: string;
 }
 
 export function emptyContact(id: number): ContactPerson {
