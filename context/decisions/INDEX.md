@@ -232,3 +232,4 @@ Not imported into every session on purpose: read or grep it when a task needs hi
 - [2026-09-29] One page for flagged concepts across every project, /pages/flagged-concepts, per direct request ("a page to... - `2026-09-29-62-one-page-for-flagged-concepts-across-every-project.md`
 - [2026-09-29] bc8ad0fb ("Project detail Option 2 (v3 records), flagged concepts review across projects, My/All projects... - `2026-09-29-63-bc8ad0fb-project-detail-option-2-v3-records-flagged.md`
 - [2026-09-30] Project-detail Option 3 (About, Records and Species) removed, per direct instruction ahead of merging... - `2026-09-30-01-project-detail-option-3-about-records-and-species.md`
+- [2026-09-30] sai-wips reconciled with origin's rule-loading restructure, pushed, merged into main - `2026-09-30-02-sai-wips-reconciled-with-origin-s-rule-loading.md`
