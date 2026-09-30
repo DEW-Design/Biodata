@@ -6,7 +6,7 @@ import { Tab, TabList, Tabs } from "@/components/application/tabs/tabs";
 import { useRoleHref } from "@/lib/use-role-href";
 
 // "My" vs "All" for the DSA and DLA collections, rolled into production from
-// /proto/collection-sidebar's "My Items" exploration (CONTEXT.md). My/All is a scope, not a
+// /proto/collection-sidebar's "My Items" exploration (context/decisions/2026-09-25-18-my-requests-all-requests-and-my-agreements-all.md). My/All is a scope, not a
 // status: column 2 holds the scope switcher, and the table in main shows every status at once with a
 // status filter and a Status column.
 

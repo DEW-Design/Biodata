@@ -1,0 +1,40 @@
+# 2026-09-29 - Template Finder built from the wireframe, and the shell hook resets on compaction
+
+- **Sept 29 2026: Template Finder built at `/pages/template-finder` from the wireframe (Figma YMproGZfrFB5jUqPHPxMhk node 38:60287). The build doubled as a test of rule loading.**
+  - **Built:**
+    - `app/pages/template-finder/page.tsx`: Section header, search and filter, then the table (CONTRACTS 4.2). The table fits the viewport, with a sticky header and pinned pagination.
+    - `app/pages/_shared/template-finder/template-finder-shell.tsx`: the three-column shell, same shape as `NominationShell`. Column 2 is the section label and footer links only (one view, so no switcher, per 3.10).
+    - `template-data.ts`: the eight templates, with the wireframe's own names, descriptions and facts. It is now the one list; the upload form's `recommendedTemplates` is filtered from it, so the two screens can't drift apart.
+    - `template-downloads.tsx`: the disabled Excel and PDF buttons with the "Coming soon" tooltip, moved out of the upload form so both screens use one treatment.
+    - Nav: "Template Finder" is now a keyed leaf (`template-finder`) in `registeredUserNav`, and biodata-admin inherits it. It was inert text before.
+    - Access: new `templateFinder` feature (every signed-in role), a whole-page gate on the Prototype tools bar, and an entry in the `/pages` index.
+  - **Departures from the wireframe, on purpose:**
+    - **Access.** The frame is titled "All Users", but the decided IA (2026-09-21-04, `ref-roles.md`) gives a public user no Template Finder section. Figma wins on styling, never on scope (2.5), so a public user gets the shell with the restriction in main. **Open question for the designer.**
+    - **Layout.** The card grid is a table (4.2). The cards' image placeholders are dropped, since there are no template images.
+    - **Filters.** The three selects and "Find Templates" are replaced by the search box and filter button every list uses, applied as you choose.
+      - "Project ID / Title" is left out, because nothing links a template to a project yet. **Open question: what should that filter find?**
+      - All eight templates are "Others" and "Flora", so each filter has one or two options.
+    - **Downloads.** The wireframe draws Excel and PDF file glyphs. The library has no file-type icon, so the formats are named on buttons, as on the upload form. They stay disabled until real template files exist.
+    - **Rows are not links.** A template has no page of its own.
+    - **Copy.** The wireframe's "Showing 9 Results" sits over eight cards; the count badge shows the real count. The en dash in "Waterbug Bioblitz - Macroinvertebrates Template" is a hyphen (2.3).
+  - **Typography (2.9):** every text layer copies a sibling.
+    - Title and description are the project list's name and description cell (Barlow 14/20 w500 and 12/16 w400, the same computed values measured on both screens). The description wraps with `text-balance` instead of truncating, capped at the sibling's 448px (about 70 characters).
+    - The other cells follow the nominations list. The section header, count badge and table heads are the components' own text.
+    - Description contrast is about 5.3:1. `/emil-typography` flagged a too-long measure (`max-w-xl`), fixed to `max-w-md`. It prefers `text-pretty` for descriptions, but CONTRACTS 2.3 requires `text-balance`, and the contract wins.
+  - **Verified:**
+    - `tsc` and `eslint --max-warnings=0` on every touched file; `npm run check:contracts` clean.
+    - Live pass with Playwright, zero console errors:
+      - registered-user and biodata-admin see 8 rows. The search "bushland" gives 2, and a search with no match shows the empty line.
+      - Keyboard: Tab reaches Filter, Enter opens it, a choice applies live ("Filter (1)"), and Escape closes the popover and keeps the selection. Sorting works.
+      - The page does not scroll at 1280x600: the table scrolls inside itself, with pagination pinned.
+      - A public user sees the restriction, and the rail shows their three sections.
+      - The upload form still shows its three templates with six disabled downloads.
+  - **Rule loading during the build:**
+    - Reading the nav, config and page files with the Read tool loaded contracts-shell, contracts-build, contracts-prototyping, ref-roles and ref-shell.
+    - The shell hook listed `ref-roles.md` and `ref-domain.md` when shell commands touched their areas.
+    - A heredoc naming only files whose rules were already listed produced no list, as intended.
+  - **Gap found and fixed:** the hook's per-session record outlived a context compaction. Rules listed before compaction were marked as sent, although their contents had left context, so they would never be listed again.
+    - The fix: a `SessionStart` hook (matcher `compact|clear`) runs the same script, which deletes that session's records (every agent's).
+    - Pipe-tested: the reset removed the session's records, left another session's alone, and the next shell read listed the rules again.
+  - **Still open:** the access conflict and the project filter above; real template files (downloads stay disabled until then).
+  - Not committed.

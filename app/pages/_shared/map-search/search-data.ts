@@ -7,7 +7,7 @@ import { projects as myProjects } from "@/app/pages/_shared/project-list-data";
 
 // The map search tool's own record datasets - illustrative, but grounded in this build's existing
 // real reference points and the real BDBSA data hierarchy (Project -> Site -> Observation ->
-// Occurrence, see CONTEXT.md's "BDBSA domain research"). Species names are real South Australian
+// Occurrence, see .claude/rules/ref-domain.md, "BDBSA domain research"). Species names are real South Australian
 // native fauna already established elsewhere in this build's copy, or otherwise genuine SA
 // species - never invented taxa. Coordinates are approximate, illustrative points near each
 // region's real national park, not surveyed record locations.
@@ -262,7 +262,7 @@ export function kingdomForGroup(group: SpeciesGroup): "Flora" | "Fauna" {
     return group === "Plant" ? "Flora" : "Fauna";
 }
 
-/** BDBSA's real sensitive-species access split (see CONTEXT.md's "BDBSA domain research": "when a
+/** BDBSA's real sensitive-species access split (see .claude/rules/ref-domain.md, "BDBSA domain research": "when a
  *  whole dataset is considered sensitive it will be flagged... and only distributed under licence
  *  or with appropriate approval" - a project-level flag in the real system, applied here at the
  *  per-occurrence level since Species mode is a per-species, cross-project view). `"Level 2"` rows

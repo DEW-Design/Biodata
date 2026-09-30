@@ -6,6 +6,7 @@
       "designer": "Sai Maniganahalli",
       "approvedBy": "Sai Maniganahalli",
       "date": "2026-09-25",
+      "reviewBy": "2027-03-25",
       "reason": "Designer requested a shared ? marker for missing components (Sept 25 2026 session). Checked: no existing Gap/placeholder component; /test-* screens each hand-rolled a local GapField or GapRadio.",
       "status": "active"
     },
@@ -15,6 +16,7 @@
       "designer": "Sai Maniganahalli",
       "approvedBy": "Sai Maniganahalli",
       "date": "2026-09-25",
+      "reviewBy": "2027-03-25",
       "reason": "Designer ingested the Untitled UI Progress steps component via the ingestion workflow (Sept 25 2026). Checked: no existing stepper or progress-steps component in components/**; the two local steppers (project-registration/stepper.tsx, auth/_shared/setup-stepper.tsx) are page-local one-offs.",
       "status": "active"
     },
@@ -24,6 +26,7 @@
       "designer": "Sai Maniganahalli",
       "approvedBy": "Sai Maniganahalli",
       "date": "2026-09-25",
+      "reviewBy": "2027-03-25",
       "reason": "Designer ingested the Untitled UI Progress steps component via the ingestion workflow (Sept 25 2026). Checked: no existing stepper or progress-steps component in components/**; the two local steppers (project-registration/stepper.tsx, auth/_shared/setup-stepper.tsx) are page-local one-offs.",
       "status": "active"
     },
@@ -33,6 +36,7 @@
       "designer": "Sai Maniganahalli",
       "approvedBy": "Sai Maniganahalli",
       "date": "2026-09-25",
+      "reviewBy": "2027-03-25",
       "reason": "Designer ingested the Untitled UI Progress steps component via the ingestion workflow (Sept 25 2026). Checked: no existing stepper or progress-steps component in components/**; the two local steppers (project-registration/stepper.tsx, auth/_shared/setup-stepper.tsx) are page-local one-offs.",
       "status": "active"
     }

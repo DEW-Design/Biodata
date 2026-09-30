@@ -1,0 +1,48 @@
+# 2026-09-29 - All rule-loading gaps closed, loader matching measured, before and after benchmark
+
+- **Sept 29 2026: every open rule-loading item from 2026-09-29-32 and -34 is closed, per the designer ("All open tasks to be closed. I need a before and after benchmark report"). The report is `context/reports/2026-09-29-rule-loading-benchmark.md`.**
+  - **`ref-ingest.md` rewritten, 25.7 KB to 8.3 KB, current practice only:**
+    - **Removed as false:**
+      - The avatar page at `app/components/avatar/page.tsx`; it is now under `app/(docs)/`.
+      - Pointers to "Final check" and "Known gaps" sections that no longer exist.
+      - The `dashboard/option-1` history.
+      - `SegmentedControl` standing in "until a DEW Select/Toggle exists"; both exist.
+      - The note that the playground canvas would be extracted; it is repeated inline in each doc page.
+    - **Now records the designer's standing instruction** that the Untitled UI CLI is not run in this repo without their go-ahead. §1.8 is kept for any run.
+    - **Now names the §1.4 override** as step 1 of the component workflow, and `custom/textarea` beside `base/textarea` as a §1.7 duplicate to resolve.
+    - Headings cited by code comments are kept. The old text is verbatim in `context/archive/ref-ingest-history.md`.
+  - **Shell rules no longer arrive after a change.** The hook (`scripts/rules-for-tools.mjs`) now also runs before every shell command. A command that writes into a scoped area is refused until that area's rules are Read:
+    - what counts as writing: redirects, `mv`, `cp`, `rm`, `tee`, `sed -i`, `perl -i`, `git mv/rm/checkout/restore/apply`, `--write`/`--fix`, and inline python or node scripts that write;
+    - a small quote-aware shell reader splits commands, so `sed -i 's|a|b|' file` is still one command;
+    - a `cd` is followed, so relative paths are resolved.
+  - **Glancing no longer lists rules:** `ls`, `test` or `[`, `stat`, `wc`, `echo`, `git status/log`, and `find` without `-exec`. A redirect from `echo` still counts as a write.
+  - **Rules are now enforced, not trusted.** Write, Edit and writing shell commands are all gated, so no file can change without its rules in context. Nothing else needs to check that a listed rule was Read.
+  - **The transcript dependency fails loudly.** If the transcript is missing, or its recent entries no longer look like Claude Code entries, the hook puts a `systemMessage` on screen, lists every matching rule, and does not refuse a change.
+  - **Found and fixed: Claude Code's rule matching was not what the hook and benchmark assumed.**
+    - A validation run showed a doc page loading `contracts-components`.
+    - Probes: throwaway rule files read by fresh subagents, three rounds, with a positive and a negative control and fresh names to rule out caching. 18 observations.
+    - The model: a trailing `/**` is dropped, then gitignore rules apply. A single-name pattern (`components/**`, `page.tsx`) matches at any depth; a pattern with a `/` in it, or a leading `/`, is anchored.
+    - So `components/**` also loaded for `app/(docs)/components/...`, an accidental load.
+    - **Fix:**
+      - Every single-name top-level pattern is anchored with a leading `/`: `/app/**`, `/components/**`, `/contracts/**`, `/scripts/**`, `/.github/**`, `/README.md`, `/CONTRACTS.md`. Changed in `contracts/rule-scopes.json` and the reference files' frontmatter, then regenerated.
+      - A probe confirmed `/components/**` loads for `components/base/...` and not for the doc page.
+      - **Flagged under §9.4:** this narrows where `contracts-components` loads. Doc pages no longer get it by accident; every file under the real `components/` still does.
+    - The model lives in `scripts/rule-paths.mjs`, shared by the hook and the benchmark. The observations are test cases.
+  - **Also added:**
+    - `scripts/rules-for-tools.test.mjs` (`npm run test:rules-hook`): 60 tests, the 19 loader observations and 41 hook cases.
+    - `scripts/bench-rules.mjs` (`npm run bench:rules`): before is pinned to `62d5015`.
+    - `.claude/settings.json`: `PreToolUse` on `Write|Edit|Bash`, `PostToolUse` on `Bash|Grep|Glob`.
+    - CONTRACTS.md §5.5 describes both hooks; the rules were regenerated.
+  - **Verified:**
+    - `eslint --max-warnings=0` on all four scripts; `npm run check:contracts` clean; 60 of 60 tests.
+    - Five real subagent runs (doc page, component, lab, new screen, record page) injected exactly the rules the benchmark predicts.
+    - A subagent's `echo probe > app/pages/zz-gate-probe.txt` was refused live, naming the four screen rules; the file was never created.
+    - The hook takes about 20 to 35 ms per call on the 235 MB session transcript.
+    - All probe rule files were deleted after each round.
+  - **Benchmark:** 909 KB (about 233k tokens) on every task before, against 23 to 75 KB after, a 91.8% to 97.5% saving. Details in the report.
+  - **Limits, not gaps in what was asked:**
+    - A separate script file that writes (`node x.mjs`, `npm run`) is not recognised as a write.
+    - Grep and Glob don't exist in this setup, so they are tested with synthetic inputs only.
+    - The loader model is for today's Claude Code.
+  - **Still open, designer decisions only:** Template Finder public-user access, and what its "Project ID / Title" filter should find (2026-09-29-30).
+  - Not committed.

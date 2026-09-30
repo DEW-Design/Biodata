@@ -5,7 +5,7 @@
 //
 // Status now follows the shared DSA/DLA workflow model (see agreement-status.ts) - Draft, Submitted,
 // Under Review, On Hold, Approved, Rejected, Active, Closed, Cancelled, and the real transitions
-// between them, replacing the earlier lo-fi-only Active/Inactive/Revoked/Draft set (see CONTEXT.md,
+// between them, replacing the earlier lo-fi-only Active/Inactive/Revoked/Draft set (see context/decisions/2026-09-24-04-unified-dsa-dla-status-model-rolled-straight-into.md,
 // "Unified DSA/DLA status model" for the source and every decision behind it).
 export type { AgreementStatus as DsaStatus, AgreementEvent as DsaEvent } from "@/app/pages/_shared/agreement-status";
 export { agreementStatusOrder as dsaStatusOrder, agreementStatusMeta as dsaStatusMeta } from "@/app/pages/_shared/agreement-status";

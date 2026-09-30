@@ -1,5 +1,6 @@
 import type { Outcome, RunView } from "@/app/pages/_shared/dataset-upload/ingestion";
 import type { BadgeColor } from "@/components/base/badges/badges";
+import { datasetTemplates, type DatasetTemplate } from "@/app/pages/_shared/template-finder/template-data";
 
 // Dataset upload: the data model and the fixed vocabularies. A dataset is one upload to a project:
 // its files, the acknowledgement the uploader gave, and where it is in the dataset workflow.
@@ -10,7 +11,7 @@ import type { BadgeColor } from "@/components/base/badges/badges";
 // Progress, Validation Passed or Failed, Save draft or Submit, Processing (post-flight), Under Review
 // or Auto-Approved, Approved. The sheet's step 8 ("All Records Approved = complete") is struck
 // through and is not modelled. **Only `file_uploaded` is written today**: uploading stages the file
-// for validation. Validation and everything after it is the next piece of work (see CONTEXT.md).
+// for validation. Validation and everything after it is the next piece of work (see context/decisions/2026-09-28-38-upload-dataset-built-from-the-wireframes.md).
 export type DatasetStatus =
   | "file_uploaded"
   | "validation_requested"
@@ -149,40 +150,13 @@ export function missingForUpload(draft: UploadDraft, uploading: boolean): Record
 }
 
 // ── Recommended templates ──
-// Names, descriptions and the two facts are the wireframe's own copy. There are no template files
-// in the preview, so the downloads are shown but disabled. (The Template Finder section is where
-// templates will be browsed and downloaded.)
-export interface DatasetTemplate {
-  id: string;
-  title: string;
-  description: string;
-  collectionMethod: string;
-  speciesType: string;
-}
+// The three the upload wireframe recommends, taken from the one template list the Template Finder
+// also reads, so the two can't drift apart.
+export type { DatasetTemplate };
 
-export const recommendedTemplates: DatasetTemplate[] = [
-  {
-    id: "site-visit-species-load",
-    title: "Site Visit Species Load Template",
-    description: "A legacy ecological data framework retained for historical reference and comparison with newer assessment methods.",
-    collectionMethod: "Others",
-    speciesType: "Flora",
-  },
-  {
-    id: "site-visit-species-load-custom",
-    title: "Site Visit Species Load Template (Custom)",
-    description: "A legacy ecological data framework retained for historical reference and comparison with newer assessment methods.",
-    collectionMethod: "Others",
-    speciesType: "Flora",
-  },
-  {
-    id: "species-data-return",
-    title: "Species Data Return Template",
-    description: "An older standardized format for submitting biodiversity and survey data, maintained for compatibility with historical records.",
-    collectionMethod: "Others",
-    speciesType: "Flora",
-  },
-];
+const RECOMMENDED_TEMPLATE_IDS = ["site-visit-species-load", "site-visit-species-load-custom", "species-data-return"];
+
+export const recommendedTemplates: DatasetTemplate[] = datasetTemplates.filter((t) => RECOMMENDED_TEMPLATE_IDS.includes(t.id));
 
 export function formatFileSize(bytes: number): string {
   if (bytes < 1024) return `${bytes} B`;

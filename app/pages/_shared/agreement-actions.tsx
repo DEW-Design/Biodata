@@ -6,7 +6,7 @@ import { cx } from "@/utils/cx";
 import { toast } from "@/components/application/toast/toast";
 
 // Column 2's "Actions" group, folded into the real DSA/DLA shells from /proto/collection-sidebar's
-// own "Actions" baseline (see CONTEXT.md) - Export CSV and Create report, below the status list.
+// own "Actions" baseline (see context/decisions/2026-09-24-05-proto-collection-sidebar-s-actions-group-and-its.md) - Export CSV and Create report, below the status list.
 // Shared between dsa-shell.tsx/dla-shell.tsx since the wrapper/label/button styling and the
 // "Create report" action are identical either way; each shell still supplies its own CSV export
 // (the columns genuinely differ between an agreement and a request).

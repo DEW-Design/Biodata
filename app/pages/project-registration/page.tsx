@@ -7,7 +7,7 @@
 //
 // Figma: https://www.figma.com/design/YMproGZfrFB5jUqPHPxMhk (Biodata Wireframe Presentation - the
 // same file already treated as this build's ground truth for the real BDBSA data model, see
-// CONTEXT.md's "BDBSA domain research"), node 2298:179004 - a plain wireframe, not a styled
+// .claude/rules/ref-domain.md, "BDBSA domain research"), node 2298:179004 - a plain wireframe, not a styled
 // reference, read for its own real IA (3 steps: Project Identification / Data Collection and
 // Storage / Privacy and Restrictions; the 5 restriction types nested in step 3) rather than for any
 // pixel/colour choice - the same "extract patterns, not pixels" treatment this file's own
@@ -44,7 +44,7 @@ import { Step2DataCollection } from "./step-2-data-collection";
 import { Step3PrivacyRestrictions, isStep3Valid } from "./step-3-privacy-restrictions";
 import { SuccessScreen } from "./success-screen";
 import { initialProjectDetails, initialDataCollection, initialRestrictions } from "./types";
-import { PrototypeTools } from "@/app/pages/_shared/prototype-tools/prototype-tools";
+import { PrototypeTools } from "@/app/_prototype-tools/prototype-tools";
 import { RegistrationLayoutSwitcher } from "./layout-switcher";
 
 function GuestGate() {

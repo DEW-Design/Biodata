@@ -96,7 +96,7 @@ function formatPoint([lat, lon]: [number, number]): string {
  *  rather than adding random jitter. Deterministic and honestly reproducible: the same input always
  *  obfuscates to the same output, unlike a random offset that would silently "wander" a sensitive
  *  species' displayed location on every render. This is the same real BDBSA mechanic already
- *  documented in CONTEXT.md's "BDBSA domain research" - a sensitive species' precise location is
+ *  documented in .claude/rules/ref-domain.md, "BDBSA domain research" - a sensitive species' precise location is
  *  withheld even when the rest of its project is public. */
 export function obfuscateCoordinate(lat: number, lon: number, radiusKm: number): { lat: number; lon: number; radiusKm: number } {
     const gridDeg = radiusKm / 111;

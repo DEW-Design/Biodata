@@ -9,7 +9,12 @@
     "lint": "eslint",
     "check:contracts": "node scripts/check-contracts.mjs",
     "contracts:override": "node scripts/add-override.mjs",
-    "audit": "node scripts/audit.mjs"
+    "audit": "node scripts/audit.mjs",
+    "context:index": "node scripts/build-context-index.mjs",
+    "decision:new": "node scripts/new-decision.mjs",
+    "contracts:rules": "node scripts/build-contract-rules.mjs",
+    "test:rules-hook": "node scripts/rules-for-tools.test.mjs",
+    "bench:rules": "node scripts/bench-rules.mjs"
   },
   "dependencies": {
     "@highcharts/map-collection": "^2.3.3",

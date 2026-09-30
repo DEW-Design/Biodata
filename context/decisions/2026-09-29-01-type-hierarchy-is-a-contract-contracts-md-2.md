@@ -1,0 +1,12 @@
+# 2026-09-29 - type hierarchy is a contract (CONTRACTS.md §2.9) and typography QA is part of done (§0.6 item 8), per direct instruction ("Good typography hierarchy is a non-negotiable... The AI model cannot generate random type layers... I need the type hierarchy sorted out correctly in the first go").
+
+- **Sept 29 2026: type hierarchy is a contract (CONTRACTS.md §2.9) and typography QA is part of done (§0.6 item 8), per direct instruction ("Good typography hierarchy is a non-negotiable... The AI model cannot generate random type layers... I need the type hierarchy sorted out correctly in the first go").**
+  - **§2.9 Type hierarchy (added, a tightening; the change to CONTRACTS.md is flagged in the next audit under §9.4):**
+    - An agent may not generate a type layer that no source has already defined.
+    - Every piece of text takes its treatment from the first source that answers, in this order: the design system (the `/primitives/typography` scale and weights, the text tokens, what the component itself sets); then patterns already on the web app (the sibling that plays the same role, copied exactly, so one role has one treatment everywhere); then Emil's skills.
+    - If all three are silent, ask (§0.4) rather than invent.
+    - The report names the source of each new layer; a layer with no named source is a violation.
+    - Enforcement `REVIEW`; the dead `text-md` is already `AUTO §2.1`.
+  - **§0.6 item 8 (added, after item 7 so existing "§0.6 item 4" references keep their numbers):** on any change that adds or changes visible text, `/emil-typography` and `/emil-design-foundations` run every time as QA, after the design system and existing-pattern checks, with computed styles measured live (family, size, weight, colour and contrast, tabular figures on changing numbers). The designer accepts the extra tokens this costs.
+  - **Not done, for the designer:** existing screens have not been swept against §2.9. The ingestion popover was checked on Sept 28; the rest of the product was not. A product-wide type audit (every role's treatment collected into one table, conflicts listed) is the natural next step, and the known conflicts are already logged: the typography docs list Text xs as 12/18 and caption as Medium while the components set 12/16 and Regular, and `text-md` is undefined but used by the fields.
+  - `npm run check:contracts` still passes. Not committed.

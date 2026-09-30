@@ -52,7 +52,7 @@ import { AppHeader } from "@/app/pages/_shared/app-header";
 import { ArtefactLightbox, type Artefact } from "@/app/pages/_shared/artefact-lightbox";
 import { ArtefactTable } from "@/app/pages/_shared/artefact-table";
 import { MobileNavTrigger } from "@/app/pages/_shared/mobile-nav";
-import { PrototypeTools } from "@/app/pages/_shared/prototype-tools/prototype-tools";
+import { PrototypeTools } from "@/app/_prototype-tools/prototype-tools";
 import { ProjectDetailLayoutSwitcher } from "@/app/pages/_shared/project-detail-layout-switcher";
 import { BentoCard } from "@/app/pages/_shared/bento-card";
 import { MapView } from "@/app/pages/_shared/map-view";
@@ -155,7 +155,7 @@ function NavTree({ node, depth = 0, defaultOpen = false }: { node: NavNode; dept
 }
 
 // ── Contextual sidebar records tree: "grouped by type + search" - decided from /proto/project-
-// sidebar (see CONTEXT.md's entry for the full rejected-options list). Below TRUNCATE_AT records
+// sidebar (see context/archive/exploratory-layouts-history.md for the full rejected-options list). Below TRUNCATE_AT records
 // shown per type at any one level, the rest are named ("+N more") rather than rendered - this
 // project's real data never reaches that cap, but the mechanism is real, not decorative, so it
 // doesn't silently break the day a project does. Search filters across the whole tree and
@@ -643,7 +643,7 @@ const abstract =
 // One shared shape for every contact in this project - Data Owner and Project Manager used to be
 // 4 near-identical raw tables (Primary/Additional Contact x Data Owner/Project Manager), separated
 // only by a thin rule and a text label, in both the lo-fi and hi-fi references. Same "repeated
-// table shapes need distinct containers, not just a label" principle from CONTEXT.md's "Design
+// table shapes need distinct containers, not just a label" principle from .claude/rules/ref-shell.md, "Design
 // principles (cognitive load)" section - one real card, used 4 times with different data, so a
 // contact is instantly recognisable as a contact rather than something to re-read labels to place.
 interface ProjectContact {
@@ -692,7 +692,7 @@ const projectManager: ProjectContact[] = [{ name: "Maya Dewitt", role: "DEW Ecol
 
 // One place for the identifying metadata, so the meta row under the title and the rail's "Project
 // Details" card below can't drift apart - "Meta Under Title, Full Rail" decided from
-// /proto/project-header (see CONTEXT.md's entry for the full rejected-options list): the meta row
+// /proto/project-header (see context/archive/exploratory-layouts-history.md for the full rejected-options list): the meta row
 // stays under the title exactly where it always was, and is deliberately repeated in the rail too,
 // on the theory that a fact worth showing once is worth being scannable without scrolling back up.
 //
@@ -953,7 +953,7 @@ function FlaggedConceptsBanner({ onSelect }: { onSelect: (concept: FlaggedConcep
 /** Adelaide Hills Bushland Survey's project page, the one project with hand-written content (the
  *  others are built from Explore's data: app/pages/project-list/[id]/project-details). Rendered by
  *  `/pages/project-detail` and by `/pages/project-list/adelaide-hills/project-details`. It opens on
- *  the Species tab (per the designer); a species row opens that record's own page
+ *  the Overview tab (per the designer); a species row opens that record's own page
  *  (/pages/project-list/adelaide-hills/project-details/occurrences/<id>); `notice` shows above the tabs. */
 export function ProjectDetailView(props: ProjectDetailProps) {
   return (

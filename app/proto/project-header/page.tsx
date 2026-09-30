@@ -5,7 +5,7 @@
 // project-detail's "Projects" header - currently all of it sits inside the Overview tab
 // body, below the persistent title/meta header. KEPT after promotion (per the user: never delete
 // explorations - they're the evidence that all the options were actually considered, not just the
-// one that shipped). See CONTEXT.md's entry for where "Meta Under Title, Full Rail" landed in the
+// one that shipped). See context/archive/exploratory-layouts-history.md, entry for where "Meta Under Title, Full Rail" landed in the
 // real page.
 
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
@@ -379,7 +379,7 @@ function VariantMetaUnderTitleCleanRail() {
 // ── Variant 4: Meta Under Title, Full Rail - same restored meta row under the title, but the rail
 // deliberately keeps "Project Details" too - some duplication, on the theory that a fact worth
 // showing once is worth being scannable in both the header and the rail without scrolling back up.
-// This is the direction promoted into the real page (see CONTEXT.md). ──
+// This is the direction promoted into the real page (see context/archive/exploratory-layouts-history.md). ──
 function VariantMetaUnderTitleFullRail() {
   return (
     <>

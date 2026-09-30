@@ -5,7 +5,7 @@
  *
  * These exist for manipulating a live demo (e.g. the Component Playground's
  * "Controls" panel, the Contextual config panel's show/hide toggles) and
- * intentionally do not import from components/base/**. Per CONTEXT.md's
+ * intentionally do not import from components/base/**. Per .claude/rules/ref-ingest.md,
  * "DEW vs. Scaffold" rule: Scaffold may inherit DEW's `--ui-*` tokens (see
  * the utility classes below) but must never be built from real DEW component
  * instances - documentation tooling is not "used to build and design

@@ -16,7 +16,7 @@ import { AppHeader } from "@/app/pages/_shared/app-header";
 import { FormSidebarSlotContext } from "@/app/pages/_shared/form-section-list";
 import { AgreementScopeNav } from "@/app/pages/_shared/agreement-scope";
 import { MobileNavTrigger } from "@/app/pages/_shared/mobile-nav";
-import { PrototypeTools } from "@/app/pages/_shared/prototype-tools/prototype-tools";
+import { PrototypeTools } from "@/app/_prototype-tools/prototype-tools";
 import { useFeatureAccess } from "@/lib/use-feature-access";
 import { useRoleHref } from "@/lib/use-role-href";
 import { useUserRole } from "@/lib/use-user-role";
@@ -26,14 +26,12 @@ import { DSA_SECTION_LABEL, keyHref, navForRole, type NavNode } from "@/lib/regi
 // new/edit form), so the three-column structure - primary icon rail, contextual sidebar, main - is
 // the same on all of them, and for every persona: a role without access still gets all three
 // columns, with the restricted message in main. Header, rail and section switching follow
-// project-list/page.tsx; see CONTEXT.md, "List -> deep dive".
+// project-list/page.tsx; see .claude/rules/ref-shell.md, "List -> deep dive".
 //
-// Column 2 is the agreement status buckets (see agreement-status.ts's shared DSA/DLA workflow -
-// Draft/Submitted/Under Review/Approved/Rejected/Active/On Hold/Closed/Cancelled) as links back to
-// the list, on every DSA route: on the list it is the filter, on a deep dive or the form it shows
-// which bucket you are in and gets you back out. Links, not local state, so the bucket is in the
-// URL and back/forward work. Below the status list, an "Actions" group (Export CSV / Create
-// report) is folded in from /proto/collection-sidebar's own "Actions" baseline - see CONTEXT.md.
+// Column 2 is the My agreements / All agreements switcher (`AgreementScopeNav`, `?scope=`) and,
+// below it, the "Actions" group (Export CSV / Create report), folded in from /proto/collection-sidebar's
+// own "Actions" baseline - see context/decisions/2026-09-24-05-proto-collection-sidebar-s-actions-group-and-its.md.
+// Status is a filter on the list (`?status=` seeds it), not a place in column 2.
 const CURRENT_KEY = "dsa";
 
 function SectionPlaceholder({ node }: { node: NavNode }) {
@@ -57,7 +55,7 @@ function SectionPlaceholder({ node }: { node: NavNode }) {
 
 // Column 2's content. Also rendered inside the mobile navigation menu, where the aside is hidden.
 // `Actions` (Export CSV / Create report) below the status list is folded in directly from
-// /proto/collection-sidebar's own "Actions" baseline (see CONTEXT.md) - real navigation, real data.
+// /proto/collection-sidebar's own "Actions" baseline (see context/decisions/2026-09-24-05-proto-collection-sidebar-s-actions-group-and-its.md) - real navigation, real data.
 function ScopeNav() {
   const dsas = useDsas();
 
@@ -84,7 +82,7 @@ export function DsaShell({
 }: {
   /** The page-specific final crumb (an agreement ID, "New agreement"). When set, the section crumb becomes a link back to the list. */
   breadcrumbCurrent?: string;
-  /** A create/edit form is rendered: column 2 becomes the form's own section list (the form portals into it via `FormSidebar`) instead of the status buckets. */
+  /** A create/edit form is rendered: column 2 becomes the form's own section list (the form portals into it via `FormSidebar`) instead of the scope switcher. */
   formSidebar?: boolean;
   children: ReactNode;
 }) {

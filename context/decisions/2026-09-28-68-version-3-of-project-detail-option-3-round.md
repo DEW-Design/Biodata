@@ -1,0 +1,46 @@
+# 2026-09-28 - Version 3 of project detail Option 3, round two, per direct feedback (branch `mohan-wips`)
+
+- **Sept 28 2026: version 3 of project detail Option 3, round two, per direct feedback (branch `mohan-wips`).**
+  - **Decisions from the designer:**
+    - A field that is itself a record comment ("Site comment") is edited as a value; no notes pile up on it.
+    - Hiding fields is per record.
+    - **Which fields can never be hidden is not known yet.** The designer will supply it. Until then the provisional lock stays (`ALWAYS_SHOWN`: a primary "…ID", not "Legacy …"). A memory records this, so it is asked about rather than changed unasked. The list can be handed over as plain field labels per record type.
+  - **Consistent treatments:**
+    - The focused edit row lost its brand-25 fill (plain now).
+    - The note panels are a plain bordered box instead of a grey fill.
+    - Hover rows (field rows, checklist rows) now inset their content by 12px, with no negative-margin bleed. The accordion clipped the bleed, so text sat 2px from the fill.
+  - **Breadcrumbs start with the project, not a link:** a folder icon and "BD-5039" (`ProjectCrumb` in `record-inspector.tsx`, used by all three versions and by v3's project header).
+  - **Actions menu:**
+    - Edit record; a divider; "Add inside" as Events, Occurrences and Observations, each a submenu of its types (the Record type filter's grouping, react-aria `SubmenuTrigger`); a divider; Delete record in the error colour.
+    - `Dropdown.Item` gained an additive `destructive` prop (error label, icon and hover), documented in the Dropdown docs API table.
+    - **Found and fixed:** `Dropdown.Separator` used the dead `bg-border-secondary`, so every dropdown divider in the app was invisible. It now uses the border token (`AUTO §2.1a` count 1 to 0).
+  - **Edit record opens every card in edit mode.** A card or field icon opens just that card.
+  - **Edit returns to where it started:** from the side panel, full-screen editing closes back to the panel on Save or Cancel; from the full view, it stays in the full view.
+  - **Questionable values** (the business term, shown with the flag icon):
+    - Only a BioData Admin can mark a value questionable (with the reason) or resolve it. Other editors see it read only; their note tabs are Comment and Attach.
+    - The admin resolves it where they read it, in the view (field notes, then Resolve), as well as in edit mode.
+    - Copy: "Marked questionable", "Mark questionable", the "Questionable" tab.
+  - **Type icons (option-4 only, lucide-react):**
+    - Events: Site MapPinned, Visit CalendarCheck2, Transect Route, Quadrat Grid2x2, Block SquareDashed, Ramble Footprints, Trap Box, Custom event Shapes.
+    - Occurrences: Individual LocateFixed, Population ChartScatter.
+    - Observations: Individual ScanEye, Population Binoculars, Non-biotic Mountain, Community Trees.
+    - Explore keeps its Figma icons.
+  - **Project tab edits inline in v3:**
+    - The card's own form (the drawer's exact fields and rules) opens inside the card, with "Editing" and the brand border, and Cancel and Save changes in a footer that stays in view.
+    - The other cards dim and lose their icons. Add restriction opens as an inline card.
+    - The current version still uses the drawer.
+    - Designer override of CONTRACTS 4.1 (no `FormPage`), as for records, logged here.
+  - **Verified headlessly** (registered-user and biodata-admin):
+    - The breadcrumb reads "BD-5039" with no link; 26 lucide icons show in the tree.
+    - The menu reads Edit record | Events (submenu Visit) | Delete record in red, with 2 dividers.
+    - Edit record puts 5 of 5 cards in edit mode, and Cancel returns to the panel; a field edit then Save returns to the panel with the new value.
+    - Row text is inset 12px, and a full-view edit then Cancel stays full screen.
+    - The admin resolves Reliability from the view, and the admin tabs are Comment | Questionable | Attach.
+    - The Project details card edits inline with no dialog; Add restriction is inline.
+    - Zero console errors. `tsc`, `eslint --max-warnings=0` and `npm run check:contracts` are clean.
+  - **Proposed, not built (for the designer):**
+    - Keep a resolved history ("Resolved by Jane Harlow, 2 Oct") rather than deleting the flag.
+    - Ask for an optional resolution note.
+    - Show questionable values in a review list (a count on the record and a filter "Has questionable values" in Survey records).
+    - Let the record's contributor reply to the reason as a comment.
+  - Not committed.

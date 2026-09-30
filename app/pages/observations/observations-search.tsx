@@ -65,7 +65,7 @@ import { AlertFullWidth } from "@/components/application/alerts/alerts";
 import { Accordion, type AccordionItemType } from "@/components/base/accordion/accordion";
 import { Tooltip } from "@/components/base/tooltip/tooltip";
 import { MobileNavTrigger } from "@/app/pages/_shared/mobile-nav";
-import { PrototypeTools } from "@/app/pages/_shared/prototype-tools/prototype-tools";
+import { PrototypeTools } from "@/app/_prototype-tools/prototype-tools";
 import { SignUpPromptModal } from "@/app/pages/_shared/guest-action-gate";
 import { PrimaryRail } from "@/app/pages/_shared/primary-rail";
 import { SidebarFooterLinks } from "@/app/pages/_shared/sidebar-footer-links";
@@ -1169,7 +1169,7 @@ function ObservationsSearch({ layout }: { layout: ExploreLayout }) {
   //
   // Core invariant, per direct feedback: every Event/Occurrence/Observation/Artefact shown in a
   // results tab must belong (via its real Project -> Event -> Occurrence -> Observation ancestry,
-  // see CONTEXT.md's "BDBSA domain research") to a Project that's also shown in the Projects tab -
+  // see .claude/rules/ref-domain.md, "BDBSA domain research") to a Project that's also shown in the Projects tab -
   // "if there are 20 events shown, it means the 20 events are somehow linked to the projects that
   // are fetched as results." Computed in two passes:
   //  1. `matchingProjectIds` - a Project qualifies if it, or ANY of its descendants (an Event, an

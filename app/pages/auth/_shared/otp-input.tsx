@@ -4,7 +4,7 @@ import { useRef } from "react";
 import { cx } from "@/utils/cx";
 
 // Matches the Figma "Enter Code" screen (node 26:2338) - 6 individual 40x40 boxes split 3-3 by a
-// "-" separator. No DEW OTP/code-input component exists yet (per CONTEXT.md's "no match, no
+// "-" separator. No DEW OTP/code-input component exists yet (per .claude/rules/ref-ingest.md, "no match, no
 // substitute" rule) - built here from plain, individually-controlled <input>s rather than a
 // fabricated component, with auto-advance on type, backspace-to-previous, and paste-to-fill.
 // Kept page-local rather than promoted to components/custom/** since its API isn't settled yet.

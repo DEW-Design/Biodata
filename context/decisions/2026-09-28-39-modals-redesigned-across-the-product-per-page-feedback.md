@@ -1,0 +1,28 @@
+# 2026-09-28 - modals redesigned across the product, per page feedback off a screenshot of the nomination discard prompt ("modal design needs to improve. All across"), from a Mobbin comparison (Braintrust, OpenAI, Dropbox, Toggl, Square, Customer.io; ideas only, CONTRACTS 2.6), and the designer's approval ("Build all six"; "black 40% is fine").
+
+- **Sept 28 2026: modals redesigned across the product, per page feedback off a screenshot of the nomination discard prompt ("modal design needs to improve. All across"), from a Mobbin comparison (Braintrust, OpenAI, Dropbox, Toggl, Square, Customer.io; ideas only, CONTRACTS 2.6), and the designer's approval ("Build all six"; "black 40% is fine").** Fixed once, in `components/application/modals/modal.tsx`, so every consumer changes.
+  - **Dimmed background:** the overlay's `bg-overlay/70` was a dead class, so the page behind was only blurred (logged as a gap since Sept 21). There is now a real token, `--ui-bg-overlay: rgb(0 0 0 / 0.4)` with `@utility bg-overlay` in `app/globals.css`, used by `ModalOverlay`, the slide-over `SidePanel` and the full-screen map (`geo-extent-picker.tsx`). The colour is the designer's call; it has not been checked against a Figma frame.
+  - **One anatomy**, as exported `ModalHeader` and `ModalFooter`:
+    - The title first, with the description under it and the close X on the same row.
+    - An icon only when it signals danger: a small (32px) error icon beside the title on `DestructiveModal`.
+    - `ConfirmationModal` lost its large "?" icon and its `icon` prop. Its one caller that passed an icon, the nomination Accept confirmation, was updated.
+    - The actions sit in a footer under a divider, at their natural width, the primary last, and stack full width on a phone.
+    - `FormModal` has the same header and footer, with its fields between them. That covers the Reject and Return modals (`RejectModal`) and the DLA approve modal.
+  - **Discard is destructive, with a way to keep the work:**
+    - Every form's discard prompt is now a `DestructiveModal` with a red "Discard changes": nominations, DLA, DSA, Add Project option 2 and the User Management forms.
+    - `DestructiveModal` gained additive `secondaryLabel` and `onSecondary`.
+    - Where a draft is possible, the prompt offers "Keep editing", "Save draft" and "Discard changes", and says "Save a draft to keep them, or discard them." Save draft closes the prompt and runs the form's own save, so a draft that can't be saved yet (no species, or a species already nominated) is still refused with its usual message.
+    - When editing a live record, and on the User Management forms, there is no Save draft option.
+  - **Hand-built modals moved to the same anatomy:**
+    - The sign-up invite (`SignUpPromptModal`): no icon, because it isn't a warning. Its `icon` prop is removed, with its five callers.
+    - DLA's Add location.
+    - The mobile navigation drawers get the dimmed background.
+    - Not changed: the artefact viewer and the slide-over panels' own layout.
+  - **Docs:** the Modal page describes the shared anatomy, the discard pattern and the new props, and its API table lists `ModalHeader`/`ModalFooter`. Two pre-existing unescaped apostrophes there were fixed too.
+  - **Verified live at 1708x1024:**
+    - A dirty nomination's X shows the red discard prompt with Keep editing, Save draft and Discard changes. Save draft there saved the draft and opened it.
+    - The docs Confirmation, Destructive and Form modals; the guest sign-up invite on Projects; DLA's Add location; a nomination's Reject modal.
+    - Every overlay computes to `rgba(0, 0, 0, 0.4)`. Escape closes each modal. Zero console errors.
+    - `tsc`, `eslint --max-warnings=0` on touched files and `npm run check:contracts` are clean.
+  - **For the other session:** the new dataset upload form (`app/pages/_shared/dataset-upload/upload-form.tsx`, being built alongside) still uses `ConfirmationModal` for its discard prompt. It was left untouched to avoid clashing edits. It should switch to `DestructiveModal`, with Save draft if uploads can be drafts.
+  - Not committed.

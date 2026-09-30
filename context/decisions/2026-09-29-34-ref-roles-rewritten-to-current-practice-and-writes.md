@@ -1,0 +1,31 @@
+# 2026-09-29 - ref-roles rewritten to current practice, and writes wait for their rules
+
+- **Sept 29 2026: the two gaps the designer picked from 2026-09-29-32 are fixed ("please fix"). The roles reference carried false claims, and some ways of touching a file loaded no rules.**
+  - **`.claude/rules/ref-roles.md` rewritten, 13.2 KB to 5.6 KB, every claim checked against the code:**
+    - **Removed as false or dead:**
+      - "`lib/registered-user-nav.ts` is a single hardcoded tree with no role branching". `navForRole` gives public-user, registered and admin their own trees.
+      - Example URLs and verification notes on the removed `option-1` routes.
+      - "`option-2` doesn't read the role".
+      - The `useRoleHref` and org-pill incident histories, kept as one line each on what to do.
+    - **Now states:**
+      - A table of the six roles (who, org pill, nav tree).
+      - What public-user gets.
+      - Build focus. The designer's standing focus is registered-user and public-user; admin screens (DSA, User Management, DLA approval, nomination review) were built on direct request. Both facts are given, neither is resolved (CONTRACTS 0.4).
+      - URL role selection, `useRoleHref`, and the Prototype tools "Viewing as" preview.
+      - The matrix, its two kinds of gate (a control, a whole page), and where record access levels live (`record-access.ts`).
+    - The "User roles" heading is kept, so the four code comments that cite it still resolve.
+    - The full old text is verbatim in `context/archive/ref-roles-history.md`, indexed in `CONTEXT.md`.
+  - **Correction to 2026-09-29-32:** the trimmed `ref-shell.md` kept a backlog item saying public and registered users "see the same project and observation rows". That was false: `record-access.ts` (Sept 28) already gives public-user Level 1 only on Explore and global search. The item is removed. It had been carried over from the old text without being checked against the code.
+  - **The hook now covers every way of touching a file** (`scripts/rules-for-shell.mjs` renamed to `scripts/rules-for-tools.mjs`):
+    - **After Bash, Grep or Glob:** it lists the missing rules for the paths touched. For a search, that is its folder, and a pattern up to its first wildcard.
+    - **Before Write or Edit:** it refuses the change while the file's rules are not in context, and lists them. The agent Reads them and makes the change again. This enforces "read the rules before creating a file in a scoped area", which the Read tool can't see.
+    - If the transcript can't be read, a write is not refused, since the refusal could then never clear.
+    - `.claude/settings.json` has a `PreToolUse` hook (Write|Edit) and a `PostToolUse` hook (Bash|Grep|Glob).
+    - CONTRACTS.md §5.5 describes both; the rules were regenerated.
+  - **Verified:**
+    - `eslint --max-warnings=0`, `npm run check:contracts` clean.
+    - 12 pipe tests. Glob and Grep by folder and by pattern; a repo-wide search lists nothing. A new file with no rules loaded is refused, and allowed once they are loaded. An Edit is refused for the missing rules only. A write outside the repo, or to a file no rule covers, is allowed, and so is a write when the transcript is unreadable.
+    - **Live:** creating `app/(docs)/zz-hook-test/page.tsx` was refused, naming exactly the three docs rules not in context (not the build rules, which were). After those were Read, the same write went through. The throwaway file was deleted.
+    - **Not live-tested:** Grep and Glob. Neither tool exists in this Claude Code setup (checked for the main agent and a subagent), so searching always goes through Bash, which is covered live. The coverage stays for when those tools are enabled.
+  - **Still open:** `ref-ingest.md` (26 KB) is still history-heavy. Rules still arrive after a shell command rather than before it. An incidental path mention still produces a list. Nothing checks that listed rules were Read, though a write can no longer happen without them.
+  - Not committed.

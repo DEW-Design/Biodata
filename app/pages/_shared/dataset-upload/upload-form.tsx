@@ -2,15 +2,12 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { Download01 } from "@untitledui/icons";
-import { Button } from "@/components/base/buttons/button";
 import { Checkbox } from "@/components/base/checkbox/checkbox";
 import { Input } from "@/components/base/input/input";
 import { RadioButton, RadioGroup } from "@/components/base/radio-buttons/radio-buttons";
-import { Tooltip } from "@/components/base/tooltip/tooltip";
 import { ConfirmationModal } from "@/components/application/modals/modal";
-import { Focusable } from "react-aria-components";
 import { FormPage } from "@/app/pages/_shared/form-page";
+import { TemplateDownloads } from "@/app/pages/_shared/template-finder/template-downloads";
 import { FormRow } from "@/app/pages/_shared/form-row";
 import { FormSectionList, FormSidebar, deriveSectionStatus } from "@/app/pages/_shared/form-section-list";
 import { FileQueue, UploadDropzone, useFileQueue } from "@/app/pages/_shared/dataset-upload/upload-dropzone";
@@ -63,17 +60,7 @@ function TemplateCard({ template }: { template: DatasetTemplate }) {
       </dl>
       <div className="flex items-center gap-2 border-t border-secondary pt-3">
         <span className="text-sm text-tertiary">Download:</span>
-        {["Excel", "PDF"].map((format) => (
-          <Tooltip key={format} title="Coming soon" description="Template downloads aren't available in this preview.">
-            <Focusable>
-              <span className="inline-flex">
-                <Button color="secondary" size="sm" iconLeading={Download01} isDisabled>
-                  {format}
-                </Button>
-              </span>
-            </Focusable>
-          </Tooltip>
-        ))}
+        <TemplateDownloads />
       </div>
     </div>
   );

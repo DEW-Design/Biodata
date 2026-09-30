@@ -1,0 +1,60 @@
+# 2026-09-28 - Site fields and field types from Figma, and field-type rules for every survey record, per direct instruction (branch `mohan-wips`)
+
+- **Sept 28 2026: Site fields and field types from Figma, and field-type rules for every survey record, per direct instruction (branch `mohan-wips`).** Source: Figma `YMproGZfrFB5jUqPHPxMhk`, node `1970:143519` ("Site Details Container / Edit"). Each field in the frame carries an annotation that names its type, and those annotations were followed exactly. The designer's standing rule: **anything given for one record type applies to every event, occurrence and observation**. The rule is saved as a memory, and the rules live in one shared file (`option-4/field-schema.ts`), so the next record types reuse them.
+  - **Site fields (in Figma order):**
+    - **Site details:**
+      - Site ID and Legacy site ID: system generated, locked.
+      - Site name, Description, Site grouping, Specific property details: text.
+      - Altitude: number.
+      - Mud map: Yes/No.
+      - Paddock: text.
+      - Site comment: text area.
+    - **Observers:** multi-select.
+    - **Location information:**
+      - Location details: the location picker.
+      - IBRA region and IBRA subregion: derived.
+      - Location method, Datum and Reliability: controlled vocabulary.
+      - Sample site dimensions: two values with a unit.
+      - Location comment: text area.
+    - **Photopoint:**
+      - Photopoint marker present: Yes/No.
+      - Photopoint disc number: text.
+      - Photopoint direction: number in degrees.
+    - **Custom properties:** the existing editor, not Figma's version.
+    - Removed from the site: Established date and Locality. A site has no date field in the frame; its date stays as a record date and is not edited.
+    - `siteSections()` in `survey-data.ts` is the one builder for seeded and new sites.
+  - **Field-type rules (`field-schema.ts`, controls in `v3/field-controls.tsx`), for every record:**
+    - **Location:** the project's own location picker (`GeoExtentPicker`: shapefile, draw, list, coordinates). A record's location must sit inside the project area and inside its nearest ancestor's location.
+      - A location outside those areas is **blocked with a warning** (designer decision). The previous location stays, the coordinate fields snap back, and a warning names the area it fell outside. The allowed areas are always listed under the picker.
+      - Records now keep their picked shape (`SurveyRecord.location`), and the maps draw it.
+    - **Picker changes (additive):**
+      - Shapefile uploads are now read for real (`parseShapefileUpload`), so they give a real shape to check. The first polygon is used, or a small circle around the first point.
+      - The coordinate fields now show the stored point.
+      - New optional props: `defaultRadiusKm`, `compactTabs` and `referenceBoundaries`. Registration's behaviour is unchanged apart from these improvements.
+    - **Controlled vocabulary** (a dropdown with a disabled box beside it): a code `Select`, with each option showing its description, plus a disabled `Input` that shows the chosen code's description. In view mode it reads "GPS · Hand-held GPS".
+      - The code lists are **illustrative** until the Control Vocabulary module supplies the real ones.
+      - Datum is no longer locked. Existing Location method and Reliability values were converted to codes.
+    - **Numbers:** the DEW `InputNumber`.
+    - **Number with a fixed unit:** the unit is written inside the field by the number formatter ("45°"), with the range as a hint ("In degrees, 0 to 359").
+    - **Two values with a unit:** length × width, then a unit select (m, km).
+    - No Mobbin tool was available this session. The pattern follows the inline units of Stripe and Shopify and native unit formatting.
+    - **Yes/No:** horizontal `RadioGroup` (Yes / No), not a dropdown. Both options stay visible and one click answers, so the designer's preference stands.
+    - **No input box in Figma** means system generated and locked.
+    - **IBRA region and subregion** are worked out from the location, both while editing and on save (`fromDraft`).
+      - The IBRA names are real IBRA 7 names; the boundaries are **approximate latitude and longitude boxes**, per the designer ("come up with region names").
+      - The Adelaide Hills sites resolve to Flinders Lofty Block / Mount Lofty Ranges.
+    - **Observers:** a `MultiSelect` of people on every record.
+  - **Verified headlessly (biodata-admin):**
+    - Site view: "GPS · Hand-held GPS", "1 · Within 10 m", "100 × 100 m", "45°".
+    - Edit record lists exactly the Figma rows.
+    - Coordinates outside the project are blocked with the warning, and the field snaps back.
+    - Inside coordinates are taken, and IBRA updates.
+    - Mud map No, direction 90° and method DGPS saved and read back as "DGPS · Differential GPS" and "90°".
+    - A Visit moved outside its site is blocked with the site named.
+    - A new site at project level gets the full Figma field set.
+    - Zero console errors. `tsc`, `eslint --max-warnings=0` and `npm run check:contracts` are clean.
+  - **Open:**
+    1. Altitude has no unit in Figma ("Number Text Field"), so it shows a bare number. Should it be metres?
+    2. The current (drawer) version's record form still types Datum as free text and uses its own coordinate inputs; only v3 got the new controls.
+    3. The location picker's draw map has no outline of the allowed area yet (the picker supports `referenceBoundaries`, but the map draws every shape the same way).
+  - Not committed.

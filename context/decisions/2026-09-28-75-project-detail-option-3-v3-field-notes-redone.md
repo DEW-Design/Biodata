@@ -1,0 +1,28 @@
+# 2026-09-28 - Project detail Option 3 v3, field notes redone as cards with a hover menu, and editable from the view, per direct feedback (branch `mohan-wips`)
+
+- **Sept 28 2026: project detail Option 3 v3, field notes redone as cards with a hover menu, and editable from the view, per direct feedback (branch `mohan-wips`).** No Mobbin tool was available this session. Patterns:
+  - Google Docs and Figma comment cards (a Resolve button plus a "..." menu for Edit and Remove).
+  - Notion and Airtable field actions behind a "..." that appears on hover.
+  - **Each field has a "..." menu, shown on hover or focus** (`FieldNoteMenu`), in view and edit mode alike. It offers only what applies now:
+    - "Add comment", only while the field has none (one comment per field; after that it is edited on its card).
+    - "Mark questionable", for BioData Admin and Privileged Admin, while the field is not flagged.
+    - "Attach a file", which opens the file picker straight away.
+    - "Add a link".
+    - Picking one opens a single card with its editor under the field.
+    - In view mode the edit pencil stays beside it.
+  - **Notes are cards** (`FieldNotesArea`):
+    - **Comment:** text, author and date. A "..." menu offers Edit (inline) and Remove, with an inline "Remove this comment? It can't be undone." confirmation.
+    - **Questionable** (warning tint): the reason, who and when. For admins, a visible Resolve button (asks "Why is it resolved?") and a "..." menu with Edit and Remove.
+    - **Resolved** (muted): the reason, who, when, and what it had been questioned as.
+    - **Attachments:** file and link chips with remove.
+    - The author and date line sits under the text, so it never truncates in the narrow panel.
+  - **Notes can be added, edited, resolved and removed from the view screen**, by anyone who can edit the record. Changes are saved at once (new `fieldNotesActions.setFieldNotes`). In edit mode the same cards write to the draft, saved with the record. A guest sees the cards read only and no menus.
+  - Replaced and deleted: the view-mode stacked read-only cards and tabs (`NotesPanel`), and the edit-mode "Add note" link menu (`FieldNotesEditor`).
+  - **Verified headlessly (biodata-admin, then public-user):**
+    - The menu on a field without notes reads "Add comment | Mark questionable | Attach a file | Add a link". Once a comment exists, "Add comment" drops out.
+    - A comment added from the view survived a reload, then was edited and removed after confirmation.
+    - Reliability was resolved with a reason and shows the Resolved card.
+    - In edit mode, the Paddock hover menu added a link to the draft.
+    - The guest sees no field menus.
+    - Zero console errors. `tsc`, `eslint --max-warnings=0` and `npm run check:contracts` are clean.
+  - Not committed.

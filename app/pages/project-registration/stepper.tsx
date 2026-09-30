@@ -6,7 +6,7 @@
 // Page-local, not shared with the auth flow's own `SetupStepper` (app/pages/auth/_shared/
 // setup-stepper.tsx) - that one's a bare dot-and-line indicator for a narrow centred card; this one
 // needs to show each step's title + description inline, a different shape, per this codebase's own
-// "page-local, not cross-imported between /pages/** files" convention (see CONTEXT.md's auth-flow
+// "page-local, not cross-imported between /pages/** files" convention (see context/decisions/2026-09-23-04-dla-deep-dive-restructured-per-direct-ux-critique.md, auth-flow
 // entry for the precedent).
 
 import { Check } from "@untitledui/icons";

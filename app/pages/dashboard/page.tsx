@@ -18,7 +18,7 @@ import { AppHeader } from "@/app/pages/_shared/app-header";
 import { ProjectsSidebar, type ProjectScope } from "@/app/pages/_shared/projects-sidebar";
 import { GuestAboutAside, GuestGradientCard } from "@/app/pages/_shared/guest-home";
 import { MobileNavTrigger } from "@/app/pages/_shared/mobile-nav";
-import { PrototypeTools } from "@/app/pages/_shared/prototype-tools/prototype-tools";
+import { PrototypeTools } from "@/app/_prototype-tools/prototype-tools";
 import { useUserRole } from "@/lib/use-user-role";
 import { useRoleHref } from "@/lib/use-role-href";
 import { navForRole, keyHref, type NavNode } from "@/lib/registered-user-nav";
@@ -40,7 +40,7 @@ import { cx } from "@/utils/cx";
 // records, flora/fauna species counts, the map) that used to live here have been trimmed to just
 // the KPI row. Decided directly by the user: a registered user has limited scope on this platform,
 // so the dashboard's job is to surface what's actually theirs to act on, not to be a smaller version
-// of an org-wide reporting surface - see CONTEXT.md's "Registered User dashboard scope".
+// of an org-wide reporting surface - see .claude/rules/ref-shell.md, "Registered User dashboard scope".
 //
 // Figma source: https://www.figma.com/design/SQ58QgwP9Xz0uo3tBpuf6e/DEW-Toolkit--version-1.0-?node-id=103-105
 // "SCREEN" (BioData SA dashboard shell, 1440px) - an exploratory layout per CONTEXT.md's
@@ -174,7 +174,7 @@ function SectionPlaceholder({ node }: { node: NavNode }) {
 }
 
 
-// User roles - see CONTEXT.md's "User roles" section. Full 6-role hierarchy is defined in
+// User roles - see .claude/rules/ref-roles.md, "User roles" section. Full 6-role hierarchy is defined in
 // lib/user-role.ts, but build focus right now is just public-user (the default) and registered-user -
 // don't build features for the other four ahead of being told to. Gated features (like the org
 // switcher below) read config/role-access.config.ts's role-access matrix via useFeatureAccess
@@ -195,7 +195,7 @@ function Dashboard() {
   // public-user ("Guest User") reads a different, smaller nav tree entirely - not a filtered view
   // of registeredUserNav, since whole sections (DLA, Nominate Sensitive Species, Reports, Template
   // Finder) don't exist for a signed-out visitor, not just individual leaves inside them. See
-  // lib/registered-user-nav.ts's publicUserNav and CONTEXT.md's "User roles" section for the real
+  // lib/registered-user-nav.ts's publicUserNav and .claude/rules/ref-roles.md, "User roles" section for the real
   // IA this is built from.
   const role = useUserRole();
   const isPublicUser = role === "public-user";

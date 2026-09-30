@@ -53,7 +53,7 @@ const initials = (first: string, last: string) => `${first[0] ?? ""}${last[0] ??
 
 /**
  * Column-3 banner (via `DsaListContent`'s own `banner` prop) - folded in directly from
- * /proto/collection-sidebar's own "Actions" baseline (see CONTEXT.md). Real `TaskItem`
+ * /proto/collection-sidebar's own "Actions" baseline (see context/decisions/2026-09-24-05-proto-collection-sidebar-s-actions-group-and-its.md). Real `TaskItem`
  * (`app/pages/_shared/home-dashboard.tsx`), not `AlertFullWidth` - a computed fact about other
  * records pointing elsewhere is a `TaskItem`, per that component's own established precedent.
  * Renders nothing when there's nothing to say.

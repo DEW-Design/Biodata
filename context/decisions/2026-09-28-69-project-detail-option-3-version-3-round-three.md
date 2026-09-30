@@ -1,0 +1,33 @@
+# 2026-09-28 - Project detail Option 3, version 3, round three, per direct feedback (branch `mohan-wips`)
+
+- **Sept 28 2026: project detail Option 3, version 3, round three, per direct feedback (branch `mohan-wips`).**
+  - **New contract clause, CONTRACTS §4.7 "Editing in place on a detail page":**
+    - how an edit is entered;
+    - one editing treatment;
+    - Cancel and Save in one sticky page footer, never inside a card;
+    - asking before discarding changes, and returning to the view the edit started from;
+    - "Fields shown" while editing.
+    - §4.1 now lists this as its exemption. `REVIEW` only.
+  - **Hierarchy, decided by the designer:**
+    - Site holds Visits, sampling events, Occurrences and Observations.
+    - A Visit holds only Occurrences and Observations: no event is ever in a Visit.
+    - Sampling events hold Occurrences and Observations.
+    - An Occurrence holds one Observation of its own type.
+    - Nothing goes inside an Observation.
+    - The sample data was re-parented to match: all six sampling events now sit under their Site. This shared data affects all three versions.
+    - "Add inside" offers Events, Occurrences and Observations as submenus of their types, filtered by these rules.
+  - **Questionable:** marked and resolved by a BioData Admin or a Privileged Admin. Resolving is now a small check icon, needs a reason, and keeps the reason as a "Resolved: …" comment.
+  - **Record path:**
+    - The breadcrumb's first step (folder icon, BD-5039) is clickable again.
+    - The tree root reads "Project".
+  - **Expanding and collapsing:**
+    - The details panel has an expand / collapse-all toggle for its sections, shared with the tree (`ExpandAllToggle`).
+    - The full view's cards are collapsible, with the same toggle.
+  - **Artefacts and attachments:** a Cards / Table switch, with search and a Type filter (`v3/artefacts-view.tsx`). It lists only what is attached to record fields.
+  - **Adding a record:** a new record opens in the full-view layout, with every card in edit mode, "Fields shown", and an "Add <type>" footer. It returns to where it started. `record-inline-editor.tsx` was deleted.
+  - **Project tab, v3:**
+    - Cancel and Save moved to a sticky page footer.
+    - Every field row and contact (except restrictions) has a hover edit icon that opens its card focused on that field.
+    - An edited card spans the full row.
+  - **Verified headlessly** (registered user and privileged admin). Zero console errors. `tsc`, `eslint` and `check:contracts` are clean.
+  - Not committed.

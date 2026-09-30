@@ -47,7 +47,7 @@ import { assetPath } from "@/lib/base-path";
 // BioData SA public marketing home page - rebuilt directly against the real
 // Figma frame the user supplied (node 155:168, "Version 3"):
 // https://www.figma.com/design/u4FTv88XXfy58MiLN5T5Wu/Home---Landing-Page?node-id=155-168
-// Per CONTEXT.md's "Figma is the source of truth" contract, every section
+// Per .claude/rules/ref-ingest.md, "Figma is the source of truth" contract, every section
 // below was re-audited against that frame's actual `get_design_context`
 // output (not the first pass's guess from pasted copy alone) - colours,
 // copy groupings, section boundaries, and real exported photography/icon
@@ -77,7 +77,7 @@ import { assetPath } from "@/lib/base-path";
 // - The hero's stacked "Discover / South Australia's / Biodiversity /
 //   Knowledge" wordmark uses Fredoka (Google Font), same as the frame -
 //   loaded locally to this page only, since every other DEW/Scaffold
-//   surface stays Geist/Barlow (see CONTEXT.md's "Geist stays Geist,
+//   surface stays Geist/Barlow (see context/archive/final-check.md, "Geist stays Geist,
 //   Barlow stays Barlow" rule - this is a third, page-scoped exception for
 //   one decorative marketing headline, not a sitewide font change). The
 //   frame hand-positions each word at its own size/offset for a fixed

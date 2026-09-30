@@ -45,7 +45,7 @@ import {
 // system block only exists once "System" is ticked, as in the lo-fi, and each system is its own
 // boxed accordion item instead of a stack of always-open cards.
 //
-// Gap, logged in CONTEXT.md:
+// Gap, logged in context/decisions/2026-09-22-05-data-sharing-agreement-dsa-workflow-for-biodata-admin.md:
 // - "Upload Agreement" is a drag-and-drop zone in the lo-fi; the real `InputFile` (button + file
 //   name) does the same job with the same accepted types, so it stands in for the dropzone.
 

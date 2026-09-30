@@ -16,8 +16,8 @@ import { recordAccess } from "@/app/pages/_shared/map-search/record-access";
 
 /**
  * A record on the map, at a glance: what it is, where it came from and the three facts you decide
- * on, with one way in: "Show in project" opens the record's project page on its Species tab with
- * the record open (`/pages/project-list/[id]/project-details/...`). The full record is long; opening it for every dot or row
+ * on, with one way in: "Show in project" opens the record's own page within its project
+ * (`/pages/project-list/[id]/project-details/<kind>/<id>`). The full record is long; opening it for every dot or row
  * covers the map and shows far more than a first look needs, so this card sits in for it. Not
  * modal: the map and results stay usable behind it, and picking another record swaps the card.
  */

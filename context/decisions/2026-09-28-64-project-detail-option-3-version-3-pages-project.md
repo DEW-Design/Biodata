@@ -1,0 +1,26 @@
+# 2026-09-28 - Project detail Option 3, version 3 (`/pages/project-detail/option-4/v3`), added to the Version floating button as "Version 3: full-screen edit", per direct instruction (branch `mohan-wips`)
+
+- **Sept 28 2026: project detail Option 3, version 3 (`/pages/project-detail/option-4/v3`), added to the Version floating button as "Version 3: full-screen edit", per direct instruction (branch `mohan-wips`).** The Project tab is the current version's. Only the Survey records tab changes (`option-4/v3/`):
+  - **Resizable:** a vertical separator between the list and the details panel can be dragged, moved with the arrow keys or double-clicked to reset (panel at least 340px, list at least 360px), so either side can be widened.
+  - **Tree-style header:** the type's icon (or the species photo), the name, then the type in muted text, then ID and date. There is no Event/Occurrence badge and no type description.
+  - **All actions together:** one toolbar at the top of the panel holds, on the right, Edit, Add (only the types allowed inside this record), More (Delete record, confirmed with what goes with it) and full screen. The record path sits on the left.
+  - **Clean metadata:** one Edit for the whole record, and every section is an accordion that starts closed.
+  - **"Within this record" and attachments reworked:** "Contains" is a row of small chips (icon, name, muted type) that go down a level on click; more than 6 fold behind "+N more". "Files" are tiles (type icon, name, size) that open the viewer.
+  - **Editing is full screen and inline** (`record-inline-editor.tsx`): Edit, or Add, opens the record full screen with every section as a card (brand ring, label left, field right), the treatment of the first inline version.
+    - Lists grow and shrink in place: observers, measurements as one row of four fields each, custom properties and files.
+    - A sticky Cancel / Save bar; the "Details missing" alert on save.
+    - While editing, Escape and outside clicks are ignored, and Cancel with changes asks first.
+    - A new record joins the list only on save.
+    - The draft logic is shared with the drawer version (`record-form.tsx` exports `toDraft`, `fromDraft`, `missingFor`, `isPlainRow`, `attachmentFromFile` and the field rules).
+  - **Designer override of CONTRACTS §4.1** (named per §0.1): the v3 record editor is an edit form that does not render `FormPage`, because the designer asked for inline editing on the record's own cards. It is scoped to this version. `AUTO §4.1` does not fire because the editor does not use `FormRow`.
+  - **Found while testing:** `w-4` computes to 0px in this repo and is used nowhere else, so the resize handle rendered 0px wide and couldn't be grabbed. It now uses `w-[16px]`. Worth adding `w-4` to the §2.1 dead-class list after a check of the compiled CSS.
+  - **Verified headlessly:**
+    - The Version menu lists all three.
+    - The v3 toolbar is Edit, Add, More and full screen; there's no badge; all sections start closed; Contains and Files show.
+    - Dragging the handle takes the panel from 440 to 648 px, and the arrow keys move it too.
+    - Full screen then Edit, rename the site, Save: the new name is in the full-screen view and the tree.
+    - Add then Visit: an empty save shows "Details missing: Name"; saving with a name shows the new visit.
+    - Escape is ignored while editing; Cancel asks "Discard your changes?".
+    - The guest toolbar is only full screen.
+    - Zero console errors; `tsc`, `eslint` and `npm run check:contracts` are clean.
+  - Not committed.

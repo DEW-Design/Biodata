@@ -1,0 +1,29 @@
+# 2026-09-29 - Project detail is down to two options, the Projects column is My projects / All projects, and Option 2 gains a Species tab, per direct instruction (branch `mohan-wips`)
+
+- **Sept 29 2026: project detail is down to two options, the Projects column is My projects / All projects, and Option 2 gains a Species tab, per direct instruction (branch `mohan-wips`).**
+  - **Two options (CONTRACTS 4.4, designer's choice):** Option 1 (`/pages/project-detail`) is unchanged. Option 2 (`/pages/project-detail/option-2`) is what was "Option 3, version 3" (`/pages/project-detail/option-4/v3`).
+    - **Deleted:** the old Option 2 (`project-detail/option-2`, the About tab with the record store), the old Option 3 page (`project-detail/option-3`), and Option 3's previous (inline) and current (drawer) versions with their routes.
+    - **Also removed:** the Version floating button (clock icon). The layout switcher lists Option 1 and Option 2.
+    - **Restructure:** the v3 files were flattened into `project-detail/option-2/`. The shared files v3 needed were kept (survey data, record rules, edit store, project tab and its drawer forms), and `project-registration-data.ts` moved in from the old Option 2. The old routes (`option-3`, `option-4`, `option-4/v3`) now 404.
+    - **Backups:** the deleted files are backed up in the session scratchpad. The old Option 2 and Option 3 are also in git history, except the uncommitted edits to Option 3.
+  - **Column 2, Projects list and project detail Option 2 alike (`_shared/projects-sidebar.tsx`, new, page-shared):**
+    - **Scope:** My projects / All projects replaces Projects / Datasets, using the same vertical tabs as DLA's My requests / All requests. Sentence case matches that convention.
+    - **Below the scope:** the Actions group, then "What is a project?" and the project guides (`projects-guide.tsx`, moved to `_shared`), then the footer links.
+    - **List page:** the scope is in its URL (`?scope=mine|all`, default All projects). "My projects" lists the projects the signed-in person contributes to (the placeholder Olivia Wyatt). The list heading reads My projects or All projects.
+    - **Detail page:** the switcher shows which list the project is in (Adelaide Hills is My projects). Picking a scope opens the list in that scope.
+    - **Guests:** they see All projects only, and now get this column on the Projects list too, instead of "What is BioData SA?".
+    - **Unchanged:** Datasets is gone from the list page. Option 1's column, the Projects section inside Home, and the mobile menu's Home tabs are unchanged.
+  - **Species tab (`project-detail/option-2/species-view.tsx`), right after Survey records, Option 2 only:**
+    - **Source:** one entry per species this project recorded, from its occurrences in Survey records. Family and group were added to `NSX_SPECIES` (real families).
+    - **Tiles:** the group tiles from Option 2's Species view are kept as quick filters.
+    - **Toolbar:** the same as Survey records and Artefacts: the Cards / Table switch, the 384px search and the Filter button. The Filter covers Family, Occurrence type, Site and Access.
+    - **Cards:** photo (ALA), names, family and group, records, sites, last recorded, and a Restricted badge where a location is generalised.
+    - **Table:** the same columns, sortable and paginated.
+    - **Go to record:** it opens the occurrence in Survey records; a species with several occurrences offers them in a menu.
+  - **Verified headlessly:**
+    - Registered and guest column 2 on the list, and "My projects" sets `scope=mine` and narrows the list.
+    - The detail column shows My projects selected, and the tabs read Project, Survey records 28, Species 7, Artefacts 7.
+    - Species: 7 cards; the Mammal tile gives 3; the Table has 7 rows; Go to record on the echidna opens OC00506 in Survey records; the blue gum's menu lists OC00502 and OC00508.
+    - The old routes 404, and Option 1 still renders its records column.
+    - Zero console errors; `tsc`, `eslint --max-warnings=0` and `npm run check:contracts` are clean. Not committed.
+  - **Open:** the Projects section inside Home (`/pages/dashboard`) still shows Projects / Datasets. Say if it should switch too.

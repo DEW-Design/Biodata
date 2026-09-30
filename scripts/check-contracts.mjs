@@ -13,6 +13,8 @@
 import { existsSync, readdirSync, readFileSync, statSync, writeFileSync } from "node:fs";
 import { join, relative, sep } from "node:path";
 import { fileURLToPath } from "node:url";
+import { checkIndex } from "./build-context-index.mjs";
+import { checkRules } from "./build-contract-rules.mjs";
 
 const ROOT = process.cwd();
 const rel = (f) => relative(ROOT, f).split(sep).join("/");
@@ -244,6 +246,16 @@ export function runChecks() {
     else if (!o.designer || !o.reason || !o.approvedBy || !o.date) violations.push({ clause: "1.4", file: f, message: `Override ${o.id ?? "?"} is missing designer, date, reason or approvedBy.` });
   }
 
+  // 1.4b: an override's reviewBy is a real deadline, checked against today every run - not just at
+  // creation. Once it passes, check:contracts fails until someone consciously renews it (a new
+  // reviewBy) or retires it (status: "retired"). CONTRACTS.md 9.2.
+  const today = new Date().toLocaleDateString("sv-SE");
+  for (const o of overrides) {
+    if (o.status !== "active") continue;
+    if (!o.reviewBy) violations.push({ clause: "1.4b", file: o.component, message: `Override ${o.id} has no reviewBy date. Every override needs one (CONTRACTS.md 1.4, 9.2).` });
+    else if (o.reviewBy < today) violations.push({ clause: "1.4b", file: o.component, message: `Override ${o.id}'s reviewBy (${o.reviewBy}) has passed. Renew it with a new reviewBy, or retire it - it MUST NOT just sit there overdue (CONTRACTS.md 9.2).` });
+  }
+
   // 1.9a behaviour patterns: a multiple-selection listbox in a component must switch off react-aria's
   // default of clearing the whole selection on Escape (Escape closes, it never changes the value).
   for (const f of componentFiles()) {
@@ -273,6 +285,12 @@ export function runChecks() {
       });
     }
   }
+
+  // 5.1b the decision index is generated from context/decisions/*.md and nothing dated is appended to
+  // CONTEXT.md; 5.5 the scoped rule files are generated from CONTRACTS.md and every clause has a scope.
+  const indexProblem = checkIndex();
+  if (indexProblem) violations.push({ clause: "5.1b", file: "context/decisions/INDEX.md", message: indexProblem });
+  for (const message of checkRules()) violations.push({ clause: "5.5", file: ".claude/rules", message });
 
   return { violations, improvements, counts };
 }

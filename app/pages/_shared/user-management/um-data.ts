@@ -2,7 +2,7 @@ import type { BadgeColors } from "@/components/base/badges/badge-types";
 
 // User Management - users, roles and permissions for the BioData Admin (Figma
 // YMproGZfrFB5jUqPHPxMhk, node 1558:10575, a lo-fi wireframe fitted into the shell - see
-// CONTEXT.md). Display-only data, per the designer's decision: editing a role here does not change
+// context/decisions/2026-09-27-05-user-management-phase-1-for-biodata-admin-only.md). Display-only data, per the designer's decision: editing a role here does not change
 // what a persona sees elsewhere in the prototype (that is `config/role-access.config.ts`).
 //
 // People and organisations are made up, in the South Australian realm, per a designer override of
@@ -276,7 +276,7 @@ const ids = (...names: string[]) => names.map(permissionId);
 
 // System roles are this build's own signed-in personas (lib/user-role.ts). The wireframe's
 // "TPA API Admin" and "TPA API User" are Privileged Admin and Privileged User (designer decision,
-// logged in CONTEXT.md for later); its "BioData Super Admin" has no equivalent in the role model.
+// logged in context/decisions/2026-09-27-05-user-management-phase-1-for-biodata-admin-only.md for later); its "BioData Super Admin" has no equivalent in the role model.
 export const seedRoles: UmRole[] = [
   {
     id: "ROLE-101",
@@ -474,7 +474,7 @@ export function initials(u: Pick<UmUser, "firstName" | "lastName">): string {
 
 // ---------------------------------------------------------------- derived
 
-/** The CONTEXT.md admin IA splits users into BioData and Privileged (plus individuals): derived from the system roles held. */
+/** The context/decisions/2026-09-22-06-biodata-admin-ia-cross-check.md admin IA splits users into BioData and Privileged (plus individuals): derived from the system roles held. */
 export type UserType = "BioData" | "Privileged" | "Registered";
 export const userTypeOrder: UserType[] = ["BioData", "Privileged", "Registered"];
 

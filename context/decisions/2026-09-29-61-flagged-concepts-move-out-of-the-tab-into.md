@@ -1,0 +1,33 @@
+# 2026-09-29 - Flagged concepts move out of the tab into a management screen; markers and a filter in Survey records; a queue on the admin's Home, per direct feedback ("not happy with questionable values as a new tab... more of a management stuff... show something like this [banner] and take to the management screen like what you did for DSA"; branch `mohan-wips`)
+
+- **Sept 29 2026: flagged concepts move out of the tab into a management screen; markers and a filter in Survey records; a queue on the admin's Home, per direct feedback ("not happy with questionable values as a new tab... more of a management stuff... show something like this [banner] and take to the management screen like what you did for DSA"; branch `mohan-wips`).**
+  - **The "Questionable values" tab is gone.** Survey records now opens with an admin-only banner (the real `AlertFullWidth`, contained, warning tint): "N flagged concepts need review across this project · Review".
+  - **Review is a management screen (`review-view.tsx`, `ReviewScreen`), laid out like the DSA form:**
+    - **URL:** `/pages/project-detail/option-2?view=review`, the same route, so the session's record edits stay. It is shown only to BioData Admin and Privileged Admin; for anyone else the parameter is ignored.
+    - **Breadcrumb:** Projects / Adelaide Hills Bushland Survey (a link back) / Flagged concepts.
+    - **Column 2 is the queue:**
+      - "Back to survey records" and a progress bar with "N open across N records · N resolved".
+      - An Open / Resolved switch, and the items: field, record, how long each has waited. Up/Down move through the list.
+    - **Main is a real `FormPage` with `FormRow`s (CONTRACTS 4.1):**
+      - Record, with Go to record.
+      - Current value, with Fix value (the record full screen with that card in edit mode, back to the queue on save or cancel).
+      - Why it was flagged; notes on the field.
+      - "Why is it resolved?", with quick reasons.
+      - The footer has Back a step (previous) and Resolve. An empty reason shows the form's "Details missing" alert. Resolve opens the next item, and the toast offers Undo. On Resolved, the primary action is Next.
+  - **Survey records:**
+    - A quiet flag with a count sits on every tree and table row that has open flagged concepts, shown to everyone who can see the record.
+    - Filter gained a "Review" section with "Has flagged concepts". It showed 6 of 28 records, each with its parents as context in the tree.
+  - **Admin Home (`flagged-home-queue.tsx`, in `AdminHomeDashboardContent`):**
+    - A "Flagged concepts" section after Also pending: the count and the age of the oldest, the five waiting longest (field, record, project, reason, age), each linking to the review screen with that item open (`&item=`), "N more in the review queue", and Review all.
+    - Only BD-5039 has survey records in this preview, so every item comes from it; the list names the project, ready for more.
+    - It reads the persisted notes with the seed records, so record edits made on project detail (session only) don't reach Home.
+  - **Verified headlessly (biodata-admin):**
+    - Tabs are Project, Survey records, Species, Artefacts.
+    - The banner reads "7 flagged concepts"; 6 rows carry markers; the filter gives 6 of 28.
+    - Review opens with `?view=review` on "Reliability, 1 of 7 open".
+    - An empty Resolve shows the alert; Value confirmed plus Resolve gives "1 of 6 open · 3 resolved".
+    - Back returns to Survey records.
+    - Home lists 5 with "2 more"; its Sex link opens the review on Sex.
+    - Registered users see markers but no banner, and `?view=review` does nothing for them.
+    - Zero console errors; `tsc`, `eslint --max-warnings=0` and `npm run check:contracts` are clean.
+  - **Known:** the banner shows the alert component's own warning icon, not a flag (changing it would be a component change). Privileged Admin can review but has no admin Home, so the Home queue is BioData Admin only. Not committed.

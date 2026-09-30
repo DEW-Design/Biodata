@@ -64,7 +64,7 @@ import { useUserRole } from "@/lib/use-user-role";
 // TaskItem's action ("Continue", "Go to X") uses `iconTrailing={ArrowNarrowRight}`, not a literal
 // "→" appended to the label text - Button already supports a trailing icon on every color variant
 // including `link-color`, so the arrow is a real icon like everywhere else, not a text character
-// standing in for one. See CONTEXT.md's "Final check" list.
+// standing in for one. See context/archive/final-check.md, "Final check" list.
 
 // `onDark` - the Sept 16 layout decision brought option-2's gradient greeting banner into this
 // shell as the shared template for "Hi, X" + KPI row (see HomeDashboardContent/
@@ -500,7 +500,7 @@ function AdminHomeDashboardContent() {
         <div className="flex flex-col gap-8 rounded-2xl bg-gradient-to-b from-brand-900 via-brand-800 via-[63.942%] to-brand-700 p-6">
           <div className="flex flex-col gap-1">
             {/* "Jane" - the sanctioned placeholder persona for the biodata-admin role, parallel to
-                "Olivia Wyatt" for registered-user (see CONTEXT.md's "Placeholder person convention") -
+                "Olivia Wyatt" for registered-user (see context/decisions/2026-09-00-avatar-build-known-gaps.md, "Placeholder person convention") -
                 never the real current user's name. */}
             <h1 className="text-2xl font-semibold text-white">Hi, Jane</h1>
             <p className="text-md text-white">Platform activity at a glance</p>

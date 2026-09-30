@@ -23,7 +23,7 @@
 import type { UserRole } from "@/lib/user-role";
 
 /** One entry per gated product feature. Add a key as a feature is actually gated - don't pre-populate speculatively. */
-export type FeatureKey = "orgSwitcher" | "metricCardCustomization" | "dsaManagement" | "dlaAccess" | "dlaApproval" | "userManagement" | "restrictedData" | "nominationAccess" | "nominationReview" | "datasetUpload";
+export type FeatureKey = "orgSwitcher" | "metricCardCustomization" | "dsaManagement" | "dlaAccess" | "dlaApproval" | "userManagement" | "restrictedData" | "nominationAccess" | "nominationReview" | "datasetUpload" | "templateFinder";
 
 /** Feature -> the roles (besides biodata-admin, which always passes) allowed to see it. */
 export const roleAccessMatrix: Record<FeatureKey, UserRole[]> = {
@@ -75,6 +75,8 @@ export const roleAccessMatrix: Record<FeatureKey, UserRole[]> = {
   // project-level access check is not modelled in the preview). A guest sees the sign-up invite on
   // the project's "Upload dataset" button, and the restriction on a direct visit.
   datasetUpload: ["registered-user", "privileged-user", "privileged-admin", "biodata-user"],
+  // Every signed-in role; a public user has no Template Finder section (context/decisions/2026-09-21-04).
+  templateFinder: ["registered-user", "privileged-user", "privileged-admin", "biodata-user"],
 };
 
 /**

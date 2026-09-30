@@ -2,10 +2,10 @@
 
 import { useRouter } from "next/navigation";
 import { Columns03 } from "@untitledui/icons";
-import { useRegisterTool } from "@/app/pages/_shared/prototype-tools/tools";
+import { useRegisterTool } from "@/app/_prototype-tools/tools";
 import { useRoleHref } from "@/lib/use-role-href";
 
-// Compare layout options on a screen that has competing layouts (see CONTEXT.md, "Exploratory page
+// Compare layout options on a screen that has competing layouts (see .claude/rules/ref-shell.md, "Exploratory page
 // layouts"). It puts a "Layout" tool on the Prototype tools bar ("Layout Option 2 of 2") rather than
 // drawing its own button, so only screens with options to compare show it. Picking an option opens
 // that layout's route, keeping the role.

@@ -18,7 +18,7 @@ import { useRoleHref } from "@/lib/use-role-href";
 //
 // "Log in"/"Sign up" are real buttons, not disabled-with-tooltip like `GuestAuthActions`'s header
 // pair - clicking either now navigates to the real /pages/auth/login or /pages/auth/signup flow
-// (see CONTEXT.md's dated entry for the auth flow build) instead of firing a "not built yet"
+// (see context/decisions/2026-09-23-04-dla-deep-dive-restructured-per-direct-ux-critique.md, dated entry for the auth flow build) instead of firing a "not built yet"
 // toast, now that a real flow exists to send the user to.
 export function SignUpPromptModal({
   isOpen,

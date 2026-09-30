@@ -1,5 +1,5 @@
 /**
- * The BioData SA portal's user roles - see CONTEXT.md's "User roles" section for what each one
+ * The BioData SA portal's user roles - see .claude/rules/ref-roles.md, "User roles" section for what each one
  * means and what it can see/do. Kept as a flat list of slugs (not an enum) so it can be read
  * straight out of a URL search param - see `useUserRole` in `lib/use-user-role.ts`.
  *
@@ -10,7 +10,7 @@
  * chrome (e.g. the breadcrumb's org switcher) applies to them too, not just privileged-*.
  *
  * The full list stays here - the type isn't scoped down. Active build focus is narrower: only
- * `registered-user` and `public-user` are being built for right now (see CONTEXT.md's "User
+ * `registered-user` and `public-user` are being built for right now (see .claude/rules/ref-roles.md, "User
  * roles" section) - don't build features for the other four ahead of being told to, but don't
  * remove them from this list either.
  */

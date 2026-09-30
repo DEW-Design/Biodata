@@ -16,7 +16,7 @@ import { eastingNorthingToLatLon, parseLocationFile } from "@/app/pages/_shared/
 import { newLocationId, type DlaLocation, type DlaLocationMethod } from "@/app/pages/_shared/dla/dla-data";
 
 // The wireframe's "Add a Location" popup (Figma YMproGZfrFB5jUqPHPxMhk, node 33:43259), re-fitted
-// to real components rather than its own drag-and-drop chrome - see CONTEXT.md, "Data Licencing
+// to real components rather than its own drag-and-drop chrome - see context/decisions/2026-09-23-03-data-licencing-agreement-dla-workflow-built-at-pages.md, "Data Licencing
 // Agreement (DLA)". 3 of its 4 methods reuse exactly what Explore's own map search already built
 // for the same job (draw on the map, enter coordinates, pick a real South Australian national
 // park) - a location added here becomes the same `Boundary` (circle/polygon) type Explore uses, so

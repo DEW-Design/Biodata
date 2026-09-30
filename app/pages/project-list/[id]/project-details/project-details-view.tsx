@@ -16,7 +16,7 @@ import { MobileNavTrigger } from "@/app/pages/_shared/mobile-nav";
 import { sectionIcons } from "@/app/pages/_shared/nav-icons";
 import { PrimaryRail } from "@/app/pages/_shared/primary-rail";
 import { ProjectCardActions } from "@/app/pages/_shared/project-card-actions";
-import { PrototypeTools } from "@/app/pages/_shared/prototype-tools/prototype-tools";
+import { PrototypeTools } from "@/app/_prototype-tools/prototype-tools";
 import { SidebarFooterLinks } from "@/app/pages/_shared/sidebar-footer-links";
 import { Breadcrumb } from "@/components/scaffold/breadcrumb";
 import { buildSections, recordTitle, type DetailRecord } from "@/app/pages/_shared/map-search/record-detail";
@@ -38,7 +38,7 @@ import { cx } from "@/utils/cx";
 // The project page for every project that has no hand-written page (all but Adelaide Hills), built
 // from the same data Explore searches, so the two can never disagree. Same three-column shell and
 // the same identity card as Adelaide Hills' page: the rail with Projects active, column 2 holding
-// the project's records as a tree, main opening on the Species tab (per the designer). Only what
+// the project's records as a tree, main opening on the Overview tab (per the designer). Only what
 // the data holds is shown; there is no abstract, contact or permit detail to invent here.
 //
 // A record (an occurrence, observation, or event such as a site or visit) has its own page in the

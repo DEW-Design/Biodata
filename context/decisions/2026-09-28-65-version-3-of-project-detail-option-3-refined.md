@@ -1,0 +1,21 @@
+# 2026-09-28 - Version 3 of project detail Option 3 refined (v3 only, `/pages/project-detail/option-4/v3`), per direct feedback (branch `mohan-wips`)
+
+- **Sept 28 2026: version 3 of project detail Option 3 refined (v3 only, `/pages/project-detail/option-4/v3`), per direct feedback (branch `mohan-wips`).**
+  - **"Contains" and "Files" removed** from the details panel for every record.
+  - **Toolbar reworked:** the row of Edit / Add / More / full-screen buttons read as clumsy.
+    - The toolbar is now the record path on the left and two icons on the right: one Actions menu ("..."), and full screen.
+    - The menu holds everything you can do to the record in sections: Edit record; Add inside, listing only the types allowed; Delete record. The pattern is Linear's and Notion's single "..." menu.
+    - Guests see only full screen.
+  - **The path no longer runs under the icons:** past two steps, the middle folds into a "..." menu listing the hidden ancestors. Verified: the path ends at 1322px and the actions start at 1493px on a deep record.
+  - **A small edit icon beside each accordion's chevron** (Accordion `action`) opens full-screen inline edit scrolled to that section's card (`focusSection`, card ids `inline-section-*`). The Actions menu's "Edit record" opens it at the top. All accordions start closed.
+  - **Field notes** (`v3/annotations.ts`, example data kept beside v3, not in the shared dataset): any field or measurement can carry a flag (questionable, with reason, who and when), comments, and attached files, alone or together.
+    - After the value, small indicators show them: a flag, a comment count, a file count.
+    - A flagged row has a warning edge. Choosing a noted row opens its notes in place: the flag banner, the comments, and the file chips.
+    - A closed section's header shows its totals, so notes are findable without opening every section.
+    - Examples: Southern Brown Bandicoot "Sex" has all three; Cleland site "Reliability" has a flag and a comment; "Description" has a file; Fairywren "Quantity" has a comment and a file; Bandicoot capture "Body mass" has a flag and a file; others have one comment.
+    - Pattern references: Airtable and Google Sheets cell comments, kept inside the row.
+    - Notes are shown, not yet editable.
+  - **Filter:** while a filter or search is on, parent rows shown only as context are disabled in the tree (`disabledKeys`), so they can't be picked. Verified: 11 disabled context rows, and clicking one leaves the selection unchanged.
+  - **Verified headlessly:** everything above, with zero console errors; `tsc`, `eslint` and `npm run check:contracts` are clean.
+  - **Open:** adding, resolving and replying to flags or comments, and attaching files to a single field, in edit mode, is not built yet.
+  - Not committed.

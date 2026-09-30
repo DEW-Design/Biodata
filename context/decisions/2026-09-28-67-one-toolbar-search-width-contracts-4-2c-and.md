@@ -1,0 +1,35 @@
+# 2026-09-28 - One toolbar search width (CONTRACTS §4.2c), and version 3 of project detail Option 3 edits one card at a time with a "Fields shown" checklist, per direct feedback (branch `mohan-wips`)
+
+- **Sept 28 2026: one toolbar search width (CONTRACTS §4.2c), and version 3 of project detail Option 3 edits one card at a time with a "Fields shown" checklist, per direct feedback (branch `mohan-wips`).**
+  - **§4.2c, one search width.** New shared `ToolbarSearch` (`app/pages/_shared/toolbar-search.tsx`; page-shared, not `components/**`): 384px (`max-w-sm`), small, `SearchMd`, with Filter directly after it.
+    - The Projects list, DSA and DLA lists (both kinds each), User Management lists, and all three Survey records explorers (previous, current, v3) now use it. The explorers' search used to grow to fill the row.
+    - `AUTO §4.2c` (`scripts/check-contracts.mjs`) fails a file that has a `ListFilterButton` and a hand-rolled `Input` with a search icon. It was checked by planting one (caught) and removing it.
+    - Open, not decided: Explore's results search (made full width on the designer's instruction earlier) and project-detail option 2's `max-w-md` records search. Neither has a Filter button, so the check does not cover them.
+  - **Tree expand and collapse.** The two "Expand all / Collapse all" links left the toolbar. The tree now has a slim header of its own, with the record count and one icon toggle (double chevrons, with a tooltip): collapse when everything is open, expand otherwise, following the VS Code explorer and GitHub file tree. It hides while a filter or search is on, because the tree then opens to the matches. No Mobbin tool was available this session.
+  - **The note tabs match the Tree / Table switch.** Its classes moved to `v3/segmented.ts` and are used by both.
+  - **Notes are added only in edit mode.**
+    - When viewing, a field shows its note indicators, which read the notes in place, and, on hover, an edit icon (anyone who can edit). The icon opens that field's card in edit mode, scrolled to and focused on the field.
+    - In edit mode, "Notes" under a field opens three tabs: Comment (add; the author can edit or delete their own), Flag (reason; Resolve), and Attach (a file, or a reference link with a title). `FieldFileKind` gained `link` with a `url`.
+    - **A field that is itself a comment (a "Site comment") takes no notes and is edited as a value only.** This is my reading of "record comment can only be edited and not added". Confirm it.
+  - **One card in edit mode, in the full view** (`v3/record-full-view.tsx`, `v3/card-editor.tsx`).
+    - A card's edit icon, a field's edit icon, or Actions > Edit record puts just that card in edit mode. Other cards stay as they are, dimmed, and their edit icons hide.
+    - Cancel and Save changes sit in a sticky footer ("Editing Site details · Unsaved changes"). Cancel with changes asks first, as does Exit full screen. Escape and outside clicks do nothing while editing.
+    - Save commits the record, its notes and its fields shown together, and shows "Details missing" if something required is empty.
+    - Adding a new record still uses the all-cards editor (`record-inline-editor.tsx`).
+    - The §4.1 designer override logged earlier for v3 still applies.
+  - **"Fields shown"** (`v3/visibility-panel.tsx`, `v3/field-visibility-store.ts`, persisted as `biodata-project-field-visibility`) replaces the right-hand column while a card is in edit mode.
+    - It lists every category with a checkbox (checked, partly checked or clear), a count, and a fold; each category's fields are listed under it with their own checkboxes.
+    - It has "Find a field", Show all and Hide all. The category being edited opens first and is tinted.
+    - Unticked fields leave the details panel and the full view, and a category with none left disappears. A hidden field is marked "Hidden" in edit mode.
+    - Primary identifiers (a label ending in "ID", except "Legacy …") are locked as always shown.
+    - Visibility is saved per record. Whether it should instead apply to every record of a type is for the designer.
+    - Patterns: Airtable "Hide fields" and Notion property visibility, built from DEW `Checkbox` (indeterminate), `Input` and `Button`.
+  - **Verified headlessly** (registered-user and public-user, 1600px):
+    - Search is 384px with Filter 12px after it on v3 and on the Projects list.
+    - The tree toggle collapses and expands.
+    - Hovering a field shows its edit icon; view mode has no composer and reads notes.
+    - A field's edit opens the full view with that card editing and the field focused, the checklist and the footer. The tabs are Comment, Flag and Attach, and "Site comment" has no Notes.
+    - I added a comment and a link and hid Legacy site ID, then saved; after a reload the notes and the hidden field held.
+    - Cancel with changes asks first. The guest sees no edit icons.
+    - Zero console errors. `tsc`, `eslint --max-warnings=0` and `npm run check:contracts` are clean.
+  - Not committed.
