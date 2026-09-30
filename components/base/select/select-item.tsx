@@ -190,7 +190,11 @@ interface SelectSectionProps {
 }
 
 /** A titled group of items inside a `ComboBox` or `Select` list. Use it when one list holds more
- * than one kind of result; items outside any section still work, so a list can mix both. */
+ * than one kind of result; items outside any section still work, so a list can mix both.
+ * When sections are built from a list that filters as the person types, key each section on the
+ * typed text too (`key={`${group}:${query}`}`): React's development build otherwise diffs an
+ * updated section's internals into react-aria's hidden collection nodes and throws
+ * ("childNodes is not supported"), which stops typing after the first letter. */
 export const SelectSection = ({ title, count, children }: SelectSectionProps) => (
     <AriaListBoxSection>
         <AriaHeader className="font-barlow flex items-center gap-1.5 px-3 pt-2.5 pb-1 text-xs font-semibold text-quaternary">

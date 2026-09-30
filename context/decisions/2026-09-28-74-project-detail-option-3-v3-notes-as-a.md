@@ -1,0 +1,30 @@
+# 2026-09-28 - Project detail Option 3 v3, notes as a menu in edit mode, and five fixes, per direct feedback (branch `mohan-wips`)
+
+- **Sept 28 2026: project detail Option 3 v3, notes as a menu in edit mode, and five fixes, per direct feedback (branch `mohan-wips`).**
+  - **Edit-mode notes are one "Add note" menu per field** (`FieldNotesEditor`, `v3/field-notes.tsx`), replacing the three stacked editors.
+    - Pattern: Notion and Airtable keep field actions behind one button, and spreadsheet "Insert note" works the same way. No Mobbin tool was available.
+    - The menu offers only what applies now:
+      - Add comment, or Edit comment once one exists (one comment per field).
+      - Mark questionable, or Resolve questionable when flagged (BioData Admin and Privileged Admin only).
+      - Attach a file, which opens the file picker directly.
+      - Add a link.
+    - Picking one opens a single small editor under the field with Cancel and a named action. Notes already on the field are listed compactly underneath (questionable in the warning tint, the comment, file chips with remove), with the note indicators beside the button.
+    - View mode keeps the stacked cards.
+  - **Location details divider:** the table belongs to Location details, so the row's line now sits under the table. `FieldRow` gained an additive `divider` prop; the row and the table are wrapped in one bordered block.
+  - **One highlight for every jump to a field.** New `v3/flash.ts` (`flashElement`) is used by:
+    - "Go to record" from an artefact.
+    - Editing a field from the details panel: the expanded view opens in edit mode and flashes that field.
+    - Every item in "Notes on this record", which also opens a folded card first.
+    - The new Observers link in the Record summary.
+  - **The breadcrumb shows the current record**, as "SU00501 · Cleland Stringybark Woodland" in medium weight with `aria-current="page"`, in the details panel and the expanded view.
+  - **Dates show only where the record type has a date field** (`hasDateField` in `field-schema.ts`): the panel header, the Record summary, and the Survey records table's Date column. A site shows none.
+  - **Record summary Observers:** the first name and "+N more", as a link that jumps to the Observers field with the highlight, instead of the full list.
+  - **Verified headlessly (biodata-admin):**
+    - The breadcrumb reads "BD-5039 › SU00501 · Cleland Stringybark Woodland".
+    - The divider sits under the table.
+    - Editing Reliability from the panel flashes it in the expanded view.
+    - The note menu for an admin on a flagged field reads "Edit comment | Resolve questionable | Attach a file | Add a link", and adding a link lists it under the field.
+    - The site summary has no Date and shows "Olivia Wyatt +1 more".
+    - Clicking a note and the Observers link both flash the field.
+    - Zero console errors. `tsc`, `eslint --max-warnings=0` and `npm run check:contracts` are clean.
+  - Not committed.

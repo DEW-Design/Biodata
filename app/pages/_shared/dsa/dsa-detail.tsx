@@ -2,7 +2,9 @@
 
 import { useState, type ReactNode } from "react";
 import type { Key } from "react-aria-components";
-import { ArrowNarrowLeft, Download01, Edit05, Eye, EyeOff, Mail01, Phone01, SearchLg, SearchMd } from "@untitledui/icons";
+import { ArrowNarrowLeft, Download01, Edit05, Eye, EyeOff, Mail01, PauseCircle, Phone01, SearchLg, SearchMd, SlashCircle01, Trash01 } from "@untitledui/icons";
+import { RecordActionBar, type RecordAction } from "@/app/pages/_shared/record-action-bar";
+import { RecordBackLink, RecordHero, RecordRow } from "@/app/pages/_shared/record-hero";
 import { AlertFullWidth } from "@/components/application/alerts/alerts";
 import { Badge, CountBadge } from "@/components/base/badges/badges";
 import { Button } from "@/components/base/buttons/button";
@@ -45,7 +47,7 @@ import { cx } from "@/utils/cx";
 // and a section for something the agreement doesn't use (no API systems) collapses to one honest
 // line instead of an empty table.
 //
-// Toolbar/action set follows the shared DSA/DLA workflow (agreement-status.ts, see CONTEXT.md's
+// Toolbar/action set follows the shared DSA/DLA workflow (agreement-status.ts, see context/decisions/2026-09-24-04-unified-dsa-dla-status-model-rolled-straight-into.md,
 // "Unified DSA/DLA status model"): Edit (Draft through Approved, not once Active - "for active
 // requests only cancel option can be used"), Start Review (Submitted), Put On Hold / Resume
 // (Under Review <-> On Hold), Approve / Reject (Under Review), Cancel (anywhere before Closed).
@@ -85,7 +87,7 @@ function ContactCard({ title, orgLabel, contact }: { title: string; orgLabel?: s
   return (
     <BentoCard className="flex-1">
       <div className="flex flex-col gap-0.5">
-        <h2 className="text-sm font-medium text-primary">{title}</h2>
+        <h2 className="text-sm font-semibold text-primary">{title}</h2>
         {orgLabel && <p className="text-sm text-tertiary">{orgLabel}</p>}
       </div>
       <div className="flex flex-col gap-1 border-t border-secondary pt-4">
@@ -194,7 +196,22 @@ export function DsaDetail({
   // available anywhere before Closed/Rejected/Cancelled itself.
   const canEdit = dsa.status === "draft" || dsa.status === "submitted" || dsa.status === "under_review" || dsa.status === "on_hold" || dsa.status === "approved";
   const canCancel = dsa.status !== "closed" && dsa.status !== "rejected" && dsa.status !== "cancelled";
-  const hasOtherAction = canEdit || dsa.status === "submitted" || dsa.status === "under_review" || dsa.status === "on_hold";
+
+  // One primary (the next workflow step), the natural alternative beside it, everything else in the
+  // "More actions" menu (RecordActionBar).
+  const inReview = dsa.status === "submitted" || dsa.status === "under_review" || dsa.status === "on_hold";
+  const editAction: RecordAction = { id: "edit", label: isDraft ? "Edit draft" : "Edit agreement", icon: Edit05, onPress: onEdit };
+  const actions: { primary?: RecordAction; secondary: RecordAction[]; menu: RecordAction[] } = { secondary: [], menu: [] };
+  if (isDraft) actions.primary = editAction;
+  else if (dsa.status === "submitted") actions.primary = { id: "start", label: "Start review", onPress: onStartReview };
+  else if (dsa.status === "under_review") actions.primary = { id: "approve", label: "Approve", onPress: () => setConfirm("approve") };
+  else if (dsa.status === "on_hold") actions.primary = { id: "resume", label: "Resume review", onPress: onResume };
+  actions.secondary.push({ id: "download", label: "Download PDF", icon: Download01, isDisabled: !dsa.agreementFile, onPress: () => toast.brand("Download isn't wired up yet", { description: "Agreement PDFs aren't stored in this preview, so there is no file to download." }) });
+  if (dsa.status === "under_review") actions.secondary.push({ id: "reject", label: "Reject", onPress: () => setRejectOpen(true) });
+  if (canEdit && !isDraft) (inReview ? actions.menu : actions.secondary).push(editAction);
+  if (dsa.status === "under_review") actions.menu.unshift({ id: "hold", label: "Put on hold", icon: PauseCircle, onPress: onHold });
+  if (isDraft) actions.menu.push({ id: "delete", label: "Delete draft", icon: Trash01, destructive: true, onPress: () => setConfirm("delete") });
+  if (canCancel && !isDraft) actions.menu.push({ id: "cancel", label: "Cancel agreement", icon: SlashCircle01, destructive: true, onPress: () => setConfirm("cancel") });
 
   // Section header + search + table (CONTEXT.md's non-negotiable) applied at this table's own
   // scale - a count next to its label, a real search, real numbered pagination - rather than the
@@ -208,125 +225,50 @@ export function DsaDetail({
 
   return (
     <div className="flex min-h-0 flex-1 flex-col overflow-y-auto">
-      {/* Back link + every real action this record can take right now, always visible - never
-          behind a scroll, matching DLA's own toolbar exactly. */}
-      <div className="flex shrink-0 flex-wrap items-center justify-between gap-3 px-6 pt-6">
-        <Button color="link-gray" size="sm" iconLeading={ArrowNarrowLeft} href={roleHref(`/pages/dsa?status=${dsa.status}`)}>
-          Back to agreements
-        </Button>
-        <div className="flex flex-wrap items-center gap-3">
-          <Button
-            color="secondary"
-            iconLeading={Download01}
-            isDisabled={!dsa.agreementFile}
-            onPress={() =>
-              toast.brand("Download isn't wired up yet", {
-                description: "Agreement PDFs aren't stored in this preview, so there is no file to download.",
-              })
-            }
-          >
-            Download PDF
-          </Button>
-          {isDraft && (
-            <Button color="secondary-destructive" onPress={() => setConfirm("delete")}>
-              Delete draft
-            </Button>
-          )}
-          {canEdit && (
-            <Button color="secondary" iconLeading={Edit05} onPress={onEdit}>
-              {isDraft ? "Edit draft" : "Edit agreement"}
-            </Button>
-          )}
-          {dsa.status === "submitted" && (
-            <Button color="primary" onPress={onStartReview}>
-              Start Review
-            </Button>
-          )}
-          {dsa.status === "under_review" && (
-            <>
-              <Button color="secondary" onPress={onHold}>
-                Put On Hold
-              </Button>
-              <Button color="secondary-destructive" onPress={() => setRejectOpen(true)}>
-                Reject
-              </Button>
-              <Button color="primary" onPress={() => setConfirm("approve")}>
-                Approve
-              </Button>
-            </>
-          )}
-          {dsa.status === "on_hold" && (
-            <Button color="primary" onPress={onResume}>
-              Resume Review
-            </Button>
-          )}
-          {canCancel && (
-            <Button color={hasOtherAction ? "secondary-destructive" : "link-destructive"} onPress={() => setConfirm("cancel")}>
-              Cancel
-            </Button>
-          )}
-        </div>
-      </div>
+      {/* Laid out like the project page: a Back link, then the identity card with the actions at its
+          top right (the next step as a button, the rest in "..."), always in view. */}
+      <RecordBackLink href={roleHref("/pages/dsa")}>Back to agreements</RecordBackLink>
 
-      {/* The same gradient card the Home dashboard/project-detail open with, so the agreement's
-          identity and its short-form metadata are the one focal point at the top of the page. */}
-      <div className="shrink-0 px-6 pt-4">
-        <div className="flex flex-col gap-4 rounded-2xl bg-gradient-to-b from-brand-900 via-brand-800 via-[63.942%] to-brand-700 p-6">
-          <div className="flex flex-col gap-1">
-            <p className="text-xs font-semibold tracking-wide text-white/70 uppercase">Data Sharing Agreement</p>
-            <h1 className="text-2xl font-medium text-white">{dsa.id}</h1>
-          </div>
-          <div className="flex flex-wrap items-start gap-8">
-            <MetaField onDark label="Data Partnership">
-              {dsa.partner || "Not provided"}
-            </MetaField>
-            <MetaField onDark label="Valid From">
-              {dsa.validFrom ? formatShortDate(dsa.validFrom) : "Not provided"}
-            </MetaField>
-            <MetaField onDark label="Valid To">
-              {dsa.validTo ? formatShortDate(dsa.validTo) : "Not provided"}
-            </MetaField>
-            <MetaField onDark label="Status">
-              <Badge size="sm" color={meta.badgeColor}>
-                {meta.label}
-              </Badge>
-            </MetaField>
-          </div>
-        </div>
-      </div>
+      <RecordHero eyebrow="Data Sharing Agreement" title={dsa.id} actions={<RecordActionBar onDark {...actions} />}>
+        <MetaField onDark label="Data Partnership">
+          {dsa.partner || "Not provided"}
+        </MetaField>
+        <MetaField onDark label="Valid From">
+          {dsa.validFrom ? formatShortDate(dsa.validFrom) : "Not provided"}
+        </MetaField>
+        <MetaField onDark label="Valid To">
+          {dsa.validTo ? formatShortDate(dsa.validTo) : "Not provided"}
+        </MetaField>
+        <MetaField onDark label="Status">
+          <Badge size="sm" color={meta.badgeColor}>
+            {meta.label}
+          </Badge>
+        </MetaField>
+      </RecordHero>
 
       {/* Neutral statements of fact, same convention as DLA's own status banners - DSA has no
           separate requester persona to write differently for, so this always reads as the one
-          reviewer's own view. */}
-      <div className="shrink-0 px-6 pt-4">
-        {dsa.status === "under_review" && (
-          <AlertFullWidth
-            color="warning"
-            title="Under Review"
-            description="This agreement needs a decision - see Put On Hold, Reject or Approve above."
-            confirmLabel="Noted"
-            contained
-            className="max-w-none rounded-lg border border-warning-200 px-4 py-3 md:px-4"
-          />
-        )}
+          reviewer's own view. No Under Review banner: the badge and the card's Approve/Reject already
+          say it. */}
+      <div className="shrink-0 px-6 pt-4 empty:hidden">
         {dsa.status === "on_hold" && (
           <AlertFullWidth
             color="warning"
-            title="On Hold"
+            title="On hold"
             description="This review is paused pending information from the requester. Resume once you have what you need."
             confirmLabel="Noted"
             contained
-            className="max-w-none rounded-lg border border-warning-200 px-4 py-3 md:px-4"
+            wrap
           />
         )}
         {dsa.status === "rejected" && (
           <AlertFullWidth
             color="error"
-            title="Agreement Rejected"
+            title="Rejected"
             description={dsa.rejectionReason || "No reason was provided."}
             confirmLabel="Noted"
             contained
-            className="max-w-none rounded-lg border border-error-200 px-4 py-3 md:px-4"
+            wrap
           />
         )}
         {dsa.status === "cancelled" && (
@@ -336,7 +278,7 @@ export function DsaDetail({
             description="This agreement was cancelled and is no longer active."
             confirmLabel="Noted"
             contained
-            className="max-w-none rounded-lg border border-secondary px-4 py-3 md:px-4"
+            wrap
           />
         )}
       </div>
@@ -345,9 +287,10 @@ export function DsaDetail({
           exactly - the underline is drawn by TabList itself, no extra border div needed. */}
       <Tabs selectedKey={tab} onSelectionChange={setTab}>
         <div className="px-6 pt-4">
-          <TabList aria-label="Agreement sections" type="underline" size="md" className="gap-6">
+          <TabList aria-label="Agreement sections" type="underline" size="md">
             <Tab id="overview" label="Overview" />
             <Tab id="sharing" label="Data Sharing" />
+            <Tab id="audit" label="Audit Log" />
           </TabList>
         </div>
 
@@ -454,6 +397,24 @@ export function DsaDetail({
             </div>
           </div>
         </TabPanel>
+
+        <TabPanel id="audit" className="p-6">
+          <div className="rounded-lg border border-secondary">
+            {[...dsa.history].reverse().map((e, i) => (
+              <RecordRow key={`${e.status}-${e.at}-${i}`} label={formatShortDate(e.at)}>
+                <span className="flex flex-col gap-1">
+                  <span className="flex flex-wrap items-center gap-2">
+                    <Badge size="sm" color={dsaStatusMeta[e.status].badgeColor}>
+                      {dsaStatusMeta[e.status].label}
+                    </Badge>
+                    <span className="text-tertiary">{e.by}</span>
+                  </span>
+                  {e.note && <span className="max-w-prose text-secondary">{e.note}</span>}
+                </span>
+              </RecordRow>
+            ))}
+          </div>
+        </TabPanel>
       </Tabs>
 
       <SidePanel isOpen={systemOpen !== null} onOpenChange={(open) => !open && setSystemOpen(null)} title={systemOpen?.name ?? "System"}>
@@ -541,9 +502,9 @@ export function DsaNotFound({ id }: { id: string }) {
   const roleHref = useRoleHref();
   return (
     <div className="flex flex-1 flex-col items-center justify-center gap-3 p-12 text-center">
-      <h1 className="text-lg font-medium text-primary">Agreement not found</h1>
+      <h1 className="text-lg font-semibold text-primary">Agreement not found</h1>
       <p className="max-w-sm text-sm text-balance text-tertiary">
-        There is no agreement {id}. In this preview, agreements you create are kept only until the page is reloaded.
+        There is no agreement {id}. It may have been deleted, or created in another browser.
       </p>
       <Button color="link-color" size="sm" href={roleHref("/pages/dsa")} iconLeading={ArrowNarrowLeft}>
         Back to agreements

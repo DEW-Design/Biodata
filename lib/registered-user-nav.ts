@@ -12,17 +12,19 @@ import type { UserRole } from "@/lib/user-role";
 export const DSA_SECTION_LABEL = "Data Sharing Agreement (DSA)";
 export const DLA_SECTION_LABEL = "Data Licencing Agreement (DLA)";
 export const USER_MANAGEMENT_SECTION_LABEL = "User Management";
+export const NOMINATION_SECTION_LABEL = "Nominate Sensitive Species";
+export const TEMPLATE_FINDER_SECTION_LABEL = "Template Finder";
 
 export interface NavNode {
   label: string;
-  key?: "dashboard" | "project-list" | "observations" | "dsa" | "dla" | "user-management";
+  key?: "dashboard" | "project-list" | "observations" | "dsa" | "dla" | "nominations" | "user-management" | "template-finder";
   items?: NavNode[];
 }
 
 /**
  * A nav `key`'s real path on the sidebar shells: always `/pages/<key>`, no `/option-*` suffix.
  * Every keyed section's page was folded into its plain route once the sidebar shell was picked as
- * the direction (see CONTEXT.md's Sept 16 2026 layout decision and the route normalisation that
+ * the direction (see context/decisions/2026-09-16-01-layout-decision-the-sidebar-icon-rail-contextual-sidebar.md and the route normalisation in context/decisions/2026-09-21-01-route-normalisation-every-option-1-suffix-is-gone.md that
  * followed). Centralised here rather than inlined at each shell's call sites (NavTree's own href,
  * SectionPlaceholder's "Go to X" button, goToSection's router.push) so they can't drift apart.
  */
@@ -69,22 +71,21 @@ export const registeredUserNav: NavNode[] = [
   // used to be inert `items` text with no page behind either, but they're really the same two
   // real operations Projects/DSA already collapse into one screen: /pages/dla is a table of the
   // signed-in user's own requests (a "New agreement" button is the request action, a row is the
-  // manage/view action), not two separate destinations. See CONTEXT.md, "Data Licencing Agreement
+  // manage/view action), not two separate destinations. See context/decisions/2026-09-23-03-data-licencing-agreement-dla-workflow-built-at-pages.md, "Data Licencing Agreement
   // (DLA)". Not in `publicUserNav` below - a signed-out guest has no DLA of their own to request or
   // manage, same reasoning as DSA being admin-only.
   { label: DLA_SECTION_LABEL, key: "dla" },
-  {
-    label: "Nominate Sensitive Species",
-    items: [{ label: "Nominate Sensitive Species" }],
-  },
+  // A keyed leaf like DLA: /pages/nominations lists the person's own nominations (the panel sees
+  // them all), "Nominate a new species" starts one, a row opens its record. See context/decisions/2026-09-28-09-nominate-sensitive-species-built-per-direct-request-from.md,
+  // "Nominate Sensitive Species".
+  { label: NOMINATION_SECTION_LABEL, key: "nominations" },
   {
     label: "Reports (Own Submissions)",
     items: [{ label: "Application and System Reports" }],
   },
-  {
-    label: "Template Finder",
-    items: [{ label: "Browse and Download Standard Dataset Templates" }],
-  },
+  // A keyed leaf: /pages/template-finder is the table of standard dataset templates, browsed and
+  // downloaded in one screen ("Browse and Download Standard Dataset Templates" in the IA brief).
+  { label: TEMPLATE_FINDER_SECTION_LABEL, key: "template-finder" },
 ];
 
 // public-user's ("Guest User") real, decided IA - a separate tree, not a filtered view of
@@ -119,7 +120,7 @@ export const publicUserNav: NavNode[] = [
 // User Management (users, roles, permissions - /pages/user-management) slots between Explore and
 // DLA, per the designer (Sept 27 2026).
 //
-// NOT yet the full admin IA - see CONTEXT.md, "BioData Admin IA cross-check": Ctrl Vocab, Reports
+// NOT yet the full admin IA - see context/decisions/2026-09-22-06-biodata-admin-ia-cross-check.md, "BioData Admin IA cross-check": Ctrl Vocab, Reports
 // (All Users), Voucher/Notification/Taxonomy management, Home's admin labels and Nominate Sensitive
 // Species nesting under Observations are all still to reconcile.
 export const biodataAdminNav: NavNode[] = [
@@ -161,7 +162,7 @@ export const projectActions: ProjectAction[] = [
     steps: ["Project Identification", "Data Collection and Storage", "Privacy and Restrictions"],
   },
   { label: "Download Project Templates" },
-  // Not a standalone flow - per CONTEXT.md's "BDBSA domain research", every dataset must be
+  // Not a standalone flow - per .claude/rules/ref-domain.md, "BDBSA domain research", every dataset must be
   // assigned to a project number, so this can never be "upload, pick a project later." Whatever UI
   // eventually implements this must fold project selection/creation into the same step, not treat
   // an unassigned dataset as a valid, if incomplete, state. Flagged directly by the user after an

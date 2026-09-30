@@ -2,7 +2,7 @@ import type { BadgeColors } from "@/components/base/badges/badge-types";
 
 // Shared status model for both DSA and DLA, sourced directly from the business's "DLA/DSA Users
 // Workflow Status" reference sheet and the follow-up Slack thread that resolved every open
-// question against it (see CONTEXT.md, "Unified DSA/DLA status model" for the source and the
+// question against it (see context/decisions/2026-09-24-04-unified-dsa-dla-status-model-rolled-straight-into.md, "Unified DSA/DLA status model" for the source and the
 // reasoning behind each answer below). DSA and DLA used to run two independently-invented status
 // sets (DSA: active/inactive/revoked/draft; DLA: active/under_review/rejected/expired/withdrawn) -
 // this file is the one shared vocabulary both now use.
@@ -25,11 +25,27 @@ export type AgreementStatus = "draft" | "submitted" | "under_review" | "on_hold"
 // source says" convention this build already applies to the transitions themselves.
 export const agreementStatusOrder: AgreementStatus[] = ["draft", "submitted", "under_review", "approved", "rejected", "active", "on_hold", "closed", "cancelled"];
 
+/**
+ * A recorded status change - who moved a DSA or DLA to this status, when, and why (a rejection
+ * reason, an on-hold/return note). The one shared shape both `Dsa.history` and `Dla.history` use
+ * for their "Audit Log" tab, the same `{status, at, by, note?}` shape nominations' own "Audit
+ * history" tab already established. `by` is the acting person's name for a real decision, or
+ * `"System"` for the two transitions nobody actually makes - Approved auto-becoming Active and
+ * Active auto-closing once a date passes (see `effectiveStatus` below) - the same `"System"`
+ * convention already used for the dataset-ingestion status trail.
+ */
+export interface AgreementEvent {
+  status: AgreementStatus;
+  at: string;
+  by: string;
+  note?: string;
+}
+
 export const agreementStatusMeta: Record<AgreementStatus, { label: string; tabLabel: string; badgeColor: BadgeColors }> = {
   draft: { label: "Draft", tabLabel: "Drafts", badgeColor: "gray" },
   submitted: { label: "Submitted", tabLabel: "Submitted", badgeColor: "brand" },
-  under_review: { label: "Under Review", tabLabel: "Under Review", badgeColor: "warning" },
-  on_hold: { label: "On Hold", tabLabel: "On Hold", badgeColor: "warning" },
+  under_review: { label: "Under review", tabLabel: "Under review", badgeColor: "warning" },
+  on_hold: { label: "On hold", tabLabel: "On hold", badgeColor: "warning" },
   approved: { label: "Approved", tabLabel: "Approved", badgeColor: "brand" },
   rejected: { label: "Rejected", tabLabel: "Rejected", badgeColor: "error" },
   active: { label: "Active", tabLabel: "Active", badgeColor: "success" },

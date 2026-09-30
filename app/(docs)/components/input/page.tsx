@@ -64,6 +64,8 @@ const props = [
   { name: "isDisabled",          type: "boolean",              default: "false" },
   { name: "isRequired",          type: "boolean",              default: "false" },
   { name: "hideRequiredIndicator", type: "boolean",            default: "false" },
+  { name: "onClear",              type: "() => void",           default: "-" },
+  { name: "clearLabel",           type: "string",               default: '"Clear"' },
   { name: "type",                 type: "HTMLInputTypeAttribute", default: '"text"' },
 ];
 

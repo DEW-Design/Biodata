@@ -33,7 +33,8 @@ const accordionProps = [
   { name: "openKeys", type: "Set<Key>", default: "-" },
   { name: "onOpenKeysChange", type: "(keys: Set<Key>) => void", default: "-" },
   { name: "singleOpen", type: "boolean", default: "false" },
-  { name: "variant", type: '"divided" | "boxed"', default: '"divided"' },
+  { name: "variant", type: '"divided" | "boxed" | "compact"', default: '"divided"' },
+  { name: "actionPlacement", type: '"end" | "beforeChevron"', default: '"end"' },
   { name: "className", type: "string", default: "-" },
 ];
 
@@ -41,6 +42,7 @@ const itemTypeProps = [
   { name: "id", type: "Key", default: "-" },
   { name: "title", type: "ReactNode", default: "-" },
   { name: "content", type: "ReactNode", default: "-" },
+  { name: "action", type: "ReactNode", default: "-" },
 ];
 
 const playgroundItems: AccordionItemType[] = [

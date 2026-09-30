@@ -48,7 +48,7 @@ export function SidePanel({
       className={({ isEntering, isExiting }) =>
         cx(
           MODAL_Z_INDEX,
-          "fixed inset-0 bg-overlay/70 backdrop-blur-[2px]",
+          "fixed inset-0 bg-overlay backdrop-blur-[2px]",
           isEntering && "duration-300 ease-out animate-in fade-in",
           isExiting && "duration-200 ease-in animate-out fade-out",
         )

@@ -1,28 +1,34 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { Download01, Upload01 } from "@untitledui/icons";
-import { toast } from "@/components/application/toast/toast";
 import { Button } from "@/components/base/buttons/button";
 import { Dropdown } from "@/components/base/dropdown/dropdown";
 import { downloadCsv } from "@/app/pages/_shared/agreement-actions";
 import { SignUpPromptModal } from "@/app/pages/_shared/guest-action-gate";
 import { projects } from "@/app/pages/_shared/project-list-data";
+import { ProjectIngestionChip } from "@/app/pages/_shared/dataset-upload/project-ingestion";
+import { useRoleHref } from "@/lib/use-role-href";
 import { useUserRole } from "@/lib/use-user-role";
 
 // Actions on ONE project, at the top right of the project-detail gradient card. Uploading a dataset
 // is project-specific (every dataset belongs to a project), so it lives here and not in the
 // Projects list's Actions group. "Upload dataset" is a visible button because it is the recurring
 // task; the "..." menu holds the quieter ones (Export CSV). A guest still sees both and gets the
-// sign-up invite on click, the same visible-but-gated rule as the header's Add menu.
-export function ProjectCardActions({ projectCode }: { projectCode: string }) {
+// sign-up invite on click, the same visible-but-gated rule as the header's Add menu. "Upload dataset"
+// opens the project's upload page (/pages/project-list/<id>/upload) for every signed-in role. While a
+// dataset is being ingested, its progress chip sits first in the row (project-ingestion.tsx), for
+// signed-in roles only: a public user can't upload, so an upload's progress isn't theirs to see (and
+// with no chip, the Prototype tools bar has no "Upload result" tool for them either). They still see
+// "Upload dataset", which opens the sign-up prompt.
+export function ProjectCardActions({ projectId, projectCode }: { projectId: string; projectCode: string }) {
+  const router = useRouter();
+  const roleHref = useRoleHref();
   const isGuest = useUserRole() === "public-user";
   const [gate, setGate] = useState<"upload" | "export" | null>(null);
 
-  const upload = () =>
-    isGuest
-      ? setGate("upload")
-      : toast.brand("Dataset upload isn't built yet", { description: "Uploading a dataset to this project isn't wired up in this preview." });
+  const upload = () => (isGuest ? setGate("upload") : router.push(roleHref(`/pages/project-list/${projectId}/upload`)));
 
   const exportCsv = () => {
     if (isGuest) return setGate("export");
@@ -38,6 +44,7 @@ export function ProjectCardActions({ projectCode }: { projectCode: string }) {
   return (
     <>
       <div className="flex shrink-0 items-center gap-2">
+        {!isGuest && <ProjectIngestionChip projectId={projectId} />}
         <Button color="secondary" size="sm" iconLeading={Upload01} onPress={upload}>
           Upload dataset
         </Button>

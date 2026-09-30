@@ -18,7 +18,7 @@ import { useConfig } from "@/lib/config-context";
 
 // Scaffold-styled trigger content for Tooltip demos - reuses the real `TooltipTrigger`
 // (needed for correct hover/focus wiring per react-aria) but with Scaffold's own visual
-// classes, not a real DEW `Button`, per CONTEXT.md's "DEW vs. Scaffold" rule: a trigger
+// classes, not a real DEW `Button`, per .claude/rules/ref-ingest.md, "DEW vs. Scaffold" rule: a trigger
 // used to operate a demo is Scaffold even though a real Button component exists.
 const scaffoldTriggerClass =
   "inline-flex h-max w-max cursor-pointer items-center gap-1.5 rounded-lg border border-secondary bg-primary px-3 py-2 text-sm font-medium text-secondary shadow-xs transition-colors active:scale-[0.98] hover:bg-secondary";
@@ -301,10 +301,10 @@ export default function TooltipPage() {
         </thead>
         <tbody>
           {[
-            { part: "Surface",          token: "bg-primary-solid",             value: "gray-950 (#0C111D)" },
+            { part: "Surface",          token: "bg-primary-solid",             value: "gray-950 (#1A1715)" },
             { part: "Title text",       token: "text-white",                   value: "#ffffff" },
             { part: "Description text", token: "text-tooltip-supporting-text", value: "gray-400 (#B5B2AF)" },
-            { part: "Arrow fill",       token: "fill-bg-primary-solid",        value: "gray-950 (#0C111D)" },
+            { part: "Arrow fill",       token: "fill-bg-primary-solid",        value: "gray-950 (#1A1715)" },
           ].map((r) => (
             <tr key={r.part}>
               <td style={{ color: "var(--ui-text-secondary)" }}>{r.part}</td>

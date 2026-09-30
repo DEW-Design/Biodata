@@ -1,10 +1,12 @@
 "use client";
 
 import { useState, type Key as ReactKey } from "react";
+import { useRouter } from "next/navigation";
 import type { Key, Selection } from "react-aria-components";
 import { parseDate } from "@internationalized/date";
 import { Eye, EyeOff, Plus, RefreshCcw01, Trash01 } from "@untitledui/icons";
 import { Accordion, type AccordionItemType } from "@/components/base/accordion/accordion";
+import { AlertFullWidth } from "@/components/application/alerts/alerts";
 import { Badge } from "@/components/base/badges/badges";
 import { Button } from "@/components/base/buttons/button";
 import { Checkbox } from "@/components/base/checkbox/checkbox";
@@ -16,7 +18,8 @@ import { TextArea } from "@/components/base/textarea/textarea";
 import { FormPage } from "@/app/pages/_shared/form-page";
 import { FormSectionList, FormSidebar, deriveSectionStatus } from "@/app/pages/_shared/form-section-list";
 import { FormRow } from "@/app/pages/_shared/form-row";
-import { ConfirmationModal, DestructiveModal } from "@/components/application/modals/modal";
+import { DestructiveModal } from "@/components/application/modals/modal";
+import { useRoleHref } from "@/lib/use-role-href";
 import {
   dsaScopeOptions,
   dsaStatusMeta,
@@ -42,7 +45,7 @@ import {
 // system block only exists once "System" is ticked, as in the lo-fi, and each system is its own
 // boxed accordion item instead of a stack of always-open cards.
 //
-// Gap, logged in CONTEXT.md:
+// Gap, logged in context/decisions/2026-09-22-05-data-sharing-agreement-dsa-workflow-for-biodata-admin.md:
 // - "Upload Agreement" is a drag-and-drop zone in the lo-fi; the real `InputFile` (button + file
 //   name) does the same job with the same accepted types, so it stands in for the dropzone.
 
@@ -240,6 +243,12 @@ export function DsaForm({
   const [openSystems, setOpenSystems] = useState<Set<ReactKey>>(() => new Set(initial?.systems[0] ? [initial.systems[0].id] : []));
   const [fileError, setFileError] = useState<string | undefined>();
 
+  const roleHref = useRoleHref();
+  const router = useRouter();
+  // Once an agreement exists past Draft, its own valid-from/valid-to dates are fixed - they're
+  // what "created" it, not just what's being negotiated (CONTEXT.md, "DLA/DSA: the requested start
+  // and end date can't change after creation"). A different period is a new agreement, the same
+  // rule DLA applies to a granted access level.
   const isEditingLive = !!initial && initial.status !== "draft";
   const tabIndex = Math.max(0, DSA_TABS.indexOf(tab as (typeof DSA_TABS)[number]));
   const isLastTab = tabIndex === DSA_TABS.length - 1;
@@ -400,6 +409,7 @@ export function DsaForm({
                 <InputDate
                   label="Valid from"
                   isRequired
+                  isDisabled={isEditingLive}
                   value={draft.validFrom ? parseDate(draft.validFrom) : null}
                   onChange={(v) => update({ validFrom: v ? v.toString() : "" })}
                   isInvalid={!!errors.validFrom}
@@ -408,12 +418,23 @@ export function DsaForm({
                 <InputDate
                   label="Valid to"
                   isRequired
+                  isDisabled={isEditingLive}
                   value={draft.validTo ? parseDate(draft.validTo) : null}
                   onChange={(v) => update({ validTo: v ? v.toString() : "" })}
                   isInvalid={!!errors.validTo}
                   hint={errors.validTo}
                 />
               </div>
+              {isEditingLive && (
+                <AlertFullWidth
+                  wrap
+                  color="gray"
+                  title="Agreement period locked"
+                  description="Set when this agreement was submitted and can't be changed here."
+                  confirmLabel="New agreement"
+                  onConfirm={() => router.push(roleHref("/pages/dsa/new"))}
+                />
+              )}
             </FormRow>
             <FormRow title="Upload agreement" required>
               <InputFile
@@ -469,13 +490,18 @@ export function DsaForm({
 )}
         </FormPage>
 
-      <ConfirmationModal
+      <DestructiveModal
         isOpen={confirmBack}
         onOpenChange={setConfirmBack}
         title="Discard your changes?"
-        description="You have unsaved changes to this agreement. Going back will lose them."
+        description={isEditingLive ? "You have unsaved changes to this agreement. Leaving now will lose them." : "You have unsaved changes to this agreement. Save a draft to keep them, or discard them."}
         confirmLabel="Discard changes"
         cancelLabel="Keep editing"
+        secondaryLabel={isEditingLive ? undefined : "Save draft"}
+        onSecondary={() => {
+          setConfirmBack(false);
+          saveDraft();
+        }}
         onConfirm={() => {
           setConfirmBack(false);
           onBack();

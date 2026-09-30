@@ -2,15 +2,21 @@
 
 import { LayoutOptionSwitcher, type LayoutOption } from "@/app/pages/_shared/layout-option-switcher";
 
-// Jump between the two project detail layouts being compared. The floating control itself is the
-// shared `LayoutOptionSwitcher` (stacked above the role switcher, bottom-right).
+// Jump between the two project detail layouts being compared. It adds a Layout tool to the
+// Prototype tools bar (`LayoutOptionSwitcher`).
+//
+// Sept 30 2026: Option 3 (About, Records and Species) removed per direct instruction, ahead of
+// merging sai-wips into main - down to the two real directions. Sept 29 2026: rolled in from
+// bc8ad0fb (the "v3 records" rewrite) and swapped with the canonical Adelaide Hills page per direct
+// instruction, so ids now match their real folder/route names one to one: Option 1 is the v3
+// rewrite at the canonical route, Option 2 is Adelaide Hills (relocated to the option-2 slot).
 export type ProjectDetailLayout = "option-1" | "option-2";
 
 const LAYOUT_OPTIONS: LayoutOption[] = [
-  { id: "option-1", label: "Option 1", href: "/pages/project-detail" },
-  { id: "option-2", label: "Option 2", href: "/pages/project-detail/option-3" },
+  { id: "option-1", label: "Option 1", description: "Survey records (v3): tree/table, species, flagged concepts", href: "/pages/project-detail" },
+  { id: "option-2", label: "Option 2", description: "Tabs with the records tree (Adelaide Hills)", href: "/pages/project-detail/option-2" },
 ];
 
 export function ProjectDetailLayoutSwitcher({ current }: { current: ProjectDetailLayout }) {
-  return <LayoutOptionSwitcher ariaLabel="Compare project detail layouts" options={LAYOUT_OPTIONS} current={current} />;
+  return <LayoutOptionSwitcher ariaLabel="Project page layout to show" options={LAYOUT_OPTIONS} current={current} />;
 }

@@ -1,12 +1,9 @@
 "use client";
 
 import { useState, type FC } from "react";
-import { Heading as AriaHeading } from "react-aria-components";
 import { useRouter } from "next/navigation";
-import { Dialog, Modal, ModalOverlay } from "@/components/application/modals/modal";
+import { Dialog, Modal, ModalFooter, ModalHeader, ModalOverlay } from "@/components/application/modals/modal";
 import { Button } from "@/components/base/buttons/button";
-import { CloseButton } from "@/components/base/buttons/close-button";
-import { FeaturedIcon } from "@/components/foundations/featured-icon/featured-icon";
 import { useRoleHref } from "@/lib/use-role-href";
 
 // The moment of delight, for the two header actions ("Add project"/"Upload dataset") that need a
@@ -14,24 +11,25 @@ import { useRoleHref } from "@/lib/use-role-href";
 // with no invitation in it. Flagged directly by the user: reveal them, and turn the "you can't do
 // this" moment into a warm, specific preview of what signing up unlocks, rather than a wall.
 //
-// Built on the real `ConfirmationModal`'s own anatomy (FeaturedIcon + title + description + a
-// 2-button row, see components/application/modals/modal.tsx) rather than that component directly -
+// Built on the shared modal anatomy (`ModalHeader` + `ModalFooter`, see
+// components/application/modals/modal.tsx) rather than `ConfirmationModal` directly -
 // this isn't a confirm/cancel choice, it's two equally-weighted real actions (Log in, Sign up), so
 // forcing it through `cancelLabel`/`confirmLabel` semantics would misrepresent what it is.
 //
 // "Log in"/"Sign up" are real buttons, not disabled-with-tooltip like `GuestAuthActions`'s header
 // pair - clicking either now navigates to the real /pages/auth/login or /pages/auth/signup flow
-// (see CONTEXT.md's dated entry for the auth flow build) instead of firing a "not built yet"
+// (see context/decisions/2026-09-23-04-dla-deep-dive-restructured-per-direct-ux-critique.md, dated entry for the auth flow build) instead of firing a "not built yet"
 // toast, now that a real flow exists to send the user to.
 export function SignUpPromptModal({
   isOpen,
   onOpenChange,
-  icon: Icon,
+  icon,
   title,
   description,
 }: {
   isOpen: boolean;
   onOpenChange: (isOpen: boolean) => void;
+  /** The featured icon for what signing up unlocks (Untitled UI's modals always carry one). */
   icon: FC<{ className?: string }>;
   title: string;
   description: string;
@@ -45,28 +43,18 @@ export function SignUpPromptModal({
 
   return (
     <ModalOverlay isOpen={isOpen} onOpenChange={onOpenChange} isDismissable>
-      <Modal className="w-full max-w-xs">
+      <Modal className="w-full sm:max-w-100">
         <Dialog>
-          <div className="flex flex-col gap-4 p-6">
-            <div className="flex items-start justify-between">
-              <FeaturedIcon icon={Icon} color="brand" theme="light" size="lg" />
-              <CloseButton size="sm" slot="close" />
-            </div>
-            <div className="flex flex-col gap-1">
-              <AriaHeading slot="title" className="text-md font-semibold text-primary">
-                {title}
-              </AriaHeading>
-              <p className="text-sm text-tertiary">{description}</p>
-            </div>
-            <div className="mt-2 grid grid-cols-2 gap-3">
-              <Button color="secondary" size="lg" onClick={() => respond("/pages/auth/login")}>
-                Log in
-              </Button>
-              <Button color="primary" size="lg" onClick={() => respond("/pages/auth/signup")}>
-                Sign up
-              </Button>
-            </div>
-          </div>
+          {/* The shared modal anatomy (Untitled UI's stacked modal). */}
+          <ModalHeader icon={icon} title={title} description={description} />
+          <ModalFooter>
+            <Button color="secondary" size="md" onClick={() => respond("/pages/auth/login")}>
+              Log in
+            </Button>
+            <Button color="primary" size="md" onClick={() => respond("/pages/auth/signup")}>
+              Sign up
+            </Button>
+          </ModalFooter>
         </Dialog>
       </Modal>
     </ModalOverlay>

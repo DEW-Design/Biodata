@@ -93,8 +93,8 @@ export default function FormsPatternPage() {
       <ol>
         <li>
           <strong>Header.</strong> An optional eyebrow, the title (with a status badge for an existing record), a one-line
-          subtitle, and two actions: <strong>Cancel</strong> and <strong>Save draft</strong>. Save draft is left out when a draft
-          makes no sense, such as editing a live record.
+          subtitle, and one close button (X) at the top right, the way out of the form. The header describes the step and holds no
+          other action.
         </li>
         <li>
           <strong>Sections live in column 2.</strong> A form with more than two or three field groups is split into sections, listed
@@ -114,12 +114,13 @@ export default function FormsPatternPage() {
         </li>
         <li>
           <strong>Footer.</strong> <strong>Back a step</strong> (secondary button, left arrow icon) on the left, hidden on the
-          first section. On the right the primary action: <strong>Continue</strong> (right arrow icon) to move on, or the final
-          action - <strong>Submit</strong>, <strong>Create project</strong>, <strong>Save changes</strong> - on the last
-          section. 
+          first section. On the right <strong>Save draft</strong> (secondary), then the primary action: <strong>Continue</strong>
+          (right arrow icon) to move on, or the final action - <strong>Submit</strong>, <strong>Create project</strong>,{" "}
+          <strong>Save changes</strong> - on the last section. Save draft is left out when a draft makes no sense, such as
+          editing a live record. Every action sits here, where the task ends, and toasts appear above the footer, never on it.
         </li>
         <li>
-          <strong>Leaving.</strong> Cancel asks before discarding unsaved changes, and says what will be lost.
+          <strong>Leaving.</strong> The close button asks before discarding unsaved changes, and says what will be lost.
         </li>
         <li>
           <strong>Controls.</strong> Real DEW components only: <code>Input</code>, <code>TextArea</code>, <code>Select</code>,{" "}
@@ -141,7 +142,7 @@ import { FormRow } from "@/app/pages/_shared/form-row";
   eyebrow="Data sharing agreement"
   title="New agreement"
   subtitle="Fields marked * are required to submit."
-  onCancel={goBack}            // ask before discarding
+  onCancel={goBack}            // the X; ask before discarding
   onSaveDraft={saveDraft}      // omit when editing a live record
   onBack={index > 0 ? previous : undefined}
   problems={missing.length ? { items: missing } : undefined}   // "Details missing" alert

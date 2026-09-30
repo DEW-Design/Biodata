@@ -5,8 +5,8 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import type { Key } from "react-aria-components";
 import { Tabs } from "react-aria-components";
-import { TabList, Tab, TabPanel } from "@/components/application/tabs/tabs";
-import { ChevronDown, ArrowNarrowRight, Folder, Database01, User01, PieChart03 } from "@untitledui/icons";
+import { TabList, Tab } from "@/components/application/tabs/tabs";
+import { ChevronDown, ArrowNarrowRight, User01, PieChart03 } from "@untitledui/icons";
 import { Button } from "@/components/base/buttons/button";
 import { HomeTabPanels } from "@/app/pages/_shared/home-tab-panels";
 import { DataOverviewContent } from "@/app/pages/_shared/data-overview";
@@ -15,10 +15,10 @@ import { PrimaryRail } from "@/app/pages/_shared/primary-rail";
 import { SidebarFooterLinks } from "@/app/pages/_shared/sidebar-footer-links";
 import { sectionIcons } from "@/app/pages/_shared/nav-icons";
 import { AppHeader } from "@/app/pages/_shared/app-header";
-import { ProjectActions } from "@/app/pages/_shared/project-actions";
+import { ProjectsSidebar, type ProjectScope } from "@/app/pages/_shared/projects-sidebar";
 import { GuestAboutAside, GuestGradientCard } from "@/app/pages/_shared/guest-home";
 import { MobileNavTrigger } from "@/app/pages/_shared/mobile-nav";
-import { RoleSwitcher } from "@/app/pages/_shared/role-switcher";
+import { PrototypeTools } from "@/app/_prototype-tools/prototype-tools";
 import { useUserRole } from "@/lib/use-user-role";
 import { useRoleHref } from "@/lib/use-role-href";
 import { navForRole, keyHref, type NavNode } from "@/lib/registered-user-nav";
@@ -40,7 +40,7 @@ import { cx } from "@/utils/cx";
 // records, flora/fauna species counts, the map) that used to live here have been trimmed to just
 // the KPI row. Decided directly by the user: a registered user has limited scope on this platform,
 // so the dashboard's job is to surface what's actually theirs to act on, not to be a smaller version
-// of an org-wide reporting surface - see CONTEXT.md's "Registered User dashboard scope".
+// of an org-wide reporting surface - see .claude/rules/ref-shell.md, "Registered User dashboard scope".
 //
 // Figma source: https://www.figma.com/design/SQ58QgwP9Xz0uo3tBpuf6e/DEW-Toolkit--version-1.0-?node-id=103-105
 // "SCREEN" (BioData SA dashboard shell, 1440px) - an exploratory layout per CONTEXT.md's
@@ -158,7 +158,7 @@ function SectionPlaceholder({ node }: { node: NavNode }) {
 
   return (
     <div className="flex flex-1 flex-col items-center justify-center gap-3 p-12 text-center">
-      <h1 className="text-lg font-medium text-primary">{node.label}</h1>
+      <h1 className="text-lg font-semibold text-primary">{node.label}</h1>
       <p className="max-w-sm text-sm text-tertiary">
         {relatedLink
           ? "This section has its own page - it isn't embedded here."
@@ -174,7 +174,7 @@ function SectionPlaceholder({ node }: { node: NavNode }) {
 }
 
 
-// User roles - see CONTEXT.md's "User roles" section. Full 6-role hierarchy is defined in
+// User roles - see .claude/rules/ref-roles.md, "User roles" section. Full 6-role hierarchy is defined in
 // lib/user-role.ts, but build focus right now is just public-user (the default) and registered-user -
 // don't build features for the other four ahead of being told to. Gated features (like the org
 // switcher below) read config/role-access.config.ts's role-access matrix via useFeatureAccess
@@ -195,7 +195,7 @@ function Dashboard() {
   // public-user ("Guest User") reads a different, smaller nav tree entirely - not a filtered view
   // of registeredUserNav, since whole sections (DLA, Nominate Sensitive Species, Reports, Template
   // Finder) don't exist for a signed-out visitor, not just individual leaves inside them. See
-  // lib/registered-user-nav.ts's publicUserNav and CONTEXT.md's "User roles" section for the real
+  // lib/registered-user-nav.ts's publicUserNav and .claude/rules/ref-roles.md, "User roles" section for the real
   // IA this is built from.
   const role = useUserRole();
   const isPublicUser = role === "public-user";
@@ -203,7 +203,7 @@ function Dashboard() {
   const roleHref = useRoleHref();
   const [activeSection, setActiveSection] = useState("Home");
   const [homeTab, setHomeTab] = useState<Key>("dashboard");
-  const [projectsTab, setProjectsTab] = useState<Key>("projects");
+  const [projectScope, setProjectScope] = useState<ProjectScope>("all");
   // public-user's own Flora and Fauna Dashboard tab (Overview/Flora/Fauna/Projects) - separate from
   // `homeTab` above, which is registered-user's My BioData/Flora-Dashboard switcher and doesn't
   // apply to a guest (see the isPublicUser branch below). Lifted here, not left uncontrolled inside
@@ -231,7 +231,7 @@ function Dashboard() {
 
   return (
     <div className="font-barlow flex h-screen flex-col overflow-hidden">
-      <RoleSwitcher />
+      <PrototypeTools />
       {/* ── Header ── */}
       <AppHeader
         mobileNav={
@@ -283,28 +283,28 @@ function Dashboard() {
                       <button
                         type="button"
                         onClick={() => {
-                          setProjectsTab("projects");
+                          setProjectScope("mine");
                           close();
                         }}
                         className={cx(
                           "rounded-md px-3 py-2 text-left text-sm font-medium outline-brand focus-visible:outline-2 focus-visible:outline-offset-2",
-                          projectsTab === "projects" ? "bg-secondary text-primary" : "text-primary hover:bg-secondary",
+                          projectScope === "mine" ? "bg-secondary text-primary" : "text-primary hover:bg-secondary",
                         )}
                       >
-                        Projects
+                        My projects
                       </button>
                       <button
                         type="button"
                         onClick={() => {
-                          setProjectsTab("datasets");
+                          setProjectScope("all");
                           close();
                         }}
                         className={cx(
                           "rounded-md px-3 py-2 text-left text-sm font-medium outline-brand focus-visible:outline-2 focus-visible:outline-offset-2",
-                          projectsTab === "datasets" ? "bg-secondary text-primary" : "text-primary hover:bg-secondary",
+                          projectScope === "all" ? "bg-secondary text-primary" : "text-primary hover:bg-secondary",
                         )}
                       >
-                        Datasets
+                        All projects
                       </button>
                     </>
                   ))
@@ -331,23 +331,17 @@ function Dashboard() {
         // "Disclosure" and a stepped "How it works") - not the empty box the pre-Sept-21 version of
         // this branch dropped entirely for lack of anything to put in it. Same content for Home and
         // Projects (only the eyebrow label differs), matching the lab exactly.
-        if (isPublicUser && (activeSection === "Home" || activeSection === "Projects")) {
+        if (isPublicUser && activeSection === "Home") {
           return (
             <div className="flex flex-1 overflow-hidden">
               {iconRail}
-              <GuestAboutAside sectionLabel={activeSection} actions={activeSection === "Projects" ? <ProjectActions withTopRule={false} /> : undefined} />
+              <GuestAboutAside sectionLabel={activeSection} />
 
               <main className="flex flex-1 flex-col overflow-y-auto">
-                {activeSection === "Home" ? (
-                  <>
-                    <div className="p-6">
-                      <GuestGradientCard tab={guestDashboardTab} />
-                    </div>
-                    <DataOverviewContent activeTab={guestDashboardTab} onActiveTabChange={setGuestDashboardTab} />
-                  </>
-                ) : (
-                  <ProjectListContent />
-                )}
+                <div className="p-6">
+                  <GuestGradientCard tab={guestDashboardTab} />
+                </div>
+                <DataOverviewContent activeTab={guestDashboardTab} onActiveTabChange={setGuestDashboardTab} />
               </main>
             </div>
           );
@@ -391,34 +385,17 @@ function Dashboard() {
         // and Datasets" link used to blend these into one destination, flagged directly by the
         // user off project-list's sidebar. Datasets has no reference/content yet, so it's
         // the honest "hasn't been scoped yet" placeholder rather than an invented list.
+        // Projects: the same column as the Projects list (My projects / All projects, Actions, guides),
+        // for every persona; a guest sees All projects only (projects-sidebar.tsx).
         if (activeSection === "Projects") {
           return (
-            <Tabs orientation="vertical" selectedKey={projectsTab} onSelectionChange={setProjectsTab} className="flex flex-1 overflow-hidden">
+            <div className="flex flex-1 overflow-hidden">
               {iconRail}
-
-              {/* ── Contextual sidebar: Projects/Datasets tab list (nav chrome - not pixel-matched) ── */}
-              <aside aria-label="Section" className="hidden w-[286px] shrink-0 flex-col justify-between overflow-y-auto border-r border-secondary bg-secondary p-4 lg:flex">
-                <div className="flex flex-col gap-1">
-                  <p className="mb-3 text-xs font-semibold tracking-wide text-quaternary uppercase">{activeSectionNode.label}</p>
-                  <TabList aria-label="Projects views" orientation="vertical" type="button-brand" fullWidth className="w-full">
-                    <Tab id="projects" label="Projects" icon={Folder} />
-                    <Tab id="datasets" label="Datasets" icon={Database01} />
-                  </TabList>
-                  <ProjectActions />
-                </div>
-                <SidebarFooterLinks />
-              </aside>
-
-              {/* ── Main content: Projects has this screen's own content; Datasets is unscoped ── */}
+              <ProjectsSidebar sectionLabel={activeSectionNode.label} scope={projectScope} onScopeChange={setProjectScope} />
               <main className="flex flex-1 flex-col overflow-y-auto">
-                <TabPanel id="projects" className="flex min-h-0 flex-1 flex-col">
-                  <ProjectListContent />
-                </TabPanel>
-                <TabPanel id="datasets">
-                  <SectionPlaceholder node={{ label: "Datasets" }} />
-                </TabPanel>
+                <ProjectListContent scope={isPublicUser ? "all" : projectScope} />
               </main>
-            </Tabs>
+            </div>
           );
         }
 

@@ -10,6 +10,9 @@ import { projects } from "@/app/pages/_shared/project-list-content";
 import { rootProjectForParentEventId, searchOccurrences, type SpeciesGroup } from "@/app/pages/_shared/map-search/search-data";
 import { SPECIES_GROUP_ICON } from "@/app/pages/_shared/map-search/species-group-icons";
 import { useRoleHref } from "@/lib/use-role-href";
+import { useUserRole } from "@/lib/use-user-role";
+import type { UserRole } from "@/lib/user-role";
+import { recordAccess } from "@/app/pages/_shared/map-search/record-access";
 
 // The header search: projects and species, and how they relate. Type a species and you see it,
 // where it was recorded, and the projects that recorded it; type a project and you see it and the
@@ -72,12 +75,13 @@ interface SpeciesEntry {
   projectIds: string[];
 }
 
-// One entry per species (scientific name), built once from the occurrence data. Non-Biotic and
-// Community rows (no family/group) are not species and are skipped.
-const speciesIndex: SpeciesEntry[] = (() => {
+// One entry per species (scientific name), built from the occurrence data the role may see (a
+// public user sees Level 1 only, see map-search/record-access.ts). Non-Biotic and Community rows
+// (no family/group) are not species and are skipped.
+function buildSpeciesIndex(role: UserRole): SpeciesEntry[] {
   const byName = new Map<string, SpeciesEntry>();
   for (const o of searchOccurrences) {
-    if (!o.family || !o.group) continue;
+    if (!o.family || !o.group || recordAccess(o, role) === "hidden") continue;
     const root = rootProjectForParentEventId(o.parentEventId);
     if (!root || (root.status !== "Active" && root.status !== "Completed")) continue;
     const entry = byName.get(o.species) ?? { species: o.species, commonName: o.commonName, family: o.family, group: o.group, projectNames: [], projectOrgs: [], projectIds: [] };
@@ -89,7 +93,7 @@ const speciesIndex: SpeciesEntry[] = (() => {
     byName.set(o.species, entry);
   }
   return [...byName.values()];
-})();
+}
 
 const matchesSpecies = (s: SpeciesEntry, q: string) => [s.commonName, s.species, s.family, s.group].some((v) => v.toLowerCase().includes(q));
 
@@ -149,6 +153,8 @@ export function GlobalSearch() {
 
   const term = query.trim();
   const q = term.toLowerCase();
+  const role = useUserRole();
+  const speciesIndex = useMemo(() => buildSpeciesIndex(role), [role]);
 
   // Prefix matches on the common name first, then the rest alphabetically.
   const speciesMatches = useMemo(
@@ -158,7 +164,7 @@ export function GlobalSearch() {
             .filter((s) => matchesSpecies(s, q))
             .sort((a, b) => Number(b.commonName.toLowerCase().startsWith(q)) - Number(a.commonName.toLowerCase().startsWith(q)) || a.commonName.localeCompare(b.commonName))
         : [],
-    [q],
+    [q, speciesIndex],
   );
 
   // Projects: matched by name or organisation, plus the ones that recorded a matching species -
@@ -224,14 +230,16 @@ export function GlobalSearch() {
     >
       {!q ? (
         <>
-          <SelectItem id={PROMPT_ID} label="Start typing to search projects and species" isDisabled />
+          {/* Keyed, so React never reuses this row as the no-results row below: react-aria rejects
+              an item whose id changes ("Cannot change the id of an item"). */}
+          <SelectItem key={PROMPT_ID} id={PROMPT_ID} label="Start typing to search projects and species" isDisabled />
           {scopeNoticeItems.map((item) => (
             <SelectItem key={item.id} {...item} />
           ))}
         </>
       ) : !hasResults ? (
         <>
-          <SelectItem id={NO_RESULTS_ID} label={`No projects or species found for "${term}"`} isDisabled />
+          <SelectItem key={NO_RESULTS_ID} id={NO_RESULTS_ID} label={`No projects or species found for "${term}"`} isDisabled />
           {scopeNoticeItems.map((item) => (
             <SelectItem key={item.id} {...item} />
           ))}

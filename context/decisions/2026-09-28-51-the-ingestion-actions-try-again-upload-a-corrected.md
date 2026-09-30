@@ -1,0 +1,3 @@
+# 2026-09-28 - the ingestion actions ("Try again", "Upload a corrected file") line up with the reason text, per page feedback ("i don't like how the try again button sits so weirdly in the left corner").
+
+- **Sept 28 2026: the ingestion actions ("Try again", "Upload a corrected file") line up with the reason text, per page feedback ("i don't like how the try again button sits so weirdly in the left corner").** The buttons started at the card edge, under the reason's icon, while the text sat 26px in. They now share the text's left edge (indent = the 16px icon plus its 10px gap): measured button and text at the same x in the chip popover, the notice and the tree card. `tsc`, `eslint`, `check:contracts` clean. Not committed.

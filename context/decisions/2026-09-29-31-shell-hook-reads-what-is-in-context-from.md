@@ -1,0 +1,37 @@
+# 2026-09-29 - Shell hook reads what is in context from the transcript
+
+- **Sept 29 2026: the shell hook (`scripts/rules-for-shell.mjs`) no longer remembers which rules it listed. It reads the agent's transcript to see which rules are in context now. Per the designer, the compaction gap "needs to be fixed", not left resting on an untested reset.**
+  - **Problem:** the hook kept a temp file of the rules it had already named. A compaction drops rules from context, but the file kept them marked as sent, so they were never named again. The fix in 2026-09-29-30 (a `SessionStart` reset on `compact|clear`) depended on an event that had never been seen firing, and it only reset the hook's memory rather than checking what was actually loaded.
+  - **Changed:**
+    - The hook reads the agent's own transcript backwards from the end, as far as the last `compact_boundary`.
+      - The main agent uses `transcript_path`; a subagent uses `<session>/subagents/agent-<id>.jsonl`.
+      - The transcript was 244 MB this session, so reading the whole of it is not an option.
+    - A rule counts as in context only if, since that boundary, the Read tool injected it (a `nested_memory` entry) or the agent Read the rule file itself.
+    - Everything else that matches the command's paths is listed. A rule that was listed but not Read yet is listed again.
+    - A boundary is accepted only if its whole line parses as a real `system` entry, so a marker quoted inside a tool result doesn't count.
+    - If the transcript can't be read, every matching rule is listed: a repeated rule is noise, a missing one is a risk.
+    - The temp state file and the `SessionStart` hook are removed. `.claude/settings.json` has the one `PostToolUse` hook again.
+    - The hook can now see what the Read tool loaded, a limitation noted in 2026-09-29-29, so its message says which files are missing instead of asking the agent to skip what it has.
+    - CONTRACTS.md §5.5's "Shell commands" bullet now describes this. The rules were regenerated.
+  - **Verified:**
+    - `eslint --max-warnings=0` and `npm run check:contracts` clean.
+    - Nine synthetic transcripts, all correct:
+      - no compaction;
+      - injected, then compacted;
+      - compacted, then Read;
+      - a quoted marker in a tool result;
+      - a boundary 9 MB back, injected before it;
+      - a boundary 9 MB back, injected after it;
+      - an injection 9 MB back with no compaction;
+      - a subagent judged by its own file;
+      - a missing transcript (fails open).
+    - **Against this session's real transcript and its real compaction (line 19562), same dashboard read:**
+      - Cut just before the compaction, the hook listed only contracts-prototyping (shell, build and ref-shell were injected earlier and still in context).
+      - Cut just after it, all four were listed.
+      - On the live transcript now, nothing was listed (all Read since).
+      - Each run took 30 to 80 ms.
+    - Live in session, a command naming `components/base` was answered with contracts-components, ref-ingest and ref-scaffold, the three matching rules not loaded since the compaction.
+  - **Limits:**
+    - The hook depends on the transcript format (`compact_boundary`, `nested_memory`, `tool_use` Read), checked on this Claude Code version. If the format changes, the hook stops recognising loaded rules and lists every match, which is safe but noisy.
+    - Rules still arrive after the first shell command in an area, not before it.
+  - Not committed.

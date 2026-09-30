@@ -39,9 +39,11 @@ interface DropdownItemProps extends AriaMenuItemProps {
     avatarUrl?: string;
     /** The selection indicator to be displayed on the item. */
     selectionIndicator?: "checkmark" | "checkbox" | "radio" | "toggle" | "none";
+    /** A destructive action (delete, remove): error-coloured label and icon, and an error-tinted hover. */
+    destructive?: boolean;
 }
 
-const DropdownItem = ({ label, children, addon, icon: Icon, avatarUrl, unstyled, selectionIndicator = "checkmark", ...props }: DropdownItemProps) => {
+const DropdownItem = ({ label, children, addon, icon: Icon, avatarUrl, unstyled, selectionIndicator = "checkmark", destructive = false, ...props }: DropdownItemProps) => {
     const SelectionIndicator = useCallback(
         (state: MenuItemRenderProps & { className?: string }) => {
             if (selectionIndicator === "checkmark") {
@@ -92,8 +94,8 @@ const DropdownItem = ({ label, children, addon, icon: Icon, avatarUrl, unstyled,
                 <div
                     className={cx(
                         "relative flex items-center rounded-md px-2.5 py-2 outline-focus-ring transition duration-100 ease-linear",
-                        !state.isDisabled && "group-hover:bg-primary_hover",
-                        state.isFocused && "bg-primary_hover",
+                        !state.isDisabled && (destructive ? "group-hover:bg-error-primary" : "group-hover:bg-primary_hover"),
+                        state.isFocused && (destructive ? "bg-error-primary" : "bg-primary_hover"),
                         state.isFocusVisible && "outline-2 -outline-offset-2",
                         state.hasSubmenu && "pr-1.5",
                     )}
@@ -106,9 +108,15 @@ const DropdownItem = ({ label, children, addon, icon: Icon, avatarUrl, unstyled,
                         </div>
                     )}
 
-                    {Icon && <Icon aria-hidden="true" className="mr-2 size-4 shrink-0 stroke-[2.25px] text-fg-quaternary" />}
+                    {Icon && <Icon aria-hidden="true" className={cx("mr-2 size-4 shrink-0 stroke-[2.25px]", destructive ? "text-fg-error-secondary" : "text-fg-quaternary")} />}
 
-                    <span className={cx("grow truncate text-sm font-semibold text-secondary", state.isFocused && "text-secondary_hover")}>
+                    <span
+                        className={cx(
+                            "grow truncate text-sm font-semibold",
+                            destructive ? "text-error-primary" : "text-secondary",
+                            state.isFocused && (destructive ? "text-error-primary_hover" : "text-secondary_hover"),
+                        )}
+                    >
                         {label || (typeof children === "function" ? children(state) : children)}
                     </span>
 
@@ -147,7 +155,10 @@ const DropdownPopover = (props: DropdownPopoverProps) => {
                 cx(
                     // font-barlow: this Popover portals to <body>, outside any font-scoping
                     // wrapper around the trigger - see components/base/select/popover.tsx.
-                    "font-barlow w-62 origin-(--trigger-anchor-point) overflow-auto rounded-lg bg-primary shadow-lg ring-1 ring-secondary_alt will-change-transform",
+                    // min-h-fit: a menu keeps its full height, so when there isn't room below the
+                    // trigger react-aria flips it above (or beside) instead of shrinking it into a
+                    // tiny scrolling box (CONTRACTS 1.9: behaviour fixed once, in the component).
+                    "font-barlow min-h-fit w-62 origin-(--trigger-anchor-point) overflow-auto rounded-lg bg-primary shadow-lg ring-1 ring-secondary_alt will-change-transform",
                     state.isEntering &&
                         "duration-150 ease-out animate-in fade-in placement-right:slide-in-from-left-0.5 placement-top:slide-in-from-bottom-0.5 placement-bottom:slide-in-from-top-0.5",
                     state.isExiting &&
@@ -162,7 +173,7 @@ const DropdownPopover = (props: DropdownPopoverProps) => {
 };
 
 const DropdownSeparator = (props: AriaSeparatorProps) => {
-    return <AriaSeparator {...props} className={cx("my-1 h-px w-full bg-border-secondary", props.className)} />;
+    return <AriaSeparator {...props} className={cx("my-1 h-px w-full bg-[var(--ui-border-secondary)]", props.className)} />;
 };
 
 const DropdownDotsButton = ({ "aria-label": ariaLabel = "Open menu", ...props }: AriaButtonProps & RefAttributes<HTMLButtonElement>) => {

@@ -20,7 +20,10 @@ interface SpeciesImageEntry {
   imageId: string;
 }
 
-const IMAGES: Record<string, SpeciesImageEntry> = {
+// A species may list more than one image (an array); the first is its representative image, used
+// for list thumbnails. The summary card shows a carousel when there are two or more. Every extra
+// image must meet the same rule as the first: a real ALA image, licence recorded and allowed.
+const IMAGES: Record<string, SpeciesImageEntry | SpeciesImageEntry[]> = {
     "Tachyglossus aculeatus": { file: "tachyglossus-aculeatus.jpg", creator: "andrewk", licence: "CC BY-NC", imageId: "d903474f-acb7-4f3d-9b40-fc9202d9e08f" },
     "Sternula nereis": { file: "sternula-nereis.jpg", creator: "Thomas Wilson", licence: "CC BY", imageId: "53303805-d48d-4186-99fa-cd637e8c832b" },
     "Pandion haliaetus": { file: "pandion-haliaetus.jpg", creator: "Naomi", licence: "CC BY-NC", imageId: "12d67fae-e7c2-4dab-a216-21fe9b4b81ee" },
@@ -45,13 +48,23 @@ export interface SpeciesImage {
   sourceUrl: string;
 }
 
-export function speciesImage(scientificName: string): SpeciesImage | undefined {
-  const entry = IMAGES[scientificName];
-  if (!entry) return undefined;
+function toImage(entry: SpeciesImageEntry): SpeciesImage {
   return {
     src: assetPath(`/pages/species/${entry.file}`),
     creator: entry.creator,
     licence: entry.licence,
     sourceUrl: `https://images.ala.org.au/image/${entry.imageId}`,
   };
+}
+
+/** Every usable image for a species, representative image first. Empty when there is none. */
+export function speciesImages(scientificName: string): SpeciesImage[] {
+  const entry = IMAGES[scientificName];
+  if (!entry) return [];
+  return (Array.isArray(entry) ? entry : [entry]).map(toImage);
+}
+
+/** The representative image, or undefined when the species has none. */
+export function speciesImage(scientificName: string): SpeciesImage | undefined {
+  return speciesImages(scientificName)[0];
 }

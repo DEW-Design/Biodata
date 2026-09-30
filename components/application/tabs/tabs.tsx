@@ -86,7 +86,7 @@ const getHorizontalStyles = ({ size, fullWidth }: { size?: "sm" | "md"; fullWidt
     "button-gray": "gap-1",
     "button-border": cx("gap-1 rounded-[10px] bg-secondary p-1 ring-1 ring-secondary ring-inset", size === "md" && "rounded-xl p-1.5"),
     "button-minimal": "gap-0.5 rounded-lg bg-secondary ring-1 ring-inset ring-secondary",
-    underline: cx("gap-3", fullWidth && "w-full gap-4"),
+    underline: cx(size === "md" ? "gap-4" : "gap-3", fullWidth && "w-full gap-4"),
     line: "gap-2",
 });
 

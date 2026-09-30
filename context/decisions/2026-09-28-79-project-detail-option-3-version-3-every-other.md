@@ -1,0 +1,36 @@
+# 2026-09-28 - Project detail Option 3, version 3: every other event type built from its Figma frame, and a new trap effort editor, per direct instruction (branch `mohan-wips`)
+
+- **Sept 28 2026: project detail Option 3, version 3: every other event type built from its Figma frame, and a new trap effort editor, per direct instruction (branch `mohan-wips`).**
+  - **Source:** the "Details Container / Edit" frames in `YMproGZfrFB5jUqPHPxMhk`, read for their component types only (the Site rules apply to all records):
+    - Visit `1970:143761`, Transect `1970:143999`, Quadrat `1970:144274`, Block `1970:144564`, Ramble `1970:144861`, Trap `1970:145237`, Custom event `1970:145642`.
+  - **Shared builder:** a new `eventSections` in `survey-data.ts` builds every event except Site; `createRecord` uses it too, so new records match the seeds.
+    - **Details:** ID (system), name, description, source ID and comment.
+    - **Type-specific fields:** Visit adds Legacy visit ID and Visit sequence number (system, the visit's place among its site's visits). Custom event adds Event array.
+    - **Labels follow Figma:** "Transect name", "Trap array name", "Event ID". `eventLabels()` supplies them, and `nameRow` uses them.
+  - **Temporal details:**
+    - **Start date:** the record's date, required.
+    - **End date:** new `date` field type; can't be before the start date.
+    - **Duration:** new `duration` field type, three numbers (days, hours, mins), stored as "2d 3h 30m" and read as "2 days, 3 hours, 30 mins".
+    - **Date accuracy:** a new controlled vocabulary (D, M, Y, S, U). It is illustrative, not sourced.
+  - **Remaining sections:**
+    - Observers on every event except Trap.
+    - Location information (the Site's location fields and picker) on every event except Visit: the Visit frame has none.
+    - Photopoint.
+    - Custom properties.
+    - The old rows that were not in Figma (Event type, Parent event, Sampling protocol, Sample size, Sampling effort, Season, Time) are gone. The seeds were rewritten to the new fields.
+  - **Trap effort (`v3/trap-effort.tsx`, not from Figma, per the designer's table):**
+    - **Adding:** trap types are added one after another, like custom properties. "Add trap type" is a menu of the trap types not used yet: Elliott, Pitfall, Hair tube, Harp, Dip net, Seine net, eFishing, Fishing line.
+    - **Two lists per trap type:** Effort and Specs. Each has its own "Add" menu listing only the variables of that group that aren't on it yet:
+      - Effort: Number of traps, Duration, Hauls.
+      - Specs: Dimension - length, Voltage, Frequency, Duty cycle, Wave form.
+    - **Lines:** a line is the variable, a value (a number, or text for Wave form) and a unit.
+      - The unit follows the variable: a choice when there are several (Duration: nights, hours, minutes, months), fixed when there is one (cm, volts, Hz, %), none for a count.
+      - Each trap type takes notes like any field.
+    - **Viewed:** Effort then Specs, in one aligned list.
+    - **Vocabularies (`TRAP_TYPES`, `TRAP_VARIABLES` in `field-schema.ts`):** illustrative until the Control Vocabulary module exists. Which variable belongs to which group, and each variable's units, are my reading of the table.
+  - **Verified headlessly:** the sections for a visit, a transect, the trap and the custom event match Figma. I added Harp to the trap, with Duration 3 nights and Dimension - length 180 cm, and saved; the view reads it back. A new visit gets exactly the Figma fields. The current and previous versions still load. Zero console errors; `tsc`, `eslint --max-warnings=0` and `npm run check:contracts` are clean.
+  - **Open:**
+    - Confirm the trap vocabularies, groups and units.
+    - Whether Visit should really have no location of its own.
+    - After a save the page behind the full view is left scrolled (scrollY 400); not yet traced.
+  - Not committed.

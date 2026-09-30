@@ -47,7 +47,7 @@ import { assetPath } from "@/lib/base-path";
 // BioData SA public marketing home page - rebuilt directly against the real
 // Figma frame the user supplied (node 155:168, "Version 3"):
 // https://www.figma.com/design/u4FTv88XXfy58MiLN5T5Wu/Home---Landing-Page?node-id=155-168
-// Per CONTEXT.md's "Figma is the source of truth" contract, every section
+// Per .claude/rules/ref-ingest.md, "Figma is the source of truth" contract, every section
 // below was re-audited against that frame's actual `get_design_context`
 // output (not the first pass's guess from pasted copy alone) - colours,
 // copy groupings, section boundaries, and real exported photography/icon
@@ -77,7 +77,7 @@ import { assetPath } from "@/lib/base-path";
 // - The hero's stacked "Discover / South Australia's / Biodiversity /
 //   Knowledge" wordmark uses Fredoka (Google Font), same as the frame -
 //   loaded locally to this page only, since every other DEW/Scaffold
-//   surface stays Geist/Barlow (see CONTEXT.md's "Geist stays Geist,
+//   surface stays Geist/Barlow (see context/archive/final-check.md, "Geist stays Geist,
 //   Barlow stays Barlow" rule - this is a third, page-scoped exception for
 //   one decorative marketing headline, not a sitewide font change). The
 //   frame hand-positions each word at its own size/offset for a fixed
@@ -252,7 +252,9 @@ const fredoka = Fredoka({ subsets: ["latin"], weight: ["500", "600"], variable: 
 const LANDING_ROLE: UserRole = "public-user";
 const publicUserHref = (path: string) => `${path}?userRole=${LANDING_ROLE}`;
 
-const EXPLORE_ROUTE = publicUserHref("/pages/project-list");
+// Explore is the records search (/pages/observations), the same place the header search sends a
+// species; the hero search carries what was typed there as `?q=`.
+const EXPLORE_ROUTE = publicUserHref("/pages/observations");
 const DASHBOARD_ROUTE = publicUserHref("/pages/dashboard");
 
 const NAV_LINKS: { label: string; href: string }[] = [
@@ -495,7 +497,8 @@ export default function BiodataHomePage() {
 
   const runSearch = (e: FormEvent) => {
     e.preventDefault();
-    router.push(EXPLORE_ROUTE);
+    const term = heroQuery.trim();
+    router.push(term ? `/pages/observations?q=${encodeURIComponent(term)}&userRole=${LANDING_ROLE}` : EXPLORE_ROUTE);
   };
 
   return (
@@ -525,7 +528,7 @@ export default function BiodataHomePage() {
 
           <div className="flex items-center gap-3">
             <Button color="secondary" size="sm" href="/pages/auth/login">
-              Login
+              Log in
             </Button>
             <Button color="secondary" size="sm" href="/pages/auth/signup">
               Sign up
@@ -583,6 +586,8 @@ export default function BiodataHomePage() {
                   placeholder='Try: "Red Kangaroo in Deep Creek National Park" or "Study on Rare Rodents"'
                   value={heroQuery}
                   onChange={setHeroQuery}
+                  onClear={() => setHeroQuery("")}
+                  clearLabel="Clear search"
                 />
               </div>
               <Button type="submit" color="primary" size="lg" iconTrailing={ArrowNarrowUpRight}>

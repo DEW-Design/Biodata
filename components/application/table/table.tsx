@@ -1,12 +1,13 @@
 "use client";
 
 import type { ComponentPropsWithRef, HTMLAttributes, ReactNode, Ref, TdHTMLAttributes, ThHTMLAttributes } from "react";
-import { createContext, isValidElement, useContext } from "react";
+import { createContext, isValidElement, useContext, useRef } from "react";
 import { ArrowDown, ArrowLeft, ArrowRight, ChevronSelectorVertical, Copy01, Edit01, HelpCircle, Trash01 } from "@untitledui/icons";
 import type {
     CellProps as AriaCellProps,
     ColumnProps as AriaColumnProps,
     RowProps as AriaRowProps,
+    SortDescriptor,
     TableHeaderProps as AriaTableHeaderProps,
     TableProps as AriaTableProps,
 } from "react-aria-components";
@@ -142,14 +143,50 @@ interface TableRootProps extends AriaTableProps, Omit<ComponentPropsWithRef<"tab
     bodyScrollable?: boolean;
 }
 
-const TableRoot = ({ className, size = "md", bodyScrollable, ...props }: TableRootProps) => {
+/**
+ * Sorting cycles through three states per column: the first click sorts one way, the second the
+ * other way, and the third resets the table to the sort it opened with (its default, for example
+ * Updated, newest first). react-aria only flips between the two directions, which left no way back
+ * to the default. The default is the `sortDescriptor` the table was first given, so no caller
+ * passes anything extra. A column that is itself the default just flips, since resetting it would
+ * change nothing.
+ */
+function useSortWithReset(sortDescriptor: SortDescriptor | undefined, onSortChange: ((descriptor: SortDescriptor) => void) | undefined) {
+    const initial = useRef(sortDescriptor);
+    // The direction each column was first sorted in, so its third click can be recognised.
+    const firstDirection = useRef<{ column: SortDescriptor["column"]; direction: SortDescriptor["direction"] } | null>(
+        sortDescriptor ? { column: sortDescriptor.column, direction: sortDescriptor.direction } : null,
+    );
+    if (!onSortChange) return undefined;
+    return (next: SortDescriptor) => {
+        const sameColumn = sortDescriptor?.column === next.column;
+        if (!sameColumn || !firstDirection.current || firstDirection.current.column !== next.column) {
+            firstDirection.current = { column: next.column, direction: next.direction };
+            onSortChange(next);
+            return;
+        }
+        const backToFirst = next.direction === firstDirection.current.direction;
+        const isDefaultColumn = initial.current?.column === next.column;
+        if (backToFirst && !isDefaultColumn && initial.current) {
+            firstDirection.current = { column: initial.current.column, direction: initial.current.direction };
+            onSortChange(initial.current);
+            return;
+        }
+        onSortChange(next);
+    };
+}
+
+const TableRoot = ({ className, size = "md", bodyScrollable, sortDescriptor, onSortChange, ...props }: TableRootProps) => {
     const context = useContext(TableContext);
+    const handleSortChange = useSortWithReset(sortDescriptor, onSortChange);
 
     return (
         <TableContext.Provider value={{ size: context?.size ?? size }}>
             <div className={cx("overflow-x-auto", bodyScrollable && "min-h-0 flex-1 overflow-y-auto")}>
                 <AriaTable
                     className={(state) => cx("font-barlow w-full overflow-x-hidden", typeof className === "function" ? className(state) : className)}
+                    sortDescriptor={sortDescriptor}
+                    onSortChange={handleSortChange}
                     {...props}
                 />
             </div>

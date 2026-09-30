@@ -1,0 +1,31 @@
+# 2026-09-28 - Project detail Option 3 (`/pages/project-detail/option-4`) edit flow rebuilt around the Add Project registration, per direct request (branch `mohan-wips`)
+
+- **Sept 28 2026: project detail Option 3 (`/pages/project-detail/option-4`) edit flow rebuilt around the Add Project registration, per direct request (branch `mohan-wips`).** The inline, per-card edit from earlier the same day is replaced; `editable-section.tsx` is deleted.
+  - **Grounding:** both registration layouts were walked (`/pages/project-registration` and `/option-2`). Option 2's six sections (Project basics, Data owner, Project team, Extent and focus, Method and details, Restrictions) plus one section per restriction kind are the unit of editing here. Their forms (`SectionFields`), rules (`isSectionValid`, `missingFields`) and state shape (`FormState`) are reused unchanged, so every add and remove registration offers (contacts, managers, permits, targeted species, species, locations, concepts, logo) works in edit too.
+  - **Layout: one edit drawer for everything (`option-4/edit-drawer.tsx`).** A wide right-hand panel holding a real `FormPage`, with a top bar naming what is edited and a full-screen toggle. Cancel, Escape or an outside click with unsaved changes asks "Discard your changes?"; Save changes validates with the same "Details missing" alert and inline errors as registration.
+    - A drawer, not inline, because several edits here are too big for a card (the map picker, repeatable managers and permits, species and location pickers, measurement lists), and one container scales to all of them.
+    - Pattern references: Notion side peek, the Airtable expanded record, GOV.UK "check your answers, then change". No Mobbin tool was available.
+  - **Project tab (`project-tab.tsx`)** reads like registration's Review page, grouped by the same three steps. Each card has Edit, which opens the same registration section in the drawer (`project-edit.tsx`).
+    - Project basics also carries the project's Status, which registration does not have.
+    - Ticking a new kind of restriction takes you straight to that restriction's own section.
+    - Each restriction card has Remove, confirmed with "Keep restriction" / "Remove restriction".
+    - An unfinished section shows "Details needed" and an "Add details" button.
+    - The header, breadcrumb and tree root all follow the saved project.
+  - **Records** (`record-form.tsx`, `record-rules.ts`, `record-inspector.tsx`): the inspector is read-only, with Edit, Add inside and Delete.
+    - Edit opens the record's form in the same drawer: name and date, one `FormRow` per metadata section with IDs, type, parent and datum locked, coordinates (locked for restricted species), plus add and remove for observers, measurements (MeasurementOrFact), custom properties and attachments.
+    - Add inside offers only what the hierarchy allows: Project > Site > Visit > sampling event > Occurrence (Individual, Population) or Observation (Non-biotic, Community); an Occurrence takes one Observation of its own type. The new record gets its next ID and opens in the same form with only name, date and, for an occurrence, scientific name required.
+    - Delete is confirmed and says how many records and attachments inside it go too.
+  - **State:** project, records and attachments live in a session store (`edit-store.tsx`); nothing persists past a reload.
+  - **Verified with a headless Playwright pass** (installed in the scratchpad, not the project) as registered-user:
+    - Added a manager; an empty project name was blocked with the "Details missing" alert; Cancel with changes asked first and discarded.
+    - Ticking Locations chained into the Location restrictions drawer; removed Embargo.
+    - Added a Koala occurrence under the quadrat (empty save blocked first); added and removed a measurement; deleted the quadrat (the dialog said "6 records inside it").
+    - As public-user: no Edit, Add or Delete anywhere.
+    - Zero console errors. `tsc`, `eslint` and `npm run check:contracts` are clean.
+    - The Chrome extension tab froze when a script opened a drawer; the same step passed headlessly in 10 ms, so it was treated as a tooling issue.
+  - **Known:**
+    - The date picker shows MM/DD in en-US browsers (pre-existing).
+    - Dev-tool buttons can sit over the drawer's Save button (draggable).
+    - Records cannot be moved to another parent.
+    - Attachments added in the drawer have no real upload.
+  - Not committed.

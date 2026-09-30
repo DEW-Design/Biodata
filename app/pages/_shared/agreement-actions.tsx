@@ -6,7 +6,7 @@ import { cx } from "@/utils/cx";
 import { toast } from "@/components/application/toast/toast";
 
 // Column 2's "Actions" group, folded into the real DSA/DLA shells from /proto/collection-sidebar's
-// own "Actions" baseline (see CONTEXT.md) - Export CSV and Create report, below the status list.
+// own "Actions" baseline (see context/decisions/2026-09-24-05-proto-collection-sidebar-s-actions-group-and-its.md) - Export CSV and Create report, below the status list.
 // Shared between dsa-shell.tsx/dla-shell.tsx since the wrapper/label/button styling and the
 // "Create report" action are identical either way; each shell still supplies its own CSV export
 // (the columns genuinely differ between an agreement and a request).
@@ -34,11 +34,11 @@ export function ActionRow({ icon: Icon, children, onClick }: { icon: typeof Down
   );
 }
 
-function CreateReportButton() {
+function CreateReportButton({ onClick }: { onClick?: () => void }) {
   return (
     <ActionRow
       icon={BarChart01}
-      onClick={() => toast.brand("Reports aren't wired up yet", { description: "Report generation isn't stored in this preview - see CONTEXT.md's Admin IA cross-check." })}
+      onClick={onClick ?? (() => toast.brand("Reports aren't wired up yet", { description: "Reports can't be generated in this preview yet." }))}
     >
       Create report
     </ActionRow>
@@ -55,7 +55,7 @@ function CreateReportButton() {
  * screenshot as inconsistent. The same `gap-1` also makes the Export CSV/Create report rows match
  * the status list's own row-to-row spacing, not just the top gap.
  */
-export function ActionsGroup({ onExportCsv, children, showCreateReport = true, withTopRule = true }: { onExportCsv: () => void; /** Off when the group is the first thing in the column. */ withTopRule?: boolean; /** Extra rows shown first, e.g. the Projects page's "Upload dataset". */ children?: ReactNode; showCreateReport?: boolean }) {
+export function ActionsGroup({ onExportCsv, onCreateReport, children, showCreateReport = true, withTopRule = true }: { onExportCsv: () => void; /** Replaces Create report's default "not wired up" toast (a guest's sign-up invite, for example). */ onCreateReport?: () => void; /** Off when the group is the first thing in the column. */ withTopRule?: boolean; /** Extra rows shown first, e.g. the Projects page's "Upload dataset". */ children?: ReactNode; showCreateReport?: boolean }) {
   return (
     <div className={cx("flex flex-col gap-1", withTopRule && "mt-4 border-t border-secondary pt-4")}>
       <p className="mb-3 text-xs font-semibold tracking-wide text-quaternary uppercase">Actions</p>
@@ -63,7 +63,7 @@ export function ActionsGroup({ onExportCsv, children, showCreateReport = true, w
       <ActionRow icon={Download01} onClick={onExportCsv}>
         Export CSV
       </ActionRow>
-      {showCreateReport && <CreateReportButton />}
+      {showCreateReport && <CreateReportButton onClick={onCreateReport} />}
     </div>
   );
 }

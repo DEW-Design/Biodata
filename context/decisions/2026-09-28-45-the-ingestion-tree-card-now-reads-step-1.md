@@ -1,0 +1,3 @@
+# 2026-09-28 - the ingestion tree card now reads "Step 1: Checking against the data model" (step, then what it is doing) instead of "Checking against the data model · step 1 of 3", per page feedback. A failure reads "Stopped at step 2: Mapping to the project's structure. Nothing was added to this project."
+
+- **Sept 28 2026: the ingestion tree card now reads "Step 1: Checking against the data model" (step, then what it is doing) instead of "Checking against the data model · step 1 of 3", per page feedback. A failure reads "Stopped at step 2: Mapping to the project's structure. Nothing was added to this project."** `tsc`, `eslint --max-warnings=0` clean. Not committed.

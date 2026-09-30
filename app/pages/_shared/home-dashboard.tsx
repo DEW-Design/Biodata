@@ -1,6 +1,6 @@
 "use client";
 
-import type { FC } from "react";
+import type { FC, ReactNode } from "react";
 import { Focusable } from "react-aria-components";
 import Link from "next/link";
 import {
@@ -15,10 +15,10 @@ import {
   DownloadCloud02,
   LifeBuoy01,
   Check,
-  Users01,
   UserCheck01,
   BarChartSquare01,
   Database01,
+  AlertCircle,
 } from "@untitledui/icons";
 import { Button } from "@/components/base/buttons/button";
 import { Tooltip } from "@/components/base/tooltip/tooltip";
@@ -29,8 +29,14 @@ import { FeaturedIcon } from "@/components/foundations/featured-icon/featured-ic
 import { ProgressBarBase } from "@/components/base/progress-indicators/progress-indicators";
 import { BentoCard } from "@/app/pages/_shared/bento-card";
 import { projects } from "@/app/pages/_shared/project-list-content";
+import { projectDetailsPath } from "@/app/pages/_shared/project-routes";
+import { agreementStatusMeta } from "@/app/pages/_shared/agreement-status";
+import { nominationStatusMeta } from "@/app/pages/_shared/nominations/nomination-data";
+import { useDlas } from "@/app/pages/_shared/dla/dla-store";
+import { useNominations } from "@/app/pages/_shared/nominations/nomination-store";
 import { cx } from "@/utils/cx";
 import { useRoleHref } from "@/lib/use-role-href";
+import { FlaggedConceptsHomeQueue } from "@/app/pages/project-detail/flagged-home-queue";
 import { useUserRole } from "@/lib/use-user-role";
 
 // The real Home/BioData Dashboard content - the single source every sidebar shell
@@ -58,7 +64,7 @@ import { useUserRole } from "@/lib/use-user-role";
 // TaskItem's action ("Continue", "Go to X") uses `iconTrailing={ArrowNarrowRight}`, not a literal
 // "→" appended to the label text - Button already supports a trailing icon on every color variant
 // including `link-color`, so the arrow is a real icon like everywhere else, not a text character
-// standing in for one. See CONTEXT.md's "Final check" list.
+// standing in for one. See context/archive/final-check.md, "Final check" list.
 
 // `onDark` - the Sept 16 layout decision brought option-2's gradient greeting banner into this
 // shell as the shared template for "Hi, X" + KPI row (see HomeDashboardContent/
@@ -140,6 +146,9 @@ interface TaskProgressStep {
   // Which of those three a step is drives its own display (see TaskItem below) - not a separate
   // enum to keep in sync with the number.
   percent: number;
+  // A step that stopped and will not finish: its label and bar turn red and it gets an alert icon,
+  // whatever its percent (where it stopped). Optional, so every existing caller is unchanged.
+  failed?: boolean;
 }
 
 interface TaskProgress {
@@ -170,6 +179,8 @@ export function TaskItem({
   actionHref,
   onActionClick,
   progress,
+  iconColor = "brand",
+  footer,
 }: {
   title: string;
   detail: string;
@@ -180,12 +191,16 @@ export function TaskItem({
   actionHref?: string;
   onActionClick?: () => void;
   progress?: TaskProgress;
+  /** The icon colour: "warning" for a task needing attention, "error" for one that failed. */
+  iconColor?: "brand" | "warning" | "error";
+  /** Extra content under the progress, inside the card (for example the reasons a task failed). */
+  footer?: ReactNode;
 }) {
   return (
     <div className="flex flex-col gap-4 rounded-lg border border-secondary p-4">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-start gap-3">
-          <FeaturedIcon icon={icon} color="brand" theme="modern" size="md" />
+          <FeaturedIcon icon={icon} color={iconColor} theme="modern" size="md" />
           <div className="flex flex-col gap-1">
             <div className="flex flex-wrap items-center gap-2">
               <p className="text-base font-medium text-primary">{title}</p>
@@ -208,17 +223,21 @@ export function TaskItem({
       {progress && (
         <div className="grid grid-cols-1 gap-4 border-t border-secondary pt-4 sm:grid-cols-3">
           {progress.steps.map((step) => {
-            const isUpcoming = step.percent === 0;
-            const isCurrent = step.percent > 0 && step.percent < 100;
-            const isDone = step.percent === 100;
+            // Once a step has failed nothing comes "next", so the steps after it are just not started.
+            const anyFailed = progress.steps.some((st) => st.failed);
+            const isFailed = !!step.failed;
+            const isUpcoming = step.percent === 0 && !isFailed;
+            const isCurrent = step.percent > 0 && step.percent < 100 && !isFailed;
+            const isDone = step.percent === 100 && !isFailed;
             return (
               <div key={step.label} className="flex flex-col gap-2">
-                <span className={cx("flex items-center gap-1.5 text-sm", isCurrent ? "font-semibold text-primary" : "text-quaternary")}>
+                <span className={cx("flex items-center gap-1.5 text-sm", isFailed ? "font-semibold text-error-primary" : isCurrent ? "font-semibold text-primary" : "text-quaternary")}>
                   {/* Small tick on the done step - flagged directly by the user as a UX tweak on
                       the "Submitted" step specifically, but keyed off isDone (not the label) so any
                       step that reaches 100% gets the same treatment, not just the first one. */}
                   {isDone && <Check className="size-3.5 shrink-0 text-fg-success-primary" />}
-                  {isUpcoming ? `Next: ${step.label}` : step.label}
+                  {isFailed && <AlertCircle className="size-3.5 shrink-0 text-fg-error-primary" />}
+                  {isUpcoming && !anyFailed ? `Next: ${step.label}` : step.label}
                 </span>
                 {/* Detail always renders, every step - a tooltip-only detail on just the upcoming
                     step (the reference card's own treatment) left that column one row shorter
@@ -234,12 +253,13 @@ export function TaskItem({
                     copy - flagged directly by the user: it was a pattern reference, not a style
                     one, same "extract pattern, not pixels" rule this build already follows for
                     every external reference (Mobbin, Figma, screenshots). */}
-                <ProgressBarBase value={step.percent} />
+                <ProgressBarBase value={step.percent} progressClassName={isFailed ? "bg-fg-error-primary" : undefined} />
               </div>
             );
           })}
         </div>
       )}
+      {footer}
     </div>
   );
 }
@@ -365,7 +385,7 @@ function FeaturedProjectsSection({ roleHref }: { roleHref: (path: string) => str
   return (
     <div className="flex flex-col gap-3">
       <div className="flex items-center justify-between gap-2">
-        <h2 className="text-lg font-medium text-primary">Featured Projects</h2>
+        <h2 className="text-lg font-semibold text-primary">Featured Projects</h2>
         <Button color="link-color" size="sm" href={roleHref("/pages/project-list")} iconTrailing={ArrowNarrowRight}>
           View all projects
         </Button>
@@ -382,7 +402,7 @@ function FeaturedProjectsSection({ roleHref }: { roleHref: (path: string) => str
 function KnowledgeBaseSection() {
   return (
     <div className="flex flex-col gap-3">
-      <h2 className="text-lg font-medium text-primary">Knowledge Base</h2>
+      <h2 className="text-lg font-semibold text-primary">Knowledge Base</h2>
       <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
         {knowledgeBaseItems.map((item) => (
           <KnowledgeBaseCard key={item.title} {...item} />
@@ -404,18 +424,18 @@ function KnowledgeBaseSection() {
 // user access requests, not 3), the same "worst content survives" rule used everywhere else in
 // this build, since an admin's cognitive-overload risk is different from a registered user's.
 //
-// User Management has a real page; Control Vocabulary, Reports and the approvals queue do not yet - each
-// action here is disabled with a "Coming soon" tooltip, same honest-gap convention as
-// DisabledQuickAction above, not a dead link.
-const adminApprovalQueues: { id: string; label: string; count: number; icon: FC<{ className?: string }>; description: string }[] = [
-  { id: "users", label: "User access requests", count: 247, icon: Users01, description: "New accounts awaiting approval before they can sign in." },
-  { id: "dla", label: "DLA requests", count: 12, icon: FileLock01, description: "Data licencing agreements pending admin review." },
-  { id: "nominations", label: "Sensitive species nominations", count: 5, icon: Feather, description: "Nominations awaiting a panel decision." },
-];
+// User Management has a real page, but no access-request queue yet, so that queue stays a "Coming
+// soon" gap with a placeholder count. DLA requests and nominations are built: their queues count
+// the real records waiting for a decision (from the DLA and nomination stores) and link to them.
+type AdminQueue = { id: string; label: string; count: number; icon: FC<{ className?: string }>; description: string; href?: string };
 
-const totalPendingReviews = adminApprovalQueues.reduce((sum, queue) => sum + queue.count, 0);
+const USER_ACCESS_REQUESTS = 247;
 
-function AdminQueueCard({ queue }: { queue: (typeof adminApprovalQueues)[number] }) {
+// Statuses that are waiting on a reviewer.
+const PENDING_DLA = ["submitted", "under_review", "on_hold"] as const;
+const PENDING_NOMINATION = ["submitted", "under_review"] as const;
+
+function AdminQueueCard({ queue }: { queue: AdminQueue }) {
   return (
     <BentoCard className="flex-row items-center justify-between gap-4">
       <div className="flex items-center gap-3">
@@ -428,21 +448,50 @@ function AdminQueueCard({ queue }: { queue: (typeof adminApprovalQueues)[number]
           <p className="text-sm text-tertiary">{queue.description}</p>
         </div>
       </div>
-      <Tooltip title="Coming soon - the approvals queue isn't built yet">
-        <Focusable>
-          <span className="inline-flex shrink-0">
-            <Button color="link-color" size="sm" iconTrailing={ArrowNarrowRight} isDisabled>
-              Review
-            </Button>
-          </span>
-        </Focusable>
-      </Tooltip>
+      {queue.href ? (
+        <Button color="link-color" size="sm" iconTrailing={ArrowNarrowRight} href={queue.href}>
+          Review
+        </Button>
+      ) : (
+        <Tooltip title="Coming soon - the approvals queue isn't built yet">
+          <Focusable>
+            <span className="inline-flex shrink-0">
+              <Button color="link-color" size="sm" iconTrailing={ArrowNarrowRight} isDisabled>
+                Review
+              </Button>
+            </span>
+          </Focusable>
+        </Tooltip>
+      )}
     </BentoCard>
   );
 }
 
 function AdminHomeDashboardContent() {
   const roleHref = useRoleHref();
+  const dlas = useDlas();
+  const nominations = useNominations();
+  const pendingDlas = dlas.filter((d) => (PENDING_DLA as readonly string[]).includes(d.status)).length;
+  const pendingNominations = nominations.filter((n) => (PENDING_NOMINATION as readonly string[]).includes(n.status)).length;
+  const alsoPending: AdminQueue[] = [
+    {
+      id: "dla",
+      label: "DLA requests",
+      count: pendingDlas,
+      icon: FileLock01,
+      description: "Data licencing agreements waiting for a decision.",
+      href: roleHref(`/pages/dla?scope=all&status=${PENDING_DLA.join(",")}`),
+    },
+    {
+      id: "nominations",
+      label: "Sensitive species nominations",
+      count: pendingNominations,
+      icon: Feather,
+      description: "Nominations waiting for a panel decision.",
+      href: roleHref(`/pages/nominations?scope=all&status=${PENDING_NOMINATION.join(",")}`),
+    },
+  ];
+  const totalPendingReviews = USER_ACCESS_REQUESTS + pendingDlas + pendingNominations;
   return (
     <>
       {/* Same gradient banner template as HomeDashboardContent's - see that component's own
@@ -451,21 +500,21 @@ function AdminHomeDashboardContent() {
         <div className="flex flex-col gap-8 rounded-2xl bg-gradient-to-b from-brand-900 via-brand-800 via-[63.942%] to-brand-700 p-6">
           <div className="flex flex-col gap-1">
             {/* "Jane" - the sanctioned placeholder persona for the biodata-admin role, parallel to
-                "Olivia Wyatt" for registered-user (see CONTEXT.md's "Placeholder person convention") -
+                "Olivia Wyatt" for registered-user (see context/decisions/2026-09-00-avatar-build-known-gaps.md, "Placeholder person convention") -
                 never the real current user's name. */}
-            <h1 className="text-2xl font-medium text-white">Hi, Jane</h1>
+            <h1 className="text-2xl font-semibold text-white">Hi, Jane</h1>
             <p className="text-md text-white">Platform activity at a glance</p>
           </div>
           <div className="flex flex-wrap items-start gap-x-6 gap-y-4">
             <KpiStat value="3,482" label="Registered users" note="128 active projects" onDark />
-            <KpiStat value="340" label="Datasets this month" note="12 DLA requests pending" onDark />
+            <KpiStat value="340" label="Datasets this month" note={`${pendingDlas} DLA ${pendingDlas === 1 ? "request" : "requests"} pending`} onDark />
             <KpiStat value={totalPendingReviews.toLocaleString()} label="Pending reviews" note="Across users, DLA, nominations" last onDark />
           </div>
         </div>
       </div>
 
       <div className="flex flex-col gap-3 px-6 pb-6">
-        <h2 className="text-lg font-medium text-primary">Quick actions</h2>
+        <h2 className="text-lg font-semibold text-primary">Quick actions</h2>
         <div className="flex flex-wrap items-center gap-2">
           <QuickAction icon={UserCheck01} label="User Management" href={roleHref("/pages/user-management")} />
           <DisabledQuickAction icon={Database01} label="Control Vocabulary" note="Coming soon - controlled vocabulary management isn't built yet" />
@@ -478,7 +527,7 @@ function AdminHomeDashboardContent() {
           <p className="text-sm font-medium text-brand-secondary">Needs your review</p>
           <div className="flex flex-wrap items-end justify-between gap-4">
             <div className="flex flex-col gap-1">
-              <p className="text-4xl font-medium text-primary tabular-nums">{adminApprovalQueues[0].count.toLocaleString()}</p>
+              <p className="text-4xl font-medium text-primary tabular-nums">{USER_ACCESS_REQUESTS.toLocaleString()}</p>
               <p className="text-base text-secondary">User access requests awaiting approval</p>
             </div>
             <Tooltip title="Coming soon - the approvals queue isn't built yet">
@@ -493,13 +542,14 @@ function AdminHomeDashboardContent() {
           </div>
         </div>
         <div className="flex flex-col gap-3">
-          <h2 className="text-lg font-medium text-primary">Also pending</h2>
+          <h2 className="text-lg font-semibold text-primary">Also pending</h2>
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-            {adminApprovalQueues.slice(1).map((queue) => (
+            {alsoPending.map((queue) => (
               <AdminQueueCard key={queue.id} queue={queue} />
             ))}
           </div>
         </div>
+        <FlaggedConceptsHomeQueue />
       </div>
     </>
   );
@@ -520,32 +570,35 @@ export const dashboardTasks: {
   progress?: TaskProgress;
 }[] = [
   {
-    title: "DLA request - Coorong Wetlands Bird Count",
-    detail: "Submitted 5 days ago, awaiting DEW review.",
-    status: "Awaiting review",
-    statusColor: "gray",
+    // Olivia's real request (DLA-2026-00510 in dla-data.ts), with its real status: approved, and
+    // active from its start date. The label and colour come from the shared status map.
+    title: "DLA request - Naracoorte Caves National Park",
+    detail: "Approved. Becomes active on 1 Dec 2026.",
+    status: agreementStatusMeta.approved.label,
+    statusColor: agreementStatusMeta.approved.badgeColor,
     // Same icon as the "Request new DLA" quick action above - one icon per concept, not a
     // different one depending on where that concept shows up on the page.
     icon: FileLock01,
-    // Placeholder 3-step flow, not the real DLA review process - see TaskProgress's own comment.
+    actionLabel: "View request",
+    actionHref: "/pages/dla/DLA-2026-00510",
     progress: {
       steps: [
-        { label: "Submitted", detail: "5 days ago", percent: 100 },
-        { label: "DEW is currently reviewing", detail: "Typically takes up to 10 business days.", percent: 55 },
-        { label: "Outcome", detail: "You'll be notified by email once a decision is made.", percent: 0 },
+        { label: "Submitted", detail: "5 Sep 2026", percent: 100 },
+        { label: "Approved by DEW", detail: "23 Sep 2026", percent: 100 },
+        { label: "Active", detail: "From 1 Dec 2026, until 30 Nov 2028.", percent: 0 },
       ],
     },
   },
   {
     title: "Sensitive species nomination - Southern Bell Frog",
     detail: "Submitted 1 week ago, under review by the sensitive species panel.",
-    status: "Under review",
-    // blue, not gray - a status actively being worked (a panel is looking at it right now) reads
-    // as visually distinct from "Awaiting review" (still queued, nothing happening yet), so the
-    // list is scannable by urgency/stage at a glance. Ported from dashboard/option-2's copy of
-    // this same task list, which had this distinction and the old option-1 dashboard's didn't.
-    statusColor: "blue",
+    // NSS-2026-00001's real status, label and colour from the shared nomination status map, so
+    // Home and the nomination pages cannot disagree.
+    status: nominationStatusMeta.under_review.label,
+    statusColor: nominationStatusMeta.under_review.badgeColor,
     icon: Feather,
+    actionLabel: "View nomination",
+    actionHref: "/pages/nominations/NSS-2026-00001",
     progress: {
       steps: [
         { label: "Submitted", detail: "1 week ago", percent: 100 },
@@ -561,7 +614,8 @@ export const dashboardTasks: {
     statusColor: "gray",
     icon: Folder,
     actionLabel: "Continue",
-    actionHref: "/pages/project-detail",
+    // This project's own page (not Adelaide Hills'), from the shared route helper.
+    actionHref: projectDetailsPath("flinders"),
     // No progress data - this task renders via ContinueStrip, not TaskItem, so there's no tracker
     // to show it in.
   },
@@ -585,12 +639,13 @@ export function HomeDashboardContent() {
     return <AdminHomeDashboardContent />;
   }
 
-  // The one task with somewhere real to go gets pulled into its own ContinueStrip above; the
+  // The task the user can continue gets pulled into its own ContinueStrip above; the
   // Needs-your-attention list below shows the rest, so it isn't stated twice. The icon rail's own
   // notification dot (and project-detail's sidebar copy of it) still badges off the full
   // `dashboardTasks.length` (3) - that's a different, correctly-scoped question ("how many things
   // need attention across the app"), not this list's own "how many rows am I showing" count.
-  const continueTask = dashboardTasks.find((task) => task.actionHref);
+  // Only something the user can pick up and continue (a draft), not a link to something they are waiting on.
+  const continueTask = dashboardTasks.find((task) => task.actionHref && task.actionLabel === "Continue");
   const otherTasks = dashboardTasks.filter((task) => task !== continueTask);
 
   // Filter tabs on top of the flat list, ported from dashboard/option-2's own Needs-your-attention
@@ -611,7 +666,7 @@ export function HomeDashboardContent() {
       <div className="p-6">
         <div className="flex flex-col gap-8 rounded-2xl bg-gradient-to-b from-brand-900 via-brand-800 via-[63.942%] to-brand-700 p-6">
           <div className="flex flex-col gap-1">
-            <h1 className="text-2xl font-medium text-white">Hi, Olivia</h1>
+            <h1 className="text-2xl font-semibold text-white">Hi, Olivia</h1>
             <p className="text-md text-white">Your activity at a glance</p>
           </div>
           <div className="flex flex-wrap items-start gap-x-6 gap-y-4">
@@ -626,11 +681,11 @@ export function HomeDashboardContent() {
           split dashboard/option-2 uses (a gradient card for identity/stats, a plain section
           underneath for actions). ── */}
       <div className="flex flex-col gap-3 px-6 pb-6">
-        <h2 className="text-lg font-medium text-primary">Quick actions</h2>
+        <h2 className="text-lg font-semibold text-primary">Quick actions</h2>
         <div className="flex flex-wrap items-center gap-2">
           <QuickAction icon={Folder} label="Manage projects & datasets" href={roleHref("/pages/project-list")} />
-          <DisabledQuickAction icon={FileLock01} label="Request new DLA" note="Coming soon - the DLA request flow isn't built yet" />
-          <DisabledQuickAction icon={Feather} label="Nominate Sensitive Species" note="Coming soon - the nomination flow isn't built yet" />
+          <QuickAction icon={FileLock01} label="Request new DLA" href={roleHref("/pages/dla/new")} />
+          <QuickAction icon={Feather} label="Nominate Sensitive Species" href={roleHref("/pages/nominations/new")} />
         </div>
       </div>
 
@@ -640,7 +695,7 @@ export function HomeDashboardContent() {
         )}
         <div className="flex flex-col gap-3">
           <div className="flex items-center gap-2">
-            <h2 className="text-lg font-medium text-primary">Needs your attention</h2>
+            <h2 className="text-lg font-semibold text-primary">Needs your attention</h2>
             {/* CountBadge, not Badge - a padding-tuned Badge still rendered as an oval, not a
                 circle. Flagged directly by the user: bring in the true-circle counter pattern
                 already used elsewhere (the icon rail's notification dot) instead of another

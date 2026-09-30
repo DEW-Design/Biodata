@@ -1,7 +1,7 @@
 "use client";
 
 /**
- * Custom component - not yet in components/base|application/**. See CONTEXT.md's "Custom
+ * Custom component - not yet in components/base|application/**. See .claude/rules/ref-ingest.md, "Custom
  * components" section: this lives here until a stakeholder decides it belongs in the design
  * system proper, at which point it moves to components/base or components/application (and this
  * directory entry goes away).

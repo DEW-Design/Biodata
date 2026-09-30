@@ -18,7 +18,7 @@ const palettes: { name: string; description: string; swatches: Swatch[] }[] = [
       { step: "700", hex: "#585451" },
       { step: "800", hex: "#423E3B" },
       { step: "900", hex: "#2E2925" },
-      { step: "950", hex: "#0C111D" },
+      { step: "950", hex: "#1A1715" },
     ],
   },
   {

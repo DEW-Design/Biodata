@@ -7,7 +7,7 @@ import { useUserRole } from "@/lib/use-user-role";
 import type { NavNode } from "@/lib/registered-user-nav";
 import { cx } from "@/utils/cx";
 
-// Column 1 of the shell: THE primary icon rail (see CONTEXT.md, "Final check": the shell contract).
+// Column 1 of the shell: THE primary icon rail (see context/archive/final-check.md, "Final check": the shell contract).
 // Every real screen renders this, never its own `<nav aria-label="Primary">`. Which sections it
 // lists comes from the persona's nav tree (`navForRole`); what a click does is the screen's call
 // (`onSelectSection`), since a section either navigates to its own page or shows in place.

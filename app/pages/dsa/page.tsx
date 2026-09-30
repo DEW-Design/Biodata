@@ -8,12 +8,12 @@ import { dsaStatusOrder, type DsaStatus } from "@/app/pages/_shared/dsa/dsa-data
 import { DsaShell } from "@/app/pages/_shared/dsa/dsa-shell";
 
 // /pages/dsa - the Data Sharing Agreement (DSA) list, step one of the list -> deep dive pattern
-// (CONTEXT.md, "List -> deep dive"). Column 2 is the My agreements / All agreements switcher (the
+// (.claude/rules/ref-shell.md, "List -> deep dive"). Column 2 is the My agreements / All agreements switcher (the
 // scope, `?scope=`); main is one table of every status with a status filter and a Status column
 // (`?status=` seeds the filter, so banner links still land on a status). A row opens
 // /pages/dsa/<id>. Built from the Master Flows lo-fi (Figma yzQY87GXoyGGGPJDnh1hmi, node 3:15901)
 // fitted into the shell; the My/All scope and all-statuses table were rolled in from
-// /proto/collection-sidebar's "My Items" - see the DSA entries in CONTEXT.md.
+// /proto/collection-sidebar's "My Items" - see the DSA entries in context/decisions/2026-09-25-18-my-requests-all-requests-and-my-agreements-all.md.
 export default function DsaPage() {
   return (
     <Suspense fallback={null}>

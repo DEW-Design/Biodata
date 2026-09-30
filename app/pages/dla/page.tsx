@@ -9,12 +9,12 @@ import { DlaShell } from "@/app/pages/_shared/dla/dla-shell";
 import { useFeatureAccess } from "@/lib/use-feature-access";
 
 // /pages/dla - the Data Licencing Agreement (DLA) list, the same "list -> deep dive" pattern as
-// Projects/DSA (CONTEXT.md, "List -> deep dive"). Column 2 is the My requests / All requests
+// Projects/DSA (.claude/rules/ref-shell.md, "List -> deep dive"). Column 2 is the My requests / All requests
 // switcher (the scope, `?scope=`; a reviewer opens on All, everyone else on My); main is one table
 // of every status with a status filter and a Status column (`?status=` seeds the filter). A row opens
 // /pages/dla/<id>. Built from the Master Flows wireframe (Figma YMproGZfrFB5jUqPHPxMhk, node
 // 33:43259); the My/All scope and all-statuses table were rolled in from /proto/collection-sidebar's
-// "My Items" - see the DLA entries in CONTEXT.md.
+// "My Items" - see the DLA entries in context/decisions/2026-09-25-18-my-requests-all-requests-and-my-agreements-all.md.
 export default function DlaPage() {
   return (
     <Suspense fallback={null}>

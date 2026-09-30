@@ -1,0 +1,21 @@
+# 2026-09-28 - form actions moved to the footer and the header has only a close button, per the designer's annotated screenshot ("something for you to think about. for forms in general") and approval ("Yes, 88px toast lift everywhere").
+
+- **Sept 28 2026: form actions moved to the footer and the header has only a close button, per the designer's annotated screenshot ("something for you to think about. for forms in general") and approval ("Yes, 88px toast lift everywhere").** This replaces the "Save draft plus a '...' menu with Cancel" header from earlier today: hiding the way out of a form in a menu was wrong.
+  - **`FormPage` (`app/pages/_shared/form-page.tsx`), so every form changes at once:**
+    - Covers nominations, DLA, DSA, Add Project option 2, the User Management forms and the `/patterns/forms` example.
+    - **Header:** the eyebrow, title and subtitle, plus one close button (X, the real `CloseButton`, 40px, labelled "Close form") at the top right. It still asks before discarding unsaved changes.
+    - **Footer:** Back a step on the left, hidden on the first step. On the right, Save draft (secondary) then Continue or the final action. Editing a live record has no Save draft.
+    - Add Project option 1 keeps its own header, as agreed.
+  - **Toasts lifted 88px everywhere:**
+    - `TOAST_OFFSET` in `components/application/toast/toast.tsx`: bottom 88px, right 24px, and the same 88px bottom on mobile.
+    - A toast never covers a form footer (73px tall), including the "Draft saved" toast raised by the Save draft button.
+  - **Removed:** `RecordActionBar`'s `keepMenu` prop, added earlier today, now unused.
+  - **Docs updated:** CONTRACTS.md §4.1 items 1, 5 and 6 (the header MUST NOT hold any other action), `/patterns/forms` and the Toast docs page.
+  - **Verified live at 1708x1024:**
+    - The nomination, DLA, DSA and Add Project option 2 forms each show the X at the top right and Save draft beside Continue in the footer, with no "..." and no Cancel.
+    - Editing submitted DLA-2026-00515 shows the X and no Save draft.
+    - The X on an untouched form returns to the list. On a DSA form with a typed organisation it opens the discard confirmation.
+    - A toast's bottom edge sits at 936px and the form footer starts at about 956px, so they don't meet.
+    - Zero console errors. `tsc`, `eslint --max-warnings=0` and `npm run check:contracts` are clean.
+  - **Still open:** leaving through the rail or the breadcrumb doesn't ask before discarding. The X is now the only visible exit, so this gap is more noticeable. Making any way out of a form with unsaved changes ask first, in the shared shell, is the recommended follow-up.
+  - Not committed.

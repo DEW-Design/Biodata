@@ -1,0 +1,23 @@
+# 2026-09-28 - Survey records tab on project detail Option 3 (current version): filter instead of tabs, accordions with Edit, no Darwin Core terms, full screen, per direct instruction (branch `mohan-wips`)
+
+- **Sept 28 2026: Survey records tab on project detail Option 3 (current version): filter instead of tabs, accordions with Edit, no Darwin Core terms, full screen, per direct instruction (branch `mohan-wips`).**
+  - **Filter, not tabs.** The All records / Events / Occurrences / Observations segmented tabs are replaced by the same `ListFilterButton` the Projects, DSA and DLA lists use, with one two-level "Record type" section:
+    - Events: Site, Visit, Transect, Quadrat, Block, Ramble, Trap, Custom event.
+    - Occurrences: Individual, Population.
+    - Observations: Individual, Population, Non-biotic, Community.
+    - `ListFilterButton` gained optional nested `children` on `FilterOption` (additive; every existing list is unchanged). A parent's checkbox selects or clears all its types and shows the mixed state when only some are on; only the type ids (`kind:type`) are stored.
+    - The Survey at a glance counts now open Survey records with that kind's types ticked (`filterForKind`).
+  - **Accordions are back** in the record inspector, as in the first version (`Accordion variant="compact"`, every section open to start). Each section's header has its own Edit beside the toggle.
+    - This is a new additive, optional `action` on `AccordionItemType`, rendered as a sibling of the header button (no nested buttons), in the compact and boxed variants. Items without it render as before. The Accordion docs API table now lists `action` and the `compact` variant.
+  - **Removed:** the "Metadata" heading with its "Darwin Core terms" toggle, and every `dwc:` term under labels and in the measurement note.
+  - **Full screen:** a full-screen button at the top of the inspector, and a double-click on a tree item or table row, open that record's details in a full-window view (`record-fullscreen.tsx`) with a wide centred column. "Exit full screen", the close button and Escape return to the list. Edit from full screen opens the drawer on top.
+  - **Bugs found and fixed while testing:**
+    - A double-click on a table row opened the project summary because the lookup matched a cell's `data-key`. It now looks for the row.
+    - The section accordion and the edit drawer shared a React key.
+  - **Verified headlessly** (registered-user):
+    - The tabs are gone and no Darwin Core text is left; 5 section headers each have Edit.
+    - Ticking Occurrences shows "Filter (2)" and exactly the 7 occurrences; Population only shows 4 rows.
+    - A double-click opens Superb Fairywren full screen; the inspector's button opens full screen too, and Edit from full screen opens the drawer scrolled to that section.
+    - Zero console errors; `tsc`, `eslint` and `npm run check:contracts` are clean.
+  - **Known:** the full-screen close button sits under the dev toolbar's floating button (Exit full screen and Escape both work). The component change to `Accordion` is additive and will be listed in the next audit.
+  - Not committed.

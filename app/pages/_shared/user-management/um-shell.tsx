@@ -13,7 +13,7 @@ import { FormSidebarSlotContext } from "@/app/pages/_shared/form-section-list";
 import { MobileNavTrigger } from "@/app/pages/_shared/mobile-nav";
 import { sectionIcons } from "@/app/pages/_shared/nav-icons";
 import { PrimaryRail } from "@/app/pages/_shared/primary-rail";
-import { RoleSwitcher } from "@/app/pages/_shared/role-switcher";
+import { PrototypeTools } from "@/app/_prototype-tools/prototype-tools";
 import { SidebarFooterLinks } from "@/app/pages/_shared/sidebar-footer-links";
 import { accessStatusMeta, fullName, organisationLabel, userStatusMeta, userType } from "@/app/pages/_shared/user-management/um-data";
 import { usePermissions, useRoles, useUsers } from "@/app/pages/_shared/user-management/um-store";
@@ -47,7 +47,7 @@ function SectionPlaceholder({ node }: { node: NavNode }) {
   const roleHref = useRoleHref();
   return (
     <div className="flex flex-1 flex-col items-center justify-center gap-3 p-12 text-center">
-      <h1 className="text-lg font-medium text-primary">{node.label}</h1>
+      <h1 className="text-lg font-semibold text-primary">{node.label}</h1>
       <p className="max-w-sm text-sm text-balance text-tertiary">
         {relatedLink ? "This section has its own page - it isn't embedded here." : "This section's content hasn't been scoped yet - only its place in the navigation is decided so far."}
       </p>
@@ -143,7 +143,7 @@ export function UmShell({
   else if (!canManage)
     main = (
       <div className="flex flex-1 flex-col items-center justify-center gap-3 p-12 text-center">
-        <h1 className="text-lg font-medium text-primary">{USER_MANAGEMENT_SECTION_LABEL}</h1>
+        <h1 className="text-lg font-semibold text-primary">{USER_MANAGEMENT_SECTION_LABEL}</h1>
         <p className="max-w-sm text-sm text-balance text-tertiary">Users, roles and permissions are managed by BioData Admins. Your account doesn&apos;t have access to this section.</p>
         <Button color="link-color" size="sm" href={roleHref("/pages/dashboard")} iconTrailing={ArrowNarrowRight}>
           Go to Home
@@ -153,7 +153,7 @@ export function UmShell({
 
   return (
     <div className="font-barlow flex h-screen flex-col overflow-hidden">
-      <RoleSwitcher />
+      <PrototypeTools />
       <AppHeader
         mobileNav={
           <MobileNavTrigger

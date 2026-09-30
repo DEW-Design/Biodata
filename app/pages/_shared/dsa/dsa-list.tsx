@@ -4,12 +4,12 @@ import { useState, type ReactNode } from "react";
 import type { SortDescriptor } from "react-aria-components";
 import { CURRENT_USER_NAME, sortRows, type AgreementScope, type SortValue } from "@/app/pages/_shared/agreement-scope";
 import { dsaStatusOrder } from "@/app/pages/_shared/dsa/dsa-data";
+import { ToolbarSearch } from "@/app/pages/_shared/toolbar-search";
 
-import { Clock, Edit05, Plus, SearchMd } from "@untitledui/icons";
+import { Clock, Edit05, Plus } from "@untitledui/icons";
 import { Avatar } from "@/components/base/avatar/avatar";
 import { Badge, CountBadge } from "@/components/base/badges/badges";
 import { Button } from "@/components/base/buttons/button";
-import { Input } from "@/components/base/input/input";
 import { SectionHeader } from "@/components/application/section-headers/section-headers";
 import { Table, TableCard } from "@/components/application/table/table";
 import { nearestToExpiry } from "@/app/pages/_shared/agreement-status";
@@ -53,7 +53,7 @@ const initials = (first: string, last: string) => `${first[0] ?? ""}${last[0] ??
 
 /**
  * Column-3 banner (via `DsaListContent`'s own `banner` prop) - folded in directly from
- * /proto/collection-sidebar's own "Actions" baseline (see CONTEXT.md). Real `TaskItem`
+ * /proto/collection-sidebar's own "Actions" baseline (see context/decisions/2026-09-24-05-proto-collection-sidebar-s-actions-group-and-its.md). Real `TaskItem`
  * (`app/pages/_shared/home-dashboard.tsx`), not `AlertFullWidth` - a computed fact about other
  * records pointing elsewhere is a `TaskItem`, per that component's own established precedent.
  * Renders nothing when there's nothing to say.
@@ -145,19 +145,15 @@ export function DsaListContent({
       ) : (
         <div className="flex min-h-0 flex-1 flex-col gap-4 p-6">
           {banner}
-          <div className="w-full max-w-sm shrink-0">
-            <Input
-              aria-label="Search agreements"
-              size="sm"
-              icon={SearchMd}
-              placeholder="Search ID, organisation or requester"
-              value={search}
-              onChange={(value) => {
-                setSearch(value);
-                setPage(1);
-              }}
-            />
-          </div>
+          <ToolbarSearch
+            label="Search agreements"
+            placeholder="Search ID, organisation or requester"
+            value={search}
+            onChange={(value) => {
+              setSearch(value);
+              setPage(1);
+            }}
+          />
           {rows.length === 0 ? (
             <p className="py-6 text-sm text-tertiary">No {dsaStatusMeta[status].label.toLowerCase()} agreements match your search.</p>
           ) : (
@@ -309,19 +305,15 @@ export function DsaAllList({ scope, initialStatuses = [], banner }: { scope: Agr
       <div className="flex min-h-0 flex-1 flex-col gap-4 p-6">
         {banner}
         <div className="flex shrink-0 flex-wrap items-center gap-3">
-          <div className="w-full max-w-sm shrink-0">
-            <Input
-              aria-label="Search agreements"
-              size="sm"
-              icon={SearchMd}
-              placeholder="Search ID, organisation or requester"
-              value={search}
-              onChange={(v) => {
-                setSearch(v);
-                setPage(1);
-              }}
-            />
-          </div>
+          <ToolbarSearch
+            label="Search agreements"
+            placeholder="Search ID, organisation or requester"
+            value={search}
+            onChange={(v) => {
+              setSearch(v);
+              setPage(1);
+            }}
+          />
           <div>
             <ListFilterButton
               sections={filterSections}

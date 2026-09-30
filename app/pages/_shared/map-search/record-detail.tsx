@@ -3,14 +3,18 @@
 import type { Key, ReactNode } from "react";
 import { useMemo, useState } from "react";
 import dynamic from "next/dynamic";
-import { Focusable } from "react-aria-components";
-import { ChevronSelectorVertical } from "@untitledui/icons";
+import { ChevronSelectorVertical, Lock01 } from "@untitledui/icons";
 import { Accordion, type AccordionItemType } from "@/components/base/accordion/accordion";
 import { Avatar } from "@/components/base/avatar/avatar";
 import { BadgeWithDot } from "@/components/base/badges/badges";
 import { Button } from "@/components/base/buttons/button";
 import { Tooltip, TooltipTrigger } from "@/components/base/tooltip/tooltip";
 import { useRoleHref } from "@/lib/use-role-href";
+import { useUserRole } from "@/lib/use-user-role";
+import { obfuscateCoordinate } from "./geo";
+import { projectDetailsPath, projectRecordPath } from "@/app/pages/_shared/project-routes";
+import { generalisedKm } from "./record-access";
+import type { UserRole } from "@/lib/user-role";
 import { SidePanel } from "./side-panel";
 import { LocationDetailsTable } from "@/app/pages/_shared/location-details-table";
 import {
@@ -21,7 +25,9 @@ import {
   type SearchEvent,
   type SearchObservation,
   type SearchOccurrence,
+  type SpeciesGroup,
 } from "./search-data";
+import { SPECIES_GROUP_COLOR } from "./species-group-icons";
 
 // The record-detail sidebar shown when a user clicks a Project/Event/Occurrence/Observation row
 // on the map search results page - built directly from the Figma "Details Container" frames
@@ -51,7 +57,7 @@ import {
 // multi-column stat/measurement grids (Occurrence's "Measurements" table, Observation
 // Community's "Overstorey Measurements" reading pairs) are flattened into plain label rows rather
 // than reproduced as exact multi-column tables - a deliberate simplification given none of this
-// build's data ever populates them, logged in CONTEXT.md rather than silently done.
+// build's data ever populates them, logged in context/decisions/2026-09-16-01-layout-decision-the-sidebar-icon-rail-contextual-sidebar.md rather than silently done.
 
 const LocationMap = dynamic(() => import("./sa-map"), {
   ssr: false,
@@ -73,7 +79,7 @@ function recordKey(record: DetailRecord): string {
   return `observation-${record.observation.id}`;
 }
 
-function recordTitle(record: DetailRecord): string {
+export function recordTitle(record: DetailRecord): string {
   if (record.kind === "event") return record.event.name;
   if (record.kind === "occurrence") return record.occurrence.commonName;
   return record.observation.commonName;
@@ -184,10 +190,77 @@ function ObserversSection({ names = [] }: { names?: (string | undefined)[] }) {
   return <FieldStack fields={[0, 1, 2].map((i) => ({ label: `Observer ${i + 1}`, value: names[i] ?? DASH }))} />;
 }
 
+/** The map preview for a restricted (Level 2) record: a soft, blurred area around the
+ *  generalised position, never a pin on the real one. The fit is steered by a hidden circle a
+ *  little larger than the area so the whole blur is in view. */
+function RestrictedLocationMapPreview({ lat, lon, radiusKm, color }: { lat: number; lon: number; radiusKm: number; color?: string }) {
+  return (
+    <div className="h-48 w-full overflow-hidden rounded-lg border border-secondary">
+      <LocationMap
+        boundaries={[{ id: "record-area", kind: "circle", center: [lat, lon], radiusKm: radiusKm * 2 }]}
+        showBoundaries={false}
+        markers={[{ id: "record-area", position: [lat, lon], label: `Within about ${radiusKm} km of here`, fuzzyRadiusKm: radiusKm, color }]}
+        onBoundaryAdd={() => {}}
+        activeDrawTool={null}
+        onDrawToolChange={() => {}}
+        className="size-full"
+      />
+    </div>
+  );
+}
+
+/** "Request access" for a restricted location: a signed-in person requests a Data Licencing
+ *  Agreement, a guest is invited to sign up first (a guest has no DLA of their own to request). */
+function RequestAccessButton() {
+  const role = useUserRole();
+  const roleHref = useRoleHref();
+  const href = role === "public-user" ? "/pages/auth/signup" : roleHref("/pages/dla/new");
+  return (
+    <Button color="secondary" size="sm" href={href}>
+      {role === "public-user" ? "Sign up to request access" : "Request access"}
+    </Button>
+  );
+}
+
+/** A restricted record's coordinates: the generalised values only (the real ones never reach the
+ *  page), blurred behind a padlock with a way to request access. */
+function RestrictedLocationDetails({ lat, lon, radiusKm }: { lat: number; lon: number; radiusKm: number }) {
+  return (
+    <div className="relative overflow-hidden rounded-lg">
+      <div aria-hidden className="pointer-events-none blur-[5px] select-none">
+        <LocationDetailsTable lat={lat} lon={lon} />
+      </div>
+      <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 p-4 text-center">
+        <span className="flex size-8 items-center justify-center rounded-full bg-primary shadow-xs ring-1 ring-secondary">
+          <Lock01 className="size-4 text-fg-quaternary" />
+        </span>
+        <p className="text-sm font-medium text-balance text-primary">Location restricted</p>
+        <p className="max-w-xs text-xs text-balance text-tertiary">
+          This is a sensitive species, so its location is shown only to within about {radiusKm} km.
+        </p>
+        <RequestAccessButton />
+      </div>
+    </div>
+  );
+}
+
 /** Every record type's Location Information - the map, then the shared Location Details
  *  coordinate table (the same format everywhere: Projects, Events, Occurrences, Observations),
- *  then the remaining location fields. */
-function LocationInformationSection({ lat, lon }: { lat: number; lon: number }) {
+ *  then the remaining location fields. A restricted (Level 2) record shows a blurred area and
+ *  blurred, generalised coordinates instead (`restrictedKm`). */
+function LocationInformationSection({ lat, lon, restrictedKm, group }: { lat: number; lon: number; restrictedKm?: number | null; group?: SpeciesGroup }) {
+  if (restrictedKm) {
+    const area = obfuscateCoordinate(lat, lon, restrictedKm);
+    return (
+      <div className="flex flex-col gap-4">
+        <RestrictedLocationMapPreview lat={area.lat} lon={area.lon} radiusKm={restrictedKm} color={group ? SPECIES_GROUP_COLOR[group] : undefined} />
+        <Field label="Location Details" value={<RestrictedLocationDetails lat={area.lat} lon={area.lon} radiusKm={restrictedKm} />} />
+        <PlaceholderFields
+          labels={["IBRA Region", "IBRA Sub Region", "Location Method", "Datum", "Reliability", "Sample Site Dimensions", "Location Comment"]}
+        />
+      </div>
+    );
+  }
   return (
     <div className="flex flex-col gap-4">
       <LocationMapPreview lat={lat} lon={lon} />
@@ -431,7 +504,7 @@ function VoucherSection() {
   );
 }
 
-function buildOccurrenceSections(o: SearchOccurrence): AccordionItemType[] {
+function buildOccurrenceSections(o: SearchOccurrence, role: UserRole): AccordionItemType[] {
   const sections: AccordionItemType[] = [
     { id: "details", title: "Occurrence Details", content: <FieldStack fields={occurrenceDetailsFields(o)} /> },
     { id: "temporal", title: "Temporal Details", content: <TemporalDetailsSection startDate={o.date} /> },
@@ -440,7 +513,7 @@ function buildOccurrenceSections(o: SearchOccurrence): AccordionItemType[] {
   if (o.type === "Individual") {
     sections.push({ id: "voucher", title: "Voucher", content: <VoucherSection /> });
   }
-  sections.push({ id: "location", title: "Location Information", content: <LocationInformationSection lat={o.lat} lon={o.lon} /> });
+  sections.push({ id: "location", title: "Location Information", content: <LocationInformationSection lat={o.lat} lon={o.lon} restrictedKm={generalisedKm(o, role)} group={o.group} /> });
   sections.push({ id: "custom", title: "Custom Property", content: <CustomPropertySection /> });
   return sections;
 }
@@ -531,7 +604,7 @@ function speciesFieldsFor(type: OccurrenceType): string[] | null {
   return null;
 }
 
-function buildObservationSections(o: SearchObservation): AccordionItemType[] {
+function buildObservationSections(o: SearchObservation, role: UserRole): AccordionItemType[] {
   const sections: AccordionItemType[] = [{ id: "details", title: "Observation Details", content: <FieldStack fields={observationDetailsFields(o)} /> }];
 
   const speciesFields = speciesFieldsFor(o.type);
@@ -627,16 +700,20 @@ function buildObservationSections(o: SearchObservation): AccordionItemType[] {
   sections.push({
     id: "location",
     title: "Location Information",
-    content: <LocationInformationSection lat={o.lat} lon={o.lon} />,
+    content: <LocationInformationSection lat={o.lat} lon={o.lon} restrictedKm={generalisedKm(o, role)} group={o.group} />,
   });
   sections.push({ id: "custom", title: "Custom Property", content: <CustomPropertySection /> });
   return sections;
 }
 
-function buildSections(record: DetailRecord): AccordionItemType[] {
+/** Every section for a record - shared by the sidebar below (Explore option 1) and the record's own
+ *  page under its project (ProjectRecordView, one tab per section), so the two can never show a
+ *  record differently. `role` decides
+ *  whether a restricted location is shown as recorded or generalised (record-access.ts). */
+export function buildSections(record: DetailRecord, role: UserRole): AccordionItemType[] {
   if (record.kind === "event") return buildEventSections(record.event);
-  if (record.kind === "occurrence") return buildOccurrenceSections(record.occurrence);
-  return buildObservationSections(record.observation);
+  if (record.kind === "occurrence") return buildOccurrenceSections(record.occurrence, role);
+  return buildObservationSections(record.observation, role);
 }
 
 // ── Common "which Project does this belong to" header, shown at the top of every record type's
@@ -644,7 +721,7 @@ function buildSections(record: DetailRecord): AccordionItemType[] {
 
 /** The root Project this record ultimately belongs to - itself, when the record already is a root
  *  Project. */
-function projectFor(record: DetailRecord): SearchEvent | undefined {
+export function projectFor(record: DetailRecord): SearchEvent | undefined {
   if (record.kind === "event") return rootProjectOfEvent(record.event);
   const parentEventId = record.kind === "occurrence" ? record.occurrence.parentEventId : record.observation.parentEventId;
   return rootProjectForParentEventId(parentEventId);
@@ -668,12 +745,12 @@ function ProjectSummaryHeader({ project }: { project?: SearchEvent }) {
     <div className="mb-6 flex flex-col gap-5 border-b border-secondary pb-6">
       <div className="flex flex-col gap-2">
         <p className="text-xs font-semibold tracking-wide text-quaternary uppercase">Project</p>
-        <h2 className="text-xl font-medium text-primary">{project.name}</h2>
+        <h2 className="text-xl font-semibold text-primary">{project.name}</h2>
       </div>
       <div className="flex flex-wrap items-start gap-x-8 gap-y-4">
         <MetaField label="Project ID">{project.code}</MetaField>
         <MetaField label="Start Date">{project.startDate}</MetaField>
-        <MetaField label="End Date">{project.endDate}</MetaField>
+        <MetaField label="End Date">{!project.endDate || project.endDate === "\u2014" ? "Ongoing" : project.endDate}</MetaField>
         <MetaField label="Status">
           <BadgeWithDot size="sm" color={project.statusColor}>
             {project.status}
@@ -688,53 +765,21 @@ function ProjectSummaryHeader({ project }: { project?: SearchEvent }) {
 // ── "Go to project" - the sidebar's own top-right quick action, per direct request: opens the
 //    project's own real detail page with the same record selected in that page's own TreeView. ──
 
-/** The one project with a real, dedicated detail page in this build - "Adelaide Hills Bushland
- *  Survey" (see project-detail's own comment: "Only one project in this whole build has a
- *  real detail page... routing every other project's own records to that same page would
- *  misrepresent a different project as if it were that specific example"). "Go to project" only
- *  ever navigates for real when a record's own root Project is this one. */
-const ADELAIDE_HILLS_PROJECT_ID = "adelaide-hills";
-
-/** project-detail's own `projectRecordTree` is a separate, smaller, hand-authored mock
- *  tree with its own ids ("site"/"visit"/...) - not the same records as search-data.ts, and most of
- *  its node codes don't correspond to any real record here (see that file's own comment on
- *  `projectRecordTree`). Only these two nodes genuinely share a real code with a record in this
- *  dataset - mapped here so "Go to project" can honestly pre-select a matching node in that page's
- *  own TreeView (via its real `?select=<id>` convention, see `selectedRecordKey` there) instead of
- *  guessing wrong. Every other record still navigates to the right real project - it just doesn't
- *  land on a pre-selected node, which is honest, not a bug (no fabricated match). */
-const ADELAIDE_HILLS_TREE_NODE_BY_CODE: Record<string, string> = {
-  SU00501: "site", // Cleland Bushland Site
-  VU00501: "visit", // Visit VU00501
-};
-
-/** The real project page for a record, with the record pre-selected in its tree where the two
- *  datasets share a code, or `null` when the record's project has no page in this preview (only
- *  Adelaide Hills does). The path only; callers add the role through `useRoleHref`. */
+/** The record's own page under its project (/pages/project-list/[id]/project-details/<kind>/<id>);
+ *  a root project is its project page. `null` only if the record belongs to no project. The path only; callers add the role through `useRoleHref`. */
 export function projectDetailPath(record: DetailRecord): string | null {
-  if (projectFor(record)?.id !== ADELAIDE_HILLS_PROJECT_ID) return null;
-  const nodeId = record.kind === "event" ? ADELAIDE_HILLS_TREE_NODE_BY_CODE[record.event.code] : undefined;
-  return `/pages/project-detail${nodeId ? `?select=${nodeId}` : ""}`;
+  const project = projectFor(record);
+  if (!project) return null;
+  if (record.kind === "occurrence") return projectRecordPath(project.id, "occurrences", record.occurrence.id);
+  if (record.kind === "observation") return projectRecordPath(project.id, "observations", record.observation.id);
+  if (record.event.type !== "Project") return projectRecordPath(project.id, "events", record.event.id);
+  return projectDetailsPath(project.id);
 }
 
 function GoToProjectButton({ record }: { record: DetailRecord }) {
   const roleHref = useRoleHref();
   const path = projectDetailPath(record);
-
-  if (!path) {
-    return (
-      <Tooltip title="This preview only has a full project page built for Adelaide Hills Bushland Survey">
-        <Focusable>
-          <span className="inline-flex">
-            <Button color="secondary" size="sm" isDisabled>
-              Go to project
-            </Button>
-          </span>
-        </Focusable>
-      </Tooltip>
-    );
-  }
-
+  if (!path) return null;
   return (
     <Button color="secondary" size="sm" href={roleHref(path)}>
       Go to project
@@ -755,8 +800,18 @@ function GoToProjectButton({ record }: { record: DetailRecord }) {
  * the sidebar is already open swaps content immediately instead of carrying over whichever
  * sections the previous record happened to have expanded.
  */
-export function RecordDetailSidebar({ record, onClose }: { record: DetailRecord | null; onClose: () => void }) {
-  const sections = useMemo(() => (record ? buildSections(record) : []), [record]);
+export function RecordDetailSidebar({
+  record,
+  onClose,
+  showGoToProject = true,
+}: {
+  record: DetailRecord | null;
+  onClose: () => void;
+  /** Off on the project's own page, where "Go to project" would lead back to the same page. */
+  showGoToProject?: boolean;
+}) {
+  const role = useUserRole();
+  const sections = useMemo(() => (record ? buildSections(record, role) : []), [record, role]);
   const currentKey = record ? recordKey(record) : null;
 
   const [openState, setOpenState] = useState<{ key: string | null; openKeys: Set<Key> }>({ key: null, openKeys: new Set() });
@@ -776,7 +831,7 @@ export function RecordDetailSidebar({ record, onClose }: { record: DetailRecord 
       headerActions={
         record && (
           <>
-            <GoToProjectButton record={record} />
+            {showGoToProject && <GoToProjectButton record={record} />}
             <Tooltip title={allOpen ? "Collapse all sections" : "Expand all sections"}>
               <TooltipTrigger
                 onPress={toggleAll}

@@ -223,7 +223,7 @@ export function DataOverviewContent({
         {/* pt-4 - the underline Tab's own vertical padding is `pb-2.5 pt-0` (tabs.tsx), so
             without top padding here the labels sit flush against the header's border-b above,
             reading as congested. Flagged directly by the user off a screenshot. */}
-        <TabList aria-label="Data dashboard views" type="underline" size="md" className="gap-6 px-6 pt-4">
+        <TabList aria-label="Data dashboard views" type="underline" size="md" className="px-6 pt-4">
           {dataDashboardTabs.map((tab) => (
             <Tab key={tab.id} id={tab.id} label={tab.label} />
           ))}
@@ -244,12 +244,12 @@ export function DataOverviewContent({
 
           <div className="flex flex-col gap-4 lg:flex-row">
             <BentoCard className="w-full lg:flex-1">
-              <h2 className="text-sm font-medium text-primary">Records by taxonomic group</h2>
+              <h2 className="text-sm font-semibold text-primary">Records by taxonomic group</h2>
               <PieChart data={taxonBreakdown} ariaLabel="Flora and fauna records by taxonomic group" />
             </BentoCard>
 
             <BentoCard className="w-full gap-1 lg:flex-1">
-              <h2 className="text-sm font-medium text-primary">Number of flora and fauna records per mapsheet</h2>
+              <h2 className="text-sm font-semibold text-primary">Number of flora and fauna records per mapsheet</h2>
               <p className="text-xs text-tertiary">South Australia</p>
               <div className="mt-2 flex flex-1 flex-col">
                 <MapView />

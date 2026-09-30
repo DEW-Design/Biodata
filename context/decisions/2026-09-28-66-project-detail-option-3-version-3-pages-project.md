@@ -1,0 +1,31 @@
+# 2026-09-28 - Project detail option 3, version 3 (`/pages/project-detail/option-4/v3`): property-level notes that persist, a new full-screen record view, and layout fixes. Per page feedback
+
+- **Sept 28 2026: project detail option 3, version 3 (`/pages/project-detail/option-4/v3`): property-level notes that persist, a new full-screen record view, and layout fixes. Per page feedback.** Only v3 changed. The previous and current versions are untouched.
+  - **Field notes (flags, comments, attachments) belong to a property and persist.** New zustand store `v3/field-notes-store.ts`. It is persisted to localStorage as `biodata-project-field-notes`, using the shared `zustand-persist` helpers (`skipHydration` plus `useRehydrate`). Notes are keyed by record and by `section:label`.
+  - **How a note is added:** hovering a field row shows a note icon, and choosing the row opens its notes underneath it (`v3/field-notes.tsx`). The panel shows:
+    - a flag with its reason, who raised it and when, and a Resolve action;
+    - the comments, which the author can delete;
+    - the attached files.
+  - The composer has a Comment/Flag switch, a text box, Post, and Attach file. A row with notes shows small flag, comment and file indicators, and a flagged row gets a warning edge. Guests can read notes but not add them.
+  - **Artefacts and attachments are modelled at property level.** The four seeded artefacts are now attached to specific fields: a photopoint, a trap protocol, and two measurements. The Artefacts tab lists every field file, so its count now changes as files are attached.
+  - **Record edits themselves are still session-only.** Only notes persist. "Record status" in the request was ambiguous and was read as a field flag; a separate record status was not added.
+  - **Full-screen record view, rebuilt** (`v3/record-full-view.tsx`), after the full record pages in Linear and GBIF:
+    - a sticky top bar with the path, Actions and Exit;
+    - a main column with a large header and every section as an open card, each with a hover edit icon;
+    - a sticky right column with a Record summary, the location map, and "Notes on this record", which lists every noted field and jumps to it.
+  - **Smaller fixes:**
+    - The records Filter button now sits after the search box.
+    - The accordion edit icon sits before the chevron and appears on hover. This uses a new additive `actionPlacement="beforeChevron"` on `Accordion`, which is added to its docs API table.
+    - Field rows share one inset, so the hover fill no longer touches the text.
+    - Project tab card edits are icon-only in v3 and are revealed on hover.
+    - The project tab fills the width when the sidebar is collapsed. `ProjectTab` gained `layout` and `artefactCount` props; the current version is unchanged.
+  - **Verified live (headless Playwright, registered user and guest):**
+    - Filter sits after search.
+    - The accordion edit icon is hidden when idle, shows on hover, and sits before the chevron.
+    - A comment, a flag and a file were added to "Site comment" and survived a reload.
+    - The Artefacts count went from 7 to 8.
+    - The full view renders, and its notes list jumps to fields.
+    - The card width goes from 938 to 1224px with the sidebar hidden.
+    - The guest sees no edit icons and no composer.
+    - Zero console errors. `tsc`, `eslint` and `npm run check:contracts` are clean.
+  - **Known:** the dev-only interface-kit toolbar draws over the full view's top-right Exit button. Not committed.

@@ -1,0 +1,28 @@
+# 2026-09-28 - Trap effort simplified to fixed fields per trap type, from the designer's table, per direct feedback (branch `mohan-wips`)
+
+- **Sept 28 2026: trap effort simplified to fixed fields per trap type, from the designer's table, per direct feedback (branch `mohan-wips`).** This replaces the Effort and Specs lists with their per-list "Add" menus from the round before.
+  - **Reading the table:**
+    - Each trap type has its own fixed fields.
+    - Only Elliott and eFishing have specs, and they differ.
+    - A type can appear twice (two fishing-line sets).
+  - **Picking the trap type is the only choice**: its fields come with it.
+  - **Fields per type** (`TRAP_TYPE_FIELDS` and `TRAP_FIELDS` in `field-schema.ts`):
+    - Elliott: number of traps, duration, and size (length × width × height, cm). Width and height are added beside the table's length, per the designer ("other specs for Elliott related to dimensions").
+    - Pitfall, Hair tube, Harp, Fishing line: number of traps and duration.
+    - Dip net: duration.
+    - Seine net: hauls.
+    - eFishing: voltage (volts), frequency (Hz), duty cycle (%, max 100) and wave form (AC, DC, Pulsed DC).
+    - Duration's unit is chosen from minutes, hours, nights and months.
+  - **Model:** `TrapEntry` is `{ trapType, values }`.
+  - **Viewed:** a trap type reads as two short lines, e.g. "20 traps · 4 nights" and "30 × 8 × 9 cm (L × W × H)" (`trapSummary`).
+  - **Edited:** one row of labelled fields per group. "Effort" and "Specs" are named only when a type has both. Elliott's size is one control with three numbers.
+  - **Adding types:** "Add trap type" lists every type, marking the two that come "with specs". A repeated type is numbered ("Fishing line 2", via `trapLabels`) for its notes key and its visibility key. Every field is required on save.
+  - **Seed:** the seeded trap now matches the table (Elliott 20 traps, 4 nights, 30 × 8 × 9 cm; Pitfall 6 traps, 4 nights), and the trap event runs 14 to 18 Oct 2025.
+  - **Verified headlessly:**
+    - The view reads "20 traps · 4 nights | 30 × 8 × 9 cm (L × W × H)".
+    - I added Seine net, eFishing and two Fishing lines, filled them in and saved; "Fishing line 2" is shown.
+    - Screenshots checked. Zero console errors; `tsc`, `eslint --max-warnings=0` and `npm run check:contracts` are clean.
+  - **Open:**
+    - The wave form options and the Elliott width and height are my additions.
+    - Whether every field should be required, or a blank allowed, is unconfirmed.
+  - Not committed.

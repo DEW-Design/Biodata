@@ -152,6 +152,12 @@ interface MultiSelectProps extends RefAttributes<HTMLDivElement>, CommonProps {
     selectedCountFormatter?: (count: number) => ReactNode;
     /** Supporting text displayed next to the selected count in the trigger. */
     supportingText?: ReactNode;
+    /**
+     * "single" makes it a searchable single select: the trigger shows the chosen item (its label and
+     * supporting text), picking an item closes the popover, and there is no footer.
+     * @default "multiple"
+     */
+    selectionMode?: "multiple" | "single";
 }
 
 const MultiSelectRoot = ({
@@ -179,7 +185,10 @@ const MultiSelectRoot = ({
     emptyStateDescription,
     selectedCountFormatter,
     supportingText,
+    selectionMode = "multiple",
 }: MultiSelectProps) => {
+    const single = selectionMode === "single";
+    const [isOpen, setOpen] = useState(false);
     const { contains } = useFilter({ sensitivity: "base" });
     const [searchValue, setSearchValue] = useState("");
 
@@ -194,6 +203,7 @@ const MultiSelectRoot = ({
 
     const selectedCount = selectedKeys instanceof Set ? selectedKeys.size : selectedKeys === "all" ? (items?.length ?? 0) : 0;
     const hasSelection = selectedCount > 0;
+    const selectedItem = single && selectedKeys instanceof Set ? items?.find((item) => selectedKeys.has(item.id)) : undefined;
 
     const handleClearSearch = useCallback(() => {
         setSearchValue("");
@@ -208,7 +218,7 @@ const MultiSelectRoot = ({
                     </Label>
                 )}
 
-                <AriaDialogTrigger>
+                <AriaDialogTrigger isOpen={isOpen} onOpenChange={setOpen}>
                     <AriaButton
                         ref={triggerRef}
                         isDisabled={isDisabled}
@@ -228,7 +238,14 @@ const MultiSelectRoot = ({
                                 "*:data-icon:shrink-0 *:data-icon:text-fg-quaternary",
                             )}
                         >
-                            {hasSelection ? (
+                            {single && selectedItem ? (
+                                <span className={cx("flex min-w-0 items-center", sizes[size].textContainer)}>
+                                    <span className={cx("truncate font-medium text-primary", sizes[size].text)}>{selectedItem.label}</span>
+                                    {selectedItem.supportingText && (
+                                        <span className={cx("truncate text-tertiary", sizes[size].text)}>{selectedItem.supportingText}</span>
+                                    )}
+                                </span>
+                            ) : !single && hasSelection ? (
                                 <span className={cx("flex items-center", sizes[size].textContainer)}>
                                     <span className={cx("font-medium text-primary", sizes[size].text)}>
                                         {selectedCountFormatter ? selectedCountFormatter(selectedCount) : `${selectedCount} selected`}
@@ -286,13 +303,17 @@ const MultiSelectRoot = ({
                                 <AriaListBox
                                     aria-label={label || "Options"}
                                     items={items}
-                                    selectionMode="multiple"
+                                    selectionMode={single ? "single" : "multiple"}
                                     // Escape closes the popover and never touches the value: react-aria's
                                     // default ("clearSelection") wiped the whole selection on Escape.
                                     escapeKeyBehavior="none"
                                     selectedKeys={selectedKeys}
                                     defaultSelectedKeys={defaultSelectedKeys}
-                                    onSelectionChange={onSelectionChange}
+                                    onSelectionChange={(keys) => {
+                                        onSelectionChange?.(keys);
+                                        // A single choice is made in one pick: close, and focus returns to the trigger.
+                                        if (single) setOpen(false);
+                                    }}
                                     renderEmptyState={() => (
                                         <MultiSelectEmptyState
                                             title={emptyStateTitle}
@@ -306,7 +327,7 @@ const MultiSelectRoot = ({
                                 </AriaListBox>
                             </AriaAutocomplete>
 
-                            {showFooter && <MultiSelectFooter size={size} onReset={onReset} onSelectAll={onSelectAll} />}
+                            {showFooter && !single && <MultiSelectFooter size={size} onReset={onReset} onSelectAll={onSelectAll} />}
                         </AriaDialog>
                     </AriaPopover>
                 </AriaDialogTrigger>

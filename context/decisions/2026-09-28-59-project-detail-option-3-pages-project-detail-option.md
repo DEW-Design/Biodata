@@ -1,0 +1,22 @@
+# 2026-09-28 - Project detail Option 3 (`/pages/project-detail/option-4`): one edit pattern, the same column 2 for everyone, and project guides, per direct request (branch `mohan-wips`)
+
+- **Sept 28 2026: project detail Option 3 (`/pages/project-detail/option-4`): one edit pattern, the same column 2 for everyone, and project guides, per direct request (branch `mohan-wips`).**
+  - **Column 2 is identical for every persona:** Projects/Datasets, then Actions (Export CSV, Create report), then a new "What is a project?" block with project guides (Getting started, Video tutorials, Policies, Downloads; `option-4/projects-guide.tsx`) styled like the guest "What is BioData SA?" block.
+    - Guests keep the gated-click rule: Export CSV and Create report open the sign-up invite.
+    - `ProjectActions` gained an opt-in `sameForEveryone` prop and `ActionsGroup` an `onCreateReport` prop, both additive. The Projects list, DSA, DLA and User Management are unchanged.
+    - The guide copy is drafted from the BDBSA facts in this file, not sourced. There are no guide pages yet, so the rows are not links.
+  - **"Survey at a glance"** now shows only the four counts (Events, Occurrences, Observations, Artefacts and attachments); the event-type chip row is gone.
+  - **One edit experience (`option-4/editable-section.tsx`):** every project card (Project details, Published by, Project managers, Geographic extent, Focus/species/method, Permits and identifiers, Embargo, Species restriction) and every metadata section of every event, occurrence and observation is the same card.
+    - "Edit" turns the card's own values into fields in place, and the card gets a brand ring and an "Editing" line.
+    - Cancel or Escape discards; Save changes commits and shows a toast.
+    - Only one card is open at a time; the others' Edit buttons are disabled until it closes. Picking another record closes an open edit.
+    - IDs, record type, parent and datum stay read-only with a lock.
+    - In the narrow record inspector the fields stack under their labels; on the Project tab the label stays on the left so nothing moves.
+    - Field kinds are text, textarea and select; select is used only where the current value is one of the options.
+  - **Who can edit:** everyone except `public-user`, who sees the same cards with no Edit buttons.
+  - **Edits are session-only** (`option-4/edit-store.tsx`, a React context).
+    - Edits flow through: the project short title, dates and status drive the header, the breadcrumb and the tree root, and an edited site, visit or species name updates the tree, table and inspector.
+    - The accordion in the inspector was replaced by these cards.
+    - Pattern references: per-section in-place edit as in Stripe's customer page, GitHub settings and Linear project details. No Mobbin tool was available this session.
+  - **Verified live:** registered-user edited and saved the project title (header, breadcrumb and tree root updated) and a site name (tree and inspector updated). Public-user saw no Edit buttons, the same column 2, and the Create report invite. Zero console errors; `tsc`, `eslint` and `npm run check:contracts` are clean.
+  - **Not covered:** adding or removing records, adding a second manager or restriction, redrawing the geographic extent on the map (it is edited as centre and radius), and dates as free text rather than date pickers. Not committed.

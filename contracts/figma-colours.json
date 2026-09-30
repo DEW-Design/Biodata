@@ -1,0 +1,168 @@
+{
+  "note": "Colour primitives and semantic tokens as documented in the real DS - Foundations Figma file. This is the reference CONTRACTS.md 2.1c/2.1d check against: a primitive in app/globals.css must match its value here exactly (2.1c, hard, never ratcheted), and a hardcoded colour literal in product code must match something here or it was invented (2.1d, ratcheted - existing debt may not grow). Re-pull via the Figma MCP (get_variable_defs on both nodes below) when the Foundations file changes. Changing this file is an audited act (CONTRACTS.md 9.4).",
+  "source": {
+    "file": "llQ4DndM7U0la4qg6MttC5",
+    "fileName": "DS - Foundations",
+    "nodes": {
+      "colors": "5225:371288",
+      "gradients": "1525:272676"
+    },
+    "fetched": "2026-09-29"
+  },
+  "base": {
+    "white": "#ffffff",
+    "black": "#000000"
+  },
+  "semantic": {
+    "text-primary": "#2e2925",
+    "text-secondary": "#585451",
+    "text-tertiary": "#706b68",
+    "bg-primary": "#ffffff",
+    "bg-secondary": "#f8f8f7",
+    "bg-brand-primary": "#f6fbfc",
+    "bg-brand-secondary": "#edf7f9",
+    "border-secondary": "#e5e4e2"
+  },
+  "primitives": {
+    "gray": {
+      "cssVar": "--color-gray-",
+      "steps": {
+        "25": "#fcfcfc",
+        "50": "#f8f8f7",
+        "100": "#f2f2f1",
+        "200": "#e5e4e2",
+        "300": "#d2d0ce",
+        "400": "#b5b2af",
+        "500": "#8f8b87",
+        "600": "#706b68",
+        "700": "#585451",
+        "800": "#423e3b",
+        "900": "#2e2925",
+        "950": "#1a1715"
+      }
+    },
+    "brand": {
+      "cssVar": "--color-brand-",
+      "figmaName": "Marine Teal",
+      "steps": {
+        "25": "#f6fbfc",
+        "50": "#edf7f9",
+        "100": "#dcecef",
+        "200": "#c3d9df",
+        "300": "#9ca9b3",
+        "400": "#4d788a",
+        "500": "#2a667c",
+        "600": "#185e74",
+        "700": "#0d576e",
+        "800": "#0a485a",
+        "900": "#073542",
+        "950": "#041e27"
+      }
+    },
+    "error": {
+      "cssVar": "--color-error-",
+      "steps": {
+        "25": "#fffbfa",
+        "50": "#fef3f2",
+        "100": "#fee4e2",
+        "200": "#fecdca",
+        "300": "#fda29b",
+        "400": "#f97066",
+        "500": "#f04438",
+        "600": "#d92d20",
+        "700": "#b42318",
+        "800": "#912018",
+        "900": "#7a271a",
+        "950": "#55160c"
+      }
+    },
+    "warning": {
+      "cssVar": "--color-warning-",
+      "steps": {
+        "25": "#fffcf5",
+        "50": "#fffaeb",
+        "100": "#fef0c7",
+        "200": "#fedf89",
+        "300": "#fec84b",
+        "400": "#fdb022",
+        "500": "#f79009",
+        "600": "#dc6803",
+        "700": "#b54708",
+        "800": "#93370d",
+        "900": "#7a2e0e",
+        "950": "#4e1d09"
+      }
+    },
+    "success": {
+      "cssVar": "--color-success-",
+      "steps": {
+        "25": "#f6fef9",
+        "50": "#ecfdf3",
+        "100": "#dcfae6",
+        "200": "#abefc6",
+        "300": "#75e0a7",
+        "400": "#47cd89",
+        "500": "#17b26a",
+        "600": "#079455",
+        "700": "#067647",
+        "800": "#085d3a",
+        "900": "#074d31",
+        "950": "#053321"
+      }
+    },
+    "seagrassGreen": {
+      "cssVar": "--color-accent-",
+      "note": "Already ingested under the internal name 'accent' (app/globals.css comments it as DEW Seagrass Green) - exact match to Figma's own Seagrass Green scale, confirmed 29 Sept 2026.",
+      "steps": {
+        "25": "#f7fbfb",
+        "50": "#eef6f6",
+        "100": "#deeaea",
+        "200": "#c9dbdb",
+        "300": "#b6c7c7",
+        "400": "#80a9a9",
+        "500": "#649898",
+        "600": "#568f8f",
+        "700": "#4a8c8c",
+        "800": "#3b7272",
+        "900": "#2a5555",
+        "950": "#162d2d"
+      }
+    },
+    "flindersViolet": {
+      "cssVar": "--color-flinders-violet-",
+      "note": "Documented in Figma's Foundations file (Secondary colors). Ingested 29 Sept 2026 as --color-flinders-violet-* for one job, per designer decision: the Prototype tools status bar (a dev tool), so it reads as 'not the product'. Not a product accent; don't use it for BioData SA UI without a new designer decision (CONTRACTS.md 2.1).",
+      "steps": {
+        "25": "#fafafb",
+        "50": "#f4f4f7",
+        "100": "#e7e6eb",
+        "200": "#d4d2da",
+        "300": "#b8b4bf",
+        "400": "#8a8699",
+        "500": "#716c86",
+        "600": "#65607b",
+        "700": "#5c5873",
+        "800": "#4a465d",
+        "900": "#353242",
+        "950": "#1d1b24"
+      }
+    },
+    "horizonBlue": {
+      "cssVar": null,
+      "note": "Same status as flindersViolet - documented in Figma, not yet ingested, a designer decision to bring in.",
+      "steps": {
+        "25": "#f8fafc",
+        "50": "#f1f5f8",
+        "100": "#e2ebf1",
+        "200": "#cfdbe5",
+        "300": "#bbc4d2",
+        "400": "#86a1b9",
+        "500": "#678daa",
+        "600": "#5b85a5",
+        "700": "#517ea1",
+        "800": "#416682",
+        "900": "#2f4a5e",
+        "950": "#192834"
+      }
+    }
+  }
+}

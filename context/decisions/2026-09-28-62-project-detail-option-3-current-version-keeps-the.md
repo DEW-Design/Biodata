@@ -1,0 +1,33 @@
+# 2026-09-28 - Project detail Option 3 current version keeps the previous version's page and edits every card in the drawer; roles live on the data owner's contacts (CONTRACTS §4.6 added), per direct instruction (branch `mohan-wips`)
+
+- **Sept 28 2026: project detail Option 3 current version keeps the previous version's page and edits every card in the drawer; roles live on the data owner's contacts (CONTRACTS §4.6 added), per direct instruction (branch `mohan-wips`).**
+  - **The Project tab is the previous (inline) version's page again**: Survey at a glance; Overview (Project details, Published by, Project managers); Data collection and storage (Geographic extent; Focus, species and method; Permits and identifiers); Privacy and restrictions (one card per restriction: Embargo, Species restriction, Location restriction, Project metadata restriction, Other restriction).
+    - Same titles, rows and look. The only change is that each card's Edit opens that card's form in the edit drawer.
+    - The registration-grouped "Step 1 of 3" view, the "Project team" card and its "Registered by (role)" row are gone.
+  - **Card forms (`project-edit.tsx`)** are built from the registration's own pieces:
+    - Project details: `SectionFields("basics")` plus Status.
+    - Published by: data owner type, organisation, logo, and a list of contacts each with name, role, email, phone and team, with add and remove; the first contact is the primary.
+    - Project managers: `ManagerCard`, add, remove, primary.
+    - Geographic extent: `GeoExtentPicker`.
+    - Focus, species and method: focus areas, targeted species, method, method details, limitations.
+    - Permits and identifiers: permits with add and remove, URI/DOI.
+    - Each restriction: `SectionFields(key)`.
+    - "Add restriction" in the Privacy and restrictions header ticks new kinds and chains straight into the first new one's form. Each restriction card has Remove.
+  - **Roles:** `ContactPerson` gained optional `role`/`roleOther` (additive; registration unchanged). The first contact's role falls back to, and is written back to, `roleOfWork`, so registration's rules still hold. Published by shows "name · role" for every contact.
+  - **CONTRACTS §4.6:**
+    - A role belongs to each data owner contact and is shown and edited with that contact.
+    - No separate "your role" or "Registered by" field or row, and no "Project team" card, on project detail or its edit flows.
+    - Nothing is added to a screen beyond what the designer approved or the source defines.
+    - `AUTO §4.6` in `scripts/check-contracts.mjs` fails any "Registered by" label under `app/pages`; it was checked by planting one (caught) and removing it.
+    - Open for the designer: the Add Project registration still asks "Your role" in its Project team section.
+  - **"On this page" is card-level**: each section lists its cards, the active card follows the scroll, and its section is emphasised. A clicked item stays active while the page scrolls to it; before, a card near the bottom handed "active" to the last item.
+  - **Records:** as in the previous version, every metadata card in the record inspector has its own Edit. It opens the record's form in the drawer, scrolled to that section. Add inside and Delete stay under the title.
+  - **Dropped:** the previous version's Geographic extent "Study area" row, which had no registration field behind it (§0.3). The extent now shows the centre and radius from the registered boundary.
+  - **Verified headlessly** (registered-user, 1600px):
+    - Card titles and section titles match the previous version; "On this page" nests the cards; no "Registered by" or "Project team" anywhere.
+    - Clicking "Permits and identifiers" in "On this page" keeps it active.
+    - Added a second Published by contact with the role Research, shown as "Lana Steiner · Research".
+    - Add restriction then Other restrictions chained and saved.
+    - The site record shows 5 section Edit buttons, and Edit Photopoint opens scrolled to Photopoint.
+    - Public-user sees no Edit and no Add restriction. Zero console errors; `tsc`, `eslint` and `npm run check:contracts` are clean.
+  - Not committed.

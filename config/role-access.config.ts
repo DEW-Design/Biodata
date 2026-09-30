@@ -23,7 +23,7 @@
 import type { UserRole } from "@/lib/user-role";
 
 /** One entry per gated product feature. Add a key as a feature is actually gated - don't pre-populate speculatively. */
-export type FeatureKey = "orgSwitcher" | "metricCardCustomization" | "dsaManagement" | "dlaAccess" | "dlaApproval" | "userManagement";
+export type FeatureKey = "orgSwitcher" | "metricCardCustomization" | "dsaManagement" | "dlaAccess" | "dlaApproval" | "userManagement" | "restrictedData" | "nominationAccess" | "nominationReview" | "datasetUpload" | "templateFinder";
 
 /** Feature -> the roles (besides biodata-admin, which always passes) allowed to see it. */
 export const roleAccessMatrix: Record<FeatureKey, UserRole[]> = {
@@ -60,6 +60,23 @@ export const roleAccessMatrix: Record<FeatureKey, UserRole[]> = {
   // CONTEXT.md) - add "privileged-admin" here only when it is. Empty array, not an omitted key, for
   // the same reason as dsaManagement.
   userManagement: [],
+  // Level 2 and above data (sensitive species) as recorded, with precise locations. Per the
+  // designer (Sept 28 2026): BioData Admin sees Level 1 to 4 in full; every other signed-in role
+  // sees these records with their location generalised and blurred, and requests a DLA for more;
+  // a public user sees Level 1 only (the rule lives in map-search/record-access.ts).
+  restrictedData: [],
+  // Nominating a sensitive species (/pages/nominations): every signed-in role, per the designer
+  // (Sept 28 2026). A guest sees the section's restriction and the sign-up invite, as with DLA.
+  nominationAccess: ["registered-user", "privileged-user", "privileged-admin", "biodata-user"],
+  // Reviewing nominations (the sensitive species panel): Start review, Accept, Reject, Return for
+  // more information, and the All nominations view. BioData Admin only, via the bypass.
+  nominationReview: [],
+  // Uploading a dataset to a project (/pages/project-list/<id>/upload): every signed-in role (the
+  // project-level access check is not modelled in the preview). A guest sees the sign-up invite on
+  // the project's "Upload dataset" button, and the restriction on a direct visit.
+  datasetUpload: ["registered-user", "privileged-user", "privileged-admin", "biodata-user"],
+  // Every signed-in role; a public user has no Template Finder section (context/decisions/2026-09-21-04).
+  templateFinder: ["registered-user", "privileged-user", "privileged-admin", "biodata-user"],
 };
 
 /**

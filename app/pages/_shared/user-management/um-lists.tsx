@@ -2,11 +2,11 @@
 
 import { useState, type ReactNode } from "react";
 import type { SortDescriptor } from "react-aria-components";
-import { Plus, SearchMd } from "@untitledui/icons";
+import { Plus } from "@untitledui/icons";
 import { Avatar } from "@/components/base/avatar/avatar";
 import { Badge, CountBadge } from "@/components/base/badges/badges";
 import { Button } from "@/components/base/buttons/button";
-import { Input } from "@/components/base/input/input";
+import { ToolbarSearch } from "@/app/pages/_shared/toolbar-search";
 import { SectionHeader } from "@/components/application/section-headers/section-headers";
 import { Table, TableCard } from "@/components/application/table/table";
 import { sortRows, type SortValue } from "@/app/pages/_shared/agreement-scope";
@@ -101,9 +101,7 @@ function ListFrame({
       </SectionHeader.Root>
       <div className="flex min-h-0 flex-1 flex-col gap-4 p-6">
         <div className="flex shrink-0 flex-wrap items-center gap-3">
-          <div className="w-full max-w-sm shrink-0">
-            <Input aria-label={`Search ${title.toLowerCase()}`} size="sm" icon={SearchMd} placeholder={searchPlaceholder} value={search} onChange={onSearch} />
-          </div>
+          <ToolbarSearch label={`Search ${title.toLowerCase()}`} placeholder={searchPlaceholder} value={search} onChange={onSearch} />
           <div>{filter}</div>
         </div>
         {empty ? <p className="py-6 text-sm text-tertiary">Nothing matches your search and filters.</p> : children}

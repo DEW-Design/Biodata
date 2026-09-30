@@ -34,8 +34,10 @@ export default function ModalPage() {
 
       <h2 className="text-balance">Confirmation</h2>
       <p className="text-balance">
-        For reversible or low-stakes actions - a brand-coloured icon, a title, optional description, and a Cancel /
-        Confirm pair.
+        For reversible or low-stakes actions. Every modal copies Untitled UI&apos;s own modal anatomy (its stacked
+        left-aligned and horizontal examples): the close X floating in the top-right corner, a featured icon, the title with
+        the description under it, and two equal-width buttons (secondary, then primary) that stack on a phone. The page
+        behind is dimmed (black at 40%) and blurred.
       </p>
       <Section label="Confirmation modal">
         <Button onPress={() => setConfirmOpen(true)}>Leave page</Button>
@@ -58,8 +60,12 @@ export default function ModalPage() {
 
       <h2 className="text-balance">Destructive</h2>
       <p className="text-balance">
-        For irreversible actions - delete, remove, revoke. Same shape as Confirmation, but the icon and the primary
-        button switch to the error colour so the stakes read at a glance.
+        For irreversible actions - delete, remove, revoke, discard. Same shape as Confirmation, with an error icon and the
+        primary button in the error colour, so the stakes read at a glance. A discard prompt
+        can offer a way to keep the work (<code>secondaryLabel</code>, <code>onSecondary</code>): every form&apos;s
+        discard prompt offers <strong>Save draft</strong> where a draft is possible. Three actions don&apos;t fit the two-column
+        row, so that prompt switches to Untitled UI&apos;s horizontal layout: the icon beside the title and the buttons
+        right-aligned.
       </p>
       <Section label="Destructive modal">
         <Button color="primary-destructive" onPress={() => setDestructiveOpen(true)}>
@@ -72,7 +78,7 @@ export default function ModalPage() {
           description={
             <>
               This will permanently delete <strong>Marketing site redesign</strong> and all of its files. This action
-              can't be undone.
+              can&apos;t be undone.
             </>
           }
           isConfirmLoading={isDeleteLoading}
@@ -89,7 +95,7 @@ export default function ModalPage() {
       <h2 className="text-balance">Form (configurable)</h2>
       <p className="text-balance">
         A general-purpose shell - header, scrollable body, footer - that takes arbitrary <code>children</code> instead
-        of a fixed icon/description layout. Wraps content in React Aria's <code>Form</code>, so a submit button with{" "}
+        of a fixed title and description. Wraps content in React Aria&apos;s <code>Form</code>, so a submit button with{" "}
         <code>type=&quot;submit&quot;</code> triggers native validation before <code>onSubmit</code> fires.
       </p>
       <Section label="Form modal">
@@ -187,15 +193,19 @@ import { CloseButton } from "@/components/base/buttons/close-button";
           {[
             {
               name: "ConfirmationModal",
-              props: "isOpen, onOpenChange, icon (default HelpCircle), title, description, confirmLabel, cancelLabel, onConfirm, isConfirmLoading",
+              props: "isOpen, onOpenChange, icon (default HelpCircle), iconColor (brand | gray | success | warning), title, description, confirmLabel, cancelLabel, onConfirm, isConfirmLoading",
             },
             {
               name: "DestructiveModal",
-              props: "isOpen, onOpenChange, icon (default AlertTriangle), title, description, confirmLabel (default \"Delete\"), cancelLabel, onConfirm, isConfirmLoading",
+              props: "isOpen, onOpenChange, icon (default AlertTriangle), title, description, confirmLabel (default \"Delete\"), cancelLabel, onConfirm, isConfirmLoading, secondaryLabel, onSecondary (an optional middle action, e.g. Save draft)",
             },
             {
               name: "FormModal",
-              props: "isOpen, onOpenChange, title, description, children, submitLabel, cancelLabel, onSubmit, isSubmitLoading, size (sm | md | lg)",
+              props: "isOpen, onOpenChange, icon, iconColor (default gray), title, description, children, submitLabel, cancelLabel, onSubmit, isSubmitLoading, size (sm 400px | md 480px | lg 640px)",
+            },
+            {
+              name: "ModalHeader, ModalFooter",
+              props: "The shared anatomy, for an app modal that composes its own body. ModalHeader: icon, iconColor, title, description, layout (stacked | horizontal); it also renders the floating close X. ModalFooter: layout, children (the buttons, primary last).",
             },
           ].map((r) => (
             <tr key={r.name}>

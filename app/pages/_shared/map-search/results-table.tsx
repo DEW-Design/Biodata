@@ -378,7 +378,7 @@ export function ResultsTable<T extends { id: string }>({
 
       {!(hideSearchBox && showHeaderColumnCustomizer) && (
         <div className="flex shrink-0 items-center gap-2">
-          {!hideSearchBox && <Input icon={SearchLg} placeholder="Search" value={keyword} onChange={setKeyword} className="flex-1" />}
+          {!hideSearchBox && <Input icon={SearchLg} placeholder="Search" value={keyword} onChange={setKeyword} className="flex-1" onClear={() => setKeyword("")} clearLabel="Clear search" />}
           {!showHeaderColumnCustomizer && (
             <Tooltip title="Customise columns">
               <TooltipTrigger onPress={() => setCustomizeOpen(true)} aria-label="Customise columns" className="flex size-10 shrink-0 items-center justify-center rounded-lg border border-secondary text-quaternary transition duration-100 ease-linear hover:bg-secondary hover:text-primary">

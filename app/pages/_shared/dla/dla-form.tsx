@@ -1,8 +1,10 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { parseDate } from "@internationalized/date";
 import { Plus, Trash01 } from "@untitledui/icons";
+import { AlertFullWidth } from "@/components/application/alerts/alerts";
 import { Button } from "@/components/base/buttons/button";
 import { Checkbox } from "@/components/base/checkbox/checkbox";
 import { Input } from "@/components/base/input/input";
@@ -12,8 +14,9 @@ import { TextArea } from "@/components/base/textarea/textarea";
 import { FormPage } from "@/app/pages/_shared/form-page";
 import { FormSectionList, FormSidebar, deriveSectionStatus } from "@/app/pages/_shared/form-section-list";
 import { FormRow } from "@/app/pages/_shared/form-row";
-import { ConfirmationModal } from "@/components/application/modals/modal";
+import { DestructiveModal } from "@/components/application/modals/modal";
 import { AddLocationModal } from "@/app/pages/_shared/dla/add-location-modal";
+import { useRoleHref } from "@/lib/use-role-href";
 import {
   dlaLevel3Projects,
   dlaLevelMeta,
@@ -31,7 +34,7 @@ import {
 
 // The DLA record form (wireframe "New request", Figma
 // YMproGZfrFB5jUqPHPxMhk node 33:43259), re-shaped to fit the shell the same way DSA's own form
-// was - see CONTEXT.md, "Data Licencing Agreement (DLA)". The wireframe's own numbered-circle
+// was - see context/decisions/2026-09-23-03-data-licencing-agreement-dla-workflow-built-at-pages.md, "Data Licencing Agreement (DLA)". The wireframe's own numbered-circle
 // stepper (1 Location & License -> 2 Details & Purpose -> 3 Review & Submit) is rebuilt as the
 // shared form pattern (FormPage + a FormSectionList in column 2, CONTRACTS.md 4.1) that every form
 // here uses, not a bespoke stepper or tabs.
@@ -137,9 +140,15 @@ export function DlaForm({
   const [addLocationOpen, setAddLocationOpen] = useState(false);
   const [agreedToTerms, setAgreedToTerms] = useState(() => !!initial && initial.status !== "draft");
   const [termsAttempted, setTermsAttempted] = useState(false);
+  const roleHref = useRoleHref();
+  const router = useRouter();
 
   const tabIndex = Math.max(0, DLA_TABS.indexOf(tab as (typeof DLA_TABS)[number]));
   const isLastTab = tabIndex === DLA_TABS.length - 1;
+  // Once a request exists past Draft, its own requested Agreement Period is fixed - the dates
+  // aren't just what's being negotiated, they're what "created" the request in the first place
+  // (CONTEXT.md, "DLA/DSA: the requested start and end date can't change after creation"). A
+  // different period is a new request, the same rule already applied to a granted access level.
   const isEditingLive = !!initial && initial.status !== "draft";
   const requestLabel = renewFrom ? `Renew ${renewFrom.id}` : initial ? (isEditingLive ? `Edit ${initial.id}` : `Edit draft ${initial.id}`) : "New request";
   // Inline errors appear only where the person has already tried to move on (or after Submit / Save
@@ -251,7 +260,7 @@ export function DlaForm({
               </div>
               <div>
                 <Button color="secondary" size="md" iconLeading={Plus} onPress={() => setAddLocationOpen(true)}>
-                  Add Location
+                  Add location
                 </Button>
               </div>
             </FormRow>
@@ -277,6 +286,7 @@ export function DlaForm({
                 <InputDate
                   label="Start Date"
                   isRequired
+                  isDisabled={isEditingLive}
                   value={draft.requestPeriodFrom ? parseDate(draft.requestPeriodFrom) : null}
                   onChange={(v) => update({ requestPeriodFrom: v ? v.toString() : "" })}
                   isInvalid={!!errors.requestPeriodFrom}
@@ -285,12 +295,23 @@ export function DlaForm({
                 <InputDate
                   label="End Date"
                   isRequired
+                  isDisabled={isEditingLive}
                   value={draft.requestPeriodTo ? parseDate(draft.requestPeriodTo) : null}
                   onChange={(v) => update({ requestPeriodTo: v ? v.toString() : "" })}
                   isInvalid={!!errors.requestPeriodTo}
                   hint={errors.requestPeriodTo}
                 />
               </div>
+              {isEditingLive && (
+                <AlertFullWidth
+                  wrap
+                  color="gray"
+                  title="Agreement period locked"
+                  description="Set when this request was submitted and can't be changed here."
+                  confirmLabel="Submit a new request"
+                  onConfirm={() => router.push(roleHref("/pages/dla/new"))}
+                />
+              )}
             </FormRow>
             <FormRow title="Your Information" required description="Tell us about yourself and your organisation.">
               <div className="grid gap-4 sm:grid-cols-2">
@@ -411,13 +432,18 @@ export function DlaForm({
 
       <AddLocationModal isOpen={addLocationOpen} onOpenChange={setAddLocationOpen} onAdd={(location) => update({ locations: [...draft.locations, location] })} />
 
-      <ConfirmationModal
+      <DestructiveModal
         isOpen={confirmBack}
         onOpenChange={setConfirmBack}
         title="Discard your request?"
-        description="You have unsaved changes to this request. Going back will lose them."
+        description={isEditingLive ? "You have unsaved changes to this request. Leaving now will lose them." : "You have unsaved changes to this request. Save a draft to keep them, or discard them."}
         confirmLabel="Discard changes"
         cancelLabel="Keep editing"
+        secondaryLabel={isEditingLive ? undefined : "Save draft"}
+        onSecondary={() => {
+          setConfirmBack(false);
+          saveDraft();
+        }}
         onConfirm={() => {
           setConfirmBack(false);
           onBack();

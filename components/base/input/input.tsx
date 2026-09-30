@@ -1,7 +1,7 @@
 "use client";
 
 import { type ComponentType, type HTMLAttributes, type ReactNode, type Ref, createContext, useContext, useState } from "react";
-import { Eye, EyeOff, HelpCircle, InfoCircle } from "@untitledui/icons";
+import { Eye, EyeOff, HelpCircle, InfoCircle, XClose } from "@untitledui/icons";
 import type { InputProps as AriaInputProps, TextFieldProps as AriaTextFieldProps } from "react-aria-components";
 import { Button as AriaButton, Group as AriaGroup, Input as AriaInput, TextField as AriaTextField } from "react-aria-components";
 import { HintText } from "@/components/base/input/hint-text";
@@ -39,6 +39,11 @@ export interface InputBaseProps extends Omit<AriaInputProps, "size"> {
     groupRef?: Ref<HTMLDivElement>;
     /** Icon component to display on the left side of the input. */
     icon?: ComponentType<HTMLAttributes<HTMLOrSVGElement>>;
+    /** Shows an "X" inside the field that calls this, then returns focus to the field. Opt-in, for
+     *  search fields; `Input` shows it only while the field has a value. */
+    onClear?: () => void;
+    /** Accessible name for the clear button. @default "Clear" */
+    clearLabel?: string;
 }
 
 export const InputBase = ({
@@ -57,12 +62,14 @@ export const InputBase = ({
     inputClassName,
     iconClassName,
     type = "text",
+    onClear,
+    clearLabel = "Clear",
     ...inputProps
 }: InputBaseProps) => {
     const [isPasswordVisible, setIsPasswordVisible] = useState(false);
 
     // Check if the input has a leading icon or tooltip
-    const hasTrailingIcon = tooltip || isInvalid;
+    const hasTrailingIcon = tooltip || isInvalid || onClear;
     const hasLeadingIcon = Icon;
 
     // If the input is inside a `TextFieldContext`, use its context to simplify applying styles
@@ -166,6 +173,23 @@ export const InputBase = ({
                 />
             )}
 
+            {/* Clear button (search fields): empties the field and puts focus back in it. */}
+            {onClear && type !== "password" && (
+                <AriaButton
+                    aria-label={clearLabel}
+                    onPress={(e) => {
+                        onClear();
+                        (e.target as HTMLElement).parentElement?.querySelector("input")?.focus();
+                    }}
+                    className={cx(
+                        "absolute flex cursor-pointer items-center justify-center rounded-sm text-fg-quaternary outline-focus-ring transition duration-100 ease-linear group-invalid/input:hidden before:absolute before:-inset-2.5 hover:text-fg-quaternary_hover focus-visible:outline-2 focus-visible:outline-offset-2",
+                        sizes[inputSize].iconTrailing,
+                    )}
+                >
+                    <XClose className="size-4 stroke-[2.25px]" />
+                </AriaButton>
+            )}
+
             {/* Password visibility toggle */}
             {type === "password" && (
                 <AriaButton
@@ -251,6 +275,11 @@ export interface InputProps
     hint?: ReactNode;
     /** Whether to hide required indicator from label */
     hideRequiredIndicator?: boolean;
+    /** Shows an "X" inside the field while it has a value; called when pressed (clear the value
+     *  here). For search fields. */
+    onClear?: () => void;
+    /** Accessible name for the clear button. @default "Clear" */
+    clearLabel?: string;
 }
 
 export const Input = ({
@@ -270,8 +299,11 @@ export const Input = ({
     wrapperClassName,
     tooltipClassName,
     type = "text",
+    onClear,
+    clearLabel,
     ...props
 }: InputProps) => {
+    const hasValue = typeof props.value === "string" ? props.value.length > 0 : false;
     return (
         <TextField aria-label={!label ? placeholder : undefined} {...props} size={size} className={className}>
             {({ isRequired, isInvalid }) => (
@@ -296,6 +328,8 @@ export const Input = ({
                             tooltipClassName,
                             tooltip,
                             type,
+                            onClear: onClear && hasValue ? onClear : undefined,
+                            clearLabel,
                         }}
                     />
 

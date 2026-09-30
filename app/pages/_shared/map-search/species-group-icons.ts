@@ -15,3 +15,20 @@ export const SPECIES_GROUP_ICON: Record<SpeciesGroup, FC<{ className?: string }>
   Amphibian: Droplets,
   Plant: Leaf,
 };
+
+// One colour per species group, for the dots on Explore's map and their legend. Real utility
+// tokens (app/globals.css), chosen to be far apart in hue so five dots read as five groups; the
+// legend always names each colour, so colour is never the only cue. "Other" (a Non-biotic or
+// Community record, which has no species group) is neutral grey.
+export const SPECIES_GROUP_COLOR: Record<SpeciesGroup, string> = {
+  Mammal: "var(--color-utility-orange-500)",
+  Bird: "var(--color-utility-blue-500)",
+  Reptile: "var(--color-utility-purple-500)",
+  Amphibian: "var(--color-utility-pink-500)",
+  Plant: "var(--color-utility-green-500)",
+};
+
+export const OTHER_RECORD_COLOR = "var(--color-utility-neutral-500)";
+
+/** Legend order: the same order as the Species tiles. */
+export const SPECIES_GROUP_ORDER: SpeciesGroup[] = ["Mammal", "Bird", "Reptile", "Amphibian", "Plant"];

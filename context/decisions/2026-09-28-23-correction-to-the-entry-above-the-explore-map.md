@@ -1,0 +1,7 @@
+# 2026-09-28 - correction to the entry above: the Explore map key is one line, per designer feedback ("As mentioned, one line. Why two?"; "or 2 x 2").
+
+- **Sept 28 2026: correction to the entry above: the Explore map key is one line, per designer feedback ("As mentioned, one line. Why two?"; "or 2 x 2").** It wrapped to two lines because it sat inside the search card's column, which is capped at 400px, while one line needs about 610px. The key now has its own row along the bottom of the map, below both floating columns (`observations-search.tsx`: the columns sit in their own flex row, and the key comes after it, `self-start`), so it can take the width it needs. Where the map is under 680px wide, `MapLegend` switches to a two-column grid under the title instead of a ragged wrap (a container query against the map's panel layer). The rule that hides the key while a summary card is open on a stacked (under 648px) map is unchanged. Measured live with a summary card open:
+  - one line, 609x38px, at 1708x1024, 1440x900, 1280x720 and 800x700;
+  - the grid, 382x112px, at 1024x650 and 1024x560;
+  - no overlaps between the key, the search card, the summary card, the zoom buttons, the scale bar and the attribution at any of those sizes (CONTRACTS 2.8).
+  Zero console errors. `tsc`, `eslint --max-warnings=0` and `npm run check:contracts` are clean. Not committed.

@@ -12,6 +12,8 @@ import { Accordion } from "@/components/base/accordion/accordion";
 import { Avatar } from "@/components/base/avatar/avatar";
 import { Badge, CountBadge } from "@/components/base/badges/badges";
 import { Button } from "@/components/base/buttons/button";
+import { RecordActionBar, type RecordAction } from "@/app/pages/_shared/record-action-bar";
+import { RecordBackLink, RecordHero } from "@/app/pages/_shared/record-hero";
 import { Input } from "@/components/base/input/input";
 import { sortRows, type SortValue } from "@/app/pages/_shared/agreement-scope";
 import {
@@ -48,32 +50,6 @@ function MetaField({ label, children }: { label: string; children: ReactNode }) 
     <div className="flex flex-col gap-1">
       <p className="text-xs font-semibold tracking-wide text-white/70 uppercase">{label}</p>
       <div className="text-sm text-white">{children}</div>
-    </div>
-  );
-}
-
-function IdentityCard({ eyebrow, title, description, children }: { eyebrow: string; title: string; description?: string; children: ReactNode }) {
-  return (
-    <div className="shrink-0 px-6 pt-4">
-      <div className="flex flex-col gap-4 rounded-2xl bg-gradient-to-b from-brand-900 via-brand-800 via-[63.942%] to-brand-700 p-6">
-        <div className="flex flex-col gap-1">
-          <p className="text-xs font-semibold tracking-wide text-white/70 uppercase">{eyebrow}</p>
-          <h1 className="text-2xl font-medium text-balance text-white">{title}</h1>
-          {description && <p className="max-w-3xl text-sm text-balance text-white/80">{description}</p>}
-        </div>
-        <div className="flex flex-wrap items-start gap-8">{children}</div>
-      </div>
-    </div>
-  );
-}
-
-function Toolbar({ backLabel, backHref, children }: { backLabel: string; backHref: string; children: ReactNode }) {
-  return (
-    <div className="flex shrink-0 flex-wrap items-center justify-between gap-3 px-6 pt-6">
-      <Button color="link-gray" size="sm" iconLeading={ArrowNarrowLeft} href={backHref}>
-        {backLabel}
-      </Button>
-      <div className="flex flex-wrap items-center gap-3">{children}</div>
     </div>
   );
 }
@@ -217,14 +193,15 @@ function userActions(status: UserStatus): UserAction[] {
 }
 
 function ActionButtons<T extends { label: string; confirm: "none" | "plain" | "destructive"; primary?: boolean }>({ actions, onPick }: { actions: T[]; onPick: (action: T) => void }) {
+  const toAction = (a: T): RecordAction => ({ id: a.label, label: a.label, destructive: a.confirm === "destructive", onPress: () => onPick(a) });
+  const primary = actions.find((a) => a.primary);
   return (
-    <>
-      {actions.map((a) => (
-        <Button key={a.label} color={a.confirm === "destructive" ? "secondary-destructive" : a.primary ? "primary" : "secondary"} onPress={() => onPick(a)}>
-          {a.label}
-        </Button>
-      ))}
-    </>
+    <RecordActionBar
+      onDark
+      primary={primary && toAction(primary)}
+      secondary={actions.filter((a) => a !== primary && a.confirm !== "destructive").map(toAction)}
+      menu={actions.filter((a) => a.confirm === "destructive").map(toAction)}
+    />
   );
 }
 
@@ -313,11 +290,9 @@ export function UserDetail({ user }: { user: UmUser }) {
 
   return (
     <div className="flex min-h-0 flex-1 flex-col overflow-y-auto">
-      <Toolbar backLabel="Back to users" backHref={roleHref("/pages/user-management")}>
-        <ActionButtons actions={userActions(user.status)} onPick={pick} />
-      </Toolbar>
+      <RecordBackLink href={roleHref("/pages/user-management")}>Back to users</RecordBackLink>
 
-      <IdentityCard eyebrow="User" title={fullName(user)}>
+      <RecordHero eyebrow="User" title={fullName(user)} actions={<ActionButtons actions={userActions(user.status)} onPick={pick} />}>
         <MetaField label="Position">{user.position}</MetaField>
         <MetaField label="Organisation">{organisationLabel(user)}</MetaField>
         <MetaField label="User type">{userType(user)}</MetaField>
@@ -326,7 +301,7 @@ export function UserDetail({ user }: { user: UmUser }) {
             {meta.label}
           </Badge>
         </MetaField>
-      </IdentityCard>
+      </RecordHero>
 
       {user.status === "invited" && (
         <div className="shrink-0 px-6 pt-4">
@@ -336,14 +311,13 @@ export function UserDetail({ user }: { user: UmUser }) {
             description={`${user.firstName} becomes Active once they accept the invitation. No email is sent in this preview.`}
             confirmLabel="Noted"
             contained
-            className="max-w-none rounded-lg border border-brand-200 px-4 py-3 md:px-4"
           />
         </div>
       )}
 
       <Tabs selectedKey={tab} onSelectionChange={setTab}>
         <div className="px-6 pt-4">
-          <TabList aria-label="User sections" type="underline" size="md" className="gap-6">
+          <TabList aria-label="User sections" type="underline" size="md">
             <Tab id="roles" label="Roles and permissions" badge={roles.length} />
             <Tab id="details" label="Details" />
           </TabList>
@@ -447,11 +421,9 @@ export function RoleDetail({ role }: { role: UmRole }) {
 
   return (
     <div className="flex min-h-0 flex-1 flex-col overflow-y-auto">
-      <Toolbar backLabel="Back to roles" backHref={roleHref("/pages/user-management/roles")}>
-        <ActionButtons actions={accessActions(role.status)} onPick={pick} />
-      </Toolbar>
+      <RecordBackLink href={roleHref("/pages/user-management/roles")}>Back to roles</RecordBackLink>
 
-      <IdentityCard eyebrow={role.kind === "system" ? "System role" : "Custom role"} title={role.name} description={role.description}>
+      <RecordHero eyebrow={role.kind === "system" ? "System role" : "Custom role"} title={role.name} description={role.description} actions={<ActionButtons actions={accessActions(role.status)} onPick={pick} />}>
         <MetaField label="Role ID">{role.id}</MetaField>
         <MetaField label="Role code">{role.code}</MetaField>
         {role.kind === "custom" && <MetaField label="Department">{role.department}</MetaField>}
@@ -461,7 +433,7 @@ export function RoleDetail({ role }: { role: UmRole }) {
             {meta.label}
           </Badge>
         </MetaField>
-      </IdentityCard>
+      </RecordHero>
 
       {role.status === "scheduled" && (
         <div className="shrink-0 px-6 pt-4">
@@ -471,14 +443,13 @@ export function RoleDetail({ role }: { role: UmRole }) {
             description={`This role becomes active on ${formatShortDate(role.startDate)}.`}
             confirmLabel="Noted"
             contained
-            className="max-w-none rounded-lg border border-brand-200 px-4 py-3 md:px-4"
           />
         </div>
       )}
 
       <Tabs selectedKey={tab} onSelectionChange={setTab}>
         <div className="px-6 pt-4">
-          <TabList aria-label="Role sections" type="underline" size="md" className="gap-6">
+          <TabList aria-label="Role sections" type="underline" size="md">
             <Tab id="permissions" label="Permissions" badge={granted.length} />
             <Tab id="users" label="Users" badge={users.length} />
           </TabList>
@@ -584,11 +555,9 @@ export function PermissionDetail({ permission }: { permission: UmPermission }) {
 
   return (
     <div className="flex min-h-0 flex-1 flex-col overflow-y-auto">
-      <Toolbar backLabel="Back to permissions" backHref={roleHref("/pages/user-management/permissions")}>
-        <ActionButtons actions={accessActions(permission.status).filter((a) => !(permission.status === "scheduled" && a.to === "active"))} onPick={pick} />
-      </Toolbar>
+      <RecordBackLink href={roleHref("/pages/user-management/permissions")}>Back to permissions</RecordBackLink>
 
-      <IdentityCard eyebrow={permission.category} title={permission.name} description={permission.description}>
+      <RecordHero eyebrow={permission.category} title={permission.name} description={permission.description} actions={<ActionButtons actions={accessActions(permission.status).filter((a) => !(permission.status === "scheduled" && a.to === "active"))} onPick={pick} />}>
         <MetaField label="Permission ID">{permission.id}</MetaField>
         <MetaField label="Permission code">{permission.code}</MetaField>
         <MetaField label="Category">{permission.category}</MetaField>
@@ -598,7 +567,7 @@ export function PermissionDetail({ permission }: { permission: UmPermission }) {
             {meta.label}
           </Badge>
         </MetaField>
-      </IdentityCard>
+      </RecordHero>
 
       {/* The wireframe's "This permission is ready for activation" banner, with its Activate action. */}
       {permission.status === "scheduled" && (
@@ -610,7 +579,6 @@ export function PermissionDetail({ permission }: { permission: UmPermission }) {
             confirmLabel="Activate permission"
             onConfirm={() => setPending({ to: "active", label: "Activate", confirm: "plain" })}
             contained
-            className="max-w-none rounded-lg border border-brand-200 px-4 py-3 md:px-4"
           />
         </div>
       )}
@@ -684,7 +652,7 @@ export function UmNotFound({ kind, id, backHref }: { kind: "user" | "role" | "pe
   const roleHref = useRoleHref();
   return (
     <div className="flex flex-1 flex-col items-center justify-center gap-3 p-12 text-center">
-      <h1 className="text-lg font-medium text-primary">{kind[0]!.toUpperCase() + kind.slice(1)} not found</h1>
+      <h1 className="text-lg font-semibold text-primary">{kind[0]!.toUpperCase() + kind.slice(1)} not found</h1>
       <p className="max-w-sm text-sm text-balance text-tertiary">There is no {kind} {id}. Records you add are kept in this browser only.</p>
       <Button color="link-color" size="sm" href={roleHref(backHref)} iconLeading={ArrowNarrowLeft}>
         Back to {kind}s

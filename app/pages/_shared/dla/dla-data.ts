@@ -3,21 +3,22 @@ import type { Boundary } from "@/app/pages/_shared/map-search/geo";
 
 // Data Licencing Agreement (DLA) model + seed data for /pages/dla. Shaped from the Master Flows
 // wireframe (Figma YMproGZfrFB5jUqPHPxMhk, node 33:43259: No DLAs Yet / Request-Renew / View /
-// Approve-Reject), re-fitted to the shell the same way DSA was - see CONTEXT.md, "Data Licencing
+// Approve-Reject), re-fitted to the shell the same way DSA was - see context/decisions/2026-09-23-03-data-licencing-agreement-dla-workflow-built-at-pages.md, "Data Licencing
 // Agreement (DLA)" for the full mapping and every deliberate departure from the wireframe.
 //
 // Status now follows the shared DSA/DLA workflow model (see agreement-status.ts) - Draft, Submitted,
 // Under Review, On Hold, Approved, Rejected, Active, Closed, Cancelled - replacing the wireframe's
-// own narrower Active/Under Review/Rejected/Expired/Withdrawn set (see CONTEXT.md, "Unified
+// own narrower Active/Under Review/Rejected/Expired/Withdrawn set (see context/decisions/2026-09-24-04-unified-dsa-dla-status-model-rolled-straight-into.md, "Unified
 // DSA/DLA status model" for the source and every decision behind it). Two real, new capabilities
 // this brought to DLA specifically: a request can now be saved as a Draft before submitting (the
 // wireframe's own form had no draft step at all), and Submitted/Under Review are now distinct
 // stages, not one and the same.
-export type { AgreementStatus as DlaStatus } from "@/app/pages/_shared/agreement-status";
+export type { AgreementStatus as DlaStatus, AgreementEvent as DlaEvent } from "@/app/pages/_shared/agreement-status";
 export { agreementStatusOrder as dlaStatusOrder, agreementStatusMeta as dlaStatusMeta } from "@/app/pages/_shared/agreement-status";
-import type { AgreementStatus as DlaStatus } from "@/app/pages/_shared/agreement-status";
+import type { AgreementStatus as DlaStatus, AgreementEvent as DlaEvent } from "@/app/pages/_shared/agreement-status";
+import { REVIEWING_ADMIN_NAME } from "@/app/pages/_shared/agreement-scope";
 
-// Level 1 (public, no DLA needed) is the tier already documented sitewide (see CONTEXT.md's "BDBSA
+// Level 1 (public, no DLA needed) is the tier already documented sitewide (see .claude/rules/ref-domain.md, "BDBSA
 // domain research" and Explore's own access banner) - it never appears here because a Level 1
 // location doesn't need a DLA in the first place. A DLA only ever grants one of these two:
 export type DlaAccessLevel = "level2" | "level3";
@@ -88,24 +89,45 @@ export interface Dla {
   validFrom: string;
   validTo: string;
   requestor: DlaRequestor;
-  /** The signed agreement an admin attaches on approval - distinct from a requester's own upload, which this workflow doesn't have (a request has no file of its own to submit, only what an admin issues back). */
-  agreementFile: { name: string } | null;
+  /** The signed agreement an admin attaches on approval - distinct from a requester's own upload, which this workflow doesn't have (a request has no file of its own to submit, only what an admin issues back). Real bytes (a base64 data URL), not just a filename - see CONTEXT.md, "Phase 1: admin uploads, requester downloads" - so "Download PDF" on the deep dive is a genuine download, not a toast. */
+  agreementFile: DlaAgreementFile | null;
   /** "Custom DLA" checkbox on the Approve Request modal. */
   isCustom: boolean;
   customNote: string;
   rejectionReason: string;
   submittedAt: string;
   updatedAt: string;
+  /** The Audit Log tab's own dated trail of every status this request has moved through. */
+  history: DlaEvent[];
 }
 
+/** The Approve Request modal's own real upload - a name, its byte size (enforced against
+ *  `MAX_AGREEMENT_FILE_BYTES` at the point of picking it), and the file's own content as a real,
+ *  downloadable `data:` URL (`FileReader.readAsDataURL`, read in `dla-detail.tsx` - a DOM API, kept
+ *  out of this otherwise-server-safe data module). A base64 data URL is a plain string, so it
+ *  round-trips through `JSON.stringify`/localStorage exactly like everything else this store
+ *  persists - no new serialisation plumbing needed, unlike a raw `Blob` (which `JSON.stringify`
+ *  reduces to `"{}"`). */
+export interface DlaAgreementFile {
+  name: string;
+  size: number;
+  dataUrl: string;
+}
+
+/** The "PDF, PNG, JPG (max. 2mb)" hint on the Approve Request modal's `InputFile`, enforced for
+ *  real - a real per-record file base64-encoded into a zustand-persisted, localStorage-backed
+ *  store is a genuine quota risk (a browser's whole-origin localStorage budget is typically
+ *  5-10MB) if left unbounded; 2MB keeps a single record's worst case well inside that. */
+export const MAX_AGREEMENT_FILE_BYTES = 2 * 1024 * 1024;
+
 /** What the record form edits - a `Dla` minus what the workflow itself assigns. */
-export type DlaDraft = Omit<Dla, "id" | "status" | "submittedAt" | "updatedAt">;
+export type DlaDraft = Omit<Dla, "id" | "status" | "submittedAt" | "updatedAt" | "history">;
 
 /** What the "Approve Request" modal collects - the fields it sets on approval. */
 export interface DlaApproveInput {
   validFrom: string;
   validTo: string;
-  agreementFile: { name: string } | null;
+  agreementFile: DlaAgreementFile | null;
   isCustom: boolean;
   customNote: string;
 }
@@ -140,6 +162,55 @@ export function todayIso(): string {
 
 export function requestorName(r: DlaRequestor): string {
   return `${r.firstName} ${r.lastName}`.trim();
+}
+
+/** A minimal, real, valid one-page PDF (plain text objects, the built-in Helvetica font, a real
+ *  computed xref table) - not a fabricated byte blob. Used only for seed data: the 3 already-
+ *  "approved" seed requests below need something real to download too, and there is no actual
+ *  signed document behind them to recover, so this stands in as an honest placeholder ("this is a
+ *  placeholder", not real agreement text) rather than the record silently having no downloadable
+ *  file at all. Every agreement approved through the real Approve Request modal from here on
+ *  attaches the requester's own real uploaded bytes instead (`readAgreementFile`, dla-detail.tsx). */
+function placeholderAgreementFile(id: string): DlaAgreementFile {
+  const lines = [
+    "Data Licencing Agreement",
+    id,
+    "This is a placeholder document. This preview does not store a real signed agreement for it.",
+  ];
+  const escape = (s: string) => s.replace(/\\/g, "\\\\").replace(/\(/g, "\\(").replace(/\)/g, "\\)");
+  const stream = lines.map((line, i) => `BT /F1 ${i === 0 ? 16 : 11} Tf 72 ${700 - i * 26} Td (${escape(line)}) Tj ET`).join("\n");
+  const objects = [
+    "<< /Type /Catalog /Pages 2 0 R >>",
+    "<< /Type /Pages /Kids [3 0 R] /Count 1 >>",
+    "<< /Type /Page /Parent 2 0 R /Resources << /Font << /F1 4 0 R >> >> /MediaBox [0 0 612 792] /Contents 5 0 R >>",
+    "<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>",
+    `<< /Length ${stream.length} >>\nstream\n${stream}\nendstream`,
+  ];
+  let pdf = "%PDF-1.4\n";
+  const offsets: number[] = [];
+  objects.forEach((body, i) => {
+    offsets.push(pdf.length);
+    pdf += `${i + 1} 0 obj\n${body}\nendobj\n`;
+  });
+  const xrefStart = pdf.length;
+  pdf += `xref\n0 ${objects.length + 1}\n0000000000 65535 f \n`;
+  for (const offset of offsets) pdf += `${String(offset).padStart(10, "0")} 00000 n \n`;
+  pdf += `trailer\n<< /Size ${objects.length + 1} /Root 1 0 R >>\nstartxref\n${xrefStart}\n%%EOF`;
+  return { name: `${id}.pdf`, size: pdf.length, dataUrl: `data:application/pdf;base64,${btoa(pdf)}` };
+}
+
+/** Draft through On Hold, a request's own access level is still being decided, so the form stays
+ *  open. Approved already is a decision - the business's own sheet has it "remain as Approved...
+ *  until the date... becomes active" - so a granted level (Level 2 or Level 3) can't be swapped for
+ *  the other one in place; getting the other level for that location takes a new request, the same
+ *  "Renew creates a new record" precedent this workflow already applies to a Closed agreement. See
+ *  CONTEXT.md, "DLA: an access level can't be changed once granted".
+ *
+ *  The single source of truth for whether a request can be edited at all - both the deep dive's own
+ *  Edit action (dla-detail.tsx) and the edit route itself (app/pages/dla/[id]/edit) must check this,
+ *  since a status guard only on the button doesn't stop a direct URL visit. */
+export function isDlaEditable(status: DlaStatus): boolean {
+  return status === "draft" || status === "submitted" || status === "under_review" || status === "on_hold";
 }
 
 /** Next display ID: DLA-<this year>-<one past the highest sequence number in use>. */
@@ -254,13 +325,19 @@ export const seedDlas: Dla[] = [
     requestPeriodTo: "2027-01-25",
     validFrom: "2026-01-26",
     validTo: "2027-01-25",
-    requestor: { firstName: "John", lastName: "Doe", organisation: "SA Museum", email: "john.doe@sa.gov.au", phone: "" },
-    agreementFile: { name: "DLA-2025-01348.pdf" },
+    requestor: { firstName: "Phoenix", lastName: "Baker", organisation: "South Australian Museum", email: "phoenix.baker@example.org", phone: "" },
+    agreementFile: placeholderAgreementFile("DLA-2025-01348"),
     isCustom: false,
     customNote: "",
     rejectionReason: "",
     submittedAt: "2026-01-20",
     updatedAt: "2026-01-26",
+    history: [
+      { status: "draft", at: "2026-01-20", by: "Phoenix Baker" },
+      { status: "submitted", at: "2026-01-21", by: "Phoenix Baker" },
+      { status: "under_review", at: "2026-01-23", by: REVIEWING_ADMIN_NAME },
+      { status: "active", at: "2026-01-26", by: REVIEWING_ADMIN_NAME },
+    ],
   },
   {
     id: "DLA-2026-00502",
@@ -287,6 +364,11 @@ export const seedDlas: Dla[] = [
     rejectionReason: "",
     submittedAt: "2026-09-18",
     updatedAt: "2026-09-18",
+    history: [
+      { status: "draft", at: "2026-09-18", by: "Maya Dewitt" },
+      { status: "submitted", at: "2026-09-18", by: "Maya Dewitt" },
+      { status: "under_review", at: "2026-09-18", by: REVIEWING_ADMIN_NAME },
+    ],
   },
   {
     id: "DLA-2026-00487",
@@ -306,13 +388,24 @@ export const seedDlas: Dla[] = [
     requestPeriodTo: "2027-07-31",
     validFrom: "",
     validTo: "",
-    requestor: { firstName: "Phoenix", lastName: "Baker", organisation: "Baker Environmental Consulting", email: "phoenix.baker@example.org", phone: "" },
+    requestor: { firstName: "Phoenix", lastName: "Baker", organisation: "South Australian Museum", email: "phoenix.baker@example.org", phone: "" },
     agreementFile: null,
     isCustom: false,
     customNote: "",
     rejectionReason: "Insufficient evidence of institutional affiliation for enhanced-access sensitive species data. Please reapply with a supporting letter from a recognised research body.",
     submittedAt: "2026-08-05",
     updatedAt: "2026-08-12",
+    history: [
+      { status: "draft", at: "2026-08-05", by: "Phoenix Baker" },
+      { status: "submitted", at: "2026-08-05", by: "Phoenix Baker" },
+      { status: "under_review", at: "2026-08-08", by: REVIEWING_ADMIN_NAME },
+      {
+        status: "rejected",
+        at: "2026-08-12",
+        by: REVIEWING_ADMIN_NAME,
+        note: "Insufficient evidence of institutional affiliation for enhanced-access sensitive species data. Please reapply with a supporting letter from a recognised research body.",
+      },
+    ],
   },
   {
     id: "DLA-2024-00219",
@@ -333,12 +426,19 @@ export const seedDlas: Dla[] = [
     validFrom: "2025-01-15",
     validTo: "2026-01-14",
     requestor: { firstName: "Lana", lastName: "Steiner", organisation: "Natural Resources KI", email: "lana.steiner@example.org", phone: "" },
-    agreementFile: { name: "DLA-2024-00219.pdf" },
+    agreementFile: placeholderAgreementFile("DLA-2024-00219"),
     isCustom: false,
     customNote: "",
     rejectionReason: "",
     submittedAt: "2025-01-10",
     updatedAt: "2025-01-15",
+    history: [
+      { status: "draft", at: "2025-01-10", by: "Lana Steiner" },
+      { status: "submitted", at: "2025-01-11", by: "Lana Steiner" },
+      { status: "under_review", at: "2025-01-13", by: REVIEWING_ADMIN_NAME },
+      { status: "active", at: "2025-01-15", by: REVIEWING_ADMIN_NAME },
+      { status: "closed", at: "2026-01-14", by: "System", note: "Closed automatically - the agreement's end date passed." },
+    ],
   },
   {
     id: "DLA-2026-00340",
@@ -358,13 +458,19 @@ export const seedDlas: Dla[] = [
     requestPeriodTo: "2027-04-30",
     validFrom: "",
     validTo: "",
-    requestor: { firstName: "Olivia", lastName: "Wyatt", organisation: "SA Museum", email: "olivia.wyatt@sa.gov.au", phone: "" },
+    requestor: { firstName: "Olivia", lastName: "Wyatt", organisation: "South Australian Museum", email: "olivia.wyatt@sa.gov.au", phone: "" },
     agreementFile: null,
     isCustom: false,
     customNote: "",
     rejectionReason: "",
     submittedAt: "2026-05-02",
     updatedAt: "2026-05-14",
+    history: [
+      { status: "draft", at: "2026-05-02", by: "Olivia Wyatt" },
+      { status: "submitted", at: "2026-05-02", by: "Olivia Wyatt" },
+      { status: "under_review", at: "2026-05-06", by: REVIEWING_ADMIN_NAME },
+      { status: "cancelled", at: "2026-05-14", by: "Olivia Wyatt" },
+    ],
   },
   // Draft through Approved: real examples of every stage in the shared DSA/DLA workflow (see
   // agreement-status.ts) that DLA didn't have seed coverage for before - Draft and Submitted (as
@@ -378,13 +484,14 @@ export const seedDlas: Dla[] = [
     requestPeriodTo: "",
     validFrom: "",
     validTo: "",
-    requestor: { firstName: "Phoenix", lastName: "Baker", organisation: "Baker Environmental Consulting", email: "phoenix.baker@example.org", phone: "" },
+    requestor: { firstName: "Phoenix", lastName: "Baker", organisation: "South Australian Museum", email: "phoenix.baker@example.org", phone: "" },
     agreementFile: null,
     isCustom: false,
     customNote: "",
     rejectionReason: "",
     submittedAt: "2026-09-19",
     updatedAt: "2026-09-19",
+    history: [{ status: "draft", at: "2026-09-19", by: "Phoenix Baker" }],
   },
   {
     id: "DLA-2026-00515",
@@ -411,6 +518,10 @@ export const seedDlas: Dla[] = [
     rejectionReason: "",
     submittedAt: "2026-09-21",
     updatedAt: "2026-09-21",
+    history: [
+      { status: "draft", at: "2026-09-21", by: "Maya Dewitt" },
+      { status: "submitted", at: "2026-09-21", by: "Maya Dewitt" },
+    ],
   },
   {
     id: "DLA-2026-00498",
@@ -437,6 +548,17 @@ export const seedDlas: Dla[] = [
     rejectionReason: "",
     submittedAt: "2026-09-11",
     updatedAt: "2026-09-19",
+    history: [
+      { status: "draft", at: "2026-09-11", by: "Lana Steiner" },
+      { status: "submitted", at: "2026-09-11", by: "Lana Steiner" },
+      { status: "under_review", at: "2026-09-15", by: REVIEWING_ADMIN_NAME },
+      {
+        status: "on_hold",
+        at: "2026-09-19",
+        by: REVIEWING_ADMIN_NAME,
+        note: "Waiting on confirmation of the grazing management plan's own project boundaries before the review can continue.",
+      },
+    ],
   },
   {
     id: "DLA-2026-00510",
@@ -456,13 +578,19 @@ export const seedDlas: Dla[] = [
     requestPeriodTo: "2028-11-30",
     validFrom: "2026-12-01",
     validTo: "2028-11-30",
-    requestor: { firstName: "Olivia", lastName: "Wyatt", organisation: "SA Museum", email: "olivia.wyatt@sa.gov.au", phone: "" },
-    agreementFile: { name: "DLA-2026-00510.pdf" },
+    requestor: { firstName: "Olivia", lastName: "Wyatt", organisation: "South Australian Museum", email: "olivia.wyatt@sa.gov.au", phone: "" },
+    agreementFile: placeholderAgreementFile("DLA-2026-00510"),
     isCustom: false,
     customNote: "",
     rejectionReason: "",
     submittedAt: "2026-09-05",
     updatedAt: "2026-09-23",
+    history: [
+      { status: "draft", at: "2026-09-05", by: "Olivia Wyatt" },
+      { status: "submitted", at: "2026-09-05", by: "Olivia Wyatt" },
+      { status: "under_review", at: "2026-09-10", by: REVIEWING_ADMIN_NAME },
+      { status: "approved", at: "2026-09-23", by: REVIEWING_ADMIN_NAME },
+    ],
   },
 ];
 

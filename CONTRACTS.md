@@ -20,13 +20,14 @@ fails `npm run check:contracts` and shows up in the daily audit (`npm run audit`
 
 ### §0.1 Precedence
 
-1. `CONTRACTS.md` is binding. `CONTEXT.md` is the dated history of how the system got here; where the two
-   disagree, this file wins and `CONTEXT.md` is corrected in the same task.
+1. `CONTRACTS.md` is binding. The dated history of how the system got here lives in
+   `context/decisions/` (one file per entry, indexed in `context/decisions/INDEX.md`); where the two disagree, this
+   file wins and the relevant decision file is corrected in the same task.
 2. An explicit instruction from the designer in the current session may override a clause. When that
-   happens the agent MUST (a) name the clause being overridden, (b) log the override in `CONTEXT.md`, and
-   (c) if the clause is §1.4 or §9, record it in `contracts/overrides.json`. One override is never a
-   precedent for the next task.
-3. Nothing in `CONTEXT.md` may be used to justify a violation of this file.
+   happens the agent MUST (a) name the clause being overridden, (b) log the override in a new dated
+   file under `context/decisions/` (indexed in `context/decisions/INDEX.md`), and (c) if the clause is §1.4 or §9,
+   record it in `contracts/overrides.json`. One override is never a precedent for the next task.
+3. Nothing in `CONTEXT.md` or `context/decisions/` may be used to justify a violation of this file.
 
 ### §0.2 No assumption - verify before use
 
@@ -49,8 +50,8 @@ missing, render an honest marker (`?` per §1.2, "Not provided" per §2.3) or as
 
 - Placeholder people are Olivia Wyatt, Phoenix Baker, Lana Steiner, Maya Dewitt only. Never the current
   user's real name or email.
-- Real organisations come from the BDBSA research in `CONTEXT.md` (BirdLife Australia, Birds SA, South
-  Australian Museum, ...). Never invent a partner.
+- Real organisations come from the BDBSA research in `.claude/rules/ref-domain.md` (BirdLife Australia, Birds SA,
+  South Australian Museum, ...). Never invent a partner.
 - Sample data MUST NOT describe its own bugs in a field the UI renders.
 - **Origin:** a Figma link fabricated for a component, a Bell icon used where Figma drew a check-circle.
 - **Enforcement:** `REVIEW`, `AUDIT` (new external URLs are listed).
@@ -77,8 +78,12 @@ A change to `components/**`, a page, a token, or a `/test-*` screen is done only
 4. A live browser pass (Playwright or the browser tool) over every affected screen, all affected
    personas, zero console errors, computed styles checked where styling was the point.
 5. A sibling grep: the same bug pattern searched for in every file that shares the pattern.
-6. A dated entry appended to `CONTEXT.md` (append-only, no em-dashes).
+6. A dated file created with `npm run decision:new` under `context/decisions/` (append-only, no
+   em-dashes). The index is generated (`npm run context:index`), never edited by hand.
 7. `git status` after any CLI ingest: a CLI run can silently revert already-fixed files.
+8. Typography QA (§2.9), on any change that adds or changes visible text: `/emil-typography` and
+   `/emil-design-foundations` ran, after the type was checked against the design system and the
+   patterns already on the web app. The report names what was checked and what was measured.
 
 - **Enforcement:** `REVIEW` (item 3 is `AUTO`).
 
@@ -105,6 +110,22 @@ Anticipate what the designer will need; do not wait to be told or corrected.
 - **Origin:** a User Management brief where the designer had to point out that the feature is
   BioData Admin only, a fact already in the role model and `CONTEXT.md`; and repeated rounds where
   contract violations were caught by the designer in review instead of being raised first.
+- **Enforcement:** `REVIEW`.
+
+### §0.8 Promote a repeated fix
+
+The second time the same underlying bug is fixed for the same reason - two `CONTEXT.md`/decision-log
+entries naming the same cause, not just a similar symptom - it MUST NOT be fixed by hand a third time.
+The task that fixes it the second time writes or extends an `AUTO` check for it in
+`scripts/check-contracts.mjs` instead, so a machine catches it from then on rather than relying on it
+being remembered.
+
+- MUST NOT close a task with "fixed again" for a bug already logged as fixed once before, with no
+  `AUTO` check added or extended in the same task.
+- A rule that cannot be checked mechanically at all (a layout judgement, a tone-of-voice call) stays
+  `REVIEW`, but is still named as a recurring pattern so the next person checking it knows to look for it.
+- **Origin:** `MultiSelect` clearing its selection on Escape was logged as fixed six times before it
+  became `AUTO §1.9a` (§1.9's own origin line).
 - **Enforcement:** `REVIEW`.
 
 ---
@@ -138,7 +159,8 @@ When no existing component does the job, MUST render the shared gap marker `<Gap
 
 When a gap is resolved by a new component, or a component changes (a prop, a token, a bug fix), every
 screen that used the placeholder or the component MUST be updated in the same task: the placeholder
-swapped, the gap table and mapping table updated, `CONTEXT.md` corrected.
+swapped, the gap table and mapping table updated, the relevant `context/decisions/` entry corrected (or
+a new one added if there wasn't one).
 
 ### §1.4 A new component is a designer override, with checks and balances
 
@@ -148,7 +170,8 @@ side effect of building a screen.
 1. **Who:** only the designer may authorise it, explicitly, for that component.
 2. **Record:** before the component file is committed, an entry MUST exist in
    `contracts/overrides.json` with `component` (path), `designer`, `date`, `reason` (why no existing
-   component works, and which were checked), and `approvedBy`. Use `npm run contracts:override`.
+   component works, and which were checked), `approvedBy`, and `reviewBy` (a date; §1.4b, §9.2). Use
+   `npm run contracts:override`.
 3. **Inventory:** the file is added to `contracts/component-inventory.json` by
    `npm run check:contracts -- --update-baseline`. Doing that is itself an audited act (§9.4).
 4. **No twin:** it MUST NOT duplicate the job of an existing component (§1.7).
@@ -157,7 +180,8 @@ side effect of building a screen.
    status. A component without an override record is flagged **VIOLATION**.
 
 - **Enforcement:** `AUTO §1.4` (a component file not in the inventory and without an override fails the
-  check), `AUDIT`.
+  check), `AUTO §1.4b` (an override with no `reviewBy`, or whose `reviewBy` has passed - checked against
+  today, on every run, not just at creation), `AUDIT`.
 
 ### §1.5 The DEW / Scaffold line
 
@@ -224,8 +248,23 @@ Colour, spacing, radius, shadow and type come from the `--ui-*` layer in `app/gl
   `bg-quaternary`, `bg-border-secondary`, `border-secondary_hover`, `border-l-brand-solid`,
   `border-error-subtle`, `selected:` variants, `ring-offset-bg-primary`. Add the utility to `globals.css`
   first if it is genuinely needed.
-- **Enforcement:** `AUTO §2.1` (known-dead classes and hard-coded colours, ratcheted against
-  `contracts/baseline.json`: existing debt may not grow).
+- **Every colour primitive traces to Figma, not invention.** `app/globals.css`'s `--color-*` scales
+  MUST match the real "DS - Foundations" Figma file's Colors page (`llQ4DndM7U0la4qg6MttC5`, node
+  `5225:371288`) exactly, recorded in `contracts/figma-colours.json`. A primitive that drifts from
+  that reference is fixed at the token the moment it's found, not left - `--color-gray-950` carried
+  Untitled UI's stock value for weeks with no real value to check it against; fixed 29 Sept 2026 once
+  one existed, and both doc pages that had copied its old hex as documentation text were fixed in the
+  same sibling grep. MUST NOT invent a hex value, approximate one by eye, or bring in a whole new
+  named palette Figma documents but nothing yet uses (e.g. Flinders Violet, Horizon Blue) as a side
+  effect of building a screen - that's a designer decision, same tier as a new component (§1.4).
+- **A hardcoded colour that matches nothing in `contracts/figma-colours.json` at all was invented, not
+  just mis-placed** - a harder violation than hardcoding a real token's value inline. Exempt:
+  `components/foundations/payment-icons/**`, third-party payment-brand logos whose hex is each
+  brand's own trademark, not a DEW colour choice.
+- **Enforcement:** `AUTO §2.1a` (known-dead classes), `AUTO §2.1b` (hard-coded colour, ratcheted
+  against `contracts/baseline.json`: existing debt may not grow), `AUTO §2.1c` (a primitive drifted
+  from `contracts/figma-colours.json` - hard, never ratcheted), `AUTO §2.1d` (a colour literal
+  matching nothing in `contracts/figma-colours.json` - ratcheted).
 
 ### §2.2 Typefaces
 
@@ -267,6 +306,64 @@ components, build, QA, document.
 
 A component MUST render identically inside and outside `.prose-doc`. Headings and paragraphs inside a
 component carry explicit `!` overrides where the doc-site globals would otherwise leak in.
+
+### §2.8 Floating panels never overlap
+
+Two floating elements on the same surface (map controls, a summary card, a map key, a search card,
+the map's scale bar and attribution) MUST NOT cover each other, at any window size.
+
+- MUST lay out floating panels that share a surface in one layout (a flex column or row), not
+  position each one on its own with offsets that only work at one size.
+- A panel that can grow (a card with a photo, a results list) MUST be height-bounded by that layout
+  and scroll inside itself; its primary action stays reachable.
+- Where there is not room for panels side by side, they stack; they never overlap.
+- **Exception:** the floating dev tools (§3.8) are draggable and are not product layout.
+- **Origin:** Explore option 2's record summary card grew down over the "Species group" map key.
+- **Enforcement:** `REVIEW` (a live pass measuring panel boxes at several window sizes, §0.6 item 4).
+
+### §2.9 Type hierarchy
+
+A correct type hierarchy is non-negotiable and is right the first time. An agent MUST NOT generate a
+type layer: a size, weight, colour, case, tracking or line-height combination that no source has
+already defined. Every piece of text takes its treatment from the first of these that answers, in this
+order, and the order is not skipped:
+
+1. **The design system.** The `/primitives/typography` scale and weights, the text colour tokens, and the
+   text the component itself already sets (`SectionHeader.Heading`, `Badge`, `Table.Head`, `HintText`,
+   `Label`). Text inside a real component is never restyled at the call site (§1.9).
+2. **Patterns already on the web app.** Find the sibling that plays the same role (a popover title, a
+   card heading, a field hint, a table cell, a count) and copy its classes exactly. One role has one
+   treatment everywhere: the same role MUST NOT be medium in one place and semibold in another.
+3. **Emil's skills.** `/emil-typography` and `/emil-design-foundations` judge the result: hierarchy
+   (one focal point, everything else recedes), scale steps, weights, tabular numbers on changing
+   figures, `text-balance`, line length, contrast, and sentence case.
+
+- If all three are silent, ask one precise question (§0.4). MUST NOT invent a layer to fill the gap.
+- Every change that adds or changes visible text runs both skills as part of QA (§0.6 item 8), with
+  computed styles measured in a live browser (`getComputedStyle`, not the class list): family, size,
+  weight, colour and contrast, tabular figures where a number changes.
+- The report says which design system entry and which existing pattern each new layer was taken from.
+  A layer with no source named is a violation, however good it looks.
+- **Origin:** the ingestion popover's tree-card heading was medium where its sibling popover heading
+  was semibold; a small "where" line sat between two larger lines and broke the hierarchy; `TextArea`
+  rendered 16px beside a 14px `Input`; the typography docs and the components disagree on caption weight.
+- **Enforcement:** `REVIEW` (the two skills at §0.6 item 8); `AUTO §2.1` already fails the dead `text-md`.
+
+### §2.10 No affordance for a shortcut that isn't real
+
+A control MUST NOT show a keyboard-shortcut hint unless that exact shortcut is wired up and does
+something on the screen showing it. A hint is a promise; an unwired one is a fabrication, same tier as
+a fake icon or a fake link (§0.3).
+
+- MUST NOT default a component to showing a shortcut badge. It is opt-in per call site, and only where
+  the caller has a real binding to advertise.
+- **Origin:** `ComboBox`'s `shortcut` prop defaulted to `true`, so every search field built on it -
+  "Search projects" in the dataset-upload flow, "Select Location" in DLA's Add a location modal -
+  showed a `⌘K` badge with no `⌘K` handler anywhere in the app. Caught directly by the designer off a
+  screenshot of the project-search field. Fixed once, at the component (`shortcut = false` by default),
+  not per call site - `GlobalSearch` and the species picker had already opted out by hand, so they were
+  unaffected either way. No component in this codebase currently has a real global shortcut to advertise.
+- **Enforcement:** `REVIEW`.
 
 ---
 
@@ -313,20 +410,42 @@ Primary rail, contextual sidebar, main - under the full-width header - on every 
 A role that cannot use a section still gets all three, with the restriction stated in main. Column 2
 always exists and always says something about where you are.
 
-- Exempt by name: `app/pages/biodata-home` (marketing) and `app/pages/auth/**` (auth flow).
+- Exempt by name: `app/pages/biodata-home` (marketing), `app/pages/auth/**` (auth flow) and `app/pages/page.tsx`
+  (the `/pages` screen index, a directory of screens rather than one).
 
 ### §3.8 Floating dev tools
 
-The role switcher and the options control are `FloatingMenuFab`s: draggable, above every map overlay
-(`z-[10000]`), and MUST NOT be compensated for with padding or margin in product layout.
-Modals and slide-over panels sit above them (`z-[20000]`, `lib/layers.ts`): a modal covers everything,
-the dev tools included.
+The preview controls (the role, a screen's layout options, a simulated run's outcome) live on one bar,
+the Prototype tools (`app/_prototype-tools/`), mounted once per screen as `<PrototypeTools />`:
+draggable, above every map overlay (`z-[10000]`), and MUST NOT be compensated for with padding or margin
+in product layout. Modals and slide-over panels sit above it (`z-[20000]`, `lib/layers.ts`): a modal covers
+everything, the dev tools included.
+
+- A tool shows only where it applies: the role is always there, and any other tool is added by the code
+  that owns it (`useRegisterTool`), only while it is on screen and has something to do. MUST NOT add a
+  separate floating button for a preview control, or show a tool on a screen where it does nothing.
+- The bar is Scaffold (§1.5): Geist, react-aria primitives, never DEW components, and coloured in Flinders
+  Violet so it never reads as part of the product.
 
 ### §3.9 Navigation order
 
 `lib/nav.ts` `Components` and `config/design-system.config.ts` keys are strictly A-Z. A new entry is
 slotted, never appended. If either list is found out of order, the whole list is fixed. (`Primitives` and
 `Patterns` follow a foundations-first order and are exempt.)
+
+### §3.10 Column 2 is navigation and actions only
+
+The contextual sidebar (column 2) holds where you are and what you can do from here: a section label, a
+list or tree or scope switch that moves you around, the Actions group (export, report), and the footer
+links. It MUST NOT hold information: no explanatory copy, no steps or explainers, no alerts, task cards
+or accordions. Information sits in main, above the content it explains.
+
+- **Exception:** the public-user (signed-out visitor) column 2, which explains what BioData SA is and
+  points to guides (`GuestAboutAside`). No other persona and no other screen.
+- **Origin:** the nominations list put a "How a nomination is reviewed" steps explainer in column 2.
+- **Enforcement:** `AUTO §3.10` (an `<aside>` in `app/pages` containing a heading, Progress steps, alert,
+  accordion or task card, except the public-user file). It catches structural information only; prose in
+  a plain paragraph is `REVIEW`.
 
 ---
 
@@ -338,8 +457,8 @@ Every create or edit form (Add Project option 2, DSA, DLA, and any new one) MUST
 (`app/pages/_shared/form-page.tsx`) with fields laid out in `<FormRow>`. Documented at `/patterns/forms`.
 
 1. **Header:** an optional eyebrow, the title (with a status badge for an existing record), a one-line
-   subtitle, and the header actions **Cancel** and **Save draft**. Save draft is omitted when a draft makes
-   no sense (editing a live record).
+   subtitle, and one **close button (X)** at the top right (`CloseButton`, labelled "Close form"): the way out
+   of the form. The header describes the step; it MUST NOT hold any other action.
 2. **Sections live in column 2.** A form with more than about two or three field groups is split into
    sections, and the sections are listed in the contextual sidebar as a `FormSectionList` (rendered into the
    shell through `FormSidebar`), which is the real **vertical Progress steps** component
@@ -357,16 +476,19 @@ Every create or edit form (Add Project option 2, DSA, DLA, and any new one) MUST
    arriving at it never shows it in red. The one exception is Submit, which checks the whole form. Column 2 marks the sections that still need attention, with a
    count. The alert and the inline errors are the only feedback; MUST NOT add a second message for the
    same fact.
-5. **Footer:** **Back a step** (secondary, left arrow icon) on the left, hidden on the first section. The
-   primary action on the right: **Continue** (right arrow icon) to move on, or the final action (**Submit**,
-   **Create project**, **Save changes**) on the last section. 
-6. **Leaving:** Cancel asks before discarding unsaved changes (`ConfirmationModal`), and says what will be
-   lost.
+5. **Footer:** every action, where the task ends. **Back a step** (secondary, left arrow icon) on the left,
+   hidden on the first section. On the right, **Save draft** (secondary), then the primary action:
+   **Continue** (right arrow icon) to move on, or the final action (**Submit**, **Create project**, **Save
+   changes**) on the last section. Save draft is omitted when a draft makes no sense (editing a live record).
+   Toasts are lifted clear of this footer everywhere (`TOAST_OFFSET`), so they never cover its buttons.
+6. **Leaving:** the close button asks before discarding unsaved changes (`ConfirmationModal`), and says
+   what will be lost.
 7. **Controls:** real DEW components only (`Input`, `TextArea`, `Select`, `MultiSelect`, `RadioGroup`,
    `Checkbox`, `Accordion`). No bespoke choice tiles.
 8. **Draft:** a draft needs only what identifies the record; submit validates the rest.
 
-- **Exempt:** Add Project option 1 (a stakeholder option, one question per card).
+- **Exempt:** Add Project option 1 (a stakeholder option, one question per card), and editing in place on a
+  detail page's own cards, which follows §4.7 instead.
 - **Enforcement:** `AUTO §4.1` (a file that uses `FormRow` must import `FormPage`), `AUTO §4.1b` (a `FormPage` screen must not use tabs).
 
 ### §4.2 Lists and tables
@@ -395,6 +517,21 @@ under a sticky header, and the numbered pagination stays pinned at the bottom.
 - **Enforcement:** `AUTO §4.2b` (a screen using `TableCard.Root` without `bodyScrollable` fails, except the
   embedded tables listed in the script), `REVIEW` for the layout chain.
 
+**One search width (§4.2c).** The search box in a collection toolbar (the row of search, then Filter,
+then any view or tree controls, above a list, table or tree) is the same everywhere.
+
+- MUST render `<ToolbarSearch>` (`app/pages/_shared/toolbar-search.tsx`): 384px wide (`max-w-sm`), shrinking
+  only on a narrow screen, small size, the `SearchMd` icon. Filter sits directly after it.
+- MUST NOT let the toolbar search grow to fill the row (`flex-1`), or give it its own width.
+- **Open, not decided:** Explore's results search (`/pages/observations`) was made full width on the
+  designer's instruction before this rule existed, and project-detail option 2's records search is
+  `max-w-md`. Neither has a Filter button beside it, so the check does not catch them; bringing them in
+  line is for the designer to decide.
+- **Origin:** the Survey records toolbar on project detail Option 3 grew its search to the full row while the
+  Projects, DSA, DLA and User Management lists all used 384px.
+- **Enforcement:** `AUTO §4.2c` (a file with a `ListFilterButton` whose search is a hand-rolled `Input` with a
+  search icon fails), `REVIEW` for toolbars without a Filter button.
+
 ### §4.3 Cognitive load
 
 More than five or six field groups needs tiering. A conditional field is conditional in the UI. One focal
@@ -413,25 +550,155 @@ explored. When a direction is chosen the others are deleted. A comparison is pre
 they ship the token inspector, and their own content is Barlow. `/pages/*` screens have none of that
 apparatus.
 
+### §4.6 Record pages follow the project page
+
+Every record page (a project, a DLA, a DSA, a nomination, a user, role or permission, and any new
+record) is laid out like the project page (`/pages/project-detail`):
+
+1. A Back link on its own above the card (`RecordBackLink`).
+2. The gradient identity card (`RecordHero`): eyebrow, title, a row of label/value facts, and the
+   record's actions at its top right (`RecordActionBar onDark`): one button for the next step, every
+   other action in the "..." menu, destructive ones below a divider.
+3. Optionally, one notice saying where the record stands and who acts next.
+4. Underline `Tabs`, each panel a bordered card of label/value rows (`RecordRow`).
+
+- MUST NOT put a record's actions in a bar above the card, or stack its content without tabs.
+- **Origin:** the nomination record page shipped with its actions above the card and no tabs, after
+  the designer had already asked for every record page to follow the project page.
+
+### §4.7 Roles belong to the data owner's contacts; show only what is approved
+
+A project's data owner (shown as **Published by**) has one or more contacts, and every one of those
+contacts carries its own **role** (role or type of work). The role is part of that contact.
+
+1. The role MUST be shown with its contact (name, then "· role"), and edited with that contact.
+2. MUST NOT show a separate "your role", "registered by", "Registered by (role)" or similar field or
+   row, and MUST NOT add a "Project team" card, on project detail or in its edit flows. Project managers
+   have their own card and their own roles.
+3. MUST NOT add a field, row, card, section or label to a screen that the designer did not approve or
+   the source does not define, even when it seems helpful. A new label is a question (§0.4), not a
+   decision.
+
+- **Origin:** a "Project team" card with a "Registered by (role)" row appeared on project detail
+  Option 3 after the role had already been placed with the data owner's contact, a correction the
+  designer had made more than once.
+- **Open, not decided:** the Add Project registration still asks "Your role" in its Project team
+  section; whether that question moves to the data owner's contact in registration is for the designer.
+- **Enforcement:** `AUTO §4.7` (a "Registered by" label under `app/pages` fails), `REVIEW` for the rest.
+
+### §4.8 Editing in place on a detail page
+
+Where a detail page (a record, a project) is edited on its own cards rather than in a form, every edit
+behaves the same way, on every card and every page.
+
+1. **Entry:** a card's edit icon edits that card; a field's edit icon (on hover or focus) edits its card,
+   scrolled to and focused on that field; "Edit record" (or the page's equivalent) edits every card. A new
+   record opens the same way, every card in edit mode.
+2. **One treatment:** a card in edit mode has the brand border and brand-50 halo and says "Editing". The field
+   rows use the same label-left layout as when viewed.
+3. **More than one card at a time:** while a card is in edit mode, the other cards stay at full strength and keep
+   their edit icons; opening another adds it to the same edit. MUST NOT dim or lock the other cards.
+4. **Actions in one place:** Cancel and Save changes (or "Add <type>" for a new record) sit in one sticky footer
+   across the bottom of the page, reading "Editing <cards> · Unsaved changes", and cover every card in edit mode.
+   MUST NOT put them inside a card or repeat them per card.
+5. **Leaving:** Cancel or Exit with unsaved changes asks first. Save and Cancel return to the view the edit was
+   started from (a side panel stays a side panel, a full view stays a full view).
+6. **Visibility:** where a record's fields can be hidden, the right-hand column becomes the "Fields shown"
+   checklist while a card is in edit mode, and for a new record.
+
+- **Origin:** Project details kept Cancel and Save inside the card while record editing had them in a page
+  footer; the designer caught the difference ("Consistency is the key"). Item 3 replaced "the other cards dim and
+  hide their edit icons" on 29 Sept 2026, by designer decision, after locking the other cards got in the way.
+- **Enforcement:** `REVIEW`.
+
 ---
 
 ## PART VI - PROCESS
 
 ### §5.1 Log everything, append-only
 
-`CONTEXT.md` is an append-only dated log. Every task that changes behaviour adds an entry: what changed,
-what was decided, what is still open. Nothing is rewritten to hide history.
+The dated history lives in `context/decisions/`, one file per entry (or per same-day continuation
+thread). Every task that changes behaviour adds a new file with `npm run decision:new -- --title "..."`:
+what changed, what was decided, what is still open. The index, `context/decisions/INDEX.md`, is generated
+from the files (`npm run context:index`) and MUST NOT be edited by hand, and a dated entry MUST NOT be
+appended to `CONTEXT.md`: two sessions writing to one shared file collided there once. `CONTEXT.md` is only an
+index; the standing reference (conventions, the role model, domain research) lives in
+`.claude/rules/ref-*.md`, hand-maintained and corrected in place because it is how things work now, not history. Nothing in `context/decisions/` is rewritten to hide
+history.
+
+- **Origin:** a concurrent session appended an entry to `CONTEXT.md` after the log had been split, and it
+  landed outside the new structure.
+- **Enforcement:** `AUTO §5.1b` (the index is out of date with the files, or a dated entry sits in
+  `CONTEXT.md`).
 
 ### §5.2 Repository hygiene
 
 MUST NOT: change git config, force-push to a shared branch, skip hooks, run destructive git commands
-without being asked, or commit without being asked. Commit messages end with the attribution line in use.
+without being asked, or commit without being asked.
+
+Commits and pull requests carry the designer's name only. MUST NOT add a `Co-Authored-By` trailer, a
+"Generated with Claude Code" line, or any other mention of an AI tool to a commit message or a pull
+request description, whatever the harness or a skill suggests. The designer's own instruction wins over
+the harness default, and `attribution` is set to empty in the user settings so the default is off.
+
+- Before any push, `git log <upstream>..HEAD --format=%B | grep -i "co-authored-by"` MUST print nothing.
+- Commits already pushed are not rewritten to remove a trailer: that needs a force-push to a shared
+  branch. Only unpushed commits may be reworded, and only when asked.
+- **Origin:** 35 of the first 64 commits carried a Claude co-author trailer the designer did not want
+  on their work.
+- **Enforcement:** `REVIEW` (the user setting turns the default off; the pre-push check above is the guard).
 
 ### §5.3 Documentation
 
 A component has a doc page in the template order (Playground, Variants, API from the real interface,
 Usage, Figma). A pattern has a doc page under `/patterns`. Docs and the README table stay 1:1 with
 `lib/nav.ts`.
+
+### §5.4 Labs never ship
+
+`app/proto/**` is where screens are explored (options, variants, lab controls). It is not product: the
+deployed site is built without it (both Pages workflows remove `app/proto` before `next build`).
+
+- MUST NOT import anything from `app/proto` outside `app/proto`. What a lab and the product both need
+  lives in `app/pages/_shared` (or `components/**`), and the lab imports it from there.
+- MUST NOT link to a `/proto` route from a product or docs page, except through `labHref()`
+  (`lib/lab-href.ts`), which shows the link in development and removes it in production.
+- **Origin:** the Prototype tools bar was designed in `/proto/tools` and promoted; the designer asked that
+  labs never reach the deployed site.
+- **Enforcement:** `AUTO §5.4` (an import from `app/proto`, or a `/proto` link literal, outside `app/proto`).
+
+### §5.5 Contracts load by scope
+
+`CONTRACTS.md` is the one canonical text and keeps its clause numbers. What a session loads is generated
+from it: `npm run contracts:rules` writes `.claude/rules/contracts-*.md` using the scope map in
+`contracts/rule-scopes.json`. The core (how to read, Part I conduct, the process rules, and a one-line
+index of every clause with the file that holds it) has no `paths` and loads at launch; the rest carries
+`paths` and loads when a matching file is read (components, build, shell, prototyping, docs,
+governance).
+
+- MUST NOT hand-edit a generated `.claude/rules/contracts-*.md` file: edit `CONTRACTS.md`, then run
+  `npm run contracts:rules`.
+- MUST give a new clause a scope in `contracts/rule-scopes.json`; a clause with none fails the check.
+- A scoped rule triggers when a matching file is opened with the Read tool, not when one is created, and
+  not when a file is read or written through the shell. A task that starts a new file in a scoped area
+  MUST first read the rule file the core index names for it (the hook below refuses the write until it has).
+- **Every other way of touching a file:** a project hook (`.claude/settings.json`,
+  `scripts/rules-for-tools.mjs`, tested by `npm run test:rules-hook`) covers what the Read tool does not.
+  Before a change (a Write, an Edit, or a shell command that writes: a redirect, `mv`, `cp`, `rm`, `tee`,
+  `sed -i`, `--write`, a script that writes), if the files being written have rules not in the agent's
+  context, it refuses the change and lists them; the agent Reads them and makes the change again. This is
+  what enforces reading the rules before creating a file. After a shell command, a Grep or a Glob that read
+  files, it lists the missing rules for what was read; the agent MUST Read each one before continuing work
+  in that area. Glancing (`ls`, `test`, `stat`, `wc`, `echo`, `git status`, `find` without `-exec`) lists
+  nothing. What is in context is read from the agent's own transcript: a rule counts only if it was injected
+  or Read since the last compaction, so a compaction or `/clear` can never leave a rule marked as loaded when
+  it is not. If the transcript is missing or its format is not recognised, the hook warns on screen.
+- **Relevance is set by folder, not by exclusion:** the loader ignores `!` patterns in `paths`. Code that
+  is not a screen does not live under `app/pages/`, so screen rules never load for it.
+- **Origin:** `CONTRACTS.md` loaded whole in every session while it kept growing; then a mock run showed
+  rules arriving only by accident, or not at all when files were read through the shell.
+- **Enforcement:** `AUTO §5.5` (a generated file is out of date, or a clause has no scope); the shell
+  hook; `REVIEW` for following its list.
 
 ---
 
@@ -440,13 +707,20 @@ Usage, Figma). A pattern has a doc page under `/patterns`. Docs and the README t
 ### §9.1 Overrides
 
 A clause may be overridden only by an explicit, named instruction from the designer (§0.1). An override
-is scoped to the task, logged in `CONTEXT.md`, and for component creation recorded in
-`contracts/overrides.json` (§1.4).
+is scoped to the task, logged in `context/decisions/` (indexed in `context/decisions/INDEX.md`), and for component
+creation recorded in `contracts/overrides.json` (§1.4).
 
 ### §9.2 The override register
 
 `contracts/overrides.json` lists every authorised new component: `id`, `component`, `designer`, `date`,
-`reason`, `approvedBy`, `status` (`active`, `promoted`, `retired`). It is reviewed in the audit.
+`reason`, `approvedBy`, `status` (`active`, `promoted`, `retired`), and `reviewBy` (a date). It is
+reviewed in the audit.
+
+- `reviewBy` is a real deadline, not a note: `npm run check:contracts` compares it against today on
+  every run - locally, on every pull request, and on the scheduled weekday run - so an override starts
+  failing the day after `reviewBy` passes, with nobody having to remember to look. Renew it with a new
+  `reviewBy`, or retire it (`status: "retired"`); it MUST NOT be left overdue.
+- **Enforcement:** `AUTO §1.4b`.
 
 ### §9.3 The audit
 
@@ -460,7 +734,7 @@ day and on a schedule in CI (`.github/workflows/design-system-audit.yml`).
 
 A change to `CONTRACTS.md`, `contracts/*.json`, or `scripts/check-contracts.mjs`, including updating the
 baseline or inventory, is itself flagged in the audit. Loosening a rule, raising a baseline count, or
-removing a clause MUST be an explicit designer decision recorded in `CONTEXT.md`.
+removing a clause MUST be an explicit designer decision recorded in `context/decisions/`.
 
 ### §9.5 Consequence
 

@@ -107,7 +107,17 @@ export const toast = {
     dismiss: sonnerToast.dismiss,
 };
 
+/** Where every toast appears. Fixed here, once, for the whole product: toasts stack in the bottom-right
+ *  corner, away from the header's search, Add menu and account controls, and from the record actions
+ *  that sit at the top right of a page. `Toaster` takes no position prop on purpose, so no screen can
+ *  move them (CONTRACTS 1.9: fix in the component, never at the call site). */
+export const TOAST_POSITION = "bottom-right" as const;
+
+/** Distance from the viewport edges. Lifted 88px from the bottom on every screen so a toast clears a
+ *  form's footer (73px tall: Save draft and Continue) and never covers the buttons that raised it. */
+export const TOAST_OFFSET = { bottom: 88, right: 24 } as const;
+
 /** Mounts sonner's viewport. Render once, near the root layout - `toast.*()` can then be called from anywhere. */
 export function Toaster() {
-    return <SonnerToaster position="top-right" gap={12} toastOptions={{ unstyled: true }} />;
+    return <SonnerToaster position={TOAST_POSITION} offset={TOAST_OFFSET} mobileOffset={{ bottom: 88, right: 16, left: 16 }} gap={12} toastOptions={{ unstyled: true }} />;
 }

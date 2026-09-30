@@ -1,11 +1,13 @@
 import type { FC } from "react";
 import { Folder, MarkerPin04, Send01, GridDotsBottom, LayoutGrid02, Scan, Shuffle01, CursorClick01, Circle } from "@untitledui/icons";
 import type { BadgeColor } from "@/components/base/badges/badges";
-import { projects as myProjects } from "@/app/pages/_shared/project-list-content";
+// From the plain data module, not project-list-content.tsx: that file is "use client", so a server
+// module importing through it (a route's generateStaticParams) would get a client reference, not the array.
+import { projects as myProjects } from "@/app/pages/_shared/project-list-data";
 
 // The map search tool's own record datasets - illustrative, but grounded in this build's existing
 // real reference points and the real BDBSA data hierarchy (Project -> Site -> Observation ->
-// Occurrence, see CONTEXT.md's "BDBSA domain research"). Species names are real South Australian
+// Occurrence, see .claude/rules/ref-domain.md, "BDBSA domain research"). Species names are real South Australian
 // native fauna already established elsewhere in this build's copy, or otherwise genuine SA
 // species - never invented taxa. Coordinates are approximate, illustrative points near each
 // region's real national park, not surveyed record locations.
@@ -260,7 +262,7 @@ export function kingdomForGroup(group: SpeciesGroup): "Flora" | "Fauna" {
     return group === "Plant" ? "Flora" : "Fauna";
 }
 
-/** BDBSA's real sensitive-species access split (see CONTEXT.md's "BDBSA domain research": "when a
+/** BDBSA's real sensitive-species access split (see .claude/rules/ref-domain.md, "BDBSA domain research": "when a
  *  whole dataset is considered sensitive it will be flagged... and only distributed under licence
  *  or with appropriate approval" - a project-level flag in the real system, applied here at the
  *  per-occurrence level since Species mode is a per-species, cross-project view). `"Level 2"` rows
@@ -296,14 +298,14 @@ export interface SearchOccurrence {
 }
 
 export const searchOccurrences: SearchOccurrence[] = [
-    { id: "OCRI094", species: "Macropus giganteus", commonName: "Western Grey Kangaroo", type: "Individual", parentEventId: "adelaide-hills", date: "2026-08-12", lastSurveyed: "2026-08-19", status: "Present", region: "Adelaide Hills", lat: -35.02, lon: 138.7, count: 1, family: "Macropodidae", group: "Mammal", licenceLevel: "Level 1" },
+    { id: "OCRI094", species: "Macropus giganteus", commonName: "Western Grey Kangaroo", type: "Individual", parentEventId: "site-adelaide-1", date: "2026-08-12", lastSurveyed: "2026-08-19", status: "Present", region: "Adelaide Hills", lat: -35.02, lon: 138.7, count: 1, family: "Macropodidae", group: "Mammal", licenceLevel: "Level 1" },
     { id: "OCRP094", species: "Tachyglossus aculeatus", commonName: "Short-beaked Echidna", type: "Individual", parentEventId: "visit-adelaide-1", date: "2026-07-30", lastSurveyed: "2026-08-06", status: "Present", region: "Adelaide Hills", lat: -35.0, lon: 138.68, count: 1, family: "Tachyglossidae", group: "Mammal", licenceLevel: "Level 1" },
-    { id: "occ-3", species: "Sternula nereis", commonName: "Fairy Tern", type: "Population", parentEventId: "coorong", date: "2026-08-02", lastSurveyed: "2026-08-16", status: "Present", region: "Coorong", lat: -35.81, lon: 139.28, count: 42, family: "Laridae", group: "Bird", licenceLevel: "Level 1" },
+    { id: "occ-3", species: "Sternula nereis", commonName: "Fairy Tern", type: "Population", parentEventId: "site-coorong-1", date: "2026-08-02", lastSurveyed: "2026-08-16", status: "Present", region: "Coorong", lat: -35.81, lon: 139.28, count: 42, family: "Laridae", group: "Bird", licenceLevel: "Level 1" },
     { id: "occ-4", species: "Pandion haliaetus", commonName: "Osprey", type: "Individual", parentEventId: "visit-coorong-1", date: "2026-08-03", lastSurveyed: "2026-08-10", status: "Absent", region: "Coorong", lat: -35.77, lon: 139.32, count: 0, family: "Pandionidae", group: "Bird", licenceLevel: "Level 1" },
     { id: "occ-5", species: "Tiliqua adelaidensis", commonName: "Pygmy Bluetongue Lizard", type: "Individual", parentEventId: "quadrat-flinders-1", date: "2026-06-21", lastSurveyed: "2026-06-28", status: "Present", region: "Flinders Ranges", lat: -31.51, lon: 138.59, count: 1, family: "Scincidae", group: "Reptile", licenceLevel: "Level 2" },
-    { id: "occ-6", species: "Petrogale xanthopus", commonName: "Yellow-footed Rock-wallaby", type: "Population", parentEventId: "flinders", date: "2026-06-22", lastSurveyed: "2026-07-05", status: "Present", region: "Flinders Ranges", lat: -31.46, lon: 138.62, count: 23, family: "Macropodidae", group: "Mammal", licenceLevel: "Level 2" },
+    { id: "occ-6", species: "Petrogale xanthopus", commonName: "Yellow-footed Rock-wallaby", type: "Population", parentEventId: "site-flinders-1", date: "2026-06-22", lastSurveyed: "2026-07-05", status: "Present", region: "Flinders Ranges", lat: -31.46, lon: 138.62, count: 23, family: "Macropodidae", group: "Mammal", licenceLevel: "Level 2" },
     { id: "occ-7", species: "Lasiorhinus latifrons", commonName: "Southern Hairy-nosed Wombat", type: "Individual", parentEventId: "block-ki-1", date: "2026-05-14", lastSurveyed: "2026-05-21", status: "Present", region: "Kangaroo Island", lat: -35.93, lon: 136.7, count: 1, family: "Vombatidae", group: "Mammal", licenceLevel: "Level 1" },
-    { id: "occ-8", species: "Dromaius novaehollandiae", commonName: "Emu", type: "Individual", parentEventId: "kangaroo-island", date: "2026-05-15", lastSurveyed: "2026-05-22", status: "Present", region: "Kangaroo Island", lat: -35.96, lon: 136.74, count: 1, family: "Dromaiidae", group: "Bird", licenceLevel: "Level 1" },
+    { id: "occ-8", species: "Dromaius novaehollandiae", commonName: "Emu", type: "Individual", parentEventId: "site-ki-1", date: "2026-05-15", lastSurveyed: "2026-05-22", status: "Present", region: "Kangaroo Island", lat: -35.96, lon: 136.74, count: 1, family: "Dromaiidae", group: "Bird", licenceLevel: "Level 1" },
     { id: "occ-9", species: "Leipoa ocellata", commonName: "Malleefowl", type: "Individual", parentEventId: "custom-remarkable-1", date: "2026-08-09", lastSurveyed: "2026-08-15", status: "Present", region: "Mount Remarkable", lat: -32.81, lon: 138.15, count: 1, family: "Megapodiidae", group: "Bird", licenceLevel: "Level 2" },
     { id: "occ-10", species: "Macropus rufus", commonName: "Red Kangaroo", type: "Population", parentEventId: "trap-nullarbor-1", date: "2026-04-28", lastSurveyed: "2026-05-09", status: "Present", region: "Nullarbor", lat: -31.42, lon: 130.88, count: 60, family: "Macropodidae", group: "Mammal", licenceLevel: "Level 1" },
     { id: "occ-11", species: "Polytelis anthopeplus", commonName: "Regent Parrot", type: "Individual", parentEventId: "ramble-lake-eyre-1", date: "2026-07-05", lastSurveyed: "2026-07-12", status: "Present", region: "Lake Eyre", lat: -28.91, lon: 137.28, count: 1, family: "Psittaculidae", group: "Bird", licenceLevel: "Level 1" },
@@ -334,6 +336,11 @@ export const searchOccurrences: SearchOccurrence[] = [
 
 export interface SearchObservation {
     id: string;
+    /** The occurrence this observation describes. The data model is Project > Site > Visit >
+     *  Occurrence > Observation: an occurrence parents exactly one observation, of the same species
+     *  and type, made at the same event, date and place. `parentEventId`, `date` and the
+     *  coordinates below repeat the occurrence's, so an observation is never filed apart from it. */
+    occurrenceId: string;
     commonName: string;
     /** Scientific (binomial) name - "-" for the two non-species records (Soil Profile, a
      *  Community type), same convention as SearchOccurrence's own species field. */
@@ -354,33 +361,33 @@ export interface SearchObservation {
 }
 
 export const searchObservations: SearchObservation[] = [
-    { id: "OCRI094", commonName: "Western Grey Kangaroo", species: "Macropus giganteus", type: "Individual", observerInitials: "OW", observerName: "Olivia Wyatt", parentEventId: "adelaide-hills", date: "2026-08-12", region: "Adelaide Hills", lat: -35.03, lon: 138.71, family: "Macropodidae", group: "Mammal", licenceLevel: "Level 1" },
-    { id: "OCRP094", commonName: "Short-beaked Echidna", species: "Tachyglossus aculeatus", type: "Individual", observerInitials: "OW", observerName: "Olivia Wyatt", parentEventId: "visit-adelaide-1", date: "2026-07-31", region: "Adelaide Hills", lat: -35.01, lon: 138.69, family: "Tachyglossidae", group: "Mammal", licenceLevel: "Level 1" },
-    { id: "OBS00125", commonName: "Fairy Tern", species: "Sternula nereis", type: "Population", observerInitials: "MD", observerName: "Maya Dewitt", parentEventId: "coorong", date: "2026-08-02", region: "Coorong", lat: -35.8, lon: 139.3, family: "Laridae", group: "Bird", licenceLevel: "Level 1" },
-    { id: "OBS00126", commonName: "Osprey", species: "Pandion haliaetus", type: "Individual", observerInitials: "MD", observerName: "Maya Dewitt", parentEventId: "visit-coorong-1", date: "2026-08-03", region: "Coorong", lat: -35.78, lon: 139.27, family: "Pandionidae", group: "Bird", licenceLevel: "Level 1" },
-    { id: "obs-5", commonName: "Pygmy Bluetongue Lizard", species: "Tiliqua adelaidensis", type: "Individual", observerInitials: "PB", observerName: "Phoenix Baker", parentEventId: "quadrat-flinders-1", date: "2026-06-21", region: "Flinders Ranges", lat: -31.5, lon: 138.58, family: "Scincidae", group: "Reptile", licenceLevel: "Level 2" },
-    { id: "obs-6", commonName: "Yellow-footed Rock-wallaby", species: "Petrogale xanthopus", type: "Population", observerInitials: "PB", observerName: "Phoenix Baker", parentEventId: "flinders", date: "2026-06-23", region: "Flinders Ranges", lat: -31.48, lon: 138.64, family: "Macropodidae", group: "Mammal", licenceLevel: "Level 2" },
-    { id: "obs-7", commonName: "Southern Hairy-nosed Wombat", species: "Lasiorhinus latifrons", type: "Individual", observerInitials: "LS", observerName: "Lana Steiner", parentEventId: "block-ki-1", date: "2026-05-14", region: "Kangaroo Island", lat: -35.94, lon: 136.72, family: "Vombatidae", group: "Mammal", licenceLevel: "Level 1" },
-    { id: "obs-8", commonName: "Malleefowl", species: "Leipoa ocellata", type: "Individual", observerInitials: "OW", observerName: "Olivia Wyatt", parentEventId: "custom-remarkable-1", date: "2026-08-09", region: "Mount Remarkable", lat: -32.79, lon: 138.13, family: "Megapodiidae", group: "Bird", licenceLevel: "Level 2" },
-    { id: "obs-9", commonName: "Red Kangaroo", species: "Macropus rufus", type: "Population", observerInitials: "MD", observerName: "Maya Dewitt", parentEventId: "trap-nullarbor-1", date: "2026-04-29", region: "Nullarbor", lat: -31.44, lon: 130.91, family: "Macropodidae", group: "Mammal", licenceLevel: "Level 1" },
-    { id: "obs-10", commonName: "Regent Parrot", species: "Polytelis anthopeplus", type: "Individual", observerInitials: "PB", observerName: "Phoenix Baker", parentEventId: "ramble-lake-eyre-1", date: "2026-07-06", region: "Lake Eyre", lat: -28.89, lon: 137.31, family: "Psittaculidae", group: "Bird", licenceLevel: "Level 1" },
-    { id: "obs-11", commonName: "Soil Profile", species: "-", type: "Non-Biotic", observerInitials: "OW", observerName: "Olivia Wyatt", parentEventId: "site-flinders-1", date: "2026-06-21", region: "Flinders Ranges", lat: -31.5, lon: 138.6 },
-    { id: "obs-12", commonName: "Fleurieu Peninsula Swamp Community", species: "-", type: "Community", observerInitials: "LS", observerName: "Lana Steiner", parentEventId: "site-adelaide-2", date: "2026-03-02", region: "Adelaide Hills", lat: -35.0, lon: 138.68 },
-    { id: "obs-13", commonName: "Orange-bellied Parrot", species: "Neophema chrysogaster", type: "Individual", observerInitials: "MD", observerName: "Maya Dewitt", parentEventId: "site-coorong-1", date: "2026-08-04", region: "Coorong", lat: -35.79, lon: 139.3, family: "Psittaculidae", group: "Bird", licenceLevel: "Level 2" },
-    { id: "obs-14", commonName: "Heath Mouse", species: "Pseudomys shortridgei", type: "Population", observerInitials: "PB", observerName: "Phoenix Baker", parentEventId: "site-remarkable-1", date: "2026-08-08", region: "Mount Remarkable", lat: -32.8, lon: 138.14, family: "Muridae", group: "Mammal", licenceLevel: "Level 1" },
-    { id: "obs-15", commonName: "Southern Bell Frog", species: "Litoria raniformis", type: "Individual", observerInitials: "OW", observerName: "Olivia Wyatt", parentEventId: "site-naracoorte-1", date: "2026-08-19", region: "Naracoorte", lat: -36.98, lon: 140.82, family: "Pelodryadidae", group: "Amphibian", licenceLevel: "Level 1" },
-    { id: "obs-16", commonName: "Emu", species: "Dromaius novaehollandiae", type: "Individual", observerInitials: "LS", observerName: "Lana Steiner", parentEventId: "site-ki-1", date: "2026-05-16", region: "Kangaroo Island", lat: -35.95, lon: 136.72, family: "Dromaiidae", group: "Bird", licenceLevel: "Level 1" },
+    { id: "OCRI094", occurrenceId: "OCRI094", commonName: "Western Grey Kangaroo", species: "Macropus giganteus", type: "Individual", observerInitials: "OW", observerName: "Olivia Wyatt", parentEventId: "site-adelaide-1", date: "2026-08-12", region: "Adelaide Hills", lat: -35.02, lon: 138.7, family: "Macropodidae", group: "Mammal", licenceLevel: "Level 1" },
+    { id: "OCRP094", occurrenceId: "OCRP094", commonName: "Short-beaked Echidna", species: "Tachyglossus aculeatus", type: "Individual", observerInitials: "OW", observerName: "Olivia Wyatt", parentEventId: "visit-adelaide-1", date: "2026-07-30", region: "Adelaide Hills", lat: -35.0, lon: 138.68, family: "Tachyglossidae", group: "Mammal", licenceLevel: "Level 1" },
+    { id: "OBS00125", occurrenceId: "occ-3", commonName: "Fairy Tern", species: "Sternula nereis", type: "Population", observerInitials: "MD", observerName: "Maya Dewitt", parentEventId: "site-coorong-1", date: "2026-08-02", region: "Coorong", lat: -35.81, lon: 139.28, family: "Laridae", group: "Bird", licenceLevel: "Level 1" },
+    { id: "OBS00126", occurrenceId: "occ-4", commonName: "Osprey", species: "Pandion haliaetus", type: "Individual", observerInitials: "MD", observerName: "Maya Dewitt", parentEventId: "visit-coorong-1", date: "2026-08-03", region: "Coorong", lat: -35.77, lon: 139.32, family: "Pandionidae", group: "Bird", licenceLevel: "Level 1" },
+    { id: "obs-5", occurrenceId: "occ-5", commonName: "Pygmy Bluetongue Lizard", species: "Tiliqua adelaidensis", type: "Individual", observerInitials: "PB", observerName: "Phoenix Baker", parentEventId: "quadrat-flinders-1", date: "2026-06-21", region: "Flinders Ranges", lat: -31.51, lon: 138.59, family: "Scincidae", group: "Reptile", licenceLevel: "Level 2" },
+    { id: "obs-6", occurrenceId: "occ-6", commonName: "Yellow-footed Rock-wallaby", species: "Petrogale xanthopus", type: "Population", observerInitials: "PB", observerName: "Phoenix Baker", parentEventId: "site-flinders-1", date: "2026-06-22", region: "Flinders Ranges", lat: -31.46, lon: 138.62, family: "Macropodidae", group: "Mammal", licenceLevel: "Level 2" },
+    { id: "obs-7", occurrenceId: "occ-7", commonName: "Southern Hairy-nosed Wombat", species: "Lasiorhinus latifrons", type: "Individual", observerInitials: "LS", observerName: "Lana Steiner", parentEventId: "block-ki-1", date: "2026-05-14", region: "Kangaroo Island", lat: -35.93, lon: 136.7, family: "Vombatidae", group: "Mammal", licenceLevel: "Level 1" },
+    { id: "obs-8", occurrenceId: "occ-9", commonName: "Malleefowl", species: "Leipoa ocellata", type: "Individual", observerInitials: "OW", observerName: "Olivia Wyatt", parentEventId: "custom-remarkable-1", date: "2026-08-09", region: "Mount Remarkable", lat: -32.81, lon: 138.15, family: "Megapodiidae", group: "Bird", licenceLevel: "Level 2" },
+    { id: "obs-9", occurrenceId: "occ-10", commonName: "Red Kangaroo", species: "Macropus rufus", type: "Population", observerInitials: "MD", observerName: "Maya Dewitt", parentEventId: "trap-nullarbor-1", date: "2026-04-28", region: "Nullarbor", lat: -31.42, lon: 130.88, family: "Macropodidae", group: "Mammal", licenceLevel: "Level 1" },
+    { id: "obs-10", occurrenceId: "occ-11", commonName: "Regent Parrot", species: "Polytelis anthopeplus", type: "Individual", observerInitials: "PB", observerName: "Phoenix Baker", parentEventId: "ramble-lake-eyre-1", date: "2026-07-05", region: "Lake Eyre", lat: -28.91, lon: 137.28, family: "Psittaculidae", group: "Bird", licenceLevel: "Level 1" },
+    { id: "obs-11", occurrenceId: "occ-13", commonName: "Soil Profile", species: "-", type: "Non-Biotic", observerInitials: "OW", observerName: "Olivia Wyatt", parentEventId: "site-flinders-1", date: "2026-06-21", region: "Flinders Ranges", lat: -31.5, lon: 138.6 },
+    { id: "obs-12", occurrenceId: "occ-14", commonName: "Fleurieu Peninsula Swamp Community", species: "-", type: "Community", observerInitials: "LS", observerName: "Lana Steiner", parentEventId: "site-adelaide-2", date: "2026-03-02", region: "Adelaide Hills", lat: -35.0, lon: 138.68 },
+    { id: "obs-13", occurrenceId: "occ-15", commonName: "Orange-bellied Parrot", species: "Neophema chrysogaster", type: "Individual", observerInitials: "MD", observerName: "Maya Dewitt", parentEventId: "site-coorong-1", date: "2026-08-04", region: "Coorong", lat: -35.79, lon: 139.3, family: "Psittaculidae", group: "Bird", licenceLevel: "Level 2" },
+    { id: "obs-14", occurrenceId: "occ-16", commonName: "Heath Mouse", species: "Pseudomys shortridgei", type: "Population", observerInitials: "PB", observerName: "Phoenix Baker", parentEventId: "site-remarkable-1", date: "2026-08-08", region: "Mount Remarkable", lat: -32.8, lon: 138.14, family: "Muridae", group: "Mammal", licenceLevel: "Level 1" },
+    { id: "obs-15", occurrenceId: "occ-12", commonName: "Southern Bell Frog", species: "Litoria raniformis", type: "Individual", observerInitials: "OW", observerName: "Olivia Wyatt", parentEventId: "site-naracoorte-1", date: "2026-08-19", region: "Naracoorte", lat: -36.98, lon: 140.82, family: "Pelodryadidae", group: "Amphibian", licenceLevel: "Level 1" },
+    { id: "obs-16", occurrenceId: "occ-8", commonName: "Emu", species: "Dromaius novaehollandiae", type: "Individual", observerInitials: "LS", observerName: "Lana Steiner", parentEventId: "site-ki-1", date: "2026-05-15", region: "Kangaroo Island", lat: -35.96, lon: 136.74, family: "Dromaiidae", group: "Bird", licenceLevel: "Level 1" },
 
     // Flora observations, matching searchOccurrences' own occ-17..occ-21 rows one for one.
-    { id: "obs-17", commonName: "Golden Wattle", species: "Acacia pycnantha", type: "Individual", observerInitials: "OW", observerName: "Olivia Wyatt", parentEventId: "site-adelaide-1", date: "2026-08-15", region: "Adelaide Hills", lat: -35.03, lon: 138.72, family: "Fabaceae", group: "Plant", licenceLevel: "Level 1" },
-    { id: "obs-18", commonName: "South Australian Blue Gum", species: "Eucalyptus leucoxylon", type: "Individual", observerInitials: "LS", observerName: "Lana Steiner", parentEventId: "site-adelaide-2", date: "2026-03-10", region: "Adelaide Hills", lat: -35.0, lon: 138.68, family: "Myrtaceae", group: "Plant", licenceLevel: "Level 1" },
-    { id: "obs-19", commonName: "Grass Tree", species: "Xanthorrhoea semiplana", type: "Population", observerInitials: "PB", observerName: "Phoenix Baker", parentEventId: "site-flinders-1", date: "2026-06-25", region: "Flinders Ranges", lat: -31.51, lon: 138.59, family: "Xanthorrhoeaceae", group: "Plant", licenceLevel: "Level 1" },
-    { id: "obs-20", commonName: "Quandong", species: "Santalum acuminatum", type: "Individual", observerInitials: "MD", observerName: "Maya Dewitt", parentEventId: "site-ki-1", date: "2026-05-18", region: "Kangaroo Island", lat: -35.94, lon: 136.72, family: "Santalaceae", group: "Plant", licenceLevel: "Level 1" },
-    { id: "obs-21", commonName: "Lavender Grevillea", species: "Grevillea lavandulacea", type: "Population", observerInitials: "OW", observerName: "Olivia Wyatt", parentEventId: "site-remarkable-1", date: "2026-08-11", region: "Mount Remarkable", lat: -32.79, lon: 138.13, family: "Proteaceae", group: "Plant", licenceLevel: "Level 1" },
+    { id: "obs-17", occurrenceId: "occ-17", commonName: "Golden Wattle", species: "Acacia pycnantha", type: "Individual", observerInitials: "OW", observerName: "Olivia Wyatt", parentEventId: "site-adelaide-1", date: "2026-08-15", region: "Adelaide Hills", lat: -35.03, lon: 138.72, family: "Fabaceae", group: "Plant", licenceLevel: "Level 1" },
+    { id: "obs-18", occurrenceId: "occ-18", commonName: "South Australian Blue Gum", species: "Eucalyptus leucoxylon", type: "Individual", observerInitials: "LS", observerName: "Lana Steiner", parentEventId: "site-adelaide-2", date: "2026-03-10", region: "Adelaide Hills", lat: -35.0, lon: 138.68, family: "Myrtaceae", group: "Plant", licenceLevel: "Level 1" },
+    { id: "obs-19", occurrenceId: "occ-19", commonName: "Grass Tree", species: "Xanthorrhoea semiplana", type: "Population", observerInitials: "PB", observerName: "Phoenix Baker", parentEventId: "site-flinders-1", date: "2026-06-25", region: "Flinders Ranges", lat: -31.51, lon: 138.59, family: "Xanthorrhoeaceae", group: "Plant", licenceLevel: "Level 1" },
+    { id: "obs-20", occurrenceId: "occ-20", commonName: "Quandong", species: "Santalum acuminatum", type: "Individual", observerInitials: "MD", observerName: "Maya Dewitt", parentEventId: "site-ki-1", date: "2026-05-18", region: "Kangaroo Island", lat: -35.94, lon: 136.72, family: "Santalaceae", group: "Plant", licenceLevel: "Level 1" },
+    { id: "obs-21", occurrenceId: "occ-21", commonName: "Lavender Grevillea", species: "Grevillea lavandulacea", type: "Population", observerInitials: "OW", observerName: "Olivia Wyatt", parentEventId: "site-remarkable-1", date: "2026-08-11", region: "Mount Remarkable", lat: -32.79, lon: 138.13, family: "Proteaceae", group: "Plant", licenceLevel: "Level 1" },
 
     // Matching occ-22/occ-23 above.
-    { id: "obs-22", commonName: "Southern Brown Bandicoot", species: "Isoodon obesulus", type: "Individual", observerInitials: "MD", observerName: "Maya Dewitt", parentEventId: "block-adelaide-1", date: "2026-07-14", region: "Adelaide Hills", lat: -35.03, lon: 138.73, family: "Peramelidae", group: "Mammal", licenceLevel: "Level 1" },
-    { id: "obs-23", commonName: "Superb Fairywren", species: "Malurus cyaneus", type: "Individual", observerInitials: "OW", observerName: "Olivia Wyatt", parentEventId: "ramble-adelaide-1", date: "2026-07-20", region: "Adelaide Hills", lat: -35.02, lon: 138.73, family: "Maluridae", group: "Bird", licenceLevel: "Level 1" },
+    { id: "obs-22", occurrenceId: "occ-22", commonName: "Southern Brown Bandicoot", species: "Isoodon obesulus", type: "Individual", observerInitials: "MD", observerName: "Maya Dewitt", parentEventId: "block-adelaide-1", date: "2026-07-14", region: "Adelaide Hills", lat: -35.03, lon: 138.73, family: "Peramelidae", group: "Mammal", licenceLevel: "Level 1" },
+    { id: "obs-23", occurrenceId: "occ-23", commonName: "Superb Fairywren", species: "Malurus cyaneus", type: "Individual", observerInitials: "OW", observerName: "Olivia Wyatt", parentEventId: "ramble-adelaide-1", date: "2026-07-20", region: "Adelaide Hills", lat: -35.02, lon: 138.73, family: "Maluridae", group: "Bird", licenceLevel: "Level 1" },
 ];
 
 export type ResourceType = "Image" | "File" | "Reference Link";
@@ -399,20 +406,61 @@ export interface SearchResource {
     lon: number;
 }
 
+
+/** The data marks "no end date" and "no scientific name" with a dash (an em dash or "-"). These say
+ *  whether there is a real value, so screens never print the dash itself. */
+export function hasEndDate(endDate: string | undefined): endDate is string {
+    return !!endDate && endDate !== "\u2014" && endDate !== "-";
+}
+export function hasScientificName(species: string | undefined): species is string {
+    return !!species && species !== "\u2014" && species !== "-";
+}
+
+/** The one observation an occurrence parents (Project > Site > Visit > Occurrence > Observation).
+ *  Trees nest it under its occurrence; it is never listed beside it. */
+export function observationOfOccurrence(occurrenceId: string): SearchObservation | undefined {
+    return searchObservations.find((o) => o.occurrenceId === occurrenceId);
+}
+
 // Each resource is attached to a real Occurrence/Observation record above (`recordId`/
 // `recordName`), and inherits that record's own location - a resource is physically tied to
 // wherever the record it documents was captured, not an independent point.
 export const searchResources: SearchResource[] = [
-    { id: "res-1", name: "Canopy.jpeg", type: "Image", attachedToConcept: "Canopy Type", recordId: "OCRI094", recordName: "Western Grey Kangaroo", parentEventId: "adelaide-hills", date: "2026-08-12", region: "Adelaide Hills", lat: -35.02, lon: 138.7 },
+    { id: "res-1", name: "Canopy.jpeg", type: "Image", attachedToConcept: "Canopy Type", recordId: "OCRI094", recordName: "Western Grey Kangaroo", parentEventId: "site-adelaide-1", date: "2026-08-12", region: "Adelaide Hills", lat: -35.02, lon: 138.7 },
     { id: "res-2", name: "Field-notes.pdf", type: "File", attachedToConcept: "Site Description", recordId: "OCRP094", recordName: "Short-beaked Echidna", parentEventId: "visit-adelaide-1", date: "2026-07-30", region: "Adelaide Hills", lat: -35.0, lon: 138.68 },
-    { id: "res-3", name: "https://gbif.org/occurrence/1291505203", type: "Reference Link", attachedToConcept: "Species ID", recordId: "occ-3", recordName: "Fairy Tern", parentEventId: "coorong", date: "2026-08-02", region: "Coorong", lat: -35.81, lon: 139.28 },
+    { id: "res-3", name: "https://gbif.org/occurrence/1291505203", type: "Reference Link", attachedToConcept: "Species ID", recordId: "occ-3", recordName: "Fairy Tern", parentEventId: "site-coorong-1", date: "2026-08-02", region: "Coorong", lat: -35.81, lon: 139.28 },
     { id: "res-4", name: "Osprey-nest.jpeg", type: "Image", attachedToConcept: "Nest Site", recordId: "occ-4", recordName: "Osprey", parentEventId: "visit-coorong-1", date: "2026-08-03", region: "Coorong", lat: -35.77, lon: 139.32 },
     { id: "res-5", name: "Transect-log.xls", type: "File", attachedToConcept: "Transect Record", recordId: "occ-5", recordName: "Pygmy Bluetongue Lizard", parentEventId: "quadrat-flinders-1", date: "2026-06-21", region: "Flinders Ranges", lat: -31.51, lon: 138.59 },
-    { id: "res-6", name: "Rock-wallaby-colony.jpeg", type: "Image", attachedToConcept: "Habitat", recordId: "occ-6", recordName: "Yellow-footed Rock-wallaby", parentEventId: "flinders", date: "2026-06-22", region: "Flinders Ranges", lat: -31.46, lon: 138.62 },
+    { id: "res-6", name: "Rock-wallaby-colony.jpeg", type: "Image", attachedToConcept: "Habitat", recordId: "occ-6", recordName: "Yellow-footed Rock-wallaby", parentEventId: "site-flinders-1", date: "2026-06-22", region: "Flinders Ranges", lat: -31.46, lon: 138.62 },
     { id: "res-7", name: "Wombat-burrow.jpeg", type: "Image", attachedToConcept: "Burrow Site", recordId: "occ-7", recordName: "Southern Hairy-nosed Wombat", parentEventId: "block-ki-1", date: "2026-05-14", region: "Kangaroo Island", lat: -35.93, lon: 136.7 },
-    { id: "res-8", name: "https://ala.org.au/species/Dromaius-novaehollandiae", type: "Reference Link", attachedToConcept: "Species ID", recordId: "occ-8", recordName: "Emu", parentEventId: "kangaroo-island", date: "2026-05-15", region: "Kangaroo Island", lat: -35.96, lon: 136.74 },
+    { id: "res-8", name: "https://ala.org.au/species/Dromaius-novaehollandiae", type: "Reference Link", attachedToConcept: "Species ID", recordId: "occ-8", recordName: "Emu", parentEventId: "site-ki-1", date: "2026-05-15", region: "Kangaroo Island", lat: -35.96, lon: 136.74 },
     { id: "res-9", name: "Malleefowl-mound.jpeg", type: "Image", attachedToConcept: "Nest Mound", recordId: "occ-9", recordName: "Malleefowl", parentEventId: "custom-remarkable-1", date: "2026-08-09", region: "Mount Remarkable", lat: -32.81, lon: 138.15 },
     { id: "res-10", name: "Trap-catch-log.xls", type: "File", attachedToConcept: "Trap Record", recordId: "occ-10", recordName: "Red Kangaroo", parentEventId: "trap-nullarbor-1", date: "2026-04-28", region: "Nullarbor", lat: -31.42, lon: 130.88 },
     { id: "res-11", name: "Regent-parrot-flock.jpeg", type: "Image", attachedToConcept: "Flock Count", recordId: "occ-11", recordName: "Regent Parrot", parentEventId: "ramble-lake-eyre-1", date: "2026-07-05", region: "Lake Eyre", lat: -28.91, lon: 137.28 },
     { id: "res-12", name: "https://gbif.org/species/2481660", type: "Reference Link", attachedToConcept: "Species ID", recordId: "occ-12", recordName: "Southern Bell Frog", parentEventId: "site-naracoorte-1", date: "2026-08-19", region: "Naracoorte", lat: -36.98, lon: 140.82 },
 ];
+
+/** How far a restricted (Level 2) record's location is generalised, in km, or `null` for a public
+ *  record. Birds generalise to 5 km (a nest or roost needs less room to protect), everything else to
+ *  10 km. The one rule shared by the Species table's coordinate cell, the Explore map's blurred
+ *  area and the record page's blurred location, so they can never disagree. */
+export function restrictedRadiusKm(record: { licenceLevel?: LicenceLevel; group?: SpeciesGroup }): number | null {
+    if (record.licenceLevel !== "Level 2") return null;
+    return record.group === "Bird" ? 5 : 10;
+}
+
+export function findOccurrence(id: string): SearchOccurrence | undefined {
+    return searchOccurrences.find((o) => o.id === id);
+}
+
+export function findObservation(id: string): SearchObservation | undefined {
+    return searchObservations.find((o) => o.id === id);
+}
+
+/** Every event from the root Project down to and including the event a record was attached to -
+ *  unlike `hierarchyFor`, never empty when the parent is itself the Project (a record page always
+ *  shows which project it belongs to). */
+export function recordEventChain(parentEventId: string): SearchEvent[] {
+    const parent = eventById.get(parentEventId);
+    return parent ? [...eventAncestors(parent), parent] : [];
+}

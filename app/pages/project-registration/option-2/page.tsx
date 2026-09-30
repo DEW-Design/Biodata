@@ -3,7 +3,7 @@
 // Add Project, second layout: the three-column structure every other screen here uses. Column 1 is
 // the primary icon rail, column 2 is the section list (progress + where you are + what needs
 // attention), column 3 is the form for the current section. Compared against the first layout (one
-// question per card, no rail or sidebar) with the floating options control - see CONTEXT.md.
+// question per card, no rail or sidebar) with the floating options control - see context/decisions/2026-09-25-02-add-project-gets-a-second-layout-at-pages.md.
 //
 // What changed from the first layout, and why:
 // - Related fields share a screen (project name + abstract + dates; owner + contact; role + team)
@@ -25,7 +25,7 @@ import { Suspense, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { LogIn01, UserPlus01 } from "@untitledui/icons";
 import { Button } from "@/components/base/buttons/button";
-import { ConfirmationModal } from "@/components/application/modals/modal";
+import { DestructiveModal } from "@/components/application/modals/modal";
 import { toast } from "@/components/application/toast/toast";
 import { useRoleHref } from "@/lib/use-role-href";
 import { useUserRole } from "@/lib/use-user-role";
@@ -45,7 +45,7 @@ function GuestPrompt() {
   const roleHref = useRoleHref();
   return (
     <div className="flex flex-1 flex-col items-center justify-center gap-4 p-12 text-center">
-      <h1 className="text-lg font-medium text-primary">Sign up to add a project</h1>
+      <h1 className="text-lg font-semibold text-primary">Sign up to add a project</h1>
       <p className="max-w-sm text-sm text-balance text-tertiary">Create a free BioData SA account to start contributing projects to South Australia&apos;s biodiversity record.</p>
       <div className="flex gap-3">
         <Button color="secondary" iconLeading={LogIn01} href="/pages/auth/login">
@@ -184,13 +184,18 @@ function RegistrationFlow() {
     <>
       <RegistrationShell sidebar={sidebar}>{main}</RegistrationShell>
       <RegistrationLayoutSwitcher current="option-2" />
-      <ConfirmationModal
+      <DestructiveModal
         isOpen={confirmCancel}
         onOpenChange={setConfirmCancel}
         title="Discard this project?"
-        description="You have unsaved details. Leaving now will lose them."
+        description="You have unsaved details. Save a draft to keep them, or discard them."
         confirmLabel="Discard project"
         cancelLabel="Keep editing"
+        secondaryLabel="Save draft"
+        onSecondary={() => {
+          setConfirmCancel(false);
+          handleSaveDraft();
+        }}
         onConfirm={() => {
           setConfirmCancel(false);
           router.push(roleHref("/pages/project-list"));

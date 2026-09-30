@@ -1,0 +1,11 @@
+# 2026-09-29 - Empty and unticked fields are left out of edit mode too, per direct feedback (branch `mohan-wips`)
+
+- **Sept 29 2026: empty and unticked fields are left out of edit mode too, per direct feedback (branch `mohan-wips`).**
+  - **In edit mode, a field with no value is not shown.** Every edit session starts with the record's empty fields unticked in "Fields shown" (`emptyFieldKeys` in `v3/field-visibility-store.ts`, judged on the values when the edit starts, so clearing a field while typing doesn't make it vanish). Ticking an empty field in "Fields shown" adds it to its card to be filled in; this is now how an empty field is added.
+  - **Unticking a field removes it from the edit card**, not just marks it: `EditRow` returns nothing for a hidden field, and the "Hidden" label is gone. It stays off the record when viewed too.
+  - **Always shown, cannot be unticked:** identifiers (as before) and what a record needs: its name, start date and, for an occurrence, the species (`REQUIRED_FIELD`).
+  - **A card with nothing to edit is left out** (`sectionShownInEdit`), e.g. Tree health on an animal observation under "Edit record"; ticking one of its fields brings the card back. List cards (location, trap effort, measurements-only, custom properties) always show, so things can be added to them.
+  - **On save** only a choice to hide a field that has a value is kept; empty fields are left out by the rule anyway.
+  - The checklist copy now reads "Tick a field to add it to the record, untick it to take it away. Empty fields start unticked."
+  - **Knock-on:** a new record opens with only its non-empty fields (its ID, name, start date, observers and any default like Photopoint marker present); everything else is added through "Fields shown".
+  - Verified headlessly: the echidna occurrence's Description (empty) is absent in edit and unticked; ticking it adds the row; unticking Occurrence comment removes it from the card and, after save, from the view; the bandicoot's "Edit record" shows no Tree health card until DBH is ticked; a new Visit opens with ID, name, sequence, start date, observers and photopoint marker. Zero console errors; `tsc`, `eslint --max-warnings=0` and `npm run check:contracts` are clean. Not committed.

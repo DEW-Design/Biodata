@@ -9,7 +9,7 @@ import { saveDla, useDla } from "@/app/pages/_shared/dla/dla-store";
 import { useRoleHref } from "@/lib/use-role-href";
 
 // /pages/dla/new - the request form. Saving lands on the new request's deep dive - either as a
-// Draft, or Submitted once the requester actually submits (see CONTEXT.md, "Unified DSA/DLA status
+// Draft, or Submitted once the requester actually submits (see context/decisions/2026-09-24-04-unified-dsa-dla-status-model-rolled-straight-into.md, "Unified DSA/DLA status
 // model" for why DLA gained a real Draft status). `?renewFrom=<id>` (from a closed agreement's
 // "Renew Licence" button) pre-fills the form from that agreement's own locations/purpose/requestor
 // rather than starting blank; the closed record itself is untouched, so its own history stays intact.

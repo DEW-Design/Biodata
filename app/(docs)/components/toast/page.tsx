@@ -82,7 +82,7 @@ export default function ToastPage() {
       <PageHeader
         section="Components"
         title="Toast"
-        description="A transient, self-dismissing notification anchored to a corner of the viewport. Built on sonner for stacking, swipe-to-dismiss, and timing - DEW only supplies the card, reusing Button, CloseButton, and FeaturedIcon from Alert. Colours and demo sections are driven from config/design-system.config.ts."
+        description="A transient, self-dismissing notification that appears in the bottom-right corner of the viewport, on every screen. Built on sonner for stacking, swipe-to-dismiss, and timing - DEW only supplies the card, reusing Button, CloseButton, and FeaturedIcon from Alert. Colours and demo sections are driven from config/design-system.config.ts."
         actions={<ContextualConfigPanel slug="toast" title="Toast" sections={sectionToggles} />}
       />
 
@@ -242,7 +242,7 @@ export default function ToastPage() {
       {/* ── Composition ── */}
       <h2 className="text-balance">Composition</h2>
       <p className="text-balance">
-        Toast doesn&apos;t introduce a new card shape - it reuses <code>Button</code>, <code>CloseButton</code>, and <code>FeaturedIcon</code>, the same primitives <code>AlertFloating</code> composes. The only new dependency is <code>sonner</code>, which owns stacking order, swipe gestures, and auto-dismiss timing; DEW supplies <code>toast.custom()</code> a plain React card (<code>ToastCard</code>) instead of sonner&apos;s default styling, so every toast matches the rest of the system.
+        Toast doesn&apos;t introduce a new card shape - it reuses <code>Button</code>, <code>CloseButton</code>, and <code>FeaturedIcon</code>, the same primitives <code>AlertFloating</code> composes. The only new dependency is <code>sonner</code>, which owns stacking order, swipe gestures, and auto-dismiss timing; DEW supplies <code>toast.custom()</code> a plain React card (<code>ToastCard</code>) instead of sonner&apos;s default styling, so every toast matches the rest of the system. Position is part of the component too: <code>Toaster</code> always stacks toasts in the bottom-right corner (<code>TOAST_POSITION</code>), lifted 88px from the bottom (<code>TOAST_OFFSET</code>) so a toast never covers a form&apos;s footer buttons, and takes no position prop, so every screen shows them in the same place.
       </p>
 
       <h2 className="text-balance">Token anatomy</h2>

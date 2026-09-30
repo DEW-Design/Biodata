@@ -1,0 +1,3 @@
+# 2026-09-28 - Vertical menu icon everywhere on the record, per direct feedback (branch `mohan-wips`)
+
+- **Sept 28 2026: vertical menu icon everywhere on the record, per direct feedback (branch `mohan-wips`).** The field's note menu trigger is now the vertical menu icon (`DotsVertical`, "<field> options"), still shown only on hover or focus, not the add (+) icon. The record's Actions menu in the details panel and the expanded view (shared `ActionsMenu`) uses the same vertical icon instead of the horizontal one, so fields, note cards and records match. Verified headlessly: the menus still open and add, edit and remove work; zero console errors; `tsc`, `eslint` and `check:contracts` are clean. Not committed.

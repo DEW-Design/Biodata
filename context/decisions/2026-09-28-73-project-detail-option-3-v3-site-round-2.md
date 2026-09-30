@@ -1,0 +1,31 @@
+# 2026-09-28 - Project detail Option 3 v3, Site round 2, per direct feedback (branch `mohan-wips`)
+
+- **Sept 28 2026: project detail Option 3 v3, Site round 2, per direct feedback (branch `mohan-wips`).**
+  - **Field types come from the Figma components, not the annotations** (designer: "only refer the field type in the Figma and not annotation"). Re-read node `1970:143519` by component:
+    - Every type matched what was built, except **Photopoint disc number**. It is an 80px input with "00", so it is now a number (`192`, `193`).
+    - The earlier CONTEXT entry's "annotation" wording is superseded.
+  - **Allowed area outline:**
+    - `SAMap` gained an additive `outlines` prop: dashed, no fill, no pin, included in the map's fit so the whole allowed area is in view.
+    - `GeoExtentPicker` passes `referenceBoundaries` to it, on both the inline draw map and its full-screen map.
+    - The survey location field passes the project area and the parent's location. Its hint names them and says the dashed outline is the allowed area.
+  - **"Full screen" on every map:** new `v3/record-map.tsx` (`RecordMap`) is the record's read-only map with the picker's "Full screen" button top left. It opens a full-window map with "Exit full screen". It is used in the details panel's Location information and in the expanded view's Location side card, which stays as it was.
+  - **The expanded view shows what was entered:** the Location information card now has a "Location details" row and the coordinate table (Entered Value and GDA2020 Equivalent), in both the panel and the expanded view.
+    - The row is how and what was entered, e.g. "Drawn on the map · circle, 500 m radius" (`locationSummary`).
+    - The row takes notes like any field, including in edit mode.
+  - **Field notes are one card per kind, stacked** (Comment, then Questionable, then Attachments), replacing the tabs.
+    - When viewing, only cards with data show. In edit mode, every card the person can add to shows.
+    - The Questionable card carries the warning tint and reads "Marked questionable". The inner box is gone, so boxes are not nested.
+    - The orange left edge on a questionable row is removed.
+  - **Custom properties:**
+    - The section is hidden when a record has none, in the panel and the expanded view. It shows in edit mode so properties can be added.
+    - Each custom property row is now a field row in edit mode, with Notes (comment, questionable, attachments) once it has a name.
+  - "Recorded by" now reads "Olivia Wyatt, Maya Dewitt" (was pipe-separated).
+  - **Verified headlessly (biodata-admin):**
+    - The panel lists no Custom properties section.
+    - Location information shows the full-screen map button, the Location details row and the table, and Full screen opens the map dialog.
+    - Reliability notes show two stacked cards (Comment, Questionable) with no tabs and no left edge.
+    - The expanded view has no Custom card, shows the entered-value table and has full-screen buttons.
+    - Adding a custom property gives it Notes, and the section appears after saving.
+    - The draw map shows the dashed 12 km project outline around the site.
+    - Zero console errors. `tsc`, `eslint --max-warnings=0` and `npm run check:contracts` are clean.
+  - Not committed.

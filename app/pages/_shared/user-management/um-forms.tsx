@@ -4,7 +4,7 @@ import { useState } from "react";
 import type { DateValue, Key, Selection } from "react-aria-components";
 import { getLocalTimeZone, today } from "@internationalized/date";
 import { Plus, SearchMd, Trash01 } from "@untitledui/icons";
-import { ConfirmationModal } from "@/components/application/modals/modal";
+import { DestructiveModal } from "@/components/application/modals/modal";
 import { TreeView } from "@/components/application/tree-view/tree-view";
 import { Button } from "@/components/base/buttons/button";
 import { Checkbox } from "@/components/base/checkbox/checkbox";
@@ -36,12 +36,13 @@ const isoOf = (d: DateValue | null) => (d ? d.toString() : "");
 
 function DiscardModal({ isOpen, onOpenChange, what, onDiscard }: { isOpen: boolean; onOpenChange: (o: boolean) => void; what: string; onDiscard: () => void }) {
   return (
-    <ConfirmationModal
+    <DestructiveModal
       isOpen={isOpen}
       onOpenChange={onOpenChange}
       title={`Discard this ${what}?`}
       description={`What you've entered for this ${what} will be lost.`}
       confirmLabel="Discard"
+      cancelLabel="Keep editing"
       onConfirm={onDiscard}
     />
   );
@@ -82,7 +83,7 @@ export function RolePicker({ value, onChange, invalid }: { value: string[]; onCh
       <div className="flex flex-col gap-3">
         <p className="text-sm font-semibold text-primary">Custom roles</p>
         <div className="w-full max-w-sm">
-          <Input aria-label="Search by department" size="sm" icon={SearchMd} placeholder="Search by department" value={deptSearch} onChange={setDeptSearch} />
+          <Input aria-label="Search by department" size="sm" icon={SearchMd} placeholder="Search by department" value={deptSearch} onChange={setDeptSearch} onClear={() => setDeptSearch("")} clearLabel="Clear search" />
         </div>
         {departments.length === 0 ? (
           <p className="text-sm text-tertiary">No department matches your search.</p>

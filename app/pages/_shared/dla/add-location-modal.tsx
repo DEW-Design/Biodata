@@ -2,7 +2,6 @@
 
 import { useState, type FC } from "react";
 import dynamic from "next/dynamic";
-import { Heading } from "react-aria-components";
 import { Circle, MarkerPin02, Pentagon, UploadCloud02 } from "@untitledui/icons";
 import { Button } from "@/components/base/buttons/button";
 import { Input } from "@/components/base/input/input";
@@ -10,15 +9,14 @@ import { InputFile } from "@/components/base/input/input-file";
 import { InputNumber } from "@/components/base/input/input-number";
 import { RadioButton, RadioGroup } from "@/components/base/radio-buttons/radio-buttons";
 import { Select } from "@/components/base/select/select";
-import { CloseButton } from "@/components/base/buttons/close-button";
-import { Dialog, Modal, ModalOverlay } from "@/components/application/modals/modal";
+import { Dialog, Modal, ModalFooter, ModalHeader, ModalOverlay } from "@/components/application/modals/modal";
 import { Tab, TabList, TabPanel, Tabs } from "@/components/application/tabs/tabs";
 import { SA_NATIONAL_PARKS, type Boundary } from "@/app/pages/_shared/map-search/geo";
 import { eastingNorthingToLatLon, parseLocationFile } from "@/app/pages/_shared/dla/dla-geo";
 import { newLocationId, type DlaLocation, type DlaLocationMethod } from "@/app/pages/_shared/dla/dla-data";
 
 // The wireframe's "Add a Location" popup (Figma YMproGZfrFB5jUqPHPxMhk, node 33:43259), re-fitted
-// to real components rather than its own drag-and-drop chrome - see CONTEXT.md, "Data Licencing
+// to real components rather than its own drag-and-drop chrome - see context/decisions/2026-09-23-03-data-licencing-agreement-dla-workflow-built-at-pages.md, "Data Licencing
 // Agreement (DLA)". 3 of its 4 methods reuse exactly what Explore's own map search already built
 // for the same job (draw on the map, enter coordinates, pick a real South Australian national
 // park) - a location added here becomes the same `Boundary` (circle/polygon) type Explore uses, so
@@ -139,13 +137,8 @@ export function AddLocationModal({ isOpen, onOpenChange, onAdd }: { isOpen: bool
         <ModalOverlay isOpen={isOpen} onOpenChange={handleOpenChange}>
             <Modal className="w-full max-w-2xl">
                 <Dialog>
-                    <div className="flex flex-col gap-5 p-6">
-                        <div className="flex items-start justify-between gap-4">
-                            <Heading slot="title" className="text-lg font-semibold text-balance text-primary">
-                                Add a Location
-                            </Heading>
-                            <CloseButton size="sm" />
-                        </div>
+                    <ModalHeader icon={MarkerPin02} iconColor="gray" title="Add a location" description="Name the area, then draw it, pick it, upload it or enter its coordinates." />
+                    <div className="flex flex-col gap-5 px-6 pt-5">
 
                         <Tabs selectedKey={method} onSelectionChange={(key) => setMethod(key as DlaLocationMethod)} className="flex flex-col gap-4">
                             <TabList aria-label="Location method" type="button-border" size="sm" fullWidth>
@@ -245,15 +238,15 @@ export function AddLocationModal({ isOpen, onOpenChange, onAdd }: { isOpen: bool
                             </TabPanel>
                         </Tabs>
 
-                        <div className="mt-2 grid grid-cols-2 gap-3">
-                            <Button color="secondary" size="lg" slot="close">
-                                Cancel
-                            </Button>
-                            <Button color="primary" size="lg" isDisabled={!canAdd} onPress={handleAdd}>
-                                Add Location
-                            </Button>
-                        </div>
                     </div>
+                    <ModalFooter>
+                        <Button color="secondary" size="md" slot="close">
+                            Cancel
+                        </Button>
+                        <Button color="primary" size="md" isDisabled={!canAdd} onPress={handleAdd}>
+                            Add location
+                        </Button>
+                    </ModalFooter>
                 </Dialog>
             </Modal>
         </ModalOverlay>

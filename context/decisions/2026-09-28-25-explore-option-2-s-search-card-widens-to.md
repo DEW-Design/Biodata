@@ -1,0 +1,11 @@
+# 2026-09-28 - Explore option 2's search card widens to line up with the map key, per designer feedback off a screenshot ("increase panel width to match labels width").
+
+- **Sept 28 2026: Explore option 2's search card widens to line up with the map key, per designer feedback off a screenshot ("increase panel width to match labels width").** The card was capped at 400px while the one-line key below it is about 610px wide, so their right edges did not line up. The card's maximum width is now the larger of 400px and the key's width, measured live with a `ResizeObserver` on the key (`keyWidth`, passed as `--key-w` on the map's panel layer in `observations-search.tsx`). CSS cannot tie the two, because they sit in different rows. The card is still `flex-1`, so on a narrower map it gives way to the summary card's column rather than overlapping it. When the key is hidden or narrower than 400px, the card stays 400px.
+  - **Bug caught while verifying:** the measuring ref was a new function on every render, so React detached and re-attached it each time and reset the width to 0. It is now a stable `useCallback`.
+  - **Measured live** (with a summary card open where one opened):
+    - At 1708x1024 and 1440x900 the card and key share both edges exactly (366 to 975.2px), and the wider card also stops the list's organisation and project names being cut off.
+    - Where the key is narrower (a "kangaroo" search, key 200px), the card stays 400px.
+    - At 1280x720 the card reaches 562px, the most the summary card's column allows, so the one-line key extends 47px past it.
+    - At 1024x650 the card is 306px with the 2-column key under it.
+    - No overlaps between the card, the key, the summary card, the zoom buttons, the scale bar and the attribution at any size (CONTRACTS 2.8). Zero console errors.
+  - **Checks:** `eslint --max-warnings=0` is clean. `npm run check:contracts` fails on §2.3a in `search-data.ts` (three em-dashes added at 13:49 by another session, in its new end-date and scientific-name null checks, not from this change; left for that session, and the fix is to write them as `"\u2014"`). `tsc` is clean for this file; it currently reports 5 errors in `home-dashboard.tsx`, which another session is editing, so not from this change. Not committed.

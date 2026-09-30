@@ -1,0 +1,27 @@
+# 2026-09-29 - Project detail option 3 v3: editing several cards at once, whole-row notes, no false note markers, the folded breadcrumb, and tinted note chips, per direct feedback (branch `mohan-wips`)
+
+- **Sept 29 2026: project detail option 3 v3: editing several cards at once, whole-row notes, no false note markers, the folded breadcrumb, and tinted note chips, per direct feedback (branch `mohan-wips`).**
+  - **Several cards can be edited at once in the full view.**
+    - While one card is in edit mode, every other card keeps its edit icon (and its field edit icons) at full opacity. Clicking one adds that card to the same edit.
+    - The session holds a list of cards (`sectionIds`) and one shared draft, so Cancel and Save cover them all.
+    - The footer names every card being edited. The "Fields shown" panel follows the last card opened.
+    - The earlier dimming of the other cards is removed.
+    - CONTRACTS §4.7's "the other cards dim and hide their edit icons" no longer describes v3. This is a designer instruction; the clause text is left for the designer to update.
+  - **Notes cover the whole row in edit mode** (`EditRow`, `v3/card-editor.tsx`).
+    - The "..." menu (comment, questionable, attach) sits at the row's right edge and shows when any part of the row is hovered, the label included.
+    - The notes and the composer span the full row under the label and the field, not just the value column: measured 636px wide in a 686px row.
+  - **No false note markers.** The seeded example notes on the transect and the trap sat on fields the Figma rebuild removed ("Sampling effort", "Sampling protocol"), so section headers showed a comment or file the record visibly didn't have.
+    - The seed now puts them on fields that exist: the transect comment on Start date, the trap layout PDF on the Elliott trap effort.
+    - The notes store moved to version 2, with a migration that moves the same keys in data already saved in the browser.
+    - New `recordFieldKeys(record)`: section header counts, the Artefacts tab and "Notes on this record" now count only notes on fields the record still has.
+  - **Breadcrumb:** in compact views (the details panel), only the project and the current record show; every step between folds into one "..." menu, e.g. "BD-5039 › ... › OC00504 · Southern Brown Bandicoot". Full screen still shows the whole path.
+  - **Note markers are tinted chips of one shape** (`NOTE_TONE` in `v3/field-notes.tsx`): questionable in warning orange, comments in light blue (`utility-blue`), attachments in light purple (`utility-purple`). They are used on field rows, section headers and "Notes on this record".
+  - **An expanded field row gets a subtle `bg-secondary` background**, in view mode when its notes are open and in edit mode when it has notes or a composer open.
+  - **Verified headlessly:**
+    - An old saved note on "Sampling protocol" moved to Trap effort ("Trap details" shows nothing, "Trap effort" shows 1 file).
+    - Both breadcrumbs as described.
+    - The attachment chip background computes to purple-50, and an open row to gray-50.
+    - Four other cards kept their edit icons while Trap effort was being edited; Photopoint joined, giving 2 cards in edit mode at full opacity.
+    - The row menu shows when the label is hovered.
+    - Zero console errors. `tsc`, `eslint --max-warnings=0` and `npm run check:contracts` are clean.
+  - Not committed.

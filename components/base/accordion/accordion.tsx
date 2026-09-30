@@ -10,6 +10,12 @@ export interface AccordionItemType {
     id: Key;
     title: ReactNode;
     content: ReactNode;
+    /**
+     * An action shown on the item's header row, beside (not inside) the toggle button, e.g. an
+     * "Edit" button. Optional and additive: items without it render exactly as before. Supported by
+     * the `compact` and `boxed` variants.
+     */
+    action?: ReactNode;
 }
 
 export interface AccordionProps {
@@ -46,6 +52,13 @@ export interface AccordionProps {
      * @default "divided"
      */
     variant?: "divided" | "boxed" | "compact";
+    /**
+     * Where an item's `action` sits on the `compact` header: `"end"` (default) after the chevron, or
+     * `"beforeChevron"` between the title and the chevron. Each header is a `group/accordion-item`, so
+     * a caller can reveal its action on hover with `group-hover/accordion-item:opacity-100`.
+     * @default "end"
+     */
+    actionPlacement?: "end" | "beforeChevron";
     className?: string;
 }
 
@@ -66,7 +79,7 @@ const AccordionChevron = ({ isOpen }: { isOpen: boolean }) => (
  * components/marketing/faq/faq-accordion-01.tsx, which now composes this instead of hand-rolling
  * its own expand/collapse state - the reusable interaction pattern, not tied to FAQ copy.
  */
-export const Accordion = ({ items, defaultOpenKeys = [], openKeys: controlledOpenKeys, onOpenKeysChange, singleOpen = false, variant = "divided", className }: AccordionProps) => {
+export const Accordion = ({ items, defaultOpenKeys = [], openKeys: controlledOpenKeys, onOpenKeysChange, singleOpen = false, variant = "divided", actionPlacement = "end", className }: AccordionProps) => {
     const isControlled = controlledOpenKeys !== undefined;
     const [internalOpenKeys, setInternalOpenKeys] = useState(new Set(defaultOpenKeys));
     const openKeys = isControlled ? controlledOpenKeys : internalOpenKeys;
@@ -97,15 +110,37 @@ export const Accordion = ({ items, defaultOpenKeys = [], openKeys: controlledOpe
                     const isOpen = openKeys.has(item.id);
                     return (
                         <div key={item.id} className={cx(index !== 0 && "border-t border-secondary")}>
-                            <button
-                                type="button"
-                                onClick={() => toggle(item.id)}
-                                aria-expanded={isOpen}
-                                className="flex w-full cursor-pointer items-center justify-between gap-2 py-2.5 text-left outline-focus-ring select-none focus-visible:outline-2 focus-visible:-outline-offset-2"
-                            >
-                                <span className="text-sm font-semibold text-primary">{item.title}</span>
-                                <ChevronDown className={cx("size-4 shrink-0 text-brand-600 transition-transform duration-150", isOpen && "rotate-180")} />
-                            </button>
+                            {item.action && actionPlacement === "beforeChevron" ? (
+                                // The action sits between the title and the chevron. The chevron is a
+                                // second, pointer-only way to toggle; keyboard users toggle with the title.
+                                <div className="group/accordion-item flex items-center gap-1">
+                                    <button
+                                        type="button"
+                                        onClick={() => toggle(item.id)}
+                                        aria-expanded={isOpen}
+                                        className="flex min-w-0 flex-1 cursor-pointer items-center gap-2 py-2.5 text-left outline-focus-ring select-none focus-visible:outline-2 focus-visible:-outline-offset-2"
+                                    >
+                                        <span className="text-sm font-semibold text-primary">{item.title}</span>
+                                    </button>
+                                    <div className="shrink-0">{item.action}</div>
+                                    <button type="button" tabIndex={-1} aria-hidden="true" onClick={() => toggle(item.id)} className="flex size-7 shrink-0 cursor-pointer items-center justify-center">
+                                        <ChevronDown className={cx("size-4 text-brand-600 transition-transform duration-150", isOpen && "rotate-180")} />
+                                    </button>
+                                </div>
+                            ) : (
+                                <div className="group/accordion-item flex items-center gap-2">
+                                    <button
+                                        type="button"
+                                        onClick={() => toggle(item.id)}
+                                        aria-expanded={isOpen}
+                                        className="flex min-w-0 flex-1 cursor-pointer items-center justify-between gap-2 py-2.5 text-left outline-focus-ring select-none focus-visible:outline-2 focus-visible:-outline-offset-2"
+                                    >
+                                        <span className="text-sm font-semibold text-primary">{item.title}</span>
+                                        <ChevronDown className={cx("size-4 shrink-0 text-brand-600 transition-transform duration-150", isOpen && "rotate-180")} />
+                                    </button>
+                                    {item.action && <div className="shrink-0">{item.action}</div>}
+                                </div>
+                            )}
                             <motion.div
                                 className="overflow-hidden"
                                 initial={false}
@@ -128,15 +163,21 @@ export const Accordion = ({ items, defaultOpenKeys = [], openKeys: controlledOpe
                     const isOpen = openKeys.has(item.id);
                     return (
                         <div key={item.id} className="overflow-hidden rounded-md border border-[var(--color-brand-100)] bg-primary">
-                            <button
-                                type="button"
-                                onClick={() => toggle(item.id)}
-                                aria-expanded={isOpen}
-                                className="flex w-full cursor-pointer items-center gap-3 px-4 py-3 text-left outline-focus-ring select-none focus-visible:outline-2 focus-visible:-outline-offset-2"
-                            >
-                                <span className="flex-1 text-base font-medium text-balance text-brand-tertiary">{item.title}</span>
-                                <ChevronDown className={cx("size-5 shrink-0 text-quaternary transition-transform duration-150", isOpen && "rotate-180")} />
-                            </button>
+                            <div className="flex items-center gap-2 pr-3">
+                                <button
+                                    type="button"
+                                    onClick={() => toggle(item.id)}
+                                    aria-expanded={isOpen}
+                                    className={cx(
+                                        "flex min-w-0 flex-1 cursor-pointer items-center gap-3 py-3 pl-4 text-left outline-focus-ring select-none focus-visible:outline-2 focus-visible:-outline-offset-2",
+                                        !item.action && "pr-1",
+                                    )}
+                                >
+                                    <span className="flex-1 text-base font-medium text-balance text-brand-tertiary">{item.title}</span>
+                                    <ChevronDown className={cx("size-5 shrink-0 text-quaternary transition-transform duration-150", isOpen && "rotate-180")} />
+                                </button>
+                                {item.action && <div className="shrink-0">{item.action}</div>}
+                            </div>
                             <motion.div
                                 className="overflow-hidden border-t border-[var(--color-brand-100)]"
                                 initial={false}

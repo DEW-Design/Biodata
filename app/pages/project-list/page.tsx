@@ -2,11 +2,11 @@
 
 import { Suspense, useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import type { Key } from "react-aria-components";
 import { Tabs } from "react-aria-components";
-import { TabList, Tab, TabPanel } from "@/components/application/tabs/tabs";
-import { ChevronDown, ArrowNarrowRight, Folder, Database01, User01, PieChart03 } from "@untitledui/icons";
+import { TabList, Tab } from "@/components/application/tabs/tabs";
+import { ChevronDown, ArrowNarrowRight, User01, PieChart03 } from "@untitledui/icons";
 import { Button } from "@/components/base/buttons/button";
 import { HomeTabPanels } from "@/app/pages/_shared/home-tab-panels";
 import { DataOverviewContent } from "@/app/pages/_shared/data-overview";
@@ -15,10 +15,10 @@ import { PrimaryRail } from "@/app/pages/_shared/primary-rail";
 import { SidebarFooterLinks } from "@/app/pages/_shared/sidebar-footer-links";
 import { sectionIcons } from "@/app/pages/_shared/nav-icons";
 import { AppHeader } from "@/app/pages/_shared/app-header";
-import { ProjectActions } from "@/app/pages/_shared/project-actions";
+import { ProjectsSidebar, readProjectScope, type ProjectScope } from "@/app/pages/_shared/projects-sidebar";
 import { GuestAboutAside, GuestGradientCard } from "@/app/pages/_shared/guest-home";
 import { MobileNavTrigger } from "@/app/pages/_shared/mobile-nav";
-import { RoleSwitcher } from "@/app/pages/_shared/role-switcher";
+import { PrototypeTools } from "@/app/_prototype-tools/prototype-tools";
 import { useUserRole } from "@/lib/use-user-role";
 import { useRoleHref } from "@/lib/use-role-href";
 import { navForRole, keyHref, type NavNode } from "@/lib/registered-user-nav";
@@ -120,7 +120,7 @@ function SectionPlaceholder({ node }: { node: NavNode }) {
 
   return (
     <div className="flex flex-1 flex-col items-center justify-center gap-3 p-12 text-center">
-      <h1 className="text-lg font-medium text-primary">{node.label}</h1>
+      <h1 className="text-lg font-semibold text-primary">{node.label}</h1>
       <p className="max-w-sm text-sm text-tertiary">
         {relatedLink
           ? "This section has its own page - it isn't embedded here."
@@ -153,7 +153,14 @@ function ProjectList() {
   const roleHref = useRoleHref();
   const [activeSection, setActiveSection] = useState("Projects");
   const [homeTab, setHomeTab] = useState<Key>("dashboard");
-  const [projectsTab, setProjectsTab] = useState<Key>("projects");
+  // My projects / All projects, kept in the URL so links and back/forward land on the same list.
+  const searchParams = useSearchParams();
+  const scope = readProjectScope(searchParams.get("scope"));
+  const setScope = (next: ProjectScope) => {
+    const params = new URLSearchParams(searchParams.toString());
+    params.set("scope", next);
+    router.replace(`?${params.toString()}`);
+  };
   // public-user's own Flora and Fauna Dashboard tab (Overview/Flora/Fauna/Projects) - separate from
   // `homeTab` above, which is registered-user's My BioData/Flora-Dashboard switcher and doesn't
   // apply to a guest (see the isPublicUser branch below). Lifted here, not left uncontrolled inside
@@ -178,7 +185,7 @@ function ProjectList() {
 
   return (
     <div className="font-barlow flex h-screen flex-col overflow-hidden">
-      <RoleSwitcher />
+      <PrototypeTools />
       {/* ── Header ── */}
       <AppHeader
         mobileNav={
@@ -227,32 +234,22 @@ function ProjectList() {
               : !isPublicUser && activeSection === "Projects"
                 ? ((close: () => void) => (
                     <>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setProjectsTab("projects");
-                          close();
-                        }}
-                        className={cx(
-                          "rounded-md px-3 py-2 text-left text-sm font-medium outline-brand focus-visible:outline-2 focus-visible:outline-offset-2",
-                          projectsTab === "projects" ? "bg-secondary text-primary" : "text-primary hover:bg-secondary",
-                        )}
-                      >
-                        Projects
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setProjectsTab("datasets");
-                          close();
-                        }}
-                        className={cx(
-                          "rounded-md px-3 py-2 text-left text-sm font-medium outline-brand focus-visible:outline-2 focus-visible:outline-offset-2",
-                          projectsTab === "datasets" ? "bg-secondary text-primary" : "text-primary hover:bg-secondary",
-                        )}
-                      >
-                        Datasets
-                      </button>
+                      {(["mine", "all"] as const).map((key) => (
+                        <button
+                          key={key}
+                          type="button"
+                          onClick={() => {
+                            setScope(key);
+                            close();
+                          }}
+                          className={cx(
+                            "rounded-md px-3 py-2 text-left text-sm font-medium outline-brand focus-visible:outline-2 focus-visible:outline-offset-2",
+                            scope === key ? "bg-secondary text-primary" : "text-primary hover:bg-secondary",
+                          )}
+                        >
+                          {key === "mine" ? "My projects" : "All projects"}
+                        </button>
+                      ))}
                     </>
                   ))
                 : undefined}
@@ -278,23 +275,17 @@ function ProjectList() {
         // this branch dropped entirely for lack of anything to put in it. Same content for Home and
         // Projects (only the eyebrow label differs), matching the lab exactly. See dashboard's copy
         // of this same branch for the full rationale.
-        if (isPublicUser && (activeSection === "Home" || activeSection === "Projects")) {
+        if (isPublicUser && activeSection === "Home") {
           return (
             <div className="flex flex-1 overflow-hidden">
               {iconRail}
-              <GuestAboutAside sectionLabel={activeSection} actions={activeSection === "Projects" ? <ProjectActions withTopRule={false} /> : undefined} />
+              <GuestAboutAside sectionLabel={activeSection} />
 
               <main className="flex flex-1 flex-col overflow-y-auto">
-                {activeSection === "Home" ? (
-                  <>
-                    <div className="p-6">
-                      <GuestGradientCard tab={guestDashboardTab} />
-                    </div>
-                    <DataOverviewContent activeTab={guestDashboardTab} onActiveTabChange={setGuestDashboardTab} />
-                  </>
-                ) : (
-                  <ProjectListContent />
-                )}
+                <div className="p-6">
+                  <GuestGradientCard tab={guestDashboardTab} />
+                </div>
+                <DataOverviewContent activeTab={guestDashboardTab} onActiveTabChange={setGuestDashboardTab} />
               </main>
             </div>
           );
@@ -332,39 +323,17 @@ function ProjectList() {
           );
         }
 
-        // Projects' two views (Projects / Datasets) get the same "own Tabs boundary, own two peer
-        // tabs" treatment as Home's My BioData/Flora and Fauna Dashboard - a single "Manage Project
-        // and Datasets" link used to blend these into one destination, flagged directly by the
-        // user off this exact sidebar. Datasets has no reference/content yet, so it's the honest
-        // "hasn't been scoped yet" placeholder rather than an invented list.
+        // Projects: the same column as project detail (My projects / All projects, Actions, project
+        // guides) for every persona; a public user sees All projects only. The scope is in the URL.
         if (activeSection === "Projects") {
           return (
-            <Tabs orientation="vertical" selectedKey={projectsTab} onSelectionChange={setProjectsTab} className="flex flex-1 overflow-hidden">
+            <div className="flex flex-1 overflow-hidden">
               {iconRail}
-
-              {/* ── Contextual sidebar: Projects/Datasets tab list (nav chrome - not pixel-matched) ── */}
-              <aside aria-label="Section" className="hidden w-[286px] shrink-0 flex-col justify-between overflow-y-auto border-r border-secondary bg-secondary p-4 lg:flex">
-                <div className="flex flex-col gap-1">
-                  <p className="mb-3 text-xs font-semibold tracking-wide text-quaternary uppercase">{activeSectionNode.label}</p>
-                  <TabList aria-label="Projects views" orientation="vertical" type="button-brand" fullWidth className="w-full">
-                    <Tab id="projects" label="Projects" icon={Folder} />
-                    <Tab id="datasets" label="Datasets" icon={Database01} />
-                  </TabList>
-                  <ProjectActions />
-                </div>
-                <SidebarFooterLinks />
-              </aside>
-
-              {/* ── Main content: Projects has this screen's own content; Datasets is unscoped ── */}
+              <ProjectsSidebar sectionLabel={activeSectionNode.label} scope={scope} onScopeChange={setScope} />
               <main className="flex flex-1 flex-col overflow-y-auto">
-                <TabPanel id="projects" className="flex min-h-0 flex-1 flex-col">
-                  <ProjectListContent />
-                </TabPanel>
-                <TabPanel id="datasets">
-                  <SectionPlaceholder node={{ label: "Datasets" }} />
-                </TabPanel>
+                <ProjectListContent scope={isPublicUser ? "all" : scope} />
               </main>
-            </Tabs>
+            </div>
           );
         }
 

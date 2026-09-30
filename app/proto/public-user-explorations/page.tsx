@@ -27,8 +27,8 @@
 // (round 2) are deleted, not just hidden - the picker only compares live directions. Single Hook
 // (header + gradient banner + real `DataOverviewContent`) is now the fixed, shared base - see
 // `SingleHookMain` below - and this round's own axis of variation is column 2, the contextual
-// sidebar `registered-user` gets but `public-user` currently doesn't (per CONTEXT.md's "no aside
-// for single-view guest sections" convention - true when that column had nothing to hold, not a
+// sidebar `registered-user` gets but `public-user` currently doesn't (per context/archive/exploratory-layouts-history.md,
+// the public-user bullet on single-view guest sections - true when that column had nothing to hold, not a
 // permanent rule). Per the user directly: "the column 2 bit could have some elements that nudge
 // the user to create a registered account... what's the incentive... let's look at patterns across
 // other similar apps from /mobbin."
@@ -247,7 +247,7 @@ function SingleHookMain() {
 
 // Same 286px contextual-sidebar shape `registered-user` already gets (dashboard/page.tsx's own
 // `<aside>`) - `public-user` never had one, since Home/Projects are single-view sections with no
-// switcher to hold (see CONTEXT.md). Repurposed here to hold the account-creation nudge instead of
+// switcher to hold (see context/archive/exploratory-layouts-history.md). Repurposed here to hold the account-creation nudge instead of
 // nav content, since that's the one real thing this column has to offer a guest right now.
 function GuestSidebarStub({ children }: { children: ReactNode }) {
   return (

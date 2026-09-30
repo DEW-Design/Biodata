@@ -1,0 +1,22 @@
+# 2026-09-28 - one species picker for forms: a combo box, then a summary card, per designer feedback off a screenshot of the nomination form's species step ("this breaks existing patterns on the design system... Should the species selection be a combo box?") and the Mobbin comparison.
+
+- **Sept 28 2026: one species picker for forms: a combo box, then a summary card, per designer feedback off a screenshot of the nomination form's species step ("this breaks existing patterns on the design system... Should the species selection be a combo box?") and the Mobbin comparison.** The designer chose all four proposed changes. Patterns taken (ideas only, CONTRACTS 2.6): picking one thing from a large catalogue is a combo box with rich rows (komoot, ElevenLabs, Uvodo); grouping lives in the dropdown as headings (Airwallex, Klaviyo); the chosen item becomes a summary card you can change (Teachable, GetYourGuide).
+  - **New page-shared `app/pages/_shared/species-picker.tsx`:** `SpeciesCombobox`, `SpeciesSummaryCard` and `SpeciesField`, which shows the combo box until a species is picked, then the card. It is not under `components/**`, so no override.
+    - **The combo box** is the real `ComboBox` with `SelectSection` headings per species group, with counts, and the same stacked `SelectItem` row as the header search. A row shows the photo as its avatar (or the group icon), the common name with the scientific name in italics, the family, and "Restricted" or "Nominated" on the right.
+    - Typing matches common name, scientific name, family or group. It opens on focus, so the whole grouped list can be browsed, and it is invalid-styled when a blocked Continue needs it.
+    - **The card** shows photo, names, family and group, and a Change button that clears the pick and puts focus back in the combo box. Notes about the species sit under the card.
+  - **Nomination form (`nomination-form.tsx`):** the search box, the "Show only" checkboxes and the always-open list are gone. The two notes under the card ("Already restricted in some projects", "This species already has an open nomination") are now bordered, like the record page banners.
+  - **Add Project's species restriction (`species-restriction.tsx`):** its side panel uses the same field.
+    - Gone from the panel: the search, the group chips and the list; the "Sensitive" badge (now "Restricted", the word used everywhere else); the "NSX Code: -" line (a stray dash while codes are missing); and the fold-out restriction summary (now the same "Already restricted" note, naming the projects).
+    - The panel title "Nominate Sensitive Species" is now "Restrict a species". It was the name of the separate nominations feature.
+    - A concept with no value reads "Whole concept" instead of "-".
+    - Species already restricted in the form are left out of the list.
+  - **A real bug found while testing, and fixed:** typing stopped after the first letter, and picking threw "childNodes is not supported". React's development build diffs the props of a re-rendered component, and a `SelectSection` updated in place leads that diff into react-aria's hidden collection nodes. Keying each section on the typed text (`${group}:${query}`) mounts it fresh instead.
+    - A key inside `SelectSection` itself did not help, so the rule is written on `SelectSection`'s doc comment for every caller.
+    - The header search does not hit it with its short lists.
+  - **NSX codes (designer chose option A):** the species table (`SpeciesResultsView`) will start with an NSX code column once the designer supplies the real codes for the 21 species. None are in the data, and none will be made up (CONTRACTS 0.3). The picker's card will show the code then too.
+  - **Verified live at 1708x1024:**
+    - Nomination form: a blocked Continue marks the combo box invalid. It opens on focus with Mammals 7, Birds 7, Reptiles 1, Amphibians 1, Plants 5. "vomb" finds the wombat by family, and "southern" types in full. ArrowDown and Enter pick the wombat, showing the card and the open-nomination note.
+    - Project-detail option 3's species restriction editor: the "Restrict a species" panel, the already-restricted bandicoot left out, the Malleefowl card with its "Already restricted" note, and Change returning focus to the field.
+    - Zero console errors. `tsc`, `eslint --max-warnings=0` on touched files, and `npm run check:contracts` are clean.
+  - **Not covered:** after Change the field has focus but the list only opens on typing or ArrowDown. Not committed.
