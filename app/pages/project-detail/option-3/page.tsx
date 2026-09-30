@@ -44,12 +44,12 @@ import { useUserRole } from "@/lib/use-user-role";
 import { useRoleHref } from "@/lib/use-role-href";
 import { registeredUserNav, publicUserNav, keyHref, type NavNode } from "@/lib/registered-user-nav";
 
-import { RecordStoreProvider, useRecordStore } from "../option-2/record-store";
-import type { DetailRecord } from "../option-2/record-fields";
-import { RecordEditPanel } from "../option-2/record-panel";
-import { RecordsView, type EntityTab } from "../option-2/records-view";
-import { projectEvents, projectObservations, projectOccurrences, projectResources } from "../option-2/project-scope";
-import type { FieldSpec, FieldValues } from "../option-2/field-editor";
+import { RecordStoreProvider, useRecordStore } from "./record-store";
+import type { DetailRecord } from "./record-fields";
+import { RecordEditPanel } from "./record-panel";
+import { RecordsView, type EntityTab } from "./records-view";
+import { projectEvents, projectObservations, projectOccurrences, projectResources } from "@/app/pages/_shared/project-scope";
+import type { FieldSpec, FieldValues } from "./field-editor";
 import { AboutContent, FieldsEditor, PROJECT_STATUS_OPTIONS, parseProjectDate, statusColorFor } from "./about-content";
 import { EditColumn, type EditRequest } from "./edit-column";
 
@@ -218,7 +218,7 @@ function ProjectDetail() {
   return (
     <div className="font-barlow flex h-screen flex-col overflow-hidden">
       <PrototypeTools />
-      <ProjectDetailLayoutSwitcher current="option-2" />
+      <ProjectDetailLayoutSwitcher current="option-3" />
       {/* ── Header - identical shape to option-1/option-2's own clean, flat header (no colour
           band): an eyebrow label, the title, and a meta line - per the user's own direct
           preference against a dark banner, confirmed twice already on option-2. ── */}
@@ -257,7 +257,7 @@ function ProjectDetail() {
               <ProjectHero onEditRequest={setActiveEdit} />
 
               <ContentTabs selectedKey={detailTab} onSelectionChange={(key) => setDetailTab(key as DetailTab)} className="flex flex-1 flex-col">
-                <TabList aria-label="Project views" type="underline" size="md" className="gap-6">
+                <TabList aria-label="Project views" type="underline" size="md">
                   {detailTabs.map((t) => (
                     <Tab key={t.id} id={t.id} label={t.label} />
                   ))}

@@ -21,6 +21,15 @@ interface NominationStoreState {
 const useNominationStore = create<NominationStoreState>()(
   persist(() => ({ nominations: seedNominations }), {
     name: "biodata-nominations",
+    // Same `history` backfill as dsa-store.ts/dla-store.ts - bumped when `history` was added to
+    // `Nomination`, so a browser with nominations already persisted under version 0 gets an honest
+    // empty log instead of `transition`/`saveNomination`/the record page's own `[...n.history]`
+    // crashing on `undefined` (CONTRACTS 0.3 - no fabricated history for those records).
+    version: 1,
+    migrate: (persisted) => {
+      const state = persisted as { nominations: (Omit<Nomination, "history"> & { history?: Nomination["history"] })[] };
+      return { nominations: state.nominations.map((n) => ({ ...n, history: n.history ?? [] })) };
+    },
     storage: createJSONStorage(browserStorage),
     skipHydration: true,
   }),

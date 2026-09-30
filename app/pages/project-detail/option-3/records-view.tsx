@@ -25,7 +25,7 @@ import {
   type SearchOccurrence,
   type SearchResource,
 } from "@/app/pages/_shared/map-search/search-data";
-import { buildEventTree, projectEvents, projectObservations, projectOccurrences, projectResources, type EventTreeNode } from "./project-scope";
+import { buildEventTree, projectEvents, projectObservations, projectOccurrences, projectResources, type EventTreeNode } from "@/app/pages/_shared/project-scope";
 import { RecordEditPanel } from "./record-panel";
 import type { DetailRecord } from "./record-fields";
 import { cx } from "@/utils/cx";

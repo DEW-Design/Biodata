@@ -4,8 +4,26 @@ import { useMemo } from "react";
 import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
 import { effectiveStatus } from "@/app/pages/_shared/agreement-status";
+import { CURRENT_USER_NAME, REVIEWING_ADMIN_NAME } from "@/app/pages/_shared/agreement-scope";
 import { browserStorage, useHydrated, useRehydrate } from "@/app/pages/_shared/zustand-persist";
-import { nextDlaId, seedDlas, todayIso, type Dla, type DlaApproveInput, type DlaDraft, type DlaLocation, type DlaStatus } from "@/app/pages/_shared/dla/dla-data";
+import {
+  nextDlaId,
+  requestorName,
+  seedDlas,
+  todayIso,
+  type Dla,
+  type DlaApproveInput,
+  type DlaDraft,
+  type DlaLocation,
+  type DlaRequestor,
+  type DlaStatus,
+} from "@/app/pages/_shared/dla/dla-data";
+
+/** The requester's own name, falling back to the placeholder signed-in user when a draft hasn't
+ *  had a name entered yet (a draft only requires the organisation, see `validateDla`). */
+function actorName(r: DlaRequestor): string {
+  return requestorName(r) || CURRENT_USER_NAME;
+}
 
 // The DLA list, kept in a zustand store (persisted to localStorage) so the list page, the deep
 // dive and the form - separate routes - all read and write the same requests, and a real page
@@ -36,6 +54,16 @@ interface DlaStoreState {
 const useDlaStore = create<DlaStoreState>()(
   persist(() => ({ dlas: seedDlas }), {
     name: "biodata-dla",
+    // Bumped when `history` (the Audit tab's log) was added to `Dla` - a browser with requests
+    // already persisted under version 0 has records with no `history` at all, and `transition`/
+    // `saveDla`/the Audit tab's own `[...dla.history]` all assume it's a real array. `migrate`
+    // backfills an empty log rather than fabricating one (CONTRACTS 0.3 - there's no real history
+    // to recover for those records, so an honest empty log, not an invented one).
+    version: 1,
+    migrate: (persisted) => {
+      const state = persisted as { dlas: (Omit<Dla, "history"> & { history?: Dla["history"] })[] };
+      return { dlas: state.dlas.map((d) => ({ ...d, history: d.history ?? [] })) };
+    },
     storage: createJSONStorage(browserStorage),
     skipHydration: true,
   }),
@@ -49,6 +77,17 @@ export function useDlasHydrated(): boolean {
 
 function commit(next: Dla[]) {
   useDlaStore.setState({ dlas: next });
+}
+
+/** Moves one request to a new status and appends the move to its own Audit Log, all in one write
+ *  (the same shape dsa-store.ts's own `transition` and nomination-store.ts's both already use). */
+function transition(id: string, status: DlaStatus, by: string, patch: Partial<Dla> = {}, note?: string) {
+  const now = todayIso();
+  commit(
+    useDlaStore
+      .getState()
+      .dlas.map((d) => (d.id === id ? { ...d, ...patch, status, updatedAt: now, history: [...d.history, { status, at: now, by, ...(note ? { note } : {}) }] } : d)),
+  );
 }
 
 export function useDlas(): Dla[] {
@@ -73,28 +112,27 @@ export function saveDla(draft: DlaDraft, intent: "draft" | "submit", existingId?
   const now = todayIso();
   const existing = existingId ? dlas.find((d) => d.id === existingId) : undefined;
   const status: DlaStatus = intent === "draft" ? "draft" : existing && existing.status !== "draft" ? existing.status : "submitted";
+  const changed = !existing || existing.status !== status;
+  const history = [...(existing?.history ?? []), ...(changed ? [{ status, at: now, by: actorName(draft.requestor) }] : [])];
   const record: Dla = existing
-    ? { ...existing, ...draft, status, updatedAt: now }
-    : { ...draft, id: nextDlaId(dlas), status, submittedAt: now, updatedAt: now };
+    ? { ...existing, ...draft, status, updatedAt: now, history }
+    : { ...draft, id: nextDlaId(dlas), status, submittedAt: now, updatedAt: now, history };
   commit(existing ? dlas.map((d) => (d.id === record.id ? record : d)) : [...dlas, record]);
   return record;
 }
 
 /** A reviewer opening a Submitted request claims it for review. */
 export function startDlaReview(id: string) {
-  const dlas = useDlaStore.getState().dlas;
-  commit(dlas.map((d) => (d.id === id ? { ...d, status: "under_review", updatedAt: todayIso() } : d)));
+  transition(id, "under_review", REVIEWING_ADMIN_NAME);
 }
 
 /** The reviewer holds the review pending information from the requester. */
 export function holdDlaReview(id: string) {
-  const dlas = useDlaStore.getState().dlas;
-  commit(dlas.map((d) => (d.id === id ? { ...d, status: "on_hold", updatedAt: todayIso() } : d)));
+  transition(id, "on_hold", REVIEWING_ADMIN_NAME);
 }
 
 export function resumeDlaReview(id: string) {
-  const dlas = useDlaStore.getState().dlas;
-  commit(dlas.map((d) => (d.id === id ? { ...d, status: "under_review", updatedAt: todayIso() } : d)));
+  transition(id, "under_review", REVIEWING_ADMIN_NAME);
 }
 
 /** Approve Request modal - sets the actual grant period (distinct from what the requester asked
@@ -102,21 +140,22 @@ export function resumeDlaReview(id: string) {
  *  to Active if the chosen start date has already arrived, otherwise Approved / Auto Approved
  *  until that date. */
 export function approveDla(id: string, input: DlaApproveInput) {
-  const dlas = useDlaStore.getState().dlas;
   const today = todayIso();
-  commit(dlas.map((d) => (d.id === id ? { ...d, ...input, status: input.validFrom && input.validFrom <= today ? "active" : "approved", updatedAt: today } : d)));
+  transition(id, input.validFrom && input.validFrom <= today ? "active" : "approved", REVIEWING_ADMIN_NAME, input);
 }
 
 export function rejectDla(id: string, rejectionReason: string) {
-  const dlas = useDlaStore.getState().dlas;
-  commit(dlas.map((d) => (d.id === id ? { ...d, status: "rejected", rejectionReason, updatedAt: todayIso() } : d)));
+  transition(id, "rejected", REVIEWING_ADMIN_NAME, { rejectionReason }, rejectionReason);
 }
 
 /** Cancel is available to the requester or an admin, at any point before Closed - "Withdraw" was
- *  the pre-workflow term for this same action (see CONTEXT.md, "Unified DSA/DLA status model"). */
+ *  the pre-workflow term for this same action (see CONTEXT.md, "Unified DSA/DLA status model").
+ *  Attributed to the requester - who exactly clicked it (them, or an admin on their behalf) isn't
+ *  tracked separately, the same "who did it is an audit detail, not a separate status" call
+ *  dsa-store.ts's own `cancelDsa` already makes. */
 export function cancelDla(id: string) {
-  const dlas = useDlaStore.getState().dlas;
-  commit(dlas.map((d) => (d.id === id ? { ...d, status: "cancelled", updatedAt: todayIso() } : d)));
+  const dla = useDlaStore.getState().dlas.find((d) => d.id === id);
+  transition(id, "cancelled", dla ? actorName(dla.requestor) : REVIEWING_ADMIN_NAME);
 }
 
 export function deleteDla(id: string) {

@@ -146,7 +146,7 @@ export function NominationDetail({
 
       <ContentTabs defaultSelectedKey="overview" className="flex flex-1 flex-col">
         <div className="shrink-0 px-6 pt-4">
-          <TabList aria-label="Nomination sections" type="underline" size="md" className="gap-6">
+          <TabList aria-label="Nomination sections" type="underline" size="md">
             <Tab id="overview" label="Overview" />
             <Tab id="protection" label="What to protect" />
             <Tab id="history" label="Audit history" />

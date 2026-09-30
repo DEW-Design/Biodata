@@ -2,10 +2,9 @@
 
 import { useState } from "react";
 import type { SortDescriptor } from "react-aria-components";
-import { Clock, Feather, MessageAlertCircle, Plus, SearchMd } from "@untitledui/icons";
+import { Clock, Feather, MessageAlertCircle, Plus } from "@untitledui/icons";
 import { Badge, CountBadge } from "@/components/base/badges/badges";
 import { Button } from "@/components/base/buttons/button";
-import { Input } from "@/components/base/input/input";
 import { FeaturedIcon } from "@/components/foundations/featured-icon/featured-icon";
 import { Progress } from "@/components/application/progress-steps/progress-steps";
 import { SectionHeader } from "@/components/application/section-headers/section-headers";
@@ -13,6 +12,7 @@ import { Table, TableCard } from "@/components/application/table/table";
 import { CURRENT_USER_NAME, sortRows, type AgreementScope, type SortValue } from "@/app/pages/_shared/agreement-scope";
 import { TaskItem } from "@/app/pages/_shared/home-dashboard";
 import { ListFilterButton, matchesFilters, monthOptions, optionsFromValues, type FilterGetters, type FilterSection, type FilterSelection } from "@/app/pages/_shared/list-filter";
+import { ToolbarSearch } from "@/app/pages/_shared/toolbar-search";
 import { SpeciesPhoto } from "@/app/pages/_shared/map-search/species-photo";
 import { SPECIES_GROUP_ICON } from "@/app/pages/_shared/map-search/species-group-icons";
 import {
@@ -172,24 +172,15 @@ export function NominationList({ scope, initialStatuses = [], canReview }: { sco
           <NominationBanner canReview={canReview} />
           {!canReview && <ReviewSteps />}
           <div className="flex shrink-0 flex-wrap items-center gap-3">
-            <div className="w-full max-w-sm shrink-0">
-              <Input
-                aria-label="Search nominations"
-                size="sm"
-                icon={SearchMd}
-                placeholder="Search ID, species or nominator"
-                value={search}
-                onChange={(v) => {
-                  setSearch(v);
-                  setPage(1);
-                }}
-                onClear={() => {
-                  setSearch("");
-                  setPage(1);
-                }}
-                clearLabel="Clear search"
-              />
-            </div>
+            <ToolbarSearch
+              label="Search nominations"
+              placeholder="Search ID, species or nominator"
+              value={search}
+              onChange={(v) => {
+                setSearch(v);
+                setPage(1);
+              }}
+            />
             <div>
               <ListFilterButton
                 sections={filterSections}

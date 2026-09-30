@@ -36,6 +36,7 @@ import { useDlas } from "@/app/pages/_shared/dla/dla-store";
 import { useNominations } from "@/app/pages/_shared/nominations/nomination-store";
 import { cx } from "@/utils/cx";
 import { useRoleHref } from "@/lib/use-role-href";
+import { FlaggedConceptsHomeQueue } from "@/app/pages/project-detail/flagged-home-queue";
 import { useUserRole } from "@/lib/use-user-role";
 
 // The real Home/BioData Dashboard content - the single source every sidebar shell
@@ -548,6 +549,7 @@ function AdminHomeDashboardContent() {
             ))}
           </div>
         </div>
+        <FlaggedConceptsHomeQueue />
       </div>
     </>
   );

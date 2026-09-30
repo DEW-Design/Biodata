@@ -980,7 +980,7 @@ function ProjectDetail({ notice }: ProjectDetailProps) {
   const [activeSection, setActiveSection] = useState("Projects");
   const [homeTab, setHomeTab] = useState<Key>("dashboard");
   const [abstractExpanded, setAbstractExpanded] = useState(false);
-  const [detailTab, setDetailTab] = useState<Key>("species");
+  const [detailTab, setDetailTab] = useState<Key>("overview");
   const projectSpeciesOccurrences = useMemo(() => searchOccurrences.filter((o) => rootProjectForParentEventId(o.parentEventId)?.id === adelaideHillsProject?.id), []);
   const [recordQuery, setRecordQuery] = useState("");
   // Controlled (not the Accordion's own default uncontrolled state) so a flagged-concept click can
@@ -1106,7 +1106,7 @@ function ProjectDetail({ notice }: ProjectDetailProps) {
   return (
     <div className="font-barlow flex h-screen flex-col overflow-hidden">
       <PrototypeTools />
-      <ProjectDetailLayoutSwitcher current="option-1" />
+      <ProjectDetailLayoutSwitcher current="option-2" />
       {/* ── Header ── */}
       <AppHeader
         mobileNav={
@@ -1395,7 +1395,7 @@ function ProjectDetail({ notice }: ProjectDetailProps) {
                       {notice && <div className="px-6 pt-4">{notice}</div>}
                       <ContentTabs selectedKey={detailTab} onSelectionChange={setDetailTab} className="flex flex-1 flex-col">
                         <div className="flex items-end gap-4 px-6 pt-4">
-                          <TabList aria-label="Project views" type="underline" size="md" className="min-w-0 flex-1 gap-6 overflow-x-auto">
+                          <TabList aria-label="Project views" type="underline" size="md" className="min-w-0 flex-1 overflow-x-auto">
                             <Tab id="overview" label="Overview" />
                             <Tab id="locations" label="Locations" />
                             <Tab id="species" label="Species" />

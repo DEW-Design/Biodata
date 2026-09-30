@@ -3,7 +3,7 @@
 import { Suspense, type ReactNode } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { AlertFullWidth } from "@/components/application/alerts/alerts";
-import { ProjectDetailView } from "@/app/pages/project-detail/project-detail-view";
+import { ProjectDetailView } from "@/app/pages/project-detail/option-2/project-detail-view";
 import type { DetailRecord } from "@/app/pages/_shared/map-search/record-detail";
 import { recordAccess } from "@/app/pages/_shared/map-search/record-access";
 import { findObservation, findOccurrence, rootProjectForParentEventId, rootProjectOfEvent, searchEvents } from "@/app/pages/_shared/map-search/search-data";

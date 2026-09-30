@@ -25,6 +25,22 @@ export type AgreementStatus = "draft" | "submitted" | "under_review" | "on_hold"
 // source says" convention this build already applies to the transitions themselves.
 export const agreementStatusOrder: AgreementStatus[] = ["draft", "submitted", "under_review", "approved", "rejected", "active", "on_hold", "closed", "cancelled"];
 
+/**
+ * A recorded status change - who moved a DSA or DLA to this status, when, and why (a rejection
+ * reason, an on-hold/return note). The one shared shape both `Dsa.history` and `Dla.history` use
+ * for their "Audit Log" tab, the same `{status, at, by, note?}` shape nominations' own "Audit
+ * history" tab already established. `by` is the acting person's name for a real decision, or
+ * `"System"` for the two transitions nobody actually makes - Approved auto-becoming Active and
+ * Active auto-closing once a date passes (see `effectiveStatus` below) - the same `"System"`
+ * convention already used for the dataset-ingestion status trail.
+ */
+export interface AgreementEvent {
+  status: AgreementStatus;
+  at: string;
+  by: string;
+  note?: string;
+}
+
 export const agreementStatusMeta: Record<AgreementStatus, { label: string; tabLabel: string; badgeColor: BadgeColors }> = {
   draft: { label: "Draft", tabLabel: "Drafts", badgeColor: "gray" },
   submitted: { label: "Submitted", tabLabel: "Submitted", badgeColor: "brand" },

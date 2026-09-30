@@ -18,7 +18,7 @@ import { HeroMeta, RecordHero } from "@/app/pages/_shared/record-hero";
 import { SidebarFooterLinks } from "@/app/pages/_shared/sidebar-footer-links";
 import { eventTypeIcon, searchEvents } from "@/app/pages/_shared/map-search/search-data";
 import { SpeciesResultsView } from "@/app/pages/_shared/map-search/species-results";
-import { buildEventTree, projectOccurrences, type EventTreeNode } from "@/app/pages/project-detail/option-2/project-scope";
+import { buildEventTree, projectOccurrences, type EventTreeNode } from "@/app/pages/_shared/project-scope";
 import { IngestionChip } from "@/app/pages/_shared/dataset-upload/ingestion-views";
 import { IngestionStrip, IngestionTreeCard } from "@/app/proto/dataset-ingestion/lab-options";
 import { useIngestionLab, useRunView, type LabSpeed } from "@/app/proto/dataset-ingestion/ingestion-sim";

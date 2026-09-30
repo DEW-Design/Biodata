@@ -15,6 +15,11 @@ export type AgreementScope = "mine" | "all";
 /** The placeholder signed-in user, matched against an agreement's requester (Olivia Wyatt convention). */
 export const CURRENT_USER_NAME = "Olivia Wyatt";
 
+/** The placeholder signed-in BioData Admin - "by" on every reviewer/manager action in a DSA or
+ *  DLA's Audit Log (Home's own "Hi, Jane" greeting, the sanctioned admin persona parallel to
+ *  Olivia Wyatt's registered-user one). */
+export const REVIEWING_ADMIN_NAME = "Jane";
+
 /** The scope in the URL (`?scope=mine|all`), or the given default when there is none. */
 export function useAgreementScope(defaultScope: AgreementScope): AgreementScope {
   const value = useSearchParams().get("scope");

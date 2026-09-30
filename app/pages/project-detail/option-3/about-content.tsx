@@ -42,11 +42,11 @@ import { BentoCard } from "@/app/pages/_shared/bento-card";
 import { LocationDetailsTable } from "@/app/pages/_shared/location-details-table";
 import { MetricTile } from "@/app/pages/_shared/map-search/metric-tile";
 import { TypeformCard, ChoiceTile } from "@/app/pages/project-registration/typeform-card";
-import { FieldRow, type FieldSpec, type FieldValues } from "../option-2/field-editor";
-import { useRecordStore } from "../option-2/record-store";
-import type { EntityTab } from "../option-2/records-view";
-import { registrationDataCollection, registrationProjectDetails, registrationRestrictions } from "../option-2/project-registration-data";
-import { DataOwnerCard, ProjectManagersCard, roleOfWorkLabel } from "../option-2/registration-summary";
+import { FieldRow, type FieldSpec, type FieldValues } from "./field-editor";
+import { useRecordStore } from "./record-store";
+import type { EntityTab } from "./records-view";
+import { registrationDataCollection, registrationProjectDetails, registrationRestrictions } from "./project-registration-data";
+import { DataOwnerCard, ProjectManagersCard, roleOfWorkLabel } from "./registration-summary";
 import { GeoExtentPicker, geoExtentSummary } from "@/app/pages/project-registration/geo-extent-picker";
 import type { GeoExtentValue, RestrictionsState, RestrictionTypeKey } from "@/app/pages/project-registration/types";
 import {

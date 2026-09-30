@@ -14,7 +14,7 @@
 //
 // No real backend exists anywhere in this build - Save doesn't persist to a server, it commits the
 // section's draft values back into this page's own in-memory record store (see
-// app/pages/project-detail/option-2/record-store.ts) so the edit is honestly visible for the rest
+// app/pages/project-detail/option-3/record-store.tsx) so the edit is honestly visible for the rest
 // of the session, and shows the same "not really persisted" toast this build already uses
 // elsewhere (project-registration's own "Save Draft").
 

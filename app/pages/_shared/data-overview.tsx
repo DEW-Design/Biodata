@@ -223,7 +223,7 @@ export function DataOverviewContent({
         {/* pt-4 - the underline Tab's own vertical padding is `pb-2.5 pt-0` (tabs.tsx), so
             without top padding here the labels sit flush against the header's border-b above,
             reading as congested. Flagged directly by the user off a screenshot. */}
-        <TabList aria-label="Data dashboard views" type="underline" size="md" className="gap-6 px-6 pt-4">
+        <TabList aria-label="Data dashboard views" type="underline" size="md" className="px-6 pt-4">
           {dataDashboardTabs.map((tab) => (
             <Tab key={tab.id} id={tab.id} label={tab.label} />
           ))}

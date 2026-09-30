@@ -2,16 +2,16 @@
 
 import { useState } from "react";
 import type { SortDescriptor } from "react-aria-components";
-import { SearchMd } from "@untitledui/icons";
 import { Avatar } from "@/components/base/avatar/avatar";
 import { Badge, CountBadge } from "@/components/base/badges/badges";
-import { Input } from "@/components/base/input/input";
 import { Table, TableCard } from "@/components/application/table/table";
 import { SectionHeader } from "@/components/application/section-headers/section-headers";
 import { useRoleHref } from "@/lib/use-role-href";
 import { projects, type Project } from "@/app/pages/_shared/project-list-data";
-import { sortRows, type SortValue } from "@/app/pages/_shared/agreement-scope";
+import { CURRENT_USER_NAME, sortRows, type SortValue } from "@/app/pages/_shared/agreement-scope";
+import type { ProjectScope } from "@/app/pages/_shared/projects-sidebar";
 import { ListFilterButton, RECENCY_OPTIONS, matchesFilters, optionsFromValues, recencyBucket, type FilterGetters, type FilterSection, type FilterSelection } from "@/app/pages/_shared/list-filter";
+import { ToolbarSearch } from "@/app/pages/_shared/toolbar-search";
 
 // The real Projects list content - shared by every sidebar shell (dashboard,
 // project-list, project-detail) so clicking the Projects icon always shows this, the same
@@ -87,7 +87,7 @@ const projectSortKeys: Record<string, (p: Project) => SortValue> = {
   updated: recency,
 };
 
-export function ProjectListContent() {
+export function ProjectListContent({ scope }: { scope?: ProjectScope } = {}) {
   const roleHref = useRoleHref();
   // Search, then real, working pagination state - matching dsa-list.tsx/dla-list.tsx's own
   // "Section header, then search, then table" shape (CONTEXT.md's non-negotiable table pattern) -
@@ -101,6 +101,8 @@ export function ProjectListContent() {
   const [sort, setSort] = useState<SortDescriptor>({ column: "updated", direction: "descending" });
   const query = search.trim().toLowerCase();
   const matching = projects
+    // "My projects": the ones the signed-in person contributes to (the placeholder user).
+    .filter((p) => scope !== "mine" || p.contributorName === CURRENT_USER_NAME)
     .filter((p) => matchesFilters(p, filters, projectFilterGetters))
     .filter((p) => !query || [p.code, p.name, p.org, p.contributorName].some((v) => v.toLowerCase().includes(query)));
   const rows = sortRows(matching, sort, projectSortKeys);
@@ -119,13 +121,15 @@ export function ProjectListContent() {
         <SectionHeader.Group>
           <div className="flex flex-1 flex-col gap-1">
             <div className="flex items-center gap-2">
-              <SectionHeader.Heading>Projects</SectionHeader.Heading>
+              <SectionHeader.Heading>{scope === "mine" ? "My projects" : scope === "all" ? "All projects" : "Projects"}</SectionHeader.Heading>
               {/* CountBadge, not Badge - a true circle, not TableCard.Header's own oval
                   padding-tuned Badge. color="brand" per the user: counters should read in the
                   primary colour, not neutral gray - see components/base/badges/badges.tsx. */}
               <CountBadge count={rows.length} color="brand" />
             </div>
-            <SectionHeader.Subheading>Every project you&apos;re contributing to or watching.</SectionHeader.Subheading>
+            <SectionHeader.Subheading>
+              {scope === "mine" ? "Projects you contribute to." : scope === "all" ? "Every project in BioData SA." : "Every project you're contributing to or watching."}
+            </SectionHeader.Subheading>
           </div>
         </SectionHeader.Group>
       </SectionHeader.Root>
@@ -135,24 +139,15 @@ export function ProjectListContent() {
           screenshot: "see how close the table is to the section header?" */}
       <div className="flex min-h-0 flex-1 flex-col gap-4 p-6">
         <div className="flex shrink-0 flex-wrap items-center gap-3">
-          <div className="w-full max-w-sm shrink-0">
-            <Input
-              aria-label="Search projects"
-              size="sm"
-              icon={SearchMd}
-              placeholder="Search ID, name, organisation or contributor"
-              value={search}
-              onChange={(value) => {
-                setSearch(value);
-                setPage(1);
-              }}
-              onClear={() => {
-                setSearch("");
-                setPage(1);
-              }}
-              clearLabel="Clear search"
-            />
-          </div>
+          <ToolbarSearch
+            label="Search projects"
+            placeholder="Search ID, name, organisation or contributor"
+            value={search}
+            onChange={(value) => {
+              setSearch(value);
+              setPage(1);
+            }}
+          />
           <div>
             <ListFilterButton
               sections={projectFilterSections}

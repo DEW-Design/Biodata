@@ -7,8 +7,8 @@ import { useLayoutEffect, useSyncExternalStore } from "react";
 // how a simulated run ends). They are Scaffold, not BioData SA (CONTRACTS 1.5): Geist text,
 // react-aria primitives, and a colour the product never uses.
 //
-// One bar shows them all (`PrototypeTools`). The role is always there; every other tool is
-// registered by the code that owns it, only while it is on screen and has something to do: a
+// One bar shows them all (`PrototypeTools`). The role is always there; every other tool is added
+// by the code that owns it, only while it is on screen and has something to do: a
 // screen with layout options to compare registers "layout", a project page with a dataset being
 // ingested registers "ingestion". So a screen shows exactly its own tools, and a screen with
 // nothing else to preview shows just the role.

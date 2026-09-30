@@ -2,13 +2,12 @@
 
 import { useState } from "react";
 import type { SortDescriptor } from "react-aria-components";
-import { SearchMd } from "@untitledui/icons";
 import { CountBadge } from "@/components/base/badges/badges";
-import { Input } from "@/components/base/input/input";
 import { Table, TableCard } from "@/components/application/table/table";
 import { sortRows, type SortValue } from "@/app/pages/_shared/agreement-scope";
 import { artefactTypeMeta, type Artefact, type ArtefactType } from "@/app/pages/_shared/artefact-lightbox";
 import { ListFilterButton, matchesFilters, type FilterGetters, type FilterSection, type FilterSelection } from "@/app/pages/_shared/list-filter";
+import { ToolbarSearch } from "@/app/pages/_shared/toolbar-search";
 
 // A project's artefacts and attachments as a table (the Explore Artefacts table's shape, without its
 // Hierarchy column): search and a Type filter above, sortable columns, numbered pagination. A row
@@ -64,24 +63,15 @@ export function ArtefactTable({ artefacts, onOpen }: { artefacts: Artefact[]; on
         <CountBadge count={rows.length} color="brand" />
       </div>
       <div className="flex flex-wrap items-center gap-3">
-        <div className="w-full max-w-sm">
-          <Input
-            aria-label="Search artefacts"
-            size="sm"
-            icon={SearchMd}
-            placeholder="Search name, record or creator"
-            value={search}
-            onChange={(v) => {
-              setSearch(v);
-              setPage(1);
-            }}
-            onClear={() => {
-              setSearch("");
-              setPage(1);
-            }}
-            clearLabel="Clear search"
-          />
-        </div>
+        <ToolbarSearch
+          label="Search artefacts"
+          placeholder="Search name, record or creator"
+          value={search}
+          onChange={(v) => {
+            setSearch(v);
+            setPage(1);
+          }}
+        />
         <ListFilterButton
           sections={filterSections}
           selection={filters}

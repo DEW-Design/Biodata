@@ -7,9 +7,10 @@
 // Under Review, On Hold, Approved, Rejected, Active, Closed, Cancelled, and the real transitions
 // between them, replacing the earlier lo-fi-only Active/Inactive/Revoked/Draft set (see CONTEXT.md,
 // "Unified DSA/DLA status model" for the source and every decision behind it).
-export type { AgreementStatus as DsaStatus } from "@/app/pages/_shared/agreement-status";
+export type { AgreementStatus as DsaStatus, AgreementEvent as DsaEvent } from "@/app/pages/_shared/agreement-status";
 export { agreementStatusOrder as dsaStatusOrder, agreementStatusMeta as dsaStatusMeta } from "@/app/pages/_shared/agreement-status";
-import type { AgreementStatus as DsaStatus } from "@/app/pages/_shared/agreement-status";
+import type { AgreementStatus as DsaStatus, AgreementEvent as DsaEvent } from "@/app/pages/_shared/agreement-status";
+import { REVIEWING_ADMIN_NAME } from "@/app/pages/_shared/agreement-scope";
 
 export type DsaScope = "species" | "location" | "project";
 
@@ -58,10 +59,12 @@ export interface Dsa {
   rejectionReason: string;
   createdAt: string;
   updatedAt: string;
+  /** The Audit Log tab's own dated trail of every status this agreement has moved through. */
+  history: DsaEvent[];
 }
 
 /** What the record form edits - a `Dsa` minus what the workflow itself assigns. */
-export type DsaDraft = Omit<Dsa, "id" | "status" | "createdAt" | "updatedAt">;
+export type DsaDraft = Omit<Dsa, "id" | "status" | "createdAt" | "updatedAt" | "history">;
 
 // ── Formatting (hand-rolled, not Intl, so server and client render the same string) ──
 
@@ -275,6 +278,12 @@ export const seedDsas: Dsa[] = [
     rejectionReason: "",
     createdAt: "2026-01-30",
     updatedAt: "2026-01-30",
+    history: [
+      { status: "draft", at: "2026-01-30", by: REVIEWING_ADMIN_NAME },
+      { status: "submitted", at: "2026-01-30", by: REVIEWING_ADMIN_NAME },
+      { status: "under_review", at: "2026-01-30", by: REVIEWING_ADMIN_NAME },
+      { status: "active", at: "2026-01-30", by: REVIEWING_ADMIN_NAME },
+    ],
   },
   {
     id: "DSA-2025-01351",
@@ -292,6 +301,12 @@ export const seedDsas: Dsa[] = [
     rejectionReason: "",
     createdAt: "2026-01-31",
     updatedAt: "2026-02-04",
+    history: [
+      { status: "draft", at: "2026-01-31", by: REVIEWING_ADMIN_NAME },
+      { status: "submitted", at: "2026-02-01", by: REVIEWING_ADMIN_NAME },
+      { status: "under_review", at: "2026-02-02", by: REVIEWING_ADMIN_NAME },
+      { status: "active", at: "2026-02-04", by: REVIEWING_ADMIN_NAME },
+    ],
   },
   {
     id: "DSA-2025-01352",
@@ -321,6 +336,12 @@ export const seedDsas: Dsa[] = [
     rejectionReason: "",
     createdAt: "2026-01-31",
     updatedAt: "2026-01-31",
+    history: [
+      { status: "draft", at: "2026-01-31", by: REVIEWING_ADMIN_NAME },
+      { status: "submitted", at: "2026-01-31", by: REVIEWING_ADMIN_NAME },
+      { status: "under_review", at: "2026-01-31", by: REVIEWING_ADMIN_NAME },
+      { status: "active", at: "2026-01-31", by: REVIEWING_ADMIN_NAME },
+    ],
   },
   {
     id: "DSA-2025-01353",
@@ -338,6 +359,12 @@ export const seedDsas: Dsa[] = [
     rejectionReason: "",
     createdAt: "2026-01-31",
     updatedAt: "2026-01-31",
+    history: [
+      { status: "draft", at: "2026-01-31", by: REVIEWING_ADMIN_NAME },
+      { status: "submitted", at: "2026-01-31", by: REVIEWING_ADMIN_NAME },
+      { status: "under_review", at: "2026-01-31", by: REVIEWING_ADMIN_NAME },
+      { status: "active", at: "2026-01-31", by: REVIEWING_ADMIN_NAME },
+    ],
   },
   {
     id: "DSA-2025-01290",
@@ -355,6 +382,12 @@ export const seedDsas: Dsa[] = [
     rejectionReason: "",
     createdAt: "2025-11-12",
     updatedAt: "2025-11-12",
+    history: [
+      { status: "draft", at: "2025-11-12", by: REVIEWING_ADMIN_NAME },
+      { status: "submitted", at: "2025-11-12", by: REVIEWING_ADMIN_NAME },
+      { status: "under_review", at: "2025-11-12", by: REVIEWING_ADMIN_NAME },
+      { status: "active", at: "2025-11-12", by: REVIEWING_ADMIN_NAME },
+    ],
   },
   {
     id: "DSA-2024-00871",
@@ -372,6 +405,13 @@ export const seedDsas: Dsa[] = [
     rejectionReason: "",
     createdAt: "2024-06-18",
     updatedAt: "2025-07-01",
+    history: [
+      { status: "draft", at: "2024-06-18", by: REVIEWING_ADMIN_NAME },
+      { status: "submitted", at: "2024-06-19", by: REVIEWING_ADMIN_NAME },
+      { status: "under_review", at: "2024-06-21", by: REVIEWING_ADMIN_NAME },
+      { status: "active", at: "2024-06-24", by: REVIEWING_ADMIN_NAME },
+      { status: "closed", at: "2025-07-01", by: "System", note: "Closed automatically - the agreement's end date passed." },
+    ],
   },
   {
     id: "DSA-2024-00912",
@@ -389,6 +429,13 @@ export const seedDsas: Dsa[] = [
     rejectionReason: "",
     createdAt: "2024-08-22",
     updatedAt: "2025-09-01",
+    history: [
+      { status: "draft", at: "2024-08-22", by: REVIEWING_ADMIN_NAME },
+      { status: "submitted", at: "2024-08-23", by: REVIEWING_ADMIN_NAME },
+      { status: "under_review", at: "2024-08-25", by: REVIEWING_ADMIN_NAME },
+      { status: "active", at: "2024-08-28", by: REVIEWING_ADMIN_NAME },
+      { status: "closed", at: "2025-09-01", by: "System", note: "Closed automatically - the agreement's end date passed." },
+    ],
   },
   {
     id: "DSA-2026-01402",
@@ -406,6 +453,7 @@ export const seedDsas: Dsa[] = [
     rejectionReason: "",
     createdAt: "2026-09-15",
     updatedAt: "2026-09-15",
+    history: [{ status: "draft", at: "2026-09-15", by: REVIEWING_ADMIN_NAME }],
   },
   // Submitted through Cancelled: real examples of every stage in the shared DSA/DLA workflow (see
   // agreement-status.ts) - none of these existed under the old Active/Inactive/Revoked/Draft set.
@@ -425,6 +473,10 @@ export const seedDsas: Dsa[] = [
     rejectionReason: "",
     createdAt: "2026-09-20",
     updatedAt: "2026-09-20",
+    history: [
+      { status: "draft", at: "2026-09-20", by: REVIEWING_ADMIN_NAME },
+      { status: "submitted", at: "2026-09-20", by: REVIEWING_ADMIN_NAME },
+    ],
   },
   {
     id: "DSA-2026-01405",
@@ -442,6 +494,11 @@ export const seedDsas: Dsa[] = [
     rejectionReason: "",
     createdAt: "2026-09-16",
     updatedAt: "2026-09-22",
+    history: [
+      { status: "draft", at: "2026-09-16", by: REVIEWING_ADMIN_NAME },
+      { status: "submitted", at: "2026-09-18", by: REVIEWING_ADMIN_NAME },
+      { status: "under_review", at: "2026-09-22", by: REVIEWING_ADMIN_NAME },
+    ],
   },
   {
     id: "DSA-2026-01398",
@@ -459,6 +516,17 @@ export const seedDsas: Dsa[] = [
     rejectionReason: "",
     createdAt: "2026-09-10",
     updatedAt: "2026-09-21",
+    history: [
+      { status: "draft", at: "2026-09-10", by: REVIEWING_ADMIN_NAME },
+      { status: "submitted", at: "2026-09-12", by: REVIEWING_ADMIN_NAME },
+      { status: "under_review", at: "2026-09-17", by: REVIEWING_ADMIN_NAME },
+      {
+        status: "on_hold",
+        at: "2026-09-21",
+        by: REVIEWING_ADMIN_NAME,
+        note: "Waiting on a revised system-scope list from the partner before the review can continue.",
+      },
+    ],
   },
   {
     id: "DSA-2026-01415",
@@ -476,6 +544,12 @@ export const seedDsas: Dsa[] = [
     rejectionReason: "",
     createdAt: "2026-09-08",
     updatedAt: "2026-09-23",
+    history: [
+      { status: "draft", at: "2026-09-08", by: REVIEWING_ADMIN_NAME },
+      { status: "submitted", at: "2026-09-09", by: REVIEWING_ADMIN_NAME },
+      { status: "under_review", at: "2026-09-14", by: REVIEWING_ADMIN_NAME },
+      { status: "approved", at: "2026-09-23", by: REVIEWING_ADMIN_NAME },
+    ],
   },
   {
     id: "DSA-2026-01388",
@@ -493,6 +567,17 @@ export const seedDsas: Dsa[] = [
     rejectionReason: "The stated purpose doesn't identify a specific research or reporting outcome. Please resubmit with a defined project and expected use of the exported data.",
     createdAt: "2026-08-28",
     updatedAt: "2026-09-05",
+    history: [
+      { status: "draft", at: "2026-08-28", by: REVIEWING_ADMIN_NAME },
+      { status: "submitted", at: "2026-08-29", by: REVIEWING_ADMIN_NAME },
+      { status: "under_review", at: "2026-09-01", by: REVIEWING_ADMIN_NAME },
+      {
+        status: "rejected",
+        at: "2026-09-05",
+        by: REVIEWING_ADMIN_NAME,
+        note: "The stated purpose doesn't identify a specific research or reporting outcome. Please resubmit with a defined project and expected use of the exported data.",
+      },
+    ],
   },
   {
     id: "DSA-2026-01372",
@@ -510,6 +595,12 @@ export const seedDsas: Dsa[] = [
     rejectionReason: "",
     createdAt: "2026-08-10",
     updatedAt: "2026-08-19",
+    history: [
+      { status: "draft", at: "2026-08-10", by: REVIEWING_ADMIN_NAME },
+      { status: "submitted", at: "2026-08-11", by: REVIEWING_ADMIN_NAME },
+      { status: "under_review", at: "2026-08-14", by: REVIEWING_ADMIN_NAME },
+      { status: "cancelled", at: "2026-08-19", by: REVIEWING_ADMIN_NAME },
+    ],
   },
 ];
 

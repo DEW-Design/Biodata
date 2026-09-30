@@ -317,7 +317,7 @@ export function UserDetail({ user }: { user: UmUser }) {
 
       <Tabs selectedKey={tab} onSelectionChange={setTab}>
         <div className="px-6 pt-4">
-          <TabList aria-label="User sections" type="underline" size="md" className="gap-6">
+          <TabList aria-label="User sections" type="underline" size="md">
             <Tab id="roles" label="Roles and permissions" badge={roles.length} />
             <Tab id="details" label="Details" />
           </TabList>
@@ -449,7 +449,7 @@ export function RoleDetail({ role }: { role: UmRole }) {
 
       <Tabs selectedKey={tab} onSelectionChange={setTab}>
         <div className="px-6 pt-4">
-          <TabList aria-label="Role sections" type="underline" size="md" className="gap-6">
+          <TabList aria-label="Role sections" type="underline" size="md">
             <Tab id="permissions" label="Permissions" badge={granted.length} />
             <Tab id="users" label="Users" badge={users.length} />
           </TabList>

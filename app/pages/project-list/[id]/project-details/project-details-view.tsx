@@ -28,7 +28,7 @@ import { HeroMeta, RecordBackLink, RecordHero } from "@/app/pages/_shared/record
 import { projectDetailsPath, projectRecordPath } from "@/app/pages/_shared/project-routes";
 import { hasFeatureAccess } from "@/config/role-access.config";
 import { SpeciesResultsView } from "@/app/pages/_shared/map-search/species-results";
-import { buildEventTree, projectOccurrences, type EventTreeNode } from "@/app/pages/project-detail/option-2/project-scope";
+import { buildEventTree, projectOccurrences, type EventTreeNode } from "@/app/pages/_shared/project-scope";
 import { keyHref, navForRole, type NavNode } from "@/lib/registered-user-nav";
 import { useRoleHref } from "@/lib/use-role-href";
 import { useUserRole } from "@/lib/use-user-role";
@@ -223,7 +223,7 @@ function ProjectShell({ project, record = null, children }: { project: SearchEve
 export function ProjectDetailsView({ project, notice }: { project: SearchEvent; notice?: ReactNode }) {
   const router = useRouter();
   const roleHref = useRoleHref();
-  const [tab, setTab] = useState<Key>("species");
+  const [tab, setTab] = useState<Key>("overview");
   const occurrences = useMemo(() => projectOccurrences(project.id), [project.id]);
   const projectsHref = roleHref("/pages/project-list");
 
@@ -263,14 +263,11 @@ export function ProjectDetailsView({ project, notice }: { project: SearchEvent; 
 
       <ContentTabs selectedKey={tab} onSelectionChange={setTab} className="flex flex-1 flex-col">
         <div className="px-6 pt-4">
-          <TabList aria-label="Project views" type="underline" size="md" className="gap-6">
-            <Tab id="species" label="Species" />
+          <TabList aria-label="Project views" type="underline" size="md">
             <Tab id="overview" label="Overview" />
+            <Tab id="species" label="Species" />
           </TabList>
         </div>
-        <TabPanel id="species" className="p-6">
-          <SpeciesResultsView rows={occurrences} onRowClick={(o) => router.push(roleHref(projectRecordPath(project.id, "occurrences", o.id)))} />
-        </TabPanel>
         <TabPanel id="overview" className="p-6">
           <div className="rounded-lg border border-secondary">
             <OverviewRow label="Abstract">
@@ -286,6 +283,9 @@ export function ProjectDetailsView({ project, notice }: { project: SearchEvent; 
           <p className="mt-3 text-sm text-balance text-tertiary">
             Contacts, permits and restrictions are recorded when a project is registered; this project&apos;s have not been added to the preview.
           </p>
+        </TabPanel>
+        <TabPanel id="species" className="p-6">
+          <SpeciesResultsView rows={occurrences} onRowClick={(o) => router.push(roleHref(projectRecordPath(project.id, "occurrences", o.id)))} />
         </TabPanel>
       </ContentTabs>
     </ProjectShell>
@@ -340,7 +340,7 @@ export function ProjectRecordView({ project, record }: { project: SearchEvent; r
       {sections.length > 0 && (
         <ContentTabs defaultSelectedKey={String(sections[0].id)} className="flex flex-1 flex-col">
           <div className="px-6 pt-4">
-            <TabList aria-label={`${recordTitle(record)} sections`} type="underline" size="md" className="gap-6">
+            <TabList aria-label={`${recordTitle(record)} sections`} type="underline" size="md">
               {sections.map((section) => (
                 <Tab key={section.id} id={String(section.id)} label={section.title} />
               ))}

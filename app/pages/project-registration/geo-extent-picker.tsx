@@ -16,6 +16,7 @@ import { InputFile } from "@/components/base/input/input-file";
 import { InputNumber } from "@/components/base/input/input-number";
 import { Select } from "@/components/base/select/select";
 import { SA_NATIONAL_PARKS, boundarySummary, type Boundary } from "@/app/pages/_shared/map-search/geo";
+import { parseShapefileUpload } from "@/app/pages/_shared/map-search/shapefile";
 import { Button } from "@/components/base/buttons/button";
 import { cx } from "@/utils/cx";
 import type { GeoExtentValue, GeoMethod } from "./types";
@@ -48,6 +49,8 @@ const METHOD_TABS: { id: GeoMethod; label: string; icon: typeof UploadCloud02 }[
     { id: "list", label: "Choose from a List", icon: ListIcon },
     { id: "coordinates", label: "Coordinates", icon: Target04 },
 ];
+
+const SHORT_LABELS: Record<GeoMethod, string> = { shapefile: "Shapefile", map: "Draw", list: "List", coordinates: "Coordinates" };
 
 const PARK_OPTIONS = SA_NATIONAL_PARKS.map((p) => ({ id: p.id, label: p.name }));
 
@@ -101,7 +104,9 @@ function MapFullscreenOverlay({
     onBoundaryAdd,
     activeDrawTool,
     onDrawToolChange,
+    outlines = [],
 }: {
+    outlines?: Boundary[];
     isOpen: boolean;
     onOpenChange: (isOpen: boolean) => void;
     boundary: Boundary | null | undefined;
@@ -142,6 +147,7 @@ function MapFullscreenOverlay({
                     <div className="min-h-0 flex-1">
                         <SAMap
                             boundaries={boundary ? [boundary] : []}
+                            outlines={outlines}
                             onBoundaryAdd={onBoundaryAdd}
                             activeDrawTool={activeDrawTool}
                             onDrawToolChange={onDrawToolChange}
@@ -154,9 +160,25 @@ function MapFullscreenOverlay({
     );
 }
 
-export function GeoExtentPicker({ value, onChange }: { value: GeoExtentValue; onChange: (value: GeoExtentValue) => void }) {
+export function GeoExtentPicker({
+    value,
+    onChange,
+    defaultRadiusKm = 25,
+    referenceBoundaries = [],
+    compactTabs = false,
+}: {
+    value: GeoExtentValue;
+    onChange: (value: GeoExtentValue) => void;
+    /** Radius of a point entered by coordinates. Registration uses 25 km; a survey record uses a small one. */
+    defaultRadiusKm?: number;
+    /** Areas shown on the map for reference (for example, the area a record must sit inside). */
+    referenceBoundaries?: Boundary[];
+    /** Short tab names (Shapefile, Draw, List, Coordinates), for a narrow column. */
+    compactTabs?: boolean;
+}) {
     const [activeDrawTool, setActiveDrawTool] = useState<"circle" | "polygon" | null>(null);
-    const [coordRadius, setCoordRadius] = useState(25);
+    const [coordRadius, setCoordRadius] = useState(defaultRadiusKm);
+    const [shapefileError, setShapefileError] = useState<string | null>(null);
     const [isMapExpanded, setIsMapExpanded] = useState(false);
 
     return (
@@ -164,7 +186,7 @@ export function GeoExtentPicker({ value, onChange }: { value: GeoExtentValue; on
             <Tabs selectedKey={value.method ?? "shapefile"} onSelectionChange={(key) => onChange({ ...value, method: key as GeoMethod })} className="flex flex-col gap-3">
                 <TabList aria-label="Geographic extent method" type="button-border" size="sm" fullWidth>
                     {METHOD_TABS.map((m) => (
-                        <Tab key={m.id} id={m.id} label={m.label} icon={m.icon} />
+                        <Tab key={m.id} id={m.id} label={compactTabs ? SHORT_LABELS[m.id] : m.label} icon={m.icon} />
                     ))}
                 </TabList>
 
@@ -173,8 +195,25 @@ export function GeoExtentPicker({ value, onChange }: { value: GeoExtentValue; on
                         label="Upload a shapefile"
                         placeholder="Choose a file"
                         acceptedFileTypes={[".geojson", ".shp"]}
-                        onChange={(files) => onChange({ ...value, shapefileName: files?.[0]?.name })}
-                        hint="File formats: .geojson or a .shp file. Please ensure your shapefile is in WGS84 EPSG:4326 (latitude, longitude) projection. The area must be less than 25,000km²."
+                        onChange={(files) => {
+                            const list = files ? Array.from(files) : [];
+                            if (list.length === 0) return;
+                            setShapefileError(null);
+                            // Read the file for real, so the shape can be drawn and checked; the first
+                            // polygon (or a small circle round the first point) becomes the extent.
+                            parseShapefileUpload(list)
+                                .then((layer) => {
+                                    const boundary: Boundary | null = layer.polygons[0]
+                                        ? { id: `shp-${layer.id}`, kind: "polygon", points: layer.polygons[0], label: layer.name }
+                                        : layer.points[0]
+                                          ? { id: `shp-${layer.id}`, kind: "circle", center: layer.points[0], radiusKm: coordRadius, label: layer.name }
+                                          : null;
+                                    onChange({ ...value, method: "shapefile", shapefileName: layer.name, boundary });
+                                })
+                                .catch((error: unknown) => setShapefileError(error instanceof Error ? error.message : "We couldn't read that file."));
+                        }}
+                        isInvalid={!!shapefileError}
+                        hint={shapefileError ?? "File formats: .geojson or a .shp file. Please ensure your shapefile is in WGS84 EPSG:4326 (latitude, longitude) projection. The area must be less than 25,000km²."}
                     />
                 </TabPanel>
 
@@ -184,6 +223,7 @@ export function GeoExtentPicker({ value, onChange }: { value: GeoExtentValue; on
                     <div className="relative h-64 w-full overflow-hidden rounded-lg border border-secondary">
                         <SAMap
                             boundaries={value.boundary ? [value.boundary] : []}
+                            outlines={referenceBoundaries}
                             onBoundaryAdd={(boundary) => {
                                 onChange({ ...value, boundary });
                                 setActiveDrawTool(null);
@@ -210,6 +250,7 @@ export function GeoExtentPicker({ value, onChange }: { value: GeoExtentValue; on
                         isOpen={isMapExpanded}
                         onOpenChange={setIsMapExpanded}
                         boundary={value.boundary}
+                        outlines={referenceBoundaries}
                         onBoundaryAdd={(boundary) => {
                             onChange({ ...value, boundary });
                             setActiveDrawTool(null);
@@ -245,9 +286,10 @@ export function GeoExtentPicker({ value, onChange }: { value: GeoExtentValue; on
                         <InputNumber
                             label="Latitude"
                             placeholder="-34.93"
-                            step={0.01}
+                            step={defaultRadiusKm < 1 ? 0.00001 : 0.01}
                             minValue={-38}
                             maxValue={-25}
+                            value={value.boundary?.kind === "circle" ? value.boundary.center[0] : NaN}
                             onChange={(lat) => {
                                 const [, lon] = value.boundary?.kind === "circle" ? value.boundary.center : [0, 138];
                                 onChange({ ...value, boundary: { id: "coordinates", kind: "circle", center: [lat, lon], radiusKm: coordRadius } });
@@ -256,9 +298,10 @@ export function GeoExtentPicker({ value, onChange }: { value: GeoExtentValue; on
                         <InputNumber
                             label="Longitude"
                             placeholder="138.60"
-                            step={0.01}
+                            step={defaultRadiusKm < 1 ? 0.00001 : 0.01}
                             minValue={129}
                             maxValue={141}
+                            value={value.boundary?.kind === "circle" ? value.boundary.center[1] : NaN}
                             onChange={(lon) => {
                                 const [lat] = value.boundary?.kind === "circle" ? value.boundary.center : [-34.93, 0];
                                 onChange({ ...value, boundary: { id: "coordinates", kind: "circle", center: [lat, lon], radiusKm: coordRadius } });
@@ -267,10 +310,10 @@ export function GeoExtentPicker({ value, onChange }: { value: GeoExtentValue; on
                     </div>
                     <InputNumber
                         label="Radius (km)"
-                        defaultValue={25}
-                        minValue={1}
+                        defaultValue={defaultRadiusKm}
+                        minValue={defaultRadiusKm < 1 ? 0.05 : 1}
                         maxValue={300}
-                        step={5}
+                        step={defaultRadiusKm < 1 ? 0.05 : 5}
                         onChange={(radiusKm) => {
                             setCoordRadius(radiusKm);
                             if (value.boundary?.kind === "circle") onChange({ ...value, boundary: { ...value.boundary, radiusKm } });

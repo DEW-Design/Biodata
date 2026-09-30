@@ -327,6 +327,8 @@ function DrawBridge({
     return null;
 }
 
+const OUTLINE_STYLE = { color: BOUNDARY_COLOR, weight: 2, dashArray: "6 6", fill: false } as const;
+
 /** The area being pointed at in the areas list is drawn heavier, so a row and its shape read as one. */
 function boundaryStyle(id: string, highlighted?: Set<string>) {
     const on = highlighted?.has(id) ?? false;
@@ -369,6 +371,9 @@ export interface SAMapProps {
      *  changes zoom, so the same click that opens a record's summary card also brings its dot
      *  into the visible area instead of leaving it wherever it happened to already be. */
     panRequest?: { key: number; point: [number, number] };
+    /** Reference areas drawn as a dashed outline with no fill or pin (for example, the area a
+     *  location must sit inside). The map fits them too, so the whole allowed area is in view. */
+    outlines?: Boundary[];
     className?: string;
 }
 
@@ -407,6 +412,7 @@ export default function SAMap({
     highlightedBoundaryIds,
     fitRequest,
     panRequest,
+    outlines = [],
     className,
 }: SAMapProps) {
     return (
@@ -445,10 +451,17 @@ export default function SAMap({
                 {showZoomControls && <ZoomControls position={zoomPosition} />}
                 <MapReady onMapReady={onMapReady} />
                 <DrawBridge activeDrawTool={activeDrawTool} onDrawToolChange={onDrawToolChange} onBoundaryAdd={onBoundaryAdd} />
-                <FlyToBoundaries boundaries={boundaries} paddingTopLeft={fitPaddingTopLeft} paddingBottomRight={fitPaddingBottomRight} />
+                <FlyToBoundaries boundaries={outlines.length ? [...boundaries, ...outlines] : boundaries} paddingTopLeft={fitPaddingTopLeft} paddingBottomRight={fitPaddingBottomRight} />
                 <FlyToRequest request={fitRequest} paddingTopLeft={fitPaddingTopLeft} paddingBottomRight={fitPaddingBottomRight} />
                 <PanToRecord request={panRequest} paddingTopLeft={fitPaddingTopLeft} paddingBottomRight={fitPaddingBottomRight} />
 
+                {outlines.map((o) =>
+                    o.kind === "circle" ? (
+                        <Circle key={`outline-${o.id}`} center={o.center} radius={o.radiusKm * 1000} pathOptions={OUTLINE_STYLE} interactive={false} />
+                    ) : (
+                        <Polygon key={`outline-${o.id}`} positions={o.points} pathOptions={OUTLINE_STYLE} interactive={false} />
+                    ),
+                )}
                 {showBoundaries && boundaries.map((boundary) =>
                     boundary.kind === "circle" ? (
                         <Fragment key={boundary.id}>

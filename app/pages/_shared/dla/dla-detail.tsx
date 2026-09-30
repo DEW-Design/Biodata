@@ -6,7 +6,7 @@ import type { Key } from "react-aria-components";
 import { parseDate } from "@internationalized/date";
 import { ArrowNarrowLeft, Download01, Edit05, PauseCircle, Plus, SearchLg, SlashCircle01, Trash01, CheckCircle } from "@untitledui/icons";
 import { RecordActionBar, type RecordAction } from "@/app/pages/_shared/record-action-bar";
-import { RecordBackLink, RecordHero } from "@/app/pages/_shared/record-hero";
+import { RecordBackLink, RecordHero, RecordRow } from "@/app/pages/_shared/record-hero";
 import { AlertFullWidth } from "@/components/application/alerts/alerts";
 import { Badge } from "@/components/base/badges/badges";
 import { Button } from "@/components/base/buttons/button";
@@ -17,7 +17,6 @@ import { TextArea } from "@/components/base/textarea/textarea";
 import { FeaturedIcon } from "@/components/foundations/featured-icon/featured-icon";
 import { DestructiveModal, FormModal } from "@/components/application/modals/modal";
 import { Tab, TabList, TabPanel, Tabs } from "@/components/application/tabs/tabs";
-import { toast } from "@/components/application/toast/toast";
 import { AddLocationModal } from "@/app/pages/_shared/dla/add-location-modal";
 import { RejectModal } from "@/app/pages/_shared/agreement-modals";
 import {
@@ -26,9 +25,12 @@ import {
   dlaLocationMethodLabel,
   dlaStatusMeta,
   formatShortDate,
+  isDlaEditable,
+  MAX_AGREEMENT_FILE_BYTES,
   requestorName,
   todayIso,
   type Dla,
+  type DlaAgreementFile,
   type DlaApproveInput,
   type DlaLocation,
   type DlaRequestor,
@@ -69,7 +71,8 @@ function MetaField({ label, children, onDark = false }: { label: string; childre
 
 const NotProvided = () => <span className="text-quaternary">Not provided</span>;
 
-function LocationCard({ location, index }: { location: DlaLocation; index: number }) {
+function LocationCard({ location, index, locked, newRequestHref }: { location: DlaLocation; index: number; locked: boolean; newRequestHref: string }) {
+  const router = useRouter();
   const level = dlaLevelMeta[location.level];
   const projectNames = location.projectIds.map((id) => dlaLevel3Projects.find((p) => p.id === id)?.name ?? id);
   return (
@@ -86,6 +89,19 @@ function LocationCard({ location, index }: { location: DlaLocation; index: numbe
               {level.short}
             </Badge>
             <p className="text-sm text-tertiary">{level.description}</p>
+            {/* Once granted, a location's level can't change in place (CONTEXT.md, "DLA: an access
+                level can't be changed once granted") - say so here, where the level is shown, rather
+                than leaving the missing Edit action to speak for itself. */}
+            {locked && (
+              <AlertFullWidth
+                wrap
+                color="gray"
+                title="Access level locked"
+                description={`This is the granted level and can't be changed here. Need ${location.level === "level3" ? "Level 2" : "Level 3"} instead?`}
+                confirmLabel="Submit a new request"
+                onConfirm={() => router.push(newRequestHref)}
+              />
+            )}
           </div>
         </Field>
       </div>
@@ -119,13 +135,40 @@ function RequestorFields({ requestor }: { requestor: DlaRequestor }) {
   );
 }
 
+/** Reads a real picked file's own bytes into a `DlaAgreementFile` - the file's content becomes a
+ *  base64 `data:` URL (`FileReader.readAsDataURL`), so "Download PDF" later has something real to
+ *  hand back, not just the name that was typed into a text field. A DOM API, so it lives here
+ *  (a "use client" file) rather than in dla-data.ts. */
+function readAgreementFile(file: File): Promise<DlaAgreementFile> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve({ name: file.name, size: file.size, dataUrl: String(reader.result) });
+    reader.onerror = () => reject(reader.error);
+    reader.readAsDataURL(file);
+  });
+}
+
+/** A real download, not a toast: the file's own real bytes are already a `data:` URL, so a
+ *  temporary `<a download>` (the same technique this app's CSV/Excel/PDF exports already use,
+ *  see map-search/export-utils.ts) hands it straight back with no Blob conversion needed. */
+function downloadAgreementFile(file: DlaAgreementFile) {
+  const a = document.createElement("a");
+  a.href = file.dataUrl;
+  a.download = file.name;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+}
+
 // Approve moves straight to Active if the chosen start date has already arrived, otherwise
 // Approved / Auto Approved until that date (agreement-status.ts) - the modal's own copy says which
 // outcome the current date field will produce, computed live as the reviewer picks a date.
 function ApproveModal({ dla, isOpen, onOpenChange, onApprove }: { dla: Dla; isOpen: boolean; onOpenChange: (open: boolean) => void; onApprove: (input: DlaApproveInput) => void }) {
   const [validFrom, setValidFrom] = useState(dla.requestPeriodFrom);
   const [validTo, setValidTo] = useState(dla.requestPeriodTo);
-  const [agreementFile, setAgreementFile] = useState<{ name: string } | null>(null);
+  const [agreementFile, setAgreementFile] = useState<DlaAgreementFile | null>(null);
+  const [fileError, setFileError] = useState("");
+  const [isReadingFile, setIsReadingFile] = useState(false);
   const [isCustom, setIsCustom] = useState(false);
   const [customNote, setCustomNote] = useState("");
   const willBeActiveNow = !!validFrom && validFrom <= todayIso();
@@ -146,7 +189,11 @@ function ApproveModal({ dla, isOpen, onOpenChange, onApprove }: { dla: Dla; isOp
       }
       submitLabel="Upload and Approve"
       size="sm"
-      onSubmit={() => onApprove({ validFrom, validTo, agreementFile, isCustom, customNote })}
+      isSubmitLoading={isReadingFile}
+      onSubmit={() => {
+        if (isReadingFile) return;
+        onApprove({ validFrom, validTo, agreementFile, isCustom, customNote });
+      }}
     >
       <div className="grid grid-cols-2 gap-3">
         <InputDate label="Agreement Start Date" value={validFrom ? parseDate(validFrom) : null} onChange={(v) => setValidFrom(v ? v.toString() : "")} />
@@ -157,10 +204,23 @@ function ApproveModal({ dla, isOpen, onOpenChange, onApprove }: { dla: Dla; isOp
         placeholder={agreementFile?.name ?? "Choose a file"}
         buttonText="Browse"
         acceptedFileTypes={["application/pdf", "image/png", "image/jpeg"]}
-        hint="PDF, PNG, JPG (max. 2mb)"
+        hint={fileError || "PDF, PNG, JPG (max. 2mb)"}
+        isInvalid={!!fileError}
+        isLoading={isReadingFile}
         onChange={(files) => {
           const file = files?.[0];
-          if (file) setAgreementFile({ name: file.name });
+          if (!file) return;
+          if (file.size > MAX_AGREEMENT_FILE_BYTES) {
+            setFileError(`"${file.name}" is over 2MB - choose a smaller file.`);
+            setAgreementFile(null);
+            return;
+          }
+          setFileError("");
+          setIsReadingFile(true);
+          readAgreementFile(file)
+            .then(setAgreementFile)
+            .catch(() => setFileError(`Couldn't read "${file.name}" - try again.`))
+            .finally(() => setIsReadingFile(false));
         }}
       />
       <Checkbox label="Custom DLA" hint={isCustom ? undefined : "This is a custom DLA…"} isSelected={isCustom} onChange={setIsCustom} />
@@ -207,8 +267,13 @@ export function DlaDetail({
   // (Start Review/Hold/Resume/Approve/Reject) stay gated behind `dlaApproval`, same as before;
   // Edit/Cancel are the requester's own capabilities, gated by whatever got this component to
   // render at all (`dlaAccess`, checked by DlaShell). "For active requests only cancel option can
-  // be used" (agreement-status.ts) - Edit stops once a request is Active.
-  const canEdit = dla.status === "draft" || dla.status === "submitted" || dla.status === "under_review" || dla.status === "on_hold" || dla.status === "approved";
+  // be used" (agreement-status.ts) - Edit stops once a request is Approved, not just Active: an
+  // Approved request's level is already a decision, so reopening the form can't be how a granted
+  // Level 2 quietly becomes Level 3 (isDlaEditable, dla-data.ts).
+  const canEdit = isDlaEditable(dla.status);
+  // A granted location's own level (Approved and Active both - a Closed one already has its own
+  // Renew Licence banner) is locked; LocationCard says so and points at a new request instead.
+  const locationLevelsLocked = dla.status === "approved" || dla.status === "active";
   const canCancel = dla.status !== "closed" && dla.status !== "rejected" && dla.status !== "cancelled";
   const showAgreement = dla.status === "active" || dla.status === "closed";
   const isPendingReview = dla.status === "under_review" && canApprove;
@@ -222,7 +287,14 @@ export function DlaDetail({
   else if (dla.status === "submitted" && canApprove) actions.primary = { id: "start", label: "Start review", onPress: onStartReview };
   else if (dla.status === "under_review" && canApprove) actions.primary = { id: "approve", label: "Approve", onPress: () => setApproveOpen(true) };
   else if (dla.status === "on_hold" && canApprove) actions.primary = { id: "resume", label: "Resume review", onPress: onResume };
-  if (showAgreement) actions.secondary.push({ id: "download", label: "Download PDF", icon: Download01, isDisabled: !dla.agreementFile, onPress: () => toast.brand("Download isn't wired up yet", { description: "Agreement files aren't stored in this preview, so there is no file to download." }) });
+  if (showAgreement)
+    actions.secondary.push({
+      id: "download",
+      label: "Download PDF",
+      icon: Download01,
+      isDisabled: !dla.agreementFile,
+      onPress: () => dla.agreementFile && downloadAgreementFile(dla.agreementFile),
+    });
   if (dla.status === "under_review" && canApprove) actions.secondary.push({ id: "reject", label: "Reject", onPress: () => setRejectOpen(true) });
   if (canEdit && !isDraft) (isReviewer ? actions.menu : actions.secondary).push(editAction);
   if (dla.status === "under_review" && canApprove) actions.menu.unshift({ id: "hold", label: "Put on hold", icon: PauseCircle, onPress: onHold });
@@ -326,10 +398,11 @@ export function DlaDetail({
           second, Agreement (the actual outcome) last, only once one exists. */}
       <Tabs selectedKey={tab} onSelectionChange={setTab} className="flex min-h-0 flex-1 flex-col">
         <div className="shrink-0 px-6 pt-4">
-          <TabList aria-label="Request sections" type="underline" size="md" className="gap-6">
+          <TabList aria-label="Request sections" type="underline" size="md">
             <Tab id="overview" label="Overview" />
             <Tab id="locations" label="Locations & Access" />
             {showAgreement && <Tab id="agreement" label="Agreement" />}
+            <Tab id="audit" label="Audit Log" />
           </TabList>
         </div>
 
@@ -369,7 +442,7 @@ export function DlaDetail({
                 ) : (
                   <div className="flex flex-col gap-4">
                     {dla.locations.map((location, index) => (
-                      <LocationCard key={location.id} location={location} index={index} />
+                      <LocationCard key={location.id} location={location} index={index} locked={locationLevelsLocked} newRequestHref={roleHref("/pages/dla/new")} />
                     ))}
                   </div>
                 )}
@@ -393,6 +466,24 @@ export function DlaDetail({
               </div>
             </TabPanel>
           )}
+
+          <TabPanel id="audit">
+            <div className="rounded-lg border border-secondary">
+              {[...dla.history].reverse().map((e, i) => (
+                <RecordRow key={`${e.status}-${e.at}-${i}`} label={formatShortDate(e.at)}>
+                  <span className="flex flex-col gap-1">
+                    <span className="flex flex-wrap items-center gap-2">
+                      <Badge size="sm" color={dlaStatusMeta[e.status].badgeColor}>
+                        {dlaStatusMeta[e.status].label}
+                      </Badge>
+                      <span className="text-tertiary">{e.by}</span>
+                    </span>
+                    {e.note && <span className="max-w-prose text-secondary">{e.note}</span>}
+                  </span>
+                </RecordRow>
+              ))}
+            </div>
+          </TabPanel>
         </div>
       </Tabs>
 

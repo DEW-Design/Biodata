@@ -55,12 +55,28 @@ const hardRules = [
     message: "A FormPage screen uses tabs. Form sections live in column 2 as a FormSectionList (rendered through FormSidebar), never tabs or a stepper.",
   },
   {
+    id: "4.7",
+    name: "role belongs to the data owner's contact",
+    test: (s) => /\bRegistered by\b/i.test(s),
+    allow: [],
+    message: 'A "Registered by" label. A role belongs to each data owner contact and is shown with that contact; never as a separate "registered by" / "your role" field or a "Project team" card (CONTRACTS.md 4.7).',
+  },
+  {
     id: "4.2b",
     name: "table fits the viewport",
     test: (s) => /<TableCard\.Root\b/.test(s) && !/\bbodyScrollable\b/.test(s),
     // Tables embedded in a detail tab: the page is the scroll container there, and rows are few.
     allow: ["_shared/dsa/dsa-detail.tsx", "observation-detail/page.tsx", "_shared/user-management/um-detail.tsx"],
     message: "A collection table without bodyScrollable. Every collection screen's table fits the viewport: header, search and pagination stay put and only the rows scroll (Table bodyScrollable + Table.Header sticky, see CONTRACTS.md 4.2).",
+  },
+  {
+    id: "4.2c",
+    name: "one toolbar search width",
+    // A collection toolbar is where the Filter button lives. Its search box is ToolbarSearch (384px),
+    // never a hand-rolled Input that grows to fill the row or picks its own width.
+    test: (s) => /<ListFilterButton\b/.test(s) && /<Input\b[^>]*icon=\{Search(?:Md|Lg|Sm)\}/.test(s),
+    allow: [],
+    message: "A toolbar with a Filter button whose search is a hand-rolled <Input>. Use <ToolbarSearch> (app/pages/_shared/toolbar-search.tsx): one 384px search width on every collection toolbar (CONTRACTS.md 4.2c).",
   },
 ];
 
