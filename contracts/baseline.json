@@ -10,7 +10,6 @@
       "components/base/avatar/avatar.tsx": 1,
       "components/base/buttons/button.tsx": 3,
       "components/base/checkbox/checkbox.tsx": 2,
-      "components/base/dropdown/dropdown.tsx": 1,
       "components/base/input/input-date.tsx": 2,
       "components/base/input/input-group.tsx": 2,
       "components/base/input/input-number.tsx": 2,
@@ -62,8 +61,6 @@
     "2.3a": {
       "app/pages/_shared/map-search/search-data.ts": 17,
       "app/pages/observation-detail/page.tsx": 1,
-      "app/pages/project-detail/option-3/about-content.tsx": 1,
-      "app/pages/project-detail/option-3/page.tsx": 2,
       "app/pages/project-registration/data.ts": 2,
       "components/application/table/table.tsx": 2,
       "components/application/tree-view/tree-view.tsx": 3
