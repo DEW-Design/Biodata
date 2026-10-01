@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { Tabs as ContentTabs } from "react-aria-components";
-import { ArrowNarrowLeft, CheckCircle, Edit05, MessageAlertCircle, Trash01 } from "@untitledui/icons";
+import { ArrowNarrowLeft, CheckCircle, Edit05, MessageAlertCircle, PlayCircle, Trash01, XCircle, Grid01, Shield01, ClockRewind } from "@untitledui/icons";
 import { Badge } from "@/components/base/badges/badges";
 import { Button } from "@/components/base/buttons/button";
 import { AlertFullWidth } from "@/components/application/alerts/alerts";
@@ -58,11 +58,11 @@ export function NominationDetail({
   // One primary (the next step for whoever is looking), the natural alternative beside it, the rest
   // in "More actions" with the destructive ones set apart (RecordActionBar).
   const actions: { primary?: RecordAction; secondary: RecordAction[]; menu: RecordAction[] } = { secondary: [], menu: [] };
-  if (canReview && n.status === "submitted") actions.primary = { id: "start", label: "Start review", onPress: onStartReview };
+  if (canReview && n.status === "submitted") actions.primary = { id: "start", label: "Start review", icon: PlayCircle, onPress: onStartReview };
   if (canReview && n.status === "under_review") {
     actions.primary = { id: "accept", label: "Accept", icon: CheckCircle, onPress: () => setConfirm("accept") };
     actions.secondary.push({ id: "return", label: "Return for more information", icon: MessageAlertCircle, onPress: () => setReturnOpen(true) });
-    actions.secondary.push({ id: "reject", label: "Reject", onPress: () => setRejectOpen(true) });
+    actions.secondary.push({ id: "reject", label: "Reject", icon: XCircle, onPress: () => setRejectOpen(true) });
   }
   if (isOwner && n.status === "draft") {
     actions.primary = { id: "edit", label: "Edit draft", icon: Edit05, onPress: onEdit };
@@ -147,9 +147,9 @@ export function NominationDetail({
       <ContentTabs defaultSelectedKey="overview" className="flex flex-1 flex-col">
         <div className="shrink-0 px-6 pt-4">
           <TabList aria-label="Nomination sections" type="underline" size="md">
-            <Tab id="overview" label="Overview" />
-            <Tab id="protection" label="What to protect" />
-            <Tab id="history" label="Audit history" />
+            <Tab id="overview" label="Overview" icon={Grid01} />
+            <Tab id="protection" label="What to protect" icon={Shield01} />
+            <Tab id="history" label="Audit history" icon={ClockRewind} />
           </TabList>
         </div>
 
@@ -239,7 +239,7 @@ export function NominationDetail({
         </TabPanel>
       </ContentTabs>
 
-      <ConfirmationModal
+      <ConfirmationModal confirmIcon={CheckCircle}
         isOpen={confirm === "accept"}
         onOpenChange={(open) => !open && setConfirm(null)}
         icon={CheckCircle}
@@ -252,7 +252,7 @@ export function NominationDetail({
           onAccept();
         }}
       />
-      <DestructiveModal
+      <DestructiveModal confirmIcon={Trash01}
         isOpen={confirm === "delete"}
         onOpenChange={(open) => !open && setConfirm(null)}
         title={`Delete draft ${n.id}?`}
@@ -282,6 +282,7 @@ export function NominationDetail({
         onOpenChange={setReturnOpen}
         icon={MessageAlertCircle}
         iconColor="warning"
+        submitIcon={MessageAlertCircle}
         title="Return for more information"
         description={`${n.nominator.name} can update the nomination and submit it again.`}
         submitLabel="Return nomination"

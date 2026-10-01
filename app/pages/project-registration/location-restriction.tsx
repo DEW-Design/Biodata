@@ -5,7 +5,7 @@
 // nominated" check exists for a location the way it does for a species in this dataset.
 
 import { useState } from "react";
-import { Plus, Trash01, MarkerPin01 } from "@untitledui/icons";
+import { MarkerPin01, Plus, Save01, Trash01, XClose } from "@untitledui/icons";
 import { Input } from "@/components/base/input/input";
 import { TextArea } from "@/components/base/textarea/textarea";
 import { Button } from "@/components/base/buttons/button";
@@ -58,10 +58,10 @@ function LocationPickerPanel({
                     onChange={setJustification}
                 />
                 <div className="flex justify-end gap-3 border-t border-secondary pt-4">
-                    <Button color="secondary" onClick={() => onOpenChange(false)}>
+                    <Button iconLeading={XClose} color="secondary" onClick={() => onOpenChange(false)}>
                         Cancel
                     </Button>
-                    <Button
+                    <Button iconLeading={Save01}
                         color="primary"
                         isDisabled={!canSave}
                         onClick={() => {

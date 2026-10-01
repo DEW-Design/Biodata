@@ -19,7 +19,7 @@ function Detail() {
   const record = useUser(id);
   const hydrated = useUmHydrated();
   return (
-    <UmShell area="users" breadcrumbCurrent={record ? `${record.firstName} ${record.lastName}` : id}>
+    <UmShell area="users" recordId={id} breadcrumbCurrent={record ? `${record.firstName} ${record.lastName}` : id}>
       {record ? <UserDetail key={record.id} user={record} /> : hydrated ? <UmNotFound kind="user" id={id} backHref="/pages/user-management" /> : null}
     </UmShell>
   );

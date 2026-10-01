@@ -99,6 +99,9 @@ function formatPoint([lat, lon]: [number, number]): string {
  *  documented in .claude/rules/ref-domain.md, "BDBSA domain research" - a sensitive species' precise location is
  *  withheld even when the rest of its project is public. */
 export function obfuscateCoordinate(lat: number, lon: number, radiusKm: number): { lat: number; lon: number; radiusKm: number } {
+    // The centre of the block (`generalisedBlock`) a record is shown as. It is still a point that is within
+    // half a block of the real one, so it is never shown: the map draws the block, search matches the block,
+    // and tables say "withheld". It stays exported for the reports that already use it.
     const gridDeg = radiusKm / 111;
     const snap = (value: number) => Math.round(value / gridDeg) * gridDeg;
     return { lat: Number(snap(lat).toFixed(2)), lon: Number(snap(lon).toFixed(2)), radiusKm };
@@ -127,4 +130,69 @@ export function boundarySummary(boundary: Boundary): string {
     // each point is a "lat, lon" pair, points themselves separated by " | " so the pair's own
     // comma can't be confused with the separator between points.
     return `Polygon: ${boundary.points.map(formatPoint).join(" | ")}`;
+}
+
+// ── Generalised blocks (restricted records) ──
+// A restricted (Level 2) record is never located by a point, a circle or its coordinates. It is shown, and
+// searched, as a square block of a fixed grid: the cell that contains it, `blockKm` wide (restrictedRadiusKm in
+// search-data.ts is the one place the size is set). The block tells you the record is somewhere in it and nothing
+// more, so it has no centre to read: the map draws it flat, the tables withhold the coordinates, and a search area
+// finds the record when it overlaps the block, never by testing the real point (testing the real point lets anyone
+// narrow a small search area down to where the record is).
+
+/** A block of the generalisation grid, in degrees. */
+export interface GeoBlock {
+    south: number;
+    west: number;
+    north: number;
+    east: number;
+}
+
+/** The block of the `blockKm` grid that contains this point (the grid is in degrees, about 111 km to a degree). */
+export function generalisedBlock(lat: number, lon: number, blockKm: number): GeoBlock {
+    const step = blockKm / 111;
+    const snap = (value: number) => Math.round(value / step) * step;
+    const centreLat = snap(lat);
+    const centreLon = snap(lon);
+    return { south: centreLat - step / 2, north: centreLat + step / 2, west: centreLon - step / 2, east: centreLon + step / 2 };
+}
+
+export function blockCentre(block: GeoBlock): [number, number] {
+    return [(block.south + block.north) / 2, (block.west + block.east) / 2];
+}
+
+const clamp = (value: number, min: number, max: number) => Math.min(max, Math.max(min, value));
+
+function segmentsCross(a: [number, number], b: [number, number], c: [number, number], d: [number, number]): boolean {
+    const side = (p: [number, number], q: [number, number], r: [number, number]) => Math.sign((q[0] - p[0]) * (r[1] - p[1]) - (q[1] - p[1]) * (r[0] - p[0]));
+    return side(a, b, c) !== side(a, b, d) && side(c, d, a) !== side(c, d, b);
+}
+
+/** Whether a search area overlaps a block: a circle when the block's nearest point is within its radius, a polygon
+ *  when a corner of either is inside the other or their edges cross. */
+export function blockTouchesBoundary(block: GeoBlock, boundary: Boundary): boolean {
+    if (boundary.kind === "circle") {
+        const nearest: [number, number] = [clamp(boundary.center[0], block.south, block.north), clamp(boundary.center[1], block.west, block.east)];
+        return haversineDistanceKm(nearest, boundary.center) <= boundary.radiusKm;
+    }
+    const corners: [number, number][] = [
+        [block.south, block.west],
+        [block.south, block.east],
+        [block.north, block.east],
+        [block.north, block.west],
+    ];
+    if (corners.some((corner) => isPointInPolygon(corner, boundary.points))) return true;
+    if (boundary.points.some(([lat, lon]) => lat >= block.south && lat <= block.north && lon >= block.west && lon <= block.east)) return true;
+    return boundary.points.some((point, i) => {
+        const next = boundary.points[(i + 1) % boundary.points.length];
+        return corners.some((corner, j) => segmentsCross(point, next, corner, corners[(j + 1) % 4]));
+    });
+}
+
+/** Whether a record is inside any active search area: a record shown as a block by the block, every other record by
+ *  its point. `blockKm` is null for a record shown as recorded. */
+export function isRecordInAnyBoundary(lat: number, lon: number, blockKm: number | null, boundaries: Boundary[]): boolean {
+    if (!blockKm) return isPointInAnyBoundary([lat, lon], boundaries);
+    const block = generalisedBlock(lat, lon, blockKm);
+    return boundaries.some((boundary) => blockTouchesBoundary(block, boundary));
 }

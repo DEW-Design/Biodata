@@ -26,7 +26,7 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import { ChevronDown, Edit02, EyeOff, InfoCircle } from "@untitledui/icons";
+import { ArrowLeft, ChevronDown, Edit02, EyeOff, InfoCircle, Save01, Trash01, XClose } from "@untitledui/icons";
 import { AlertFullWidth } from "@/components/application/alerts/alerts";
 import { ConfirmationModal } from "@/components/application/modals/modal";
 import { toast } from "@/components/application/toast/toast";
@@ -464,7 +464,7 @@ export function RecordFullView({
                       <SectionTitle record={record} section={section} />
                     </button>
                     {sectionHidden && (
-                      <span className="inline-flex items-center gap-1 text-xs font-normal text-quaternary">
+                      <span className="inline-flex items-center gap-1 text-xs font-normal text-tertiary">
                         <EyeOff className="size-3" />
                         Hidden
                       </span>
@@ -611,8 +611,9 @@ export function RecordFullView({
                     className="h-44"
                   />
                   <p className="text-xs text-tertiary">
-                    {lat.toFixed(record.locationNote ? 1 : 3)},{" "}
-                    {lon.toFixed(record.locationNote ? 1 : 3)} · GDA2020
+                    {record.locationNote
+                      ? "Shown only as a block: this is a restricted record."
+                      : `${lat.toFixed(3)}, ${lon.toFixed(3)} · GDA2020`}
                   </p>
                 </SideCard>
               )}
@@ -638,7 +639,7 @@ export function RecordFullView({
                             </span>
                             <NoteIndicators notes={x.n} />
                           </span>
-                          <span className="text-xs text-quaternary">
+                          <span className="text-xs text-tertiary">
                             {x.section}
                           </span>
                           {x.n.files.slice(0, 2).map((f) => (
@@ -681,10 +682,10 @@ export function RecordFullView({
               )}
             </p>
             <div className="flex items-center gap-3">
-              <Button color="secondary" onClick={cancel}>
+              <Button iconLeading={XClose} color="secondary" onClick={cancel}>
                 Cancel
               </Button>
-              <Button color="primary" onClick={save}>
+              <Button iconLeading={Save01} color="primary" onClick={save}>
                 {isNew
                   ? `Add ${(record.kind === "event" ? record.type : `${record.type} ${record.kind}`).toLowerCase()}`
                   : "Save changes"}
@@ -694,7 +695,7 @@ export function RecordFullView({
         </div>
       )}
 
-      <ConfirmationModal
+      <ConfirmationModal confirmIcon={Trash01} cancelIcon={ArrowLeft}
         isOpen={confirm !== null}
         onOpenChange={(open) => !open && setConfirm(null)}
         title="Discard your changes?"

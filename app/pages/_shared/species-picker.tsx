@@ -2,7 +2,7 @@
 
 import { useState, type ReactNode } from "react";
 import type { Key } from "react-aria-components";
-import { SearchMd } from "@untitledui/icons";
+import { Edit05, SearchMd } from "@untitledui/icons";
 import { Button } from "@/components/base/buttons/button";
 import { ComboBox } from "@/components/base/select/combobox";
 import { SelectItem, SelectSection } from "@/components/base/select/select-item";
@@ -117,7 +117,7 @@ export function SpeciesSummaryCard({ species, onChange, children }: { species: R
             {species.family} · {species.group}
           </span>
         </div>
-        <Button color="secondary" size="sm" onPress={onChange}>
+        <Button iconLeading={Edit05} color="secondary" size="sm" onPress={onChange}>
           Change
         </Button>
       </div>

@@ -220,7 +220,7 @@ export const Tab = ({ label, children, badge, icon: Icon, className, ...otherPro
                                 // tall oval instead of a near-circle; min-w-5 keeps it round rather than
                                 // squeezed for a single digit while still growing for 2+ digits.
                                 className={cx(
-                                    "hidden min-w-5 justify-center py-1 transition-inherit-all md:flex",
+                                    "hidden min-w-5 justify-center py-1 tabular-nums transition-inherit-all md:flex",
                                     size === "sm" && "-my-px",
                                 )}
                             >

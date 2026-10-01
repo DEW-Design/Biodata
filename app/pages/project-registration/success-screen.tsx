@@ -1,7 +1,7 @@
 "use client";
 
 import { Focusable } from "react-aria-components";
-import { CheckCircle, Download01, Upload01, Database01, FileSearch02 } from "@untitledui/icons";
+import { BookOpen01, CheckCircle, Database01, Download01, FileSearch02, Upload01 } from "@untitledui/icons";
 import { Button } from "@/components/base/buttons/button";
 import { FeaturedIcon } from "@/components/foundations/featured-icon/featured-icon";
 import { Tooltip } from "@/components/base/tooltip/tooltip";
@@ -45,7 +45,7 @@ export function SuccessScreen({ projectName, onGoToProjects }: { projectName: st
                 <Tooltip title="Guided walkthroughs aren't built yet - coming soon.">
                     <Focusable>
                         <span className="inline-flex w-full">
-                            <Button color="primary" size="md" className="w-full" isDisabled>
+                            <Button iconLeading={BookOpen01} color="primary" size="md" className="w-full" isDisabled>
                                 Learn How
                             </Button>
                         </span>

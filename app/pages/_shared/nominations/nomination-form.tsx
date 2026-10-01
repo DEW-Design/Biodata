@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Edit05 } from "@untitledui/icons";
+import { ArrowLeft, Edit05, Trash01 } from "@untitledui/icons";
 import { Button } from "@/components/base/buttons/button";
 import { RadioButton, RadioGroup } from "@/components/base/radio-buttons/radio-buttons";
 import { TextArea } from "@/components/base/textarea/textarea";
@@ -346,7 +346,7 @@ export function NominationForm({
         )}
       </FormPage>
 
-      <DestructiveModal
+      <DestructiveModal confirmIcon={Trash01} cancelIcon={ArrowLeft}
         isOpen={confirmBack}
         onOpenChange={setConfirmBack}
         title="Discard your nomination?"

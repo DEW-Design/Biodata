@@ -376,10 +376,14 @@ hand-rolled, copied, or wrapped to change what it shows.
 
 - **Enforcement:** `AUTO §3.1`.
 
-### §3.2 One rail, one icon map, one footer block
+### §3.2 One rail, one icon map, legal links in the rail
 
-Column 1 is `<PrimaryRail />`, icons come from `nav-icons.ts`, column 2 ends with `<SidebarFooterLinks />`.
+Column 1 is `<PrimaryRail />`, icons come from `nav-icons.ts`, and the Terms, Privacy and Help links are
+icons at the foot of the rail (`PrimaryRail`), on every screen and every persona. Column 2 carries no
+footer block.
 
+- **Origin:** the designer moved the legal links from a text block at the foot of column 2 into the rail
+  (30 Sept 2026), so they survive on screens that have no column 2.
 - **Enforcement:** `AUTO §3.2`, `AUTO §3.3`, `AUTO §3.5`.
 
 ### §3.3 Account controls live in the header
@@ -412,6 +416,16 @@ always exists and always says something about where you are.
 
 - Exempt by name: `app/pages/biodata-home` (marketing), `app/pages/auth/**` (auth flow) and `app/pages/page.tsx`
   (the `/pages` screen index, a directory of screens rather than one).
+- **Override (designer, 30 Sept 2026):** the project page (`/pages/project-list/<id>/project-details`,
+  `/pages/project-detail`) and that project's record pages have no column 2, for every persona. The
+  project's own actions are in the hero's "..." menu, the records tree is on the Survey records tab, and a
+  breadcrumb project switcher replaces going back to the list. Logged in
+  `context/decisions/2026-09-30-07-*`; it is scoped to those screens and is not a precedent (§0.1).
+- **Override (designer, 1 Oct 2026):** Explore's first layout (`/pages/observations`) has no column 2, for every
+  persona, so the map takes the full width. Its search areas are a section of the floating search card and
+  the data-access notice some roles see is the warning banner across the top of the map. Explore's second
+  layout (`/pages/observations/option-2`) is unchanged. Logged in `context/decisions/2026-10-01-*`; it is
+  scoped to that screen and is not a precedent (§0.1).
 
 ### §3.8 Floating dev tools
 
@@ -436,20 +450,126 @@ slotted, never appended. If either list is found out of order, the whole list is
 ### §3.10 Column 2 is navigation and actions only
 
 The contextual sidebar (column 2) holds where you are and what you can do from here: a section label, a
-list or tree or scope switch that moves you around, the Actions group (export, report), and the footer
-links. It MUST NOT hold information: no explanatory copy, no steps or explainers, no alerts, task cards
+list or tree or scope switch that moves you around, and the Actions group (export, report). It MUST NOT hold information: no explanatory copy, no steps or explainers, no alerts, task cards
 or accordions. Information sits in main, above the content it explains.
 
 - **Exception:** the public-user (signed-out visitor) column 2, which explains what BioData SA is and
   points to guides (`GuestAboutAside`). No other persona and no other screen.
-- **Origin:** the nominations list put a "How a nomination is reviewed" steps explainer in column 2.
-- **Enforcement:** `AUTO §3.10` (an `<aside>` in `app/pages` containing a heading, Progress steps, alert,
-  accordion or task card, except the public-user file). It catches structural information only; prose in
-  a plain paragraph is `REVIEW`.
+- **Where the information goes.** "What is this" content is never in column 2. A short one (how a nomination is
+  reviewed) is an `ExplainerCard` (`app/pages/_shared/explainer-card.tsx`) above the list it belongs to, closable;
+  a notice about the whole screen is a `PageBanner`. Both are documented at `/patterns/banners`. Where a longer
+  explanation should live is not decided (the project explainer is parked, see the backlog in `ref-shell.md`).
+- **Origin:** the nominations list put a "How a nomination is reviewed" steps explainer in column 2; the same
+  mistake came back as the "What is a project?" and project guides block in the Projects column 2, which the check
+  missed because its headings were inside a component the aside rendered (designer, 1 Oct 2026, section 0.8).
+- **Enforcement:** `AUTO §3.10` (a left-hand `<aside>` in `app/pages` containing a heading, Progress steps, alert,
+  accordion or task card, or rendering a component whose own markup does, except the public-user file). It
+  catches structural information only; prose in a plain paragraph is `REVIEW`.
 
 ---
 
 ## PART V - PATTERNS
+
+### §3.11 Every item in column 2 has an icon
+
+Every navigation item in column 2 (a scope tab, an area tab, a view tab, an action row) MUST carry an icon to the
+left of its label, so the column scans by shape as well as by word and reads the same on every screen. The same
+items in the mobile menu carry the same icons.
+
+- **Which icon.** "All X" takes the section's own icon from `sectionIcons` (`nav-icons.ts`), as "All projects"
+  takes the Projects icon; "My X" takes `User01`. An area or view tab takes the icon of what it holds (All users
+  `Users01`, All roles `UserCheck01`, All permissions `Key01`; Home's My BioData `User01`, Flora and Fauna Dashboard
+  `PieChart03`). An action row carries its action (Export CSV `Download01`, Create report `BarChart01`).
+- **One icon per concept (§2.4).** An item has the same icon in column 2 and in the mobile menu, and on every
+  screen it appears. A new item takes an icon that is not already another concept's.
+- **Built with.** `Tab icon={...}` in column 2, `ActionRow icon={...}` for actions, and `MobileNavItem`
+  (`app/pages/_shared/mobile-nav.tsx`) for the extra items in the mobile menu, never a hand-built button.
+- **Not covered.** The section label above the items (a heading, not an item), the numbered steps of a form's
+  section list (the step marker is its icon, §4.1), and data rows such as the project's records tree (each row
+  carries its own record-type icon).
+- **Origin:** the All / My switch on DLA, DSA and nominations and User Management's Users / Roles / Permissions
+  tabs were text only, beside Projects and Home, which had icons (designer, 1 Oct 2026).
+- **Enforcement:** `AUTO §3.11` (a vertical `TabList` whose `<Tab>` has no `icon`), `REVIEW` for action rows and the
+  mobile menu.
+
+### §3.12 Every action button carries an icon
+
+Every action button MUST carry an icon that names its action: on the left of the label (`iconLeading`), or a
+forward arrow on the right (`iconTrailing`) for a button that moves on. An action button is a filled or outlined
+`Button` with a text label: `primary`, `secondary`, `tertiary` or a destructive colour.
+
+- **Not action buttons.** An icon-only button (an `aria-label`, no text) and a link-style button (`link-color`,
+  `link-gray`, `link-destructive`) are not covered; they may still carry an icon.
+- **One icon per action (§2.4).** The same action has the same icon on every screen. Workflow actions on a record
+  (`RecordAction`, whose `icon` is required) and the buttons in forms, modals and the auth flow use this set:
+
+  | Action | Icon |
+  | --- | --- |
+  | Create, add, new, request | `Plus` |
+  | Continue, next (trailing) | `ArrowRight` |
+  | Back | `ArrowLeft` |
+  | Go to another screen (trailing) | `ArrowNarrowRight` |
+  | Cancel | `XClose` |
+  | Keep editing, back out of a prompt | `ArrowLeft` |
+  | Discard, delete, remove | `Trash01` |
+  | Save, save draft | `Save01` |
+  | Done | `Check` |
+  | Approve, accept, resolve | `CheckCircle` |
+  | Reject | `XCircle` |
+  | Start or resume a review | `PlayCircle` |
+  | Put on hold, disable, deactivate | `PauseCircle` |
+  | Activate, enable, reactivate | `Power01` |
+  | Archive, restore | `Archive`, `FlipBackward` |
+  | Cancel an agreement or request | `SlashCircle01` |
+  | Edit, change | `Edit05` |
+  | Download, export | `Download01` |
+  | Upload, replace a file | `Upload01` |
+  | Search | `SearchLg` |
+  | Reset, re-generate, show everything again | `RefreshCcw01` |
+  | Select all | `CheckDone01` |
+  | Log in, sign in | `LogIn01` |
+  | Sign up | `UserPlus01` |
+  | Request access, reset a password | `Key01` |
+  | Open a report, open guides | `BarChart01`, `BookOpen01` |
+  | Flag, add a link | `Flag01`, `Link01` |
+
+  An action not in the set takes the icon Figma draws, or the closest existing one (§2.4), and is added here.
+- **Modals and shared components.** A modal's buttons are action buttons. `ConfirmationModal`, `DestructiveModal` and
+  `FormModal` require `confirmIcon` / `submitIcon` (an action is never the same twice, so there is no default) and
+  default Cancel to `XClose`; "Keep editing" on a discard prompt takes `ArrowLeft` (`cancelIcon`). A button-style
+  alert takes `confirmIcon` (`PageBanner` requires `actionIcon`). The file field's Browse, multi-select's Reset and
+  Select all, and the table pagination's Previous and Next carry theirs. A component that renders a text button of
+  its own carries an icon for it, required where the action varies.
+- **Origin:** the DLA record page's Approve, Reject and Start review buttons had no icon beside Edit and Download,
+  which did, and some 50 other filled and outlined buttons across the forms, the auth flow and the registration
+  flow had none; the check then missed every modal, because their buttons live in a shared component (the Approve
+  request modal's Cancel and Upload and Approve, the file field's Browse), so the same gap was found again
+  (designer, 1 Oct 2026, section 0.8).
+- **Enforcement:** `AUTO §3.12` (an action button with no icon anywhere under `app/pages`, the auth flow and the
+  home page included, or in `components/application`, `components/base` and `components/custom`; the two stale
+  unlinked drafts are exempt), and `tsc` for `RecordAction.icon` and the modals' required icon props.
+
+### §3.13 Underline tabs carry icons
+
+Every tab in an underline tab list (a record page's sections, the project page, the dashboards, a report's tabs) MUST
+carry an icon to the left of its label, as column 2's items do (§3.11): the icon of what the tab holds, so a tab row
+scans by shape as well as by word and the same section has the same icon on every screen.
+
+- **Which icon.** The one the app already uses for the same thing (§2.4): Overview `Grid01`, Locations `MarkerPin04`,
+  Species `Feather`, Survey records and Data Collection Scope `Database01`, Artefacts and attachments `Paperclip`,
+  Project and Projects `Folder`, Permit and Agreement `FileCheck02`, Audit log and history `ClockRewind`, Privacy and
+  Restrictions `Lock01`, What to protect `Shield01`, Data Sharing `Share07`, Comments `MessageSquare01`, URI/DOI `Link01`,
+  Roles and permissions and Permissions `Key01`, Users `Users01`, Details `File06`, Favourites `Star01`, Uploads
+  `UploadCloud02`; Flora and Fauna take the species group icons, and the record kinds the records tree's icons
+  (`record-icons.ts`). A new tab takes an icon not already another concept's, and is added here.
+- **Counts** (`badge`) stay after the label; the icon does not replace them.
+- **Exempt (open, see the backlog in `ref-shell.md`):** Explore's results tabs (the 440px card; with icons they need
+  about 780px and scroll further), a record's dynamic section tabs (`project-details-view.tsx`, whose titles come from
+  the data), and Home's task status filters (`Tabs.List`, filters, not sections).
+- **Origin:** column 2 and the method tabs had icons while the underline tabs did not (designer, 1 Oct 2026: "these to
+  also have icons"); the lab at `/proto/tab-icons` measured the options (A text, B every tab, C selected only) and B
+  was chosen.
+- **Enforcement:** `AUTO §3.13` (an underline `TabList` in `app/pages` with no `icon` in it, except the two listed files).
 
 ### §4.1 The form pattern
 
@@ -525,12 +645,83 @@ then any view or tree controls, above a list, table or tree) is the same everywh
 - MUST NOT let the toolbar search grow to fill the row (`flex-1`), or give it its own width.
 - **Open, not decided:** Explore's results search (`/pages/observations`) was made full width on the
   designer's instruction before this rule existed, and project-detail option 2's records search is
-  `max-w-md`. Neither has a Filter button beside it, so the check does not catch them; bringing them in
-  line is for the designer to decide.
+  `max-w-md`. Both now have the Filter menu beside them, so the check names them as exceptions (`species-results.tsx`,
+  `observations-search.tsx`); bringing them in line is for the designer to decide.
 - **Origin:** the Survey records toolbar on project detail Option 3 grew its search to the full row while the
   Projects, DSA, DLA and User Management lists all used 384px.
-- **Enforcement:** `AUTO §4.2c` (a file with a `ListFilterButton` whose search is a hand-rolled `Input` with a
+- **Enforcement:** `AUTO §4.2c` (a file with a `FilterMenu` whose search is a hand-rolled `Input` with a
   search icon fails), `REVIEW` for toolbars without a Filter button.
+
+**The filter (§4.2d).** Every table that can be filtered has the one filter (designer, 1 Oct 2026, chosen from the filter
+options lab, option A): a **Filter** button, directly after the search, that opens a contextual menu of the attributes
+(`FilterMenu`, `app/pages/_shared/filter-menu.tsx`). Each attribute is a row with an icon and a name, a line between
+related groups, and the number ticked where it is on; pointing at it opens its values in a submenu beside it, a tick after
+each value that is on (a date attribute offers its presets and a Custom range). The filters that are on are removable chips
+under the toolbar, with Clear all (`AttributeFilterChips`, `app/pages/_shared/attribute-filter.tsx`). Documented at
+`/patterns/filters`.
+
+- MUST be the only filter on a table: no second Filter button, popover, side panel, accordion of values or hand-built chips.
+  A list is described to it as attributes (`useAttributeFilter`), as sections and getters (`useListFilter`,
+  `list-filter.tsx`), or as a selection kept outside the list (`useSelectionFilter`).
+- MUST apply as values are chosen and MUST NOT have an Apply button (§1.9 item 2). Escape closes the menu a level at a time
+  and never changes what is ticked.
+- MUST go back to page 1 whenever a filter changes.
+- MUST give every attribute an icon that names what it holds (`icon`; one left out gets the icon for what its name says).
+- **A list of values that grows with the data (a project, a person, an organisation, a site) is searchable and bounded.**
+  Mark it `searchable`: from 4 values up its submenu has a search box at the top (the keyboard goes from the box into the
+  list), what is ticked stays on top however it is searched, and at most 50 others are drawn at a time with a line saying
+  how many are waiting ("50 of 1,284 shown. Search to find the rest."). The data can run to thousands of projects, so
+  scrolling a full list is not a way to find one. A fixed set (a status, a kind, an access level) is not `searchable`
+  and shows all of its few values. The rule is `boundedOptions` (`app/pages/_shared/option-checklist.tsx`). MUST NOT
+  hand-roll a list of values for a filter.
+- MUST NOT add an attribute the data cannot filter on (a "Project timeline" range needs project start and
+  end dates the project list does not carry yet). What is filtered is a column you would scan, never an identifier
+  (the search covers IDs and names).
+- **Origin:** the Data Ingestion Report has nine filter attributes; twelve always-open filters and a section per facet in
+  one popover were rejected (30 Sept 2026), then a lab compared a contextual menu, quick filters on the toolbar and a
+  side panel, and the designer chose the menu and asked for it on every table with filtering (1 Oct 2026). Until then the
+  lists had a popover of every section open (`ListFilterButton`), the reports an "Add filter" popover, and Explore a side
+  panel of accordions, three filters for one job.
+- **Enforcement:** `AUTO §4.2d` (the old filters' labels, a button or panel titled "All Filters" or "Add filter", under
+  `app/pages`), `tsc` (`ListFilterButton` and `AttributeFilterButton` no longer exist), `REVIEW` for the rest.
+
+**Empty tables (§4.2e).** A collection with no rows to show renders `<ListEmptyState>`
+(`app/pages/_shared/list-empty-state.tsx`) in place of the table: a gray FeaturedIcon, a heading, one balanced
+line that says why and what to do, then the action. Two cases, told apart: nothing exists yet (no action unless
+the designer names one), and nothing matches (an action that undoes the narrowing, named by its outcome, e.g.
+"Show all uploads").
+
+- MUST NOT leave a bare line of grey text where the table would be.
+- MUST NOT name the action "Clear search" (it collides with the search box's own clear button); name what the
+  person gets back.
+- **Origin:** the Data Ingestion Report showed "No uploads match your search and filters." as a lone sentence
+  under the chips (designer screenshot, 30 Sept 2026); the Projects, DLA, DSA, Nominations and artefacts lists
+  had the same line.
+- **Enforcement:** `REVIEW`. First occurrence of this fix, so no `AUTO` check yet (§0.8); one is due if it recurs.
+
+**Stable tables (§4.2f).** A collection table's columns keep their width whatever rows are showing. Every table
+that is filtered, searched, sorted or paged is `<Table layout="fixed">` and gives every column a width on its
+`Table.Head` (a percentage for a list that fills the screen, a pixel width for a wide report), with a `min-w-*` on the
+table so a narrow window scrolls it sideways instead of crushing a column. A value longer than its column wraps or is
+cut with an ellipsis and its full text as the tooltip; it never widens the column.
+
+The same holds for a scrollbar. Where a person sees a classic scrollbar (Windows, or a Mac with a mouse), a scroll area
+that overflows in one state and not in another (All beside My, one tab beside another) takes about 15px from the
+content when its scrollbar appears. A scrolling `main` reserves that space (`overflow-y-auto [scrollbar-gutter:stable]`)
+and a scrolling table does it itself (`bodyScrollable`), so nothing moves when rows or content come and go.
+
+- MUST NOT leave a collection table on the automatic layout: it sizes each column to its widest cell, so switching
+  All to My, a search, a sort or the next page moves every column.
+- MUST NOT leave a column without a width in a fixed table (the browser leaves the space unused).
+- MUST NOT make a page's scrolling `<main>` `overflow-y-auto` without `[scrollbar-gutter:stable]`.
+- **Exception:** Explore's results table (`map-search/results-table.tsx`), whose columns are chosen by the person, and
+  the lab-only `ingestion-report.tsx`; both are listed in the check and are open, see the backlog in `ref-shell.md`.
+- **Origin:** the nominations list moved every column when the designer switched from All to My, because one row
+  had a second line (an organisation) and another a long status; every other list had the same flaw (designer,
+  1 Oct 2026: "no dance-y layouts").
+- **Enforcement:** `AUTO §4.2f` (a `Table` with `bodyScrollable` and no `layout="fixed"`, or a `<main>` with `overflow-y-auto`
+  and no `scrollbar-gutter`, under `app/pages`). The scrollbar half cannot be seen in the headless browser used for
+  checks, which hides scrollbars: it is `REVIEW` to look at in a real browser with scrollbars always shown.
 
 ### §4.3 Cognitive load
 
@@ -552,7 +743,7 @@ apparatus.
 
 ### §4.6 Record pages follow the project page
 
-Every record page (a project, a DLA, a DSA, a nomination, a user, role or permission, and any new
+Every record page (a project, a DLA, a DSA, a nomination, a user, role or permission, a report, and any new
 record) is laid out like the project page (`/pages/project-detail`):
 
 1. A Back link on its own above the card (`RecordBackLink`).
@@ -560,11 +751,37 @@ record) is laid out like the project page (`/pages/project-detail`):
    record's actions at its top right (`RecordActionBar onDark`): one button for the next step, every
    other action in the "..." menu, destructive ones below a divider.
 3. Optionally, one notice saying where the record stands and who acts next.
-4. Underline `Tabs`, each panel a bordered card of label/value rows (`RecordRow`).
+4. Underline `Tabs`, each panel a bordered card of label/value rows (`RecordRow`). A report is a record whose
+   content is a table: under its card come the report's counts (`MetricTile`s), then search, the attribute filter
+   and the table (`DataReport`, `app/pages/_shared/reports/report-table.tsx`); a report with parts has underline
+   `Tabs` for them. Its eyebrow is "Report"; its facts are who it is for (Scope, stated once, so the description is
+   the same for every role), the date of its newest record where its rows carry a date, the report's own totals
+   (Events, Occurrences, Observations; Total records), and its columns (and its rows, unless a total already says it).
+   A breakdown of those totals (species groups, errors by kind) is a row of `MetricTile`s under the card, an overview.
+   A report has no next step, so all its actions (Export CSV) are in the card's "..." menu, like the other record
+   pages, with no white button. A project scope is a Select right after the search, before the Filter button, not a row of its own.
+   A "Columns" button at the right of the toolbar (`column-chooser.tsx`) opens one popover where columns are shown,
+   hidden and reordered (by their handle or the keyboard), the first column pinned and always shown, applying as
+   each is chosen with no Apply button (1.9 item 2), and a Reset; its label says how many are hidden.
+5. **The breadcrumb.** On a record page the section crumb is a switcher, not a plain label or a link back: the
+   section's name with an up-down caret (`BreadcrumbSwitcher`, `app/pages/_shared/breadcrumb-switcher.tsx`, through
+   a thin wrapper per collection such as `ProjectSwitcher` and `ReportSwitcher`). It opens one popup: a searchable
+   list of the other records of the same collection (the design system `ComboBox`, A-Z, about six rows then
+   scrolling inside, the records the role may see and no others, the current one ticked) and a bar fixed at the
+   foot, "View all <things>", which goes to the list. Picking a record opens it with the role kept. The crumb
+   after it is the record's name. On the list page itself the crumb is plain. The section's name is the same in
+   the breadcrumb, the rail and column 2 ("Reports", not "Reports (All Users)": who sees what is the content's
+   rule, not part of the name).
 
 - MUST NOT put a record's actions in a bar above the card, or stack its content without tabs.
+- MUST NOT build a second switcher: a collection's record pages reuse `BreadcrumbSwitcher`.
 - **Origin:** the nomination record page shipped with its actions above the card and no tabs, after
-  the designer had already asked for every record page to follow the project page.
+  the designer had already asked for every record page to follow the project page. The reports were first built
+  with a plain section header and no breadcrumb switcher; the designer asked why they did not follow the project
+  page, and for the project page's switcher to apply "across all instances where we do a deep dive into a deep
+  page" (1 Oct 2026).
+- **Enforcement:** `REVIEW`. First occurrence of the switcher gap, so no `AUTO` check yet (§0.8); one is due if a record
+  page ships with a plain section crumb again.
 
 ### §4.7 Roles belong to the data owner's contacts; show only what is approved
 

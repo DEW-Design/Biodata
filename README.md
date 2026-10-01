@@ -51,6 +51,7 @@ The docs site (`app/(docs)`) is organized into three sections: **primitives** (d
 | [Avatar](/components/avatar) | User representation - sizes, colour variants, and avatar groups. |
 | [Badge](/components/badge) | Status labels - pill and badge-colour styles, 5 documented colours, dot/icon/dismiss variants. |
 | [Button](/components/button) | Primary action trigger - 8 colour variants, 5 sizes, icon and loading states. |
+| [Button utility](/components/button-utility) | Icon-only button for toolbars and row actions - secondary and tertiary colours, two sizes, tooltip that doubles as the accessible name, optional link. |
 | [Checkbox](/components/checkbox) | Binary selection control with an indeterminate state and two sizes. |
 | [Dropdown](/components/dropdown) | Menu built on React Aria - icon items, sections, and checkmark/checkbox/radio/toggle selection indicators. |
 | [Input](/components/input) | Text field plus specialised variants - password, date, number, payment, tags, file upload, PIN. |
@@ -63,6 +64,7 @@ The docs site (`app/(docs)`) is organized into three sections: **primitives** (d
 | [Select](/components/select) | Dropdown selection - single select, searchable combobox, multi-select, tag select, and native select, in three sizes. |
 | [Table](/components/table) | React Aria Table - a plain primitive plus TableCard, the full data table with row selection, sorting, and row-actions dropdown. |
 | [Tabs](/components/tabs) | React Aria Tabs - 5 horizontal types, 5 vertical types, two sizes, optional icon/badge, full-width layout. |
+| [Text editor](/components/text-editor) | Rich text field built on Tiptap - simple or advanced toolbar, bubble menu on selection, optional character limit, invalid and disabled states. |
 | [Textarea](/components/textarea) | Multi-line text input - label, hint, tooltip, two sizes, invalid and disabled states. |
 | [Toast](/components/toast) | Transient corner notification powered by sonner - 6 colours, optional action, composed from Button/CloseButton/FeaturedIcon. |
 | [Toggle](/components/toggle) | Binary switch control with an optional label/hint and a slim track variant, in two sizes. |
@@ -75,6 +77,8 @@ The docs site (`app/(docs)`) is organized into three sections: **primitives** (d
 | [Forms](/patterns/forms) | The one create/edit form pattern: FormPage header, sections, FormRow fields, Back a step / Continue footer, inline errors after a failed attempt. |
 | [Navigation](/patterns/navigation) | The sidebar shell's two nav pieces - primary icon rail + contextual sidebar (side nav) and the persistent header bar (top nav). |
 | [Tree selection](/patterns/tree-view) | Multi-select file/folder tree composed from Tree view + the base Checkbox - cascading selection and indeterminate parents. |
+| [Banners](/patterns/banners) | The one full-width notice under the header - one fact about the screen, one next step, one close control - and the explainer card for how something works. Explore's data-access notice and the Nominations explainer use them. |
+| [Filters](/patterns/filters) | The one filter for every table that can be filtered: a Filter button that opens a contextual menu of the attributes, each opening its values beside it (searchable when the list grows with the data), with the filters that are on shown as chips under the toolbar. |
 | [Empty states](/patterns/empty-states) | 🚧 Documentation coming soon. |
 | [Loading states](/patterns/loading-states) | 🚧 Documentation coming soon. |
 | [Feedback](/patterns/feedback) | 🚧 Documentation coming soon. |

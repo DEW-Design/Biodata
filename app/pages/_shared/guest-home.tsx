@@ -6,7 +6,6 @@ import type { Key } from "react-aria-components";
 import { ArrowNarrowUpRight, BookOpen01, CheckVerified01, Download02, PlayCircle, ShieldTick, UserPlus01 } from "@untitledui/icons";
 import { Button } from "@/components/base/buttons/button";
 import { GuestActionButton } from "@/app/pages/_shared/guest-action-gate";
-import { SidebarFooterLinks } from "@/app/pages/_shared/sidebar-footer-links";
 
 // public-user's Home/Projects content, folded in from `/proto/public-user` (the "Reference" column-2
 // variant the user picked, of the three compared there - Disclosure and How it works are the other
@@ -198,7 +197,6 @@ export function GuestAboutAside({
           </>
         )}
       </div>
-      <SidebarFooterLinks />
     </aside>
   );
 }

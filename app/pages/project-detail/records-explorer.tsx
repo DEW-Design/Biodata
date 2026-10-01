@@ -40,6 +40,7 @@ import {
   Flag01,
   Table as TableIcon,
   Folder,
+  Tag01,
 } from "@untitledui/icons";
 import { Badge } from "@/components/base/badges/badges";
 import { ToolbarSearch } from "@/app/pages/_shared/toolbar-search";
@@ -60,13 +61,9 @@ import { RecordFullscreenV3 } from "./record-fullscreen";
 import { formatDate, type RecordKind, type SurveyRecord } from "./survey-data";
 import { useEditStore } from "./edit-store";
 import { useFlagCounts } from "./review-view";
-import {
-  ListFilterButton,
-  filterCount,
-  matchesFilters,
-  type FilterSection,
-  type FilterSelection,
-} from "@/app/pages/_shared/list-filter";
+import { type FilterSection, type FilterSelection, useSelectionFilter } from "@/app/pages/_shared/list-filter";
+import { AttributeFilterChips } from "@/app/pages/_shared/attribute-filter";
+import { FilterMenu } from "@/app/pages/_shared/filter-menu";
 import { SAMPLING_TYPES, createRecord, type ChildOption } from "./record-rules";
 
 export type KindFilter = "all" | RecordKind;
@@ -80,6 +77,7 @@ const TYPES: Record<RecordKind, string[]> = {
 const TYPE_FILTER: FilterSection = {
   id: "type",
   label: "Record type",
+  icon: Tag01,
   options: (["event", "occurrence", "observation"] as RecordKind[]).map(
     (kind) => ({
       id: kind,
@@ -93,8 +91,12 @@ const typeKey = (r: SurveyRecord) => `${r.kind}:${r.type}`;
 const REVIEW_FILTER: FilterSection = {
   id: "review",
   label: "Review",
+  icon: Flag01,
   options: [{ id: "flagged", label: "Has flagged concepts" }],
 };
+
+// The sections the records filter offers: what kind of record, and whether it has flagged values.
+const RECORD_FILTERS: FilterSection[] = [TYPE_FILTER, REVIEW_FILTER];
 
 /** The filter that shows only one kind of record (every one of its types), or nothing for "all". */
 export function filterForKind(kind: KindFilter): FilterSelection {
@@ -120,9 +122,9 @@ function FlagMarker({ count }: { count: number }) {
     <span
       aria-label={`${count} flagged concept${count === 1 ? "" : "s"}`}
       title={`${count} flagged concept${count === 1 ? "" : "s"}`}
-      className="inline-flex shrink-0 items-center gap-0.5 text-xs font-medium text-fg-warning-primary tabular-nums"
+      className="inline-flex shrink-0 items-center gap-0.5 text-xs font-medium text-warning-700 tabular-nums"
     >
-      <Flag01 className="size-3.5" />
+      <Flag01 className="size-3.5 text-fg-warning-primary" />
       {count}
     </span>
   );
@@ -147,7 +149,7 @@ export function RecordsExplorer({
   focusField?: { recordId: string; key: string; nonce: number } | null;
 }) {
   // Records come from the session store, so added, edited and deleted records show here at once.
-  const { records, recordById, ancestorsOf, project } = useEditStore();
+  const { records, recordById, ancestorsOf, project, meta } = useEditStore();
   const projectTitle = project.details.shortTitle;
   const ALL_PARENT_IDS = records
     .filter((r) => records.some((c) => c.parentId === r.id))
@@ -251,15 +253,19 @@ export function RecordsExplorer({
     }),
     [flagCounts],
   );
-  const filterOn = filterCount(filter) > 0 || query.trim() !== "";
+  const filterApi = useSelectionFilter(RECORD_FILTERS, getters, filter, (next) => {
+    onFilterChange(next);
+    setPage(1);
+  });
+  const filterOn = filterApi.count > 0 || query.trim() !== "";
   const matches = useMemo(
     () =>
       records.filter(
         (r) =>
-          matchesFilters(r, filter, getters) &&
+          filterApi.matches(r) &&
           matchesSearch(r, query.trim(), r.name),
       ),
-    [records, filter, query, getters],
+    [records, filterApi, query],
   );
   // The project is a record too (an event of type Project): the table lists it first, like the tree's root.
   const projectRow = useMemo(
@@ -267,7 +273,7 @@ export function RecordsExplorer({
       ({
         ...records[0],
         id: PROJECT_NODE,
-        code: "BD-5039",
+        code: meta.code,
         kind: "event",
         type: "Project",
         name: projectTitle,
@@ -276,10 +282,10 @@ export function RecordsExplorer({
         scientificName: undefined,
         sections: [],
       }) as unknown as SurveyRecord,
-    [records, projectTitle, project.details.startDate],
+    [records, projectTitle, project.details.startDate, meta.code],
   );
   const projectMatches =
-    matchesFilters(projectRow, filter, getters) &&
+    filterApi.matches(projectRow) &&
     matchesSearch(projectRow, query.trim(), projectRow.name);
 
   // Double-click a tree item or a table row: select it and open its details full screen.
@@ -356,7 +362,7 @@ export function RecordsExplorer({
           action={
             <span className="flex shrink-0 items-center gap-2">
               <FlagMarker count={flagCounts.get(r.id) ?? 0} />
-              <span className="text-xs font-normal text-quaternary tabular-nums">
+              <span className="text-xs font-normal text-tertiary tabular-nums">
                 {r.code}
               </span>
             </span>
@@ -371,7 +377,7 @@ export function RecordsExplorer({
           >
             {r.name}
           </span>
-          <span className="ml-2 text-xs font-normal text-quaternary">
+          <span className="ml-2 text-xs font-normal text-tertiary">
             {r.type}
           </span>
         </TreeView.ItemContent>
@@ -386,27 +392,6 @@ export function RecordsExplorer({
     <div className="flex flex-col gap-3">
       {/* ── Toolbar ── */}
       <div className="flex flex-wrap items-center gap-3">
-        <ToggleButtonGroup
-          aria-label="Records view"
-          selectionMode="single"
-          disallowEmptySelection
-          selectedKeys={[view]}
-          onSelectionChange={(keys) => {
-            const next = Array.from(keys)[0];
-            if (next === "tree" || next === "table") onViewChange(next);
-          }}
-          className={segmentTrayClass}
-        >
-          <ToggleButton id="tree" className={segmentClass}>
-            <Dataflow03 className="size-4" />
-            Tree
-          </ToggleButton>
-          <ToggleButton id="table" className={segmentClass}>
-            <TableIcon className="size-4" />
-            Table
-          </ToggleButton>
-        </ToggleButtonGroup>
-
         <ToolbarSearch
           label="Search records"
           placeholder="Search by name, ID, species or type"
@@ -417,15 +402,30 @@ export function RecordsExplorer({
           }}
         />
 
-        <ListFilterButton
-          sections={[TYPE_FILTER, REVIEW_FILTER]}
-          selection={filter}
-          onChange={(next) => {
-            onFilterChange(next);
-            setPage(1);
+        <FilterMenu filter={filterApi} />
+
+        <ToggleButtonGroup
+          aria-label="Records view"
+          selectionMode="single"
+          disallowEmptySelection
+          selectedKeys={[view]}
+          onSelectionChange={(keys) => {
+            const next = Array.from(keys)[0];
+            if (next === "tree" || next === "table") onViewChange(next);
           }}
-        />
+          className={cx(segmentTrayClass, "ml-auto")}
+        >
+          <ToggleButton id="tree" className={segmentClass}>
+            <Dataflow03 className="size-4" />
+            Tree
+          </ToggleButton>
+          <ToggleButton id="table" className={segmentClass}>
+            <TableIcon className="size-4" />
+            Table
+          </ToggleButton>
+        </ToggleButtonGroup>
       </div>
+      <AttributeFilterChips filter={filterApi} />
 
       {/* ── Records + inspector ── */}
       <div ref={rowRef} className="flex h-[calc(100dvh-9rem)] min-h-[560px]">
@@ -495,8 +495,8 @@ export function RecordsExplorer({
                           "bg-brand-50 hover:bg-brand-50",
                       )}
                       action={
-                        <span className="shrink-0 text-xs font-normal text-quaternary">
-                          BD-5039
+                        <span className="shrink-0 text-xs font-normal text-tertiary">
+                          {meta.code}
                         </span>
                       }
                     >
@@ -509,7 +509,7 @@ export function RecordsExplorer({
                       >
                         {projectTitle}
                       </span>
-                      <span className="ml-2 text-xs font-normal text-quaternary">
+                      <span className="ml-2 text-xs font-normal text-tertiary">
                         Project
                       </span>
                     </TreeView.ItemContent>
@@ -523,7 +523,7 @@ export function RecordsExplorer({
               className="flex min-h-0 flex-1 flex-col rounded-none shadow-none ring-0"
               onDoubleClick={openFullscreenFrom}
             >
-              <Table
+              <Table layout="fixed" className="min-w-[1100px]"
                 aria-label="Survey records"
                 bodyScrollable
                 sortDescriptor={sort}
@@ -533,12 +533,12 @@ export function RecordsExplorer({
                 }}
               >
                 <Table.Header sticky>
-                  <Table.Head id="code" label="ID" isRowHeader allowsSorting />
-                  <Table.Head id="name" label="Name" allowsSorting />
-                  <Table.Head id="kind" label="Record" allowsSorting />
-                  <Table.Head id="type" label="Type" allowsSorting />
-                  <Table.Head id="date" label="Date" allowsSorting />
-                  <Table.Head id="parentId" label="Within" />
+                  <Table.Head id="code" label="ID" isRowHeader allowsSorting className="w-[12%]" />
+                  <Table.Head id="name" label="Name" allowsSorting className="w-[30%]" />
+                  <Table.Head id="kind" label="Record" allowsSorting className="w-[12%]" />
+                  <Table.Head id="type" label="Type" allowsSorting className="w-[14%]" />
+                  <Table.Head id="date" label="Date" allowsSorting className="w-[12%]" />
+                  <Table.Head id="parentId" label="Within" className="w-[20%]" />
                 </Table.Header>
                 <Table.Body items={paged}>
                   {(r) => {
@@ -601,7 +601,7 @@ export function RecordsExplorer({
                               ? ""
                               : parent
                                 ? parent.code
-                                : "BD-5039"}
+                                : meta.code}
                           </span>
                         </Table.Cell>
                       </Table.Row>

@@ -2,7 +2,7 @@
 
 import type { ReactNode, RefAttributes } from "react";
 import { useCallback, useRef, useState } from "react";
-import { ChevronDown, SearchLg } from "@untitledui/icons";
+import { CheckDone01, ChevronDown, RefreshCcw01, SearchLg, XClose } from "@untitledui/icons";
 import { useFilter } from "react-aria";
 import type { Selection } from "react-aria-components";
 import {
@@ -60,10 +60,10 @@ const MultiSelectFooter = ({ size = "sm", onReset, onSelectAll, className }: Mul
 
     return (
         <div className={cx("flex items-center justify-between border-t border-secondary p-3", className)}>
-            <Button size={btnSize} color="secondary" onClick={onReset}>
+            <Button size={btnSize} color="secondary" iconLeading={RefreshCcw01} onClick={onReset}>
                 Reset
             </Button>
-            <Button size={btnSize} color="secondary" onClick={onSelectAll}>
+            <Button size={btnSize} color="secondary" iconLeading={CheckDone01} onClick={onSelectAll}>
                 Select all
             </Button>
         </div>
@@ -285,7 +285,7 @@ const MultiSelectRoot = ({
                             <AriaAutocomplete filter={contains} inputValue={searchValue} onInputChange={setSearchValue}>
                                 {showSearch && (
                                     <div className={cx("border-b border-secondary", searchSizes[size].wrapper)}>
-                                        <AriaSearchField aria-label="Search" value={searchValue} onChange={setSearchValue} autoFocus>
+                                        <AriaSearchField aria-label="Search" value={searchValue} onChange={setSearchValue} autoFocus className="group/search">
                                             <div className={cx("flex items-center", searchSizes[size].root)}>
                                                 <SearchLg data-icon aria-hidden="true" className="shrink-0 text-fg-quaternary" />
                                                 <AriaInput
@@ -295,6 +295,12 @@ const MultiSelectRoot = ({
                                                         searchSizes[size].text,
                                                     )}
                                                 />
+                                                <AriaButton
+                                                    aria-label="Clear search"
+                                                    className="flex shrink-0 cursor-pointer items-center justify-center rounded-sm text-fg-quaternary outline-focus-ring transition duration-100 ease-linear hover:text-fg-quaternary_hover focus-visible:outline-2 focus-visible:outline-offset-2 group-data-empty/search:hidden"
+                                                >
+                                                    <XClose aria-hidden="true" className="size-4 stroke-[2.25px]" />
+                                                </AriaButton>
                                             </div>
                                         </AriaSearchField>
                                     </div>

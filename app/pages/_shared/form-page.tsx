@@ -1,7 +1,7 @@
 "use client";
 
 import type { ReactNode } from "react";
-import { ArrowNarrowLeft, ArrowNarrowRight } from "@untitledui/icons";
+import { ArrowNarrowLeft, ArrowNarrowRight, Save01 } from "@untitledui/icons";
 import { Button } from "@/components/base/buttons/button";
 import { AlertFullWidth } from "@/components/application/alerts/alerts";
 import { CloseButton } from "@/components/base/buttons/close-button";
@@ -107,7 +107,7 @@ export function FormPage({
         <div className="flex flex-wrap items-center gap-3">
           {message && <p className="text-sm text-error-primary">{message}</p>}
           {onSaveDraft && (
-            <Button color="secondary" onClick={onSaveDraft}>
+            <Button iconLeading={Save01} color="secondary" onClick={onSaveDraft}>
               Save draft
             </Button>
           )}

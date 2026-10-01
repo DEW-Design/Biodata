@@ -3,7 +3,9 @@ import type { UserRole } from "@/lib/user-role";
 
 // What the header's "Add" menu offers each persona. One list, filtered by the same role-access
 // matrix everything else uses (`config/role-access.config.ts`), so adding a creatable thing for a
-// persona is one entry here - never a per-screen edit. Order is the menu order.
+// persona is one entry here - never a per-screen edit. Order is the menu order. User comes first
+// (the designer, Sept 30 2026); only BioData Admin has it, so every other persona's menu still opens
+// on Project.
 //
 // public-user is deliberately not filtered here: a guest sees the same "Add" button and gets the
 // sign-up invite instead of a menu (see `CreateMenu`), so nothing they could create is hidden.
@@ -21,12 +23,12 @@ export interface CreateMenuItem {
 }
 
 export const createMenuItems: CreateMenuItem[] = [
+  { id: "user", label: "User", href: "/pages/user-management/users/new", feature: "userManagement" },
   { id: "project", label: "Project", href: "/pages/project-registration" },
   { id: "dataset", label: "Dataset", feature: "datasetUpload" },
   { id: "dla", label: "Data licence request (DLA)", href: "/pages/dla/new", feature: "dlaAccess" },
   { id: "nomination", label: "Sensitive species nomination", href: "/pages/nominations/new", feature: "nominationAccess" },
   { id: "dsa", label: "Data sharing agreement (DSA)", href: "/pages/dsa/new", feature: "dsaManagement" },
-  { id: "user", label: "User", href: "/pages/user-management/users/new", feature: "userManagement" },
 ];
 
 export function createMenuItemsForRole(role: UserRole): CreateMenuItem[] {

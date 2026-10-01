@@ -327,7 +327,7 @@ export function CardEditor({
           <Lock01 className="size-3.5 shrink-0" />
           {text}
         </span>
-        {hint && <span className="text-xs text-quaternary">{hint}</span>}
+        {hint && <span className="text-xs text-tertiary">{hint}</span>}
       </p>
     );
     if (type === "system") return { locked: true, control: locked(row.value) };

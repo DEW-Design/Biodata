@@ -2,7 +2,7 @@
 
 import { useState, type ReactNode } from "react";
 import type { Key } from "react-aria-components";
-import { ArrowNarrowLeft, SearchMd } from "@untitledui/icons";
+import { Archive, ArrowNarrowLeft, Check, FlipBackward, PauseCircle, Power01, SearchMd, XCircle, Key01, File06, Users01 } from "@untitledui/icons";
 import { AlertFullWidth } from "@/components/application/alerts/alerts";
 import { ConfirmationModal, DestructiveModal } from "@/components/application/modals/modal";
 import { Tab, TabList, TabPanel, Tabs } from "@/components/application/tabs/tabs";
@@ -145,55 +145,55 @@ function useEmbeddedPaging<T>(rows: T[]) {
 
 // ---------------------------------------------------------------- lifecycle actions
 
-type AccessAction = { to: AccessStatus; label: string; confirm: "none" | "plain" | "destructive"; primary?: boolean };
+type AccessAction = { to: AccessStatus; label: string; icon: RecordAction["icon"]; confirm: "none" | "plain" | "destructive"; primary?: boolean };
 
 /** What a role or permission can move to from where it is: Scheduled > Active <> Disabled > Archived, restorable to Disabled. */
 function accessActions(status: AccessStatus): AccessAction[] {
   switch (status) {
     case "scheduled":
       return [
-        { to: "active", label: "Activate now", confirm: "plain", primary: true },
-        { to: "archived", label: "Archive", confirm: "destructive" },
+        { to: "active", label: "Activate now", icon: Power01, confirm: "plain", primary: true },
+        { to: "archived", label: "Archive", icon: Archive, confirm: "destructive" },
       ];
     case "active":
       return [
-        { to: "disabled", label: "Disable", confirm: "plain" },
-        { to: "archived", label: "Archive", confirm: "destructive" },
+        { to: "disabled", label: "Disable", icon: PauseCircle, confirm: "plain" },
+        { to: "archived", label: "Archive", icon: Archive, confirm: "destructive" },
       ];
     case "disabled":
       return [
-        { to: "active", label: "Enable", confirm: "none", primary: true },
-        { to: "archived", label: "Archive", confirm: "destructive" },
+        { to: "active", label: "Enable", icon: Power01, confirm: "none", primary: true },
+        { to: "archived", label: "Archive", icon: Archive, confirm: "destructive" },
       ];
     case "archived":
-      return [{ to: "disabled", label: "Restore", confirm: "none" }];
+      return [{ to: "disabled", label: "Restore", icon: FlipBackward, confirm: "none" }];
   }
 }
 
-type UserAction = { to: UserStatus; label: string; confirm: "none" | "plain" | "destructive"; primary?: boolean };
+type UserAction = { to: UserStatus; label: string; icon: RecordAction["icon"]; confirm: "none" | "plain" | "destructive"; primary?: boolean };
 
 /** Invited > Active <> Inactive > Archived. Archiving an invitation withdraws it; an archived user is restorable as Inactive. */
 function userActions(status: UserStatus): UserAction[] {
   switch (status) {
     case "invited":
-      return [{ to: "archived", label: "Withdraw invitation", confirm: "destructive" }];
+      return [{ to: "archived", label: "Withdraw invitation", icon: XCircle, confirm: "destructive" }];
     case "active":
       return [
-        { to: "inactive", label: "Deactivate", confirm: "plain" },
-        { to: "archived", label: "Archive", confirm: "destructive" },
+        { to: "inactive", label: "Deactivate", icon: PauseCircle, confirm: "plain" },
+        { to: "archived", label: "Archive", icon: Archive, confirm: "destructive" },
       ];
     case "inactive":
       return [
-        { to: "active", label: "Reactivate", confirm: "none", primary: true },
-        { to: "archived", label: "Archive", confirm: "destructive" },
+        { to: "active", label: "Reactivate", icon: Power01, confirm: "none", primary: true },
+        { to: "archived", label: "Archive", icon: Archive, confirm: "destructive" },
       ];
     case "archived":
-      return [{ to: "inactive", label: "Restore", confirm: "none" }];
+      return [{ to: "inactive", label: "Restore", icon: FlipBackward, confirm: "none" }];
   }
 }
 
-function ActionButtons<T extends { label: string; confirm: "none" | "plain" | "destructive"; primary?: boolean }>({ actions, onPick }: { actions: T[]; onPick: (action: T) => void }) {
-  const toAction = (a: T): RecordAction => ({ id: a.label, label: a.label, destructive: a.confirm === "destructive", onPress: () => onPick(a) });
+function ActionButtons<T extends { label: string; icon: RecordAction["icon"]; confirm: "none" | "plain" | "destructive"; primary?: boolean }>({ actions, onPick }: { actions: T[]; onPick: (action: T) => void }) {
+  const toAction = (a: T): RecordAction => ({ id: a.label, label: a.label, icon: a.icon, destructive: a.confirm === "destructive", onPress: () => onPick(a) });
   const primary = actions.find((a) => a.primary);
   return (
     <RecordActionBar
@@ -213,7 +213,7 @@ function StatusConfirm({
   onClose,
   onConfirm,
 }: {
-  pending: { label: string; confirm: "none" | "plain" | "destructive" } | null;
+  pending: { label: string; icon: RecordAction["icon"]; confirm: "none" | "plain" | "destructive" } | null;
   subject: string;
   consequence: string;
   onClose: () => void;
@@ -226,6 +226,7 @@ function StatusConfirm({
     title: pending ? `${pending.label} ${subject}?` : "",
     description: consequence,
     confirmLabel: pending?.label ?? "",
+    confirmIcon: pending?.icon ?? Check,
     onConfirm,
   };
   return pending?.confirm === "destructive" ? <DestructiveModal {...props} /> : <ConfirmationModal {...props} />;
@@ -318,8 +319,8 @@ export function UserDetail({ user }: { user: UmUser }) {
       <Tabs selectedKey={tab} onSelectionChange={setTab}>
         <div className="px-6 pt-4">
           <TabList aria-label="User sections" type="underline" size="md">
-            <Tab id="roles" label="Roles and permissions" badge={roles.length} />
-            <Tab id="details" label="Details" />
+            <Tab id="roles" label="Roles and permissions" icon={Key01} badge={roles.length} />
+            <Tab id="details" label="Details" icon={File06} />
           </TabList>
         </div>
 
@@ -450,8 +451,8 @@ export function RoleDetail({ role }: { role: UmRole }) {
       <Tabs selectedKey={tab} onSelectionChange={setTab}>
         <div className="px-6 pt-4">
           <TabList aria-label="Role sections" type="underline" size="md">
-            <Tab id="permissions" label="Permissions" badge={granted.length} />
-            <Tab id="users" label="Users" badge={users.length} />
+            <Tab id="permissions" label="Permissions" icon={Key01} badge={granted.length} />
+            <Tab id="users" label="Users" icon={Users01} badge={users.length} />
           </TabList>
         </div>
 
@@ -577,7 +578,7 @@ export function PermissionDetail({ permission }: { permission: UmPermission }) {
             title="This permission is ready for activation"
             description={`It becomes active on its own on ${formatShortDate(permission.startDate)}, or you can activate it now.`}
             confirmLabel="Activate permission"
-            onConfirm={() => setPending({ to: "active", label: "Activate", confirm: "plain" })}
+            onConfirm={() => setPending({ to: "active", label: "Activate", icon: Power01, confirm: "plain" })}
             contained
           />
         </div>

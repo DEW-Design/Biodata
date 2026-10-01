@@ -37,10 +37,9 @@ import { TreeView } from "@/components/application/tree-view/tree-view";
 import { Breadcrumb } from "@/components/scaffold/breadcrumb";
 import { HomeTabPanels } from "@/app/pages/_shared/home-tab-panels";
 import { PrimaryRail } from "@/app/pages/_shared/primary-rail";
-import { SidebarFooterLinks } from "@/app/pages/_shared/sidebar-footer-links";
 import { sectionIcons } from "@/app/pages/_shared/nav-icons";
 import { AppHeader } from "@/app/pages/_shared/app-header";
-import { MobileNavTrigger } from "@/app/pages/_shared/mobile-nav";
+import { MobileNavItem, MobileNavTrigger } from "@/app/pages/_shared/mobile-nav";
 import { PrototypeTools } from "@/app/_prototype-tools/prototype-tools";
 import { MapView } from "@/app/pages/_shared/map-view";
 import { LocationDetailsTable } from "@/app/pages/_shared/location-details-table";
@@ -869,32 +868,8 @@ function ObservationDetail() {
             {!isPublicUser && activeSection === "Home" &&
               ((close: () => void) => (
                 <>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setHomeTab("dashboard");
-                      close();
-                    }}
-                    className={cx(
-                      "rounded-md px-3 py-2 text-left text-sm font-medium outline-brand focus-visible:outline-2 focus-visible:outline-offset-2",
-                      homeTab === "dashboard" ? "bg-secondary text-primary" : "text-primary hover:bg-secondary",
-                    )}
-                  >
-                    My BioData
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setHomeTab("overview");
-                      close();
-                    }}
-                    className={cx(
-                      "rounded-md px-3 py-2 text-left text-sm font-medium outline-brand focus-visible:outline-2 focus-visible:outline-offset-2",
-                      homeTab === "overview" ? "bg-secondary text-primary" : "text-primary hover:bg-secondary",
-                    )}
-                  >
-                    Flora and Fauna Dashboard
-                  </button>
+                  <MobileNavItem icon={User01} active={homeTab === "dashboard"} onPress={() => { setHomeTab("dashboard"); close(); }}>My BioData</MobileNavItem>
+                  <MobileNavItem icon={PieChart03} active={homeTab === "overview"} onPress={() => { setHomeTab("overview"); close(); }}>Flora and Fauna Dashboard</MobileNavItem>
                 </>
               ))}
           </MobileNavTrigger>
@@ -925,9 +900,8 @@ function ObservationDetail() {
                     <Tab id="overview" label="Flora and Fauna Dashboard" icon={PieChart03} />
                   </TabList>
                 </div>
-                <SidebarFooterLinks />
               </aside>
-              <main className="flex flex-1 flex-col overflow-y-auto">
+              <main className="flex flex-1 flex-col overflow-y-auto [scrollbar-gutter:stable]">
                 <HomeTabPanels />
               </main>
             </Tabs>
@@ -980,10 +954,9 @@ function ObservationDetail() {
                   activeSectionNode.items?.map((item) => <NavTree key={item.label} node={item} depth={1} />)
                 )}
               </div>
-              <SidebarFooterLinks />
             </aside>
 
-            <main className="flex flex-1 flex-col overflow-y-auto">
+            <main className="flex flex-1 flex-col overflow-y-auto [scrollbar-gutter:stable]">
               {activeSection === "Projects" ? (
                 <>
                   <div className="p-6 pb-0">

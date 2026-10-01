@@ -87,6 +87,7 @@ export function ProjectIngestionChip({ projectId }: { projectId: string }) {
     <IngestionChip
       view={view}
       projectId={projectId}
+      datasetId={dataset.id}
       title={`Uploading files against ${dataset.projectCode}`}
       datasetStatus={{ label: statusMeta.label, color: statusMeta.badgeColor }}
       // A fault on our side is transient: the second attempt succeeds.

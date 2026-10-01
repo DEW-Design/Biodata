@@ -27,14 +27,7 @@ import {
   ToggleButton,
   ToggleButtonGroup,
 } from "react-aria-components";
-import {
-  ArrowNarrowLeft,
-  CheckCircle,
-  Edit05,
-  Flag01,
-  MessageSquare01,
-  Paperclip,
-} from "@untitledui/icons";
+import { ArrowNarrowLeft, CheckCircle, Edit05, Flag01, MessageSquare01, Paperclip, Plus } from "@untitledui/icons";
 import { Button } from "@/components/base/buttons/button";
 import { Badge, CountBadge } from "@/components/base/badges/badges";
 import { TextArea } from "@/components/base/textarea/textarea";
@@ -44,7 +37,6 @@ import { ProgressBarBase } from "@/components/base/progress-indicators/progress-
 import { toast } from "@/components/application/toast/toast";
 import { FormPage } from "@/app/pages/_shared/form-page";
 import { FormRow } from "@/app/pages/_shared/form-row";
-import { SidebarFooterLinks } from "@/app/pages/_shared/sidebar-footer-links";
 import { cx } from "@/utils/cx";
 import { useEditStore } from "./edit-store";
 import {
@@ -389,7 +381,7 @@ export function ReviewScreen({
             >
               {item.field}
             </span>
-            <span className="shrink-0 text-xs text-quaternary">
+            <span className="shrink-0 text-xs text-tertiary">
               {waited(item.daysWaiting)}
             </span>
           </div>
@@ -520,7 +512,6 @@ export function ReviewScreen({
             </p>
           )}
         </div>
-        <SidebarFooterLinks />
       </aside>
 
       {/* ── Main: the flagged concept in focus ── */}
@@ -551,10 +542,7 @@ export function ReviewScreen({
             eyebrow={`Flagged concept - ${index + 1} of ${items.length} ${status}`}
             title={selected.field}
             badge={
-              <Badge
-                size="md"
-                color={status === "open" ? "warning" : "success"}
-              >
+              <Badge size="sm" color={status === "open" ? "warning" : "success"}>
                 {status === "open" ? "Questionable" : "Resolved"}
               </Badge>
             }
@@ -604,7 +592,7 @@ export function ReviewScreen({
                   <span className="truncate">
                     {selected.recordCode} · {selected.recordName}
                   </span>
-                  <span className="text-xs text-quaternary">
+                  <span className="text-xs text-tertiary">
                     {selected.recordType}
                   </span>
                 </span>
@@ -716,7 +704,7 @@ export function ReviewScreen({
                       <p className="text-balance text-secondary">
                         {selected.comment.text}
                       </p>
-                      <p className="text-xs text-quaternary">
+                      <p className="text-xs text-tertiary">
                         {selected.comment.author} · {selected.comment.date}
                       </p>
                     </div>
@@ -748,7 +736,7 @@ export function ReviewScreen({
                 />
                 <div className="flex flex-wrap gap-2">
                   {QUICK_REASONS.map((r) => (
-                    <Button
+                    <Button iconLeading={Plus}
                       key={r}
                       size="sm"
                       color="secondary"

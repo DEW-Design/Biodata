@@ -69,12 +69,12 @@ function Calculated({
       <p className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-sm">
         <span className="text-tertiary">{label}</span>
         <span className="font-medium text-primary tabular-nums">{value}</span>
-        <span className="inline-flex items-center gap-1 rounded-full bg-secondary px-1.5 py-0.5 text-[11px] font-medium text-tertiary">
+        <span className="inline-flex items-center gap-1 rounded-full bg-secondary px-1.5 py-0.5 text-xs font-medium text-tertiary">
           <Lock01 className="size-3" />
           Calculated
         </span>
       </p>
-      {hint && <p className="text-xs text-balance text-quaternary">{hint}</p>}
+      {hint && <p className="text-xs text-balance text-tertiary">{hint}</p>}
     </div>
   );
 }
@@ -236,7 +236,7 @@ export function LandscapeEditor({
             }
           />
           <BandStrip bands={REMAINING_BANDS} match={sub?.label} />
-          <p className="text-xs text-quaternary">
+          <p className="text-xs text-tertiary">
             From the location. The two scores are added.
           </p>
         </>
@@ -368,7 +368,7 @@ export function OverstoreyEditor({
               value={foliageCoverClass(pfc)}
             />
           ) : (
-            <p className="text-xs text-quaternary">
+            <p className="text-xs text-tertiary">
               The structural class is worked out from the percentage.
             </p>
           )}
@@ -405,7 +405,7 @@ export function OverstoreyEditor({
                 <span />
                 {data.readings.map((r, i) => (
                   <div key={i} className="group/reading contents">
-                    <span className="text-sm text-quaternary tabular-nums">
+                    <span className="text-sm text-tertiary tabular-nums">
                       {i + 1}
                     </span>
                     {READING_COLUMNS.filter((c) => c.key !== "valueType").map(

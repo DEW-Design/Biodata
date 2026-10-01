@@ -11,7 +11,7 @@
 // `--json` prints machine-readable results.
 
 import { existsSync, readdirSync, readFileSync, statSync, writeFileSync } from "node:fs";
-import { join, relative, sep } from "node:path";
+import { dirname, join, relative, resolve, sep } from "node:path";
 import { fileURLToPath } from "node:url";
 import { checkIndex } from "./build-context-index.mjs";
 import { checkRules } from "./build-contract-rules.mjs";
@@ -28,20 +28,62 @@ const PAGE_EXEMPT = [["biodata-home"], ["auth"], ["projects", "page.tsx"], ["pro
 const asideBlocks = (s) => [...s.matchAll(/^[ \t]*<aside\b[\s\S]*?<\/aside>/gm)].map((m) => m[0]);
 const ASIDE_INFO = /<h[1-6]\b|<Progress\.|<Accordion\b|<AlertFullWidth\b|<AlertFloating\b|<TaskItem\b/;
 
+// 3.10, second half: a component rendered inside column 2 must not hold information either. The "What is a project?"
+// block sat in column 2 as a `<ProjectsGuide />` whose headings lived in its own file, so looking at the aside's own
+// markup found nothing (the nominations steps explainer was the first time, the project block the second, CONTRACTS 0.8).
+// Column 2 is the left-hand aside (`border-r`); the tags it renders are followed to the function that defines them.
+const leftAsides = (s) => asideBlocks(s).filter((b) => /^[ \t]*<aside\b[^>]*\bborder-r\b/.test(b));
+const importTarget = (file, spec) => {
+  const base = spec.startsWith("@/") ? join(ROOT, spec.slice(2)) : spec.startsWith(".") ? resolve(dirname(file), spec) : null;
+  return base ? [".tsx", ".ts", "/index.tsx"].map((ext) => base + ext).find((f) => existsSync(f)) : undefined;
+};
+function columnTwoComponentsHoldInformation(src, file) {
+  if (!file) return false;
+  return leftAsides(src).some((block) =>
+    [...new Set([...block.matchAll(/<([A-Z]\w+)/g)].map((m) => m[1]))].some((tag) => {
+      const spec = src.match(new RegExp(`import[^;]*\\b${tag}\\b[^;]*from "([^"]+)"`))?.[1];
+      const target = spec && importTarget(file, spec);
+      if (!target) return false;
+      const body = readFileSync(target, "utf8").match(new RegExp(`(?:export )?function ${tag}\\b[\\s\\S]*?\\n}\\n`))?.[0] ?? "";
+      return ASIDE_INFO.test(body);
+    }),
+  );
+}
+
 const hardRules = [
   {
     id: "3.10",
     name: "column 2 is navigation and actions",
-    test: (s) => asideBlocks(s).some((b) => ASIDE_INFO.test(b)),
+    test: (s, file) => asideBlocks(s).some((b) => ASIDE_INFO.test(b)) || columnTwoComponentsHoldInformation(s, file),
     // The one exception is the signed-out visitor's column 2 (public-user): what BioData SA is, and guides.
     allow: ["_shared/guest-home.tsx"],
-    message: "Explanatory content (heading, steps, alert, accordion or task card) inside the column 2 <aside>. Column 2 is navigation and actions only; put information in main above the content (CONTRACTS.md 3.10). Only the public-user column 2 is exempt.",
+    message: "Explanatory content (heading, steps, alert, accordion or task card) inside the column 2 <aside>, or in a component it renders. Column 2 is navigation and actions only; put information in main above the content, as an ExplainerCard (CONTRACTS.md 3.10). Only the public-user column 2 is exempt.",
+  },
+  {
+    // 3.11: column 2's items are the vertical tab lists (scope, area and view switchers); each tab carries an icon.
+    id: "3.11",
+    name: "column 2 items have icons",
+    test: (s) =>
+      [...s.matchAll(/<TabList\b[^>]*orientation="vertical"[^>]*>[\s\S]*?<\/TabList>/g)].some((list) =>
+        [...list[0].matchAll(/<Tab\b[\s\S]*?\/>/g)].some((tab) => !/\bicon=/.test(tab[0])),
+      ),
+    allow: [],
+    message: "A column 2 tab (a vertical TabList item) without an icon. Every navigation item in column 2 carries an icon left of its label: Tab icon={...} (CONTRACTS.md 3.11).",
+  },
+  {
+    // 3.13: an underline tab list is a row of sections; each tab carries an icon (a mapped list passes one per tab).
+    id: "3.13",
+    name: "underline tabs have icons",
+    test: (s) => [...s.matchAll(/<TabList\b[^>]*type="underline"[^>]*>[\s\S]*?<\/TabList>/g)].some((list) => !/\bicon=/.test(list[0])),
+    // Explore's results card is too narrow for icons; the record sections' titles come from the data.
+    allow: ["observations/observations-search.tsx", "project-list/[id]/project-details/project-details-view.tsx"],
+    message: "An underline tab list whose tabs have no icon. Every tab carries the icon of what it holds: Tab icon={...} (CONTRACTS.md 3.13).",
   },
   { id: "3.1", name: "header", test: (s) => /<header[\s>]/.test(s), allow: ["_shared/app-header.tsx"], message: 'Hand-rolled <header>. Render <AppHeader /> from "@/app/pages/_shared/app-header".' },
   { id: "3.2", name: "primary rail", test: (s) => /aria-label="Primary"/.test(s), allow: ["_shared/primary-rail.tsx", "_shared/mobile-nav.tsx"], message: 'Hand-rolled primary rail. Render <PrimaryRail /> from "@/app/pages/_shared/primary-rail".' },
   { id: "3.3", name: "section icon map", test: (s) => /const sectionIcons\b/.test(s), allow: ["_shared/nav-icons.ts"], message: 'Local sectionIcons map. Import { sectionIcons } from "@/app/pages/_shared/nav-icons".' },
   { id: "3.4", name: "account controls", test: (s) => /function (ProfileMenu|GuestAuthActions)\b/.test(s), allow: ["_shared/profile-menu.tsx", "_shared/guest-auth-actions.tsx"], message: "Local ProfileMenu/GuestAuthActions. They live in AppHeader." },
-  { id: "3.5", name: "sidebar footer links", test: (s) => /registeredUserFooterLinks\.map/.test(s), allow: ["_shared/sidebar-footer-links.tsx"], message: "Inline footer links. Render <SidebarFooterLinks />." },
+  { id: "3.5", name: "legal links in the rail", test: (s) => /registeredUserFooterLinks\.map/.test(s), allow: ["_shared/primary-rail.tsx"], message: "Inline legal links. They are icons at the foot of <PrimaryRail /> (CONTRACTS.md 3.2)." },
   {
     id: "4.1",
     name: "form pattern",
@@ -72,13 +114,47 @@ const hardRules = [
     message: "A collection table without bodyScrollable. Every collection screen's table fits the viewport: header, search and pagination stay put and only the rows scroll (Table bodyScrollable + Table.Header sticky, see CONTRACTS.md 4.2).",
   },
   {
+    id: "4.2d",
+    name: "one filter",
+    // The three filters this replaced were a popover of every section, an "Add filter" popover and an "All Filters" side
+    // panel. A table has the contextual Filter menu (FilterMenu) and nothing else.
+    test: (s) => /(?:title="All Filters"|>\s*All Filters\b|>\s*Add filter\s*<)/.test(s),
+    allow: [],
+    message: 'A hand-built filter ("All Filters" panel or "Add filter" button). A table has the one Filter menu: <FilterMenu> with useAttributeFilter, useListFilter or useSelectionFilter (CONTRACTS.md 4.2d).',
+  },
+  {
     id: "4.2c",
     name: "one toolbar search width",
-    // A collection toolbar is where the Filter button lives. Its search box is ToolbarSearch (384px),
+    // A collection toolbar is where the Filter menu lives. Its search box is ToolbarSearch (384px),
     // never a hand-rolled Input that grows to fill the row or picks its own width.
-    test: (s) => /<ListFilterButton\b/.test(s) && /<Input\b[^>]*icon=\{Search(?:Md|Lg|Sm)\}/.test(s),
-    allow: [],
+    test: (s) => /<FilterMenu\b/.test(s) && /<Input\b[^>]*icon=\{Search(?:Md|Lg|Sm)\}/.test(s),
+    allow: ["_shared/map-search/species-results.tsx", "observations/observations-search.tsx"], // Explore's full-width results search: the designer's call, open (CONTRACTS 4.2c)
     message: "A toolbar with a Filter button whose search is a hand-rolled <Input>. Use <ToolbarSearch> (app/pages/_shared/toolbar-search.tsx): one 384px search width on every collection toolbar (CONTRACTS.md 4.2c).",
+  },
+  {
+    id: "4.2f",
+    name: "stable table columns",
+    // A collection table is one with bodyScrollable. Its columns must not reflow as the rows change, so it is a
+    // fixed layout with a width on every column (the automatic layout sizes each column to its widest cell).
+    test: (s) => {
+      for (const m of s.matchAll(/<Table(?![.\w])/g)) {
+        const tag = s.slice(m.index, m.index + 500);
+        if (/\bbodyScrollable\b/.test(tag) && !/layout="fixed"/.test(tag)) return true;
+      }
+      return false;
+    },
+    // The Explore results table lets the person choose its columns; the ingestion report view is lab-only.
+    allow: ["_shared/map-search/results-table.tsx", "_shared/reports/ingestion-report.tsx"],
+    message: 'A collection table (Table bodyScrollable) without layout="fixed". Its columns must keep their width whatever rows show: fixed layout, a width on every Table.Head, a min-w on the table (CONTRACTS.md 4.2f).',
+  },
+  {
+    id: "4.2f",
+    name: "scrollbar gutter",
+    // A scrolling main that overflows in one state and not another moves its content by a scrollbar's width on a
+    // classic-scrollbar system. It reserves the space.
+    test: (s) => /<main\b[^>]*className="[^"]*\boverflow-y-auto\b(?![^"]*scrollbar-gutter)[^"]*"/.test(s),
+    allow: [],
+    message: "A scrolling <main> (overflow-y-auto) without [scrollbar-gutter:stable]. Reserve the scrollbar so the content does not move when it appears (CONTRACTS.md 4.2f).",
   },
 ];
 
@@ -201,6 +277,43 @@ export function currentRatchetCounts() {
   return counts;
 }
 
+// 3.12: every action button carries an icon that names its action. An action button is a filled or outlined
+// `<Button>` with a text label: `color` primary, secondary (the default), tertiary or a destructive one. Link-style
+// buttons (`link-color`, `link-gray`, `link-destructive`) are links, and a button with only an aria-label (or only
+// an ellipsis) is icon-only; neither needs one. The stale unlinked drafts are exempt, like the shell rules.
+const ACTION_COLOURS = /^(primary|secondary|tertiary|primary-destructive|secondary-destructive)$/;
+function actionButtonsWithoutIcon(src) {
+  const found = [];
+  let i = 0;
+  while ((i = src.indexOf("<Button", i)) !== -1) {
+    if (!/[\s>/]/.test(src[i + 7] ?? " ")) {
+      i += 7;
+      continue;
+    }
+    let depth = 0;
+    let j = i + 7;
+    let quote = null;
+    for (; j < src.length; j++) {
+      const c = src[j];
+      if (quote) {
+        if (c === quote && src[j - 1] !== "\\") quote = null;
+        continue;
+      }
+      if (c === '"' || c === "'" || c === "`") quote = c;
+      else if (c === "{") depth++;
+      else if (c === "}") depth--;
+      else if (c === ">" && depth === 0 && src[j - 1] !== "=") break;
+    }
+    const tag = src.slice(i, j + 1);
+    const label = tag.endsWith("/>") ? "" : src.slice(j + 1, src.indexOf("</Button>", j)).replace(/\s+/g, " ").trim();
+    const color = tag.match(/color="([^"]+)"/)?.[1] ?? (/color=\{/.test(tag) ? "primary" : "secondary");
+    const iconOnly = label === "" || /^[.\u2026\s]*$/.test(label);
+    if (ACTION_COLOURS.test(color) && !iconOnly && !/icon(Leading|Trailing)=/.test(tag)) found.push(src.slice(0, i).split("\n").length);
+    i = j;
+  }
+  return found;
+}
+
 export function runChecks() {
   const violations = [];
   const improvements = [];
@@ -214,7 +327,27 @@ export function runChecks() {
     const src = readFileSync(file, "utf8");
     for (const rule of hardRules) {
       if (rule.allow.includes(r)) continue;
-      if (rule.test(src)) violations.push({ clause: rule.id, file: `app/pages/${r}`, message: rule.message });
+      if (rule.test(src, file)) violations.push({ clause: rule.id, file: `app/pages/${r}`, message: rule.message });
+    }
+  }
+
+  // 3.12: action buttons carry an icon (every screen, the auth flow and the home page included)
+  for (const file of walk(PAGES)) {
+    const parts = relative(PAGES, file).split(sep);
+    if ((parts[0] === "projects" || parts[0] === "projectsv2") && parts[1] === "page.tsx") continue;
+    if (!/\.tsx$/.test(file)) continue;
+    for (const line of actionButtonsWithoutIcon(readFileSync(file, "utf8")))
+      violations.push({ clause: "3.12", file: `app/pages/${parts.join("/")}:${line}`, message: "An action button (primary, secondary, tertiary or destructive, with a text label) without an icon. Every action button carries an icon that names the action: iconLeading, or iconTrailing for a forward arrow (CONTRACTS.md 3.12)." });
+  }
+  // ... and in the shared components that render buttons of their own (modals, alerts, the file field, multi-select):
+  // a modal's Cancel and its confirm button are action buttons too.
+  for (const dir of ["application", "base", "custom"]) {
+    const root = join(ROOT, "components", dir);
+    if (!existsSync(root)) continue;
+    for (const file of walk(root)) {
+      if (!/\.tsx$/.test(file)) continue;
+      for (const line of actionButtonsWithoutIcon(readFileSync(file, "utf8")))
+        violations.push({ clause: "3.12", file: `${rel(file)}:${line}`, message: "An action button (primary, secondary, tertiary or destructive, with a text label) without an icon in a shared component. Give it an icon prop, required where the action varies (CONTRACTS.md 3.12)." });
     }
   }
 
@@ -264,6 +397,17 @@ export function runChecks() {
       const tag = src.slice(m.index, m.index + 900);
       if (/selectionMode="multiple"/.test(tag) && !/escapeKeyBehavior=/.test(tag)) {
         violations.push({ clause: "1.9a", file: f, message: 'Multiple-selection ListBox without escapeKeyBehavior="none": Escape would clear the selection (CONTRACTS.md 1.9).' });
+      }
+    }
+  }
+
+  // 1.9a, menus: a menu component can carry a multiple selection (a filter's ticks) whatever its caller passes, so a react-aria
+  // Menu in a component must switch off the clear-on-Escape default itself.
+  for (const f of componentFiles()) {
+    const src = readFileSync(join(ROOT, f), "utf8");
+    for (const m of src.matchAll(/<AriaMenu\b/g)) {
+      if (!/escapeKeyBehavior=/.test(src.slice(m.index, m.index + 900))) {
+        violations.push({ clause: "1.9a", file: f, message: 'A react-aria Menu without escapeKeyBehavior="none": Escape would clear a multiple selection (CONTRACTS.md 1.9).' });
       }
     }
   }

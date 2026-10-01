@@ -6,6 +6,7 @@ import { Input } from "@/components/base/input/input";
 import { Button } from "@/components/base/buttons/button";
 import { AuthShell, AuthHeader, AuthDivider } from "@/app/pages/auth/_shared/auth-shell";
 import { PasswordChecklist, passwordMeetsRules } from "@/app/pages/auth/_shared/password-checklist";
+import { ArrowRight } from "@untitledui/icons";
 
 const MIN_LENGTH = 12;
 
@@ -35,7 +36,7 @@ function SetPasswordForm() {
         </div>
         <PasswordChecklist password={password} minLength={MIN_LENGTH} />
         <div className="flex flex-col gap-6">
-          <Button type="submit" color="primary" size="md" className="w-full" isDisabled={!isValid}>
+          <Button iconTrailing={ArrowRight} type="submit" color="primary" size="md" className="w-full" isDisabled={!isValid}>
             Continue
           </Button>
           <AuthDivider />

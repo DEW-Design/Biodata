@@ -17,6 +17,6 @@ export const segmentClass = ({
     "flex cursor-pointer items-center gap-1.5 rounded-md px-2.5 py-1.5 text-sm font-semibold whitespace-nowrap outline-focus-ring transition duration-100 ease-linear focus-visible:outline-2",
     isSelected
       ? "bg-primary_alt text-secondary shadow-xs"
-      : "text-quaternary hover:text-secondary",
-    isDisabled && "cursor-not-allowed opacity-50 hover:text-quaternary",
+      : "text-tertiary hover:text-secondary",
+    isDisabled && "cursor-not-allowed opacity-50 hover:text-tertiary",
   );

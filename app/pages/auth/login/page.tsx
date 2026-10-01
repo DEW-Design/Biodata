@@ -2,7 +2,7 @@
 
 import { Suspense, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Mail01 } from "@untitledui/icons";
+import { LogIn01, Mail01 } from "@untitledui/icons";
 import { Input } from "@/components/base/input/input";
 import { Button } from "@/components/base/buttons/button";
 import { Checkbox } from "@/components/base/checkbox/checkbox";
@@ -41,7 +41,7 @@ function LoginForm() {
               Forgot Password
             </Button>
           </div>
-          <Button type="submit" color="primary" size="md" className="w-full">
+          <Button iconLeading={LogIn01} type="submit" color="primary" size="md" className="w-full">
             Sign in
           </Button>
           <div className="flex items-baseline justify-center gap-1 text-sm">

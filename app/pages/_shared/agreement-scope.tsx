@@ -1,14 +1,17 @@
 "use client";
 
+import type { FC } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import { User01 } from "@untitledui/icons";
 import type { SortDescriptor } from "react-aria-components";
 import { Tab, TabList, Tabs } from "@/components/application/tabs/tabs";
 import { useRoleHref } from "@/lib/use-role-href";
 
-// "My" vs "All" for the DSA and DLA collections, rolled into production from
-// /proto/collection-sidebar's "My Items" exploration (context/decisions/2026-09-25-18-my-requests-all-requests-and-my-agreements-all.md). My/All is a scope, not a
+// "All" and "My" for the DSA, DLA and nomination collections, rolled into production from
+// /proto/collection-sidebar's "My Items" exploration (context/decisions/2026-09-25-18-my-requests-all-requests-and-my-agreements-all.md). All/My is a scope, not a
 // status: column 2 holds the scope switcher, and the table in main shows every status at once with a
-// status filter and a Status column.
+// status filter and a Status column. All comes first because it is the whole collection and "My" is that
+// collection narrowed to you (designer, 1 Oct 2026): the order reads the way the data is shaped.
 
 export type AgreementScope = "mine" | "all";
 
@@ -26,19 +29,23 @@ export function useAgreementScope(defaultScope: AgreementScope): AgreementScope 
   return value === "mine" || value === "all" ? value : defaultScope;
 }
 
-/** Column 2's switcher: the same vertical `Tabs` (`button-brand`) as Home's My BioData / Flora and Fauna Dashboard. */
+/** Column 2's switcher: the same vertical `Tabs` (`button-brand`) as Home's My BioData / Flora and Fauna Dashboard,
+ *  every item with an icon (CONTRACTS 3.11): All takes the section's icon, My the person icon, as on Projects. */
 export function AgreementScopeNav({
   heading,
   basePath,
   defaultScope,
   myLabel,
   allLabel,
+  allIcon,
 }: {
   heading: string;
   basePath: string;
   defaultScope: AgreementScope;
   myLabel: string;
   allLabel: string;
+  /** The section's own icon from the rail (`sectionIcons`), the way "All projects" carries the Projects icon. */
+  allIcon: FC<{ className?: string }>;
 }) {
   const router = useRouter();
   const roleHref = useRoleHref();
@@ -48,8 +55,8 @@ export function AgreementScopeNav({
       <p className="mb-3 text-xs font-semibold tracking-wide text-quaternary uppercase">{heading}</p>
       <Tabs orientation="vertical" selectedKey={scope} onSelectionChange={(key) => router.push(roleHref(`${basePath}?scope=${key}`))}>
         <TabList aria-label={heading} orientation="vertical" type="button-brand" fullWidth className="w-full">
-          <Tab id="mine" label={myLabel} />
-          <Tab id="all" label={allLabel} />
+          <Tab id="all" label={allLabel} icon={allIcon} />
+          <Tab id="mine" label={myLabel} icon={User01} />
         </TabList>
       </Tabs>
     </div>

@@ -6,7 +6,6 @@ import { useRouter } from "next/navigation";
 import { ArrowNarrowRight } from "@untitledui/icons";
 import { Button } from "@/components/base/buttons/button";
 import { PrimaryRail } from "@/app/pages/_shared/primary-rail";
-import { SidebarFooterLinks } from "@/app/pages/_shared/sidebar-footer-links";
 import { sectionIcons } from "@/app/pages/_shared/nav-icons";
 import { AppHeader } from "@/app/pages/_shared/app-header";
 import { MobileNavTrigger } from "@/app/pages/_shared/mobile-nav";
@@ -100,7 +99,6 @@ export function TemplateFinderShell({ children }: { children: ReactNode }) {
               </p>
             ))}
           </div>
-          <SidebarFooterLinks />
         </aside>
 
         <main className="flex min-h-0 flex-1 flex-col overflow-hidden">{main}</main>

@@ -15,7 +15,6 @@ import { LayoutOptionSwitcher } from "@/app/pages/_shared/layout-option-switcher
 import { PrimaryRail } from "@/app/pages/_shared/primary-rail";
 import { ProjectCardActions } from "@/app/pages/_shared/project-card-actions";
 import { HeroMeta, RecordHero } from "@/app/pages/_shared/record-hero";
-import { SidebarFooterLinks } from "@/app/pages/_shared/sidebar-footer-links";
 import { eventTypeIcon, searchEvents } from "@/app/pages/_shared/map-search/search-data";
 import { SpeciesResultsView } from "@/app/pages/_shared/map-search/species-results";
 import { buildEventTree, projectOccurrences, type EventTreeNode } from "@/app/pages/_shared/project-scope";
@@ -115,7 +114,6 @@ function Lab() {
               {view && <NewRecordItems view={view} />}
             </TreeView>
           </div>
-          <SidebarFooterLinks />
         </aside>
 
         <main className="flex min-w-0 flex-1 flex-col overflow-y-auto">

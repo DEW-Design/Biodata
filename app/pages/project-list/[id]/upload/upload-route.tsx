@@ -13,8 +13,7 @@ import { useRoleHref } from "@/lib/use-role-href";
 
 // /pages/project-list/[id]/upload - upload a dataset to a project. Confirming stages the files for
 // ingestion, shows a toast and returns to the project, where the ingestion chip shows its progress.
-// The toast carries no "view the ingestion report" button yet: the report sits under Reports and comes
-// with the validation work.
+// The toast carries a "View report" button that opens the Data Ingestion Report on this upload's row.
 export default function UploadRoute() {
   return (
     <Suspense fallback={null}>
@@ -39,7 +38,11 @@ function Upload() {
           onCancel={back}
           onSubmit={(draft) => {
             const dataset = addDataset(project, draft);
-            toast.success("Your files are uploaded", { description: `${dataset.id} is being added to the project. Follow it on the project page.` });
+            toast.success("Your files are uploaded", {
+              description: `${dataset.id} is being added to the project. Follow it on the project page.`,
+              actionLabel: "View report",
+              onAction: () => router.push(roleHref(`/pages/reports/data-ingestion?q=${dataset.id}`)),
+            });
             back();
           }}
         />

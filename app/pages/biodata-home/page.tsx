@@ -34,6 +34,8 @@ import {
   Download02,
   LinkExternal01,
   Scale01,
+  LogIn01,
+  UserPlus01,
 } from "@untitledui/icons";
 import { Button } from "@/components/base/buttons/button";
 import { Input } from "@/components/base/input/input";
@@ -527,13 +529,13 @@ export default function BiodataHomePage() {
           </nav>
 
           <div className="flex items-center gap-3">
-            <Button color="secondary" size="sm" href="/pages/auth/login">
+            <Button color="secondary" size="sm" iconLeading={LogIn01} href="/pages/auth/login">
               Log in
             </Button>
-            <Button color="secondary" size="sm" href="/pages/auth/signup">
+            <Button color="secondary" size="sm" iconLeading={UserPlus01} href="/pages/auth/signup">
               Sign up
             </Button>
-            <Button color="primary" size="sm" href={DASHBOARD_ROUTE}>
+            <Button color="primary" size="sm" iconLeading={Map01} href={DASHBOARD_ROUTE}>
               Explore
             </Button>
           </div>

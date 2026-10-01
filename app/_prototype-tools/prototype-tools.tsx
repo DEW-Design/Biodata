@@ -22,6 +22,7 @@ const wholePageGates: { prefix?: string; pattern?: RegExp; feature: FeatureKey }
   { prefix: "/pages/user-management", feature: "userManagement" },
   { prefix: "/pages/nominations", feature: "nominationAccess" },
   { prefix: "/pages/template-finder", feature: "templateFinder" },
+  { prefix: "/pages/reports", feature: "reports" },
   { pattern: /^\/pages\/project-list\/[^/]+\/upload$/, feature: "datasetUpload" },
 ];
 

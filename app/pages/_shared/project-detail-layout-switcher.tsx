@@ -5,7 +5,8 @@ import { LayoutOptionSwitcher, type LayoutOption } from "@/app/pages/_shared/lay
 // Jump between the two project detail layouts being compared. It adds a Layout tool to the
 // Prototype tools bar (`LayoutOptionSwitcher`).
 //
-// Sept 30 2026: Option 3 (About, Records and Species) removed per direct instruction, ahead of
+// Sept 30 2026: Option 1 became the project page template for every project (project-detail-template.tsx);
+// Option 2 stays on its own route for comparison and is reached from this switcher. Option 3 (About, Records and Species) removed per direct instruction, ahead of
 // merging sai-wips into main - down to the two real directions. Sept 29 2026: rolled in from
 // bc8ad0fb (the "v3 records" rewrite) and swapped with the canonical Adelaide Hills page per direct
 // instruction, so ids now match their real folder/route names one to one: Option 1 is the v3

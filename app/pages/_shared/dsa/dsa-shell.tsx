@@ -9,8 +9,8 @@ import { Button } from "@/components/base/buttons/button";
 import { ActionsGroup, downloadCsv } from "@/app/pages/_shared/agreement-actions";
 import { dsaStatusMeta } from "@/app/pages/_shared/dsa/dsa-data";
 import { useDsas } from "@/app/pages/_shared/dsa/dsa-store";
+import { DsaSwitcher } from "@/app/pages/_shared/dsa/dsa-switcher";
 import { PrimaryRail } from "@/app/pages/_shared/primary-rail";
-import { SidebarFooterLinks } from "@/app/pages/_shared/sidebar-footer-links";
 import { sectionIcons } from "@/app/pages/_shared/nav-icons";
 import { AppHeader } from "@/app/pages/_shared/app-header";
 import { FormSidebarSlotContext } from "@/app/pages/_shared/form-section-list";
@@ -28,7 +28,7 @@ import { DSA_SECTION_LABEL, keyHref, navForRole, type NavNode } from "@/lib/regi
 // columns, with the restricted message in main. Header, rail and section switching follow
 // project-list/page.tsx; see .claude/rules/ref-shell.md, "List -> deep dive".
 //
-// Column 2 is the My agreements / All agreements switcher (`AgreementScopeNav`, `?scope=`) and,
+// Column 2 is the All agreements / My agreements switcher (`AgreementScopeNav`, `?scope=`) and,
 // below it, the "Actions" group (Export CSV / Create report), folded in from /proto/collection-sidebar's
 // own "Actions" baseline - see context/decisions/2026-09-24-05-proto-collection-sidebar-s-actions-group-and-its.md.
 // Status is a filter on the list (`?status=` seeds it), not a place in column 2.
@@ -61,7 +61,7 @@ function ScopeNav() {
 
   return (
     <div className="flex flex-col gap-1">
-      <AgreementScopeNav heading="Agreements" basePath="/pages/dsa" defaultScope="all" myLabel="My agreements" allLabel="All agreements" />
+      <AgreementScopeNav heading="Agreements" basePath="/pages/dsa" defaultScope="all" myLabel="My agreements" allLabel="All agreements" allIcon={sectionIcons[DSA_SECTION_LABEL]} />
       <ActionsGroup
         onExportCsv={() =>
           downloadCsv(
@@ -77,11 +77,14 @@ function ScopeNav() {
 
 export function DsaShell({
   breadcrumbCurrent,
+  recordId,
   formSidebar = false,
   children,
 }: {
   /** The page-specific final crumb (an agreement ID, "New agreement"). When set, the section crumb becomes a link back to the list. */
   breadcrumbCurrent?: string;
+  /** The ID of the agreement a deep-dive page shows (not set on forms): the section crumb becomes a switcher over the agreements. */
+  recordId?: string;
   /** A create/edit form is rendered: column 2 becomes the form's own section list (the form portals into it via `FormSidebar`) instead of the scope switcher. */
   formSidebar?: boolean;
   children: ReactNode;
@@ -143,7 +146,9 @@ export function DsaShell({
           </MobileNavTrigger>
         }
         section={
-              breadcrumbCurrent && !otherSection ? (
+              recordId && canManage && !otherSection ? (
+                <DsaSwitcher currentId={recordId} />
+              ) : breadcrumbCurrent && !otherSection ? (
                 <Link href={roleHref("/pages/dsa")} className="hover:text-primary">
                   {activeSection}
                 </Link>
@@ -174,7 +179,6 @@ export function DsaShell({
               ))}
             </div>
           )}
-          <SidebarFooterLinks />
         </aside>
 
         <main className="flex min-h-0 flex-1 flex-col overflow-hidden">

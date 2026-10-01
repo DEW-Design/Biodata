@@ -10,8 +10,8 @@ import { ActionsGroup, downloadCsv } from "@/app/pages/_shared/agreement-actions
 import { AgreementScopeNav, CURRENT_USER_NAME } from "@/app/pages/_shared/agreement-scope";
 import { nominationStatusMeta, speciesFor } from "@/app/pages/_shared/nominations/nomination-data";
 import { useNominations } from "@/app/pages/_shared/nominations/nomination-store";
+import { NominationSwitcher } from "@/app/pages/_shared/nominations/nomination-switcher";
 import { PrimaryRail } from "@/app/pages/_shared/primary-rail";
-import { SidebarFooterLinks } from "@/app/pages/_shared/sidebar-footer-links";
 import { sectionIcons } from "@/app/pages/_shared/nav-icons";
 import { AppHeader } from "@/app/pages/_shared/app-header";
 import { FormSidebarSlotContext } from "@/app/pages/_shared/form-section-list";
@@ -24,7 +24,7 @@ import { NOMINATION_SECTION_LABEL, keyHref, navForRole, type NavNode } from "@/l
 
 // The one shell every nomination route renders through (the list, a nomination's record page, the
 // new and edit forms), the same shape as DlaShell. Column 2:
-//   - the panel (nominationReview) switches between My nominations and All nominations, like DLA;
+//   - the panel (nominationReview) switches between All nominations and My nominations, like DLA;
 //   - everyone else sees only their own nominations, so there is no switch (a one-option switcher
 //     is dishonest UI): column 2 is the section label and the Actions group.
 // Column 2 is navigation and actions only. How a nomination is reviewed is information, so it sits
@@ -58,7 +58,7 @@ function ScopeNav() {
   return (
     <div className="flex flex-col gap-1">
       {canReview ? (
-        <AgreementScopeNav heading="Nominations" basePath="/pages/nominations" defaultScope="all" myLabel="My nominations" allLabel="All nominations" />
+        <AgreementScopeNav heading="Nominations" basePath="/pages/nominations" defaultScope="all" myLabel="My nominations" allLabel="All nominations" allIcon={sectionIcons[NOMINATION_SECTION_LABEL]} />
       ) : (
         <p className="mb-3 text-xs font-semibold tracking-wide text-quaternary uppercase">Nominations</p>
       )}
@@ -80,11 +80,14 @@ function ScopeNav() {
 
 export function NominationShell({
   breadcrumbCurrent,
+  recordId,
   formSidebar = false,
   children,
 }: {
   /** The page-specific final crumb (a nomination ID, "New nomination"). When set, the section crumb links back to the list. */
   breadcrumbCurrent?: string;
+  /** The ID of the nomination a deep-dive page shows (not set on forms): the section crumb becomes a switcher over the nominations. */
+  recordId?: string;
   /** A create/edit form is rendered: column 2 becomes the form's section list (portalled via `FormSidebar`). */
   formSidebar?: boolean;
   children: ReactNode;
@@ -139,7 +142,9 @@ export function NominationShell({
           </MobileNavTrigger>
         }
         section={
-          breadcrumbCurrent && !otherSection ? (
+          recordId && canAccess && !otherSection ? (
+            <NominationSwitcher currentId={recordId} />
+          ) : breadcrumbCurrent && !otherSection ? (
             <Link href={roleHref("/pages/nominations")} className="hover:text-primary">
               {activeSection}
             </Link>
@@ -168,7 +173,6 @@ export function NominationShell({
               ))}
             </div>
           )}
-          <SidebarFooterLinks />
         </aside>
 
         <main className="flex min-h-0 flex-1 flex-col overflow-hidden">

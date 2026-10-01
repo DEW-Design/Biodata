@@ -2,16 +2,19 @@
 
 import { useState } from "react";
 import type { SortDescriptor } from "react-aria-components";
-import { Clock, Feather, MessageAlertCircle, Plus } from "@untitledui/icons";
+import { Clock, Feather, MessageAlertCircle, Plus, SearchLg, Calendar, Flag01, Lock01, User01 } from "@untitledui/icons";
+import { ListEmptyState } from "@/app/pages/_shared/list-empty-state";
 import { Badge, CountBadge } from "@/components/base/badges/badges";
 import { Button } from "@/components/base/buttons/button";
 import { FeaturedIcon } from "@/components/foundations/featured-icon/featured-icon";
-import { Progress } from "@/components/application/progress-steps/progress-steps";
+import { ExplainerCard } from "@/app/pages/_shared/explainer-card";
 import { SectionHeader } from "@/components/application/section-headers/section-headers";
 import { Table, TableCard } from "@/components/application/table/table";
 import { CURRENT_USER_NAME, sortRows, type AgreementScope, type SortValue } from "@/app/pages/_shared/agreement-scope";
 import { TaskItem } from "@/app/pages/_shared/home-dashboard";
-import { ListFilterButton, matchesFilters, monthOptions, optionsFromValues, type FilterGetters, type FilterSection, type FilterSelection } from "@/app/pages/_shared/list-filter";
+import { monthOptions, optionsFromValues, useListFilter, type FilterGetters, type FilterSection } from "@/app/pages/_shared/list-filter";
+import { AttributeFilterChips } from "@/app/pages/_shared/attribute-filter";
+import { FilterMenu } from "@/app/pages/_shared/filter-menu";
 import { ToolbarSearch } from "@/app/pages/_shared/toolbar-search";
 import { SpeciesPhoto } from "@/app/pages/_shared/map-search/species-photo";
 import { SPECIES_GROUP_ICON } from "@/app/pages/_shared/map-search/species-group-icons";
@@ -58,12 +61,7 @@ const REVIEW_STEPS = [
 /** How a nomination is reviewed, for someone who nominates but doesn't review. Information, so it
  *  sits above the table rather than in column 2, which is for navigation and actions only. */
 function ReviewSteps() {
-  return (
-    <section aria-label="How a nomination is reviewed" className="shrink-0 rounded-lg border border-secondary p-4">
-      <p className="mb-3 text-xs font-semibold tracking-wide text-quaternary uppercase">How a nomination is reviewed</p>
-      <Progress.IconsWithText type="number" orientation="horizontal" size="sm" items={REVIEW_STEPS.map((step) => ({ ...step, status: "incomplete" as const }))} />
-    </section>
-  );
+  return <ExplainerCard id="how-a-nomination-is-reviewed" title="How a nomination is reviewed" steps={REVIEW_STEPS} />;
 }
 
 /** What needs attention: nominations waiting for the panel (reviewers), or returned to the nominator for more information. */
@@ -107,22 +105,22 @@ export function NominationList({ scope, initialStatuses = [], canReview }: { sco
   // Someone else's draft isn't submitted yet, so it isn't the panel's to see.
   const scoped = scope === "mine" ? all.filter((n) => n.nominator.name === CURRENT_USER_NAME) : all.filter((n) => n.status !== "draft" || n.nominator.name === CURRENT_USER_NAME);
   const [search, setSearch] = useState("");
-  const [filters, setFilters] = useState<FilterSelection>({ status: new Set<string>(initialStatuses) });
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(50);
   const [sort, setSort] = useState<SortDescriptor>({ column: "updated", direction: "descending" });
 
   const filterSections: FilterSection[] = [
-    { id: "status", label: "Status", options: nominationStatusOrder.map((id) => ({ id, label: nominationStatusMeta[id].label })) },
-    { id: "group", label: "Species group", options: SPECIES_GROUP_OPTIONS.map((g) => ({ id: g, label: g })) },
-    { id: "protection", label: "Protection", options: (Object.keys(protectionMeta) as ProtectionScope[]).map((id) => ({ id, label: protectionMeta[id].label })) },
-    { id: "nominator", label: "Nominated by", searchable: true, options: optionsFromValues(scoped.map((n) => n.nominator.name)) },
-    { id: "updated", label: "Updated", options: monthOptions(scoped.map((n) => n.updatedAt)) },
+    { id: "status", label: "Status", icon: Flag01, options: nominationStatusOrder.map((id) => ({ id, label: nominationStatusMeta[id].label })) },
+    { id: "group", label: "Species group", icon: Feather, options: SPECIES_GROUP_OPTIONS.map((g) => ({ id: g, label: g })) },
+    { id: "protection", label: "Protection", icon: Lock01, options: (Object.keys(protectionMeta) as ProtectionScope[]).map((id) => ({ id, label: protectionMeta[id].label })) },
+    { id: "nominator", label: "Nominated by", icon: User01, searchable: true, options: optionsFromValues(scoped.map((n) => n.nominator.name)) },
+    { id: "updated", label: "Updated", icon: Calendar, options: monthOptions(scoped.map((n) => n.updatedAt)) },
   ];
+  const filter = useListFilter(filterSections, filterGetters, () => setPage(1), { status: new Set<string>(initialStatuses) });
 
   const query = search.trim().toLowerCase();
   const matching = scoped
-    .filter((n) => matchesFilters(n, filters, filterGetters))
+    .filter(filter.matches)
     .filter((n) => {
       if (!query) return true;
       const species = speciesFor(n.speciesId);
@@ -181,23 +179,29 @@ export function NominationList({ scope, initialStatuses = [], canReview }: { sco
                 setPage(1);
               }}
             />
-            <div>
-              <ListFilterButton
-                sections={filterSections}
-                selection={filters}
-                onChange={(next) => {
-                  setFilters(next);
-                  setPage(1);
-                }}
-              />
-            </div>
+            <FilterMenu filter={filter} />
           </div>
+          <AttributeFilterChips filter={filter} />
           {rows.length === 0 ? (
-            <p className="py-6 text-sm text-tertiary">No nominations match your search and filters.</p>
+            <ListEmptyState
+              icon={SearchLg}
+              title="No nominations match"
+              description="Try a different search, or remove a filter."
+              action={{
+                label: "Show all nominations",
+                onPress: () => {
+                  setSearch("");
+                  filter.clear();
+                  setPage(1);
+                },
+              }}
+            />
           ) : (
             <TableCard.Root className="flex min-h-48 flex-1 flex-col">
               <Table
                 bodyScrollable
+                layout="fixed"
+                className="min-w-[960px]"
                 aria-label="Sensitive species nominations"
                 sortDescriptor={sort}
                 onSortChange={(next) => {
@@ -206,12 +210,12 @@ export function NominationList({ scope, initialStatuses = [], canReview }: { sco
                 }}
               >
                 <Table.Header sticky>
-                  <Table.Head id="id" label="Nomination" isRowHeader />
-                  <Table.Head id="species" label="Species" allowsSorting />
-                  <Table.Head id="protection" label="Protection" allowsSorting />
-                  <Table.Head id="nominator" label="Nominated by" allowsSorting />
-                  <Table.Head id="status" label="Status" allowsSorting />
-                  <Table.Head id="updated" label="Updated" allowsSorting />
+                  <Table.Head id="id" label="Nomination" isRowHeader className="w-[16%]" />
+                  <Table.Head id="species" label="Species" allowsSorting className="w-[16%]" />
+                  <Table.Head id="protection" label="Protection" allowsSorting className="w-[13%]" />
+                  <Table.Head id="nominator" label="Nominated by" allowsSorting className="w-[14%]" />
+                  <Table.Head id="status" label="Status" allowsSorting className="w-[28%]" />
+                  <Table.Head id="updated" label="Updated" allowsSorting className="w-[13%]" />
                 </Table.Header>
                 <Table.Body items={paged}>
                   {(n) => {

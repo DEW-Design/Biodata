@@ -1075,8 +1075,8 @@ const railSections: { label: string; icon: FC<{ className?: string }> }[] = [
   { label: "Observations", icon: Eye },
   { label: "Data Licencing Agreement (DLA)", icon: FileLock01 },
   { label: "Nominate Sensitive Species", icon: Feather },
-  { label: "Reports (Own Submissions)", icon: BarChart01 },
   { label: "Template Finder", icon: FileSearch01 },
+  { label: "Reports", icon: BarChart01 },
 ];
 
 function IconRail() {

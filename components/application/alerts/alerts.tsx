@@ -1,7 +1,7 @@
 "use client";
 
-import type { ReactNode } from "react";
-import { AlertCircle, CheckCircle, InfoCircle } from "@untitledui/icons";
+import type { FC, ReactNode } from "react";
+import { AlertCircle, Check, CheckCircle, InfoCircle, XClose } from "@untitledui/icons";
 import { Button } from "@/components/base/buttons/button";
 import { CloseButton } from "@/components/base/buttons/close-button";
 import { FeaturedIcon } from "@/components/foundations/featured-icon/featured-icon";
@@ -118,6 +118,14 @@ interface AlertFullWidthProps {
      */
     onConfirm?: () => void;
     /**
+     * The icon that names the confirm action on a button-style alert (CONTRACTS 3.12), such as a forward arrow for "Go to DLA".
+     * Link-style actions (`actionType="link"`) need none.
+     * @default Check
+     */
+    confirmIcon?: FC<{ className?: string }>;
+    /** `"trailing"` puts the confirm icon after the label, for an action that moves on (an arrow). @default "leading" */
+    confirmIconPosition?: "leading" | "trailing";
+    /**
      * Overrides the default centered `max-w-container` + `px-8` treatment (designed for
      * standalone, full-viewport-width placements). Pass this when the alert sits inside a
      * layout that already establishes its own horizontal padding rhythm, so the alert's
@@ -175,6 +183,8 @@ export const AlertFullWidth = ({
     color = "default",
     actionType = "button",
     dismissLabel = "Dismiss",
+    confirmIcon = Check,
+    confirmIconPosition = "leading",
     className,
     tintedBackground = false,
     hideDismissButton = false,
@@ -194,12 +204,18 @@ export const AlertFullWidth = ({
     const actions = (onConfirm || (onClose && !hideDismissButton)) && (
         <div className={cx("flex gap-3", actionType === "button" ? "flex-col-reverse md:flex-row" : "flex-row")}>
             {onClose && !hideDismissButton && (
-                <Button onClick={onClose} color={actionType === "button" ? "secondary" : "link-gray"} size="sm">
+                <Button onClick={onClose} color={actionType === "button" ? "secondary" : "link-gray"} size="sm" iconLeading={actionType === "button" ? XClose : undefined}>
                     {dismissLabel}
                 </Button>
             )}
             {onConfirm && (
-                <Button onClick={onConfirm} color={actionType === "button" ? "primary" : "link-color"} size="sm">
+                <Button
+                    onClick={onConfirm}
+                    color={actionType === "button" ? "primary" : "link-color"}
+                    size="sm"
+                    iconLeading={actionType === "button" && confirmIconPosition === "leading" ? confirmIcon : undefined}
+                    iconTrailing={actionType === "button" && confirmIconPosition === "trailing" ? confirmIcon : undefined}
+                >
                     {confirmLabel}
                 </Button>
             )}

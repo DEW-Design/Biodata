@@ -23,7 +23,7 @@
 import type { UserRole } from "@/lib/user-role";
 
 /** One entry per gated product feature. Add a key as a feature is actually gated - don't pre-populate speculatively. */
-export type FeatureKey = "orgSwitcher" | "metricCardCustomization" | "dsaManagement" | "dlaAccess" | "dlaApproval" | "userManagement" | "restrictedData" | "nominationAccess" | "nominationReview" | "datasetUpload" | "templateFinder";
+export type FeatureKey = "orgSwitcher" | "metricCardCustomization" | "dsaManagement" | "dlaAccess" | "dlaApproval" | "userManagement" | "restrictedData" | "nominationAccess" | "nominationReview" | "datasetUpload" | "templateFinder" | "reports";
 
 /** Feature -> the roles (besides biodata-admin, which always passes) allowed to see it. */
 export const roleAccessMatrix: Record<FeatureKey, UserRole[]> = {
@@ -77,7 +77,23 @@ export const roleAccessMatrix: Record<FeatureKey, UserRole[]> = {
   datasetUpload: ["registered-user", "privileged-user", "privileged-admin", "biodata-user"],
   // Every signed-in role; a public user has no Template Finder section (context/decisions/2026-09-21-04).
   templateFinder: ["registered-user", "privileged-user", "privileged-admin", "biodata-user"],
+  // Reports (/pages/reports): every signed-in role, like the Template Finder; a public user has no Reports
+  // section. What a role sees inside a report is decided by the report (the ingestion report shows a
+  // registered user their own runs and BioData Admin all of them).
+  reports: ["registered-user", "privileged-user", "privileged-admin", "biodata-user"],
 };
+
+/**
+ * PARKED (1 Oct 2026, see the backlog in `.claude/rules/ref-shell.md`): nothing calls this while the project explainer is
+ * parked. Whether the "What is a project?" explainer shows on the Projects list. BioData Admin already knows
+ * what a project is, so it does not get the onboarding card; every other role, a signed-out visitor
+ * included, does (per the designer, Sept 30 and Oct 1 2026; it moved from column 2 to above the list).
+ * It is its own function, not a `roleAccessMatrix` entry, because the matrix always lets
+ * `biodata-admin` through, and this is the one place the admin is left out.
+ */
+export function showsProjectExplainer(role: UserRole): boolean {
+  return role !== "biodata-admin";
+}
 
 /**
  * Whether `role` can see `feature`. `biodata-admin` always returns true (the top of the access

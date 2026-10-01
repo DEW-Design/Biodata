@@ -9,7 +9,7 @@ import { DlaShell } from "@/app/pages/_shared/dla/dla-shell";
 import { useFeatureAccess } from "@/lib/use-feature-access";
 
 // /pages/dla - the Data Licencing Agreement (DLA) list, the same "list -> deep dive" pattern as
-// Projects/DSA (.claude/rules/ref-shell.md, "List -> deep dive"). Column 2 is the My requests / All requests
+// Projects/DSA (.claude/rules/ref-shell.md, "List -> deep dive"). Column 2 is the All requests / My requests
 // switcher (the scope, `?scope=`; a reviewer opens on All, everyone else on My); main is one table
 // of every status with a status filter and a Status column (`?status=` seeds the filter). A row opens
 // /pages/dla/<id>. Built from the Master Flows wireframe (Figma YMproGZfrFB5jUqPHPxMhk, node

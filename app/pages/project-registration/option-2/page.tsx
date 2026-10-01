@@ -23,7 +23,7 @@
 
 import { Suspense, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { LogIn01, UserPlus01 } from "@untitledui/icons";
+import { ArrowLeft, LogIn01, Trash01, UserPlus01 } from "@untitledui/icons";
 import { Button } from "@/components/base/buttons/button";
 import { DestructiveModal } from "@/components/application/modals/modal";
 import { toast } from "@/components/application/toast/toast";
@@ -184,7 +184,7 @@ function RegistrationFlow() {
     <>
       <RegistrationShell sidebar={sidebar}>{main}</RegistrationShell>
       <RegistrationLayoutSwitcher current="option-2" />
-      <DestructiveModal
+      <DestructiveModal confirmIcon={Trash01} cancelIcon={ArrowLeft}
         isOpen={confirmCancel}
         onOpenChange={setConfirmCancel}
         title="Discard this project?"

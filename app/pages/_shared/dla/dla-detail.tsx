@@ -4,7 +4,7 @@ import { useState, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import type { Key } from "react-aria-components";
 import { parseDate } from "@internationalized/date";
-import { ArrowNarrowLeft, Download01, Edit05, PauseCircle, Plus, SearchLg, SlashCircle01, Trash01, CheckCircle } from "@untitledui/icons";
+import { ArrowNarrowLeft, CheckCircle, Download01, Edit05, PauseCircle, PlayCircle, Plus, SearchLg, SlashCircle01, Trash01, XCircle, Grid01, MarkerPin04, FileCheck02, ClockRewind } from "@untitledui/icons";
 import { RecordActionBar, type RecordAction } from "@/app/pages/_shared/record-action-bar";
 import { RecordBackLink, RecordHero, RecordRow } from "@/app/pages/_shared/record-hero";
 import { AlertFullWidth } from "@/components/application/alerts/alerts";
@@ -174,7 +174,7 @@ function ApproveModal({ dla, isOpen, onOpenChange, onApprove }: { dla: Dla; isOp
   const willBeActiveNow = !!validFrom && validFrom <= todayIso();
 
   return (
-    <FormModal
+    <FormModal submitIcon={CheckCircle}
       isOpen={isOpen}
       onOpenChange={onOpenChange}
       icon={CheckCircle}
@@ -284,9 +284,9 @@ export function DlaDetail({
   const editAction: RecordAction = { id: "edit", label: isDraft ? "Edit draft" : "Edit request", icon: Edit05, onPress: onEdit };
   const actions: { primary?: RecordAction; secondary: RecordAction[]; menu: RecordAction[] } = { secondary: [], menu: [] };
   if (isDraft) actions.primary = editAction;
-  else if (dla.status === "submitted" && canApprove) actions.primary = { id: "start", label: "Start review", onPress: onStartReview };
-  else if (dla.status === "under_review" && canApprove) actions.primary = { id: "approve", label: "Approve", onPress: () => setApproveOpen(true) };
-  else if (dla.status === "on_hold" && canApprove) actions.primary = { id: "resume", label: "Resume review", onPress: onResume };
+  else if (dla.status === "submitted" && canApprove) actions.primary = { id: "start", label: "Start review", icon: PlayCircle, onPress: onStartReview };
+  else if (dla.status === "under_review" && canApprove) actions.primary = { id: "approve", label: "Approve", icon: CheckCircle, onPress: () => setApproveOpen(true) };
+  else if (dla.status === "on_hold" && canApprove) actions.primary = { id: "resume", label: "Resume review", icon: PlayCircle, onPress: onResume };
   if (showAgreement)
     actions.secondary.push({
       id: "download",
@@ -295,7 +295,7 @@ export function DlaDetail({
       isDisabled: !dla.agreementFile,
       onPress: () => dla.agreementFile && downloadAgreementFile(dla.agreementFile),
     });
-  if (dla.status === "under_review" && canApprove) actions.secondary.push({ id: "reject", label: "Reject", onPress: () => setRejectOpen(true) });
+  if (dla.status === "under_review" && canApprove) actions.secondary.push({ id: "reject", label: "Reject", icon: XCircle, onPress: () => setRejectOpen(true) });
   if (canEdit && !isDraft) (isReviewer ? actions.menu : actions.secondary).push(editAction);
   if (dla.status === "under_review" && canApprove) actions.menu.unshift({ id: "hold", label: "Put on hold", icon: PauseCircle, onPress: onHold });
   if (isDraft) actions.menu.push({ id: "delete", label: "Delete draft", icon: Trash01, destructive: true, onPress: () => setCancelConfirm("delete") });
@@ -399,10 +399,10 @@ export function DlaDetail({
       <Tabs selectedKey={tab} onSelectionChange={setTab} className="flex min-h-0 flex-1 flex-col">
         <div className="shrink-0 px-6 pt-4">
           <TabList aria-label="Request sections" type="underline" size="md">
-            <Tab id="overview" label="Overview" />
-            <Tab id="locations" label="Locations & Access" />
-            {showAgreement && <Tab id="agreement" label="Agreement" />}
-            <Tab id="audit" label="Audit Log" />
+            <Tab id="overview" label="Overview" icon={Grid01} />
+            <Tab id="locations" label="Locations & Access" icon={MarkerPin04} />
+            {showAgreement && <Tab id="agreement" label="Agreement" icon={FileCheck02} />}
+            <Tab id="audit" label="Audit Log" icon={ClockRewind} />
           </TabList>
         </div>
 
@@ -491,7 +491,7 @@ export function DlaDetail({
       <RejectModal id={dla.id} isOpen={rejectOpen} onOpenChange={setRejectOpen} onReject={(reason) => { onReject(reason); setRejectOpen(false); }} />
       <AddLocationModal isOpen={addLocationOpen} onOpenChange={setAddLocationOpen} onAdd={onAddLocation} />
 
-      <DestructiveModal
+      <DestructiveModal confirmIcon={cancelConfirm === "delete" ? Trash01 : SlashCircle01}
         isOpen={cancelConfirm !== null}
         onOpenChange={(open) => !open && setCancelConfirm(null)}
         title={cancelConfirm === "delete" ? `Delete draft ${dla.id}?` : `Cancel ${dla.id}?`}
@@ -543,7 +543,7 @@ export function DlaEmptyState({ status, newHref }: { status: DlaStatus; newHref:
         </div>
       </div>
       {copy.cta && (
-        <Button color="primary" href={newHref}>
+        <Button iconLeading={Plus} color="primary" href={newHref}>
           Request DLA
         </Button>
       )}

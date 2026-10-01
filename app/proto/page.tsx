@@ -69,6 +69,10 @@ const PROTO_LABS: ProtoEntry[] = [
     description: "Turning the guest dashboard into an account-creation nudge. Superseded by /proto/public-user.",
   },
   {
+    route: "tab-icons",
+    description: "Icons on the underline tabs: text only, an icon on every tab, or an icon on the selected tab.",
+  },
+  {
     route: "tools",
     description: "One home for the preview tools (role, layout options, upload result). The status bar was chosen and is now on every screen; the dock and launcher stay for the record.",
   },

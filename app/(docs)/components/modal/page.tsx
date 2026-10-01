@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import type React from "react";
+import { ArrowLeft, Send01, Trash01 } from "@untitledui/icons";
 import { PageHeader } from "@/components/PageHeader";
 import { Button } from "@/components/base/buttons/button";
 import { Input } from "@/components/base/input/input";
@@ -47,6 +48,7 @@ export default function ModalPage() {
           title="Leave this page?"
           description="You have unsaved changes. If you leave now, they'll be lost."
           confirmLabel="Leave"
+          confirmIcon={ArrowLeft}
           isConfirmLoading={isConfirmLoading}
           onConfirm={() => {
             setIsConfirmLoading(true);
@@ -75,6 +77,7 @@ export default function ModalPage() {
           isOpen={destructiveOpen}
           onOpenChange={setDestructiveOpen}
           title="Delete this project?"
+          confirmIcon={Trash01}
           description={
             <>
               This will permanently delete <strong>Marketing site redesign</strong> and all of its files. This action
@@ -106,6 +109,7 @@ export default function ModalPage() {
           title="Invite a team member"
           description="They'll get an email with a link to join this workspace."
           submitLabel="Send invite"
+          submitIcon={Send01}
           isSubmitLoading={isSaveLoading}
           onSubmit={() => {
             setIsSaveLoading(true);
@@ -135,6 +139,7 @@ const [isOpen, setIsOpen] = useState(false);
   title="Leave this page?"
   description="You have unsaved changes."
   confirmLabel="Leave"
+  confirmIcon={ArrowLeft}
   onConfirm={() => setIsOpen(false)}
 />
 
@@ -143,6 +148,7 @@ const [isOpen, setIsOpen] = useState(false);
   onOpenChange={setIsOpen}
   title="Delete this project?"
   description="This action can't be undone."
+  confirmIcon={Trash01}
   onConfirm={handleDelete}
 />
 
@@ -150,6 +156,7 @@ const [isOpen, setIsOpen] = useState(false);
   isOpen={isOpen}
   onOpenChange={setIsOpen}
   title="Invite a team member"
+  submitIcon={Send01}
   onSubmit={handleInvite}
 >
   <Input label="Email address" isRequired />
@@ -167,6 +174,7 @@ const [isOpen, setIsOpen] = useState(false);
         <code className="font-mono text-[13px] text-secondary">
 {`import { ModalOverlay, Modal, Dialog } from "@/components/application/modals/modal";
 import { CloseButton } from "@/components/base/buttons/close-button";
+import { ArrowLeft, Send01, Trash01 } from "@untitledui/icons";
 
 <ModalOverlay isOpen={isOpen} onOpenChange={setIsOpen}>
   <Modal className="w-full max-w-md">
@@ -193,15 +201,15 @@ import { CloseButton } from "@/components/base/buttons/close-button";
           {[
             {
               name: "ConfirmationModal",
-              props: "isOpen, onOpenChange, icon (default HelpCircle), iconColor (brand | gray | success | warning), title, description, confirmLabel, cancelLabel, onConfirm, isConfirmLoading",
+              props: "isOpen, onOpenChange, icon (default HelpCircle), iconColor (brand | gray | success | warning), title, description, confirmLabel, confirmIcon (required: the icon that names the action), cancelLabel, cancelIcon (default XClose), onConfirm, isConfirmLoading",
             },
             {
               name: "DestructiveModal",
-              props: "isOpen, onOpenChange, icon (default AlertTriangle), title, description, confirmLabel (default \"Delete\"), cancelLabel, onConfirm, isConfirmLoading, secondaryLabel, onSecondary (an optional middle action, e.g. Save draft)",
+              props: "isOpen, onOpenChange, icon (default AlertTriangle), title, description, confirmLabel (default \"Delete\"), confirmIcon (required), cancelLabel, cancelIcon (default XClose), onConfirm, isConfirmLoading, secondaryLabel, secondaryIcon (default Save01), onSecondary (an optional middle action, e.g. Save draft)",
             },
             {
               name: "FormModal",
-              props: "isOpen, onOpenChange, icon, iconColor (default gray), title, description, children, submitLabel, cancelLabel, onSubmit, isSubmitLoading, size (sm 400px | md 480px | lg 640px)",
+              props: "isOpen, onOpenChange, icon, iconColor (default gray), title, description, children, submitLabel, submitIcon (required), submitIconTrailing (an arrow after the label, for Continue), cancelLabel, cancelIcon (default XClose), onSubmit, isSubmitLoading, size (sm 400px | md 480px | lg 640px)",
             },
             {
               name: "ModalHeader, ModalFooter",

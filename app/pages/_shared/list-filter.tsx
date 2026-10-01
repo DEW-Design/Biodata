@@ -1,21 +1,14 @@
 "use client";
 
-import { useState } from "react";
-import { FilterLines, SearchMd } from "@untitledui/icons";
-import { Dialog, DialogTrigger } from "react-aria-components";
-import { Button } from "@/components/base/buttons/button";
-import { Checkbox } from "@/components/base/checkbox/checkbox";
-import { Input } from "@/components/base/input/input";
-import { Popover } from "@/components/base/select/popover";
+import { useMemo, useState, type FC } from "react";
+import { useAttributeFilter, type AppliedFilter, type Attribute, type AttributeFilterApi } from "@/app/pages/_shared/attribute-filter";
 
-// The one Filter button for every collection list (Projects, DSA, DLA). What it filters on is
-// decided by the list, not here: each list passes its own sections, built from its own columns, so
-// Projects filters on Status, Organisation, Contributor and Updated while a DSA filters on its
-// partner, requester and how it is shared. The rule is the one Explore's All Filters panel uses:
-// a column you would scan becomes a filter, an identifier (Project ID, Agreement ID) does not.
-//
-// Nothing selected in a section means every value in it; sections combine (a row must match every
-// section that has a selection). One button, tinted and counted while any filter is on.
+// What a collection list filters on is decided by the list, not here: each list passes its own sections, built from its own
+// columns, so Projects filters on Status, Organisation, Contributor and Updated while a DSA filters on its partner,
+// requester and how it is shared. The rule is the one Explore's filter menu uses: a column you would scan becomes a
+// filter, an identifier (Project ID, Agreement ID) does not. The filter itself is the contextual menu every table has
+// (`FilterMenu`, filter-menu.tsx; CONTRACTS 4.2d). Nothing selected in a section means every value in it; sections combine
+// (a row must match every section that has a selection).
 
 export interface FilterOption {
   id: string;
@@ -29,8 +22,12 @@ export interface FilterSection {
   id: string;
   label: string;
   options: FilterOption[];
-  /** A list of people or organisations that grows with the data: gets a search box once it is long
-   *  enough to need one. Fixed vocabularies (status, access level, updated) never do. */
+  /** The icon beside its name in the filter menu. One that is left out gets the icon for what its name says (`attributeIcon`). */
+  icon?: FC<{ className?: string }>;
+  /** Sections with the same `group` sit together in the menu, a line where the group changes. */
+  group?: string;
+  /** A list of people, organisations or projects that grows with the data: gets a search box from 4 options up (and
+   *  draws at most 50 at a time). Fixed vocabularies (status, access level, updated) never do. */
   searchable?: boolean;
 }
 
@@ -40,109 +37,69 @@ export type FilterSelection = Record<string, Set<string>>;
 /** How to read each section's value off a row (one value, or several when a row can match more than one). */
 export type FilterGetters<T> = Record<string, (row: T) => string | string[]>;
 
-/** A searchable section shows its search box once it has more options than this. */
-const SEARCH_ABOVE = 6;
-
-export const filterCount = (selection: FilterSelection) => Object.values(selection).reduce((n, set) => n + set.size, 0);
-
-export function matchesFilters<T>(row: T, selection: FilterSelection, getters: FilterGetters<T>): boolean {
-  return Object.entries(selection).every(([sectionId, chosen]) => {
-    if (chosen.size === 0) return true;
-    const value = getters[sectionId]?.(row);
-    if (value == null) return false;
-    return (Array.isArray(value) ? value : [value]).some((v) => chosen.has(v));
-  });
-}
-
 /** The distinct values in a column as options, alphabetical, skipping empty ones. */
 export function optionsFromValues(values: string[]): FilterOption[] {
   return [...new Set(values.filter(Boolean))].sort((a, b) => a.localeCompare(b)).map((v) => ({ id: v, label: v }));
 }
 
-function FilterSectionBlock({ section, selected, onChange }: { section: FilterSection; selected: Set<string>; onChange: (next: Set<string>) => void }) {
-  const [search, setSearch] = useState("");
-  const searchable = !!section.searchable && section.options.length > SEARCH_ABOVE;
-  const q = search.trim().toLowerCase();
-  const options = q ? section.options.filter((o) => o.label.toLowerCase().includes(q)) : section.options;
-  const toggle = (id: string, checked: boolean) => {
-    const next = new Set(selected);
-    if (checked) next.add(id);
-    else next.delete(id);
-    onChange(next);
-  };
-  return (
-    <div className="flex flex-col gap-2">
-      <p className="text-xs font-semibold tracking-wide text-quaternary uppercase">{section.label}</p>
-      {searchable && <Input aria-label={`Search ${section.label.toLowerCase()}`} size="sm" icon={SearchMd} placeholder="Search" value={search} onChange={setSearch} onClear={() => setSearch("")} clearLabel="Clear search" />}
-      <div className="flex flex-col gap-2">
-        {options.map((o) =>
-          o.children ? (
-            <div key={o.id} className="flex flex-col gap-2">
-              <Checkbox
-                label={o.label}
-                isSelected={o.children.every((c) => selected.has(c.id))}
-                isIndeterminate={o.children.some((c) => selected.has(c.id)) && !o.children.every((c) => selected.has(c.id))}
-                onChange={(checked) => {
-                  const next = new Set(selected);
-                  o.children!.forEach((c) => (checked ? next.add(c.id) : next.delete(c.id)));
-                  onChange(next);
-                }}
-              />
-              <div className="flex flex-col gap-2 pl-6">
-                {o.children.map((c) => (
-                  <Checkbox key={c.id} label={c.label} isSelected={selected.has(c.id)} onChange={(checked) => toggle(c.id, checked)} />
-                ))}
-              </div>
-            </div>
-          ) : (
-            <Checkbox key={o.id} label={o.label} isSelected={selected.has(o.id)} onChange={(checked) => toggle(o.id, checked)} />
-          ),
-        )}
-        {options.length === 0 && <p className="text-sm text-tertiary">No matches</p>}
-      </div>
-    </div>
+/** Sections as the attributes the filter menu draws. */
+const sectionAttributes = <T,>(sections: FilterSection[], getters: FilterGetters<T>): Attribute<T>[] =>
+  sections.map((section) => ({
+    kind: "options",
+    id: section.id,
+    label: section.label,
+    icon: section.icon,
+    group: section.group,
+    options: section.options,
+    searchable: section.searchable,
+    get: (row: T) => getters[section.id]?.(row) ?? "",
+  }));
+
+/**
+ * The same filter for a list whose selection lives outside it (the project page keeps its records filter in the page, so
+ * a tile can set it). `selection` is the state and `onSelectionChange` is told the next one.
+ */
+export function useSelectionFilter<T>(sections: FilterSection[], getters: FilterGetters<T>, selection: FilterSelection, onSelectionChange: (next: FilterSelection) => void): AttributeFilterApi<T> {
+  const attributes = useMemo(() => sectionAttributes(sections, getters), [sections, getters]);
+  const applied = useMemo(
+    (): AppliedFilter[] =>
+      Object.entries(selection)
+        .filter(([, chosen]) => chosen.size > 0)
+        .map(([id, chosen]) => ({ id, value: { kind: "options", ids: [...chosen] } as const })),
+    [selection],
   );
+  const matches = useMemo(
+    () => (row: T) =>
+      applied.every((filter) => {
+        const value = getters[filter.id]?.(row);
+        if (value == null || filter.value.kind !== "options") return false;
+        const chosen = new Set(filter.value.ids);
+        return (Array.isArray(value) ? value : [value]).some((v) => chosen.has(v));
+      }),
+    [applied, getters],
+  );
+  const setValue = (id: string, value: AppliedFilter["value"] | null) => {
+    const next = { ...selection };
+    if (!value || value.kind !== "options" || value.ids.length === 0) delete next[id];
+    else next[id] = new Set(value.ids);
+    onSelectionChange(next);
+  };
+  return { attributes, applied, count: applied.length, setValue, remove: (id) => setValue(id, null), clear: () => onSelectionChange({}), matches };
 }
 
-export function ListFilterButton({ sections, selection, onChange }: { sections: FilterSection[]; selection: FilterSelection; onChange: (next: FilterSelection) => void }) {
-  const count = filterCount(selection);
-  const active = count > 0;
-  return (
-    <DialogTrigger>
-      <Button
-        color="secondary"
-        size="sm"
-        iconLeading={FilterLines}
-        aria-label={active ? `Filters, ${count} applied` : "Filters"}
-        className={active ? "bg-brand-50! ring-brand-100!" : undefined}
-      >
-        {active ? `Filter (${count})` : "Filter"}
-      </Button>
-      <Popover size="auto" placement="bottom start" className="font-barlow w-72">
-        <Dialog className="flex flex-col outline-hidden">
-          <div className="flex items-center justify-between px-4 pt-3 pb-1">
-            <p className="text-sm font-semibold text-primary">Filters</p>
-            {active && (
-              <Button color="link-color" size="sm" onPress={() => onChange({})}>
-                Clear all
-              </Button>
-            )}
-          </div>
-          <div className="flex flex-col [&>*+*]:border-t [&>*+*]:border-[var(--ui-border-secondary)]">
-            {sections.map((section) => (
-              <div key={section.id} className="px-4 py-3">
-                <FilterSectionBlock
-                  section={section}
-                  selected={selection[section.id] ?? new Set()}
-                  onChange={(next) => onChange({ ...selection, [section.id]: next })}
-                />
-              </div>
-            ))}
-          </div>
-        </Dialog>
-      </Popover>
-    </DialogTrigger>
+/**
+ * A list's filters, from the sections it describes and how to read each one off a row: the state, the rule that says
+ * which rows pass (`matches`), and what `FilterMenu` and `AttributeFilterChips` draw. `onChange` runs whenever a filter
+ * changes (to go back to page 1), and `initial` seeds filters from the URL (`?status=`).
+ */
+export function useListFilter<T>(sections: FilterSection[], getters: FilterGetters<T>, onChange?: () => void, initial?: FilterSelection): AttributeFilterApi<T> {
+  const attributes = useMemo(() => sectionAttributes(sections, getters), [sections, getters]);
+  const [seed] = useState<AppliedFilter[]>(() =>
+    Object.entries(initial ?? {})
+      .filter(([, chosen]) => chosen.size > 0)
+      .map(([id, chosen]) => ({ id, value: { kind: "options", ids: [...chosen] } as const })),
   );
+  return useAttributeFilter(attributes, onChange, seed);
 }
 
 // ── Updated ──

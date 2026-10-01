@@ -23,7 +23,8 @@ export type DatasetStatus =
   | "processing"
   | "under_review"
   | "auto_approved"
-  | "approved";
+  | "approved"
+  | "rejected";
 
 export const datasetStatusOrder: DatasetStatus[] = [
   "file_uploaded",
@@ -37,6 +38,7 @@ export const datasetStatusOrder: DatasetStatus[] = [
   "under_review",
   "auto_approved",
   "approved",
+  "rejected",
 ];
 
 export const datasetStatusMeta: Record<DatasetStatus, { label: string; stage: string; badgeColor: BadgeColor<"pill-color"> }> = {
@@ -51,6 +53,9 @@ export const datasetStatusMeta: Record<DatasetStatus, { label: string; stage: st
   under_review: { label: "Under review", stage: "Record review", badgeColor: "warning" },
   auto_approved: { label: "Auto-approved", stage: "Record review", badgeColor: "success" },
   approved: { label: "Approved", stage: "Dataset approval", badgeColor: "success" },
+  // A reviewer turned the dataset down (Data Ingestion Report, Dataset processing status "Rejected").
+  // Not in the business sheet's list; added with the report (designer, Sept 30 2026).
+  rejected: { label: "Rejected", stage: "Record review", badgeColor: "error" },
 };
 
 // ── The acknowledgement ──
