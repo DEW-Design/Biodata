@@ -75,8 +75,15 @@ designer owns. It is data, separate from `design-system.config.ts` (which doc va
     but `biodata-admin`, `dlaApproval`, `nominationReview`).
   - **A whole page:** keep the shell and put the restriction in main (§3.7), and add the route to
     `wholePageGates` (`dsaManagement`, `dlaAccess`, `userManagement`, `nominationAccess`, `datasetUpload`,
-    `templateFinder`).
+    `templateFinder`, `reports`).
 - **Record access levels** live in one place, `app/pages/_shared/map-search/record-access.ts`: `biodata-admin`
   (`restrictedData`) sees Level 1 to 4 in full; other signed-in roles see restricted records with the location
-  generalised and can request a DLA; `public-user` sees Level 1 only. Every screen that shows a record asks
+  shown only as a block (see below) and can request a DLA; `public-user` sees Level 1 only.
+- **A restricted record is a block, never a point or a circle** (`generalisedBlock` in `map-search/geo.ts`; size
+  from `restrictedRadiusKm` in `search-data.ts`, the one place to change it). The map draws the square cell of the
+  grid that contains it: flat, a thin edge, no centre mark, no blur. Tables, exports and the record page withhold
+  the coordinates altogether (not rounded ones: any point in the block is a place to look). A search area matches
+  the record when it overlaps the block (`isRecordInAnyBoundary`), never by testing the real point, or a small area
+  could be moved about to find it. Copy says "a 5 km block", not "within about 5 km" (the real position is within
+  half a block of the centre, closer than that wording claims). Every screen that shows a record asks
   there.

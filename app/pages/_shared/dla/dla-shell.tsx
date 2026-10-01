@@ -9,8 +9,8 @@ import { Button } from "@/components/base/buttons/button";
 import { ActionsGroup, downloadCsv } from "@/app/pages/_shared/agreement-actions";
 import { dlaStatusMeta, requestorName } from "@/app/pages/_shared/dla/dla-data";
 import { useDlas } from "@/app/pages/_shared/dla/dla-store";
+import { DlaSwitcher } from "@/app/pages/_shared/dla/dla-switcher";
 import { PrimaryRail } from "@/app/pages/_shared/primary-rail";
-import { SidebarFooterLinks } from "@/app/pages/_shared/sidebar-footer-links";
 import { sectionIcons } from "@/app/pages/_shared/nav-icons";
 import { AppHeader } from "@/app/pages/_shared/app-header";
 import { FormSidebarSlotContext } from "@/app/pages/_shared/form-section-list";
@@ -27,7 +27,7 @@ import { DLA_SECTION_LABEL, keyHref, navForRole, type NavNode } from "@/lib/regi
 // (app/pages/_shared/dsa/dsa-shell.tsx), which this file mirrors closely. See context/decisions/2026-09-23-03-data-licencing-agreement-dla-workflow-built-at-pages.md, "Data
 // Licencing Agreement (DLA)".
 //
-// Column 2 is the My requests / All requests switcher (`AgreementScopeNav`, `?scope=`) and, below it,
+// Column 2 is the All requests / My requests switcher (`AgreementScopeNav`, `?scope=`) and, below it,
 // the "Actions" group (Export CSV / Create report), folded in from /proto/collection-sidebar's own
 // "Actions" baseline - see context/decisions/2026-09-24-05-proto-collection-sidebar-s-actions-group-and-its.md.
 // Status is a filter on the list (`?status=` seeds it), not a place in column 2.
@@ -61,7 +61,7 @@ function ScopeNav() {
 
   return (
     <div className="flex flex-col gap-1">
-      <AgreementScopeNav heading="Requests" basePath="/pages/dla" defaultScope={canReview ? "all" : "mine"} myLabel="My requests" allLabel="All requests" />
+      <AgreementScopeNav heading="Requests" basePath="/pages/dla" defaultScope={canReview ? "all" : "mine"} myLabel="My requests" allLabel="All requests" allIcon={sectionIcons[DLA_SECTION_LABEL]} />
       <ActionsGroup
         onExportCsv={() =>
           downloadCsv(
@@ -77,11 +77,14 @@ function ScopeNav() {
 
 export function DlaShell({
   breadcrumbCurrent,
+  recordId,
   formSidebar = false,
   children,
 }: {
   /** The page-specific final crumb (a request ID, "New request"). When set, the section crumb becomes a link back to the list. */
   breadcrumbCurrent?: string;
+  /** The ID of the request a deep-dive page shows (not set on forms): the section crumb becomes a switcher over the requests. */
+  recordId?: string;
   /** A create/edit form is rendered: column 2 becomes the form's own section list (the form portals into it via `FormSidebar`) instead of the scope switcher. */
   formSidebar?: boolean;
   children: ReactNode;
@@ -143,7 +146,9 @@ export function DlaShell({
           </MobileNavTrigger>
         }
         section={
-              breadcrumbCurrent && !otherSection ? (
+              recordId && canAccess && !otherSection ? (
+                <DlaSwitcher currentId={recordId} />
+              ) : breadcrumbCurrent && !otherSection ? (
                 <Link href={roleHref("/pages/dla")} className="hover:text-primary">
                   {activeSection}
                 </Link>
@@ -174,7 +179,6 @@ export function DlaShell({
               ))}
             </div>
           )}
-          <SidebarFooterLinks />
         </aside>
 
         <main className="flex min-h-0 flex-1 flex-col overflow-hidden">

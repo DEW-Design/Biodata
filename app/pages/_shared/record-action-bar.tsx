@@ -8,7 +8,8 @@ import { Dropdown } from "@/components/base/dropdown/dropdown";
 export interface RecordAction {
   id: string;
   label: string;
-  icon?: FC<{ className?: string }>;
+  /** Required: every action button carries an icon that names the action (CONTRACTS 3.12). */
+  icon: FC<{ className?: string }>;
   onPress: () => void;
   isDisabled?: boolean;
   /** Ends the record or discards it. Sits below a divider in the menu, never beside the primary. */

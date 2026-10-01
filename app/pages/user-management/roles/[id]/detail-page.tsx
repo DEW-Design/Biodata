@@ -19,7 +19,7 @@ function Detail() {
   const record = useRole(id);
   const hydrated = useUmHydrated();
   return (
-    <UmShell area="roles" breadcrumbCurrent={record ? record.name : id}>
+    <UmShell area="roles" recordId={id} breadcrumbCurrent={record ? record.name : id}>
       {record ? <RoleDetail key={record.id} role={record} /> : hydrated ? <UmNotFound kind="role" id={id} backHref="/pages/user-management/roles" /> : null}
     </UmShell>
   );

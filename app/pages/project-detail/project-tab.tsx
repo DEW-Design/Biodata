@@ -17,7 +17,7 @@ import dynamic from "next/dynamic";
 import { createContext, createElement, useContext, useEffect, useRef, useState, type ReactNode } from "react";
 import { getLocalTimeZone } from "@internationalized/date";
 import type { DateValue } from "react-aria-components";
-import { Activity, Edit02, Eye, File06, Mail01, Phone01, Plus, Target05, Trash01 } from "@untitledui/icons";
+import { Activity, ArrowLeft, Edit02, Eye, File06, Mail01, Phone01, Plus, Target05, Trash01 } from "@untitledui/icons";
 import { Badge } from "@/components/base/badges/badges";
 import { Button } from "@/components/base/buttons/button";
 import { Tooltip, TooltipTrigger } from "@/components/base/tooltip/tooltip";
@@ -96,7 +96,7 @@ function Rows({ rows }: { rows: { label: string; value?: ReactNode; empty?: bool
             )}
           >
             <dt className="text-sm text-tertiary">{r.label}</dt>
-            <dd className={cx("min-w-0 text-sm text-balance whitespace-pre-line", empty ? "text-quaternary" : "text-primary")}>{empty ? "Not provided" : r.value}</dd>
+            <dd className={cx("min-w-0 max-w-prose text-sm text-balance whitespace-pre-line", empty ? "text-quaternary" : "text-primary")}>{empty ? "Not provided" : r.value}</dd>
             {edit && <FieldEditIcon label={r.label} onPress={() => edit(r.label)} />}
           </div>
         );
@@ -124,7 +124,11 @@ function Person({ name, role, team, email, phone, primary }: { name: string; rol
     <div className="flex min-w-0 flex-1 flex-col gap-1">
       <p className="flex flex-wrap items-center gap-x-1.5 text-sm font-medium text-primary">
         {name || <span className="text-quaternary">Name not provided</span>}
-        {primary && <span className="rounded-full bg-brand-50 px-1.5 py-0.5 text-[10px] font-semibold tracking-wide text-brand-secondary uppercase">Primary</span>}
+        {primary && (
+          <Badge size="sm" color="brand">
+            Primary
+          </Badge>
+        )}
         {role && <span className="font-normal text-tertiary">· {role}</span>}
       </p>
       {team && <p className="text-xs text-tertiary">{team}</p>}
@@ -436,7 +440,7 @@ export function ProjectTab({
                     // eslint-disable-next-line @next/next/no-img-element -- a local object URL picked in this session
                     <img src={d.dataOwnerOrgLogo.previewUrl} alt={`${d.dataOwnerOrgName} logo`} className="size-10 rounded-md border border-secondary object-contain" />
                   )}
-                  <p className="text-sm font-medium text-secondary">{d.dataOwnerType === "organisation" ? d.dataOwnerOrgName : "Individual / Person"}</p>
+                  <p className="text-sm font-medium text-primary">{d.dataOwnerType === "organisation" ? d.dataOwnerOrgName : "Individual / Person"}</p>
                 </div>
                 {d.dataOwnerContacts.map((contact, i) => {
                   const role = contactRole(d, i);
@@ -602,7 +606,7 @@ export function ProjectTab({
       <OnThisPage items={toc} />
 
       {layout === "default" && <ProjectCardDrawer card={editing} onChange={setEditing} />}
-      <DestructiveModal
+      <DestructiveModal confirmIcon={Trash01} cancelIcon={ArrowLeft}
         isOpen={removing !== null}
         onOpenChange={(open) => !open && setRemoving(null)}
         title={`Remove ${removing ? CARD_TITLES[removing] : "restriction"}?`}

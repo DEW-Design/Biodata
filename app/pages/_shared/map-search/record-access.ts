@@ -39,6 +39,12 @@ export function artefactRecord(resource: SearchResource) {
   return findOccurrence(resource.recordId) ?? findObservation(resource.recordId);
 }
 
+/** The block size an artefact is shown at: its record's (an artefact sits where its record was made). */
+export function artefactGeneralisedKm(resource: SearchResource, role: UserRole): number | null {
+  const record = artefactRecord(resource);
+  return record ? generalisedKm(record, role) : null;
+}
+
 export function artefactAccess(resource: SearchResource, role: UserRole): RecordAccess {
   const record = artefactRecord(resource);
   return record ? recordAccess(record, role) : "full";

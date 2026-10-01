@@ -551,6 +551,15 @@
   box-sizing: border-box;
 }
 
+/* A search input's own clear mark is the browser's (a blue x drawn by the OS, not by the design system): hide it. A field
+   that clears has its own clear button with the design system's icon (the Input's onClear, the search in MultiSelect). */
+input[type="search"]::-webkit-search-cancel-button,
+input[type="search"]::-webkit-search-decoration {
+  -webkit-appearance: none;
+  appearance: none;
+  display: none;
+}
+
 html {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
@@ -665,12 +674,25 @@ body {
   display: none !important;
 }
 
-/* A restricted (Level 2) record on the map: a soft blurred area at its generalised position, never
-   a precise dot (app/pages/_shared/map-search/sa-map.tsx, `SAMapMarker.fuzzyRadiusKm`). The blur is
-   an SVG filter reference rather than a CSS `blur()` function so it renders the same on Leaflet's
-   SVG paths in every browser; the filter itself is defined once in `sa-map.tsx`. */
+/* Leaflet sets its own text (the scale bar and the attribution) in Helvetica with its stock blue and
+   grey, which showed up as a second typeface inside the product's Barlow. Every map now takes the
+   surrounding font and the DEW text tokens (CONTRACTS 2.2, 2.1). The `body` prefix wins over
+   leaflet.css, which loads after this file. */
+body .leaflet-container {
+  font-family: inherit;
+}
+body .leaflet-container .leaflet-control-attribution,
+body .leaflet-container .leaflet-control-scale-line {
+  color: var(--ui-text-tertiary);
+}
+body .leaflet-container .leaflet-control-attribution a {
+  color: var(--ui-text-brand-secondary);
+}
+
+/* A restricted (Level 2) record on the map: the flat square block of the generalisation grid it is in,
+   never a precise dot and never a blurred blob (app/pages/_shared/map-search/sa-map.tsx,
+   `SAMapMarker.fuzzyBlock`). */
 .map-fuzzy-area {
-  filter: url(#map-fuzzy-blur);
   cursor: pointer;
 }
 

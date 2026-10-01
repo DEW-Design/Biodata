@@ -292,6 +292,14 @@ export default function SelectPage() {
         <>
           <h2 className="text-balance">Combobox</h2>
           <p className="text-balance"><code>Select.ComboBox</code> - a searchable variant with a text input instead of a static trigger.</p>
+          <p className="text-balance">
+            The list floats in its own card under the field by default. Pass <code>listbox=&quot;inline&quot;</code> to draw it in place, straight under the field and
+            scrolling inside itself (<code>popoverSize</code> sets its height), for a ComboBox that already sits in a card or popup of its own - the
+            breadcrumb project switcher is one: a search box at the top of a popup, the list beneath, and a fixed bar below.
+            A <code>listboxFooter</code> in inline mode sits under the scrolling list, not inside it, so it stays on screen; it is
+            part of the ComboBox&apos;s own region, so a screen reader still hears the list and its buttons while the list is open
+            (a ComboBox hides everything outside its field and list), and a button in it is an ordinary button in the tab order.
+          </p>
           <Section label="Select">
             <div className="w-64">
               <Select.ComboBox label="Role" placeholder="Search roles" items={roleItems} shortcut={false}>

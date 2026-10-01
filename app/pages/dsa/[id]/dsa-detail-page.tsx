@@ -26,7 +26,7 @@ function DsaDeepDive() {
   const roleHref = useRoleHref();
 
   return (
-    <DsaShell breadcrumbCurrent={id}>
+    <DsaShell recordId={id} breadcrumbCurrent={id}>
       {dsa ? (
         <DsaDetail
           key={dsa.id}

@@ -4,7 +4,7 @@ import { useState, type Key as ReactKey } from "react";
 import { useRouter } from "next/navigation";
 import type { Key, Selection } from "react-aria-components";
 import { parseDate } from "@internationalized/date";
-import { Eye, EyeOff, Plus, RefreshCcw01, Trash01 } from "@untitledui/icons";
+import { ArrowLeft, Eye, EyeOff, Plus, RefreshCcw01, Trash01 } from "@untitledui/icons";
 import { Accordion, type AccordionItemType } from "@/components/base/accordion/accordion";
 import { AlertFullWidth } from "@/components/application/alerts/alerts";
 import { Badge } from "@/components/base/badges/badges";
@@ -366,7 +366,7 @@ export function DsaForm({
           title={DSA_SECTIONS[tab].title}
           badge={
             initial && (
-              <Badge size="md" color={dsaStatusMeta[initial.status].badgeColor}>
+              <Badge size="sm" color={dsaStatusMeta[initial.status].badgeColor}>
                 {dsaStatusMeta[initial.status].label}
               </Badge>
             )
@@ -490,7 +490,7 @@ export function DsaForm({
 )}
         </FormPage>
 
-      <DestructiveModal
+      <DestructiveModal confirmIcon={Trash01} cancelIcon={ArrowLeft}
         isOpen={confirmBack}
         onOpenChange={setConfirmBack}
         title="Discard your changes?"
@@ -507,7 +507,7 @@ export function DsaForm({
           onBack();
         }}
       />
-      <DestructiveModal
+      <DestructiveModal confirmIcon={RefreshCcw01}
         isOpen={regenerateId !== null}
         onOpenChange={(open) => !open && setRegenerateId(null)}
         title="Re-generate tokens?"
@@ -518,7 +518,7 @@ export function DsaForm({
           setRegenerateId(null);
         }}
       />
-      <DestructiveModal
+      <DestructiveModal confirmIcon={Trash01}
         isOpen={removeId !== null}
         onOpenChange={(open) => !open && setRemoveId(null)}
         title="Remove this system?"

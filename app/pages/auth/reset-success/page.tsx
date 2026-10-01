@@ -2,7 +2,7 @@
 
 import { Suspense } from "react";
 import { useSearchParams } from "next/navigation";
-import { CheckCircle } from "@untitledui/icons";
+import { CheckCircle, LogIn01 } from "@untitledui/icons";
 import { FeaturedIcon } from "@/components/foundations/featured-icon/featured-icon";
 import { Button } from "@/components/base/buttons/button";
 import { AuthShell, AuthWordmark } from "@/app/pages/auth/_shared/auth-shell";
@@ -22,7 +22,7 @@ function ResetSuccessContent() {
         <p className="text-xl font-semibold text-primary">Password Reset</p>
         <p className="text-base text-secondary">Your password has been successfully reset.</p>
       </div>
-      <Button color="primary" size="md" className="w-full" href={`/pages/auth/login?email=${encodeURIComponent(email)}`}>
+      <Button iconLeading={LogIn01} color="primary" size="md" className="w-full" href={`/pages/auth/login?email=${encodeURIComponent(email)}`}>
         Sign in with new password
       </Button>
     </AuthShell>

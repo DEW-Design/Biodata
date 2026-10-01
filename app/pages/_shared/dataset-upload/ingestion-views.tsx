@@ -1,14 +1,13 @@
 "use client";
 
 import type { ReactNode } from "react";
-import { Dialog, DialogTrigger, Focusable } from "react-aria-components";
-import { AlertCircle, ChevronDown, CheckCircle, Eye, File06, RefreshCcw01, UploadCloud02 } from "@untitledui/icons";
+import { Dialog, DialogTrigger } from "react-aria-components";
+import { AlertCircle, BarChart01, CheckCircle, ChevronDown, Eye, File06, RefreshCcw01, UploadCloud02 } from "@untitledui/icons";
 import { Badge, type BadgeColor } from "@/components/base/badges/badges";
 import { Button } from "@/components/base/buttons/button";
 import { ProgressBarBase } from "@/components/base/progress-indicators/progress-indicators";
 import { Popover } from "@/components/base/select/popover";
 import { cx } from "@/utils/cx";
-import { Tooltip } from "@/components/base/tooltip/tooltip";
 import { Progress } from "@/components/application/progress-steps/progress-steps";
 import { STAGES, type Reason, type RunView } from "@/app/pages/_shared/dataset-upload/ingestion";
 import { useRoleHref } from "@/lib/use-role-href";
@@ -79,7 +78,7 @@ function ReasonList({ reasons }: { reasons: Reason[] }) {
   );
 }
 
-function ReasonActions({ view, projectId, onRetry }: { view: RunView; projectId: string; onRetry: () => void }) {
+function ReasonActions({ view, projectId, datasetId, onRetry }: { view: RunView; projectId: string; datasetId?: string; onRetry: () => void }) {
   const roleHref = useRoleHref();
   const system = isSystemFault(view);
   return (
@@ -95,27 +94,21 @@ function ReasonActions({ view, projectId, onRetry }: { view: RunView; projectId:
           Upload a corrected file
         </Button>
       )}
-      {/* Every ingestion that doesn't fully succeed goes straight to Reports as well, error file
-          included. Reports isn't built yet, so this is disabled rather than a link that goes nowhere. */}
-      <Tooltip title="Coming soon" description="This is recorded in Reports automatically, with the error file.">
-        <Focusable>
-          <span className="inline-flex">
-            <Button color="secondary" size="sm" isDisabled>
-              View in Reports
-            </Button>
-          </span>
-        </Focusable>
-      </Tooltip>
+      {/* Every ingestion that doesn't fully succeed is in Reports as well, error file included: the
+          Data Ingestion Report, opened on this dataset's row when we know which one it is. */}
+      <Button iconLeading={BarChart01} color="secondary" size="sm" href={roleHref(datasetId ? `/pages/reports/data-ingestion?q=${datasetId}` : "/pages/reports/data-ingestion")}>
+        View in Reports
+      </Button>
     </div>
   );
 }
 
-export function IngestionProblems({ view, projectId, onRetry }: { view: RunView; projectId: string; onRetry: () => void }) {
+export function IngestionProblems({ view, projectId, datasetId, onRetry }: { view: RunView; projectId: string; datasetId?: string; onRetry: () => void }) {
   if (view.reasons.length === 0) return null;
   return (
     <div className="flex flex-col gap-4">
       <ReasonList reasons={view.reasons} />
-      <ReasonActions view={view} projectId={projectId} onRetry={onRetry} />
+      <ReasonActions view={view} projectId={projectId} datasetId={datasetId} onRetry={onRetry} />
     </div>
   );
 }
@@ -138,12 +131,15 @@ function SpinningIcon(props: { className?: string }) {
 export function IngestionChip({
   view,
   projectId,
+  datasetId,
   onRetry,
   title = "Dataset ingestion",
   datasetStatus,
 }: {
   view: RunView;
   projectId: string;
+  /** The dataset being ingested, so "View in Reports" opens on its row. */
+  datasetId?: string;
   onRetry: () => void;
   /** The popover heading. */
   title?: string;
@@ -208,7 +204,7 @@ export function IngestionChip({
           />
           {view.done && (view.failed || view.partial) && (
             <div className="flex flex-col gap-4 border-t border-secondary pt-4">
-              <IngestionProblems view={view} projectId={projectId} onRetry={onRetry} />
+              <IngestionProblems view={view} projectId={projectId} datasetId={datasetId} onRetry={onRetry} />
             </div>
           )}
           <ul className="m-0 flex list-none flex-col gap-1 border-t border-secondary p-0 pt-3 text-xs text-tertiary">

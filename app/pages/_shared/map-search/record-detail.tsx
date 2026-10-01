@@ -3,7 +3,7 @@
 import type { Key, ReactNode } from "react";
 import { useMemo, useState } from "react";
 import dynamic from "next/dynamic";
-import { ChevronSelectorVertical, Lock01 } from "@untitledui/icons";
+import { ArrowNarrowRight, ChevronSelectorVertical, Key01, Lock01 } from "@untitledui/icons";
 import { Accordion, type AccordionItemType } from "@/components/base/accordion/accordion";
 import { Avatar } from "@/components/base/avatar/avatar";
 import { BadgeWithDot } from "@/components/base/badges/badges";
@@ -11,7 +11,7 @@ import { Button } from "@/components/base/buttons/button";
 import { Tooltip, TooltipTrigger } from "@/components/base/tooltip/tooltip";
 import { useRoleHref } from "@/lib/use-role-href";
 import { useUserRole } from "@/lib/use-user-role";
-import { obfuscateCoordinate } from "./geo";
+import { blockCentre, generalisedBlock, type GeoBlock } from "./geo";
 import { projectDetailsPath, projectRecordPath } from "@/app/pages/_shared/project-routes";
 import { generalisedKm } from "./record-access";
 import type { UserRole } from "@/lib/user-role";
@@ -190,16 +190,17 @@ function ObserversSection({ names = [] }: { names?: (string | undefined)[] }) {
   return <FieldStack fields={[0, 1, 2].map((i) => ({ label: `Observer ${i + 1}`, value: names[i] ?? DASH }))} />;
 }
 
-/** The map preview for a restricted (Level 2) record: a soft, blurred area around the
- *  generalised position, never a pin on the real one. The fit is steered by a hidden circle a
- *  little larger than the area so the whole blur is in view. */
-function RestrictedLocationMapPreview({ lat, lon, radiusKm, color }: { lat: number; lon: number; radiusKm: number; color?: string }) {
+/** The map preview for a restricted (Level 2) record: the square block of the grid that contains it, flat and
+ *  with no centre mark, never a pin on the real position. The fit is steered by a hidden circle a little larger
+ *  than the block so the whole block is in view. */
+function RestrictedLocationMapPreview({ block, blockKm, color }: { block: GeoBlock; blockKm: number; color?: string }) {
+  const centre = blockCentre(block);
   return (
     <div className="h-48 w-full overflow-hidden rounded-lg border border-secondary">
       <LocationMap
-        boundaries={[{ id: "record-area", kind: "circle", center: [lat, lon], radiusKm: radiusKm * 2 }]}
+        boundaries={[{ id: "record-area", kind: "circle", center: centre, radiusKm: blockKm * 1.5 }]}
         showBoundaries={false}
-        markers={[{ id: "record-area", position: [lat, lon], label: `Within about ${radiusKm} km of here`, fuzzyRadiusKm: radiusKm, color }]}
+        markers={[{ id: "record-area", position: centre, label: `Somewhere in this ${blockKm} km block`, fuzzyBlock: block, color }]}
         onBoundaryAdd={() => {}}
         activeDrawTool={null}
         onDrawToolChange={() => {}}
@@ -216,45 +217,38 @@ function RequestAccessButton() {
   const roleHref = useRoleHref();
   const href = role === "public-user" ? "/pages/auth/signup" : roleHref("/pages/dla/new");
   return (
-    <Button color="secondary" size="sm" href={href}>
+    <Button iconLeading={Key01} color="secondary" size="sm" href={href}>
       {role === "public-user" ? "Sign up to request access" : "Request access"}
     </Button>
   );
 }
 
-/** A restricted record's coordinates: the generalised values only (the real ones never reach the
- *  page), blurred behind a padlock with a way to request access. */
-function RestrictedLocationDetails({ lat, lon, radiusKm }: { lat: number; lon: number; radiusKm: number }) {
+/** A restricted record's location: no coordinates at all, not even blurred ones (a CSS blur leaves the text in the
+ *  page), only that it is withheld and how big the block on the map is, with a way to request access. */
+function RestrictedLocationDetails({ blockKm }: { blockKm: number }) {
   return (
-    <div className="relative overflow-hidden rounded-lg">
-      <div aria-hidden className="pointer-events-none blur-[5px] select-none">
-        <LocationDetailsTable lat={lat} lon={lon} />
-      </div>
-      <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 p-4 text-center">
-        <span className="flex size-8 items-center justify-center rounded-full bg-primary shadow-xs ring-1 ring-secondary">
-          <Lock01 className="size-4 text-fg-quaternary" />
-        </span>
-        <p className="text-sm font-medium text-balance text-primary">Location restricted</p>
-        <p className="max-w-xs text-xs text-balance text-tertiary">
-          This is a sensitive species, so its location is shown only to within about {radiusKm} km.
-        </p>
-        <RequestAccessButton />
-      </div>
+    <div className="flex flex-col items-start gap-2 rounded-lg border border-secondary bg-secondary p-4">
+      <span className="flex size-8 items-center justify-center rounded-full bg-primary shadow-xs ring-1 ring-secondary">
+        <Lock01 className="size-4 text-fg-quaternary" />
+      </span>
+      <p className="text-sm font-medium text-balance text-primary">Location restricted</p>
+      <p className="max-w-xs text-xs text-balance text-tertiary">This is a sensitive species, so the map shows only the {blockKm} km block it is in, and no coordinates.</p>
+      <RequestAccessButton />
     </div>
   );
 }
 
 /** Every record type's Location Information - the map, then the shared Location Details
  *  coordinate table (the same format everywhere: Projects, Events, Occurrences, Observations),
- *  then the remaining location fields. A restricted (Level 2) record shows a blurred area and
- *  blurred, generalised coordinates instead (`restrictedKm`). */
+ *  then the remaining location fields. A restricted (Level 2) record shows a block and no
+ *  coordinates instead (`restrictedKm`). */
 function LocationInformationSection({ lat, lon, restrictedKm, group }: { lat: number; lon: number; restrictedKm?: number | null; group?: SpeciesGroup }) {
   if (restrictedKm) {
-    const area = obfuscateCoordinate(lat, lon, restrictedKm);
+    const block = generalisedBlock(lat, lon, restrictedKm);
     return (
       <div className="flex flex-col gap-4">
-        <RestrictedLocationMapPreview lat={area.lat} lon={area.lon} radiusKm={restrictedKm} color={group ? SPECIES_GROUP_COLOR[group] : undefined} />
-        <Field label="Location Details" value={<RestrictedLocationDetails lat={area.lat} lon={area.lon} radiusKm={restrictedKm} />} />
+        <RestrictedLocationMapPreview block={block} blockKm={restrictedKm} color={group ? SPECIES_GROUP_COLOR[group] : undefined} />
+        <Field label="Location Details" value={<RestrictedLocationDetails blockKm={restrictedKm} />} />
         <PlaceholderFields
           labels={["IBRA Region", "IBRA Sub Region", "Location Method", "Datum", "Reliability", "Sample Site Dimensions", "Location Comment"]}
         />
@@ -781,7 +775,7 @@ function GoToProjectButton({ record }: { record: DetailRecord }) {
   const path = projectDetailPath(record);
   if (!path) return null;
   return (
-    <Button color="secondary" size="sm" href={roleHref(path)}>
+    <Button iconTrailing={ArrowNarrowRight} color="secondary" size="sm" href={roleHref(path)}>
       Go to project
     </Button>
   );

@@ -7,7 +7,7 @@ import { cx } from "@/utils/cx";
 // little of the map as possible (per the designer). Where the map is too narrow for one line (under
 // 680px, measured against the nearest @container, the map's panel layer) it becomes a two-column
 // grid under the title instead of a ragged wrap. Only what is actually on the map is
-// listed. A restricted record's blurred area gets its own row, since a soft blob is not otherwise
+// listed. A restricted record's block gets its own row, since a flat square is not otherwise
 // self-explanatory. Composed from tokens (no DEW legend component exists); it sits on the map like
 // the zoom buttons and is not interactive.
 
@@ -16,7 +16,7 @@ export interface LegendItem {
   label: string;
   /** A token var, e.g. `var(--color-utility-blue-500)`. */
   color: string;
-  /** Draw the swatch soft and blurred, like a restricted area on the map. */
+  /** Draw the swatch as a flat square, like a restricted block on the map. */
   fuzzy?: boolean;
 }
 
@@ -27,7 +27,7 @@ export function MapLegend({ title, items, className }: { title: string; items: L
       role="group"
       aria-label={`Map key: ${title}`}
       className={cx(
-        "pointer-events-none flex max-w-full items-center gap-x-4 gap-y-1.5 rounded-lg border border-secondary bg-primary px-3 py-2 shadow-sm @max-[679px]:grid @max-[679px]:grid-cols-2",
+        "pointer-events-none flex max-w-full flex-wrap items-center gap-x-4 gap-y-1.5 rounded-lg border border-secondary bg-primary px-3 py-2 shadow-sm @max-[679px]:grid @max-[679px]:grid-cols-2",
         className,
       )}
     >
@@ -38,7 +38,7 @@ export function MapLegend({ title, items, className }: { title: string; items: L
           <li key={item.id} className="flex items-center gap-1.5 whitespace-nowrap">
             <span
               aria-hidden
-              className={cx("shrink-0 rounded-full", item.fuzzy ? "size-3.5 opacity-60 blur-[1.5px]" : "size-3 ring-2 ring-[var(--ui-bg-primary)] shadow-xs")}
+              className={cx("shrink-0", item.fuzzy ? "size-3.5 rounded-[2px] opacity-60" : "size-3 rounded-full ring-2 ring-[var(--ui-bg-primary)] shadow-xs")}
               style={{ backgroundColor: item.color }}
             />
             <span className="text-sm text-secondary">{item.label}</span>

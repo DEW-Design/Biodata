@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { Dialog, Modal, ModalFooter, ModalHeader, ModalOverlay } from "@/components/application/modals/modal";
 import { Button } from "@/components/base/buttons/button";
 import { useRoleHref } from "@/lib/use-role-href";
+import { LogIn01, UserPlus01 } from "@untitledui/icons";
 
 // The moment of delight, for the two header actions ("Add project"/"Upload dataset") that need a
 // signed-in account: a guest used to just not see these buttons at all - honest, but a dead end
@@ -48,10 +49,10 @@ export function SignUpPromptModal({
           {/* The shared modal anatomy (Untitled UI's stacked modal). */}
           <ModalHeader icon={icon} title={title} description={description} />
           <ModalFooter>
-            <Button color="secondary" size="md" onClick={() => respond("/pages/auth/login")}>
+            <Button iconLeading={LogIn01} color="secondary" size="md" onClick={() => respond("/pages/auth/login")}>
               Log in
             </Button>
-            <Button color="primary" size="md" onClick={() => respond("/pages/auth/signup")}>
+            <Button iconLeading={UserPlus01} color="primary" size="md" onClick={() => respond("/pages/auth/signup")}>
               Sign up
             </Button>
           </ModalFooter>

@@ -14,6 +14,7 @@ import type { ComponentType, ReactNode } from "react";
 import { AnimatePresence, motion } from "motion/react";
 import { Button } from "@/components/base/buttons/button";
 import { cx } from "@/utils/cx";
+import { ArrowLeft, ArrowRight } from "@untitledui/icons";
 
 export function TypeformCard({
     cardKey,
@@ -101,11 +102,11 @@ export function TypeformCard({
 
                         <div className="flex flex-wrap items-center gap-3 pt-2">
                             {showBack && onBack && (
-                                <Button type="button" color="secondary" onClick={onBack}>
+                                <Button iconLeading={ArrowLeft} type="button" color="secondary" onClick={onBack}>
                                     Back
                                 </Button>
                             )}
-                            <Button type="button" color="primary" isDisabled={nextDisabled} onClick={onNext}>
+                            <Button iconTrailing={ArrowRight} type="button" color="primary" isDisabled={nextDisabled} onClick={onNext}>
                                 {nextLabel}
                             </Button>
                         </div>

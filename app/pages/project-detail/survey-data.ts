@@ -1,4 +1,5 @@
-// The survey records for option 3 of the project detail page (route: /pages/project-detail/option-2).
+// The survey records for Adelaide Hills Bushland Survey, the hand-written seed of the project page template
+// (project-seed.ts). Every other project's records are built from Explore's data instead.
 //
 // One project, Adelaide Hills Bushland Survey (BD-5039), modelled the way a Darwin Core user reads a
 // survey: Events nest under the Site (Site > Visit, and Site > sampling event; a Visit holds no events), Occurrences sit under the sampling event that
@@ -18,6 +19,7 @@
 
 import type { Artefact } from "@/app/pages/_shared/artefact-lightbox";
 import type { GeoExtentValue } from "@/app/pages/project-registration/types";
+import type { SpeciesGroup } from "@/app/pages/_shared/map-search/search-data";
 import { NSX_SPECIES, ibraFor, type FieldType, type TrapEntry } from "./field-schema";
 import { FACTORS_FOR, type FactorId, type LandscapeInputs } from "./landscape";
 
@@ -96,10 +98,15 @@ export interface SurveyRecord {
   lat: number;
   lon: number;
   scientificName?: string;
+  /** Taxonomy for an occurrence whose species is not in the NSX list (field-schema.ts); the Species tab falls back to these. */
+  family?: string;
+  group?: SpeciesGroup;
   /** One short line shown under the name in the tree, table and inspector. */
   summary: string;
   /** Set when a project restriction generalises this record's location. */
   locationNote?: string;
+  /** With `locationNote`: the width in km of the grid block the record is shown as (its position is never shown). */
+  blockKm?: number;
   /** Where the record is, as chosen in the location picker (shapefile, drawn shape, list or coordinates). */
   location?: GeoExtentValue;
   sections: MetaSection[];

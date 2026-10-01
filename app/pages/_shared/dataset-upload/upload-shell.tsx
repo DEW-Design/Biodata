@@ -13,7 +13,6 @@ import { MobileNavTrigger } from "@/app/pages/_shared/mobile-nav";
 import { sectionIcons } from "@/app/pages/_shared/nav-icons";
 import { PrimaryRail } from "@/app/pages/_shared/primary-rail";
 import { PrototypeTools } from "@/app/_prototype-tools/prototype-tools";
-import { SidebarFooterLinks } from "@/app/pages/_shared/sidebar-footer-links";
 import { projectDetailsPath } from "@/app/pages/_shared/project-routes";
 import type { SearchEvent } from "@/app/pages/_shared/map-search/search-data";
 import { keyHref, navForRole, type NavNode } from "@/lib/registered-user-nav";
@@ -114,7 +113,6 @@ export function UploadShell({ project, children }: { project?: SearchEvent; chil
               <p className="mb-3 text-xs font-semibold tracking-wide text-quaternary uppercase">Upload dataset</p>
             </div>
           )}
-          <SidebarFooterLinks />
         </aside>
 
         <main className="flex min-h-0 flex-1 flex-col overflow-hidden">

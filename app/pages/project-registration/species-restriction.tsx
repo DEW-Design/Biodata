@@ -10,7 +10,7 @@
 // editor, whose value control per concept matches Figma's own field type (see concept-rows.tsx).
 
 import { useState } from "react";
-import { Plus, Trash01, ShieldTick } from "@untitledui/icons";
+import { Plus, Save01, ShieldTick, Trash01, XClose } from "@untitledui/icons";
 import { AlertFullWidth } from "@/components/application/alerts/alerts";
 import { TextArea } from "@/components/base/textarea/textarea";
 import { Button } from "@/components/base/buttons/button";
@@ -116,10 +116,10 @@ function SpeciesPickerPanel({
                     />
 
                     <div className="flex justify-end gap-3 border-t border-secondary pt-4">
-                        <Button color="secondary" onClick={() => onOpenChange(false)}>
+                        <Button iconLeading={XClose} color="secondary" onClick={() => onOpenChange(false)}>
                             Cancel
                         </Button>
-                        <Button
+                        <Button iconLeading={Save01}
                             color="primary"
                             isDisabled={!canSave}
                             onClick={() => {

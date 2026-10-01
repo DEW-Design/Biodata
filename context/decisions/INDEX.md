@@ -233,3 +233,59 @@ Not imported into every session on purpose: read or grep it when a task needs hi
 - [2026-09-29] bc8ad0fb ("Project detail Option 2 (v3 records), flagged concepts review across projects, My/All projects... - `2026-09-29-63-bc8ad0fb-project-detail-option-2-v3-records-flagged.md`
 - [2026-09-30] Project-detail Option 3 (About, Records and Species) removed, per direct instruction ahead of merging... - `2026-09-30-01-project-detail-option-3-about-records-and-species.md`
 - [2026-09-30] sai-wips reconciled with origin's rule-loading restructure, pushed, merged into main - `2026-09-30-02-sai-wips-reconciled-with-origin-s-rule-loading.md`
+- [2026-09-30] Rail order: Template Finder now sits before Reports - `2026-09-30-03-rail-order-template-finder-now-sits-before-reports.md`
+- [2026-09-30] Explore option 1 and option 2 swapped - `2026-09-30-04-explore-option-1-and-option-2-swapped.md`
+- [2026-09-30] One project page template for every project, in Option 1's look - `2026-09-30-05-one-project-page-template-for-every-project-in.md`
+- [2026-09-30] Project guides hidden for BioData Admin, Option 2 kept - `2026-09-30-06-project-guides-hidden-for-biodata-admin-option-2.md`
+- [2026-09-30] Cognitive load audit of project details, and three shell changes approved - `2026-09-30-07-cognitive-load-audit-of-project-details-and-three.md`
+- [2026-09-30] Project page shell: no column 2, breadcrumb project switcher, legal links in the rail - `2026-09-30-08-project-page-shell-no-column-2-breadcrumb-project.md`
+- [2026-09-30] Project page feedback: view toggles right, standard alert, legal icon hover - `2026-09-30-09-project-page-feedback-view-toggles-right-standard-alert.md`
+- [2026-09-30] Dropdown menus sit 12px from their trigger - `2026-09-30-10-dropdown-menus-sit-12px-from-their-trigger.md`
+- [2026-09-30] Breadcrumb project switcher is now the searchable ComboBox - `2026-09-30-11-breadcrumb-project-switcher-is-now-the-searchable-combobox.md`
+- [2026-09-30] Project switcher: a popup with the ComboBox search inside, not a morphing crumb - `2026-09-30-12-project-switcher-a-popup-with-the-combobox-search.md`
+- [2026-09-30] Add menu: User first - `2026-09-30-13-add-menu-user-first.md`
+- [2026-09-30] Project page typography pass: one hero, readable small text, one font - `2026-09-30-14-project-page-typography-pass-one-hero-readable-small.md`
+- [2026-09-30] Proposal: the faint grey text token (text-quaternary) fails contrast - `2026-09-30-15-proposal-the-faint-grey-text-token-text-quaternary.md`
+- [2026-09-30] Faint grey text token left as is - `2026-09-30-16-faint-grey-text-token-left-as-is.md`
+- [2026-09-30] Data Ingestion Report Pre-Flight Validation built under Reports - `2026-09-30-17-data-ingestion-report-pre-flight-validation-built-under.md`
+- [2026-09-30] Reports landing page with cards; the ingestion report is one of them - `2026-09-30-18-reports-landing-page-with-cards-the-ingestion-report.md`
+- [2026-09-30] Attribute filter on the Data Ingestion Report - `2026-09-30-19-attribute-filter-on-the-data-ingestion-report.md`
+- [2026-09-30] Empty tables get a real empty state - `2026-09-30-20-empty-tables-get-a-real-empty-state.md`
+- [2026-09-30] Filter options lab for the Data Ingestion Report - `2026-09-30-21-filter-options-lab-for-the-data-ingestion-report.md`
+- [2026-09-30] Filter lab option B: pills keep the toolbar one line - `2026-09-30-22-filter-lab-option-b-pills-keep-the-toolbar.md`
+- [2026-10-01] Explore drops column 2, search areas live in the card - `2026-10-01-01-explore-drops-column-2-search-areas-live-in.md`
+- [2026-10-01] Result card badges sit beside the name - `2026-10-01-02-result-card-badges-sit-beside-the-name.md`
+- [2026-10-01] Restricted records are shown as a grid block - `2026-10-01-03-restricted-records-are-shown-as-a-grid-block.md`
+- [2026-10-01] Areas rows on one line and the banner pattern documented - `2026-10-01-04-areas-rows-on-one-line-and-the-banner.md`
+- [2026-10-01] Add area stays primary - `2026-10-01-05-add-area-stays-primary.md`
+- [2026-10-01] Eight more reports built on one shared report table - `2026-10-01-06-eight-more-reports-built-on-one-shared-report.md`
+- [2026-10-01] Scope switches list All before My - `2026-10-01-07-scope-switches-list-all-before-my.md`
+- [2026-10-01] Every column 2 item has an icon - `2026-10-01-08-every-column-2-item-has-an-icon.md`
+- [2026-10-01] Drop the every-area-is-hidden hint - `2026-10-01-09-drop-the-every-area-is-hidden-hint.md`
+- [2026-10-01] User Management tabs read All users, All roles, All permissions - `2026-10-01-10-user-management-tabs-read-all-users-all-roles.md`
+- [2026-10-01] What is a project moves above the list as an explainer card - `2026-10-01-11-what-is-a-project-moves-above-the-list.md`
+- [2026-10-01] Explore empty card hint typography review - `2026-10-01-12-explore-empty-card-hint-typography-review.md`
+- [2026-10-01] Every action button carries an icon - `2026-10-01-13-every-action-button-carries-an-icon.md`
+- [2026-10-01] What is a project becomes a walkthrough modal - `2026-10-01-14-what-is-a-project-becomes-a-walkthrough-modal.md`
+- [2026-10-01] Reports open like the project page and switch from the breadcrumb - `2026-10-01-15-reports-open-like-the-project-page-and-switch.md`
+- [2026-10-01] Modal and shared component buttons carry icons - `2026-10-01-16-modal-and-shared-component-buttons-carry-icons.md`
+- [2026-10-01] Tab icons lab - `2026-10-01-17-tab-icons-lab.md`
+- [2026-10-01] Reports card facts, a cards or table switch and one Reports name - `2026-10-01-18-reports-card-facts-a-cards-or-table-switch.md`
+- [2026-10-01] Project explainer walkthrough parked and removed from the Projects list - `2026-10-01-19-project-explainer-walkthrough-parked-and-removed-from-the.md`
+- [2026-10-01] Report counts move into the card and export into its menu - `2026-10-01-20-report-counts-move-into-the-card-and-export.md`
+- [2026-10-01] Explore search card keeps one width in every state - `2026-10-01-21-explore-search-card-keeps-one-width-in-every.md`
+- [2026-10-01] Status badges beside a page title are small - `2026-10-01-22-status-badges-beside-a-page-title-are-small.md`
+- [2026-10-01] Reports: column chooser, categories, favourites and last opened - `2026-10-01-23-reports-column-chooser-categories-favourites-and-last-opened.md`
+- [2026-10-01] Collection tables keep their column widths in every state - `2026-10-01-24-collection-tables-keep-their-column-widths-in-every.md`
+- [2026-10-01] Explore Map settings button removed - `2026-10-01-25-explore-map-settings-button-removed.md`
+- [2026-10-01] Table footer numbers use tabular figures and the footer stops moving - `2026-10-01-26-table-footer-numbers-use-tabular-figures-and-the.md`
+- [2026-10-01] Reports list fits a laptop window, favourites move into the row menu, pagination select fixed in the component - `2026-10-01-27-reports-list-fits-a-laptop-window-favourites-move.md`
+- [2026-10-01] Underline tabs carry icons - `2026-10-01-28-underline-tabs-carry-icons.md`
+- [2026-10-01] Filter values are searchable and bounded - `2026-10-01-29-filter-values-are-searchable-and-bounded.md`
+- [2026-10-01] Search fields clear with the design system icon, not the browser's - `2026-10-01-30-search-fields-clear-with-the-design-system-icon.md`
+- [2026-10-01] Filter contextual menu behaves like a macOS or iOS menu - `2026-10-01-31-filter-contextual-menu-behaves-like-a-macos-or.md`
+- [2026-10-01] Filter option A, the contextual menu, goes to production on every filtered table - `2026-10-01-32-filter-option-a-the-contextual-menu-goes-to.md`
+- [2026-10-01] Text editor (Tiptap) ingested: dependencies linked, dead classes and hex colours replaced, doc page added - `2026-10-01-33-text-editor-tiptap-ingested-dependencies-linked-dead-classes.md`
+- [2026-10-01] Text editor: colour picker and font family picker removed - `2026-10-01-34-text-editor-colour-picker-and-font-family-picker.md`
+- [2026-10-01] Button utility ingested: override, inventory, doc page - `2026-10-01-35-button-utility-ingested-override-inventory-doc-page.md`
+- [2026-10-01] Button utility aria-label fix, text-editor buttons moved onto ButtonUtility, typography re-check - `2026-10-01-36-button-utility-aria-label-fix-text-editor-buttons.md`

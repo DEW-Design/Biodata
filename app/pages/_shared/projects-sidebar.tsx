@@ -1,8 +1,9 @@
 "use client";
 
 // Column 2 of the Projects list and of project detail: one shared column, so the two read the same.
-// A scope switcher (My projects / All projects, the same vertical tabs as the DLA and DSA lists'
-// My requests / All requests), the Actions group, the project guides, then the footer links.
+// A scope switcher (All projects / My projects, the same vertical tabs as the DLA and DSA lists'
+// All requests / My requests) and the Actions group. What a project is, and the guides, sit above the list (`ExplainerCard`):
+// column 2 is navigation and actions only (CONTRACTS 3.10).
 //
 // The scope lives in the Projects list's URL (`?scope=mine|all`). On project detail the switcher
 // shows which list the project belongs to, and picking a scope opens the list in that scope.
@@ -11,8 +12,6 @@
 import { Folder, User01 } from "@untitledui/icons";
 import { Tab, TabList, Tabs } from "@/components/application/tabs/tabs";
 import { ProjectActions } from "@/app/pages/_shared/project-actions";
-import { ProjectsGuide } from "@/app/pages/_shared/projects-guide";
-import { SidebarFooterLinks } from "@/app/pages/_shared/sidebar-footer-links";
 import { useUserRole } from "@/lib/use-user-role";
 
 export type ProjectScope = "mine" | "all";
@@ -30,7 +29,8 @@ export function ProjectsSidebar({
   onScopeChange: (scope: ProjectScope) => void;
   sectionLabel?: string;
 }) {
-  const isPublicUser = useUserRole() === "public-user";
+  const role = useUserRole();
+  const isPublicUser = role === "public-user";
   return (
     <aside
       aria-label="Section"
@@ -55,18 +55,14 @@ export function ProjectsSidebar({
             fullWidth
             className="w-full"
           >
+            <Tab id="all" label="All projects" icon={Folder} />
             {!isPublicUser && (
               <Tab id="mine" label="My projects" icon={User01} />
             )}
-            <Tab id="all" label="All projects" icon={Folder} />
           </TabList>
           <ProjectActions sameForEveryone />
         </Tabs>
-        <div className="mt-6">
-          <ProjectsGuide />
-        </div>
       </div>
-      <SidebarFooterLinks />
     </aside>
   );
 }

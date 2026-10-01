@@ -9,7 +9,7 @@
 // object URL for the preview.
 
 import { useRef, useState, type DragEvent } from "react";
-import { Image01, Trash01, UploadCloud02 } from "@untitledui/icons";
+import { Image01, Trash01, Upload01, UploadCloud02 } from "@untitledui/icons";
 import { Button } from "@/components/base/buttons/button";
 import { cx } from "@/utils/cx";
 import type { OrgLogo } from "./types";
@@ -104,7 +104,7 @@ export function LogoUpload({ value, onChange, orgName }: { value: OrgLogo | null
                         <p className="truncate text-sm font-medium text-secondary">{value.fileName}</p>
                         <p className="text-sm text-tertiary">{formatSize(value.sizeBytes)}</p>
                     </div>
-                    <Button color="secondary" size="sm" onClick={() => inputRef.current?.click()}>
+                    <Button iconLeading={Upload01} color="secondary" size="sm" onClick={() => inputRef.current?.click()}>
                         Replace
                     </Button>
                     <Button color="secondary" size="sm" iconLeading={Trash01} aria-label="Remove logo" onClick={remove} />

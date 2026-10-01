@@ -14,7 +14,7 @@
 
 import { displayValue } from "./field-schema";
 import dynamic from "next/dynamic";
-import { createElement, useState, type FC, type ReactNode } from "react";
+import { createElement, useState, type ReactNode } from "react";
 import { ChevronDown, ChevronRight, Edit02, File06, Folder, InfoCircle, Maximize02, Plus, Trash01 } from "@untitledui/icons";
 import { Accordion } from "@/components/base/accordion/accordion";
 import { Badge } from "@/components/base/badges/badges";
@@ -22,10 +22,11 @@ import { Button } from "@/components/base/buttons/button";
 import { Dropdown } from "@/components/base/dropdown/dropdown";
 import { DestructiveModal } from "@/components/application/modals/modal";
 import { toast } from "@/components/application/toast/toast";
-import { Binoculars, Box, CalendarCheck2, ChartScatter, Footprints, Grid2x2, LocateFixed, MapPinned, Mountain, Route, ScanEye, Shapes, SquareDashed, Trees } from "lucide-react";
+import { recordIcon } from "@/app/pages/_shared/record-icons";
 import { SpeciesPhoto } from "@/app/pages/_shared/map-search/species-photo";
 import { speciesImage } from "@/app/pages/_shared/map-search/species-images";
 import { LocationDetailsTable } from "@/app/pages/_shared/location-details-table";
+import { recordMapShape } from "./record-map";
 import { artefactTypeMeta, type Artefact } from "@/app/pages/_shared/artefact-lightbox";
 import { cx } from "@/utils/cx";
 import { useEditStore } from "./edit-store";
@@ -42,38 +43,19 @@ export const KIND_LABEL: Record<RecordKind, string> = { event: "Event", occurren
 export const KIND_PLURAL: Record<RecordKind, string> = { event: "Events", occurrence: "Occurrences", observation: "Observations" };
 export const KIND_COLOR: Record<RecordKind, "brand" | "success" | "blue"> = { event: "brand", occurrence: "success", observation: "blue" };
 
-// Type icons for this page's records (lucide-react, per the designer: "find from online, no need to
-// stick with only the design system icons here"). One icon per type, and occurrences and observations
-// read differently: an occurrence is "found here" (a point, or a scatter of points for a population),
-// an observation is "looked at" (eye, binoculars) or what was looked at (land, community).
-const EVENT_ICON: Record<string, FC<{ className?: string }>> = {
-  Site: MapPinned,
-  Visit: CalendarCheck2,
-  Transect: Route,
-  Quadrat: Grid2x2,
-  Block: SquareDashed,
-  Ramble: Footprints,
-  Trap: Box,
-  "Custom event": Shapes,
-};
-const OCCURRENCE_ICON: Record<string, FC<{ className?: string }>> = { Individual: LocateFixed, Population: ChartScatter };
-const OBSERVATION_ICON: Record<string, FC<{ className?: string }>> = { Individual: ScanEye, Population: Binoculars, "Non-biotic": Mountain, Community: Trees };
-
-export function recordIcon(r: Pick<SurveyRecord, "kind" | "type">): FC<{ className?: string }> {
-  if (r.kind === "event") return EVENT_ICON[r.type] ?? Folder;
-  if (r.kind === "occurrence") return OCCURRENCE_ICON[r.type] ?? LocateFixed;
-  return OBSERVATION_ICON[r.type] ?? ScanEye;
-}
+// Type icons for this page's records live in `_shared/record-icons.ts`, one map for every screen that draws them.
+export { recordIcon };
 
 /**
  * The start of every record path: the project, as a folder icon and its ID (the same text identity
  * every other step shows, "SU00501"). It opens the project, like every other step opens its record.
  */
 export function ProjectCrumb({ title, onPress }: { title: string; onPress: () => void }) {
+  const { meta } = useEditStore();
   return (
     <button type="button" onClick={onPress} title={`Project: ${title}`} className="flex shrink-0 items-center gap-1 rounded px-1 py-0.5 text-tertiary hover:bg-secondary hover:text-primary">
       <Folder className="size-3.5 text-fg-quaternary" aria-hidden />
-      <span>BD-5039</span>
+      <span>{meta.code}</span>
       <span className="sr-only">(project)</span>
     </button>
   );
@@ -147,9 +129,9 @@ function SectionBody({ record, section }: { record: SurveyRecord; section: MetaS
       {section.withMap && (
         <>
           <div className="relative isolate h-40 overflow-hidden rounded-lg border border-secondary">
-            <LocationMap boundaries={[{ id: `pt-${record.id}`, kind: "circle", center: [lat, lon], radiusKm: record.locationNote ? 10 : 0.2 }]} onBoundaryAdd={() => {}} activeDrawTool={null} onDrawToolChange={() => {}} className="size-full" />
+            <LocationMap {...recordMapShape(record, lat, lon)} onBoundaryAdd={() => {}} activeDrawTool={null} onDrawToolChange={() => {}} className="size-full" />
           </div>
-          <LocationDetailsTable lat={lat} lon={lon} />
+          {!record.locationNote && <LocationDetailsTable lat={lat} lon={lon} />}
         </>
       )}
       {section.rows && <Rows section={{ ...section, rows: section.rows.filter((r) => r.type !== "measurements") }} />}
@@ -163,7 +145,7 @@ function RecordLink({ record, onSelect }: { record: SurveyRecord; onSelect: (id:
     <button type="button" onClick={() => onSelect(record.id)} className="flex w-full items-center gap-2.5 rounded-md px-2 py-1.5 text-left hover:bg-secondary">
       <RecordIcon record={record} className="size-4 shrink-0 text-fg-quaternary" />
       <span className="min-w-0 flex-1 truncate text-sm text-primary">{record.name}</span>
-      <span className="shrink-0 text-xs text-quaternary">{record.type}</span>
+      <span className="shrink-0 text-xs text-tertiary">{record.type}</span>
     </button>
   );
 }
@@ -300,7 +282,7 @@ export function RecordInspector({
 
       <p className="text-sm text-balance text-tertiary">{typeDescription(record)}.</p>
       {photo && (
-        <p className="-mt-2 text-xs text-quaternary">
+        <p className="-mt-2 text-xs text-tertiary">
           Photo:{" "}
           <a href={photo.sourceUrl} target="_blank" rel="noreferrer" className="underline hover:text-tertiary">
             {photo.creator}, {photo.licence}, via ALA
@@ -331,7 +313,7 @@ export function RecordInspector({
             <button key={a.id} type="button" onClick={() => onOpenArtefact(a)} className="flex w-full items-center gap-2.5 rounded-md px-2 py-1.5 text-left hover:bg-secondary">
               {createElement(artefactTypeMeta[a.type].icon, { className: "size-4 shrink-0 text-fg-quaternary" })}
               <span className="min-w-0 flex-1 truncate text-sm text-primary">{a.title}</span>
-              <span className="shrink-0 text-xs text-quaternary">{a.size}</span>
+              <span className="shrink-0 text-xs text-tertiary">{a.size}</span>
             </button>
           ))}
         </div>
@@ -356,7 +338,7 @@ export function RecordInspector({
 
       {editing && <RecordDrawer key={`edit-${record.id}`} record={record} mode="edit" focusSection={editing} onClose={() => setEditing(null)} onSaved={() => setEditing(null)} />}
       {add.drawer}
-      <DestructiveModal
+      <DestructiveModal confirmIcon={Trash01}
         isOpen={confirmDelete}
         onOpenChange={setConfirmDelete}
         title={`Delete ${record.name}?`}
@@ -381,7 +363,7 @@ export function RecordInspector({
 
 // Shown when the project itself is selected: what the survey holds, one click from each part.
 function ProjectSummary({ onSelect, onAdd, addDrawer, fullscreenButton }: { onSelect: (id: string | null) => void; onAdd: (o: ChildOption) => void; addDrawer: ReactNode; fullscreenButton: ReactNode }) {
-  const { records, canEdit, project } = useEditStore();
+  const { records, canEdit, project, meta } = useEditStore();
   const kinds: RecordKind[] = ["event", "occurrence", "observation"];
   return (
     <div className="flex flex-col gap-5 p-5">
@@ -394,7 +376,7 @@ function ProjectSummary({ onSelect, onAdd, addDrawer, fullscreenButton }: { onSe
             Project
           </Badge>
           <h2 className="text-lg font-semibold text-primary">{project.details.shortTitle}</h2>
-          <p className="text-xs text-tertiary">BD-5039 · {records.length} records</p>
+          <p className="text-xs text-tertiary">{meta.code} · {records.length} records</p>
         </div>
         <div className="ml-auto">{fullscreenButton}</div>
       </div>
@@ -415,14 +397,14 @@ function ProjectSummary({ onSelect, onAdd, addDrawer, fullscreenButton }: { onSe
                 <button key={t} type="button" onClick={() => onSelect(first.id)} className="flex w-full items-center gap-2.5 rounded-md px-2 py-1.5 text-left hover:bg-secondary">
                   <RecordIcon record={first} className="size-4 shrink-0 text-fg-quaternary" />
                   <span className="min-w-0 flex-1 text-sm text-primary">{t}</span>
-                  <span className="text-xs text-quaternary tabular-nums">{count}</span>
+                  <span className="text-xs text-tertiary tabular-nums">{count}</span>
                 </button>
               );
             })}
           </div>
         );
       })}
-      <p className="flex items-center gap-1.5 text-xs text-quaternary">
+      <p className="flex items-center gap-1.5 text-xs text-tertiary">
         <File06 className="size-3.5" />
         Attachments are listed on the record they belong to.
       </p>

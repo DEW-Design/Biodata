@@ -17,12 +17,12 @@ import { AppHeader } from "@/app/pages/_shared/app-header";
 import { MobileNavTrigger } from "@/app/pages/_shared/mobile-nav";
 import { PrimaryRail } from "@/app/pages/_shared/primary-rail";
 import { PrototypeTools } from "@/app/_prototype-tools/prototype-tools";
-import { SidebarFooterLinks } from "@/app/pages/_shared/sidebar-footer-links";
 import { sectionIcons } from "@/app/pages/_shared/nav-icons";
 import { keyHref, navForRole, type NavNode } from "@/lib/registered-user-nav";
 import { useRoleHref } from "@/lib/use-role-href";
 import { useUserRole } from "@/lib/use-user-role";
 import { EditStoreProvider } from "../project-detail/edit-store";
+import { adelaideHillsSeed } from "../project-detail/project-seed";
 import { useCanReview } from "../project-detail/field-notes";
 import { usePortfolioEntries } from "../project-detail/flagged-portfolio";
 import { ReviewScreen, useLiveEntries } from "../project-detail/review-view";
@@ -30,7 +30,7 @@ import { ReviewScreen, useLiveEntries } from "../project-detail/review-view";
 export default function FlaggedConceptsPage() {
   return (
     <Suspense fallback={null}>
-      <EditStoreProvider canEdit>
+      <EditStoreProvider canEdit seed={adelaideHillsSeed}>
         <FlaggedConcepts />
       </EditStoreProvider>
     </Suspense>
@@ -104,7 +104,6 @@ function FlaggedConcepts() {
               className="hidden w-[286px] shrink-0 flex-col justify-between gap-6 border-r border-secondary bg-secondary p-4 lg:flex"
             >
               <p className="text-xs font-semibold tracking-wide text-quaternary uppercase">Flagged concepts</p>
-              <SidebarFooterLinks />
             </aside>
             <main className="flex flex-1 flex-col items-center justify-center gap-3 p-12 text-center">
               <h1 className="text-lg font-medium text-primary">Flagged concepts</h1>

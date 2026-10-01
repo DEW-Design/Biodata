@@ -1,0 +1,14 @@
+# 2026-09-30 - Proposal: the faint grey text token (text-quaternary) fails contrast
+
+- **Sept 30 2026: proposal only, nothing changed. The designer answered "Yes" to proposing a fix for the faint grey (open item 2 of 2026-09-30-14); decisions pending.**
+  - **The facts:**
+    - `--ui-text-quaternary` is `--color-gray-500` (#8F8B87). Against white that is **3.38:1**, against `bg-secondary` (#F8F8F7) **3.18:1**. WCAG AA for text of this size needs 4.5:1. `text-tertiary` (gray-600, #706B68) is 5.26:1 on white and 4.95:1 on `bg-secondary`; `text-secondary` (gray-700) is 7.49:1.
+    - **Figma agrees with the code.** The DS - Foundations file (`llQ4DndM7U0la4qg6MttC5`) defines `Colors/Text/text-quaternary (500)` as Gray 500 (#8f8b87), and `text-tertiary (600)` as #706b68. So this is the design system's own choice, not a code drift (2.1 traces to Figma).
+    - **Where it shows as text:** the small uppercase eyebrows (12px semibold, on the DLA pages and the project page alike), the design system table heads (`components/base/table`, `components/application/table`), the inactive tab labels (`components/application/tabs`), the "Not provided" empty value, and 198 uses in `app/pages` (a share of them icon colours or placeholders). 36 uses in `components/` across 18 files.
+  - **Options (for the designer):**
+    1. **Leave it.** Accept 3.4:1 for these roles as a deliberate quiet-text choice. The lowest effort, and it fails AA for eyebrows, table heads and inactive tabs.
+    2. **Change the token in Figma first, then in code.** Re-point `text-quaternary` to Gray 600. This makes it identical to `text-tertiary` (#706B68), so the four-step text hierarchy (primary, secondary, tertiary, quaternary) collapses to three, and the difference between "meta" and "quiet" text disappears. It passes AA everywhere in one change, but loses a tier.
+    3. **Keep the token, narrow its use (recommended).** Reserve `text-quaternary` for what is allowed to be faint (placeholders, the empty "Not provided" value, disabled and decorative text, icons) and move the real content that uses it to `text-tertiary`: the eyebrows, the table heads and the inactive tab labels. Do it in Figma first (the component frames for Table head, Tab and the eyebrow style), then mirror it in the components and, once, in the pages. It keeps all four tiers and fixes AA where it matters. Cost: about 6 component files plus the eyebrow pattern in the pages, and a Figma update. The project page's small meta text was already moved to tertiary in 2026-09-30-14, so option 3 would finish what that started.
+    4. **A darker gray between 500 and 600 for text only.** Rejected: it invents a colour Figma does not document (2.1).
+  - **Not done, awaiting the decision:** any change to `app/globals.css`, the components, or Figma.
+  - Not committed.

@@ -2,9 +2,10 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Download01, Upload01 } from "@untitledui/icons";
+import { BarChart01, Download01, Upload01 } from "@untitledui/icons";
 import { Button } from "@/components/base/buttons/button";
 import { Dropdown } from "@/components/base/dropdown/dropdown";
+import { toast } from "@/components/application/toast/toast";
 import { downloadCsv } from "@/app/pages/_shared/agreement-actions";
 import { SignUpPromptModal } from "@/app/pages/_shared/guest-action-gate";
 import { projects } from "@/app/pages/_shared/project-list-data";
@@ -15,7 +16,8 @@ import { useUserRole } from "@/lib/use-user-role";
 // Actions on ONE project, at the top right of the project-detail gradient card. Uploading a dataset
 // is project-specific (every dataset belongs to a project), so it lives here and not in the
 // Projects list's Actions group. "Upload dataset" is a visible button because it is the recurring
-// task; the "..." menu holds the quieter ones (Export CSV). A guest still sees both and gets the
+// task; the "..." menu holds the quieter ones (Export CSV, Create report), which used to sit in the Projects
+// list's column 2 before the project page lost that column (30 Sept 2026). A guest still sees both and gets the
 // sign-up invite on click, the same visible-but-gated rule as the header's Add menu. "Upload dataset"
 // opens the project's upload page (/pages/project-list/<id>/upload) for every signed-in role. While a
 // dataset is being ingested, its progress chip sits first in the row (project-ingestion.tsx), for
@@ -26,7 +28,7 @@ export function ProjectCardActions({ projectId, projectCode }: { projectId: stri
   const router = useRouter();
   const roleHref = useRoleHref();
   const isGuest = useUserRole() === "public-user";
-  const [gate, setGate] = useState<"upload" | "export" | null>(null);
+  const [gate, setGate] = useState<"upload" | "export" | "report" | null>(null);
 
   const upload = () => (isGuest ? setGate("upload") : router.push(roleHref(`/pages/project-list/${projectId}/upload`)));
 
@@ -41,6 +43,11 @@ export function ProjectCardActions({ projectId, projectCode }: { projectId: stri
     );
   };
 
+  // Reports are not built yet: a signed-in person is told so, a guest gets the sign-up invite (the same
+  // two outcomes as the Actions group's Create report).
+  const createReport = () =>
+    isGuest ? setGate("report") : toast.brand("Reports aren't wired up yet", { description: "Reports can't be generated in this preview yet." });
+
   return (
     <>
       <div className="flex shrink-0 items-center gap-2">
@@ -51,8 +58,9 @@ export function ProjectCardActions({ projectId, projectCode }: { projectId: stri
         <Dropdown.Root>
           <Dropdown.DotsButton aria-label="More project actions" className="p-1 text-white/80 hover:text-white" />
           <Dropdown.Popover placement="bottom right">
-            <Dropdown.Menu aria-label="More project actions" onAction={(key) => key === "export" && exportCsv()}>
+            <Dropdown.Menu aria-label="More project actions" onAction={(key) => (key === "export" ? exportCsv() : key === "report" && createReport())}>
               <Dropdown.Item id="export" label="Export CSV" icon={Download01} />
+              <Dropdown.Item id="report" label="Create report" icon={BarChart01} />
             </Dropdown.Menu>
           </Dropdown.Popover>
         </Dropdown.Root>
@@ -70,6 +78,13 @@ export function ProjectCardActions({ projectId, projectCode }: { projectId: stri
         icon={Download01}
         title="Sign up to export data"
         description="Exporting records needs a free BioData SA account. Create one to download project and record data."
+      />
+      <SignUpPromptModal
+        isOpen={gate === "report"}
+        onOpenChange={(open) => !open && setGate(null)}
+        icon={BarChart01}
+        title="Sign up to create reports"
+        description="Reports need a free BioData SA account. Create one to build and save reports on project data."
       />
     </>
   );

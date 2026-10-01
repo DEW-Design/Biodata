@@ -27,6 +27,7 @@ import { artefactTypeMeta, type ArtefactType } from "@/app/pages/_shared/artefac
 import { EditDrawer } from "./edit-drawer";
 import { useEditStore, type SurveyArtefact } from "./edit-store";
 import { nameRow } from "./record-rules";
+import type { ProjectMeta } from "./project-seed";
 import { formatDate, type MetaRow, type MetaSection, type SurveyRecord } from "./survey-data";
 
 import { LOCKED, LONG, boundaryCentre, ibraFor, nsxSpecies, trapMissing, type TrapEntry } from "./field-schema";
@@ -200,7 +201,7 @@ export function artefactTypeFor(fileName: string): ArtefactType | null {
 export const sizeLabel = (bytes: number) => (bytes >= 1_000_000 ? `${(bytes / 1_000_000).toFixed(1)} MB` : `${Math.max(1, Math.round(bytes / 1000))} KB`);
 
 /** A picked file as an attachment of `record` (no real upload in this preview), or null for an unsupported type. */
-export function attachmentFromFile(file: File, record: SurveyRecord): SurveyArtefact | null {
+export function attachmentFromFile(file: File, record: SurveyRecord, meta: ProjectMeta): SurveyArtefact | null {
   const type = artefactTypeFor(file.name);
   if (!type) return null;
   return {
@@ -213,13 +214,13 @@ export function attachmentFromFile(file: File, record: SurveyRecord): SurveyArte
     metaTitle: file.name,
     created: formatDate(new Date().toISOString().slice(0, 10)),
     creator: "You",
-    objectId: `AHL:${record.code}:${file.name.toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 12)}`,
+    objectId: `${meta.objectPrefix}:${record.code}:${file.name.toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 12)}`,
     description: "Uploaded in this session.",
     format: file.type || "application/octet-stream",
     identifierUrl: "https://data.environment.sa.gov.au",
     licenseUrl: "https://creativecommons.org/licenses/by/4.0/",
-    publisher: "Adelaide Hills Landcare",
-    rightsHolder: "Adelaide Hills Landcare",
+    publisher: meta.publisher,
+    rightsHolder: meta.publisher,
     dcType: type === "image" ? "StillImage" : type === "video" ? "MovingImage" : type === "spreadsheet" ? "Dataset" : "Text",
     bioDataId: "Assigned on save",
   };
@@ -275,7 +276,7 @@ export function RecordDrawer({
   };
 
   const addFile = (file: File) => {
-    const attachment = attachmentFromFile(file, record);
+    const attachment = attachmentFromFile(file, record, store.meta);
     if (!attachment) {
       setFileError("Use an image, PDF, spreadsheet, audio or video file.");
       return;
@@ -448,7 +449,7 @@ export function RecordDrawer({
                   <div key={a.id} className="flex items-center gap-3 rounded-lg border border-secondary px-3 py-2">
                     <Icon className="size-4 shrink-0 text-fg-quaternary" />
                     <span className="min-w-0 flex-1 truncate text-sm text-primary">{a.title}</span>
-                    <span className="shrink-0 text-xs text-quaternary">{a.size}</span>
+                    <span className="shrink-0 text-xs text-tertiary">{a.size}</span>
                     <Button color="tertiary" size="sm" iconLeading={Trash01} aria-label={`Remove ${a.title}`} onClick={() => patch({ attachments: draft.attachments.filter((x) => x.id !== a.id) })} />
                   </div>
                 );

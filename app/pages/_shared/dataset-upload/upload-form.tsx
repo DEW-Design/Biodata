@@ -29,6 +29,7 @@ import {
 import { useDatasets } from "@/app/pages/_shared/dataset-upload/dataset-store";
 import { projectDetailsPath } from "@/app/pages/_shared/project-routes";
 import { useRoleHref } from "@/lib/use-role-href";
+import { ArrowLeft, Trash01 } from "@untitledui/icons";
 
 // The upload-dataset form, fitted from the wireframe (Figma YMproGZfrFB5jUqPHPxMhk node 67:33213)
 // into the shared form pattern (FormPage, sections in column 2, CONTRACTS 4.1). The wireframe's one
@@ -240,7 +241,7 @@ export function UploadForm({
         )}
       </FormPage>
 
-      <ConfirmationModal
+      <ConfirmationModal confirmIcon={Trash01} cancelIcon={ArrowLeft}
         isOpen={confirmDiscard}
         onOpenChange={setConfirmDiscard}
         title="Discard this upload?"

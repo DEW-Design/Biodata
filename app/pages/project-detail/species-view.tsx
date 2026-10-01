@@ -21,18 +21,17 @@ import {
   LayoutGrid01,
   Lock01,
   Table as TableIcon,
+  Feather,
+  MarkerPin04,
+  Tag01,
 } from "@untitledui/icons";
 import { Badge } from "@/components/base/badges/badges";
 import { Button } from "@/components/base/buttons/button";
 import { Dropdown } from "@/components/base/dropdown/dropdown";
 import { Table, TableCard } from "@/components/application/table/table";
-import {
-  ListFilterButton,
-  matchesFilters,
-  optionsFromValues,
-  type FilterSection,
-  type FilterSelection,
-} from "@/app/pages/_shared/list-filter";
+import { optionsFromValues, type FilterSection, useListFilter } from "@/app/pages/_shared/list-filter";
+import { AttributeFilterChips } from "@/app/pages/_shared/attribute-filter";
+import { FilterMenu } from "@/app/pages/_shared/filter-menu";
 import { ToolbarSearch } from "@/app/pages/_shared/toolbar-search";
 import { MetricTile } from "@/app/pages/_shared/map-search/metric-tile";
 import { SPECIES_GROUP_ICON } from "@/app/pages/_shared/map-search/species-group-icons";
@@ -42,6 +41,7 @@ import { useEditStore } from "./edit-store";
 import { NSX_SPECIES } from "./field-schema";
 import { formatDate, type SurveyRecord } from "./survey-data";
 import { segmentClass, segmentTrayClass } from "./segmented";
+import { cx } from "@/utils/cx";
 
 const GROUPS: SpeciesGroup[] = [
   "Mammal",
@@ -91,8 +91,8 @@ export function useProjectSpecies(): SpeciesRow[] {
         id: scientific,
         common: sp?.common ?? occ[0].name,
         scientific,
-        family: sp?.family ?? "Not provided",
-        group: sp?.group ?? "Plant",
+        family: sp?.family ?? occ[0].family ?? "Not provided",
+        group: sp?.group ?? occ[0].group ?? "Plant",
         occurrences: sorted,
         types: [...new Set(occ.map((o) => o.type))],
         sites,
@@ -164,7 +164,6 @@ export function SpeciesView({
   const [view, setView] = useState<"cards" | "table">("cards");
   const [group, setGroup] = useState<SpeciesGroup | null>(null);
   const [query, setQuery] = useState("");
-  const [filter, setFilter] = useState<FilterSelection>({});
   const [sort, setSort] = useState<SortDescriptor>({
     column: "common",
     direction: "ascending",
@@ -182,32 +181,37 @@ export function SpeciesView({
     {
       id: "family",
       label: "Family",
+      icon: Feather,
       options: optionsFromValues(all.map((r) => r.family)),
     },
     {
       id: "type",
       label: "Occurrence type",
+      icon: Tag01,
       options: optionsFromValues(all.flatMap((r) => r.types)),
     },
     {
       id: "site",
       label: "Site",
+      icon: MarkerPin04,
       options: optionsFromValues(all.flatMap((r) => r.sites)),
     },
     {
       id: "access",
       label: "Access",
+      icon: Lock01,
       options: [
         { id: "public", label: "Public" },
         { id: "restricted", label: "Restricted" },
       ],
     },
   ];
+  const filter = useListFilter(sections, getters, () => setPage(1));
   const q = query.trim().toLowerCase();
   // The tiles count what the search and Filter leave, so a tile never zeroes the others.
   const filtered = all.filter(
     (r) =>
-      matchesFilters(r, filter, getters) &&
+      filter.matches(r) &&
       (!q ||
         `${r.common} ${r.scientific} ${r.family}`.toLowerCase().includes(q)),
   );
@@ -274,6 +278,16 @@ export function SpeciesView({
       </div>
 
       <div className="flex flex-wrap items-center gap-3">
+        <ToolbarSearch
+          label="Search species"
+          placeholder="Search by common name, scientific name or family"
+          value={query}
+          onChange={(v) => {
+            setQuery(v);
+            reset();
+          }}
+        />
+        <FilterMenu filter={filter} />
         <ToggleButtonGroup
           aria-label="Species view"
           selectionMode="single"
@@ -283,7 +297,7 @@ export function SpeciesView({
             const next = Array.from(keys)[0];
             if (next === "cards" || next === "table") setView(next);
           }}
-          className={segmentTrayClass}
+          className={cx(segmentTrayClass, "ml-auto")}
         >
           <ToggleButton id="cards" className={segmentClass}>
             <LayoutGrid01 className="size-4" />
@@ -294,24 +308,8 @@ export function SpeciesView({
             Table
           </ToggleButton>
         </ToggleButtonGroup>
-        <ToolbarSearch
-          label="Search species"
-          placeholder="Search by common name, scientific name or family"
-          value={query}
-          onChange={(v) => {
-            setQuery(v);
-            reset();
-          }}
-        />
-        <ListFilterButton
-          sections={sections}
-          selection={filter}
-          onChange={(next) => {
-            setFilter(next);
-            reset();
-          }}
-        />
       </div>
+      <AttributeFilterChips filter={filter} />
 
       {rows.length === 0 ? (
         <div className="flex flex-col items-center gap-1 rounded-xl border border-secondary p-10 text-center">
@@ -340,7 +338,7 @@ export function SpeciesView({
                     {r.restricted && restrictedBadge}
                   </p>
                   <p className="text-sm text-tertiary italic">{r.scientific}</p>
-                  <p className="text-xs text-quaternary">
+                  <p className="text-xs text-tertiary">
                     {r.family} · {r.group}
                   </p>
                 </div>
@@ -366,7 +364,7 @@ export function SpeciesView({
         </div>
       ) : (
         <TableCard.Root className="flex max-h-[calc(100dvh-16rem)] min-h-48 flex-col">
-          <Table
+          <Table layout="fixed" className="min-w-[1100px]"
             aria-label="Species"
             bodyScrollable
             sortDescriptor={sort}
@@ -380,15 +378,14 @@ export function SpeciesView({
                 id="common"
                 label="Species"
                 isRowHeader
-                allowsSorting
-              />
-              <Table.Head id="family" label="Family" allowsSorting />
-              <Table.Head id="group" label="Group" allowsSorting />
-              <Table.Head id="records" label="Records" allowsSorting />
-              <Table.Head id="sites" label="Sites" />
-              <Table.Head id="last" label="Last recorded" allowsSorting />
-              <Table.Head id="access" label="Access" />
-              <Table.Head id="go" label="" />
+                allowsSorting className="w-[20%]" />
+              <Table.Head id="family" label="Family" allowsSorting className="w-[12%]" />
+              <Table.Head id="group" label="Group" allowsSorting className="w-[8%]" />
+              <Table.Head id="records" label="Records" allowsSorting className="w-[9%]" />
+              <Table.Head id="sites" label="Sites" className="w-[14%]" />
+              <Table.Head id="last" label="Last recorded" allowsSorting className="w-[10%]" />
+              <Table.Head id="access" label="Access" className="w-[13%]" />
+              <Table.Head id="go" label="" className="w-[14%]" />
             </Table.Header>
             <Table.Body items={paged}>
               {(r) => (

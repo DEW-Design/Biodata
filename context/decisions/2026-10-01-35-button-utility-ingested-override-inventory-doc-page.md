@@ -1,0 +1,10 @@
+# 2026-10-01 - Button utility ingested: override, inventory, doc page
+
+- **Oct 1 2026: Button utility ingested: override, inventory, doc page.** The designer ingested Untitled UI's Button utility into `components/base/buttons/button-utility.tsx` and asked for the ingestion workflow.
+  - **CLI side effects (1.8):** `package.json` moved `react-aria` 3.52.0 to 3.52.1 (the `@untitledui/icons` 0.0.23 bump was the earlier text-editor ingest). No audited file was reverted: every modified component file predates the ingest.
+  - **Dependencies:** `Tooltip`, `cx`, `isReactComponent` and `Placement` from `react-aria` resolve. All 32 utility classes checked against the compiled CSS exist, no hex colours, no dead classes, and the tooltip is Barlow.
+  - **No twin (1.7):** `Button` is the labelled button and `CloseButton` is a fixed X that fills the dialog close slot; neither is an icon-only button with a tooltip and a link variant. The text-editor's internal `EditorButton` and hand-rolled icon buttons under `app/pages` do the same job and are possible later callers; none were swapped here.
+  - **Override and inventory:** OVR-011 (reviewBy 2027-03-25); the file was added to `contracts/component-inventory.json` by hand, not `--update-baseline`.
+  - **Docs:** `/components/button-utility` (Playground, Colours, Sizes, With tooltip, As link, Disabled, API, Usage, Figma "not linked yet"), config key `button-utility`, slotted A-Z between Button and Checkbox in `lib/nav.ts`, and the README table.
+  - **Verified:** `tsc`, `eslint` on the touched files, `check:contracts`; live browser: secondary and tertiary, xs (16px icon) and sm (20px), hover tooltip, disabled, focus-visible outline, link variant, zero console errors. A page bug caught on the way: passing `aria-label={undefined}` overrides the tooltip's label, so the playground only passes it when there is no tooltip.
+  - **Open:** the component's `{ "aria-label": tooltip, ...props }` order lets an explicit undefined drop the label (left as ingested); typography skills were not re-run because the page text reuses the textarea page's copy and layout; the only visible text added is doc chrome. Not committed.

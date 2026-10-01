@@ -363,6 +363,13 @@ export default function TablePage() {
         so every table using the simple &quot;Page X of Y&quot; footer is unaffected. The row slicing is the caller&apos;s
         job - it only reports the page and page size.
       </p>
+      <p className="text-balance">
+        The footer does not move as its numbers change. Every figure in it (the page numbers, the rows-per-page value,
+        the range) is set in tabular figures (<code>tabular-nums</code>: Barlow&apos;s own fixed-width digits, not a
+        monospace font, so a 1 and an 8 take the same room and the letters are unchanged), and the layout is three
+        columns (<code>1fr auto 1fr</code>) so the page numbers stay centred, with the range in a fixed minimum width so
+        Next stays where it is.
+      </p>
       <Section label="TableCard.PaginationNumbered">
         <TableCard.Root>
           <TableCard.PaginationNumbered
@@ -463,6 +470,7 @@ import { Table, TableCard, TableRowActionsDropdown } from "@/components/applicat
             },
             { name: "Table (application) - sortDescriptor / onSortChange", notes: "Sorting cycles through three states per column: the first click sorts one way, the second the other way, and the third resets to the sort the table opened with (its default). The default is the first sortDescriptor the table receives, so callers pass nothing extra. Clicking the default column only flips its direction. The caller still re-orders its own rows." },
             { name: "Table (application) - bodyScrollable", notes: "Opt-in, default false. Makes the table's own wrapper scroll vertically (min-h-0 flex-1 overflow-y-auto) instead of growing to its full content height - use it only when the table's container already has a fixed height, so a toolbar and pagination can stay on screen while only the rows scroll. Pair with Table.Header sticky. Required on every collection screen (CONTRACTS.md 4.2, the table fits the viewport); a table embedded in a detail tab keeps its natural height." },
+            { name: "Table (application) - layout", notes: "\"auto\" (default) or \"fixed\". Fixed lays the columns out from the header row alone, so a column keeps its width whatever rows are showing; auto sizes each column to its widest cell, so a filter, search, sort or the next page can move every column. Required on every collection table (CONTRACTS.md 4.2f): give every Table.Head a width (a percentage for a list that fills the screen, pixels for a wide report), put a min-w on the table so a narrow window scrolls it sideways, and let a long value wrap or truncate with its full text as the tooltip. A column without a width leaves the space unused." },
             { name: "Table.Header - sticky", notes: "Opt-in, default false. Pins the header row to the top of a scrolling table (sticky top-0). A no-op when the table is not inside a scrolling ancestor." },
             { name: "Table.Head", notes: "label, tooltip (renders a help-icon Tooltip next to the label), plus Column's allowsSorting/isRowHeader." },
             { name: "Table.Row", notes: "highlightSelectedRow (default true), size override." },

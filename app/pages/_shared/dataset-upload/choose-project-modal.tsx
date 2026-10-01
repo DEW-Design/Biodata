@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Upload01 } from "@untitledui/icons";
+import { ArrowRight, Upload01 } from "@untitledui/icons";
 import { Select } from "@/components/base/select/select";
 import { FormModal } from "@/components/application/modals/modal";
 import { searchEvents } from "@/app/pages/_shared/map-search/search-data";
@@ -38,7 +38,7 @@ export function ChooseProjectModal({ isOpen, onOpenChange, defaultProjectId }: {
   };
 
   return (
-    <FormModal
+    <FormModal submitIcon={ArrowRight} submitIconTrailing
       isOpen={isOpen}
       onOpenChange={(open) => {
         onOpenChange(open);

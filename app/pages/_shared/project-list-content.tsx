@@ -1,6 +1,8 @@
 "use client";
 
 import { useState } from "react";
+import { SearchLg, Building02, Calendar, Flag01, User01 } from "@untitledui/icons";
+import { ListEmptyState } from "@/app/pages/_shared/list-empty-state";
 import type { SortDescriptor } from "react-aria-components";
 import { Avatar } from "@/components/base/avatar/avatar";
 import { Badge, CountBadge } from "@/components/base/badges/badges";
@@ -10,7 +12,9 @@ import { useRoleHref } from "@/lib/use-role-href";
 import { projects, type Project } from "@/app/pages/_shared/project-list-data";
 import { CURRENT_USER_NAME, sortRows, type SortValue } from "@/app/pages/_shared/agreement-scope";
 import type { ProjectScope } from "@/app/pages/_shared/projects-sidebar";
-import { ListFilterButton, RECENCY_OPTIONS, matchesFilters, optionsFromValues, recencyBucket, type FilterGetters, type FilterSection, type FilterSelection } from "@/app/pages/_shared/list-filter";
+import { RECENCY_OPTIONS, optionsFromValues, recencyBucket, type FilterGetters, type FilterSection, useListFilter } from "@/app/pages/_shared/list-filter";
+import { AttributeFilterChips } from "@/app/pages/_shared/attribute-filter";
+import { FilterMenu } from "@/app/pages/_shared/filter-menu";
 import { ToolbarSearch } from "@/app/pages/_shared/toolbar-search";
 
 // The real Projects list content - shared by every sidebar shell (dashboard,
@@ -68,10 +72,10 @@ const recency = (p: Project): SortValue => {
 // What a project can be filtered on: its columns that you would scan. (Not the ID or the name -
 // search covers those.)
 const projectFilterSections: FilterSection[] = [
-  { id: "status", label: "Status", options: projectStatusOrder.map((s) => ({ id: s, label: s })) },
-  { id: "org", label: "Organisation", searchable: true, options: optionsFromValues(projects.map((p) => p.org)) },
-  { id: "contributor", label: "Contributor", searchable: true, options: optionsFromValues(projects.map((p) => p.contributorName)) },
-  { id: "updated", label: "Updated", options: RECENCY_OPTIONS },
+  { id: "status", label: "Status", icon: Flag01, options: projectStatusOrder.map((s) => ({ id: s, label: s })) },
+  { id: "org", label: "Organisation", icon: Building02, searchable: true, options: optionsFromValues(projects.map((p) => p.org)) },
+  { id: "contributor", label: "Contributor", icon: User01, searchable: true, options: optionsFromValues(projects.map((p) => p.contributorName)) },
+  { id: "updated", label: "Updated", icon: Calendar, options: RECENCY_OPTIONS },
 ];
 const projectFilterGetters: FilterGetters<Project> = {
   status: (p) => p.status,
@@ -97,13 +101,13 @@ export function ProjectListContent({ scope }: { scope?: ProjectScope } = {}) {
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(50);
-  const [filters, setFilters] = useState<FilterSelection>({});
+  const filter = useListFilter(projectFilterSections, projectFilterGetters, () => setPage(1));
   const [sort, setSort] = useState<SortDescriptor>({ column: "updated", direction: "descending" });
   const query = search.trim().toLowerCase();
   const matching = projects
     // "My projects": the ones the signed-in person contributes to (the placeholder user).
     .filter((p) => scope !== "mine" || p.contributorName === CURRENT_USER_NAME)
-    .filter((p) => matchesFilters(p, filters, projectFilterGetters))
+    .filter(filter.matches)
     .filter((p) => !query || [p.code, p.name, p.org, p.contributorName].some((v) => v.toLowerCase().includes(query)));
   const rows = sortRows(matching, sort, projectSortKeys);
   const pageCount = Math.max(1, Math.ceil(rows.length / pageSize));
@@ -148,22 +152,26 @@ export function ProjectListContent({ scope }: { scope?: ProjectScope } = {}) {
               setPage(1);
             }}
           />
-          <div>
-            <ListFilterButton
-              sections={projectFilterSections}
-              selection={filters}
-              onChange={(next) => {
-                setFilters(next);
-                setPage(1);
-              }}
-            />
-          </div>
+          <FilterMenu filter={filter} />
         </div>
+        <AttributeFilterChips filter={filter} />
         {rows.length === 0 ? (
-          <p className="py-6 text-sm text-tertiary">No projects match your search and filters.</p>
+          <ListEmptyState
+            icon={SearchLg}
+            title="No projects match"
+            description="Try a different search, or remove a filter."
+            action={{
+              label: "Show all projects",
+              onPress: () => {
+                setSearch("");
+                filter.clear();
+                setPage(1);
+              },
+            }}
+          />
         ) : (
         <TableCard.Root className="flex min-h-48 flex-1 flex-col">
-          <Table
+          <Table layout="fixed" className="min-w-[880px]"
             aria-label="Projects"
             bodyScrollable
             sortDescriptor={sort}
@@ -176,12 +184,12 @@ export function ProjectListContent({ scope }: { scope?: ProjectScope } = {}) {
               {/* `label` (not children) - Table.Head only applies the design system's header treatment
                   (text-xs, semibold, text-quaternary) through its own `label` prop, the same way the
                   Explore results tables do. Plain children rendered as unstyled bold black text. */}
-              <Table.Head id="code" label="Project ID" isRowHeader />
-              <Table.Head id="project" label="Project" allowsSorting />
-              <Table.Head id="org" label="Organisation" allowsSorting />
-              <Table.Head id="status" label="Status" allowsSorting />
-              <Table.Head id="contributor" label="Contributor" allowsSorting />
-              <Table.Head id="updated" label="Updated" allowsSorting />
+              <Table.Head id="code" label="Project ID" isRowHeader className="w-[12%]" />
+              <Table.Head id="project" label="Project" allowsSorting className="w-[28%]" />
+              <Table.Head id="org" label="Organisation" allowsSorting className="w-[15%]" />
+              <Table.Head id="status" label="Status" allowsSorting className="w-[17%]" />
+              <Table.Head id="contributor" label="Contributor" allowsSorting className="w-[14%]" />
+              <Table.Head id="updated" label="Updated" allowsSorting className="w-[14%]" />
             </Table.Header>
             <Table.Body items={pagedProjects}>
               {(project) => (

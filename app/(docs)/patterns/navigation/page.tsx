@@ -7,6 +7,7 @@ import { PageHeader } from "@/components/PageHeader";
 import { Button } from "@/components/base/buttons/button";
 import { Avatar } from "@/components/base/avatar/avatar";
 import { Breadcrumb } from "@/components/scaffold/breadcrumb";
+import { BreadcrumbSwitcher } from "@/app/pages/_shared/breadcrumb-switcher";
 import { cx } from "@/utils/cx";
 import { assetPath } from "@/lib/base-path";
 
@@ -116,6 +117,45 @@ function TopNavDemo() {
   );
 }
 
+// The deep-dive crumb, live: the section's name with an up-down caret on a record page. Choosing a record changes the
+// "current" crumb here (on a real page it opens that record); "View all" says where it would go.
+const SWITCHER_ITEMS = [
+  { id: "adelaide-hills", label: "Adelaide Hills Bushland Survey", addon: "BD-5039" },
+  { id: "coorong", label: "Coorong Wetlands Bird Count", addon: "BD-5102" },
+  { id: "flinders", label: "Flinders Ranges Reptile Atlas", addon: "BD-5137" },
+  { id: "kangaroo-island", label: "Kangaroo Island Recovery Monitoring", addon: "BD-4988" },
+];
+
+function BreadcrumbSwitcherDemo() {
+  const [current, setCurrent] = useState("adelaide-hills");
+  const [note, setNote] = useState("");
+  const name = SWITCHER_ITEMS.find((i) => i.id === current)?.label;
+  return (
+    <div className="font-barlow flex flex-col gap-3">
+      <nav aria-label="Breadcrumb" className="flex flex-wrap items-center gap-2 text-sm text-tertiary">
+        <span>Home</span>
+        <span>/</span>
+        <BreadcrumbSwitcher
+          label="Projects"
+          ariaLabel="Switch project"
+          placeholder="Search projects"
+          items={SWITCHER_ITEMS}
+          currentId={current}
+          onSelect={(id) => {
+            setCurrent(id);
+            setNote("");
+          }}
+          viewAllLabel="View all projects"
+          onViewAll={() => setNote("On a real page this opens the Projects list.")}
+        />
+        <span>/</span>
+        <span className="text-primary">{name}</span>
+      </nav>
+      {note && <p className="text-sm text-tertiary">{note}</p>}
+    </div>
+  );
+}
+
 export default function NavigationPatternPage() {
   return (
     <div className="prose-doc">
@@ -136,6 +176,29 @@ export default function NavigationPatternPage() {
       <Section label="Side nav - anatomy">
         <SideNavDemo />
       </Section>
+
+      <h3 className="text-balance">Items in the contextual sidebar</h3>
+      <p className="text-balance">
+        Every navigation item in the contextual sidebar carries an icon to the left of its label (contract section 3.11), so the
+        column scans by shape as well as by word, and the same item has the same icon in the mobile menu.
+      </p>
+      <ul>
+        <li>
+          <strong>All and My.</strong> <em>All</em> comes first and takes the section&apos;s own icon from the rail (All projects
+          the folder, All requests the licence file); <em>My</em> is that list narrowed to you and takes the person icon.
+        </li>
+        <li>
+          <strong>Area and view tabs</strong> take the icon of what they hold: All users, All roles and All permissions in User Management; My
+          BioData and the Flora and Fauna Dashboard on Home.
+        </li>
+        <li>
+          <strong>Actions</strong> carry their action: Export CSV the download arrow, Create report the bar chart.
+        </li>
+        <li>
+          <strong>Built with</strong> <code>Tab icon</code>, <code>ActionRow</code> and, for the extra items in the mobile menu,{" "}
+          <code>MobileNavItem</code>. A vertical tab list with an item that has no icon fails <code>npm run check:contracts</code>.
+        </li>
+      </ul>
 
       <h2 className="text-balance">Top nav</h2>
       <p className="text-balance">
@@ -166,14 +229,45 @@ export default function NavigationPatternPage() {
           role-access matrix. To let a persona create something new, add one entry there.
         </li>
         <li>
-          <code>PrimaryRail</code> (<code>primary-rail.tsx</code>), <code>sectionIcons</code> (<code>nav-icons.ts</code>) and{" "}
-          <code>SidebarFooterLinks</code>: column 1, its one icon per section, and the Terms / Privacy / Help links at the foot of
-          column 2. Home&apos;s task badge is decided once, inside the rail.
+          <code>PrimaryRail</code> (<code>primary-rail.tsx</code>) and <code>sectionIcons</code> (<code>nav-icons.ts</code>): column 1, its
+          one icon per section, and the Terms / Privacy / Help links as icons at its foot. Home&apos;s task badge is decided once,
+          inside the rail.
         </li>
         <li>
           Never hand-roll a <code>&lt;header&gt;</code>, a primary rail, an icon map, or copy the profile menu into a screen. The
           check fails on any of them under <code>app/pages</code> (labs in <code>app/proto</code>, the marketing landing page and the
           auth flow are exempt).
+        </li>
+      </ul>
+
+      <h2 className="text-balance">The breadcrumb on a deep-dive page</h2>
+      <p>
+        On a record page (a project, a report, a data licence request, an agreement, a nomination, a user, role or permission) the
+        section crumb is a <strong>switcher</strong>: the section&apos;s name with an up-down caret, opening one popup so a person
+        can move to another record of the same collection without going back to the list, searching, and clicking in. The
+        crumb after it is the record&apos;s name. On the list page itself the crumb is plain.
+      </p>
+      <Section label="Breadcrumb switcher (Projects)">
+        <BreadcrumbSwitcherDemo />
+      </Section>
+      <ul>
+        <li>
+          <strong>The popup:</strong> the design system <code>ComboBox</code> as a search box at the top, with its list directly
+          under it (A-Z, name and ID, about six rows then scrolling inside), the current record ticked, and a bar fixed at the
+          foot, &quot;View all &lt;things&gt;&quot;, which goes to the list. Search matches the name or the ID. Escape closes it and
+          focus returns to the crumb. It lists only the records the signed-in role may see.
+        </li>
+        <li>
+          <strong>One piece, reused:</strong> <code>BreadcrumbSwitcher</code> (<code>app/pages/_shared/breadcrumb-switcher.tsx</code>),
+          through a thin wrapper per collection (<code>ProjectSwitcher</code>, <code>ReportSwitcher</code> and one for each of DLA,
+          DSA, nominations and user management). A collection never builds its own.
+        </li>
+        <li>
+          <strong>One name:</strong> the section is called the same in the breadcrumb, the rail and column 2 (&quot;Reports&quot;).
+          Who sees what is the content&apos;s rule, not part of the name.
+        </li>
+        <li>
+          The rule is CONTRACTS §4.6, item 5.
         </li>
       </ul>
 

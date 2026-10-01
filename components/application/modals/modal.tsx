@@ -1,7 +1,7 @@
 "use client";
 
 import type { FC, FormEvent, ReactNode } from "react";
-import { AlertTriangle, HelpCircle } from "@untitledui/icons";
+import { AlertTriangle, HelpCircle, Save01, XClose } from "@untitledui/icons";
 import type { DialogProps as AriaDialogProps, ModalOverlayProps as AriaModalOverlayProps } from "react-aria-components";
 import { Dialog as AriaDialog, DialogTrigger as AriaDialogTrigger, Form as AriaForm, Heading as AriaHeading, Modal as AriaModal, ModalOverlay as AriaModalOverlay } from "react-aria-components";
 import { Button } from "@/components/base/buttons/button";
@@ -138,6 +138,10 @@ interface ConfirmationModalProps {
     confirmLabel?: string;
     /** @default "Cancel" */
     cancelLabel?: string;
+    /** The icon that names the confirm action (CONTRACTS 3.12). Required: it is never the same twice ("Approve" is not "Delete"). */
+    confirmIcon: FC<{ className?: string }>;
+    /** @default XClose */
+    cancelIcon?: FC<{ className?: string }>;
     onConfirm?: () => void;
     isConfirmLoading?: boolean;
 }
@@ -152,6 +156,8 @@ export const ConfirmationModal = ({
     description,
     confirmLabel = "Confirm",
     cancelLabel = "Cancel",
+    confirmIcon,
+    cancelIcon = XClose,
     onConfirm,
     isConfirmLoading,
 }: ConfirmationModalProps) => (
@@ -160,10 +166,10 @@ export const ConfirmationModal = ({
             <Dialog>
                 <ModalHeader icon={icon} iconColor={iconColor} title={title} description={description} />
                 <ModalFooter>
-                    <Button color="secondary" size="md" slot="close">
+                    <Button color="secondary" size="md" iconLeading={cancelIcon} slot="close">
                         {cancelLabel}
                     </Button>
-                    <Button color="primary" size="md" isLoading={isConfirmLoading} onPress={onConfirm}>
+                    <Button color="primary" size="md" iconLeading={confirmIcon} isLoading={isConfirmLoading} onPress={onConfirm}>
                         {confirmLabel}
                     </Button>
                 </ModalFooter>
@@ -183,6 +189,10 @@ interface DestructiveModalProps {
     confirmLabel?: string;
     /** @default "Cancel" */
     cancelLabel?: string;
+    /** The icon that names the destructive action: a bin to delete, a cross to revoke (CONTRACTS 3.12). Required. */
+    confirmIcon: FC<{ className?: string }>;
+    /** @default XClose */
+    cancelIcon?: FC<{ className?: string }>;
     onConfirm?: () => void;
     isConfirmLoading?: boolean;
     /**
@@ -191,6 +201,8 @@ interface DestructiveModalProps {
      * layout, since three actions don't fit the stacked two-column row. Omit when there is nothing to keep.
      */
     secondaryLabel?: string;
+    /** @default Save01 (the one secondary this modal has is "Save draft") */
+    secondaryIcon?: FC<{ className?: string }>;
     onSecondary?: () => void;
 }
 
@@ -203,9 +215,12 @@ export const DestructiveModal = ({
     description,
     confirmLabel = "Delete",
     cancelLabel = "Cancel",
+    confirmIcon,
+    cancelIcon = XClose,
     onConfirm,
     isConfirmLoading,
     secondaryLabel,
+    secondaryIcon = Save01,
     onSecondary,
 }: DestructiveModalProps) => {
     const layout: ModalLayout = secondaryLabel && onSecondary ? "horizontal" : "stacked";
@@ -215,15 +230,15 @@ export const DestructiveModal = ({
                 <Dialog>
                     <ModalHeader icon={icon} iconColor="error" title={title} description={description} layout={layout} />
                     <ModalFooter layout={layout}>
-                        <Button color="secondary" size="md" slot="close">
+                        <Button color="secondary" size="md" iconLeading={cancelIcon} slot="close">
                             {cancelLabel}
                         </Button>
                         {layout === "horizontal" && (
-                            <Button color="secondary" size="md" isDisabled={isConfirmLoading} onPress={onSecondary}>
+                            <Button color="secondary" size="md" iconLeading={secondaryIcon} isDisabled={isConfirmLoading} onPress={onSecondary}>
                                 {secondaryLabel}
                             </Button>
                         )}
-                        <Button color="primary-destructive" size="md" isLoading={isConfirmLoading} onPress={onConfirm}>
+                        <Button color="primary-destructive" size="md" iconLeading={confirmIcon} isLoading={isConfirmLoading} onPress={onConfirm}>
                             {confirmLabel}
                         </Button>
                     </ModalFooter>
@@ -248,6 +263,12 @@ interface FormModalProps {
     submitLabel?: string;
     /** @default "Cancel" */
     cancelLabel?: string;
+    /** The icon that names the submit action (CONTRACTS 3.12). Required. */
+    submitIcon: FC<{ className?: string }>;
+    /** Put the submit icon after the label, for an action that moves on (Continue, with an arrow). */
+    submitIconTrailing?: boolean;
+    /** @default XClose */
+    cancelIcon?: FC<{ className?: string }>;
     onSubmit?: (e: FormEvent<HTMLFormElement>) => void;
     isSubmitLoading?: boolean;
     /** @default "md" */
@@ -274,6 +295,9 @@ export const FormModal = ({
     children,
     submitLabel = "Save",
     cancelLabel = "Cancel",
+    submitIcon,
+    submitIconTrailing = false,
+    cancelIcon = XClose,
     onSubmit,
     isSubmitLoading,
     size = "md",
@@ -290,10 +314,17 @@ export const FormModal = ({
                     <ModalHeader icon={icon} iconColor={iconColor} title={title} description={description} />
                     <div className="flex flex-col gap-4 px-4 pt-5 sm:px-6">{children}</div>
                     <ModalFooter>
-                        <Button color="secondary" size="md" slot="close" isDisabled={isSubmitLoading}>
+                        <Button color="secondary" size="md" iconLeading={cancelIcon} slot="close" isDisabled={isSubmitLoading}>
                             {cancelLabel}
                         </Button>
-                        <Button type="submit" color="primary" size="md" isLoading={isSubmitLoading}>
+                        <Button
+                            type="submit"
+                            color="primary"
+                            size="md"
+                            iconLeading={submitIconTrailing ? undefined : submitIcon}
+                            iconTrailing={submitIconTrailing ? submitIcon : undefined}
+                            isLoading={isSubmitLoading}
+                        >
                             {submitLabel}
                         </Button>
                     </ModalFooter>

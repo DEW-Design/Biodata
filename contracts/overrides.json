@@ -39,6 +39,76 @@
       "reviewBy": "2027-03-25",
       "reason": "Designer ingested the Untitled UI Progress steps component via the ingestion workflow (Sept 25 2026). Checked: no existing stepper or progress-steps component in components/**; the two local steppers (project-registration/stepper.tsx, auth/_shared/setup-stepper.tsx) are page-local one-offs.",
       "status": "active"
+    },
+    {
+      "id": "OVR-005",
+      "component": "components/base/text-editor/text-editor.tsx",
+      "designer": "Sai Maniganahalli",
+      "approvedBy": "Sai Maniganahalli",
+      "date": "2026-10-01",
+      "reviewBy": "2027-03-25",
+      "reason": "Designer ingested the Untitled UI Text editor component (Tiptap, 6 files) via the ingestion workflow (1 Oct 2026). Checked: no existing rich-text editor in components/** or app/**; TextArea (base) and custom/textarea are plain-text fields, so this is not a twin (1.7). Shipped in components/base/ as ingested, matching the progress-steps precedent (OVR-002 to OVR-004).",
+      "status": "active"
+    },
+    {
+      "id": "OVR-006",
+      "component": "components/base/text-editor/text-editor-button.tsx",
+      "designer": "Sai Maniganahalli",
+      "approvedBy": "Sai Maniganahalli",
+      "date": "2026-10-01",
+      "reviewBy": "2027-03-25",
+      "reason": "Designer ingested the Untitled UI Text editor component (Tiptap, 6 files) via the ingestion workflow (1 Oct 2026). Checked: no existing rich-text editor in components/** or app/**; TextArea (base) and custom/textarea are plain-text fields, so this is not a twin (1.7). Shipped in components/base/ as ingested, matching the progress-steps precedent (OVR-002 to OVR-004). Retired 2026-10-01: file removed, its job is done by ButtonUtility (components/base/buttons/button-utility.tsx).",
+      "status": "retired"
+    },
+    {
+      "id": "OVR-007",
+      "component": "components/base/text-editor/text-editor-character-count.tsx",
+      "designer": "Sai Maniganahalli",
+      "approvedBy": "Sai Maniganahalli",
+      "date": "2026-10-01",
+      "reviewBy": "2027-03-25",
+      "reason": "Designer ingested the Untitled UI Text editor component (Tiptap, 6 files) via the ingestion workflow (1 Oct 2026). Checked: no existing rich-text editor in components/** or app/**; TextArea (base) and custom/textarea are plain-text fields, so this is not a twin (1.7). Shipped in components/base/ as ingested, matching the progress-steps precedent (OVR-002 to OVR-004).",
+      "status": "active"
+    },
+    {
+      "id": "OVR-008",
+      "component": "components/base/text-editor/text-editor-extensions.tsx",
+      "designer": "Sai Maniganahalli",
+      "approvedBy": "Sai Maniganahalli",
+      "date": "2026-10-01",
+      "reviewBy": "2027-03-25",
+      "reason": "Designer ingested the Untitled UI Text editor component (Tiptap, 6 files) via the ingestion workflow (1 Oct 2026). Checked: no existing rich-text editor in components/** or app/**; TextArea (base) and custom/textarea are plain-text fields, so this is not a twin (1.7). Shipped in components/base/ as ingested, matching the progress-steps precedent (OVR-002 to OVR-004).",
+      "status": "active"
+    },
+    {
+      "id": "OVR-009",
+      "component": "components/base/text-editor/text-editor-toolbar.tsx",
+      "designer": "Sai Maniganahalli",
+      "approvedBy": "Sai Maniganahalli",
+      "date": "2026-10-01",
+      "reviewBy": "2027-03-25",
+      "reason": "Designer ingested the Untitled UI Text editor component (Tiptap, 6 files) via the ingestion workflow (1 Oct 2026). Checked: no existing rich-text editor in components/** or app/**; TextArea (base) and custom/textarea are plain-text fields, so this is not a twin (1.7). Shipped in components/base/ as ingested, matching the progress-steps precedent (OVR-002 to OVR-004).",
+      "status": "active"
+    },
+    {
+      "id": "OVR-010",
+      "component": "components/base/text-editor/text-editor-tooltip.tsx",
+      "designer": "Sai Maniganahalli",
+      "approvedBy": "Sai Maniganahalli",
+      "date": "2026-10-01",
+      "reviewBy": "2027-03-25",
+      "reason": "Designer ingested the Untitled UI Text editor component (Tiptap, 6 files) via the ingestion workflow (1 Oct 2026). Checked: no existing rich-text editor in components/** or app/**; TextArea (base) and custom/textarea are plain-text fields, so this is not a twin (1.7). Shipped in components/base/ as ingested, matching the progress-steps precedent (OVR-002 to OVR-004).",
+      "status": "active"
+    },
+    {
+      "id": "OVR-011",
+      "component": "components/base/buttons/button-utility.tsx",
+      "designer": "Sai Maniganahalli",
+      "approvedBy": "Sai Maniganahalli",
+      "date": "2026-10-01",
+      "reviewBy": "2027-03-25",
+      "reason": "Designer ingested the Untitled UI Button utility component via the ingestion workflow (1 Oct 2026). Checked: Button is the labelled button and CloseButton is a fixed X for dialogs and clears, so neither is an icon-only utility button with a tooltip and an optional link variant; not a twin (1.7). Text-editor's internal EditorButton and hand-rolled icon buttons under app/pages are possible later callers, not swapped in this task. Shipped in components/base/buttons/ as ingested, beside button.tsx and close-button.tsx.",
+      "status": "active"
     }
   ]
 }

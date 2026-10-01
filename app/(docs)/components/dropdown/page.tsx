@@ -167,8 +167,9 @@ import { Dropdown } from "@/components/base/dropdown/dropdown";
             { name: "Dropdown.Root", notes: "React Aria MenuTrigger - wraps a trigger element and the Popover." },
             { name: "Dropdown.DotsButton", notes: "Ready-made vertical-dots trigger button. Use any AriaButton-compatible element instead if you need a different trigger." },
             { name: "Dropdown.Popover", notes: "React Aria PopoverProps. className sets width, e.g. \"w-56\"." },
+            { name: "Dropdown.SubmenuPopover", notes: "The popover of a submenu (inside a React Aria SubmenuTrigger). It tucks against the parent menu and lines its first row up with the row that opened it, as a macOS or iOS menu does (offset -2, crossOffset -5, placement \"end top\"); the row that opened it stays highlighted while the submenu is open. Same props as Dropdown.Popover; className sets width." },
             { name: "Dropdown.Menu", notes: "React Aria MenuProps - selectionMode, selectedKeys/defaultSelectedKeys, onSelectionChange." },
-            { name: "Dropdown.Item", notes: "label, icon, avatarUrl, addon (trailing text), selectionIndicator (\"checkmark\" | \"checkbox\" | \"radio\" | \"toggle\" | \"none\"), unstyled (opt out of default styling for a fully custom row), destructive (error-coloured label, icon and hover, for delete or remove; put it last, after a Dropdown.Separator)." },
+            { name: "Dropdown.Item", notes: "label, icon, avatarUrl, addon (trailing text), selectionIndicator (\"checkmark\" reserves a left column for the tick | \"checkmark-end\" ticks after the label, only on what is on, reserving nothing | \"checkbox\" | \"radio\" | \"toggle\" | \"none\"), unstyled (opt out of default styling for a fully custom row), destructive (error-coloured label, icon and hover, for delete or remove; put it last, after a Dropdown.Separator)." },
             { name: "Dropdown.Section / SectionHeader", notes: "React Aria MenuSection/Header - groups items under a label." },
             { name: "Dropdown.Separator", notes: "Hairline divider between items or sections." },
           ].map((r) => (

@@ -34,9 +34,10 @@ type Area =
   | "Nominations"
   | "User management"
   | "Template Finder"
+  | "Reports"
   | "Unlinked";
 
-const AREAS: Area[] = ["Start", "Sign in", "Home", "Projects", "Explore", "Data licence (DLA)", "Data sharing (DSA)", "Nominations", "User management", "Template Finder", "Unlinked"];
+const AREAS: Area[] = ["Start", "Sign in", "Home", "Projects", "Explore", "Data licence (DLA)", "Data sharing (DSA)", "Nominations", "User management", "Template Finder", "Reports", "Unlinked"];
 
 interface Screen {
   path: string;
@@ -60,17 +61,17 @@ const SCREENS: Screen[] = [
   { area: "Sign in", name: "Password reset", path: "/pages/auth/reset-success", access: "Everyone", description: "Confirmation, then back to log in." },
   { area: "Home", name: "Home", path: "/pages/dashboard", access: "Everyone", description: "My BioData and the Flora and Fauna Dashboard; a public user gets the dashboard and the sign-up card." },
   { area: "Projects", name: "Projects", path: "/pages/project-list", access: "Everyone", description: "Every project, with search, filters and sorting." },
-  { area: "Projects", name: "Adelaide Hills project, option 1", path: "/pages/project-detail", access: "Everyone", description: "The hand-built project page: tabs with the records tree in column 2." },
-  { area: "Projects", name: "Adelaide Hills project, option 2", path: "/pages/project-detail/option-3", access: "Everyone", description: "The comparison layout: About, Records and Species, with editing." },
-  { area: "Projects", name: "Project page", path: "/pages/project-list/kangaroo-island/project-details", access: "Everyone", description: "Any other project, built from the shared data (Kangaroo Island shown)." },
+  { area: "Projects", name: "Project page, Adelaide Hills (option 1)", path: "/pages/project-detail", access: "Everyone", description: "The project page template on its canonical route: Project, Survey records, Species and Artefacts tabs." },
+  { area: "Projects", name: "Project page, Adelaide Hills (option 2)", path: "/pages/project-detail/option-2", access: "Everyone", description: "The older comparison layout: nine tabs with the records tree in column 2." },
+  { area: "Projects", name: "Project page", path: "/pages/project-list/kangaroo-island/project-details", access: "Everyone", description: "The same template for every project; other projects are built from the shared data (Kangaroo Island shown)." },
   { area: "Projects", name: "Record page", path: "/pages/project-list/kangaroo-island/project-details/occurrences/occ-7", access: "Everyone", description: "One occurrence on its project (a Southern Hairy-nosed Wombat)." },
   { area: "Projects", name: "Upload dataset", path: "/pages/project-list/kangaroo-island/upload", access: "Signed in", description: "Upload a spreadsheet to a project, then the data upload acknowledgement." },
   { area: "Projects", name: "Add Project, option 1", path: "/pages/project-registration", access: "Signed in", description: "One question per card." },
   { area: "Projects", name: "Add Project, option 2", path: "/pages/project-registration/option-2", access: "Signed in", description: "The form pattern: sections in column 2." },
-  { area: "Explore", name: "Explore, option 1", path: "/pages/observations", access: "Everyone", description: "Search the map, then a results page." },
-  { area: "Explore", name: "Explore, option 2", path: "/pages/observations/option-2", access: "Everyone", description: "A floating card over the map; search areas as layers." },
+  { area: "Explore", name: "Explore, option 1", path: "/pages/observations", access: "Everyone", description: "A floating card over the map; search areas as layers." },
+  { area: "Explore", name: "Explore, option 2", path: "/pages/observations/option-2", access: "Everyone", description: "Search the map, then a results page." },
   { area: "Explore", name: "Observation", path: "/pages/observation-detail", access: "Everyone", description: "The original observation screen (OBS094)." },
-  { area: "Data licence (DLA)", name: "Licence requests", path: "/pages/dla", access: "Signed in", description: "My requests and All requests, every status in one table." },
+  { area: "Data licence (DLA)", name: "Licence requests", path: "/pages/dla", access: "Signed in", description: "All requests and My requests, every status in one table." },
   { area: "Data licence (DLA)", name: "Request a licence", path: "/pages/dla/new", access: "Signed in", description: "Locations and licence level, purpose, review." },
   { area: "Data licence (DLA)", name: "Licence request", path: "/pages/dla/DLA-2026-00502", access: "Signed in", description: "One request and its actions (DLA-2026-00502)." },
   { area: "Data sharing (DSA)", name: "Sharing agreements", path: "/pages/dsa", access: "BioData Admin", description: "Every data sharing agreement, every status in one table." },
@@ -89,7 +90,16 @@ const SCREENS: Screen[] = [
   { area: "User management", name: "Permission", path: "/pages/user-management/permissions/PERM-301", access: "BioData Admin", description: "One permission and the roles that have it." },
   { area: "User management", name: "Add permissions", path: "/pages/user-management/permissions/new", access: "BioData Admin", description: "Several at once, under a category." },
   { area: "Template Finder", name: "Template Finder", path: "/pages/template-finder", access: "Signed in", description: "Standard dataset templates, with search and filters." },
-  { area: "Unlinked", name: "Project detail, older option 2", path: "/pages/project-detail/option-2", access: "Everyone", description: "The earlier comparison layout; not in the layout switcher." },
+  { area: "Reports", name: "Reports", path: "/pages/reports", access: "Signed in", description: "The landing page: one card per report." },
+  { area: "Reports", name: "Data Ingestion Report Pre-Flight Validation", path: "/pages/reports/data-ingestion", access: "Signed in", description: "Every dataset upload from validation to approval; a registered user sees theirs, BioData Admin sees all." },
+  { area: "Reports", name: "Project Dataset Post Ingestion", path: "/pages/reports/post-ingestion", access: "Signed in", description: "Every dataset submission beside its project's facts; a registered user sees theirs, BioData Admin sees all." },
+  { area: "Reports", name: "Project Sensitive and Restriction Report", path: "/pages/reports/sensitive-restriction", access: "Signed in", description: "Every restriction on a project, with reviewer and treatment." },
+  { area: "Reports", name: "Voucher ID Update Report", path: "/pages/reports/voucher-id-update", access: "Signed in", description: "Museum or herbarium voucher details beside BioData's, with the mismatch." },
+  { area: "Reports", name: "Data Validation Error Report", path: "/pages/reports/data-validation-error", access: "Signed in", description: "The errors found in one chosen dataset." },
+  { area: "Reports", name: "SpecimenDB Refresh Report", path: "/pages/reports/specimendb-refresh", access: "Signed in", description: "Specimen batches refreshed from SpecimenDB, in Darwin Core." },
+  { area: "Reports", name: "Project Detail Report", path: "/pages/reports/project-detail", access: "Signed in", description: "Every project's registration and record counts in one table." },
+  { area: "Reports", name: "Species Detail Report", path: "/pages/reports/species-detail", access: "Signed in", description: "Every species record with its codes, voucher and measurements." },
+  { area: "Reports", name: "Events, Occurrences and Observations Report", path: "/pages/reports/events-occurrences-observations", access: "Signed in", description: "The survey records at each level, in three tabs." },
   { area: "Unlinked", name: "Projects draft", path: "/pages/projects", access: "Everyone", description: "A stale draft, not linked from anywhere." },
   { area: "Unlinked", name: "Projects draft 2", path: "/pages/projectsv2", access: "Everyone", description: "A stale draft, not linked from anywhere." },
 ];
@@ -183,7 +193,7 @@ export default function PagesIndex() {
           <p className="py-6 text-sm text-tertiary">No screens match your search.</p>
         ) : (
           <TableCard.Root className="flex min-h-48 flex-1 flex-col">
-            <Table
+            <Table layout="fixed" className="min-w-[840px]"
               aria-label="Prototype screens"
               bodyScrollable
               sortDescriptor={sort}
@@ -193,10 +203,10 @@ export default function PagesIndex() {
               }}
             >
               <Table.Header sticky>
-                <Table.Head id="screen" label="Screen" allowsSorting isRowHeader />
-                <Table.Head id="area" label="Area" allowsSorting />
-                <Table.Head id="access" label="Who can use it" />
-                <Table.Head id="description" label="What it is" />
+                <Table.Head id="screen" label="Screen" allowsSorting isRowHeader className="w-[22%]" />
+                <Table.Head id="area" label="Area" allowsSorting className="w-[14%]" />
+                <Table.Head id="access" label="Who can use it" className="w-[22%]" />
+                <Table.Head id="description" label="What it is" className="w-[42%]" />
               </Table.Header>
               <Table.Body items={pagedRows} dependencies={[role]}>
                 {(s) => (

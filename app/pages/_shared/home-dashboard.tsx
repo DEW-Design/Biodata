@@ -518,7 +518,7 @@ function AdminHomeDashboardContent() {
         <div className="flex flex-wrap items-center gap-2">
           <QuickAction icon={UserCheck01} label="User Management" href={roleHref("/pages/user-management")} />
           <DisabledQuickAction icon={Database01} label="Control Vocabulary" note="Coming soon - controlled vocabulary management isn't built yet" />
-          <DisabledQuickAction icon={BarChartSquare01} label="Reports" note="Coming soon - reporting isn't built yet" />
+          <QuickAction icon={BarChartSquare01} label="Reports" href={roleHref("/pages/reports")} />
         </div>
       </div>
 

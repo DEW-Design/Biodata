@@ -1,0 +1,30 @@
+# 2026-09-30 - One project page template for every project, in Option 1's look
+
+- **Sept 30 2026: every project page is now the Option 1 page ("v3 records": Project, Survey records, Species, Artefacts and attachments), by direct request from the designer.**
+  - **The request, as settled over the session:** make all the project details screens consistent; the normal route goes to Option 1, not Option 2; and, after a first misreading corrected by the designer, "all the project details' look should match option 1's survey-records features". Before this there were three looks: Option 1 (`/pages/project-detail`), Option 2 (what the Projects list opened for Adelaide Hills) and a third, simpler page for every other project.
+  - **Built:**
+    - `app/pages/project-detail/project-detail-template.tsx` is the old Option 1 page turned into `ProjectDetailTemplate({ projectId, basePath, layoutSwitcher?, notice? })`. `app/pages/project-detail/page.tsx` is now a thin route that renders it for Adelaide Hills.
+    - `project-seed.ts` holds what the template is fed (`ProjectSeed`: meta, project, records, artefacts). Adelaide Hills keeps its hand-written records (`adelaideHillsSeed`). Every other project is built by `seedFromExplore` from Explore's dataset, reusing the existing `siteSections`, `eventSections`, `occurrenceSections` and `observationSections` builders.
+    - `edit-store.tsx` takes the `seed` and exposes `meta` (route id, project ID, publisher, object-id prefix). The hard-coded `BD-5039`, `AHL:` and "Adelaide Hills Landcare" in the template, records explorer, inspector, record panel, record form and project editor now read `meta`.
+    - `/pages/project-list/<id>/project-details` renders the template for every project. The generic `ProjectDetailsView` was deleted; record pages (`.../occurrences/<id>` and so on) are unchanged. `flagged-concepts` passes the Adelaide Hills seed.
+    - `SurveyRecord` gained optional `family` and `group`, so the Species tab shows real taxonomy for species outside the NSX list.
+  - **Adapter rules (no fabrication, 0.3):**
+    - Only what Explore holds is filled in. Every other field on a record reads "Not provided"; no NSX code is invented (a species outside the list shows its scientific name); contacts, permits and restrictions are empty.
+    - Explore's Non-Biotic and Community occurrences become observations directly under their event, as the page's model has it. Record ids are prefixed (`occurrence:`, `observation:`) because Explore reuses an id for an occurrence and its observation.
+    - Access follows Explore: a public user does not get a Level 2 record; other roles get it generalised, with a note. The "needs a Data Licencing Agreement" notice for a followed hidden record is kept (it now shows above the tabs).
+    - Artefacts are empty for a non-Adelaide project (the Artefacts tab shows 0). Explore's resources are not field attachments, so none were mapped.
+  - **Layout switcher:** shown only on the canonical `/pages/project-detail` route. The `/pages` index entries for the project pages were corrected (one pointed at the removed `option-3` route).
+  - **Not deleted:** `app/pages/project-detail/option-2` (Adelaide Hills, nine tabs) is no longer opened by any normal route but is still reachable from the layout switcher. Deleting a comparison option is the designer's call (0.4, 4.4).
+  - **Verified:**
+    - `tsc --noEmit`, `eslint --max-warnings=0` on every touched folder, `npm run check:contracts`, and a production `next build` all pass. (`lib/config-context.tsx` has an existing `set-state-in-effect` lint error that is not part of this change.)
+    - Live pass with Playwright (headless Chromium, zero console errors): Adelaide Hills, Coorong, Flinders and Kangaroo Island as registered-user and public-user all render the same tabs and shell; the canonical route matches the list route; Coorong's Survey records tree, inspector, Species tab and its project edit drawer open; Adelaide Hills' review screen (`?view=review`) and the flagged concepts page load; a hidden Flinders record shows the notice for a public user; record pages for Coorong and Adelaide Hills load.
+  - **Not done:**
+    - Keyboard-only pass (Tab, Arrows, Enter, Escape) on the template. The components were not changed, only their data source.
+    - Typography QA with `/emil-typography` and `/emil-design-foundations` (0.6 item 8). No new type layer was added: the new visible strings are data ("Coorong Lagoon Site", "Fairy Tern observation", "Observed by Maya Dewitt", a generalisation note) shown in existing components.
+    - A full edit-and-save round trip on a non-Adelaide record.
+  - **Still open:**
+    - Delete Option 2 and its layout switcher entry, or keep it for comparison?
+    - Non-Adelaide projects show mostly "Not provided" for contacts, permits, restrictions and record detail, because Explore does not hold them. Real data needs a decision on where it comes from.
+    - Coorong, Flinders and Kangaroo Island all show a start date of 2 Nov 2025 and "Ongoing", straight from Explore's project rows (same as the old generic page). That data looks like placeholder and is worth the designer's check.
+    - Earlier open items: Template Finder access for a public user, and its "Project ID / Title" filter (2026-09-29-30).
+  - Not committed.
