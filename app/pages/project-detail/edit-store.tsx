@@ -7,7 +7,7 @@
 //   project-registration/option-2/sections.ts: details, collection, restrictions) plus a status.
 //   Editing a project section therefore reuses the registration's own section forms and rules
 //   unchanged, including adding and removing contacts, managers, permits, species and locations.
-// - Survey records and their attachments are a list that can be added to, edited and deleted.
+// - Project records and their attachments are a list that can be added to, edited and deleted.
 
 import { createContext, useCallback, useContext, useMemo, useState, type ReactNode } from "react";
 import type { Artefact } from "@/app/pages/_shared/artefact-lightbox";

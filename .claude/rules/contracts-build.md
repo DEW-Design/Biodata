@@ -84,7 +84,8 @@ Colour, spacing, radius, shadow and type come from the `--ui-*` layer in `app/gl
 - MUST NOT hard-code hex, rgb or rgba in product code.
 - MUST NOT use a utility that is not defined. Known-dead and therefore prohibited: `text-md`,
   `bg-quaternary`, `bg-border-secondary`, `border-secondary_hover`, `border-l-brand-solid`,
-  `border-error-subtle`, `selected:` variants, `ring-offset-bg-primary`. Add the utility to `globals.css`
+  `border-error-subtle`, `selected:` variants, `ring-offset-bg-primary`, `divide-secondary` (a divider takes
+  `border-t border-secondary` instead). Add the utility to `globals.css`
   first if it is genuinely needed.
 - **Every colour primitive traces to Figma, not invention.** `app/globals.css`'s `--color-*` scales
   MUST match the real "DS - Foundations" Figma file's Colors page (`llQ4DndM7U0la4qg6MttC5`, node
@@ -183,3 +184,39 @@ a fake icon or a fake link (§0.3).
   not per call site - `GlobalSearch` and the species picker had already opted out by hand, so they were
   unaffected either way. No component in this codebase currently has a real global shortcut to advertise.
 - **Enforcement:** `REVIEW`.
+
+### §2.11 A date field has a calendar
+
+Every date a person enters in the product is entered with the design system's date field with a
+calendar: `InputDatePicker` (`components/custom/date-picker/input-date-picker.tsx`), which lets them
+type the date or pick it from the calendar. A person should never have to type a date blind.
+
+- MUST NOT render the calendar-less `InputDate` (`components/base/input/input-date.tsx`) on a product
+  screen. Its only place is its own doc page.
+- **Origin:** the Controlled Vocabulary, DSA and DLA forms used `InputDate`, typed segments with no
+  calendar; the designer asked for the calendar field everywhere ("always remember to use date fields
+  with calendar input field from design system", 30 Sept 2026).
+- **Enforcement:** `AUTO §2.11` (an `<InputDate` under `app/pages` fails).
+
+### §2.12 Nothing on screen without a purpose
+
+What ships is visually clean the first time: every mark on a screen (an icon, a border, a badge, a
+fill, a divider, a column) earns its place by telling the person something they need. Decoration that
+adds noise is a defect, the same as a bug, however correct the behaviour behind it.
+
+- MUST NOT put an icon in a field, cell, label or button unless it carries meaning the text does not
+  (a search glass on a search field, a calendar on a date field). A glyph that repeats the label, or
+  marks every row the same way, is removed. When a component draws an icon by default and the call site
+  has no meaning for it, the component gets an opt-in way to leave it out (§1.6), for example
+  `ComboBox`'s `hideIcon`.
+- A field or column is sized to what it holds: a one or two digit number is not given the width of a
+  name.
+- Repeated per-row controls recede: muted, compact, and aligned in one column. Spare width goes after
+  the row's content, never between the content and its own controls.
+- MUST look at every visible change in a live screenshot, at the size the designer works at, and judge
+  it with `/emil-design-foundations` before presenting it (§0.6 item 4, §0.7 item 3). "It works" is not
+  done; it is done when nothing on it looks accidental.
+- **Origin:** the Controlled Vocabulary Entries grid's Order field showed a large # icon in every row,
+  with the field as wide as a text column; the designer: "the # in this is too big and ugly ... Make
+  sure you do visually aesthetic" (30 Sept 2026).
+- **Enforcement:** `REVIEW` (a live screenshot and `/emil-design-foundations`, §0.6 item 4).

@@ -29,7 +29,7 @@ export function ProjectsGuide() {
       <section className="flex flex-col gap-3">
         <h2 className="text-base font-semibold text-primary">What is a project?</h2>
         <p className="text-sm text-pretty text-tertiary">
-          Every record in BioData SA belongs to a project. A project describes one survey program: who runs it, where and how data is collected, and what is held back
+          Every record in BioData SA belongs to a project. A project describes one program of data collection: who runs it, where and how data is collected, and what is held back
           from public release.
         </p>
         <p className="text-sm text-pretty text-tertiary">

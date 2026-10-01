@@ -37,6 +37,13 @@ const hardRules = [
     allow: ["_shared/guest-home.tsx"],
     message: "Explanatory content (heading, steps, alert, accordion or task card) inside the column 2 <aside>. Column 2 is navigation and actions only; put information in main above the content (CONTRACTS.md 3.10). Only the public-user column 2 is exempt.",
   },
+  {
+    id: "2.11",
+    name: "a date field has a calendar",
+    test: (s) => /<InputDate\b(?!Picker)/.test(s),
+    allow: [],
+    message: 'A date field without a calendar (<InputDate>). Use <InputDatePicker> from "@/components/custom/date-picker/input-date-picker": type the date or pick it (CONTRACTS.md 2.11).',
+  },
   { id: "3.1", name: "header", test: (s) => /<header[\s>]/.test(s), allow: ["_shared/app-header.tsx"], message: 'Hand-rolled <header>. Render <AppHeader /> from "@/app/pages/_shared/app-header".' },
   { id: "3.2", name: "primary rail", test: (s) => /aria-label="Primary"/.test(s), allow: ["_shared/primary-rail.tsx", "_shared/mobile-nav.tsx"], message: 'Hand-rolled primary rail. Render <PrimaryRail /> from "@/app/pages/_shared/primary-rail".' },
   { id: "3.3", name: "section icon map", test: (s) => /const sectionIcons\b/.test(s), allow: ["_shared/nav-icons.ts"], message: 'Local sectionIcons map. Import { sectionIcons } from "@/app/pages/_shared/nav-icons".' },
@@ -80,6 +87,22 @@ const hardRules = [
     allow: [],
     message: "A toolbar with a Filter button whose search is a hand-rolled <Input>. Use <ToolbarSearch> (app/pages/_shared/toolbar-search.tsx): one 384px search width on every collection toolbar (CONTRACTS.md 4.2c).",
   },
+  {
+    id: "4.2d",
+    name: "one gap under the header",
+    // Between a SectionHeader and the first toolbar search after it, some wrapping <div> must carry the
+    // 24px top padding every list uses (p-6). `px-6 pb-6` leaves the search flush against the divider.
+    test: (s) =>
+      [...s.matchAll(/<\/SectionHeader\.Root>/g)].some((m) => {
+        const rest = s.slice(m.index);
+        const at = rest.indexOf("<ToolbarSearch");
+        if (at < 0) return false;
+        const divs = [...rest.slice(0, at).matchAll(/<div\b[^>]*className="([^"]*)"/g)].map((d) => d[1]);
+        return !divs.some((c) => /(?:^|\s)(?:p|pt|py)-6(?:\s|$)/.test(c));
+      }),
+    allow: [],
+    message: "The list body under </SectionHeader.Root> has no top padding before the toolbar search, so the search sits flush against the header's divider. Wrap it in a div with p-6 (flex min-h-0 flex-1 flex-col gap-4 p-6), as every list does (CONTRACTS.md 4.2d).",
+  },
 ];
 
 // ---------------------------------------------------------------- ratchet rules
@@ -89,7 +112,7 @@ const SCAN_DIRS = ["app", "components", "lib", "config"];
 // DEW colour choice, so it's not "invented" or "hardcoded instead of tokenised" in any sense CONTRACTS
 // 2.1 means. Out of scope for every colour rule, same tier as the /proto exemption below.
 const SCAN_SKIP = [/^app\/proto\//, /^app\/globals\.css$/, /^node_modules\//, /^components\/foundations\/payment-icons\//];
-const DEAD = /\b(?:text-md|bg-quaternary|bg-border-secondary|border-secondary_hover|border-l-brand-solid|border-error-subtle|ring-offset-bg-primary)\b/;
+const DEAD = /\b(?:text-md|bg-quaternary|bg-border-secondary|border-secondary_hover|border-l-brand-solid|border-error-subtle|ring-offset-bg-primary|divide-secondary)\b/;
 const isComment = (line) => /^\s*(\/\/|\/\*|\*|\{\/\*)/.test(line);
 
 // 2.1c/2.1d: colour is never invented. contracts/figma-colours.json is the real DS - Foundations

@@ -8,7 +8,7 @@ import { AlertFullWidth } from "@/components/application/alerts/alerts";
 import { Button } from "@/components/base/buttons/button";
 import { Checkbox } from "@/components/base/checkbox/checkbox";
 import { Input } from "@/components/base/input/input";
-import { InputDate } from "@/components/base/input/input-date";
+import { InputDatePicker } from "@/components/custom/date-picker/input-date-picker";
 import { RadioButton, RadioGroup } from "@/components/base/radio-buttons/radio-buttons";
 import { TextArea } from "@/components/base/textarea/textarea";
 import { FormPage } from "@/app/pages/_shared/form-page";
@@ -283,7 +283,7 @@ export function DlaForm({
             </FormRow>
             <FormRow title="Agreement Period" required description="When do you need access to the data?">
               <div className="grid gap-4 sm:grid-cols-2">
-                <InputDate
+                <InputDatePicker
                   label="Start Date"
                   isRequired
                   isDisabled={isEditingLive}
@@ -292,7 +292,7 @@ export function DlaForm({
                   isInvalid={!!errors.requestPeriodFrom}
                   hint={errors.requestPeriodFrom}
                 />
-                <InputDate
+                <InputDatePicker
                   label="End Date"
                   isRequired
                   isDisabled={isEditingLive}

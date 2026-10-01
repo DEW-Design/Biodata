@@ -58,7 +58,7 @@ const tabAsks: Record<string, TabAsk> = {
     modalDescription: "Create a free BioData SA account to record an animal sighting with its location and photos, and add it to the state's fauna record.",
   },
   projects: {
-    headline: "Give your survey a home in the record",
+    headline: "Give your project a home in the record",
     body: "Every record in BioData SA belongs to a project. Create a free account to register yours and add its data.",
     modalTitle: "Register a project",
     modalDescription: "Create a free BioData SA account to register a project and add its records to South Australia's biodiversity record.",
@@ -142,7 +142,7 @@ const aboutParagraphs = [
 // landing page's own (/pages/biodata-home hero: 6.8M+ records, 640,000+ species, 240+ contributors;
 // About: "Trusted since 1974"). The project count is left out: the landing page gives two figures.
 const projectParagraph =
-  "A survey, study or monitoring program, run by a person or an organisation. Every record in BioData SA belongs to one.";
+  "A study or monitoring program, run by a person or an organisation. Every record in BioData SA belongs to one.";
 
 const standOutParagraph =
   "6.8M+ records of 640,000+ species, going back to 1974, from 240+ contributors. Curated by DEW scientists.";

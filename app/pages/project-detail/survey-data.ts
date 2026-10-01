@@ -1,4 +1,4 @@
-// The survey records for option 3 of the project detail page (route: /pages/project-detail/option-2).
+// The project records for option 3 of the project detail page (route: /pages/project-detail/option-2).
 //
 // One project, Adelaide Hills Bushland Survey (BD-5039), modelled the way a Darwin Core user reads a
 // survey: Events nest under the Site (Site > Visit, and Site > sampling event; a Visit holds no events), Occurrences sit under the sampling event that

@@ -165,6 +165,20 @@ then any view or tree controls, above a list, table or tree) is the same everywh
 - **Enforcement:** `AUTO §4.2c` (a file with a `ListFilterButton` whose search is a hand-rolled `Input` with a
   search icon fails), `REVIEW` for toolbars without a Filter button.
 
+**One gap under the header (§4.2d).** Under a `SectionHeader`, the collection body (any notice, the toolbar,
+the table) sits in one wrapper with `p-6`: the same 24px between the header's divider and the search on every
+list, and 24px to the sides and bottom.
+
+- MUST wrap the body that follows `</SectionHeader.Root>` in a `div` with `p-6` (`flex min-h-0 flex-1 flex-col
+  gap-4 p-6`, as every list does).
+- MUST NOT give that wrapper side and bottom padding only (`px-6 pb-6`) or none at all: the search then sits
+  flush against the header's divider.
+- **Origin:** the Notification Management list and the project's Datasets view both shipped with `px-6 pb-6`,
+  the search box touching the divider, while every other list used `p-6`; the designer: "This error is recurring
+  fix it and add to contracts" (1 Oct 2026).
+- **Enforcement:** `AUTO §4.2d` (in a file with `<ToolbarSearch>`, no `div` between `</SectionHeader.Root>` and the
+  first `<ToolbarSearch>` carries `p-6`, `pt-6` or `py-6`).
+
 ### §4.3 Cognitive load
 
 More than five or six field groups needs tiering. A conditional field is conditional in the UI. One focal

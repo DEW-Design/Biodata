@@ -316,7 +316,7 @@ function PermitsForm({ draft, update }: FormProps) {
   const updatePermit = (id: number, p: Partial<(typeof c.permits)[number]>) => patch({ permits: c.permits.map((x) => (x.id === id ? { ...x, ...p } : x)) });
   return (
     <>
-      <FormRow title="Permits" description="Any permits the survey was carried out under.">
+      <FormRow title="Permits" description="Any permits the project was carried out under.">
         {c.permits.map((permit, i) => (
           <div key={permit.id} className="flex items-end gap-3">
             <Select label="Permit type" placeholder="Select permit type" items={PERMIT_TYPE_OPTIONS} selectedKey={permit.type} onSelectionChange={(key) => updatePermit(permit.id, { type: key as string })} className="flex-1">

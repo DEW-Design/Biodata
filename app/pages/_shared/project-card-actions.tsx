@@ -1,15 +1,13 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
-import { Download01, Upload01 } from "@untitledui/icons";
-import { Button } from "@/components/base/buttons/button";
+import { Download01 } from "@untitledui/icons";
 import { Dropdown } from "@/components/base/dropdown/dropdown";
 import { downloadCsv } from "@/app/pages/_shared/agreement-actions";
 import { SignUpPromptModal } from "@/app/pages/_shared/guest-action-gate";
 import { projects } from "@/app/pages/_shared/project-list-data";
 import { ProjectIngestionChip } from "@/app/pages/_shared/dataset-upload/project-ingestion";
-import { useRoleHref } from "@/lib/use-role-href";
+import { UploadDatasetButton } from "@/app/pages/_shared/upload-dataset-button";
 import { useUserRole } from "@/lib/use-user-role";
 
 // Actions on ONE project, at the top right of the project-detail gradient card. Uploading a dataset
@@ -23,12 +21,9 @@ import { useUserRole } from "@/lib/use-user-role";
 // with no chip, the Prototype tools bar has no "Upload result" tool for them either). They still see
 // "Upload dataset", which opens the sign-up prompt.
 export function ProjectCardActions({ projectId, projectCode }: { projectId: string; projectCode: string }) {
-  const router = useRouter();
-  const roleHref = useRoleHref();
   const isGuest = useUserRole() === "public-user";
-  const [gate, setGate] = useState<"upload" | "export" | null>(null);
+  const [gate, setGate] = useState<"export" | null>(null);
 
-  const upload = () => (isGuest ? setGate("upload") : router.push(roleHref(`/pages/project-list/${projectId}/upload`)));
 
   const exportCsv = () => {
     if (isGuest) return setGate("export");
@@ -45,9 +40,7 @@ export function ProjectCardActions({ projectId, projectCode }: { projectId: stri
     <>
       <div className="flex shrink-0 items-center gap-2">
         {!isGuest && <ProjectIngestionChip projectId={projectId} />}
-        <Button color="secondary" size="sm" iconLeading={Upload01} onPress={upload}>
-          Upload dataset
-        </Button>
+        <UploadDatasetButton projectId={projectId} />
         <Dropdown.Root>
           <Dropdown.DotsButton aria-label="More project actions" className="p-1 text-white/80 hover:text-white" />
           <Dropdown.Popover placement="bottom right">
@@ -57,13 +50,6 @@ export function ProjectCardActions({ projectId, projectCode }: { projectId: stri
           </Dropdown.Popover>
         </Dropdown.Root>
       </div>
-      <SignUpPromptModal
-        isOpen={gate === "upload"}
-        onOpenChange={(open) => !open && setGate(null)}
-        icon={Upload01}
-        title="Sign up to upload a dataset"
-        description="Create a free BioData SA account to start contributing datasets to South Australia's biodiversity record."
-      />
       <SignUpPromptModal
         isOpen={gate === "export"}
         onOpenChange={(open) => !open && setGate(null)}

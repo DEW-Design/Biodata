@@ -38,6 +38,8 @@ import { cx } from "@/utils/cx";
 import { useRoleHref } from "@/lib/use-role-href";
 import { FlaggedConceptsHomeQueue } from "@/app/pages/project-detail/flagged-home-queue";
 import { useUserRole } from "@/lib/use-user-role";
+import { useFeatureAccess } from "@/lib/use-feature-access";
+import { isBiodataAdmin } from "@/lib/user-role";
 
 // The real Home/BioData Dashboard content - the single source every sidebar shell
 // (dashboard, project-list, project-detail) renders for the "Home" section, instead of the
@@ -468,6 +470,8 @@ function AdminQueueCard({ queue }: { queue: AdminQueue }) {
 }
 
 function AdminHomeDashboardContent() {
+  // Controlled Vocabulary is the BioData Super Admin's alone.
+  const canManageVocab = useFeatureAccess("ctrlVocabManagement");
   const roleHref = useRoleHref();
   const dlas = useDlas();
   const nominations = useNominations();
@@ -517,7 +521,7 @@ function AdminHomeDashboardContent() {
         <h2 className="text-lg font-semibold text-primary">Quick actions</h2>
         <div className="flex flex-wrap items-center gap-2">
           <QuickAction icon={UserCheck01} label="User Management" href={roleHref("/pages/user-management")} />
-          <DisabledQuickAction icon={Database01} label="Control Vocabulary" note="Coming soon - controlled vocabulary management isn't built yet" />
+          {canManageVocab && <QuickAction icon={Database01} label="Controlled Vocabulary" href={roleHref("/pages/ctrl-vocab")} />}
           <DisabledQuickAction icon={BarChartSquare01} label="Reports" note="Coming soon - reporting isn't built yet" />
         </div>
       </div>
@@ -635,7 +639,7 @@ export function HomeDashboardContent() {
   // dashboard/project-list/project-detail sidebar shells stays identical for every role;
   // flagged directly by the user as a "keep a consistent shell" requirement, for development ease.
   const role = useUserRole();
-  if (role === "biodata-admin") {
+  if (isBiodataAdmin(role)) {
     return <AdminHomeDashboardContent />;
   }
 

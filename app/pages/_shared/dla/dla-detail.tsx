@@ -11,7 +11,7 @@ import { AlertFullWidth } from "@/components/application/alerts/alerts";
 import { Badge } from "@/components/base/badges/badges";
 import { Button } from "@/components/base/buttons/button";
 import { Checkbox } from "@/components/base/checkbox/checkbox";
-import { InputDate } from "@/components/base/input/input-date";
+import { InputDatePicker } from "@/components/custom/date-picker/input-date-picker";
 import { InputFile } from "@/components/base/input/input-file";
 import { TextArea } from "@/components/base/textarea/textarea";
 import { FeaturedIcon } from "@/components/foundations/featured-icon/featured-icon";
@@ -39,6 +39,7 @@ import {
 import { useFeatureAccess } from "@/lib/use-feature-access";
 import { useRoleHref } from "@/lib/use-role-href";
 import { cx } from "@/utils/cx";
+import { AuditLog, milestones } from "@/app/pages/_shared/audit-log";
 
 // The DLA deep dive at /pages/dla/<id> (wireframe "View - Data Licence Agreement", Figma
 // YMproGZfrFB5jUqPHPxMhk node 33:43259), rebuilt on the same information arrangement DSA and
@@ -196,8 +197,8 @@ function ApproveModal({ dla, isOpen, onOpenChange, onApprove }: { dla: Dla; isOp
       }}
     >
       <div className="grid grid-cols-2 gap-3">
-        <InputDate label="Agreement Start Date" value={validFrom ? parseDate(validFrom) : null} onChange={(v) => setValidFrom(v ? v.toString() : "")} />
-        <InputDate label="Agreement End Date" value={validTo ? parseDate(validTo) : null} onChange={(v) => setValidTo(v ? v.toString() : "")} />
+        <InputDatePicker label="Agreement Start Date" value={validFrom ? parseDate(validFrom) : null} onChange={(v) => setValidFrom(v ? v.toString() : "")} />
+        <InputDatePicker label="Agreement End Date" value={validTo ? parseDate(validTo) : null} onChange={(v) => setValidTo(v ? v.toString() : "")} />
       </div>
       <InputFile
         label="Attach Agreement"
@@ -468,21 +469,23 @@ export function DlaDetail({
           )}
 
           <TabPanel id="audit">
-            <div className="rounded-lg border border-secondary">
-              {[...dla.history].reverse().map((e, i) => (
-                <RecordRow key={`${e.status}-${e.at}-${i}`} label={formatShortDate(e.at)}>
-                  <span className="flex flex-col gap-1">
-                    <span className="flex flex-wrap items-center gap-2">
-                      <Badge size="sm" color={dlaStatusMeta[e.status].badgeColor}>
-                        {dlaStatusMeta[e.status].label}
-                      </Badge>
-                      <span className="text-tertiary">{e.by}</span>
+            <AuditLog id={dla.id} idLabel="DLA ID" items={milestones(dla.history, { label: "Activated", is: (e) => e.status === "active" }, { created: dla.submittedAt, updated: dla.updatedAt })} changeCount={dla.history.length}>
+              <div className="rounded-lg border border-secondary">
+                {[...dla.history].reverse().map((e, i) => (
+                  <RecordRow key={`${e.status}-${e.at}-${i}`} label={formatShortDate(e.at)}>
+                    <span className="flex flex-col gap-1">
+                      <span className="flex flex-wrap items-center gap-2">
+                        <Badge size="sm" color={dlaStatusMeta[e.status].badgeColor}>
+                          {dlaStatusMeta[e.status].label}
+                        </Badge>
+                        <span className="text-tertiary">{e.by}</span>
+                      </span>
+                      {e.note && <span className="max-w-prose text-secondary">{e.note}</span>}
                     </span>
-                    {e.note && <span className="max-w-prose text-secondary">{e.note}</span>}
-                  </span>
-                </RecordRow>
-              ))}
-            </div>
+                  </RecordRow>
+                ))}
+              </div>
+            </AuditLog>
           </TabPanel>
         </div>
       </Tabs>

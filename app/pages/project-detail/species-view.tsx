@@ -1,12 +1,12 @@
 "use client";
 
-// The Species tab: every species this project has recorded, from its occurrences in Survey records.
+// The Species tab: every species this project has recorded, from its occurrences in Project records.
 // Built from Option 2's Species view (Explore's species results): the group tiles on top, each one a
-// quick filter (click again to clear). Below them, the same collection toolbar as Survey records and
+// quick filter (click again to clear). Below them, the same collection toolbar as Project records and
 // Artefacts (CONTRACTS 4.2c): the Cards / Table switch, the 384px search and the Filter button.
 //
 // A species appears once, however many occurrences it has. "Go to record" opens its occurrence in
-// Survey records; a species with more than one occurrence offers them in a menu. A species with a
+// Project records; a species with more than one occurrence offers them in a menu. A species with a
 // restricted occurrence (a generalised location) is marked Restricted.
 
 import { useMemo, useState } from "react";

@@ -14,6 +14,7 @@ import {
     ListBox as AriaListBox,
     Popover as AriaPopover,
     SearchField as AriaSearchField,
+    TextContext as AriaTextContext,
 } from "react-aria-components";
 import { Button } from "@/components/base/buttons/button";
 import { HintText } from "@/components/base/input/hint-text";
@@ -332,10 +333,15 @@ const MultiSelectRoot = ({
                     </AriaPopover>
                 </AriaDialogTrigger>
 
+                {/* MultiSelect is not a react-aria field, so its hint would otherwise pick up the text slots
+                    of whatever surrounds it: inside a Dialog (a FormModal) that offers only "description",
+                    and an invalid hint's "errorMessage" slot threw. The hint takes no outside slots. */}
                 {hint && (
-                    <HintText isInvalid={isInvalid} className={cx(size === "sm" && "text-xs")}>
-                        {hint}
-                    </HintText>
+                    <AriaTextContext.Provider value={null}>
+                        <HintText isInvalid={isInvalid} className={cx(size === "sm" && "text-xs")}>
+                            {hint}
+                        </HintText>
+                    </AriaTextContext.Provider>
                 )}
             </div>
         </SelectContext.Provider>

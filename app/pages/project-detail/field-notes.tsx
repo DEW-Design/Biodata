@@ -42,6 +42,7 @@ import { TextArea } from "@/components/base/textarea/textarea";
 import { Tooltip, TooltipTrigger } from "@/components/base/tooltip/tooltip";
 import { toast } from "@/components/application/toast/toast";
 import { useUserRole } from "@/lib/use-user-role";
+import { isBiodataAdmin } from "@/lib/user-role";
 import { cx } from "@/utils/cx";
 import {
   fieldNotesActions,
@@ -69,7 +70,7 @@ export const takesNotes = (label: string) => !/comment$/i.test(label.trim());
 /** The person adding notes: the persona's placeholder name. */
 export function useCurrentUserName(): string {
   const role = useUserRole();
-  return role === "biodata-admin" ? "Jane Harlow" : "Olivia Wyatt";
+  return isBiodataAdmin(role) ? "Jane Harlow" : "Olivia Wyatt";
 }
 
 /**
@@ -79,7 +80,7 @@ export function useCurrentUserName(): string {
  */
 export function useCanReview(): boolean {
   const role = useUserRole();
-  return role === "biodata-admin" || role === "privileged-admin";
+  return isBiodataAdmin(role) || role === "privileged-admin";
 }
 
 /** The field's one comment (older data may hold more; the latest is the one shown and edited). */

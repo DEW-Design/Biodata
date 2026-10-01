@@ -1,6 +1,6 @@
 "use client";
 
-// VERSION 3 of the Survey records explorer (route /pages/project-detail/option-2), once compared through
+// VERSION 3 of the Project records explorer (route /pages/project-detail/option-2), once compared through
 // the Version floating button. Same list, filter and search as the current version, plus:
 // - the list and the details panel are split by a handle you can drag (or move with the arrow keys),
 //   so either side can be widened;
@@ -12,7 +12,7 @@
 //   (the VS Code explorer and GitHub file tree pattern), instead of two links in the toolbar.
 // - the search is the shared ToolbarSearch, the same 384px as every list (CONTRACTS 4.2c).
 
-// Survey records explorer: one toolbar, then the records (tree or table) beside the record inspector.
+// Project records explorer: one toolbar, then the records (tree or table) beside the record inspector.
 // Tree and table show the same filtered set and share one selection, so switching view never loses
 // your place. The tree keeps a record's parents visible when a filter or search hides its siblings,
 // so a match is always read in context (Site > Quadrat > Occurrence).
@@ -465,7 +465,7 @@ export function RecordsExplorer({
                 onDoubleClick={openFullscreenFrom}
               >
                 <TreeView
-                  aria-label="Survey records"
+                  aria-label="Project records"
                   showConnectors
                   size="md"
                   selectionMode="none"
@@ -524,7 +524,7 @@ export function RecordsExplorer({
               onDoubleClick={openFullscreenFrom}
             >
               <Table
-                aria-label="Survey records"
+                aria-label="Project records"
                 bodyScrollable
                 sortDescriptor={sort}
                 onSortChange={(next) => {

@@ -96,7 +96,7 @@ export function ArtefactsView({
     <div className="flex flex-col gap-4">
       <p className="text-sm text-balance text-tertiary">
         Files, photos, recordings and links attached to the fields of this
-        project&apos;s records, in Survey records. Each one opens in the viewer;
+        project&apos;s records, in Project records. Each one opens in the viewer;
         &ldquo;Go to record&rdquo; shows the record it belongs to.
       </p>
       <div className="flex flex-wrap items-center gap-3">

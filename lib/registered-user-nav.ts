@@ -14,10 +14,14 @@ export const DLA_SECTION_LABEL = "Data Licencing Agreement (DLA)";
 export const USER_MANAGEMENT_SECTION_LABEL = "User Management";
 export const NOMINATION_SECTION_LABEL = "Nominate Sensitive Species";
 export const TEMPLATE_FINDER_SECTION_LABEL = "Template Finder";
+export const CTRL_VOCAB_SECTION_LABEL = "Controlled Vocabulary";
+export const TAXONOMY_SECTION_LABEL = "Taxonomy Management";
+export const NOTIFICATION_SECTION_LABEL = "Notification Management";
+export const VOUCHER_SECTION_LABEL = "Voucher Management";
 
 export interface NavNode {
   label: string;
-  key?: "dashboard" | "project-list" | "observations" | "dsa" | "dla" | "nominations" | "user-management" | "template-finder";
+  key?: "dashboard" | "project-list" | "observations" | "dsa" | "dla" | "nominations" | "user-management" | "template-finder" | "ctrl-vocab" | "taxonomy" | "notifications" | "vouchers";
   items?: NavNode[];
 }
 
@@ -118,22 +122,46 @@ export const publicUserNav: NavNode[] = [
 // own contextual sidebar, not as nav `items`).
 //
 // User Management (users, roles, permissions - /pages/user-management) slots between Explore and
-// DLA, per the designer (Sept 27 2026).
+// DLA, per the designer (Sept 27 2026). Taxonomy Management (/pages/taxonomy) follows it, per the
+// designer (Sept 30 2026): BioData Admin and above. Notification Management (/pages/notifications)
+// follows Taxonomy, per the designer (Oct 1 2026): BioData Admin and above, one of the admin modules
+// named in the IA cross-check below.
 //
-// NOT yet the full admin IA - see context/decisions/2026-09-22-06-biodata-admin-ia-cross-check.md, "BioData Admin IA cross-check": Ctrl Vocab, Reports
-// (All Users), Voucher/Notification/Taxonomy management, Home's admin labels and Nominate Sensitive
+// NOT yet the full admin IA - see context/decisions/2026-09-22-06-biodata-admin-ia-cross-check.md, "BioData Admin IA cross-check": Reports
+// (All Users), Voucher/Notification management, Home's admin labels and Nominate Sensitive
 // Species nesting under Observations are all still to reconcile.
 export const biodataAdminNav: NavNode[] = [
   ...registeredUserNav.flatMap((section): NavNode[] => {
-    if (section.key === "observations") return [section, { label: USER_MANAGEMENT_SECTION_LABEL, key: "user-management" }];
+    if (section.key === "observations")
+      return [
+        section,
+        { label: USER_MANAGEMENT_SECTION_LABEL, key: "user-management" },
+        { label: TAXONOMY_SECTION_LABEL, key: "taxonomy" },
+        { label: NOTIFICATION_SECTION_LABEL, key: "notifications" },
+      ];
     if (section.label === DLA_SECTION_LABEL) return [section, { label: DSA_SECTION_LABEL, key: "dsa" }];
     return [section];
   }),
 ];
 
+// biodata-super-admin's tree: the admin's, plus Controlled Vocabulary (/pages/ctrl-vocab, BRD REQ-18)
+// after DSA, the other admin module. Sept 30 2026: "This role will see everything that the Biodata
+// Admin has but CV is an additional one". The IA lists it last as "Ctrl Vocab"; the section takes the
+// BRD's name.
+//
+// Voucher Management (/pages/vouchers) follows Controlled Vocabulary: the second module only the super
+// admin has, per the designer (1 Oct 2026). The IA cross-check below names "Voucher management" as an
+// admin module; the designer placed it with the super admin.
+export const biodataSuperAdminNav: NavNode[] = biodataAdminNav.flatMap((section): NavNode[] =>
+  section.label === DSA_SECTION_LABEL
+    ? [section, { label: CTRL_VOCAB_SECTION_LABEL, key: "ctrl-vocab" }, { label: VOUCHER_SECTION_LABEL, key: "vouchers" }]
+    : [section],
+);
+
 /** The one nav tree a role's shell reads - see each tree's own comment for how they differ. */
 export function navForRole(role: UserRole): NavNode[] {
   if (role === "public-user") return publicUserNav;
+  if (role === "biodata-super-admin") return biodataSuperAdminNav;
   if (role === "biodata-admin") return biodataAdminNav;
   return registeredUserNav;
 }

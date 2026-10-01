@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, type FC } from "react";
-import dynamic from "next/dynamic";
 import { Circle, MarkerPin02, Pentagon, UploadCloud02 } from "@untitledui/icons";
 import { Button } from "@/components/base/buttons/button";
 import { Input } from "@/components/base/input/input";
@@ -12,6 +11,7 @@ import { Select } from "@/components/base/select/select";
 import { Dialog, Modal, ModalFooter, ModalHeader, ModalOverlay } from "@/components/application/modals/modal";
 import { Tab, TabList, TabPanel, Tabs } from "@/components/application/tabs/tabs";
 import { SA_NATIONAL_PARKS, type Boundary } from "@/app/pages/_shared/map-search/geo";
+import { ExpandableMap } from "@/app/pages/_shared/map-search/expandable-map";
 import { eastingNorthingToLatLon, parseLocationFile } from "@/app/pages/_shared/dla/dla-geo";
 import { newLocationId, type DlaLocation, type DlaLocationMethod } from "@/app/pages/_shared/dla/dla-data";
 
@@ -27,15 +27,6 @@ import { newLocationId, type DlaLocation, type DlaLocationMethod } from "@/app/p
 // this modal - the wireframe places them on each already-added location row in the parent step,
 // not inside "Add a Location" itself, so this modal only ever produces a location's name/method/
 // geometry; the caller assigns a default level and lets the requester change it afterward.
-
-const SAMap = dynamic(() => import("@/app/pages/_shared/map-search/sa-map"), {
-    ssr: false,
-    loading: () => (
-        <div className="flex size-full items-center justify-center bg-secondary">
-            <p className="text-sm text-tertiary">Loading map…</p>
-        </div>
-    ),
-});
 
 const methodTabs: { id: DlaLocationMethod; label: string; icon: FC<{ className?: string }> }[] = [
     { id: "shapefile", label: "Upload Shapefile", icon: UploadCloud02 },
@@ -59,6 +50,29 @@ export function AddLocationModal({ isOpen, onOpenChange, onAdd }: { isOpen: bool
 
     const [drawnBoundary, setDrawnBoundary] = useState<Boundary | null>(null);
     const [activeDrawTool, setActiveDrawTool] = useState<"circle" | "polygon" | null>(null);
+    // The draw buttons, above the map and again in its full-screen bar.
+    const drawButtons = (className?: string) => (
+        <>
+            <Button
+                color={activeDrawTool === "circle" ? "primary" : "secondary"}
+                size="sm"
+                iconLeading={Circle}
+                className={className}
+                onPress={() => setActiveDrawTool(activeDrawTool === "circle" ? null : "circle")}
+            >
+                {activeDrawTool === "circle" ? "Drawing…" : "Draw circle"}
+            </Button>
+            <Button
+                color={activeDrawTool === "polygon" ? "primary" : "secondary"}
+                size="sm"
+                iconLeading={Pentagon}
+                className={className}
+                onPress={() => setActiveDrawTool(activeDrawTool === "polygon" ? null : "polygon")}
+            >
+                {activeDrawTool === "polygon" ? "Drawing…" : "Draw polygon"}
+            </Button>
+        </>
+    );
 
     const [selectedParkId, setSelectedParkId] = useState<string | null>(null);
 
@@ -167,38 +181,20 @@ export function AddLocationModal({ isOpen, onOpenChange, onAdd }: { isOpen: bool
 
                             <TabPanel id="map" className="flex flex-col gap-4">
                                 <Input label="Specify a Location Name" isRequired value={name} onChange={setName} />
-                                <div className="flex gap-2">
-                                    <Button
-                                        color={activeDrawTool === "circle" ? "primary" : "secondary"}
-                                        size="sm"
-                                        iconLeading={Circle}
-                                        className="flex-1"
-                                        onPress={() => setActiveDrawTool(activeDrawTool === "circle" ? null : "circle")}
-                                    >
-                                        {activeDrawTool === "circle" ? "Drawing…" : "Draw circle"}
-                                    </Button>
-                                    <Button
-                                        color={activeDrawTool === "polygon" ? "primary" : "secondary"}
-                                        size="sm"
-                                        iconLeading={Pentagon}
-                                        className="flex-1"
-                                        onPress={() => setActiveDrawTool(activeDrawTool === "polygon" ? null : "polygon")}
-                                    >
-                                        {activeDrawTool === "polygon" ? "Drawing…" : "Draw polygon"}
-                                    </Button>
-                                </div>
-                                <div className="h-72 overflow-hidden rounded-lg border border-secondary">
-                                    <SAMap
-                                        boundaries={drawnBoundary ? [drawnBoundary] : []}
-                                        onBoundaryAdd={(b) => {
-                                            setDrawnBoundary(b);
-                                            setActiveDrawTool(null);
-                                        }}
-                                        activeDrawTool={activeDrawTool}
-                                        onDrawToolChange={setActiveDrawTool}
-                                        className="size-full"
-                                    />
-                                </div>
+                                <div className="flex gap-2">{drawButtons("flex-1")}</div>
+                                <ExpandableMap
+                                    title={name.trim() || "Draw a location"}
+                                    overModal
+                                    toolbar={<div className="flex gap-2">{drawButtons()}</div>}
+                                    boundaries={drawnBoundary ? [drawnBoundary] : []}
+                                    onBoundaryAdd={(b) => {
+                                        setDrawnBoundary(b);
+                                        setActiveDrawTool(null);
+                                    }}
+                                    activeDrawTool={activeDrawTool}
+                                    onDrawToolChange={setActiveDrawTool}
+                                    className="h-72"
+                                />
                                 {drawnBoundary && (
                                     <Button color="link-gray" size="sm" className="self-start" onPress={() => setDrawnBoundary(null)}>
                                         Clear shape

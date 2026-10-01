@@ -2,7 +2,7 @@
 
 import { useState, type FC } from "react";
 import { usePathname, useRouter } from "next/navigation";
-import { ChevronDown, Feather, FileCheck02, FileLock01, Folder, Plus, Upload01, UserPlus01 } from "@untitledui/icons";
+import { Bell01, ChevronDown, Database01, Feather, FileCheck02, FileLock01, Folder, Plus, Upload01, UserPlus01 } from "@untitledui/icons";
 import { Button } from "@/components/base/buttons/button";
 import { Dropdown } from "@/components/base/dropdown/dropdown";
 import { ChooseProjectModal } from "@/app/pages/_shared/dataset-upload/choose-project-modal";
@@ -25,6 +25,8 @@ const itemIcons: Record<CreateItemId, FC<{ className?: string }>> = {
   nomination: Feather,
   dsa: FileCheck02,
   user: UserPlus01,
+  "ctrl-vocab": Database01,
+  notification: Bell01,
 };
 
 export function CreateMenu() {

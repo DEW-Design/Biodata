@@ -34,6 +34,7 @@ const VARIANTS = [
 // Role names as User Management already writes them (um-data.ts). A public user has no account,
 // so the name says what you see: the signed-out site.
 const ROLE_NAMES: Record<UserRole, { label: string; description?: string }> = {
+  "biodata-super-admin": { label: "BioData Super Admin" },
   "biodata-admin": { label: "BioData Admin" },
   "biodata-user": { label: "BioData User" },
   "privileged-admin": { label: "Privileged Admin" },

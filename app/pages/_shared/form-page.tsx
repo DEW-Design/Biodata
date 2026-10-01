@@ -38,6 +38,7 @@ export function FormPage({
   primaryLabel,
   onPrimary,
   primaryIsContinue = false,
+  primaryIsDisabled = false,
 }: {
   eyebrow?: string;
   title: string;
@@ -59,6 +60,8 @@ export function FormPage({
   onPrimary: () => void;
   /** True when the primary action just moves to the next section: adds the right arrow. */
   primaryIsContinue?: boolean;
+  /** Disables the primary action, e.g. "Save changes" on a live record before anything has changed. */
+  primaryIsDisabled?: boolean;
 }) {
   return (
     <div className="flex min-h-0 flex-1 flex-col">
@@ -111,7 +114,7 @@ export function FormPage({
               Save draft
             </Button>
           )}
-          <Button color="primary" iconTrailing={primaryIsContinue ? ArrowNarrowRight : undefined} onClick={onPrimary}>
+          <Button color="primary" iconTrailing={primaryIsContinue ? ArrowNarrowRight : undefined} isDisabled={primaryIsDisabled} onClick={onPrimary}>
             {primaryLabel}
           </Button>
         </div>

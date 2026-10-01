@@ -22,7 +22,7 @@ import { USER_ROLES, type UserRole } from "@/lib/user-role";
 // Maintained by hand: a new screen needs one line here. Routes with an id in them link to a real
 // seeded record (a project, an agreement, a nomination, a user).
 
-type Access = "Everyone" | "Signed in" | "BioData Admin";
+type Access = "Everyone" | "Signed in" | "BioData Admin" | "BioData Super Admin";
 type Area =
   | "Start"
   | "Sign in"
@@ -33,10 +33,14 @@ type Area =
   | "Data sharing (DSA)"
   | "Nominations"
   | "User management"
+  | "Controlled Vocabulary"
+  | "Taxonomy Management"
+  | "Notification Management"
   | "Template Finder"
-  | "Unlinked";
+  | "Unlinked"
+  | "Voucher Management";
 
-const AREAS: Area[] = ["Start", "Sign in", "Home", "Projects", "Explore", "Data licence (DLA)", "Data sharing (DSA)", "Nominations", "User management", "Template Finder", "Unlinked"];
+const AREAS: Area[] = ["Start", "Sign in", "Home", "Projects", "Explore", "Data licence (DLA)", "Data sharing (DSA)", "Nominations", "User management", "Taxonomy Management", "Notification Management", "Controlled Vocabulary", "Voucher Management", "Template Finder", "Unlinked"];
 
 interface Screen {
   path: string;
@@ -60,8 +64,8 @@ const SCREENS: Screen[] = [
   { area: "Sign in", name: "Password reset", path: "/pages/auth/reset-success", access: "Everyone", description: "Confirmation, then back to log in." },
   { area: "Home", name: "Home", path: "/pages/dashboard", access: "Everyone", description: "My BioData and the Flora and Fauna Dashboard; a public user gets the dashboard and the sign-up card." },
   { area: "Projects", name: "Projects", path: "/pages/project-list", access: "Everyone", description: "Every project, with search, filters and sorting." },
-  { area: "Projects", name: "Adelaide Hills project, option 1", path: "/pages/project-detail", access: "Everyone", description: "The hand-built project page: tabs with the records tree in column 2." },
-  { area: "Projects", name: "Adelaide Hills project, option 2", path: "/pages/project-detail/option-3", access: "Everyone", description: "The comparison layout: About, Records and Species, with editing." },
+  { area: "Projects", name: "Adelaide Hills project, option 1", path: "/pages/project-detail", access: "Everyone", description: "Project, Project records, Species and Artefacts tabs, with editing and flagged concepts." },
+  { area: "Projects", name: "Adelaide Hills project, option 2", path: "/pages/project-detail/option-2", access: "Everyone", description: "The hand-built project page: tabs with the records tree." },
   { area: "Projects", name: "Project page", path: "/pages/project-list/kangaroo-island/project-details", access: "Everyone", description: "Any other project, built from the shared data (Kangaroo Island shown)." },
   { area: "Projects", name: "Record page", path: "/pages/project-list/kangaroo-island/project-details/occurrences/occ-7", access: "Everyone", description: "One occurrence on its project (a Southern Hairy-nosed Wombat)." },
   { area: "Projects", name: "Upload dataset", path: "/pages/project-list/kangaroo-island/upload", access: "Signed in", description: "Upload a spreadsheet to a project, then the data upload acknowledgement." },
@@ -88,14 +92,31 @@ const SCREENS: Screen[] = [
   { area: "User management", name: "Permissions", path: "/pages/user-management/permissions", access: "BioData Admin", description: "Every permission, by category." },
   { area: "User management", name: "Permission", path: "/pages/user-management/permissions/PERM-301", access: "BioData Admin", description: "One permission and the roles that have it." },
   { area: "User management", name: "Add permissions", path: "/pages/user-management/permissions/new", access: "BioData Admin", description: "Several at once, under a category." },
+  { area: "Controlled Vocabulary", name: "Vocabularies", path: "/pages/ctrl-vocab", access: "BioData Super Admin", description: "Every vocabulary: search inside entries, categories, templates from Actions." },
+  { area: "Controlled Vocabulary", name: "Vocabulary", path: "/pages/ctrl-vocab/BIODATA-114", access: "BioData Super Admin", description: "One vocabulary: entries, details, history (the BRD's Measurement example)." },
+  { area: "Controlled Vocabulary", name: "Descriptive vocabulary", path: "/pages/ctrl-vocab/BIODATA-115", access: "BioData Super Admin", description: "Fauna species, picked from the Taxonomy table." },
+  { area: "Controlled Vocabulary", name: "New vocabulary", path: "/pages/ctrl-vocab/new", access: "BioData Super Admin", description: "Details, columns, then entries." },
+  { area: "Taxonomy Management", name: "Species", path: "/pages/taxonomy", access: "BioData Admin", description: "Every species, Flora and Fauna, as a list or the hierarchy; Update taxonomy starts a change." },
+  { area: "Taxonomy Management", name: "Species record", path: "/pages/taxonomy/P01937", access: "BioData Admin", description: "South Australian Blue Gum: Flora tabs, edit in place, Synonyms view." },
+  { area: "Taxonomy Management", name: "Rename Taxon", path: "/pages/taxonomy/new?type=rename", access: "BioData Admin", description: "A guided change: taxon in, new name, before and after review. Combine, Split, Append the same." },
+  { area: "Notification Management", name: "Notifications", path: "/pages/notifications", access: "BioData Admin", description: "Every notification beside its email: arrow through them to preview." },
+  { area: "Notification Management", name: "Notification", path: "/pages/notifications/NTF-001", access: "BioData Admin", description: "One notification: preview, settings, history (Observation submitted successfully)." },
+  { area: "Notification Management", name: "New notification", path: "/pages/notifications/new", access: "BioData Admin", description: "Trigger, recipients, then the message beside a live preview." },
+  { area: "Notification Management", name: "Notifications, Option 2", path: "/pages/notifications/option-2", access: "BioData Admin", description: "Status tabs, triggers in words, the same notifications." },
+  { area: "Notification Management", name: "Notification, Option 2", path: "/pages/notifications/option-2/NTF-001", access: "BioData Admin", description: "How it works beside the email, then History." },
+  { area: "Notification Management", name: "New notification, Option 2", path: "/pages/notifications/option-2/new", access: "BioData Admin", description: "The email builds beside every section." },
+  { area: "Voucher Management", name: "Scan batches", path: "/pages/vouchers", access: "BioData Super Admin", description: "Every scan, Herbarium and SA Museum run separately; the source in column 2." },
+  { area: "Voucher Management", name: "Batch to review", path: "/pages/vouchers/1012", access: "BioData Super Admin", description: "Option 1: a row per record, its fields as lines; set Your update, then push or ignore." },
+  { area: "Voucher Management", name: "Batch to review, Option 2", path: "/pages/vouchers/option-2/1012", access: "BioData Super Admin", description: "A row per field, coloured by where it stands, as in the Figma." },
+  { area: "Voucher Management", name: "Record comparison", path: "/pages/vouchers/1012?record=ADH-2024-118", access: "BioData Super Admin", description: "One record's four fields beside the Herbarium's, and its history across scans." },
   { area: "Template Finder", name: "Template Finder", path: "/pages/template-finder", access: "Signed in", description: "Standard dataset templates, with search and filters." },
-  { area: "Unlinked", name: "Project detail, older option 2", path: "/pages/project-detail/option-2", access: "Everyone", description: "The earlier comparison layout; not in the layout switcher." },
   { area: "Unlinked", name: "Projects draft", path: "/pages/projects", access: "Everyone", description: "A stale draft, not linked from anywhere." },
   { area: "Unlinked", name: "Projects draft 2", path: "/pages/projectsv2", access: "Everyone", description: "A stale draft, not linked from anywhere." },
 ];
 
 // Role names as the Prototype tools bar and User Management write them.
 const ROLE_NAMES: Record<UserRole, string> = {
+  "biodata-super-admin": "BioData Super Admin",
   "biodata-admin": "BioData Admin",
   "biodata-user": "BioData User",
   "privileged-admin": "Privileged Admin",
@@ -108,6 +129,7 @@ const accessColor: Record<Access, "gray" | "brand" | "warning"> = {
   Everyone: "gray",
   "Signed in": "brand",
   "BioData Admin": "warning",
+  "BioData Super Admin": "warning",
 };
 
 const sortKeys: Record<string, (s: Screen) => SortValue> = {

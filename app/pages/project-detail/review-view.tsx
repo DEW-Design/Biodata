@@ -2,7 +2,7 @@
 
 // Reviewing flagged concepts: the admin's management screen for this project (29 Sept 2026).
 // A flagged concept is a value on a survey record that has been marked questionable. It is
-// management work, not a view of the records, so it is not a tab: Survey records shows a banner
+// management work, not a view of the records, so it is not a tab: Project records shows a banner
 // ("N flagged concepts need review across this project · Review") that opens this screen, and the
 // admin's Home lists the oldest ones across projects.
 //
@@ -175,7 +175,7 @@ export function useReviewItems() {
   return useMemo(() => collectReviewItems(notes, records), [notes, records]);
 }
 
-/** Open flagged concepts per record, for the markers and the filter in Survey records. */
+/** Open flagged concepts per record, for the markers and the filter in Project records. */
 export function useFlagCounts(): Map<string, number> {
   const { open } = useReviewItems();
   return useMemo(() => {

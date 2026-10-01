@@ -203,7 +203,7 @@ function ProjectShell({ project, record = null, children }: { project: SearchEve
             {tree.length === 0 ? (
               <div className="flex flex-col items-center gap-2 px-2 py-6 text-center">
                 <FileSearch01 className="size-5 text-fg-quaternary" />
-                <p className="text-xs text-balance text-tertiary">This project has no sites or surveys recorded yet.</p>
+                <p className="text-xs text-balance text-tertiary">This project has no sites or visits recorded yet.</p>
               </div>
             ) : (
               <TreeView aria-label={`${project.name} records`} showConnectors onAction={openFromTree} defaultExpandedKeys={allKeys} className="w-full">
