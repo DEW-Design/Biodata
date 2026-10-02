@@ -201,7 +201,7 @@ function projectRestrictions(project: SearchEvent): Draft[] {
             attributeValue: entry.speciesId,
             subAttribute: sub,
             subAttributeValue: value,
-            justification: entry.justification,
+            justification: concept ? concept.justification : entry.justification,
             accessLevel: concept ? accessFor(concept.concept, value) : "Highly restricted",
             treatments: concept ? treatmentFor(concept.concept, sub, value, null) : "Withhold precise coordinates",
           });

@@ -29,7 +29,8 @@ import { MultiSelect } from "@/components/base/select/multi-select";
 import { Button } from "@/components/base/buttons/button";
 import { TypeformCard, ChoiceTile } from "./typeform-card";
 import { GeoExtentPicker, geoExtentSummary } from "./geo-extent-picker";
-import { FOCUS_AREA_OPTIONS, PERMIT_TYPE_OPTIONS, COLLECTION_METHOD_OPTIONS, REGISTRATION_SPECIES } from "./data";
+import { FOCUS_AREA_OPTIONS, PERMIT_TYPE_OPTIONS, COLLECTION_METHOD_OPTIONS, REGISTRATION_SPECIES, SURVEY_TYPE_OPTIONS } from "./data";
+import { MethodologySelect, SurveyTypeRadios } from "./methodology-fields";
 import { emptyPermitRow, isGeoExtentComplete, type DataCollectionState } from "./types";
 
 const SPECIES_ITEMS = REGISTRATION_SPECIES.map((s) => ({ id: s.id, label: `${s.commonName} (${s.species})` }));
@@ -39,6 +40,7 @@ export function isStep2Valid(collection: DataCollectionState): boolean {
         isGeoExtentComplete(collection.geographicExtent) &&
         collection.focusAreas.length > 0 &&
         (!collection.focusAreas.includes("other") || collection.focusAreaOther.trim().length > 0) &&
+        !!collection.surveyType &&
         !!collection.collectionMethod &&
         collection.methodDetails.trim().length > 0
     );
@@ -91,7 +93,7 @@ export function Step2DataCollection({
     const cardValid = [
         isGeoExtentComplete(value.geographicExtent),
         value.focusAreas.length > 0 && (!value.focusAreas.includes("other") || value.focusAreaOther.trim().length > 0),
-        !!value.collectionMethod && value.methodDetails.trim().length > 0,
+        !!value.surveyType && !!value.collectionMethod && value.methodDetails.trim().length > 0,
     ];
 
     if (cardIndex === 0) {
@@ -130,6 +132,11 @@ export function Step2DataCollection({
         return (
             <TypeformCard cardKey={2} step={3} totalSteps={TOTAL_QUESTIONS} kicker="Data collection" title="How was this data collected?" nextDisabled={!cardValid[2]} onNext={next} onBack={back}>
                 <div className="flex flex-col gap-3">
+                    <p className="text-sm font-medium text-secondary">Survey type</p>
+                    <SurveyTypeRadios value={value.surveyType} onChange={(surveyType) => patch({ surveyType })} />
+                </div>
+                <div className="flex flex-col gap-3">
+                    <p className="text-sm font-medium text-secondary">Method of data collection</p>
                     {COLLECTION_METHOD_OPTIONS.map((option) => (
                         <ChoiceTile key={option.id} label={option.label} hint={option.description} isSelected={value.collectionMethod === option.id} onClick={() => patch({ collectionMethod: option.id })} />
                     ))}
@@ -138,15 +145,10 @@ export function Step2DataCollection({
                     even an "Incidental"/"Unknown" method still has real survey-technique detail
                     worth capturing. */}
                 {!!value.collectionMethod && (
-                    <TextArea
-                        label="Method details"
-                        placeholder="Provide details of your survey methods such as qualitative or quantitative techniques."
-                        isRequired
-                        rows={3}
-                        value={value.methodDetails}
-                        onChange={(v) => patch({ methodDetails: v })}
-                        autoFocus
-                    />
+                    <div className="flex flex-col gap-3">
+                        <p className="text-sm font-medium text-secondary">Methodology</p>
+                        <MethodologySelect value={value.methodDetails} onChange={(methodDetails) => patch({ methodDetails })} />
+                    </div>
                 )}
             </TypeformCard>
         );
@@ -154,6 +156,7 @@ export function Step2DataCollection({
 
     // Review - same shape as Step 1's own closing card: a summary of the mandatory answers with
     // edit-jump links, then every genuinely optional field surfaced as a "+ Add..." choice.
+    const surveyTypeLabel = SURVEY_TYPE_OPTIONS.find((o) => o.id === value.surveyType)?.label;
     const methodLabel = COLLECTION_METHOD_OPTIONS.find((o) => o.id === value.collectionMethod)?.label;
     const focusAreaLabels = value.focusAreas
         .map((id) => (id === "other" && value.focusAreaOther ? value.focusAreaOther : (FOCUS_AREA_OPTIONS.find((o) => o.id === id)?.label ?? id)))
@@ -165,7 +168,9 @@ export function Step2DataCollection({
                 {[
                     { label: "Geographic extent", value: geoExtentSummary(value.geographicExtent), goToIndex: 0 },
                     { label: "Project focus areas", value: focusAreaLabels, goToIndex: 1 },
+                    { label: "Survey type", value: surveyTypeLabel, goToIndex: 2 },
                     { label: "Method of data collection", value: methodLabel, goToIndex: 2 },
+                    { label: "Methodology", value: value.methodDetails, goToIndex: 2 },
                 ].map((row) => (
                     <div key={row.label} className="flex items-center justify-between gap-4 px-4 py-3">
                         <div className="flex min-w-0 flex-col">

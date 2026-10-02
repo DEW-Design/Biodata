@@ -103,6 +103,20 @@ function keyboardDot(label: string, activate: () => void) {
  *  smaller than the area the record could be in. */
 const MIN_BLOCK_PX = 14;
 
+/** Keeps the map true to the box it is in. Leaflet measures its container once and again only when the window resizes, so a
+ *  map in a dialog that reaches its size after the map mounted drew its shapes for the old size (a circle cut off along a
+ *  straight edge). This re-measures whenever the container itself changes size. */
+function ResizeSync() {
+    const map = useMap();
+    useEffect(() => {
+        const container = map.getContainer();
+        const observer = new ResizeObserver(() => map.invalidateSize({ animate: false }));
+        observer.observe(container);
+        return () => observer.disconnect();
+    }, [map]);
+    return null;
+}
+
 /** A restricted record's block: the square cell of the generalisation grid that contains it, drawn flat with a thin
  *  edge and no centre mark (a blur or a dot would point at a place inside it). Pixel-aware, so it re-sizes itself on
  *  every zoom. */
@@ -518,6 +532,7 @@ export default function SAMap({
                     </CircleMarker>
                     ),
                 )}
+                <ResizeSync />
             </MapContainer>
         </div>
     );

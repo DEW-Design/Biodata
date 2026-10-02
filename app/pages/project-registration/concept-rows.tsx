@@ -11,7 +11,7 @@
 
 import type { ReactNode } from "react";
 import { Plus, Trash01 } from "@untitledui/icons";
-import { getLocalTimeZone } from "@internationalized/date";
+import { getLocalTimeZone, today } from "@internationalized/date";
 import { Input } from "@/components/base/input/input";
 import { Select } from "@/components/base/select/select";
 import { MultiSelect } from "@/components/base/select/multi-select";
@@ -19,7 +19,10 @@ import { RadioButton, RadioGroup } from "@/components/base/radio-buttons/radio-b
 import { InputDatePicker } from "@/components/custom/date-picker/input-date-picker";
 import { Button } from "@/components/base/buttons/button";
 import type { ConceptOption } from "./data";
+import { TextArea } from "@/components/base/textarea/textarea";
 import { emptyConceptRow, type ConceptValueRow } from "./types";
+
+const REQUIRED = "This field is required";
 
 function hasValue(row: ConceptValueRow, option: ConceptOption | undefined): boolean {
     switch (option?.valueType) {
@@ -29,7 +32,8 @@ function hasValue(row: ConceptValueRow, option: ConceptOption | undefined): bool
         case "areas":
             return row.values.length > 0;
         case "dateRange":
-            return !!row.dateFrom || !!row.dateTo;
+            // From is mandatory (it defaults to today); To is optional but never before From.
+            return !!row.dateFrom && (!row.dateTo || row.dateTo.compare(row.dateFrom) >= 0);
         case "text":
         case "select":
         case "boolean":
@@ -41,10 +45,16 @@ function hasValue(row: ConceptValueRow, option: ConceptOption | undefined): bool
 
 /** Every row needs a concept (plus a name, if "Other") and a value in that concept's own
  *  control - except `none` concepts, which are withheld whole and have no value to give. */
-export function isConceptRowsValid(rows: ConceptValueRow[], options: ConceptOption[]): boolean {
+export function isConceptRowsValid(rows: ConceptValueRow[], options: ConceptOption[], justifyEach = false): boolean {
     return (
         rows.length > 0 &&
-        rows.every((r) => !!r.concept && (r.concept !== "other" || r.conceptOther.trim().length > 0) && hasValue(r, options.find((o) => o.id === r.concept)))
+        rows.every(
+            (r) =>
+                !!r.concept &&
+                (r.concept !== "other" || r.conceptOther.trim().length > 0) &&
+                hasValue(r, options.find((o) => o.id === r.concept)) &&
+                (!justifyEach || r.justification.trim().length > 0),
+        )
     );
 }
 
@@ -76,15 +86,21 @@ export function conceptValueLabel(row: ConceptValueRow, options: ConceptOption[]
     }
 }
 
-function ValueControl({ row, option, update }: { row: ConceptValueRow; option: ConceptOption | undefined; update: (patch: Partial<ConceptValueRow>) => void }) {
+function ValueControl({ row, option, update, showErrors }: { row: ConceptValueRow; option: ConceptOption | undefined; update: (patch: Partial<ConceptValueRow>) => void; showErrors: boolean }) {
     if (!option) return null;
+    const valueMissing = showErrors && !hasValue(row, option);
     switch (option.valueType) {
         case "multi": {
             const items = option.options ?? [];
             return (
                 <MultiSelect
                     label="Value"
+                    isRequired
                     placeholder={option.placeholder}
+                    isInvalid={valueMissing}
+                    hint={valueMissing ? "Select at least one" : undefined}
+                    // The trigger names what is chosen, in the order the list shows them, rather than counting them.
+                    selectedCountFormatter={() => items.filter((o) => row.values.includes(o.id)).map((o) => o.label).join(", ")}
                     items={items}
                     selectedKeys={new Set(row.values)}
                     onSelectionChange={(keys) => update({ values: Array.from(keys as Set<string>) })}
@@ -97,7 +113,16 @@ function ValueControl({ row, option, update }: { row: ConceptValueRow; option: C
         }
         case "select":
             return (
-                <Select label="Value" placeholder={option.placeholder} items={option.options ?? []} selectedKey={row.value || null} onSelectionChange={(key) => update({ value: String(key) })}>
+                <Select
+                    label="Value"
+                    isRequired
+                    placeholder={option.placeholder}
+                    items={option.options ?? []}
+                    selectedKey={row.value || null}
+                    onSelectionChange={(key) => update({ value: String(key) })}
+                    isInvalid={valueMissing}
+                    hint={valueMissing ? "Select a value" : undefined}
+                >
                     {(item) => <Select.Item {...item}>{item.label}</Select.Item>}
                 </Select>
             );
@@ -109,12 +134,21 @@ function ValueControl({ row, option, update }: { row: ConceptValueRow; option: C
                         <RadioButton value="yes" label="Yes" size="sm" />
                         <RadioButton value="no" label="No" size="sm" />
                     </RadioGroup>
+                    {valueMissing && <p className="m-0 text-sm text-error-primary">Choose Yes or No</p>}
                 </div>
             );
         case "dateRange":
             return (
                 <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                    <InputDatePicker label="From" value={row.dateFrom} maxValue={row.dateTo ?? undefined} onChange={(v) => update({ dateFrom: v })} />
+                    <InputDatePicker
+                        label="From"
+                        isRequired
+                        value={row.dateFrom}
+                        maxValue={row.dateTo ?? undefined}
+                        onChange={(v) => update({ dateFrom: v })}
+                        isInvalid={!row.dateFrom}
+                        hint={!row.dateFrom ? "Choose the date the restriction starts from" : undefined}
+                    />
                     <InputDatePicker label="To" value={row.dateTo} minValue={row.dateFrom ?? undefined} onChange={(v) => update({ dateTo: v })} />
                 </div>
             );
@@ -124,7 +158,17 @@ function ValueControl({ row, option, update }: { row: ConceptValueRow; option: C
             // The areas editor is the caller's (`renderBelow`), placed here as this row's value.
             return null;
         default:
-            return <Input label="Value" placeholder={option.placeholder} value={row.value} onChange={(v) => update({ value: v })} />;
+            return (
+                <Input
+                    label="Value"
+                    isRequired
+                    placeholder={option.placeholder}
+                    value={row.value}
+                    onChange={(v) => update({ value: v })}
+                    isInvalid={valueMissing}
+                    hint={valueMissing ? REQUIRED : undefined}
+                />
+            );
     }
 }
 
@@ -134,6 +178,8 @@ export function ConceptRows({
     options,
     noun = "concept",
     renderBelow,
+    justifyEach = false,
+    showErrors = false,
 }: {
     rows: ConceptValueRow[];
     onChange: (rows: ConceptValueRow[]) => void;
@@ -142,6 +188,10 @@ export function ConceptRows({
     noun?: "concept" | "attribute";
     /** The value for types this editor does not draw itself (areas), shown as that row's value. */
     renderBelow?: (row: ConceptValueRow, option: ConceptOption | undefined, update: (patch: Partial<ConceptValueRow>) => void) => ReactNode;
+    /** Each row asks for its own justification, after its value (Add Project's species and metadata restrictions). */
+    justifyEach?: boolean;
+    /** Show what is missing on each row. Switched on once a person tries to save with something missing. */
+    showErrors?: boolean;
 }) {
     const Noun = noun === "attribute" ? "Attribute" : "Concept";
     const article = noun === "attribute" ? "an" : "a";
@@ -176,15 +226,37 @@ export function ConceptRows({
                             items={options.filter((o) => !taken.has(o.id))}
                             selectedKey={row.concept}
                             // Switching resets the value: each one has its own value control.
-                            onSelectionChange={(key) => update(row.id, { ...emptyConceptRow(row.id), concept: key as string })}
+                            onSelectionChange={(key) => update(row.id, { ...emptyConceptRow(row.id), concept: key as string, justification: row.justification, ...(options.find((o) => o.id === key)?.valueType === "dateRange" ? { dateFrom: today(getLocalTimeZone()) } : {}) })}
+                            isInvalid={showErrors && !row.concept}
+                            hint={showErrors && !row.concept ? `Select ${article} ${noun}` : undefined}
                         >
                             {(item) => <Select.Item {...item}>{item.label}</Select.Item>}
                         </Select>
                         {row.concept === "other" && (
-                            <Input label={`${Noun} name`} placeholder={`Name this ${noun}`} isRequired value={row.conceptOther} onChange={(v) => patch({ conceptOther: v })} />
+                            <Input
+                                label={`${Noun} name`}
+                                placeholder={`Name this ${noun}`}
+                                isRequired
+                                value={row.conceptOther}
+                                onChange={(v) => patch({ conceptOther: v })}
+                                isInvalid={showErrors && !row.conceptOther.trim()}
+                                hint={showErrors && !row.conceptOther.trim() ? REQUIRED : undefined}
+                            />
                         )}
-                        <ValueControl row={row} option={option} update={patch} />
+                        <ValueControl row={row} option={option} update={patch} showErrors={showErrors} />
                         {renderBelow?.(row, option, patch)}
+                        {justifyEach && row.concept && (
+                            <TextArea
+                                label="Justification"
+                                isRequired
+                                rows={2}
+                                placeholder={`Why is ${conceptLabel(row, options).toLowerCase()} restricted?`}
+                                value={row.justification}
+                                onChange={(v) => patch({ justification: v })}
+                                isInvalid={showErrors && !row.justification.trim()}
+                                hint={showErrors && !row.justification.trim() ? "Enter a justification" : undefined}
+                            />
+                        )}
                     </div>
                 );
             })}

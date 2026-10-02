@@ -19,6 +19,7 @@ import {
   type SearchOccurrence,
 } from "@/app/pages/_shared/map-search/search-data";
 import { projectEvents, projectObservations, projectOccurrences } from "@/app/pages/_shared/project-scope";
+import { createdProjectForm, type CreatedProject } from "@/app/pages/_shared/created-projects-store";
 import type { UserRole } from "@/lib/user-role";
 import type { ProjectState, SurveyArtefact } from "./edit-store";
 import { NSX_SPECIES } from "./field-schema";
@@ -279,6 +280,20 @@ export function seedFromExplore(project: SearchEvent, role: UserRole): ProjectSe
       status: projectStatus(project.status),
     },
     records,
+    artefacts: [],
+  };
+}
+
+/** The template's seed for a project created through Add Project: exactly what was submitted, no records
+ *  or artefacts yet (a new project has none; they arrive with its first upload). */
+export function seedFromCreated(created: CreatedProject): ProjectSeed {
+  const form = createdProjectForm(created);
+  const { details } = form;
+  const publisher = details.dataOwnerType === "organisation" ? details.dataOwnerOrgName : `${details.dataOwnerContacts[0]?.firstName ?? ""} ${details.dataOwnerContacts[0]?.lastName ?? ""}`.trim();
+  return {
+    meta: { id: created.id, code: created.code, publisher, objectPrefix: created.code },
+    project: { details, collection: form.collection, restrictions: form.restrictions, status: "Active" },
+    records: [],
     artefacts: [],
   };
 }

@@ -6,8 +6,8 @@
 // question per card, no rail or sidebar) with the floating options control - see context/decisions/2026-09-25-02-add-project-gets-a-second-layout-at-pages.md.
 //
 // What changed from the first layout, and why:
-// - Related fields share a screen (project name + abstract + dates; owner + contact; role + team)
-//   instead of one question per card, so 14 cards become 6 sections plus one per restriction kind.
+// - Related fields share a screen (project name + abstract + dates; owner + contact + role + managers)
+//   instead of one question per card, so 14 cards become 5 sections plus one per restriction kind.
 // - Column 2 lists every section with its state (current, complete, needs attention, not started),
 //   and any section can be opened at any time - the first layout only ever moved forward or back.
 // - Required fields explain themselves inline, but only after Continue is pressed with something
@@ -19,7 +19,8 @@
 //   bespoke choice tiles are gone.
 //
 // Same form state, validation rules, restriction editors and success screen as the first layout.
-// No backend: "Create project" persists nothing, and Save draft says so.
+// No backend: "Create project" keeps the project in this browser's localStorage (created-projects-store.ts),
+// and Save draft says it persists nothing.
 
 import { Suspense, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -30,6 +31,7 @@ import { toast } from "@/components/application/toast/toast";
 import { useRoleHref } from "@/lib/use-role-href";
 import { useUserRole } from "@/lib/use-user-role";
 import { FormPage } from "@/app/pages/_shared/form-page";
+import { createdProjectHref, saveCreatedProject, type CreatedProject } from "@/app/pages/_shared/created-projects-store";
 import { RegistrationLayoutSwitcher } from "../layout-switcher";
 import { SuccessScreen } from "../success-screen";
 import { initialDataCollection, initialProjectDetails, initialRestrictions } from "../types";
@@ -71,7 +73,8 @@ function RegistrationFlow() {
   const [dirty, setDirty] = useState(false);
   const [visited, setVisited] = useState<Set<SectionId>>(new Set());
   const [attempted, setAttempted] = useState<Set<SectionId>>(new Set());
-  const [created, setCreated] = useState(false);
+  // The project once it is created: kept in localStorage, and where "Go to Project" leads.
+  const [created, setCreated] = useState<CreatedProject | null>(null);
   const [confirmCancel, setConfirmCancel] = useState(false);
 
   const sections = visibleSections(state.restrictions);
@@ -117,7 +120,7 @@ function RegistrationFlow() {
       router.push(roleHref(`${BASE_PATH}?section=${missing[0]}`));
       return;
     }
-    setCreated(true);
+    setCreated(saveCreatedProject(state));
   };
 
   const handleCancel = () => (dirty ? setConfirmCancel(true) : router.push(roleHref("/pages/project-list")));
@@ -152,7 +155,7 @@ function RegistrationFlow() {
   else if (created) {
     main = (
       <div className="min-h-0 flex-1 overflow-y-auto px-6 py-6">
-        <SuccessScreen projectName={state.details.shortTitle || "Untitled project"} onGoToProjects={() => router.push(roleHref("/pages/project-list"))} />
+        <SuccessScreen projectName={state.details.shortTitle || "Untitled project"} onGoToProject={() => router.push(roleHref(createdProjectHref(created.id)))} />
       </div>
     );
   } else {

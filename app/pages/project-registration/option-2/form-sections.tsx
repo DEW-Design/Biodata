@@ -15,8 +15,9 @@ import { FormRow } from "@/app/pages/_shared/form-row";
 import { COLLECTION_METHOD_OPTIONS, FOCUS_AREA_OPTIONS, PERMIT_TYPE_OPTIONS, REGISTRATION_SPECIES, ROLE_OF_WORK_OPTIONS } from "../data";
 import { GeoExtentPicker } from "../geo-extent-picker";
 import { LogoUpload } from "../logo-upload";
+import { MethodologySelect, SurveyTypeRadios } from "../methodology-fields";
 import { ManagerCard } from "../step-1-project-details";
-import { RESTRICTION_TYPE_META, RestrictionTypeFields } from "../step-3-privacy-restrictions";
+import { OFFERED_RESTRICTION_TYPES, RESTRICTION_TYPE_META, RestrictionTypeFields } from "../step-3-privacy-restrictions";
 import { emptyContact, emptyPermitRow, emptyProjectManager, type CollectionMethod, type DataCollectionState, type ProjectDetailsState, type ProjectManager, type RestrictionsState } from "../types";
 import type { FormState, SectionId } from "./sections";
 
@@ -106,7 +107,16 @@ function BasicsSection({ state, onChange, showErrors }: SectionProps) {
   );
 }
 
-function OwnerSection({ state, onChange, showErrors }: SectionProps) {
+function OwnerSection(props: SectionProps) {
+  return (
+    <>
+      <OwnerRows {...props} />
+      <TeamRows {...props} />
+    </>
+  );
+}
+
+function OwnerRows({ state, onChange, showErrors }: SectionProps) {
   const { patchDetails } = useSectionPatches(state, onChange);
   const d = state.details;
   const contact = d.dataOwnerContacts[0];
@@ -119,6 +129,8 @@ function OwnerSection({ state, onChange, showErrors }: SectionProps) {
       <FormRow title="Data owner" required description="The organisation or person responsible for this project's data.">
         <RadioGroup
           aria-label="Data owner type"
+          orientation="horizontal"
+          className="gap-6"
           value={d.dataOwnerType}
           onChange={(v) => patchDetails({ dataOwnerType: v as ProjectDetailsState["dataOwnerType"] })}
         >
@@ -158,6 +170,7 @@ function OwnerSection({ state, onChange, showErrors }: SectionProps) {
               <Input label="Last name" value={c.lastName} onChange={(v) => updateContact(c.id, { lastName: v })} />
               <Input label="Email" value={c.email} onChange={(v) => updateContact(c.id, { email: v })} />
               <Input label="Phone number" value={c.phone} onChange={(v) => updateContact(c.id, { phone: v })} />
+              <Input label="Organisation" placeholder="Their team or organisation" value={c.organisation ?? ""} onChange={(v) => updateContact(c.id, { organisation: v })} className="sm:col-span-2" />
             </div>
           </div>
         ))}
@@ -169,7 +182,9 @@ function OwnerSection({ state, onChange, showErrors }: SectionProps) {
   );
 }
 
-function TeamSection({ state, onChange, showErrors }: SectionProps) {
+// Your role and the project managers. These were their own "Project team" section; they are part of the
+// Data owner section now (the designer, 2 Oct 2026), so this is rendered by it.
+function TeamRows({ state, onChange, showErrors }: SectionProps) {
   const { patchDetails } = useSectionPatches(state, onChange);
   const d = state.details;
   const updateManager = (id: number, p: Partial<ProjectManager>) => patchDetails({ projectManagers: d.projectManagers.map((m) => (m.id === id ? { ...m, ...p } : m)) });
@@ -349,6 +364,9 @@ function MethodSection({ state, onChange, showErrors }: SectionProps) {
 
   return (
     <>
+      <FormRow title="Survey type" required description="The kind of survey this project runs." error={showErrors && !c.surveyType ? "Choose a survey type" : undefined}>
+        <SurveyTypeRadios value={c.surveyType} onChange={(surveyType) => patchCollection({ surveyType })} />
+      </FormRow>
       <FormRow title="Method of data collection" required description="Pick the closest match." error={showErrors && !c.collectionMethod ? "Choose a method" : undefined}>
         <RadioGroup aria-label="Method of data collection" value={c.collectionMethod ?? ""} onChange={(v) => patchCollection({ collectionMethod: v as CollectionMethod })}>
           {COLLECTION_METHOD_OPTIONS.map((option) => (
@@ -356,17 +374,8 @@ function MethodSection({ state, onChange, showErrors }: SectionProps) {
           ))}
         </RadioGroup>
       </FormRow>
-      <FormRow title="Method details" required description="Survey techniques, whether qualitative or quantitative.">
-        <TextArea
-          aria-label="Method details"
-          isRequired
-          rows={4}
-          placeholder="Provide details of your survey methods such as qualitative or quantitative techniques."
-          value={c.methodDetails}
-          onChange={(v) => patchCollection({ methodDetails: v })}
-          isInvalid={showErrors && !c.methodDetails.trim()}
-          hint={showErrors && !c.methodDetails.trim() ? "Describe the survey method" : undefined}
-        />
+      <FormRow title="Methodology" required description="The survey technique used, from the Survey method vocabulary.">
+        <MethodologySelect value={c.methodDetails} onChange={(methodDetails) => patchCollection({ methodDetails })} isInvalid={showErrors && !c.methodDetails.trim()} />
       </FormRow>
       <FormRow title="Optional details" description="Only add these if they apply to this project.">
         <OptionalMethodDetails state={state} onChange={onChange} />
@@ -397,7 +406,7 @@ function RestrictionsSection({ state, onChange, showErrors }: SectionProps) {
       </FormRow>
       {r.hasRestrictions && (
         <FormRow title="Kinds of restriction" required description="Each one you tick gets its own section in the list on the left." error={showErrors && r.enabledTypes.size === 0 ? "Select at least one kind of restriction" : undefined}>
-          {RESTRICTION_TYPE_META.map(({ key, title, description }) => (
+          {OFFERED_RESTRICTION_TYPES.map(({ key, title, description }) => (
             <Checkbox key={key} size="sm" label={title} hint={description} isSelected={r.enabledTypes.has(key)} onChange={(on) => toggleType(key, on)} />
           ))}
         </FormRow>
@@ -421,8 +430,6 @@ export function SectionFields({ id, ...props }: SectionProps & { id: Exclude<Sec
       return <BasicsSection {...props} />;
     case "owner":
       return <OwnerSection {...props} />;
-    case "team":
-      return <TeamSection {...props} />;
     case "extent":
       return <ExtentSection {...props} />;
     case "method":

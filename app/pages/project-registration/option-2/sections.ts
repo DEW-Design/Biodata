@@ -1,5 +1,5 @@
 import { isGeoExtentComplete, type DataCollectionState, type ProjectDetailsState, type RestrictionsState, type RestrictionTypeKey } from "../types";
-import { isTypeValid, RESTRICTION_TYPE_META } from "../step-3-privacy-restrictions";
+import { isTypeValid, OFFERED_RESTRICTION_TYPES } from "../step-3-privacy-restrictions";
 
 // The Add Project flow's sections for the second (three-column) layout. The first layout asks one
 // question per card (~14 cards before Create); here related fields share a screen, grouped by how
@@ -8,9 +8,9 @@ import { isTypeValid, RESTRICTION_TYPE_META } from "../step-3-privacy-restrictio
 //
 // Steps and their titles/descriptions come from the same Figma wireframe as the first layout
 // (node 2298:179004): Project Identification / Data Collection and Storage / Privacy and
-// Restrictions.
+// Restrictions. The designer renamed the second step "Data Collection and Methodology" (2 Oct 2026).
 
-export type SectionId = "basics" | "owner" | "team" | "extent" | "method" | "restrictions" | RestrictionTypeKey | "review";
+export type SectionId = "basics" | "owner" | "extent" | "method" | "restrictions" | RestrictionTypeKey | "review";
 
 export interface FormState {
   details: ProjectDetailsState;
@@ -27,16 +27,16 @@ export interface SectionMeta {
 
 export const STEP_TITLES: Record<1 | 2 | 3, string> = {
   1: "Project Identification",
-  2: "Data Collection and Storage",
+  2: "Data Collection and Methodology",
   3: "Privacy and Restrictions",
 };
 
 const FIXED_SECTIONS: Record<Exclude<SectionId, RestrictionTypeKey>, Omit<SectionMeta, "id">> = {
   basics: { step: 1, title: "Project basics", description: "What the project is called, what it is about, and when it runs." },
-  owner: { step: 1, title: "Data owner", description: "The organisation or person responsible for this project's data, and who to contact about it." },
-  team: { step: 1, title: "Project team", description: "Your role on the project, and who manages it day to day." },
+  // Project team was rolled into this section (the designer, 2 Oct 2026: "roll all step 3 into step 2").
+  owner: { step: 1, title: "Data owner", description: "The organisation or person responsible for this project's data, who to contact about it, your role, and who manages it day to day." },
   extent: { step: 2, title: "Extent and focus", description: "Where the data was collected and which domains the project covers." },
-  method: { step: 2, title: "Method and details", description: "How the data was collected, plus any permits, identifiers or limitations." },
+  method: { step: 2, title: "Method and details", description: "The kind of survey and how the data was collected, plus any permits, identifiers or limitations." },
   restrictions: { step: 3, title: "Restrictions", description: "BDBSA data is open access by default. Choose which protections, if any, apply to this project." },
   review: { step: null, title: "Review and create", description: "Check every section, then create the project." },
 };
@@ -49,6 +49,10 @@ const TYPE_TITLES: Record<RestrictionTypeKey, { title: string; description: stri
   other: { title: "Other restrictions", description: "Anything not covered by the other restriction types." },
 };
 
+// "Other restrictions" is hidden for now (the designer, 2 Oct 2026): nothing offers it, so it never has a
+// section here, even though the type still exists for a project that already has one.
+const OFFERED_TYPES = OFFERED_RESTRICTION_TYPES.map((m) => m.key);
+
 export function sectionMeta(id: SectionId): SectionMeta {
   if (id in TYPE_TITLES) return { id, step: 3, ...TYPE_TITLES[id as RestrictionTypeKey] };
   return { id, ...FIXED_SECTIONS[id as Exclude<SectionId, RestrictionTypeKey>] };
@@ -56,8 +60,8 @@ export function sectionMeta(id: SectionId): SectionMeta {
 
 /** Every section in order - the restriction-type sections appear only once that type is ticked. */
 export function visibleSections(restrictions: RestrictionsState): SectionId[] {
-  const types = restrictions.hasRestrictions ? RESTRICTION_TYPE_META.map((m) => m.key).filter((k) => restrictions.enabledTypes.has(k)) : [];
-  return ["basics", "owner", "team", "extent", "method", "restrictions", ...types, "review"];
+  const types = restrictions.hasRestrictions ? OFFERED_TYPES.filter((k) => restrictions.enabledTypes.has(k)) : [];
+  return ["basics", "owner", "extent", "method", "restrictions", ...types, "review"];
 }
 
 function contactValid(c: ProjectDetailsState["dataOwnerContacts"][number] | undefined): boolean {
@@ -71,9 +75,9 @@ export function isSectionValid(id: SectionId, s: FormState): boolean {
     case "basics":
       return d.shortTitle.trim().length > 0 && d.abstract.trim().length > 0 && !!d.startDate;
     case "owner":
-      return (d.dataOwnerType === "individual" || d.dataOwnerOrgName.trim().length > 0) && contactValid(d.dataOwnerContacts[0]);
-    case "team":
       return (
+        (d.dataOwnerType === "individual" || d.dataOwnerOrgName.trim().length > 0) &&
+        contactValid(d.dataOwnerContacts[0]) &&
         !!d.roleOfWork &&
         (d.roleOfWork !== "other" || d.roleOfWorkOther.trim().length > 0) &&
         d.projectManagers.some((m) => m.firstName.trim() && m.lastName.trim() && m.email.trim())
@@ -81,7 +85,7 @@ export function isSectionValid(id: SectionId, s: FormState): boolean {
     case "extent":
       return isGeoExtentComplete(c.geographicExtent) && c.focusAreas.length > 0 && (!c.focusAreas.includes("other") || c.focusAreaOther.trim().length > 0);
     case "method":
-      return !!c.collectionMethod && c.methodDetails.trim().length > 0;
+      return !!c.surveyType && !!c.collectionMethod && c.methodDetails.trim().length > 0;
     case "restrictions":
       return !s.restrictions.hasRestrictions || s.restrictions.enabledTypes.size > 0;
     case "review":
@@ -98,6 +102,29 @@ export function isFormValid(s: FormState): boolean {
   return isSectionValid("review", s);
 }
 
+/** The data owner half of the Data owner section: the owner and the primary contact. The project page edits
+ *  it as its own card. */
+export function missingOwnerFields(s: FormState): string[] {
+  const d = s.details;
+  const contact = d.dataOwnerContacts[0];
+  const out: string[] = [];
+  if (d.dataOwnerType === "organisation" && !d.dataOwnerOrgName.trim()) out.push("Organisation / Institution name");
+  if (!contact || !contact.firstName.trim()) out.push("Primary contact first name");
+  if (!contact || !contact.lastName.trim()) out.push("Primary contact last name");
+  if (!contact || !contact.email.trim()) out.push("Primary contact email");
+  return out;
+}
+
+/** The team half of the Data owner section (it was the Project team section): your role and the managers. */
+export function missingTeamFields(s: FormState): string[] {
+  const d = s.details;
+  const out: string[] = [];
+  if (!d.roleOfWork) out.push("Your role");
+  else if (d.roleOfWork === "other" && !d.roleOfWorkOther.trim()) out.push("Your role (please specify)");
+  if (!d.projectManagers.some((m) => m.firstName.trim() && m.lastName.trim() && m.email.trim())) out.push("A project manager with a name and email");
+  return out;
+}
+
 /** The mandatory details a section is still missing, named the way the form labels them. Shown in the
  *  "Details missing" alert when Continue is pressed. Empty exactly when `isSectionValid` is true. */
 export function missingFields(id: SectionId, s: FormState): string[] {
@@ -112,18 +139,8 @@ export function missingFields(id: SectionId, s: FormState): string[] {
       if (blank(d.abstract)) out.push("Abstract");
       if (!d.startDate) out.push("Start date");
       break;
-    case "owner": {
-      const contact = d.dataOwnerContacts[0];
-      if (d.dataOwnerType === "organisation" && blank(d.dataOwnerOrgName)) out.push("Organisation / Institution name");
-      if (!contact || blank(contact.firstName)) out.push("Primary contact first name");
-      if (!contact || blank(contact.lastName)) out.push("Primary contact last name");
-      if (!contact || blank(contact.email)) out.push("Primary contact email");
-      break;
-    }
-    case "team":
-      if (!d.roleOfWork) out.push("Your role");
-      else if (d.roleOfWork === "other" && blank(d.roleOfWorkOther)) out.push("Your role (please specify)");
-      if (!d.projectManagers.some((m) => m.firstName.trim() && m.lastName.trim() && m.email.trim())) out.push("A project manager with a name and email");
+    case "owner":
+      out.push(...missingOwnerFields(s), ...missingTeamFields(s));
       break;
     case "extent":
       if (!isGeoExtentComplete(c.geographicExtent)) out.push("Geographic extent");
@@ -131,8 +148,9 @@ export function missingFields(id: SectionId, s: FormState): string[] {
       if (c.focusAreas.includes("other") && blank(c.focusAreaOther)) out.push("Focus area (please specify)");
       break;
     case "method":
+      if (!c.surveyType) out.push("Survey type");
       if (!c.collectionMethod) out.push("Method of data collection");
-      if (blank(c.methodDetails)) out.push("Method details");
+      if (blank(c.methodDetails)) out.push("Methodology");
       break;
     case "restrictions":
       if (r.hasRestrictions && r.enabledTypes.size === 0) out.push("At least one kind of restriction");

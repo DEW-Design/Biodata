@@ -58,9 +58,9 @@ function SourceNav({ source }: { source: VmSource | "" }) {
   const needing = (s?: VmSource) => BATCHES.filter((b) => (!s || b.source === s) && summaries.get(b.id)?.status === "review").length;
   const badge = (n: number) => (n > 0 ? n : undefined);
   return (
-    <div className="flex min-h-0 flex-1 flex-col gap-1">
+    <div className="flex flex-col gap-1">
       <p className="mb-3 text-xs font-semibold tracking-wide text-quaternary uppercase">Sources</p>
-      <div className="min-h-0 flex-1 overflow-y-auto">
+      <div>
         <Tabs orientation="vertical" selectedKey={source || "all"} onSelectionChange={(key) => router.push(roleHref(key === "all" ? root : `${root}?source=${String(key)}`))}>
           <TabList aria-label="Sources" orientation="vertical" type="button-brand" fullWidth className="w-full">
             <Tab id="all" label="All batches" icon={SwitchHorizontal01} badge={badge(needing())} />

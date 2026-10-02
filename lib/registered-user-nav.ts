@@ -192,7 +192,7 @@ export const projectActions: ProjectAction[] = [
   // convention.
   {
     label: "Create Project",
-    steps: ["Project Identification", "Data Collection and Storage", "Privacy and Restrictions"],
+    steps: ["Project Identification", "Data Collection and Methodology", "Privacy and Restrictions"],
   },
   { label: "Download Project Templates" },
   // Not a standalone flow - per .claude/rules/ref-domain.md, "BDBSA domain research", every dataset must be

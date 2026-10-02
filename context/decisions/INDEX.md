@@ -339,3 +339,12 @@ Not imported into every session on purpose: read or grep it when a task needs hi
 - [2026-10-02] Layout lab /proto/layouts: how much room the table gets on a report page - `2026-10-02-10-layout-lab-proto-layouts-how-much-room-the.md`
 - [2026-10-02] Data Validation Error report: Map visualise is the card's primary button - `2026-10-02-11-data-validation-error-report-map-visualise-is-the.md`
 - [2026-10-02] Merged mohan-wips into sai's work; the audit log is now Mohan's milestones with our feed behind Show all... - `2026-10-02-17-merged-mohan-wips-into-sai-s-work-the.md`
+- [2026-10-02] Column 2 Actions sit under the navigation on Vouchers, Controlled Vocabulary and Notifications - `2026-10-02-18-column-2-actions-sit-under-the-navigation-on.md`
+- [2026-10-02] Project page: Geographic extent card puts the details on the left and the map on the right - `2026-10-02-19-project-page-geographic-extent-card-puts-the-details.md`
+- [2026-10-02] Maps: Exit full screen moves to the left, the same corner as Full screen - `2026-10-02-20-maps-exit-full-screen-moves-to-the-left.md`
+- [2026-10-02] Project page rows: dividers no longer curl at their ends - `2026-10-02-21-project-page-rows-dividers-no-longer-curl-at.md`
+- [2026-10-02] Maps: Expand opens a large modal for view maps; draw maps keep a takeover; one X to close; maps re-measure - `2026-10-02-22-maps-expand-opens-a-large-modal-for-view.md`
+- [2026-10-02] Datasets page: the latest-upload card goes two-column and the page scrolls, so the table is not squeezed - `2026-10-02-23-datasets-page-the-latest-upload-card-goes-two.md`
+- [2026-10-02] Dataset Validation tab: one status, and the same two-column card as the Datasets list - `2026-10-02-24-dataset-validation-tab-one-status-and-the-same.md`
+- [2026-10-02] Add Project: survey type, methodology from the vocabulary, team in the owner step, species list, per-concept... - `2026-10-02-25-add-project-survey-type-methodology-from-the-vocabulary.md`
+- [2026-10-02] PENDING for the business team: Add Project open questions (methods, survey type templates, storage location,... - `2026-10-02-26-pending-for-the-business-team-add-project-open.md`

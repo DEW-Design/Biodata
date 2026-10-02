@@ -29,10 +29,11 @@ import { FormRow } from "@/app/pages/_shared/form-row";
 import { COLLECTION_METHOD_OPTIONS, FOCUS_AREA_OPTIONS, PERMIT_TYPE_OPTIONS, REGISTRATION_SPECIES, ROLE_OF_WORK_OPTIONS } from "@/app/pages/project-registration/data";
 import { GeoExtentPicker } from "@/app/pages/project-registration/geo-extent-picker";
 import { LogoUpload } from "@/app/pages/project-registration/logo-upload";
+import { MethodologySelect, SurveyTypeRadios } from "@/app/pages/project-registration/methodology-fields";
 import { SectionFields } from "@/app/pages/project-registration/option-2/form-sections";
-import { isSectionValid, missingFields } from "@/app/pages/project-registration/option-2/sections";
+import { isSectionValid, missingFields, missingOwnerFields } from "@/app/pages/project-registration/option-2/sections";
 import { ManagerCard } from "@/app/pages/project-registration/step-1-project-details";
-import { RESTRICTION_TYPE_META } from "@/app/pages/project-registration/step-3-privacy-restrictions";
+import { OFFERED_RESTRICTION_TYPES, RESTRICTION_TYPE_META } from "@/app/pages/project-registration/step-3-privacy-restrictions";
 import { emptyContact, emptyPermitRow, emptyProjectManager, isGeoExtentComplete, type CollectionMethod, type ContactPerson, type ProjectDetailsState, type ProjectManager, type RestrictionTypeKey } from "@/app/pages/project-registration/types";
 import { EditDrawer } from "./edit-drawer";
 import { PROJECT_STATUSES, useEditStore, type ProjectState, type ProjectStatus } from "./edit-store";
@@ -59,9 +60,9 @@ const CARD_GROUP: Record<ProjectCardId, string> = {
   details: "Overview",
   owner: "Overview",
   managers: "Overview",
-  extent: "Data collection and storage",
-  collection: "Data collection and storage",
-  permits: "Data collection and storage",
+  extent: "Data collection and methodology",
+  collection: "Data collection and methodology",
+  permits: "Data collection and methodology",
   "add-restriction": "Privacy and restrictions",
   embargo: "Privacy and restrictions",
   species: "Privacy and restrictions",
@@ -98,7 +99,7 @@ export function cardMissing(id: ProjectCardId, s: ProjectState): string[] {
     case "details":
       return missingFields("basics", s);
     case "owner": {
-      out.push(...missingFields("owner", s));
+      out.push(...missingOwnerFields(s));
       const primary = contactRole(d, 0);
       if (!primary.role) out.push("Primary contact role");
       else if (primary.role === "other" && blank(primary.roleOther)) out.push("Primary contact role (please specify)");
@@ -113,8 +114,9 @@ export function cardMissing(id: ProjectCardId, s: ProjectState): string[] {
     case "collection":
       if (c.focusAreas.length === 0) out.push("Focus areas");
       if (c.focusAreas.includes("other") && blank(c.focusAreaOther)) out.push("Focus area (please specify)");
+      if (!c.surveyType) out.push("Survey type");
       if (!c.collectionMethod) out.push("Method of data collection");
-      if (blank(c.methodDetails)) out.push("Method details");
+      if (blank(c.methodDetails)) out.push("Methodology");
       return out;
     case "permits":
       return out;
@@ -162,7 +164,7 @@ function OwnerForm({ draft, update, showErrors }: FormProps) {
   return (
     <>
       <FormRow title="Data owner" required description="The organisation or person responsible for this project's data.">
-        <RadioGroup aria-label="Data owner type" value={d.dataOwnerType} onChange={(v) => patch({ dataOwnerType: v as ProjectDetailsState["dataOwnerType"] })}>
+        <RadioGroup aria-label="Data owner type" orientation="horizontal" className="gap-6" value={d.dataOwnerType} onChange={(v) => patch({ dataOwnerType: v as ProjectDetailsState["dataOwnerType"] })}>
           <RadioButton value="organisation" label="Organisation / Institution" />
           <RadioButton value="individual" label="Individual / Person" />
         </RadioGroup>
@@ -293,6 +295,9 @@ function CollectionForm({ draft, update, showErrors }: FormProps) {
           {(item) => <MultiSelect.Item {...item} selectionIndicator="checkbox" selectionIndicatorAlign="left" />}
         </MultiSelect>
       </FormRow>
+      <FormRow title="Survey type" required description="The kind of survey this project runs." error={showErrors && !c.surveyType ? "Choose a survey type" : undefined}>
+        <SurveyTypeRadios value={c.surveyType} onChange={(surveyType) => patch({ surveyType })} />
+      </FormRow>
       <FormRow title="Method of data collection" required description="Pick the closest match." error={showErrors && !c.collectionMethod ? "Choose a method" : undefined}>
         <RadioGroup aria-label="Method of data collection" value={c.collectionMethod ?? ""} onChange={(v) => patch({ collectionMethod: v as CollectionMethod })}>
           {COLLECTION_METHOD_OPTIONS.map((o) => (
@@ -300,8 +305,8 @@ function CollectionForm({ draft, update, showErrors }: FormProps) {
           ))}
         </RadioGroup>
       </FormRow>
-      <FormRow title="Method details" required description="Survey techniques, whether qualitative or quantitative.">
-        <TextArea aria-label="Method details" isRequired rows={4} value={c.methodDetails} onChange={(v) => patch({ methodDetails: v })} isInvalid={showErrors && blank(c.methodDetails)} hint={showErrors && blank(c.methodDetails) ? "Describe the survey method" : undefined} />
+      <FormRow title="Methodology" required description="The survey technique used, from the Survey method vocabulary.">
+        <MethodologySelect value={c.methodDetails} onChange={(methodDetails) => patch({ methodDetails })} isInvalid={showErrors && blank(c.methodDetails)} />
       </FormRow>
       <FormRow title="Limitations and biases" description="What the method may miss or over-represent.">
         <TextArea aria-label="Limitations and biases" rows={3} value={c.limitationsAndBiases} onChange={(v) => patch({ limitationsAndBiases: v })} />
@@ -339,7 +344,7 @@ function PermitsForm({ draft, update }: FormProps) {
 
 function AddRestrictionForm({ draft, update }: FormProps) {
   const r = draft.restrictions;
-  const available = RESTRICTION_TYPE_META.filter((m) => !(r.hasRestrictions && r.enabledTypes.has(m.key)));
+  const available = OFFERED_RESTRICTION_TYPES.filter((m) => !(r.hasRestrictions && r.enabledTypes.has(m.key)));
   return (
     <FormRow title="Kinds of restriction" description="Tick the ones to add. Each one gets its own card, and you fill in its details next.">
       {available.length === 0 ? (

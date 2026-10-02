@@ -11,7 +11,7 @@ import { areaMethodLabel, type NominationArea } from "@/app/pages/_shared/nomina
 
 // The Location attribute's areas: the places whose records of this species are obscured. Adding
 // one reuses DLA's "Add a Location" modal (shapefile, draw on the map, national park, coordinates),
-// which is the same four methods the lo-fi draws; the map preview reuses Explore's SAMap, with the shared Full screen button (ExpandableMap). Nothing
+// which is the same four methods the lo-fi draws; the map preview reuses Explore's SAMap, with the shared Expand button (ExpandableMap). Nothing
 // here is a new component - it composes existing ones for this attribute.
 
 /** A read-only map of the areas, fitted to them. */

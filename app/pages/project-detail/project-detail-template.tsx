@@ -11,7 +11,7 @@
 // CONTRACTS 3.7): the project's actions are in the header's "..." menu, and the breadcrumb's Projects
 // crumb switches project. The main area has four tabs:
 //
-//  - Project: the whole registration (Overview, Data collection and storage, Privacy and
+//  - Project: the whole registration (Overview, Data collection and methodology, Privacy and
 //    restrictions) as one readable page with an "On this page" list (project-tab.tsx).
 //  - Project records: every event, occurrence and observation in a tree or a table, beside a record
 //    inspector that shows the selected record's metadata grouped by Darwin Core class
@@ -66,7 +66,7 @@ import { SpeciesView, useProjectSpecies } from "./species-view";
 import { ProjectSwitcher } from "@/app/pages/_shared/project-switcher";
 import { HeroMeta, RecordBackLink, RecordHero } from "@/app/pages/_shared/record-hero";
 import { EditStoreProvider, useEditStore } from "./edit-store";
-import { ADELAIDE_HILLS_ID, adelaideHillsSeed, exploreProject, seedFromExplore } from "./project-seed";
+import { ADELAIDE_HILLS_ID, adelaideHillsSeed, exploreProject, seedFromExplore, type ProjectSeed } from "./project-seed";
 import {
   RecordsExplorer,
   filterForKind,
@@ -132,11 +132,17 @@ function SectionPlaceholder({ node }: { node: NavNode }) {
   );
 }
 
+/** Adds a query to a path that may already have one. */
+const withQuery = (path: string, query: string) => `${path}${path.includes("?") ? "&" : "?"}${query}`;
+
 export interface ProjectDetailTemplateProps {
   /** The project's route id, e.g. `adelaide-hills`. */
   projectId: string;
-  /** This page's own path, which the review screen (`?view=review`) returns to. */
+  /** This page's own path, which the review screen (`?view=review`) returns to. It may carry a query of its
+   *  own (a created project's page is `/pages/project-detail/created?project=<id>`). */
   basePath: string;
+  /** The project's data, when it is not one the page can find itself (a project created in this browser). */
+  seed?: ProjectSeed;
   /** Shows the layout switcher on the Prototype tools bar (only on the canonical Adelaide Hills route). */
   layoutSwitcher?: boolean;
   /** An alert shown above the tabs, e.g. that a followed record is not available. */
@@ -155,10 +161,11 @@ function ProjectDetailWithEdits(props: ProjectDetailTemplateProps) {
   const role = useUserRole();
   const canEdit = role !== "public-user";
   const seed = useMemo(() => {
+    if (props.seed) return props.seed;
     if (props.projectId === ADELAIDE_HILLS_ID) return adelaideHillsSeed;
     const project = exploreProject(props.projectId);
     return project ? seedFromExplore(project, role) : null;
-  }, [props.projectId, role]);
+  }, [props.projectId, props.seed, role]);
   if (!seed) return null;
   return (
     <EditStoreProvider key={`${props.projectId}:${role}`} canEdit={canEdit} seed={seed}>
@@ -193,12 +200,12 @@ function ProjectDetail({ basePath, layoutSwitcher = false, notice }: ProjectDeta
   // The project's Datasets page (datasets-view.tsx): its own view on the same route, like review.
   const viewingDatasets = !reviewing && searchParams.get("view") === "datasets";
   const datasetParam = searchParams.get("dataset");
-  const datasetsHref = roleHref(`${basePath}?view=datasets`);
-  const datasetHref = (id: string) => roleHref(`${basePath}?view=datasets&dataset=${encodeURIComponent(id)}`);
+  const datasetsHref = roleHref(withQuery(basePath, "view=datasets"));
+  const datasetHref = (id: string) => roleHref(withQuery(basePath, `view=datasets&dataset=${encodeURIComponent(id)}`));
   // The review returns to where it was opened from (`&from=`): the Project tab's at-a-glance, or
   // Project records' banner. Anything else (an old link) goes back to Project records.
   const reviewFrom: DetailTab = searchParams.get("from") === "project" ? "project" : "records";
-  const openReview = (from: DetailTab) => router.push(roleHref(`${basePath}?view=review&from=${from}`));
+  const openReview = (from: DetailTab) => router.push(roleHref(withQuery(basePath, `view=review&from=${from}`)));
   const closeReview = () => {
     setDetailTab(reviewFrom);
     router.push(roleHref(basePath));

@@ -44,6 +44,13 @@ export const PERMIT_TYPE_OPTIONS = [
     { id: "none", label: "None required" },
 ];
 
+// The two kinds of survey a project runs (the designer, 2 Oct 2026). Narrowing the templates by survey
+// type waits on the templates saying which type they belong to; nothing here invents that mapping.
+export const SURVEY_TYPE_OPTIONS: { id: "biological" | "native-vegetation"; label: string }[] = [
+    { id: "biological", label: "Biological Survey" },
+    { id: "native-vegetation", label: "Native Vegetation Survey" },
+];
+
 export const COLLECTION_METHOD_OPTIONS: { id: "incidental" | "systematic" | "unknown" | "other"; label: string; description: string }[] = [
     { id: "incidental", label: "Incidental observations", description: "Data collected informally or opportunistically without a predefined sampling method." },
     { id: "systematic", label: "Systematic", description: "Data collected using a structured and repeatable method, often across set time intervals or locations." },
@@ -133,7 +140,7 @@ export const PROJECT_METADATA_CONCEPTS: ConceptOption[] = [
     { id: "collection-method", label: "Data Collection Method", valueType: "select", options: COLLECTION_METHOD_OPTIONS.map((o) => ({ id: o.id, label: o.label })), placeholder: "Select method" },
     OBSERVER_CONCEPT,
     { id: "site-coordinates", label: "Site Coordinates Precision", valueType: "select", options: LOCATION_PRECISION_OPTIONS, placeholder: "Select precision" },
-    { id: "permit-number", label: "Permit Number", valueType: "none" },
+    { id: "permit-number", label: "Permit Number", valueType: "text", placeholder: "Enter the permit number" },
     { id: "raw-data-storage", label: "Raw Data Storage Location", valueType: "none" },
     OTHER_CONCEPT,
 ];

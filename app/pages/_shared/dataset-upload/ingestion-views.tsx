@@ -116,9 +116,9 @@ export function IngestionProblems({ view, projectId, datasetId, onRetry }: { vie
 /** The run itself: the progress bar, the three stages (the first is pre-flight validation against
  *  the data model) and, once it ends badly, why and what to do. Shared by the chip's popover and the
  *  project's Datasets page, so both say the same thing the same way. */
-export function IngestionDetail({ view, projectId, datasetId, onRetry }: { view: RunView; projectId: string; datasetId?: string; onRetry: () => void }) {
+export function IngestionDetail({ view, projectId, datasetId, onRetry, split = false }: { view: RunView; projectId: string; datasetId?: string; onRetry: () => void; split?: boolean }) {
   const percent = Math.round(view.overall * 100);
-  return (
+  const run = (
     <>
       <div className="flex flex-col gap-1.5">
         <ProgressBarBase value={percent} progressClassName={view.failed ? "bg-fg-error-primary" : undefined} />
@@ -138,11 +138,26 @@ export function IngestionDetail({ view, projectId, datasetId, onRetry }: { view:
           error: view.failedStage === i || (view.partial && i === 1),
         }))}
       />
-      {view.done && (view.failed || view.partial) && (
-        <div className="flex flex-col gap-4 border-t border-secondary pt-4">
-          <IngestionProblems view={view} projectId={projectId} datasetId={datasetId} onRetry={onRetry} />
-        </div>
-      )}
+    </>
+  );
+  const problems = view.done && (view.failed || view.partial) ? <IngestionProblems view={view} projectId={projectId} datasetId={datasetId} onRetry={onRetry} /> : null;
+
+  // `split` (opt-in, for a page wide enough): the run on the left and what went wrong beside it, so the card is about half
+  // as tall. Stacked (the default) is the popover's and the dataset page's, one narrow column.
+  if (split && problems) {
+    return (
+      <div className="grid gap-6 lg:grid-cols-[minmax(0,26rem)_minmax(0,1fr)] lg:gap-10">
+        <div className="flex flex-col gap-4">{run}</div>
+        <div className="flex min-w-0 flex-col gap-4 border-t border-secondary pt-4 lg:border-t-0 lg:border-l lg:pt-0 lg:pl-10">{problems}</div>
+      </div>
+    );
+  }
+  // Split, with nothing wrong: the run keeps the width it has beside the problems, so a clean upload lines up with a failed one.
+  if (split) return <div className="flex max-w-[26rem] flex-col gap-4">{run}</div>;
+  return (
+    <>
+      {run}
+      {problems && <div className="flex flex-col gap-4 border-t border-secondary pt-4">{problems}</div>}
     </>
   );
 }

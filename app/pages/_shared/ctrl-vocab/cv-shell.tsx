@@ -75,14 +75,14 @@ function CategoryNav( { category, currentId }: { category: string; currentId?: s
   const findable = all.length > 6;
 
   return (
-    <div className="flex min-h-0 flex-1 flex-col gap-1">
+    <div className="flex flex-col gap-1">
       <p className="mb-3 text-xs font-semibold tracking-wide text-quaternary uppercase">Categories</p>
       {findable && (
         <div className="mb-2 shrink-0">
           <Input aria-label="Find a category" size="sm" icon={SearchMd} placeholder={`Find among ${all.length} categories`} value={find} onChange={setFind} onClear={find ? () => setFind("") : undefined} />
         </div>
       )}
-      <div className="min-h-0 flex-1 overflow-y-auto">
+      <div className="max-h-[45vh] overflow-y-auto">
       <Tabs
         orientation="vertical"
         selectedKey={category || "all"}

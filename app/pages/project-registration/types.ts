@@ -133,6 +133,11 @@ export function isGeoExtentComplete(extent: GeoExtentValue): boolean {
 
 // ── Step 2: Data Collection Details ──
 
+/** What kind of survey the project runs (the designer, 2 Oct 2026): a Biological Survey or a Native
+ *  Vegetation Survey. The templates offered to the project are to be narrowed by it once the templates say
+ *  which survey type they belong to (they do not carry that yet). */
+export type SurveyType = "biological" | "native-vegetation";
+
 export type CollectionMethod = "incidental" | "systematic" | "unknown" | "other";
 
 export interface PermitRow {
@@ -152,7 +157,10 @@ export interface DataCollectionState {
      *  of the additional, non-listed domain, same "Other" reveal pattern as `roleOfWorkOther`. */
     focusAreaOther: string;
     targetedSpeciesIds: string[];
+    surveyType: SurveyType | null;
     collectionMethod: CollectionMethod | null;
+    /** The methodology: the name of an entry in the Survey method controlled vocabulary. Older projects
+     *  hold free text here, which still displays. */
     methodDetails: string;
     permits: PermitRow[];
     uriDoi: string;
@@ -167,6 +175,7 @@ export function initialDataCollection(): DataCollectionState {
         focusAreas: ["biological"],
         focusAreaOther: "",
         targetedSpeciesIds: [],
+        surveyType: null,
         collectionMethod: null,
         methodDetails: "",
         permits: [emptyPermitRow(1)],
@@ -212,10 +221,12 @@ export interface ConceptValueRow {
     values: string[];
     dateFrom: DateValue | null;
     dateTo: DateValue | null;
+    /** Why this concept is restricted. Every concept gives its own (the designer, 2 Oct 2026). */
+    justification: string;
 }
 
 export function emptyConceptRow(id: number): ConceptValueRow {
-    return { id, concept: null, conceptOther: "", value: "", values: [], dateFrom: null, dateTo: null };
+    return { id, concept: null, conceptOther: "", value: "", values: [], dateFrom: null, dateTo: null, justification: "" };
 }
 
 export interface SpeciesRestrictionEntry {
@@ -234,12 +245,12 @@ export interface LocationRestrictionEntry {
 }
 
 export interface MetadataRestrictionState {
+    /** Each concept carries its own justification. */
     concepts: ConceptValueRow[];
-    justification: string;
 }
 
 export function initialMetadataRestriction(): MetadataRestrictionState {
-    return { concepts: [emptyConceptRow(1)], justification: "" };
+    return { concepts: [emptyConceptRow(1)] };
 }
 
 export interface RestrictionsState {

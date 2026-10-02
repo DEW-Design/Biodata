@@ -24,10 +24,10 @@ import { DestructiveModal } from "@/components/application/modals/modal";
 import { toast } from "@/components/application/toast/toast";
 import { LocationDetailsTable } from "@/app/pages/_shared/location-details-table";
 import { ExpandableMap } from "@/app/pages/_shared/map-search/expandable-map";
-import { COLLECTION_METHOD_OPTIONS, EMBARGO_TYPE_OPTIONS, FOCUS_AREA_OPTIONS, PERMIT_TYPE_OPTIONS, PROJECT_METADATA_CONCEPTS, REGISTRATION_SPECIES, SPECIES_CONCEPTS } from "@/app/pages/project-registration/data";
+import { COLLECTION_METHOD_OPTIONS, EMBARGO_TYPE_OPTIONS, FOCUS_AREA_OPTIONS, PERMIT_TYPE_OPTIONS, PROJECT_METADATA_CONCEPTS, REGISTRATION_SPECIES, SPECIES_CONCEPTS, SURVEY_TYPE_OPTIONS } from "@/app/pages/project-registration/data";
 import { conceptLabel, conceptValueLabel } from "@/app/pages/project-registration/concept-rows";
 import { geoExtentSummary } from "@/app/pages/project-registration/geo-extent-picker";
-import { RESTRICTION_TYPE_META } from "@/app/pages/project-registration/step-3-privacy-restrictions";
+import { OFFERED_RESTRICTION_TYPES, RESTRICTION_TYPE_META } from "@/app/pages/project-registration/step-3-privacy-restrictions";
 import type { RestrictionTypeKey } from "@/app/pages/project-registration/types";
 import { cx } from "@/utils/cx";
 import { useEditStore } from "./edit-store";
@@ -93,7 +93,7 @@ function Rows({ rows }: { rows: { label: string; value?: ReactNode; empty?: bool
             key={r.label}
             className={cx(
               "grid gap-x-4 border-b border-secondary py-2.5 last:border-b-0",
-              edit ? "group/field grid-cols-[minmax(0,11rem)_minmax(0,1fr)_1.75rem] rounded-md px-3 transition-colors hover:bg-primary_hover" : "grid-cols-[minmax(0,11rem)_minmax(0,1fr)]",
+              edit ? "group/field grid-cols-[minmax(0,11rem)_minmax(0,1fr)_1.75rem] px-3 transition-colors hover:bg-primary_hover" : "grid-cols-[minmax(0,11rem)_minmax(0,1fr)]",
             )}
           >
             <dt className="text-sm text-tertiary">{r.label}</dt>
@@ -587,7 +587,7 @@ export function ProjectTab({
   const toc: TocItem[] = [
     { id: "at-a-glance", label: "Project at a glance" },
     { id: "overview", label: "Overview", children: [card("details"), card("owner"), card("managers")] },
-    { id: "data-collection", label: "Data collection and storage", children: [card("extent"), card("collection"), card("permits")] },
+    { id: "data-collection", label: "Data collection and methodology", children: [card("extent"), card("collection"), card("permits")] },
     { id: "privacy", label: "Privacy and restrictions", children: enabled.map((m) => card(m.key)) },
   ];
 
@@ -676,25 +676,28 @@ export function ProjectTab({
           </div>
         </Section>
 
-        <Section id="data-collection" title="Data collection and storage" description="Where, how and under what permits the data was collected.">
+        <Section id="data-collection" title="Data collection and methodology" description="Where, how and under what permits the data was collected.">
           <Card card="extent" onEdit={setEditing}>
-            {circle && (
-              <>
-                <ExpandableMap title={`${d.shortTitle} · geographic extent`} boundaries={[{ id: "project-extent", kind: "circle", center: circle.center, radiusKm: circle.radiusKm }]} onBoundaryAdd={() => {}} activeDrawTool={null} onDrawToolChange={() => {}} className="h-56 w-full" />
-                <LocationDetailsTable lat={circle.center[0]} lon={circle.center[1]} />
-              </>
-            )}
-            <Rows
-              rows={
-                circle
-                  ? [
-                      { label: "Centre latitude", value: String(circle.center[0]) },
-                      { label: "Centre longitude", value: String(circle.center[1]) },
-                      { label: "Radius", value: `${circle.radiusKm} km` },
-                    ]
-                  : [{ label: "Extent", value: c.geographicExtent.method ? geoExtentSummary(c.geographicExtent) : "" }]
-              }
-            />
+            {/* The details on the left, the map on the right; stacked (details first) below the lg breakpoint. */}
+            <div className={cx(circle && "grid gap-6 lg:grid-cols-2 lg:items-stretch")}>
+              <div className="flex min-w-0 flex-col gap-4">
+                {circle && <LocationDetailsTable lat={circle.center[0]} lon={circle.center[1]} />}
+                <Rows
+                  rows={
+                    circle
+                      ? [
+                          { label: "Centre latitude", value: String(circle.center[0]) },
+                          { label: "Centre longitude", value: String(circle.center[1]) },
+                          { label: "Radius", value: `${circle.radiusKm} km` },
+                        ]
+                      : [{ label: "Extent", value: c.geographicExtent.method ? geoExtentSummary(c.geographicExtent) : "" }]
+                  }
+                />
+              </div>
+              {circle && (
+                <ExpandableMap title={`${d.shortTitle} · geographic extent`} boundaries={[{ id: "project-extent", kind: "circle", center: circle.center, radiusKm: circle.radiusKm }]} onBoundaryAdd={() => {}} activeDrawTool={null} onDrawToolChange={() => {}} className="h-64 w-full lg:h-full lg:min-h-64" />
+              )}
+            </div>
           </Card>
           <Card card="collection" onEdit={setEditing}>
             <div className="flex flex-col gap-4">
@@ -708,8 +711,9 @@ export function ProjectTab({
               </div>
               <Rows
                 rows={[
+                  { label: "Survey type", value: SURVEY_TYPE_OPTIONS.find((o) => o.id === c.surveyType)?.label },
                   { label: "Collection method", value: method?.label },
-                  { label: "Method details", value: c.methodDetails },
+                  { label: "Methodology", value: c.methodDetails },
                   { label: "Limitations and biases", value: c.limitationsAndBiases },
                 ]}
               />
@@ -734,7 +738,7 @@ export function ProjectTab({
           title="Privacy and restrictions"
           description="What is held back from public release, and why."
           action={
-            canEdit && enabled.length < RESTRICTION_TYPE_META.length && !(layout === "v3" && editing !== null) ? (
+            canEdit && OFFERED_RESTRICTION_TYPES.some((m) => !enabled.some((e) => e.key === m.key)) && !(layout === "v3" && editing !== null) ? (
               <Button color="secondary" size="sm" iconLeading={Plus} onClick={() => setEditing("add-restriction")}>
                 Add restriction
               </Button>
@@ -769,7 +773,9 @@ export function ProjectTab({
                             value: s.scope === "all" ? "All concepts" : s.concepts.filter((cr) => cr.concept).map((cr) => conceptLabel(cr, SPECIES_CONCEPTS)).join(", "),
                           },
                           ...(s.scope === "selected" ? [{ label: "Rule", value: s.concepts.filter((cr) => cr.concept).map((cr) => conceptValueLabel(cr, SPECIES_CONCEPTS) || "Withheld").join(", ") }] : []),
-                          { label: "Justification", value: s.justification },
+                          ...(s.scope === "all"
+                            ? [{ label: "Justification", value: s.justification }]
+                            : s.concepts.filter((cr) => cr.concept).map((cr) => ({ label: `Justification: ${conceptLabel(cr, SPECIES_CONCEPTS)}`, value: cr.justification }))),
                         ]}
                       />
                     ))}
@@ -795,8 +801,12 @@ export function ProjectTab({
               {m.key === "metadata" && (
                 <Rows
                   rows={[
-                    { label: "Restricted details", value: r.metadata.concepts.filter((cr) => cr.concept).map((cr) => conceptLabel(cr, PROJECT_METADATA_CONCEPTS)).join(", ") },
-                    { label: "Justification", value: r.metadata.justification },
+                    ...r.metadata.concepts
+                      .filter((cr) => cr.concept)
+                      .flatMap((cr) => [
+                        { label: conceptLabel(cr, PROJECT_METADATA_CONCEPTS), value: conceptValueLabel(cr, PROJECT_METADATA_CONCEPTS) },
+                        { label: "Justification", value: cr.justification },
+                      ]),
                   ]}
                 />
               )}
