@@ -1,11 +1,11 @@
 "use client";
 
 import type { FC, ReactNode } from "react";
-import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { Suspense, useEffect, useMemo, useRef, useState } from "react";
 import dynamic from "next/dynamic";
 import { useRouter, useSearchParams } from "next/navigation";
 import type { Selection } from "react-aria-components";
-import { Dialog, DialogTrigger, Tabs } from "react-aria-components";
+import { Tabs } from "react-aria-components";
 import { TabList, Tab, TabPanel } from "@/components/application/tabs/tabs";
 import { AreaLayerList, type AreaLayerRow } from "@/app/pages/_shared/map-search/area-layers";
 import { ScrollFade } from "@/app/pages/_shared/map-search/scroll-fade";
@@ -14,65 +14,28 @@ import { MapLegend, type LegendItem } from "@/app/pages/_shared/map-search/map-l
 import type { SAMapMarker } from "@/app/pages/_shared/map-search/sa-map";
 import { MapZoomButtons } from "@/app/pages/_shared/map-search/map-zoom-buttons";
 import type { Map as LeafletMap } from "leaflet";
-import {
-  ChevronDown,
-  ChevronUp,
-  Folder,
-  Eye,
-  Activity,
-  Target05,
-  File06,
-  Image01,
-  File01,
-  Link02,
-  Circle,
-  Pentagon,
-  Trash01,
-  MarkerPin02,
-  Map02,
-  PenTool02,
-  SearchLg,
-  ArrowNarrowLeft,
-  LayerSingle,
-  LayersThree01,
-  Waves,
-  Users01,
-  Download01,
-  FileDownload01,
-  File07,
-  Printer,
-  FilterLines,
-  UploadCloud02,
-  File04,
-  Plus,
-  FileLock01,
-  Settings01,
-  RefreshCcw01,
-} from "@untitledui/icons";
+import { Activity, ArrowNarrowLeft, ArrowNarrowRight, ChevronDown, ChevronUp, Circle, Download01, Eye, File01, File04, File06, File07, FileDownload01, FileLock01, Folder, Image01, LayerSingle, LayersThree01, Link02, Map02, MarkerPin02, PenTool02, Pentagon, Plus, Printer, RefreshCcw01, SearchLg, Target05, Trash01, UploadCloud02, UserPlus01, Users01, Waves } from "@untitledui/icons";
 import { Button } from "@/components/base/buttons/button";
 import { Dropdown } from "@/components/base/dropdown/dropdown";
 import { Avatar } from "@/components/base/avatar/avatar";
 import { Badge } from "@/components/base/badges/badges";
-import { Checkbox } from "@/components/base/checkbox/checkbox";
+import { AttributeFilterChips } from "@/app/pages/_shared/attribute-filter";
+import { FilterMenu } from "@/app/pages/_shared/filter-menu";
+import { optionsFromValues, useSelectionFilter, type FilterGetters, type FilterSection } from "@/app/pages/_shared/list-filter";
 import { Input } from "@/components/base/input/input";
 import { InputNumber } from "@/components/base/input/input-number";
 import { InputFile } from "@/components/base/input/input-file";
 import { MultiSelect } from "@/components/base/select/multi-select";
-import { Popover } from "@/components/base/select/popover";
-import { Toggle } from "@/components/base/toggle/toggle";
 import { SectionHeader } from "@/components/application/section-headers/section-headers";
-import { AlertFullWidth } from "@/components/application/alerts/alerts";
-import { Accordion, type AccordionItemType } from "@/components/base/accordion/accordion";
+import { PageBanner } from "@/app/pages/_shared/page-banner";
 import { Tooltip } from "@/components/base/tooltip/tooltip";
 import { MobileNavTrigger } from "@/app/pages/_shared/mobile-nav";
 import { PrototypeTools } from "@/app/_prototype-tools/prototype-tools";
 import { SignUpPromptModal } from "@/app/pages/_shared/guest-action-gate";
 import { PrimaryRail } from "@/app/pages/_shared/primary-rail";
-import { SidebarFooterLinks } from "@/app/pages/_shared/sidebar-footer-links";
 import { sectionIcons } from "@/app/pages/_shared/nav-icons";
 import { AppHeader } from "@/app/pages/_shared/app-header";
-import { SA_NATIONAL_PARKS, WHOLE_STATE_SOURCE, isPointInAnyBoundary, boundarySummary, obfuscateCoordinate, wholeStateBoundary, type Boundary } from "@/app/pages/_shared/map-search/geo";
-import { SidePanel } from "@/app/pages/_shared/map-search/side-panel";
+import { SA_NATIONAL_PARKS, WHOLE_STATE_SOURCE, isPointInAnyBoundary, isRecordInAnyBoundary, boundarySummary, blockCentre, generalisedBlock, wholeStateBoundary, type Boundary } from "@/app/pages/_shared/map-search/geo";
 import { parseShapefileUpload, shapefileLayerSummary, type ShapefileLayer } from "@/app/pages/_shared/map-search/shapefile";
 import {
   searchEvents,
@@ -105,7 +68,7 @@ import { RecordPeekCard } from "@/app/pages/_shared/map-search/record-peek-card"
 import { ResultCard } from "@/app/pages/_shared/map-search/result-card";
 import { SpeciesPhoto } from "@/app/pages/_shared/map-search/species-photo";
 import { hasFeatureAccess } from "@/config/role-access.config";
-import { artefactAccess, generalisedKm, recordAccess } from "@/app/pages/_shared/map-search/record-access";
+import { artefactAccess, artefactGeneralisedKm, generalisedKm, recordAccess } from "@/app/pages/_shared/map-search/record-access";
 import { readExploreSearch, saveExploreSearch, useExploreSearchHydrated } from "@/app/pages/_shared/map-search/explore-search-store";
 import { ArtefactLightbox, type Artefact, type ArtefactType } from "@/app/pages/_shared/artefact-lightbox";
 import { useUserRole } from "@/lib/use-user-role";
@@ -195,17 +158,7 @@ function matchesKeyword(haystack: string, keyword: string): boolean {
   return !q || haystack.toLowerCase().includes(q);
 }
 
-// Same toggle-a-value-in-a-Set helper species-results.tsx's own `toggleInSet` already provides for
-// Species mode's facet checkboxes - duplicated here (not imported) since it's a tiny, self-
-// contained utility and this file doesn't otherwise import from that one.
-function toggleInSet<T>(set: Set<T>, value: T, checked: boolean): Set<T> {
-  const next = new Set(set);
-  if (checked) next.add(value);
-  else next.delete(value);
-  return next;
-}
-
-// ── Records mode's "All Filters" panel is built directly from each entity tab's own real
+// ── Records mode's filter menu is built directly from each entity tab's own real
 //    ColumnDef list, per direct feedback ("the all filters side panel... [is] not reflecting the
 //    column headers and values as filters. Use the same column headers and column values as
 //    filters and values. You can ignore the hierarchy column as filter") - never a separate,
@@ -226,33 +179,16 @@ function matchesColumnFilters<T>(row: T, columns: ColumnDef<T>[], selected: Reco
   });
 }
 
-/** One real accordion section per filterable column, its real distinct values (from `rows`, not
- *  narrowed by any other currently-selected facet - same "independent option lists" precedent
- *  Species mode's own Family/Genus/Species/Authority dropdowns already use) as checkboxes. */
-function buildColumnFilterSections<T>(
-  rows: T[],
-  columns: ColumnDef<T>[],
-  selected: Record<string, Set<string>>,
-  onToggle: (columnId: string, value: string, checked: boolean) => void,
-): AccordionItemType[] {
-  return filterableColumns(columns).map((col) => {
-    const values = [...new Set(rows.map(col.filterValue))].sort();
-    const selectedSet = selected[col.id] ?? new Set<string>();
-    return {
-      id: col.id,
-      title: col.label,
-      content:
-        values.length === 0 ? (
-          <p className="py-2 text-sm text-tertiary">No values in this search.</p>
-        ) : (
-          <div className="flex flex-col gap-3">
-            {values.map((v) => (
-              <Checkbox key={v} label={v} isSelected={selectedSet.has(v)} onChange={(checked) => onToggle(col.id, v, checked)} />
-            ))}
-          </div>
-        ),
-    };
-  });
+/** One filter section per filterable column, with its real distinct values (from `rows`, not narrowed by any other
+ *  filter that is on: the same "independent option lists" precedent Species mode's own dropdowns use), and how to
+ *  read a row for it. A project, a name or a site can run to thousands of values, so a section is searchable (from 4
+ *  values up, and only 50 drawn at a time, in the filter menu); a kind or a status is a short fixed set and is not. */
+function columnFilterDefs<T>(rows: T[], columns: ColumnDef<T>[]): { sections: FilterSection[]; getters: FilterGetters<unknown> } {
+  const filterable = filterableColumns(columns);
+  return {
+    sections: filterable.map((col) => ({ id: col.id, label: col.label, searchable: !["type", "status"].includes(col.id), options: optionsFromValues(rows.map(col.filterValue)) })),
+    getters: Object.fromEntries(filterable.map((col) => [col.id, (row: unknown) => col.filterValue(row as T)])),
+  };
 }
 
 // ── Result table column definitions, one array per entity - the customise-columns feature (see
@@ -655,10 +591,10 @@ function SectionPlaceholder({ node }: { node: NavNode }) {
   );
 }
 
-/** "classic" is the original flow (search on the map, press Search, land on a results page).
- *  "float" is the second option: a floating card over the map that lists the search areas as layers,
- *  with no Search step - results appear in the same card and follow the areas live. Both read the
- *  same state. */
+/** "classic" is the original flow (search on the map, press Search, land on a results page); it is
+ *  Option 2, at /pages/observations/option-2. "float" is Option 1, at /pages/observations: a floating
+ *  card over the map that lists the search areas as layers, with no Search step - results appear in
+ *  the same card and follow the areas live. Both read the same state. */
 export type ExploreLayout = "classic" | "float";
 
 export function ObservationsExplore({ layout }: { layout: ExploreLayout }) {
@@ -737,7 +673,6 @@ function ObservationsSearch({ layout }: { layout: ExploreLayout }) {
   // per-tab" precedent `keyword`/`boundaries` above already use - each `ResultsTable` call below
   // wires its own internal search box to this via `searchValue`/`onSearchChange`/`hideSearchBox`.
   const [recordsSearch, setRecordsSearch] = useState("");
-  const [recordsFilterPanelOpen, setRecordsFilterPanelOpen] = useState(false);
   // The "All Filters" panel's own facet selections, per direct feedback that it must reflect each
   // tab's own real column headers/values (Hierarchy excluded) rather than a fixed Region/
   // Organisation pair - keyed first by EntityTab, then by that tab's own ColumnDef id, so switching
@@ -1036,7 +971,7 @@ function ObservationsSearch({ layout }: { layout: ExploreLayout }) {
     setMode("search");
     if (urlQuery) {
       setAppliedQuery(null);
-      router.replace(roleHref(layout === "float" ? "/pages/observations/option-2" : "/pages/observations"));
+      router.replace(roleHref(layout === "float" ? "/pages/observations" : "/pages/observations/option-2"));
     }
   };
 
@@ -1098,15 +1033,16 @@ function ObservationsSearch({ layout }: { layout: ExploreLayout }) {
         if (e.type !== "Project") children += 1;
       }
     }
-    const child = (parentEventId: string, lat: number, lon: number, text: string) => {
+    // A restricted record is matched by its block, not its real point (geo.ts, "Generalised blocks").
+    const child = (parentEventId: string, lat: number, lon: number, blockKm: number | null, text: string) => {
       const project = rootProjectForParentEventId(parentEventId);
-      if (!isPointInAnyBoundary([lat, lon], bs) || !matchesKeyword(text, keyword) || !published(project)) return;
+      if (!isRecordInAnyBoundary(lat, lon, blockKm, bs) || !matchesKeyword(text, keyword) || !published(project)) return;
       projectIds.add(project!.id);
       children += 1;
     };
-    for (const o of visibleOccurrences) child(o.parentEventId, o.lat, o.lon, `${o.species} ${o.commonName} ${o.type}`);
-    for (const o of visibleObservations) child(o.parentEventId, o.lat, o.lon, `${o.species} ${o.observerName} ${o.type}`);
-    for (const r of visibleResources) child(r.parentEventId, r.lat, r.lon, `${r.name} ${r.recordName} ${r.attachedToConcept}`);
+    for (const o of visibleOccurrences) child(o.parentEventId, o.lat, o.lon, generalisedKm(o, role), `${o.species} ${o.commonName} ${o.type}`);
+    for (const o of visibleObservations) child(o.parentEventId, o.lat, o.lon, generalisedKm(o, role), `${o.species} ${o.observerName} ${o.type}`);
+    for (const r of visibleResources) child(r.parentEventId, r.lat, r.lon, artefactGeneralisedKm(r, role), `${r.name} ${r.recordName} ${r.attachedToConcept}`);
     return children + projectIds.size;
   };
 
@@ -1188,19 +1124,19 @@ function ObservationsSearch({ layout }: { layout: ExploreLayout }) {
       }
     }
     for (const o of visibleOccurrences) {
-      if (isPointInAnyBoundary([o.lat, o.lon], boundaries) && matchesKeyword(`${o.species} ${o.commonName} ${o.type}`, keyword)) {
+      if (isRecordInAnyBoundary(o.lat, o.lon, generalisedKm(o, role), boundaries) && matchesKeyword(`${o.species} ${o.commonName} ${o.type}`, keyword)) {
         const project = rootProjectForParentEventId(o.parentEventId);
         if (project) touched.add(project.id);
       }
     }
     for (const o of visibleObservations) {
-      if (isPointInAnyBoundary([o.lat, o.lon], boundaries) && matchesKeyword(`${o.species} ${o.observerName} ${o.type}`, keyword)) {
+      if (isRecordInAnyBoundary(o.lat, o.lon, generalisedKm(o, role), boundaries) && matchesKeyword(`${o.species} ${o.observerName} ${o.type}`, keyword)) {
         const project = rootProjectForParentEventId(o.parentEventId);
         if (project) touched.add(project.id);
       }
     }
     for (const r of visibleResources) {
-      if (isPointInAnyBoundary([r.lat, r.lon], boundaries) && matchesKeyword(`${r.name} ${r.recordName} ${r.attachedToConcept}`, keyword)) {
+      if (isRecordInAnyBoundary(r.lat, r.lon, artefactGeneralisedKm(r, role), boundaries) && matchesKeyword(`${r.name} ${r.recordName} ${r.attachedToConcept}`, keyword)) {
         const project = rootProjectForParentEventId(r.parentEventId);
         if (project) touched.add(project.id);
       }
@@ -1213,7 +1149,7 @@ function ObservationsSearch({ layout }: { layout: ExploreLayout }) {
     return new Set(
       searchEvents.filter((e) => e.type === "Project" && touched.has(e.id) && (e.status === "Active" || e.status === "Completed")).map((e) => e.id),
     );
-  }, [boundaries, keyword, visibleOccurrences, visibleObservations, visibleResources]);
+  }, [boundaries, keyword, visibleOccurrences, visibleObservations, visibleResources, role]);
 
   // "pre-facet" - spatial + keyword + matchingProjectIds only, same as before this round. The
   // Records-mode "All Filters" panel (see below) layers two more real facets - Region and
@@ -1238,39 +1174,32 @@ function ObservationsSearch({ layout }: { layout: ExploreLayout }) {
     () =>
       visibleOccurrences.filter(
         (o) =>
-          isPointInAnyBoundary([o.lat, o.lon], boundaries) &&
+          isRecordInAnyBoundary(o.lat, o.lon, generalisedKm(o, role), boundaries) &&
           matchesKeyword(`${o.species} ${o.commonName} ${o.type}`, keyword) &&
           matchingProjectIds.has(rootProjectForParentEventId(o.parentEventId)?.id ?? ""),
       ),
-    [boundaries, keyword, matchingProjectIds, visibleOccurrences],
+    [boundaries, keyword, matchingProjectIds, visibleOccurrences, role],
   );
   const preFacetObservations = useMemo(
     () =>
       visibleObservations.filter(
         (o) =>
-          isPointInAnyBoundary([o.lat, o.lon], boundaries) &&
+          isRecordInAnyBoundary(o.lat, o.lon, generalisedKm(o, role), boundaries) &&
           matchesKeyword(`${o.species} ${o.observerName} ${o.type}`, keyword) &&
           matchingProjectIds.has(rootProjectForParentEventId(o.parentEventId)?.id ?? ""),
       ),
-    [boundaries, keyword, matchingProjectIds, visibleObservations],
+    [boundaries, keyword, matchingProjectIds, visibleObservations, role],
   );
   const preFacetResources = useMemo(
     () =>
       visibleResources.filter(
         (r) =>
-          isPointInAnyBoundary([r.lat, r.lon], boundaries) &&
+          isRecordInAnyBoundary(r.lat, r.lon, artefactGeneralisedKm(r, role), boundaries) &&
           matchesKeyword(`${r.name} ${r.recordName} ${r.attachedToConcept}`, keyword) &&
           matchingProjectIds.has(rootProjectForParentEventId(r.parentEventId)?.id ?? ""),
       ),
-    [boundaries, keyword, matchingProjectIds, visibleResources],
+    [boundaries, keyword, matchingProjectIds, visibleResources, role],
   );
-
-  const toggleColumnFilterValue = (tab: EntityTab, columnId: string, value: string, checked: boolean) => {
-    setColumnFilters((prev) => ({
-      ...prev,
-      [tab]: { ...prev[tab], [columnId]: toggleInSet(prev[tab][columnId] ?? new Set<string>(), value, checked) },
-    }));
-  };
 
   const filteredProjects = useMemo(
     () => preFacetProjects.filter((e) => matchesColumnFilters(e, projectColumns, columnFilters.projects)),
@@ -1294,64 +1223,25 @@ function ObservationsSearch({ layout }: { layout: ExploreLayout }) {
   );
   const resourceArtefacts = useMemo(() => filteredResources.map(resourceToArtefact), [filteredResources]);
 
-  // The "All Filters" panel's own accordion content - one real section per the active tab's own
-  // filterable columns (see buildColumnFilterSections above), so switching tabs shows that tab's
-  // own real column headers/values, never a fixed, invented facet set.
-  const columnFilterSections = useMemo((): AccordionItemType[] => {
+  // The filter menu's content: one section per filterable column of the active tab, with that tab's own real values, so
+  // switching tabs shows that tab's own column headers and values, never a fixed, invented facet set.
+  const recordFilterDefs = useMemo(() => {
     switch (entityTab) {
       case "projects":
-        return buildColumnFilterSections(preFacetProjects, projectColumns, columnFilters.projects, (id, v, c) => toggleColumnFilterValue("projects", id, v, c));
+        return columnFilterDefs(preFacetProjects, projectColumns);
       case "events":
-        return buildColumnFilterSections(preFacetEvents, eventColumns, columnFilters.events, (id, v, c) => toggleColumnFilterValue("events", id, v, c));
+        return columnFilterDefs(preFacetEvents, eventColumns);
       case "occurrence":
-        return buildColumnFilterSections(preFacetOccurrences, occurrenceColumns, columnFilters.occurrence, (id, v, c) =>
-          toggleColumnFilterValue("occurrence", id, v, c),
-        );
+        return columnFilterDefs(preFacetOccurrences, occurrenceColumns);
       case "observations":
-        return buildColumnFilterSections(preFacetObservations, observationColumns, columnFilters.observations, (id, v, c) =>
-          toggleColumnFilterValue("observations", id, v, c),
-        );
+        return columnFilterDefs(preFacetObservations, observationColumns);
       case "resources":
-        return buildColumnFilterSections(preFacetResources, resourceColumns, columnFilters.resources, (id, v, c) => toggleColumnFilterValue("resources", id, v, c));
+        return columnFilterDefs(preFacetResources, resourceColumns);
     }
-  }, [entityTab, preFacetProjects, preFacetEvents, preFacetOccurrences, preFacetObservations, preFacetResources, columnFilters]);
-
-  // The active tab's own filterable columns as plain {id, label} pairs - used for the pill row
-  // below, kept separate from `columnFilterSections` (which needs real option values too, not just
-  // the column identity) so building pills doesn't require re-deriving every column's full value
-  // list a second time.
-  const activeFilterableColumns = useMemo((): { id: string; label: string }[] => {
-    switch (entityTab) {
-      case "projects":
-        return filterableColumns(projectColumns).map((c) => ({ id: c.id, label: c.label }));
-      case "events":
-        return filterableColumns(eventColumns).map((c) => ({ id: c.id, label: c.label }));
-      case "occurrence":
-        return filterableColumns(occurrenceColumns).map((c) => ({ id: c.id, label: c.label }));
-      case "observations":
-        return filterableColumns(observationColumns).map((c) => ({ id: c.id, label: c.label }));
-      case "resources":
-        return filterableColumns(resourceColumns).map((c) => ({ id: c.id, label: c.label }));
-    }
-  }, [entityTab]);
-
-  const activeTabColumnFilters = columnFilters[entityTab];
-  const recordsFilterCount = Object.values(activeTabColumnFilters).reduce((sum, values) => sum + values.size, 0);
-
-  // One removable pill per selected value, scoped to the currently active tab only - matching how
-  // the panel itself only ever shows that tab's own real columns, never a cross-tab combined list.
-  const recordsFilterPills = useMemo(() => {
-    const pills: { key: string; label: string; onRemove: () => void }[] = [];
-    for (const col of activeFilterableColumns) {
-      const values = activeTabColumnFilters[col.id] ?? new Set<string>();
-      for (const v of values) {
-        pills.push({ key: `${col.id}:${v}`, label: `${col.label}: ${v}`, onRemove: () => toggleColumnFilterValue(entityTab, col.id, v, false) });
-      }
-    }
-    return pills;
-  }, [activeFilterableColumns, activeTabColumnFilters, entityTab]);
-
-  const clearRecordsFilters = () => setColumnFilters((prev) => ({ ...prev, [entityTab]: {} }));
+  }, [entityTab, preFacetProjects, preFacetEvents, preFacetOccurrences, preFacetObservations, preFacetResources]);
+  const recordFilter = useSelectionFilter(recordFilterDefs.sections, recordFilterDefs.getters, columnFilters[entityTab], (next) =>
+    setColumnFilters((prev) => ({ ...prev, [entityTab]: next })),
+  );
 
   const countFor = (tab: EntityTab) =>
     ({
@@ -1514,34 +1404,6 @@ function ObservationsSearch({ layout }: { layout: ExploreLayout }) {
     </>
   );
 
-  const recordsFilterPillsRow = (
-    <>
-                {recordsFilterPills.length > 0 && (
-                  <div className="flex shrink-0 flex-wrap items-center gap-1.5 px-6 pt-2">
-                    {recordsFilterPills.map((pill) => (
-                      <span
-                        key={pill.key}
-                        className="inline-flex items-center gap-1 rounded-full border border-secondary bg-secondary py-1 pr-1 pl-2.5 text-xs font-medium text-secondary"
-                      >
-                        {pill.label}
-                        <button
-                          type="button"
-                          onClick={pill.onRemove}
-                          aria-label={`Remove filter: ${pill.label}`}
-                          className="flex size-4 shrink-0 items-center justify-center rounded-full text-quaternary outline-focus-ring hover:bg-primary_hover hover:text-primary"
-                        >
-                          <Trash01 className="size-3" />
-                        </button>
-                      </span>
-                    ))}
-                    <Button color="link-gray" size="sm" onPress={clearRecordsFilters}>
-                      Clear all
-                    </Button>
-                  </div>
-                )}
-    </>
-  );
-
   const recordTables = (
     <>
                   {entityTab === "projects" && (
@@ -1633,25 +1495,6 @@ function ObservationsSearch({ layout }: { layout: ExploreLayout }) {
                     />
                   )}
     </>
-  );
-
-  const recordsFilterPanel = (
-                <SidePanel
-                  isOpen={recordsFilterPanelOpen}
-                  onOpenChange={setRecordsFilterPanelOpen}
-                  title="All Filters"
-                  side="left"
-                  widthClassName="max-w-sm"
-                  headerActions={
-                    recordsFilterCount > 0 ? (
-                      <Button color="link-gray" size="sm" onPress={clearRecordsFilters}>
-                        Clear all
-                      </Button>
-                    ) : undefined
-                  }
-                >
-                  <Accordion variant="compact" items={columnFilterSections} />
-                </SidePanel>
   );
 
   const coordinatesBody = (
@@ -1815,7 +1658,7 @@ function ObservationsSearch({ layout }: { layout: ExploreLayout }) {
                     <Input icon={SearchLg} placeholder="Species or keyword (optional)" value={keyword} onChange={setKeyword} className="mt-4" onClear={() => setKeyword("")} clearLabel="Clear search" />
 
                     {!isCompact && (
-                      <Button color="primary" size="md" className="mt-4 w-full" isDisabled={boundaries.length === 0} onPress={runSearch}>
+                      <Button iconLeading={SearchLg} color="primary" size="md" className="mt-4 w-full" isDisabled={boundaries.length === 0} onPress={runSearch}>
                         Search records
                       </Button>
                     )}
@@ -1831,25 +1674,18 @@ function ObservationsSearch({ layout }: { layout: ExploreLayout }) {
     ? "Sensitive records are not shown. Sign up and request a Data Licencing Agreement (DLA) to see them."
     : "Sensitive species are shown only to an approximate area. Request a Data Licencing Agreement (DLA) for full access.";
 
-  const dlaBanner = (
-    <>
-                {!dlaBannerDismissed && !seesAllData && (
-                  <div className="shrink-0">
-                    <AlertFullWidth
-                      color="warning"
-                      tintedBackground
-                      hideDismissButton
-                      title={accessNoticeTitle}
-                      description={accessNoticeBody}
-                      confirmLabel={isPublicUser ? "Sign up for access" : "Go to DLA"}
-                      onConfirm={requestDlaAccess}
-                      onClose={() => setDlaBannerDismissed(true)}
-                      className="mx-0 max-w-none px-6 py-2.5 md:px-6 md:py-2.5"
-                    />
-                  </div>
-                )}
-    </>
-  );
+  const dlaBanner =
+    !dlaBannerDismissed && !seesAllData ? (
+      <PageBanner
+        title={accessNoticeTitle}
+        description={accessNoticeBody}
+        actionLabel={isPublicUser ? "Sign up for access" : "Go to DLA"}
+        actionIcon={isPublicUser ? UserPlus01 : ArrowNarrowRight}
+        actionIconPosition={isPublicUser ? "leading" : "trailing"}
+        onAction={requestDlaAccess}
+        onDismiss={() => setDlaBannerDismissed(true)}
+      />
+    ) : null;
 
   // ── Second layout: one screen ──
   // Search controls live in column 2 and the results float over the map, so nothing redirects and
@@ -1871,13 +1707,13 @@ function ObservationsSearch({ layout }: { layout: ExploreLayout }) {
       legendKey: group ?? ("Other" as const),
       color: group ? SPECIES_GROUP_COLOR[group] : OTHER_RECORD_COLOR,
     });
-    // A restricted (Level 2) record is never pinned: it becomes a soft, blurred area around its
-    // generalised position (the same generalisation the record page shows), so the map cannot give
-    // away where a sensitive species is.
+    // A restricted (Level 2) record is never pinned: it is drawn as the square block of the grid that
+    // contains it (the same block the record page shows), flat and with no centre mark, so the map
+    // cannot give away where in the block a sensitive species is.
     const fuzzyPt = (id: string, lat: number, lon: number, label: string, km: number | null, group: SpeciesGroup | undefined): ExploreMarker => {
       if (!km) return { ...pt(id, lat, lon, label), ...groupStyle(group) };
-      const area = obfuscateCoordinate(lat, lon, km);
-      return { id, position: [area.lat, area.lon], label: `${label} - location restricted to about ${km} km`, fuzzyRadiusKm: km, ...groupStyle(group) };
+      const block = generalisedBlock(lat, lon, km);
+      return { id, position: blockCentre(block), label: `${label} - location restricted to a ${km} km block`, fuzzyBlock: block, ...groupStyle(group) };
     };
     const recordPt = (kind: "occurrence" | "observation", o: SearchOccurrence | SearchObservation) =>
       fuzzyPt(`${kind}:${o.id}`, o.lat, o.lon, o.commonName, generalisedKm(o, role), o.group);
@@ -1904,13 +1740,13 @@ function ObservationsSearch({ layout }: { layout: ExploreLayout }) {
   }, [isCompact, viewMode, entityTab, filteredProjects, filteredEvents, filteredOccurrences, filteredObservations, filteredResources, role]);
 
   // The key to the dots: each species group in view (in the Species tiles' order), then "Other",
-  // then the blurred area when a restricted record is plotted. Empty for projects and events.
+  // then the block when a restricted record is plotted. Empty for projects and events.
   const legendItems = useMemo<LegendItem[]>(() => {
     if (!mapMarkers || !mapMarkers.some((m) => m.legendKey)) return [];
     const present = new Set(mapMarkers.map((m) => m.legendKey));
     const items: LegendItem[] = SPECIES_GROUP_ORDER.filter((g) => present.has(g)).map((g) => ({ id: g, label: g, color: SPECIES_GROUP_COLOR[g] }));
     if (present.has("Other")) items.push({ id: "other", label: "Other record", color: OTHER_RECORD_COLOR });
-    if (mapMarkers.some((m) => m.fuzzyRadiusKm)) items.push({ id: "restricted", label: "Restricted (approximate)", color: OTHER_RECORD_COLOR, fuzzy: true });
+    if (mapMarkers.some((m) => m.fuzzyBlock)) items.push({ id: "restricted", label: "Restricted (block)", color: OTHER_RECORD_COLOR, fuzzy: true });
     return items;
   }, [mapMarkers]);
 
@@ -1987,7 +1823,7 @@ function ObservationsSearch({ layout }: { layout: ExploreLayout }) {
     subtitle?: string;
     subtitleItalic?: boolean;
     meta?: string;
-    trailing?: ReactNode;
+    badge?: ReactNode;
     onSelect: () => void;
   }
   const speciesThumb = (r: { species: string; commonName: string; group?: SpeciesGroup }) =>
@@ -2015,7 +1851,7 @@ function ObservationsSearch({ layout }: { layout: ExploreLayout }) {
           subtitle: o.species,
           subtitleItalic: true,
           meta: provenance(o.parentEventId),
-          trailing: restrictedBadge(o),
+          badge: restrictedBadge(o),
           onSelect: () => selectRecord({ kind: "occurrence", occurrence: o }),
         }));
       case "projects":
@@ -2026,7 +1862,7 @@ function ObservationsSearch({ layout }: { layout: ExploreLayout }) {
           title: e.name,
           subtitle: e.org,
           meta: `${e.code}${e.updated ? ` \u00b7 Updated ${e.updated}` : ""}`,
-          trailing: (
+          badge: (
             <Badge size="sm" color={e.statusColor}>
               {e.status}
             </Badge>
@@ -2054,7 +1890,7 @@ function ObservationsSearch({ layout }: { layout: ExploreLayout }) {
           subtitle: hasScientificName(o.species) ? o.species : undefined,
           subtitleItalic: true,
           meta: `${o.type} \u00b7 ${o.date}`,
-          trailing: restrictedBadge(o),
+          badge: restrictedBadge(o),
           onSelect: () => selectRecord({ kind: "occurrence", occurrence: o }),
         }));
       case "observations":
@@ -2067,7 +1903,7 @@ function ObservationsSearch({ layout }: { layout: ExploreLayout }) {
           subtitle: hasScientificName(o.species) ? o.species : undefined,
           subtitleItalic: true,
           meta: `${o.type} \u00b7 ${o.date}`,
-          trailing: restrictedBadge(o),
+          badge: restrictedBadge(o),
           onSelect: () => selectRecord({ kind: "observation", observation: o }),
         }));
       case "resources":
@@ -2118,7 +1954,7 @@ function ObservationsSearch({ layout }: { layout: ExploreLayout }) {
                 subtitle={c.subtitle}
                 subtitleItalic={c.subtitleItalic}
                 meta={c.meta}
-                trailing={c.trailing}
+                badge={c.badge}
                 onSelect={c.onSelect}
                 onHoverChange={(hovered) => setHoveredMarkerId(hovered ? c.markerId : null)}
               />
@@ -2137,27 +1973,9 @@ function ObservationsSearch({ layout }: { layout: ExploreLayout }) {
   // ── The floating layout (option 2) ──
   // The card over the map's left: results appear on the same page, live, with no Search step and no
   // redirect. One card - the setup folds to the areas list and the same card grows a results list.
-  // Column 2 is the map's own contextual column (the areas as layers, and the data-access notice that
-  // used to be a full-width banner), so it keeps the three-column shell.
+  // There is no column 2 (CONTRACTS 3.7 override, 1 Oct 2026): the areas are a section of the card and
+  // the data-access notice is the banner across the top of the map.
   const hasAreas = boundaries.length > 0;
-  const [showDotsLayer, setShowDotsLayer] = useState(true);
-  // The map key's own one-line width, measured, so the search card can widen to line up with it (per
-  // the designer: "increase panel width to match labels width"). The two sit in different rows, so
-  // CSS alone cannot tie them. 0 when the key is not shown.
-  const [keyWidth, setKeyWidth] = useState(0);
-  const keyObserver = useRef<ResizeObserver | null>(null);
-  // Stable, so React attaches it once when the key appears and detaches it once when it goes.
-  const measureKey = useCallback((el: HTMLDivElement | null) => {
-    keyObserver.current?.disconnect();
-    keyObserver.current = null;
-    if (!el) {
-      setKeyWidth(0);
-      return;
-    }
-    const observer = new ResizeObserver(([entry]) => setKeyWidth(entry.borderBoxSize[0]?.inlineSize ?? entry.contentRect.width));
-    observer.observe(el);
-    keyObserver.current = observer;
-  }, []);
 
   // Option 3 counts the visible layers (a hidden area is not searched); the others count every area.
   const areaCount = layout === "float" ? visibleLayers.length + (impliedWholeState ? 1 : 0) : areaEntries.length;
@@ -2191,7 +2009,7 @@ function ObservationsSearch({ layout }: { layout: ExploreLayout }) {
   };
   const addAreaMenu = (
     <Dropdown.Root>
-      <Button color={hasAreas || layerRows.length > 0 ? "secondary" : "primary"} size="sm" iconLeading={Plus}>
+      <Button color="primary" size="sm" iconLeading={Plus}>
         Add area
       </Button>
       <Dropdown.Popover placement="bottom right" className="w-56">
@@ -2230,44 +2048,34 @@ function ObservationsSearch({ layout }: { layout: ExploreLayout }) {
       {addingMethod === "shapefile" && shapefileBody}
     </div>
   );
+  // The one line of guidance, for a card with nothing in it yet. It is not shown once there is an area (hidden or
+  // not): the areas list is open and dimmed while every area is hidden, which says it, and a keyword alone is
+  // already a search across the state. One line on purpose: the copy gives both ways to start and says what a
+  // species search with no area covers, and a balanced two-line wrap left a 233px measure stranded in a 366px card.
+  const growHintId = "explore-search-hint";
+  const showGrowHint = !addingMethod && !hasAreas && layerRows.length === 0 && !keyword.trim();
   const growSearchField = (
-    <Input icon={SearchLg} aria-label="Search species or keyword" placeholder="Search a species or keyword" value={keyword} onChange={setKeyword} onClear={() => setKeyword("")} clearLabel="Clear search" />
+    <Input
+      icon={SearchLg}
+      aria-label="Search species or keyword"
+      aria-describedby={showGrowHint ? growHintId : undefined}
+      placeholder="Search a species or keyword"
+      value={keyword}
+      onChange={setKeyword}
+      onClear={() => setKeyword("")}
+      clearLabel="Clear search"
+    />
   );
-  const growHint = !addingMethod && !hasAreas && (
-    <p className="text-sm text-tertiary text-balance">
-      {layerRows.length > 0
-        ? "Every area is hidden. Show one in the list on the left to see results."
-        : keyword.trim()
-          ? ""
-          : "Add an area to search, or type a species to look across South Australia."}
+  const growHint = showGrowHint ? (
+    <p id={growHintId} className="m-0 text-sm text-balance text-tertiary">
+      Add an area, or search a species across South Australia.
     </p>
-  );
+  ) : null;
 
-  // "On the map" (the Result dots toggle) moved into the floating card's own summary row, next to
-  // the zoom buttons - both are map display controls, and read better docked to the map they
-  // control than sitting in this column, per direct feedback. That leaves a gap between the areas
-  // list and the footer links this column always had - the public-data card now sits at the
-  // bottom of it (`mt-auto`), close to the footer, instead of floating right under the areas list
-  // with empty space below it.
-  const floatColumn2 = (
-    <aside aria-label="Explore" className="hidden w-[286px] shrink-0 flex-col gap-4 overflow-y-auto border-r border-secondary bg-secondary p-4 lg:flex">
-      <div className="flex flex-col gap-3">
-        <p className="text-xs font-semibold tracking-wide text-quaternary uppercase">Explore</p>
-        {areasList}
-      </div>
-      {!seesAllData && (
-        <div className="mt-auto flex flex-col gap-2 rounded-lg border border-secondary bg-primary p-3">
-          <p className="text-sm font-semibold text-balance text-primary">{accessNoticeTitle}</p>
-          <p className="text-sm text-balance text-tertiary">{accessNoticeBody}</p>
-          <Button color="secondary" size="sm" className="self-start" onPress={requestDlaAccess}>
-            {isPublicUser ? "Sign up for access" : "Go to DLA"}
-          </Button>
-        </div>
-      )}
-      <SidebarFooterLinks />
-    </aside>
-  );
-
+  // Explore's first layout has no column 2 (designer, 1 Oct 2026; CONTRACTS 3.7): the map takes the whole
+  // width, the search areas are a section of the floating card (`AreaLayerList`, folded to one row until
+  // opened), and the data-access notice some roles see is the same warning banner the second layout shows,
+  // across the top of the map (`dlaBanner`).
   const floatMap = (padTopLeft: [number, number], padBottomRight: [number, number]) => (
     <div className="absolute inset-0">
       <SAMap
@@ -2277,7 +2085,7 @@ function ObservationsSearch({ layout }: { layout: ExploreLayout }) {
         onDrawToolChange={setActiveDrawTool}
         fitPaddingTopLeft={padTopLeft}
         fitPaddingBottomRight={padBottomRight}
-        markers={showDotsLayer ? mapMarkers : undefined}
+        markers={mapMarkers}
         onMarkerClick={onMarkerClick}
         highlightedMarkerId={hoveredMarkerId ?? selectedMarkerId}
         highlightedBoundaryIds={highlightedBoundaryIds}
@@ -2293,8 +2101,8 @@ function ObservationsSearch({ layout }: { layout: ExploreLayout }) {
   const floatFrame = (children: ReactNode) => (
     <div className="flex flex-1 overflow-hidden">
       {iconRail}
-      {floatColumn2}
       <main className="relative flex min-w-0 flex-1 flex-col overflow-hidden">
+        {dlaBanner}
         <div className="relative min-h-0 flex-1 overflow-hidden">{children}</div>
         {signUpModals}
         <ArtefactLightbox artefacts={resourceArtefacts} index={artefactIndex} onClose={() => setArtefactIndex(null)} onNavigate={setArtefactIndex} />
@@ -2314,12 +2122,13 @@ function ObservationsSearch({ layout }: { layout: ExploreLayout }) {
           side (below 648px) the right column moves under the left one. The bottom padding keeps the map's scale bar
           (bottom-left) and attribution (bottom-right) clear. The layer lets clicks through to the
           map; each panel takes its own. */}
-      <div className="pointer-events-none absolute inset-0 z-[1000] @container" style={{ ["--key-w" as string]: `${keyWidth}px` }}>
+      <div className="pointer-events-none absolute inset-0 z-[1000] @container">
         <div className="flex size-full flex-col gap-4 p-4 pb-9">
         <div className="flex min-h-0 flex-1 flex-col gap-4 @min-[648px]:flex-row">
-      {/* 400px, or the key's width when it is wider, so the two line up; flex-1 still lets it give way
-          to the summary card's column when the map is narrow. */}
-      <div className="flex min-h-0 w-full flex-col items-start gap-3 @max-[647px]:min-h-[72px] @max-[647px]:shrink-[1000] @min-[648px]:w-auto @min-[648px]:max-w-[max(400px,var(--key-w))] @min-[648px]:min-w-[280px] @min-[648px]:flex-1">
+      {/* One fixed width, whatever the state: empty, searching, results, a key or none. The card used to
+          take the key's measured width, so it grew by a few pixels the moment results appeared (and
+          the key with them). It now only gives way to the summary card's column when the map is narrow. */}
+      <div className="flex min-h-0 w-full flex-col items-start gap-3 @max-[647px]:min-h-[72px] @max-[647px]:shrink-[1000] @min-[648px]:w-[440px] @min-[648px]:min-w-[280px] @min-[648px]:shrink">
       <section
         aria-label="Search the map"
         className={cx(floatCard, "pointer-events-auto min-h-0 w-full shrink @max-[647px]:min-h-[72px]")}
@@ -2336,35 +2145,15 @@ function ObservationsSearch({ layout }: { layout: ExploreLayout }) {
           </div>
         </div>
         {addAreaPanel && <div className="max-h-[50%] shrink-0 overflow-y-auto">{addAreaPanel}</div>}
-        <div className="flex shrink-0 flex-col gap-2 px-4 pt-1 pb-4">
+        <div className="flex shrink-0 flex-col gap-2 px-4 pt-1 pb-3">
           {growSearchField}
           {growHint}
         </div>
+        {layerRows.length > 0 && <div className="shrink-0 px-4 pb-3">{areasList}</div>}
         {hasAreas && (
           <div className={cx("flex min-h-0 flex-1 flex-col border-t border-secondary", rise)}>
             <div className="flex shrink-0 items-center gap-2 px-4 pt-3 pb-2 text-sm text-tertiary">
               <div className="min-w-0 flex-1 truncate">{summaryLine}</div>
-              {/* Zoom moved back onto the map itself (its own top-right corner, real map chrome
-                  belongs on the map - see floatMap above), so this row is down to
-                  the two things that actually differ per search: what the map displays, and
-                  exporting the results. "Result dots" is the one display toggle today, but it's
-                  not the last one this will ever need - rather than grow this row by one icon
-                  every time, it lives behind a single "Map settings" button, same restraint this
-                  row's own controls already got once (a bare Toggle + a boxed zoom pair + a naked
-                  icon, unified into one tray, then most of that tray moved onto the map). */}
-              <DialogTrigger>
-                <Button color="secondary" size="sm" iconLeading={Settings01} aria-label="Map settings" />
-                {/* Toggle's own label wrapper is `w-max` (sizes to its content, not its parent) -
-                    fine in a form with room to spare, but it lets a hint line overflow a narrow
-                    popover instead of wrapping. w-72 gives the hint enough room to sit on one
-                    line without touching that shared component. */}
-                <Popover size="auto" placement="bottom end" className="font-barlow w-72">
-                  <Dialog className="flex flex-col gap-1 p-4 outline-hidden">
-                    <p className="text-sm font-semibold text-primary">Map settings</p>
-                    <Toggle label="Result dots" hint="A dot for every matching record" isSelected={showDotsLayer} onChange={setShowDotsLayer} className="mt-2" />
-                  </Dialog>
-                </Popover>
-              </DialogTrigger>
               {exportControl}
             </div>
             {resultsBody}
@@ -2390,8 +2179,8 @@ function ObservationsSearch({ layout }: { layout: ExploreLayout }) {
             one line instead of wrapping inside the search card's 400px column (per the designer). On
             a narrow map it becomes a two-column grid; when the panels stack there is no room for both
             the key and an open summary card, so the key steps aside until the card is closed. */}
-        {showDotsLayer && legendItems.length > 0 && (
-          <div ref={measureKey} className={cx("max-w-full shrink-0 self-start", peekVisible && "@max-[647px]:hidden")}>
+        {legendItems.length > 0 && (
+          <div className={cx("max-w-full shrink-0 self-start @min-[648px]:max-w-[440px]", peekVisible && "@max-[647px]:hidden")}>
             <MapLegend title="Species group" items={legendItems} />
           </div>
         )}
@@ -2427,9 +2216,8 @@ function ObservationsSearch({ layout }: { layout: ExploreLayout }) {
               <p className="mb-3 text-xs font-semibold tracking-wide text-quaternary uppercase">{activeSectionNode.label}</p>
               {activeSectionNode.items?.map((item) => <NavTree key={item.label} node={item} />)}
             </div>
-            <SidebarFooterLinks />
           </aside>
-          <main className="flex flex-1 flex-col overflow-y-auto">
+          <main className="flex flex-1 flex-col overflow-y-auto [scrollbar-gutter:stable]">
             <SectionPlaceholder node={activeSectionNode} />
           </main>
         </div>
@@ -2650,18 +2438,12 @@ function ObservationsSearch({ layout }: { layout: ExploreLayout }) {
                     its own search box used to be. ── */}
                 <div className="flex shrink-0 items-center gap-3 px-6 pt-4">
                   <Input icon={SearchLg} placeholder="Search" value={recordsSearch} onChange={setRecordsSearch} className="flex-1" onClear={() => setRecordsSearch("")} clearLabel="Clear search" />
-                  <Button
-                    color="secondary"
-                    size="md"
-                    iconLeading={FilterLines}
-                    onPress={() => setRecordsFilterPanelOpen(true)}
-                    className="min-w-[220px] shrink-0 justify-center"
-                  >
-                    All Filters{recordsFilterCount > 0 ? ` (${recordsFilterCount})` : ""}
-                  </Button>
+                  <FilterMenu filter={recordFilter} />
                 </div>
 
-                {recordsFilterPillsRow}
+                <div className="px-6 pt-2 empty:hidden">
+                  <AttributeFilterChips filter={recordFilter} />
+                </div>
 
                 {/* min-h-0 flex-1 overflow-hidden - takes exactly the space left over below the
                     toolbar pieces above; ResultsTable's own internal scroll region (its table
@@ -2678,7 +2460,6 @@ function ObservationsSearch({ layout }: { layout: ExploreLayout }) {
                     this panel must reflect the table's real columns rather than an invented facet
                     set. Hierarchy is never a section (excluded in `filterableColumns`), per direct
                     request. ── */}
-                {recordsFilterPanel}
                   </>
                 )}
               </div>

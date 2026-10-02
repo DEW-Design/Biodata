@@ -2,10 +2,11 @@
 
 import { useState } from "react";
 import type { Key } from "react-aria-components";
-import { RefreshCcw01 } from "@untitledui/icons";
+import { RefreshCcw01, Grid01, Folder } from "@untitledui/icons";
 import { Tab, TabList, TabPanel, Tabs } from "@/components/application/tabs/tabs";
 import { SectionHeader } from "@/components/application/section-headers/section-headers";
 import { Dropdown } from "@/components/base/dropdown/dropdown";
+import { SPECIES_GROUP_ICON } from "@/app/pages/_shared/map-search/species-group-icons";
 import { BentoCard } from "@/app/pages/_shared/bento-card";
 import { useFeatureAccess } from "@/lib/use-feature-access";
 import { PieChart, categoricalPalette, type PieSlice } from "@/app/pages/_shared/pie-chart";
@@ -83,11 +84,12 @@ function TabPlaceholder({ label }: { label: string }) {
   );
 }
 
+// The same icons the rest of the app uses for these: the species group icons for Flora and Fauna, the rail's folder for Projects.
 const dataDashboardTabs = [
-  { id: "overview", label: "Overview" },
-  { id: "flora", label: "Flora" },
-  { id: "fauna", label: "Fauna" },
-  { id: "projects", label: "Projects" },
+  { id: "overview", label: "Overview", icon: Grid01 },
+  { id: "flora", label: "Flora", icon: SPECIES_GROUP_ICON.Plant },
+  { id: "fauna", label: "Fauna", icon: SPECIES_GROUP_ICON.Mammal },
+  { id: "projects", label: "Projects", icon: Folder },
 ];
 
 type MetricId = "records" | "flora-species" | "fauna-species" | "projects";
@@ -225,7 +227,7 @@ export function DataOverviewContent({
             reading as congested. Flagged directly by the user off a screenshot. */}
         <TabList aria-label="Data dashboard views" type="underline" size="md" className="px-6 pt-4">
           {dataDashboardTabs.map((tab) => (
-            <Tab key={tab.id} id={tab.id} label={tab.label} />
+            <Tab key={tab.id} id={tab.id} label={tab.label} icon={tab.icon} />
           ))}
         </TabList>
 

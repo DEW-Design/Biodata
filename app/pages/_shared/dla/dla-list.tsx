@@ -6,7 +6,8 @@ import { CURRENT_USER_NAME, sortRows, type AgreementScope, type SortValue } from
 import { dlaStatusOrder } from "@/app/pages/_shared/dla/dla-data";
 import { ToolbarSearch } from "@/app/pages/_shared/toolbar-search";
 
-import { Clock, Plus } from "@untitledui/icons";
+import { Clock, Plus, SearchLg, Building02, Calendar, Flag01, Lock01, User01 } from "@untitledui/icons";
+import { ListEmptyState } from "@/app/pages/_shared/list-empty-state";
 import { Avatar } from "@/components/base/avatar/avatar";
 import { Badge, CountBadge } from "@/components/base/badges/badges";
 import { Button } from "@/components/base/buttons/button";
@@ -17,7 +18,9 @@ import { DlaEmptyState } from "@/app/pages/_shared/dla/dla-detail";
 import { dlaLevelMeta, dlaStatusMeta, formatShortDate, requestorName, type Dla, type DlaAccessLevel, type DlaStatus } from "@/app/pages/_shared/dla/dla-data";
 import { useDlas } from "@/app/pages/_shared/dla/dla-store";
 import { TaskItem } from "@/app/pages/_shared/home-dashboard";
-import { ListFilterButton, matchesFilters, monthOptions, optionsFromValues, type FilterGetters, type FilterSection, type FilterSelection } from "@/app/pages/_shared/list-filter";
+import { monthOptions, optionsFromValues, type FilterGetters, type FilterSection, useListFilter } from "@/app/pages/_shared/list-filter";
+import { AttributeFilterChips } from "@/app/pages/_shared/attribute-filter";
+import { FilterMenu } from "@/app/pages/_shared/filter-menu";
 import { useRoleHref } from "@/lib/use-role-href";
 
 // The DLA list, same shape as DSA's own list (app/pages/_shared/dsa/dsa-list.tsx): a table of one
@@ -147,17 +150,28 @@ export function DlaListContent({
             }}
           />
           {rows.length === 0 ? (
-            <p className="py-6 text-sm text-tertiary">No {dlaStatusMeta[status].label.toLowerCase()} requests match your search.</p>
+            <ListEmptyState
+              icon={SearchLg}
+              title={`No ${dlaStatusMeta[status].label.toLowerCase()} requests match`}
+              description="Try a different search."
+              action={{
+                label: "Show all requests",
+                onPress: () => {
+                  setSearch("");
+                  setPage(1);
+                },
+              }}
+            />
           ) : (
             <TableCard.Root className="flex min-h-48 flex-1 flex-col">
-              <Table bodyScrollable aria-label={`${dlaStatusMeta[status].label} Data Licencing Agreements`}>
+              <Table layout="fixed" className="min-w-[1000px]" bodyScrollable aria-label={`${dlaStatusMeta[status].label} Data Licencing Agreements`}>
                 <Table.Header sticky>
                   {/* `label` (not children) - Table.Head only applies the header treatment to the prop. */}
-                  <Table.Head id="id" label="Request" isRowHeader />
-                  <Table.Head id="requestor" label="Requestor" />
-                  <Table.Head id="locations" label="Locations" />
-                  <Table.Head id="period" label="Agreement period" />
-                  <Table.Head id="updated" label="Updated" />
+                  <Table.Head id="id" label="Request" isRowHeader className="w-[18%]" />
+                  <Table.Head id="requestor" label="Requestor" className="w-[22%]" />
+                  <Table.Head id="locations" label="Locations" className="w-[22%]" />
+                  <Table.Head id="period" label="Agreement period" className="w-[24%]" />
+                  <Table.Head id="updated" label="Updated" className="w-[14%]" />
                 </Table.Header>
                 <Table.Body items={paged}>
                   {(dla) => (
@@ -216,7 +230,7 @@ export function DlaListContent({
 }
 
 // ── All statuses, scoped My / All (rolled in from /proto/collection-sidebar's "My Items") ──
-// The production list. My/All is a scope chosen in column 2 (`AgreementScopeNav`); this table shows
+// The production list. All/My is a scope chosen in column 2 (`AgreementScopeNav`); this table shows
 // every status at once, with a status filter (`?status=` seeds it, so banner links still land on a
 // status) and a Status column. The one-bucket list above stays for the lab that still uses it.
 
@@ -245,22 +259,22 @@ export function DlaAllList({ scope, initialStatuses = [], banner }: { scope: Agr
   const scoped = scope === "mine" ? all.filter((d) => requestorName(d.requestor) === CURRENT_USER_NAME) : all;
   const roleHref = useRoleHref();
   const [search, setSearch] = useState("");
-  const [filters, setFilters] = useState<FilterSelection>({ status: new Set<string>(initialStatuses) });
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(50);
   const [sort, setSort] = useState<SortDescriptor>({ column: "updated", direction: "descending" });
 
   const filterSections: FilterSection[] = [
-    { id: "status", label: "Status", options: dlaStatusOrder.map((id) => ({ id, label: dlaStatusMeta[id].label })) },
-    { id: "organisation", label: "Requestor organisation", searchable: true, options: optionsFromValues(scoped.map((d) => d.requestor.organisation)) },
-    { id: "requestor", label: "Requestor", searchable: true, options: optionsFromValues(scoped.map((d) => requestorName(d.requestor))) },
-    { id: "level", label: "Access level", options: (Object.keys(dlaLevelMeta) as DlaAccessLevel[]).map((id) => ({ id, label: dlaLevelMeta[id].label })) },
-    { id: "updated", label: "Updated", options: monthOptions(scoped.map((d) => d.updatedAt)) },
+    { id: "status", label: "Status", icon: Flag01, options: dlaStatusOrder.map((id) => ({ id, label: dlaStatusMeta[id].label })) },
+    { id: "organisation", label: "Requestor organisation", icon: Building02, searchable: true, options: optionsFromValues(scoped.map((d) => d.requestor.organisation)) },
+    { id: "requestor", label: "Requestor", icon: User01, searchable: true, options: optionsFromValues(scoped.map((d) => requestorName(d.requestor))) },
+    { id: "level", label: "Access level", icon: Lock01, options: (Object.keys(dlaLevelMeta) as DlaAccessLevel[]).map((id) => ({ id, label: dlaLevelMeta[id].label })) },
+    { id: "updated", label: "Updated", icon: Calendar, options: monthOptions(scoped.map((d) => d.updatedAt)) },
   ];
+  const filter = useListFilter(filterSections, dlaFilterGetters, () => setPage(1), { status: new Set<string>(initialStatuses) });
 
   const query = search.trim().toLowerCase();
   const matching = scoped
-    .filter((d) => matchesFilters(d, filters, dlaFilterGetters))
+    .filter(filter.matches)
     .filter((d) => !query || [d.id, d.requestor.organisation, requestorName(d.requestor)].some((v) => v.toLowerCase().includes(query)));
   const filtered = sortRows(matching, sort, dlaSortKeys);
   const pageCount = Math.max(1, Math.ceil(filtered.length / pageSize));
@@ -297,22 +311,26 @@ export function DlaAllList({ scope, initialStatuses = [], banner }: { scope: Agr
               setPage(1);
             }}
           />
-          <div>
-            <ListFilterButton
-              sections={filterSections}
-              selection={filters}
-              onChange={(next) => {
-                setFilters(next);
-                setPage(1);
-              }}
-            />
-          </div>
+          <FilterMenu filter={filter} />
         </div>
+        <AttributeFilterChips filter={filter} />
         {filtered.length === 0 ? (
-          <p className="py-6 text-sm text-tertiary">No requests match your search and filters.</p>
+          <ListEmptyState
+            icon={SearchLg}
+            title="No requests match"
+            description="Try a different search, or remove a filter."
+            action={{
+              label: "Show all requests",
+              onPress: () => {
+                setSearch("");
+                filter.clear();
+                setPage(1);
+              },
+            }}
+          />
         ) : (
           <TableCard.Root className="flex min-h-48 flex-1 flex-col">
-            <Table
+            <Table layout="fixed" className="min-w-[840px]"
               bodyScrollable
               aria-label="Data Licencing Agreements"
               sortDescriptor={sort}
@@ -322,11 +340,11 @@ export function DlaAllList({ scope, initialStatuses = [], banner }: { scope: Agr
               }}
             >
               <Table.Header sticky>
-                <Table.Head id="id" label="Request" isRowHeader />
-                <Table.Head id="requestor" label="Requestor" allowsSorting />
-                <Table.Head id="status" label="Status" allowsSorting />
-                <Table.Head id="locations" label="Locations" allowsSorting />
-                <Table.Head id="updated" label="Updated" allowsSorting />
+                <Table.Head id="id" label="Request" isRowHeader className="w-[19%]" />
+                <Table.Head id="requestor" label="Requestor" allowsSorting className="w-[24%]" />
+                <Table.Head id="status" label="Status" allowsSorting className="w-[18%]" />
+                <Table.Head id="locations" label="Locations" allowsSorting className="w-[24%]" />
+                <Table.Head id="updated" label="Updated" allowsSorting className="w-[15%]" />
               </Table.Header>
               <Table.Body items={paged}>
                 {(dla) => (

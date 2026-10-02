@@ -1,4 +1,5 @@
 import { Button } from "@/components/base/buttons/button";
+import { LogIn01, UserPlus01 } from "@untitledui/icons";
 
 // public-user's header replacement for ProfileMenu - there's no account to show an avatar/
 // Profile Settings/Logout for, so a signed-out guest gets a real "Log in / Sign up" entry point
@@ -14,10 +15,10 @@ import { Button } from "@/components/base/buttons/button";
 export function GuestAuthActions() {
   return (
     <div className="flex items-center gap-2">
-      <Button color="secondary" href="/pages/auth/login">
+      <Button iconLeading={LogIn01} color="secondary" href="/pages/auth/login">
         Log in
       </Button>
-      <Button color="primary" href="/pages/auth/signup">
+      <Button iconLeading={UserPlus01} color="primary" href="/pages/auth/signup">
         Sign up
       </Button>
     </div>

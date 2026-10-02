@@ -25,35 +25,39 @@ export function MetricTile({
   icon: Icon,
   label,
   value,
-  active,
+  active = false,
   onClick,
 }: {
   icon: FC<{ className?: string }>;
   label: string;
   value: ReactNode;
-  active: boolean;
-  onClick: () => void;
+  active?: boolean;
+  /** Omit for a read-only count (a report's totals): the tile is then a plain block, with no hover and no button role. */
+  onClick?: () => void;
 }) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className={cx(
-        // `flex-1` alone only shares row width when the parent is itself a flex row (the Records/
-        // Species switchers this component was originally built for) - it's inert as a plain block
-        // child, which left `project-detail/option-3`'s own vertically-stacked `RecordCountsCard`
-        // rendering each tile shrink-wrapped to its own label width instead of the shared full
-        // width every sibling tile should have. `w-full` fixes that case directly; it's a no-op
-        // inside a real flex row, since `flex-1`'s own `flex-basis: 0%` already wins there.
-        "flex w-full flex-1 flex-col items-start gap-1 rounded-md border px-4 py-2 text-left transition-colors",
-        active ? "border-brand-500 bg-brand-50" : "border-secondary bg-primary hover:bg-secondary",
-      )}
-    >
+  const classes = cx(
+    // `flex-1` alone only shares row width when the parent is itself a flex row (the Records/
+    // Species switchers this component was originally built for) - it's inert as a plain block
+    // child, which left `project-detail/option-3`'s own vertically-stacked `RecordCountsCard`
+    // rendering each tile shrink-wrapped to its own label width instead of the shared full
+    // width every sibling tile should have. `w-full` fixes that case directly; it's a no-op
+    // inside a real flex row, since `flex-1`'s own `flex-basis: 0%` already wins there.
+    "flex w-full flex-1 flex-col items-start gap-1 rounded-md border px-4 py-2 text-left transition-colors",
+    active ? "border-brand-500 bg-brand-50" : cx("border-secondary bg-primary", onClick && "hover:bg-secondary"),
+  );
+  const content = (
+    <>
       <span className={cx("flex w-full items-center gap-1.5 text-sm", active ? "font-medium text-brand-tertiary" : "font-normal text-tertiary")}>
         <Icon className="size-4 shrink-0" />
         {label}
       </span>
-      <span className={cx("text-lg font-medium tabular-nums", active ? "text-brand-secondary" : "text-tertiary")}>{value}</span>
+      <span className={cx("text-lg font-medium tabular-nums", active ? "text-brand-secondary" : "text-primary")}>{value}</span>
+    </>
+  );
+  if (!onClick) return <div className={classes}>{content}</div>;
+  return (
+    <button type="button" onClick={onClick} className={classes}>
+      {content}
     </button>
   );
 }

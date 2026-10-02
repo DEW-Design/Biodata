@@ -69,3 +69,23 @@ export function MobileNavTrigger({
     </DialogTrigger>
   );
 }
+
+/** One extra item in the mobile menu, below the section list: a view or scope that column 2 lists as a tab on a wider
+ *  screen (My BioData, All projects). It carries the same icon as that tab (CONTRACTS 3.11), sized and spaced like the
+ *  section rows above it. */
+export function MobileNavItem({ icon: Icon, active, onPress, children }: { icon: FC<{ className?: string }>; active: boolean; onPress: () => void; children: ReactNode }) {
+  return (
+    <button
+      type="button"
+      onClick={onPress}
+      aria-current={active ? "true" : undefined}
+      className={cx(
+        "flex items-center gap-3 rounded-md px-3 py-2 text-left text-sm font-medium outline-brand focus-visible:outline-2 focus-visible:outline-offset-2",
+        active ? "bg-secondary text-primary" : "text-primary hover:bg-secondary",
+      )}
+    >
+      <Icon className="size-4.5 shrink-0" />
+      {children}
+    </button>
+  );
+}

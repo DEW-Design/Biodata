@@ -18,10 +18,13 @@ export const CTRL_VOCAB_SECTION_LABEL = "Controlled Vocabulary";
 export const TAXONOMY_SECTION_LABEL = "Taxonomy Management";
 export const NOTIFICATION_SECTION_LABEL = "Notification Management";
 export const VOUCHER_SECTION_LABEL = "Voucher Management";
+// One name for every role (designer, 1 Oct 2026: "Reports"). What a role sees inside a report (its own uploads and
+// the projects it contributes to, or everything for BioData Admin) is each report's own rule, not part of the name.
+export const REPORTS_SECTION_LABEL = "Reports";
 
 export interface NavNode {
   label: string;
-  key?: "dashboard" | "project-list" | "observations" | "dsa" | "dla" | "nominations" | "user-management" | "template-finder" | "ctrl-vocab" | "taxonomy" | "notifications" | "vouchers";
+  key?: "dashboard" | "project-list" | "observations" | "dsa" | "dla" | "nominations" | "user-management" | "template-finder" | "ctrl-vocab" | "taxonomy" | "notifications" | "vouchers" | "reports";
   items?: NavNode[];
 }
 
@@ -83,13 +86,14 @@ export const registeredUserNav: NavNode[] = [
   // them all), "Nominate a new species" starts one, a row opens its record. See context/decisions/2026-09-28-09-nominate-sensitive-species-built-per-direct-request-from.md,
   // "Nominate Sensitive Species".
   { label: NOMINATION_SECTION_LABEL, key: "nominations" },
-  {
-    label: "Reports (Own Submissions)",
-    items: [{ label: "Application and System Reports" }],
-  },
   // A keyed leaf: /pages/template-finder is the table of standard dataset templates, browsed and
   // downloaded in one screen ("Browse and Download Standard Dataset Templates" in the IA brief).
+  // Sits before Reports in the rail, per the designer (Sept 30 2026).
   { label: TEMPLATE_FINDER_SECTION_LABEL, key: "template-finder" },
+  // A keyed leaf: /pages/reports holds the reports, one at a time (the Data Ingestion Report Pre-Flight
+  // Validation first). "Application and System Reports" and the admin's "Audit Log Reports", which used to sit
+  // here as inert items, are not built and are not listed until they are.
+  { label: REPORTS_SECTION_LABEL, key: "reports" },
 ];
 
 // public-user's ("Guest User") real, decided IA - a separate tree, not a filtered view of
@@ -127,9 +131,10 @@ export const publicUserNav: NavNode[] = [
 // follows Taxonomy, per the designer (Oct 1 2026): BioData Admin and above, one of the admin modules
 // named in the IA cross-check below.
 //
-// NOT yet the full admin IA - see context/decisions/2026-09-22-06-biodata-admin-ia-cross-check.md, "BioData Admin IA cross-check": Reports
-// (All Users), Voucher/Notification management, Home's admin labels and Nominate Sensitive
-// Species nesting under Observations are all still to reconcile.
+// NOT yet the full admin IA - see context/decisions/2026-09-22-06-biodata-admin-ia-cross-check.md, "BioData Admin IA cross-check":
+// Voucher/Notification management, Home's admin labels and Nominate Sensitive Species nesting under Observations
+// are all still to reconcile. Reports is reconciled: the admin IA's "Reports (All Users)" is "Reports",
+// the one name every role sees (designer, 1 Oct 2026).
 export const biodataAdminNav: NavNode[] = [
   ...registeredUserNav.flatMap((section): NavNode[] => {
     if (section.key === "observations")

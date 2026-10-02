@@ -2,6 +2,7 @@
 
 import type { ReactNode } from "react";
 import { useRef, useState } from "react";
+import { Upload01 } from "@untitledui/icons";
 import { Button } from "@/components/base/buttons/button";
 import { InputBase } from "@/components/base/input/input";
 import { InputGroup } from "@/components/base/input/input-group";
@@ -96,7 +97,7 @@ export const InputFile = ({
                 hideRequiredIndicator={hideRequiredIndicator}
                 className={className}
                 trailingAddon={
-                    <Button size={size} color="secondary" onClick={handleClick} isDisabled={isDisabled}>
+                    <Button size={size} color="secondary" iconLeading={Upload01} onClick={handleClick} isDisabled={isDisabled}>
                         {buttonText}
                     </Button>
                 }

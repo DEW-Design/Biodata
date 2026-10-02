@@ -8,7 +8,6 @@ import { Tabs } from "react-aria-components";
 import { Tab, TabList, TabPanel } from "@/components/application/tabs/tabs";
 import { AppHeader } from "@/app/pages/_shared/app-header";
 import { PrimaryRail } from "@/app/pages/_shared/primary-rail";
-import { SidebarFooterLinks } from "@/app/pages/_shared/sidebar-footer-links";
 import { ProjectActions } from "@/app/pages/_shared/project-actions";
 import { ProjectListContent } from "@/app/pages/_shared/project-list-content";
 import { useUserRole } from "@/lib/use-user-role";
@@ -240,7 +239,6 @@ function Lab() {
             </TabList>
             <ProjectActions />
           </div>
-          <SidebarFooterLinks />
         </aside>
         <main className="flex flex-1 flex-col overflow-hidden">
           <LabContext screenId={screen.id} setScreenId={setScreenId} />

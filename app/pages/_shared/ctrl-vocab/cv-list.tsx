@@ -2,13 +2,15 @@
 
 import { useState } from "react";
 import type { SortDescriptor } from "react-aria-components";
-import { Plus } from "@untitledui/icons";
+import { Plus, Calendar, Flag01, Tag01 } from "@untitledui/icons";
 import { Badge, CountBadge } from "@/components/base/badges/badges";
 import { Button } from "@/components/base/buttons/button";
 import { SectionHeader } from "@/components/application/section-headers/section-headers";
 import { Table, TableCard } from "@/components/application/table/table";
 import { sortRows, type SortValue } from "@/app/pages/_shared/agreement-scope";
-import { ListFilterButton, matchesFilters, monthOptions, type FilterGetters, type FilterSection, type FilterSelection } from "@/app/pages/_shared/list-filter";
+import { monthOptions, type FilterGetters, type FilterSection, type FilterSelection, useSelectionFilter } from "@/app/pages/_shared/list-filter";
+import { AttributeFilterChips } from "@/app/pages/_shared/attribute-filter";
+import { FilterMenu } from "@/app/pages/_shared/filter-menu";
 import { ToolbarSearch } from "@/app/pages/_shared/toolbar-search";
 import { CV_ROOT, cvStatus, cvStatusMeta, cvStatusOrder, cvTypeLabel, formatShortDate, identifierLabel, resolvedEntries, sourceTable, type Cv, type CvEntry, type CvStatus } from "@/app/pages/_shared/ctrl-vocab/cv-data";
 import { useCvs } from "@/app/pages/_shared/ctrl-vocab/cv-store";
@@ -78,15 +80,19 @@ export function CvList( { category, initialStatuses = [] }: { category: string; 
   const [sort, setSort] = useState<SortDescriptor>({ column: "name", direction: "ascending" });
 
   const filterSections: FilterSection[] = [
-    { id: "status", label: "Status", options: cvStatusOrder.map((id) => ({ id, label: cvStatusMeta[id].label })) },
-    { id: "type", label: "Type", options: [{ id: "reference", label: "Reference" }, { id: "descriptive", label: "Descriptive" }] },
-    { id: "updated", label: "Updated", options: monthOptions(scoped.map((cv) => cv.updatedAt)) },
+    { id: "status", label: "Status", icon: Flag01, options: cvStatusOrder.map((id) => ({ id, label: cvStatusMeta[id].label })) },
+    { id: "type", label: "Type", icon: Tag01, options: [{ id: "reference", label: "Reference" }, { id: "descriptive", label: "Descriptive" }] },
+    { id: "updated", label: "Updated", icon: Calendar, options: monthOptions(scoped.map((cv) => cv.updatedAt)) },
   ];
+  const filter = useSelectionFilter(filterSections, filterGetters, filters, (next) => {
+    setFilters(next);
+    setPage(1);
+  });
 
   const query = search.trim().toLowerCase();
   const found = new Map<string, CvEntry[]>();
   const matching = scoped
-    .filter((cv) => matchesFilters(cv, filters, filterGetters))
+    .filter((cv) => filter.matches(cv))
     .filter((cv) => {
       if (!query || [cv.name, cv.id, cv.description].some((v) => v.toLowerCase().includes(query))) return true;
       const hits = entryMatches(cv, query);
@@ -129,17 +135,9 @@ export function CvList( { category, initialStatuses = [] }: { category: string; 
               setPage(1);
             }}
           />
-          <div>
-            <ListFilterButton
-              sections={filterSections}
-              selection={filters}
-              onChange={(next) => {
-                setFilters(next);
-                setPage(1);
-              }}
-            />
-          </div>
+          <FilterMenu filter={filter} />
         </div>
+        <AttributeFilterChips filter={filter} />
 
         {rows.length === 0 ? (
           <div className="flex flex-col items-start gap-2 py-6">
@@ -162,7 +160,7 @@ export function CvList( { category, initialStatuses = [] }: { category: string; 
           </div>
         ) : (
           <TableCard.Root className="flex min-h-48 flex-1 flex-col">
-            <Table
+            <Table layout="fixed" className="min-w-[1000px]"
               bodyScrollable
               aria-label="Controlled vocabularies"
               sortDescriptor={sort}
@@ -172,13 +170,13 @@ export function CvList( { category, initialStatuses = [] }: { category: string; 
               }}
             >
               <Table.Header sticky>
-                <Table.Head id="name" label="Vocabulary" isRowHeader allowsSorting />
-                <Table.Head id="id" label="ID" />
-                {!category ? <Table.Head id="category" label="Category" allowsSorting /> : null}
-                <Table.Head id="type" label="Type" allowsSorting />
-                <Table.Head id="values" label="Values" allowsSorting />
-                <Table.Head id="status" label="Status" allowsSorting />
-                <Table.Head id="updated" label="Updated" allowsSorting />
+                <Table.Head id="name" label="Vocabulary" isRowHeader allowsSorting className="w-[20%]" />
+                <Table.Head id="id" label="ID" className="w-[13%]" />
+                {!category ? <Table.Head id="category" label="Category" allowsSorting className="w-[14%]" /> : null}
+                <Table.Head id="type" label="Type" allowsSorting className="w-[11%]" />
+                <Table.Head id="values" label="Values" allowsSorting className="w-[16%]" />
+                <Table.Head id="status" label="Status" allowsSorting className="w-[12%]" />
+                <Table.Head id="updated" label="Updated" allowsSorting className="w-[14%]" />
               </Table.Header>
               {/* The entry-match line depends on the search, not only on the row: react-aria caches rows per item. */}
               <Table.Body items={paged} dependencies={[query]}>
@@ -198,14 +196,14 @@ export function CvList( { category, initialStatuses = [] }: { category: string; 
                       </Table.Cell>
                       {!category ? (
                         <Table.Cell>
-                          <span className="text-sm whitespace-nowrap text-secondary">{cv.category || <span className="text-quaternary">Not provided</span>}</span>
+                          <span className="text-sm text-secondary">{cv.category || <span className="text-quaternary">Not provided</span>}</span>
                         </Table.Cell>
                       ) : null}
                       <Table.Cell>
                         <span className="text-sm text-secondary">{cvTypeLabel[cv.type]}</span>
                       </Table.Cell>
                       <Table.Cell>
-                        <span className="text-sm whitespace-nowrap text-tertiary tabular-nums">{valuesSummary(cv)}</span>
+                        <span className="text-sm text-tertiary tabular-nums">{valuesSummary(cv)}</span>
                       </Table.Cell>
                       <Table.Cell>
                         <Badge size="sm" color={cvStatusMeta[status].badgeColor}>

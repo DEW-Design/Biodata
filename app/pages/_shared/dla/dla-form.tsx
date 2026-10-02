@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { parseDate } from "@internationalized/date";
-import { Plus, Trash01 } from "@untitledui/icons";
+import { ArrowLeft, Plus, Trash01 } from "@untitledui/icons";
 import { AlertFullWidth } from "@/components/application/alerts/alerts";
 import { Button } from "@/components/base/buttons/button";
 import { Checkbox } from "@/components/base/checkbox/checkbox";
@@ -432,7 +432,7 @@ export function DlaForm({
 
       <AddLocationModal isOpen={addLocationOpen} onOpenChange={setAddLocationOpen} onAdd={(location) => update({ locations: [...draft.locations, location] })} />
 
-      <DestructiveModal
+      <DestructiveModal confirmIcon={Trash01} cancelIcon={ArrowLeft}
         isOpen={confirmBack}
         onOpenChange={setConfirmBack}
         title="Discard your request?"

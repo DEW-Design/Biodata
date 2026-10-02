@@ -1,18 +1,18 @@
 "use client";
 
-import type { ReactNode } from "react";
+import type { FC, ReactNode } from "react";
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ArrowNarrowRight } from "@untitledui/icons";
+import { ArrowNarrowRight, Dataflow03 } from "@untitledui/icons";
 import { Button } from "@/components/base/buttons/button";
 import { Tab, TabList, Tabs } from "@/components/application/tabs/tabs";
 import { AppHeader } from "@/app/pages/_shared/app-header";
 import { FormSidebarSlotContext } from "@/app/pages/_shared/form-section-list";
 import { MobileNavTrigger } from "@/app/pages/_shared/mobile-nav";
 import { sectionIcons } from "@/app/pages/_shared/nav-icons";
+import { SPECIES_GROUP_ICON } from "@/app/pages/_shared/map-search/species-group-icons";
 import { PrimaryRail } from "@/app/pages/_shared/primary-rail";
-import { SidebarFooterLinks } from "@/app/pages/_shared/sidebar-footer-links";
 import { PrototypeTools } from "@/app/_prototype-tools/prototype-tools";
 import { TX_ROOT } from "@/app/pages/_shared/taxonomy/tx-data";
 import { useTaxa } from "@/app/pages/_shared/taxonomy/tx-store";
@@ -50,7 +50,7 @@ function SectionPlaceholder({ node }: { node: NavNode }) {
   );
 }
 
-function NavList({ heading, items, current }: { heading: string; items: { id: string; label: string; href: string; badge?: number }[]; current: string }) {
+function NavList({ heading, items, current }: { heading: string; items: { id: string; label: string; href: string; badge?: number; icon: FC<{ className?: string }> }[]; current: string }) {
   const router = useRouter();
   const roleHref = useRoleHref();
   return (
@@ -58,7 +58,7 @@ function NavList({ heading, items, current }: { heading: string; items: { id: st
       <p className="mb-3 text-xs font-semibold tracking-wide text-quaternary uppercase">{heading}</p>
       <Tabs orientation="vertical" selectedKey={current} onSelectionChange={(key) => router.push(roleHref(items.find((i) => i.id === key)?.href ?? TX_ROOT))}>
         <TabList aria-label={heading} orientation="vertical" type="button-brand" fullWidth className="w-full" items={items}>
-          {(item) => <Tab id={item.id} label={item.label} badge={item.badge} />}
+          {(item) => <Tab id={item.id} label={item.label} icon={item.icon} badge={item.badge} />}
         </TabList>
       </Tabs>
     </div>
@@ -70,9 +70,9 @@ function KingdomNav({ current }: { current: string }) {
   const base = TX_ROOT;
   const taxa = useTaxa().filter((t) => t.current);
   const items = [
-    { id: "all", label: "All species", href: base, badge: taxa.length },
-    { id: "Flora", label: "Flora", href: `${base}?kingdom=Flora`, badge: taxa.filter((t) => t.kingdom === "Flora").length },
-    { id: "Fauna", label: "Fauna", href: `${base}?kingdom=Fauna`, badge: taxa.filter((t) => t.kingdom === "Fauna").length },
+    { id: "all", label: "All species", href: base, badge: taxa.length, icon: Dataflow03 },
+    { id: "Flora", label: "Flora", href: `${base}?kingdom=Flora`, badge: taxa.filter((t) => t.kingdom === "Flora").length, icon: SPECIES_GROUP_ICON.Plant },
+    { id: "Fauna", label: "Fauna", href: `${base}?kingdom=Fauna`, badge: taxa.filter((t) => t.kingdom === "Fauna").length, icon: SPECIES_GROUP_ICON.Mammal },
   ];
   return <NavList heading="Species" items={items} current={current} />;
 }
@@ -172,7 +172,6 @@ export function TxShell({
               ))}
             </div>
           )}
-          <SidebarFooterLinks />
         </aside>
 
         <main className="flex min-h-0 flex-1 flex-col overflow-hidden">

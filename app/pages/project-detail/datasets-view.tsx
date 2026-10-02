@@ -15,7 +15,7 @@
 // SAMPLE_DATASETS below, three earlier uploads so the report has a history to show.
 
 import { useEffect, useMemo, useState } from "react";
-import { ChevronRight, Database01, RefreshCcw01 } from "@untitledui/icons";
+import { ChevronRight, Database01, RefreshCcw01, ClipboardCheck, File06, ClockRewind } from "@untitledui/icons";
 import { FeaturedIcon } from "@/components/foundations/featured-icon/featured-icon";
 import { Badge, CountBadge } from "@/components/base/badges/badges";
 import { Button } from "@/components/base/buttons/button";
@@ -41,16 +41,18 @@ import { restartIngestion, useDatasets } from "@/app/pages/_shared/dataset-uploa
 import { TOTAL_MS, rowsFromSize, viewAt, type RunView } from "@/app/pages/_shared/dataset-upload/ingestion";
 import { IngestionDetail, isSystemFault, placedRows, statusOf } from "@/app/pages/_shared/dataset-upload/ingestion-views";
 import { AuditLog, milestones } from "@/app/pages/_shared/audit-log";
+import { useEditStore } from "./edit-store";
 
-export const DATASETS_PROJECT = { id: "adelaide-hills", code: "BD-5039" };
+// The project the sample uploads belong to. Every other project shows only its own uploads.
+const SAMPLE_PROJECT = { id: "adelaide-hills", code: "BD-5039" };
 
 // SAMPLE: three earlier uploads to BD-5039, one per way a run can end (added, partly added, not
 // ingested), uploaded by the placeholder people. Illustrative, like the project records themselves.
 const SAMPLE_DATASETS: Dataset[] = [
   {
     id: "DS-2025-00012",
-    projectId: DATASETS_PROJECT.id,
-    projectCode: DATASETS_PROJECT.code,
+    projectId: SAMPLE_PROJECT.id,
+    projectCode: SAMPLE_PROJECT.code,
     files: [{ name: "AHL_spring_survey_2025.xlsx", size: 421_888 }],
     licence: "ccby",
     classification: "official",
@@ -69,8 +71,8 @@ const SAMPLE_DATASETS: Dataset[] = [
   },
   {
     id: "DS-2025-00018",
-    projectId: DATASETS_PROJECT.id,
-    projectCode: DATASETS_PROJECT.code,
+    projectId: SAMPLE_PROJECT.id,
+    projectCode: SAMPLE_PROJECT.code,
     files: [{ name: "AHL_bandicoot_trapping_Nov2025.xlsx", size: 98_304 }],
     licence: "ccby",
     classification: "official_sensitive",
@@ -88,8 +90,8 @@ const SAMPLE_DATASETS: Dataset[] = [
   },
   {
     id: "DS-2026-00003",
-    projectId: DATASETS_PROJECT.id,
-    projectCode: DATASETS_PROJECT.code,
+    projectId: SAMPLE_PROJECT.id,
+    projectCode: SAMPLE_PROJECT.code,
     files: [{ name: "AHL_summer_vegetation_2026.xlsx", size: 161_792 }],
     licence: "cc0",
     classification: "official",
@@ -132,15 +134,15 @@ function rowFor(dataset: Dataset, now: number): DatasetRow {
 }
 
 /** Every dataset on this project, newest first, ticking while an upload runs. */
-export function useProjectDatasets(): DatasetRow[] {
+export function useProjectDatasets(projectId: string): DatasetRow[] {
   const stored = useDatasets();
   const [now, setNow] = useState(() => Date.now());
   const all = useMemo(
     () =>
-      [...SAMPLE_DATASETS, ...stored.filter((d) => d.projectId === DATASETS_PROJECT.id)].sort((a, b) =>
+      [...SAMPLE_DATASETS, ...stored].filter((d) => d.projectId === projectId).sort((a, b) =>
         a.uploadedAt === b.uploadedAt ? b.id.localeCompare(a.id) : b.uploadedAt.localeCompare(a.uploadedAt),
       ),
-    [stored],
+    [stored, projectId],
   );
   const rows = all.map((d) => rowFor(d, now));
   const running = rows.some((r) => r.view && !r.view.done);
@@ -192,7 +194,8 @@ export function DatasetsScreen({
   datasetsHref: string;
   datasetHref: (id: string) => string;
 }) {
-  const rows = useProjectDatasets();
+  const { meta } = useEditStore();
+  const rows = useProjectDatasets(meta.id);
   if (datasetId) {
     const row = rows.find((r) => r.dataset.id === datasetId);
     return <DatasetDetail row={row ?? null} datasetId={datasetId} backHref={datasetsHref} />;
@@ -201,6 +204,7 @@ export function DatasetsScreen({
 }
 
 function DatasetsList({ rows, projectHref, datasetHref }: { rows: DatasetRow[]; projectHref: string; datasetHref: (id: string) => string }) {
+  const { meta } = useEditStore();
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(50);
@@ -224,10 +228,10 @@ function DatasetsList({ rows, projectHref, datasetHref }: { rows: DatasetRow[]; 
               <SectionHeader.Heading>Datasets</SectionHeader.Heading>
               <CountBadge count={rows.length} color="brand" />
             </div>
-            <SectionHeader.Subheading>Every dataset uploaded to {DATASETS_PROJECT.code}, the checks it went through and where it is now.</SectionHeader.Subheading>
+            <SectionHeader.Subheading>Every dataset uploaded to {meta.code}, the checks it went through and where it is now.</SectionHeader.Subheading>
           </div>
           <SectionHeader.Actions>
-            <UploadDatasetButton projectId={DATASETS_PROJECT.id} color="primary" size="md" />
+            <UploadDatasetButton projectId={meta.id} color="primary" size="md" />
           </SectionHeader.Actions>
         </SectionHeader.Group>
       </SectionHeader.Root>
@@ -250,7 +254,7 @@ function DatasetsList({ rows, projectHref, datasetHref }: { rows: DatasetRow[]; 
               </div>
             </div>
             <div className="flex max-w-2xl flex-col gap-4">
-              <IngestionDetail view={current.view} projectId={DATASETS_PROJECT.id} onRetry={() => retry(current.dataset.id)} />
+              <IngestionDetail view={current.view} projectId={meta.id} datasetId={current.dataset.id} onRetry={() => retry(current.dataset.id)} />
             </div>
           </section>
         )}
@@ -268,14 +272,14 @@ function DatasetsList({ rows, projectHref, datasetHref }: { rows: DatasetRow[]; 
           <p className="py-6 text-sm text-tertiary">No datasets match your search.</p>
         ) : (
           <TableCard.Root className="flex min-h-48 flex-1 flex-col">
-            <Table bodyScrollable aria-label="Datasets">
+            <Table layout="fixed" className="min-w-[1000px]" bodyScrollable aria-label="Datasets">
               <Table.Header sticky>
-                <Table.Head id="id" label="Dataset" isRowHeader />
-                <Table.Head id="file" label="File" />
-                <Table.Head id="by" label="Uploaded by" />
-                <Table.Head id="at" label="Uploaded" />
-                <Table.Head id="added" label="Records added" />
-                <Table.Head id="status" label="Status" />
+                <Table.Head id="id" label="Dataset" isRowHeader className="w-[14%]" />
+                <Table.Head id="file" label="File" className="w-[28%]" />
+                <Table.Head id="by" label="Uploaded by" className="w-[16%]" />
+                <Table.Head id="at" label="Uploaded" className="w-[12%]" />
+                <Table.Head id="added" label="Records added" className="w-[14%]" />
+                <Table.Head id="status" label="Status" className="w-[16%]" />
               </Table.Header>
               <Table.Body items={paged.map((r) => ({ ...r, id: r.dataset.id }))}>
                 {(r) => (
@@ -355,9 +359,9 @@ function DatasetDetail({ row, datasetId, backHref }: { row: DatasetRow | null; d
       <Tabs selectedKey={tab} onSelectionChange={setTab}>
         <div className="px-6 pt-4">
           <TabList aria-label="Dataset sections" type="underline" size="md">
-            <Tab id="validation" label="Validation" />
-            <Tab id="details" label="Details" />
-            <Tab id="history" label="History" />
+            <Tab id="validation" label="Validation" icon={ClipboardCheck} />
+            <Tab id="details" label="Details" icon={File06} />
+            <Tab id="history" label="History" icon={ClockRewind} />
           </TabList>
         </div>
 
@@ -372,7 +376,7 @@ function DatasetDetail({ row, datasetId, backHref }: { row: DatasetRow | null; d
               )}
             </div>
             {view ? (
-              <IngestionDetail view={view} projectId={d.projectId} onRetry={() => retry(d.id)} />
+              <IngestionDetail view={view} projectId={d.projectId} datasetId={d.id} onRetry={() => retry(d.id)} />
             ) : (
               <p className="text-sm text-quaternary">Not provided</p>
             )}
@@ -446,7 +450,8 @@ function snapshotOf({ view, status }: DatasetRow): Snapshot {
 }
 
 export function DatasetsCard({ onOpenDataset, onOpenDatasets }: { onOpenDataset: (id: string) => void; onOpenDatasets: () => void }) {
-  const rows = useProjectDatasets();
+  const { meta } = useEditStore();
+  const rows = useProjectDatasets(meta.id);
   const last = rows[0];
   const snap = last ? snapshotOf(last) : null;
   return (
@@ -463,7 +468,7 @@ export function DatasetsCard({ onOpenDataset, onOpenDatasets }: { onOpenDataset:
               View all
             </Button>
           )}
-          <UploadDatasetButton projectId={DATASETS_PROJECT.id} />
+          <UploadDatasetButton projectId={meta.id} />
         </div>
       </div>
       {/* The last upload: one row, the same row as the records card's, opening that dataset. */}

@@ -2,7 +2,7 @@
 
 import { Fragment, useState } from "react";
 import { parseDate } from "@internationalized/date";
-import { ArrowNarrowLeft, Plus } from "@untitledui/icons";
+import { ArrowNarrowLeft, Plus, Bell01 } from "@untitledui/icons";
 import { Button } from "@/components/base/buttons/button";
 import { Checkbox } from "@/components/base/checkbox/checkbox";
 import { Input } from "@/components/base/input/input";
@@ -287,7 +287,7 @@ export function AttributesPanel({
     <div className="flex flex-col gap-4">
       <div className={cx("flex items-center gap-3", showHeading ? "justify-between" : "justify-end")}>
         {showHeading && <p className="text-sm font-semibold text-primary">Attributes</p>}
-        <Button color="secondary" size="sm" onClick={() => setView("notifications")}>
+        <Button iconLeading={Bell01} color="secondary" size="sm" onClick={() => setView("notifications")}>
           Personal Notifications
         </Button>
       </div>

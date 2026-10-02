@@ -37,8 +37,12 @@ interface DropdownItemProps extends AriaMenuItemProps {
     icon?: FC<{ className?: string }>;
     /** Avatar URL to be displayed on the left side of the item. */
     avatarUrl?: string;
-    /** The selection indicator to be displayed on the item. */
-    selectionIndicator?: "checkmark" | "checkbox" | "radio" | "toggle" | "none";
+    /**
+     * The selection indicator to be displayed on the item. `"checkmark"` reserves a column on the left for a tick (the labels
+     * line up whether or not an item is on); `"checkmark-end"` draws the tick after the label only on what is on, and reserves
+     * nothing, so a menu where few items are on has no empty column beside the labels.
+     */
+    selectionIndicator?: "checkmark" | "checkmark-end" | "checkbox" | "radio" | "toggle" | "none";
     /** A destructive action (delete, remove): error-coloured label and icon, and an error-tinted hover. */
     destructive?: boolean;
 }
@@ -96,6 +100,9 @@ const DropdownItem = ({ label, children, addon, icon: Icon, avatarUrl, unstyled,
                         "relative flex items-center rounded-md px-2.5 py-2 outline-focus-ring transition duration-100 ease-linear",
                         !state.isDisabled && (destructive ? "group-hover:bg-error-primary" : "group-hover:bg-primary_hover"),
                         state.isFocused && (destructive ? "bg-error-primary" : "bg-primary_hover"),
+                        // A row whose submenu is open stays marked while the pointer is over the submenu, so the pair reads as one
+                        // (the parent is where you came from, as in a macOS or iOS menu).
+                        state.isOpen && !destructive && "bg-primary_hover",
                         state.isFocusVisible && "outline-2 -outline-offset-2",
                         state.hasSubmenu && "pr-1.5",
                     )}
@@ -122,6 +129,10 @@ const DropdownItem = ({ label, children, addon, icon: Icon, avatarUrl, unstyled,
 
                     {addon && <span className="ml-1 shrink-0 pr-1 text-xs font-medium text-quaternary">{addon}</span>}
 
+                    {selectionIndicator === "checkmark-end" && state.selectionMode !== "none" && state.isSelected && (
+                        <Check aria-hidden="true" className="ml-2 size-4 shrink-0 stroke-[2.25px] text-fg-brand-primary" />
+                    )}
+
                     {state.selectionMode !== "none" && (avatarUrl || Icon) && <SelectionIndicator {...state} className="ml-1" />}
 
                     {state.hasSubmenu && <ChevronRight aria-hidden="true" className="ml-auto size-4 shrink-0 stroke-[2.25px] text-fg-quaternary" />}
@@ -136,6 +147,9 @@ type DropdownMenuProps<T extends object> = AriaMenuProps<T>;
 const DropdownMenu = <T extends object>(props: DropdownMenuProps<T>) => {
     return (
         <AriaMenu
+            // Escape closes the menu and never touches what is ticked: react-aria's default ("clearSelection") wiped every
+            // tick in a multiple-selection menu on the first Escape, and ate the key so it took a second to close (CONTRACTS 1.9a).
+            escapeKeyBehavior="none"
             {...props}
             className={(state) =>
                 cx("h-min overflow-y-auto py-1 outline-hidden select-none", typeof props.className === "function" ? props.className(state) : props.className)
@@ -150,6 +164,11 @@ const DropdownPopover = (props: DropdownPopoverProps) => {
     return (
         <AriaPopover
             placement="bottom right"
+            // 12px, not react-aria's 8: the trigger's pressed and focus ring (DropdownDotsButton draws a
+            // 2px outline 2px out, so it reaches 4px) is open while the menu is, and at 8px the menu sat
+            // 4px from the ring and read as touching the button. 4px of ring + the same 8px gap every
+            // other trigger has. Callers can still pass their own `offset`.
+            offset={12}
             {...props}
             className={(state) =>
                 cx(
@@ -170,6 +189,15 @@ const DropdownPopover = (props: DropdownPopoverProps) => {
             {props.children}
         </AriaPopover>
     );
+};
+
+/**
+ * The popover of a submenu (`SubmenuTrigger`). It tucks against its parent menu and lines its first row up with the row
+ * that opened it, as a macOS or iOS menu does, instead of floating a trigger-sized gap away at an unrelated height:
+ * a slight overlap (`offset`) and the popover's own padding taken off (`crossOffset`). Extra props pass through.
+ */
+const DropdownSubmenuPopover = (props: DropdownPopoverProps) => {
+    return <DropdownPopover placement="end top" offset={-2} {...props} crossOffset={props.crossOffset ?? -5} />;
 };
 
 const DropdownSeparator = (props: AriaSeparatorProps) => {
@@ -198,6 +226,7 @@ const DropdownDotsButton = ({ "aria-label": ariaLabel = "Open menu", ...props }:
 export const Dropdown = {
     Root: AriaMenuTrigger,
     Popover: DropdownPopover,
+    SubmenuPopover: DropdownSubmenuPopover,
     Menu: DropdownMenu,
     Section: AriaMenuSection,
     SectionHeader: AriaHeader,

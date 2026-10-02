@@ -3,7 +3,7 @@
 import { useEffect, useState, type ReactNode } from "react";
 import { parseDate, type CalendarDate } from "@internationalized/date";
 import Link from "next/link";
-import { ArrowNarrowRight, Edit05, UploadCloud02, XClose } from "@untitledui/icons";
+import { ArrowNarrowRight, Edit05, UploadCloud02, XClose, Save01, Send01 } from "@untitledui/icons";
 import { Dialog, Modal, ModalFooter, ModalHeader, ModalOverlay } from "@/components/application/modals/modal";
 import { Badge } from "@/components/base/badges/badges";
 import { Button } from "@/components/base/buttons/button";
@@ -194,10 +194,10 @@ export function EditValueModal({
             )}
           </div>
           <ModalFooter layout="horizontal">
-            <Button color="secondary" onPress={onClose}>
+            <Button iconLeading={XClose} color="secondary" onPress={onClose}>
               Cancel
             </Button>
-            <Button
+            <Button iconLeading={Save01}
               color="primary"
               onPress={() => {
                 if (missing) return setTried(true);
@@ -249,10 +249,10 @@ export function IgnoreModal({ what, count, onClose, onConfirm }: { what: string;
             />
           </div>
           <ModalFooter layout="horizontal">
-            <Button color="secondary" onPress={onClose}>
+            <Button iconLeading={XClose} color="secondary" onPress={onClose}>
               Cancel
             </Button>
-            <Button
+            <Button iconLeading={XClose}
               color="primary"
               onPress={() => {
                 if (missing) return setTried(true);
@@ -289,7 +289,7 @@ export function IgnoreDetailsModal({ field, batchId, by, at, reason, batchHref, 
             </div>
           </div>
           <ModalFooter layout="horizontal">
-            <Button color="secondary" onPress={onClose}>
+            <Button iconLeading={XClose} color="secondary" onPress={onClose}>
               Close
             </Button>
           </ModalFooter>
@@ -351,10 +351,10 @@ export function PushModal({ groups, skipped, onClose, onConfirm }: { groups: Pus
             )}
           </div>
           <ModalFooter layout="horizontal">
-            <Button color="secondary" onPress={onClose}>
+            <Button iconLeading={XClose} color="secondary" onPress={onClose}>
               Cancel
             </Button>
-            <Button color="primary" onPress={onConfirm} isDisabled={fields === 0}>
+            <Button iconLeading={Send01} color="primary" onPress={onConfirm} isDisabled={fields === 0}>
               Push {fields} {fields === 1 ? "update" : "updates"}
             </Button>
           </ModalFooter>

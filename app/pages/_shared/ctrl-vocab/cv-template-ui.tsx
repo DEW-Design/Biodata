@@ -2,7 +2,7 @@
 
 import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { FileDownload02, Upload01 } from "@untitledui/icons";
+import { FileDownload02, Upload01, Download01 } from "@untitledui/icons";
 import { FormModal } from "@/components/application/modals/modal";
 import { toast } from "@/components/application/toast/toast";
 import { MultiSelect } from "@/components/base/select/multi-select";
@@ -87,6 +87,7 @@ export function TemplateActions( { currentId }: { currentId?: string }) {
         }}
       />
       <FormModal
+        submitIcon={Download01}
         isOpen={open}
         onOpenChange={setOpen}
         icon={FileDownload02}

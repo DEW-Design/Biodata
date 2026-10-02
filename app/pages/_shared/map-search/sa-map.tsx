@@ -5,8 +5,8 @@ import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import "leaflet-draw/dist/leaflet.draw.css";
 import "leaflet-draw";
-import { Circle, CircleMarker, MapContainer, Marker, Polygon, ScaleControl, Tooltip, TileLayer, useMap, useMapEvents } from "react-leaflet";
-import type { Boundary } from "./geo";
+import { Circle, CircleMarker, MapContainer, Marker, Polygon, Rectangle, ScaleControl, Tooltip, TileLayer, useMap, useMapEvents } from "react-leaflet";
+import type { Boundary, GeoBlock } from "./geo";
 import { assetPath } from "@/lib/base-path";
 import { cx } from "@/utils/cx";
 import { MapZoomButtons } from "./map-zoom-buttons";
@@ -98,32 +98,47 @@ function keyboardDot(label: string, activate: () => void) {
     };
 }
 
-/** A restricted record's blurred area. Drawn at its real size once zoomed in, but never smaller
- *  than 14px across the radius, so it stays visible at state-wide zoom instead of blurring to
- *  nothing. Pixel-sized (a CircleMarker), so it re-sizes itself on every zoom. */
+/** The smallest a restricted block is drawn, across, in pixels: at state-wide zoom a 10 km block is a speck, so it is
+ *  drawn this big around the same centre instead of disappearing. It only ever grows, so the drawn block is never
+ *  smaller than the area the record could be in. */
+const MIN_BLOCK_PX = 14;
+
+/** A restricted record's block: the square cell of the generalisation grid that contains it, drawn flat with a thin
+ *  edge and no centre mark (a blur or a dot would point at a place inside it). Pixel-aware, so it re-sizes itself on
+ *  every zoom. */
 function FuzzyArea({ marker, highlighted, onClick }: { marker: SAMapMarker; highlighted: boolean; onClick?: () => void }) {
     const map = useMap();
     const [zoom, setZoom] = useState(() => map.getZoom());
     useMapEvents({ zoomend: () => setZoom(map.getZoom()) });
-    const metersPerPixel = (40075016.686 * Math.cos((marker.position[0] * Math.PI) / 180)) / 2 ** (zoom + 8);
-    const radius = Math.max(14, ((marker.fuzzyRadiusKm ?? 0) * 1000) / metersPerPixel);
+    const block = marker.fuzzyBlock as GeoBlock;
+    const [centreLat, centreLon] = [(block.south + block.north) / 2, (block.west + block.east) / 2];
+    const metersPerPixel = (40075016.686 * Math.cos((centreLat * Math.PI) / 180)) / 2 ** (zoom + 8);
+    const minHalfLat = (MIN_BLOCK_PX / 2) * metersPerPixel / 111000;
+    const halfLat = Math.max((block.north - block.south) / 2, minHalfLat);
+    const halfLon = Math.max((block.east - block.west) / 2, minHalfLat / Math.cos((centreLat * Math.PI) / 180));
+    const fill = markerFill(marker, highlighted);
     return (
-        <CircleMarker
+        <Rectangle
             ref={onClick ? keyboardDot(marker.label, onClick) : undefined}
-            center={marker.position}
-            radius={radius}
+            bounds={[
+                [centreLat - halfLat, centreLon - halfLon],
+                [centreLat + halfLat, centreLon + halfLon],
+            ]}
             pathOptions={{
                 className: "map-fuzzy-area",
-                stroke: false,
-                fillColor: markerFill(marker, highlighted),
-                fillOpacity: highlighted ? 0.7 : 0.5,
+                stroke: true,
+                color: fill,
+                weight: highlighted ? 2 : 1,
+                opacity: 0.8,
+                fillColor: fill,
+                fillOpacity: highlighted ? 0.45 : 0.25,
             }}
             eventHandlers={{ click: () => onClick?.() }}
         >
             <Tooltip direction="top" sticky>
                 {marker.label}
             </Tooltip>
-        </CircleMarker>
+        </Rectangle>
     );
 }
 
@@ -381,9 +396,10 @@ export interface SAMapMarker {
     id: string;
     position: [number, number];
     label: string;
-    /** A restricted (Level 2) record: drawn as a soft, blurred area of this radius around a
-     *  generalised `position` instead of a precise dot, so the map never pins a sensitive species. */
-    fuzzyRadiusKm?: number;
+    /** A restricted (Level 2) record: drawn as this block of the generalisation grid instead of a
+     *  dot, so the map never pins a sensitive species. `position` is the block's centre, for fitting
+     *  and panning only; it is not drawn. */
+    fuzzyBlock?: GeoBlock;
     /** Fill colour (a token var), e.g. the record's species group; brand when omitted. */
     color?: string;
 }
@@ -417,17 +433,6 @@ export default function SAMap({
 }: SAMapProps) {
     return (
         <div className={className}>
-            {/* The blur for restricted areas (`.map-fuzzy-area` in globals.css). Sized relative to
-                each area's own box, so the edge stays soft at every zoom level. */}
-            {markers?.some((marker) => marker.fuzzyRadiusKm) && (
-                <svg aria-hidden width="0" height="0" style={{ position: "absolute" }}>
-                    <defs>
-                        <filter id="map-fuzzy-blur" x="-0.5" y="-0.5" width="2" height="2" filterUnits="objectBoundingBox" primitiveUnits="objectBoundingBox">
-                            <feGaussianBlur stdDeviation="0.14" />
-                        </filter>
-                    </defs>
-                </svg>
-            )}
             <MapContainer
                 center={SA_CENTER}
                 zoom={6}
@@ -486,7 +491,7 @@ export default function SAMap({
                 )}
 
                 {markers?.map((marker) =>
-                    marker.fuzzyRadiusKm ? (
+                    marker.fuzzyBlock ? (
                         <FuzzyArea
                             key={marker.id}
                             marker={marker}

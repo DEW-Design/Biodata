@@ -214,7 +214,7 @@ export function VisibilityPanel({
                       />
                       {f.locked && (
                         <span
-                          className="flex shrink-0 items-center gap-1 text-xs text-quaternary"
+                          className="flex shrink-0 items-center gap-1 text-xs text-tertiary"
                           title="Identifiers are always shown"
                         >
                           <Lock01 className="size-3" />

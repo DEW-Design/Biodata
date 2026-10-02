@@ -3,7 +3,7 @@
 import { useState, type FC, type ReactNode } from "react";
 import type { Key } from "react-aria-components";
 import { useRouter } from "next/navigation";
-import { Archive, ArrowNarrowLeft, Clock, Copy01, Download01, Edit05, Mail01, PauseCircle, PlayCircle, Send01, Trash01, Users01, Zap } from "@untitledui/icons";
+import { Archive, ArrowNarrowLeft, Clock, Copy01, Download01, Edit05, Mail01, PauseCircle, PlayCircle, Send01, Trash01, Users01, Zap, Grid01, Monitor01, Settings01, ClockRewind } from "@untitledui/icons";
 import { AlertFullWidth } from "@/components/application/alerts/alerts";
 import { ConfirmationModal, DestructiveModal } from "@/components/application/modals/modal";
 import { Tab, TabList, TabPanel, Tabs } from "@/components/application/tabs/tabs";
@@ -165,14 +165,14 @@ export function NtDetail({
         <div className="px-6 pt-4">
           <TabList aria-label="Notification sections" type="underline" size="md">
             {layout === "overview" ? (
-              <Tab id="overview" label="Overview" />
+              <Tab id="overview" label="Overview" icon={Grid01} />
             ) : (
               <>
-                <Tab id="preview" label="Preview" />
-                <Tab id="settings" label="Settings" />
+                <Tab id="preview" label="Preview" icon={Monitor01} />
+                <Tab id="settings" label="Settings" icon={Settings01} />
               </>
             )}
-            <Tab id="history" label="History" />
+            <Tab id="history" label="History" icon={ClockRewind} />
           </TabList>
         </div>
 
@@ -289,6 +289,7 @@ export function NtDetail({
       </Tabs>
 
       <ConfirmationModal
+        confirmIcon={PauseCircle}
         isOpen={confirmDisable}
         onOpenChange={setConfirmDisable}
         icon={PauseCircle}
@@ -301,6 +302,7 @@ export function NtDetail({
         }}
       />
       <DestructiveModal
+        confirmIcon={Trash01}
         isOpen={confirmDelete}
         onOpenChange={setConfirmDelete}
         title={`Delete draft ${n.name || n.id}?`}

@@ -4,7 +4,7 @@ import type { ReactNode } from "react";
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ArrowNarrowRight, Database01, SearchMd } from "@untitledui/icons";
+import { ArrowNarrowRight, Database01, SearchMd, Tag01 } from "@untitledui/icons";
 import { Input } from "@/components/base/input/input";
 import { useRegisterTool } from "@/app/_prototype-tools/tools";
 import { Button } from "@/components/base/buttons/button";
@@ -15,7 +15,6 @@ import { FormSidebarSlotContext } from "@/app/pages/_shared/form-section-list";
 import { MobileNavTrigger } from "@/app/pages/_shared/mobile-nav";
 import { sectionIcons } from "@/app/pages/_shared/nav-icons";
 import { PrimaryRail } from "@/app/pages/_shared/primary-rail";
-import { SidebarFooterLinks } from "@/app/pages/_shared/sidebar-footer-links";
 import { PrototypeTools } from "@/app/_prototype-tools/prototype-tools";
 import { CV_ROOT, cvStatus, cvStatusMeta, cvTypeLabel, formatShortDate } from "@/app/pages/_shared/ctrl-vocab/cv-data";
 import { TemplateActions } from "@/app/pages/_shared/ctrl-vocab/cv-template-ui";
@@ -90,9 +89,9 @@ function CategoryNav( { category, currentId }: { category: string; currentId?: s
         onSelectionChange={(key) => router.push(roleHref(key === "all" ? base : `${base}?category=${encodeURIComponent(String(key))}`))}
       >
         <TabList aria-label="Categories" orientation="vertical" type="button-brand" fullWidth className="w-full">
-          <Tab id="all" label="All vocabularies" badge={cvs.length} />
+          <Tab id="all" label="All vocabularies" icon={Database01} badge={cvs.length} />
           {categories.map((c) => (
-            <Tab key={c} id={c} label={c} badge={count(c)} />
+            <Tab key={c} id={c} label={c} icon={Tag01} badge={count(c)} />
           ))}
         </TabList>
       </Tabs>
@@ -232,7 +231,6 @@ export function CvShell({
               ))}
             </div>
           )}
-          <SidebarFooterLinks />
         </aside>
 
         <main className="flex min-h-0 flex-1 flex-col overflow-hidden">

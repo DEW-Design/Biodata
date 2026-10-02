@@ -3,7 +3,7 @@
 import { useRef, useState, type ReactNode } from "react";
 import type { Key, Selection } from "react-aria-components";
 import { parseDate } from "@internationalized/date";
-import { Attachment01, Clock, Plus, Send01, Trash01, Zap } from "@untitledui/icons";
+import { Attachment01, Clock, Plus, Send01, Trash01, Zap, ArrowLeft } from "@untitledui/icons";
 import { AlertFullWidth } from "@/components/application/alerts/alerts";
 import { DestructiveModal } from "@/components/application/modals/modal";
 import { toast } from "@/components/application/toast/toast";
@@ -619,7 +619,7 @@ export function NtForm({
                   Variables go into <span className="font-medium text-secondary">{fieldLabel[lastField]}</span>, at the cursor.
                 </p>
                 <Dropdown.Root>
-                  <Button color="secondary" size="sm">
+                  <Button iconLeading={Plus} color="secondary" size="sm">
                     Insert variable
                   </Button>
                   <Dropdown.Popover placement="bottom right" className="w-80">
@@ -691,6 +691,8 @@ export function NtForm({
       </FormPage>
 
       <DestructiveModal
+        confirmIcon={Trash01}
+        cancelIcon={ArrowLeft}
         isOpen={confirmClose}
         onOpenChange={setConfirmClose}
         title="Discard your changes?"

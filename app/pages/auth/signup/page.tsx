@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Mail01 } from "@untitledui/icons";
+import { ArrowRight, Mail01 } from "@untitledui/icons";
 import { Input } from "@/components/base/input/input";
 import { Button } from "@/components/base/buttons/button";
 import { AuthShell, AuthHeader, AuthDivider } from "@/app/pages/auth/_shared/auth-shell";
@@ -24,7 +24,7 @@ export default function SignupPage() {
       <form onSubmit={handleSubmit} className="flex w-full flex-col gap-6">
         <Input label="Email" type="email" icon={Mail01} placeholder="Enter your email" value={email} onChange={setEmail} isRequired />
         <div className="flex flex-col gap-6">
-          <Button type="submit" color="primary" size="md" className="w-full">
+          <Button iconTrailing={ArrowRight} type="submit" color="primary" size="md" className="w-full">
             Continue
           </Button>
           <AuthDivider />

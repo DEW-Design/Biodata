@@ -1,12 +1,16 @@
 "use client";
 
+import { Feather, Tag01 } from "@untitledui/icons";
+
 import { Suspense, useState } from "react";
 import type { SortDescriptor } from "react-aria-components";
 import { CountBadge } from "@/components/base/badges/badges";
 import { SectionHeader } from "@/components/application/section-headers/section-headers";
 import { Table, TableCard } from "@/components/application/table/table";
 import { sortRows, type SortValue } from "@/app/pages/_shared/agreement-scope";
-import { ListFilterButton, matchesFilters, optionsFromValues, type FilterGetters, type FilterSection, type FilterSelection } from "@/app/pages/_shared/list-filter";
+import { optionsFromValues, type FilterGetters, type FilterSection, useListFilter } from "@/app/pages/_shared/list-filter";
+import { AttributeFilterChips } from "@/app/pages/_shared/attribute-filter";
+import { FilterMenu } from "@/app/pages/_shared/filter-menu";
 import { ToolbarSearch } from "@/app/pages/_shared/toolbar-search";
 import { datasetTemplates, type DatasetTemplate } from "@/app/pages/_shared/template-finder/template-data";
 import { TemplateDownloads } from "@/app/pages/_shared/template-finder/template-downloads";
@@ -36,8 +40,8 @@ const filterGetters: FilterGetters<DatasetTemplate> = {
 };
 
 const filterSections: FilterSection[] = [
-  { id: "method", label: "Collection method", options: optionsFromValues(datasetTemplates.map((t) => t.collectionMethod)) },
-  { id: "species", label: "Species type", options: optionsFromValues(datasetTemplates.map((t) => t.speciesType)) },
+  { id: "method", label: "Collection method", icon: Tag01, options: optionsFromValues(datasetTemplates.map((t) => t.collectionMethod)) },
+  { id: "species", label: "Species type", icon: Feather, options: optionsFromValues(datasetTemplates.map((t) => t.speciesType)) },
 ];
 
 export default function TemplateFinderPage() {
@@ -54,14 +58,14 @@ export default function TemplateFinderPage() {
 
 function TemplateList() {
   const [search, setSearch] = useState("");
-  const [filters, setFilters] = useState<FilterSelection>({});
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(50);
   const [sort, setSort] = useState<SortDescriptor>({ column: "template", direction: "ascending" });
+  const filter = useListFilter(filterSections, filterGetters, () => setPage(1));
 
   const query = search.trim().toLowerCase();
   const matching = datasetTemplates
-    .filter((t) => matchesFilters(t, filters, filterGetters))
+    .filter(filter.matches)
     .filter((t) => !query || [t.title, t.description].some((v) => v.toLowerCase().includes(query)));
   const rows = sortRows(matching, sort, sortKeys);
   const pageCount = Math.max(1, Math.ceil(rows.length / pageSize));
@@ -97,22 +101,14 @@ function TemplateList() {
               setPage(1);
             }}
           />
-          <div>
-            <ListFilterButton
-              sections={filterSections}
-              selection={filters}
-              onChange={(next) => {
-                setFilters(next);
-                setPage(1);
-              }}
-            />
-          </div>
+          <FilterMenu filter={filter} />
         </div>
+        <AttributeFilterChips filter={filter} />
         {rows.length === 0 ? (
           <p className="py-6 text-sm text-tertiary">No templates match your search and filters.</p>
         ) : (
           <TableCard.Root className="flex min-h-48 flex-1 flex-col">
-            <Table
+            <Table layout="fixed" className="min-w-[840px]"
               bodyScrollable
               aria-label="Dataset templates"
               sortDescriptor={sort}
@@ -122,10 +118,10 @@ function TemplateList() {
               }}
             >
               <Table.Header sticky>
-                <Table.Head id="template" label="Template" isRowHeader allowsSorting />
-                <Table.Head id="method" label="Collection method" allowsSorting />
-                <Table.Head id="species" label="Species type" allowsSorting />
-                <Table.Head id="download" label="Download" />
+                <Table.Head id="template" label="Template" isRowHeader allowsSorting className="w-[24%]" />
+                <Table.Head id="method" label="Collection method" allowsSorting className="w-[22%]" />
+                <Table.Head id="species" label="Species type" allowsSorting className="w-[18%]" />
+                <Table.Head id="download" label="Download" className="w-[36%]" />
               </Table.Header>
               <Table.Body items={paged}>
                 {(t) => (

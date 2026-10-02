@@ -18,23 +18,8 @@
 // session and are saved with Save changes. A field that is itself a comment (a "Site comment") is
 // edited as a value only: it takes no notes.
 
-import { createElement, useRef, useState, type ReactNode } from "react";
-import {
-  Check,
-  ChevronDown,
-  DotsVertical,
-  Edit02,
-  FileAttachment02,
-  FileCheck02,
-  Flag01,
-  Image01,
-  Link01,
-  MessageSquare01,
-  Paperclip,
-  Trash01,
-  UploadCloud02,
-  VideoRecorder,
-} from "@untitledui/icons";
+import { createElement, useRef, useState, type FC, type ReactNode } from "react";
+import { Check, CheckCircle, ChevronDown, DotsVertical, Edit02, FileAttachment02, FileCheck02, Flag01, Image01, Link01, MessageSquare01, Paperclip, Plus, Save01, Trash01, UploadCloud02, VideoRecorder, XClose } from "@untitledui/icons";
 import { Button } from "@/components/base/buttons/button";
 import { Dropdown } from "@/components/base/dropdown/dropdown";
 import { Input } from "@/components/base/input/input";
@@ -91,10 +76,12 @@ const commentOf = (n: FieldNotes) => n.comments[n.comments.length - 1];
  * grey as other secondary icons; only questionable is coloured (the warning icon colour), because
  * it is the one that asks a reviewer to act.
  */
+// The tone colours the icon only; the count beside it is text, so it stays readable (warning-700 for a
+// flag, tertiary for the rest, both over 4.5:1) rather than taking the fainter icon colour.
 export const NOTE_TONE = {
-  flag: "text-fg-warning-primary",
-  comment: "text-fg-quaternary",
-  file: "text-fg-quaternary",
+  flag: "text-warning-700 [&>svg]:text-fg-warning-primary",
+  comment: "[&>svg]:text-fg-quaternary",
+  file: "[&>svg]:text-fg-quaternary",
 } as const;
 export const NOTE_MARK =
   "inline-flex items-center gap-0.5 text-xs text-tertiary";
@@ -183,7 +170,7 @@ function FileChip({
 }
 
 const Meta = ({ children }: { children: ReactNode }) => (
-  <p className="text-xs text-quaternary">{children}</p>
+  <p className="text-xs text-tertiary">{children}</p>
 );
 
 // ── Notes on a field: cards, one small editor, one menu ──
@@ -290,7 +277,7 @@ function TextComposer({
   label,
   placeholder,
   initial = "",
-  action,
+  action, actionIcon,
   hint,
   onSave,
   onCancel,
@@ -299,6 +286,8 @@ function TextComposer({
   placeholder: string;
   initial?: string;
   action: string;
+  /** The icon that names the action (CONTRACTS 3.12). */
+  actionIcon: FC<{ className?: string }>;
   hint?: string;
   onSave: (text: string) => void;
   onCancel: () => void;
@@ -317,12 +306,13 @@ function TextComposer({
         hint={hint}
       />
       <div className="flex justify-end gap-2">
-        <Button color="tertiary" size="sm" onClick={onCancel}>
+        <Button iconLeading={XClose} color="tertiary" size="sm" onClick={onCancel}>
           Cancel
         </Button>
         <Button
           color="secondary"
           size="sm"
+          iconLeading={actionIcon}
           isDisabled={!ok}
           onClick={() => onSave(text.trim())}
         >
@@ -348,10 +338,10 @@ function ConfirmRemove({
         Remove this {what}? It can&apos;t be undone.
       </p>
       <div className="flex gap-2">
-        <Button color="tertiary" size="sm" onClick={onCancel}>
+        <Button iconLeading={XClose} color="tertiary" size="sm" onClick={onCancel}>
           Cancel
         </Button>
-        <Button color="primary-destructive" size="sm" onClick={onRemove}>
+        <Button iconLeading={Trash01} color="primary-destructive" size="sm" onClick={onRemove}>
           Remove
         </Button>
       </div>
@@ -390,7 +380,7 @@ function CommentCard({
           label="Edit the comment"
           placeholder="What should people know about this value?"
           initial={comment.text}
-          action="Save comment"
+          action="Save comment" actionIcon={Save01}
           onCancel={() => setMode("view")}
           onSave={(text) => {
             onChange({
@@ -469,7 +459,7 @@ function QuestionableCard({
           label="Why is this value questionable?"
           placeholder="Why is this value questionable?"
           initial={flag.reason}
-          action="Save"
+          action="Save" actionIcon={Save01}
           onCancel={() => setMode("view")}
           onSave={(reason) => {
             onChange({ ...notes, flag: { ...flag, reason } });
@@ -488,7 +478,7 @@ function QuestionableCard({
         <TextComposer
           label="Why is it resolved?"
           placeholder="Why is it resolved?"
-          action="Resolve"
+          action="Resolve" actionIcon={CheckCircle}
           hint="The reason is kept with the field."
           onCancel={() => setMode("view")}
           onSave={(reason) => {
@@ -595,10 +585,10 @@ function LinkComposer({
         />
       </div>
       <div className="flex justify-end gap-2">
-        <Button color="tertiary" size="sm" onClick={onCancel}>
+        <Button iconLeading={XClose} color="tertiary" size="sm" onClick={onCancel}>
           Cancel
         </Button>
-        <Button
+        <Button iconLeading={Link01}
           color="secondary"
           size="sm"
           isDisabled={!ok}
@@ -647,7 +637,7 @@ export function FieldNotesArea({
           <TextComposer
             label="Add a comment"
             placeholder="What should people know about this value?"
-            action="Add comment"
+            action="Add comment" actionIcon={Plus}
             hint="A field has one comment. Once added, it can be edited."
             onCancel={done}
             onSave={(text) => {
@@ -672,7 +662,7 @@ export function FieldNotesArea({
           <TextComposer
             label="Why is this value questionable?"
             placeholder="Why is this value questionable?"
-            action="Mark questionable"
+            action="Mark questionable" actionIcon={Flag01}
             onCancel={done}
             onSave={(reason) => {
               onChange({

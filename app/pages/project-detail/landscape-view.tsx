@@ -85,7 +85,7 @@ export function BandStrip({
             {!compact && (
               <span
                 className={cx(
-                  "mt-1 block truncate text-center text-[11px] tabular-nums",
+                  "mt-1 block truncate text-center text-xs tabular-nums",
                   on ? "font-medium text-brand-secondary" : "text-quaternary",
                 )}
               >
@@ -141,7 +141,7 @@ export function LandscapeTotal({
           </div>
         </dl>
       )}
-      <p className="text-xs text-balance text-quaternary">
+      <p className="text-xs text-balance text-tertiary">
         {live ? "Updates as you enter values. " : ""}
         {entered < score.results.length
           ? `${entered} of ${score.results.length} factors scored; the rest count as 0 until entered. `
@@ -247,7 +247,7 @@ export function OverstoreyStats({
           </div>
         ))}
       </dl>
-      <p className="text-xs text-quaternary">
+      <p className="text-xs text-tertiary">
         {live
           ? "Worked out from the readings below as you enter them."
           : "Worked out from the readings."}

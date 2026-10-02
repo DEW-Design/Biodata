@@ -2,7 +2,7 @@
 
 import { useRef, useState } from "react";
 import { parseDate } from "@internationalized/date";
-import { Plus, Trash01 } from "@untitledui/icons";
+import { Plus, Trash01, ArrowLeft } from "@untitledui/icons";
 import { AlertFullWidth } from "@/components/application/alerts/alerts";
 import { DestructiveModal } from "@/components/application/modals/modal";
 import { Badge } from "@/components/base/badges/badges";
@@ -480,6 +480,8 @@ export function CvForm({
       </FormPage>
 
       <DestructiveModal
+        confirmIcon={Trash01}
+        cancelIcon={ArrowLeft}
         isOpen={confirmClose}
         onOpenChange={setConfirmClose}
         title="Discard your changes?"

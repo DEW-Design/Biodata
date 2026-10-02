@@ -26,6 +26,7 @@ import { Badge } from "@/components/base/badges/badges";
 import { Button } from "@/components/base/buttons/button";
 import { Checkbox } from "@/components/base/checkbox/checkbox";
 import { Dropdown } from "@/components/base/dropdown/dropdown";
+import { NativeSelect } from "@/components/base/select/select-native";
 import { Tooltip, TooltipTrigger } from "@/components/base/tooltip/tooltip";
 import { cx } from "@/utils/cx";
 
@@ -141,6 +142,16 @@ interface TableRootProps extends AriaTableProps, Omit<ComponentPropsWithRef<"tab
      *  needs the toolbar/pagination to stay on-screen while only the rows scroll). Pair with
      *  `Table.Header`'s own `sticky` prop so the header stays visible above the scrolling rows. */
     bodyScrollable?: boolean;
+    /** `"fixed"` lays the columns out from the header row alone, so a column keeps its width whatever
+     *  rows are showing. The default, `"auto"`, sizes every column to its widest cell, which makes the
+     *  whole table reflow when a filter, a search, a sort or the next page brings a longer value (or a
+     *  second line) into a column. Every collection table (one a person filters, sorts or pages) is
+     *  `"fixed"`. Give EVERY column a width on its `Table.Head` (`className="w-44"`): the widest value that
+     *  column can hold, padding included. A column left without one does not share what is left (the
+     *  browser leaves a gap), and when the window is wider than the widths add up the extra is shared in
+     *  proportion, while a narrower window scrolls the table sideways. A fixed table needs cells that wrap
+     *  or truncate. */
+    layout?: "auto" | "fixed";
 }
 
 /**
@@ -176,15 +187,17 @@ function useSortWithReset(sortDescriptor: SortDescriptor | undefined, onSortChan
     };
 }
 
-const TableRoot = ({ className, size = "md", bodyScrollable, sortDescriptor, onSortChange, ...props }: TableRootProps) => {
+const TableRoot = ({ className, size = "md", bodyScrollable, layout = "auto", sortDescriptor, onSortChange, ...props }: TableRootProps) => {
     const context = useContext(TableContext);
     const handleSortChange = useSortWithReset(sortDescriptor, onSortChange);
 
     return (
         <TableContext.Provider value={{ size: context?.size ?? size }}>
-            <div className={cx("overflow-x-auto", bodyScrollable && "min-h-0 flex-1 overflow-y-auto")}>
+            {/* A scrolling table reserves its scrollbar's space, so the columns are the same width whether or not the rows
+                overflow (a list that scrolls beside one that does not, All and My). No cost where scrollbars overlay. */}
+            <div className={cx("overflow-x-auto", bodyScrollable && "min-h-0 flex-1 overflow-y-auto [scrollbar-gutter:stable]")}>
                 <AriaTable
-                    className={(state) => cx("font-barlow w-full overflow-x-hidden", typeof className === "function" ? className(state) : className)}
+                    className={(state) => cx("font-barlow w-full overflow-x-hidden", layout === "fixed" && "table-fixed", typeof className === "function" ? className(state) : className)}
                     sortDescriptor={sortDescriptor}
                     onSortChange={handleSortChange}
                     {...props}
@@ -396,14 +409,14 @@ interface TableCardPaginationProps {
  */
 const TableCardPagination = ({ page, pageCount, onPageChange, className }: TableCardPaginationProps) => (
     <div className={cx("flex items-center justify-between border-t border-secondary px-4 py-3 md:px-6", className)}>
-        <p className="text-sm text-tertiary">
+        <p className="text-sm text-tertiary tabular-nums">
             Page {page} of {pageCount}
         </p>
         <div className="flex gap-3">
-            <Button color="secondary" size="sm" isDisabled={page <= 1} onPress={() => onPageChange(page - 1)}>
+            <Button color="secondary" size="sm" iconLeading={ArrowLeft} isDisabled={page <= 1} onPress={() => onPageChange(page - 1)}>
                 Previous
             </Button>
-            <Button color="secondary" size="sm" isDisabled={page >= pageCount} onPress={() => onPageChange(page + 1)}>
+            <Button color="secondary" size="sm" iconTrailing={ArrowRight} isDisabled={page >= pageCount} onPress={() => onPageChange(page + 1)}>
                 Next
             </Button>
         </div>
@@ -449,11 +462,9 @@ interface TableCardPaginationNumberedProps {
  * to match Figma exactly, rather than ahead of time. Kept as a genuinely separate component from
  * `TableCardPagination` (the simple "Page X of Y" version) rather than replacing it - every
  * existing consumer of the simple version keeps working unchanged.
- * The "Rows per page" control is a small native `<select>` built from raw tokens, not the real
- * `NativeSelect` component - `NativeSelect`'s own default styling (rounded-lg, shadow-xs, ring-1,
- * text-md) is sized for a real form field, not this compact, borderless-until-focused inline
- * control Figma shows (border-primary, rounded-xs, text-xs, minimal padding); overriding that much
- * of `NativeSelect`'s baked-in styling would fight the component more than reuse it.
+ * The "Rows per page" control is the real `NativeSelect` at its small size, so it has the design system's field
+ * height, border, radius and chevron like every other select (it was a raw `<select>` with its own tiny styling,
+ * which looked cramped beside the Previous button and let a value run under the chevron).
  */
 const TableCardPaginationNumbered = ({ page, pageCount, onPageChange, pageSize, onPageSizeChange, pageSizeOptions = [10, 25, 50, 100], totalCount, className }: TableCardPaginationNumberedProps) => {
     const range = tableCardPaginationRange(page, Math.max(pageCount, 1));
@@ -461,24 +472,22 @@ const TableCardPaginationNumbered = ({ page, pageCount, onPageChange, pageSize, 
     const rangeEnd = Math.min(page * pageSize, totalCount);
 
     return (
-        <div className={cx("flex items-center justify-center gap-3 border-t border-secondary px-6 py-3", className)}>
-            <div className="flex shrink-0 items-center gap-2">
-                <span className="text-sm font-medium text-secondary whitespace-nowrap">Rows per page</span>
-                <select
-                    aria-label="Rows per page"
-                    value={pageSize}
-                    onChange={(e) => onPageSizeChange(Number(e.target.value))}
-                    className="rounded-xs border border-primary bg-primary px-1 py-0.5 text-xs font-semibold text-tertiary outline-focus-ring"
-                >
-                    {pageSizeOptions.map((size) => (
-                        <option key={size} value={size}>
-                            {size}
-                        </option>
-                    ))}
-                </select>
-            </div>
-
-            <div className="flex flex-1 items-center">
+        // Three columns, the middle one the page numbers: `1fr auto 1fr` keeps them centred whatever the two sides hold, where
+        // flexible spacers of unequal neighbours slid them sideways as the range text changed ("1 - 4 of 4", "51 - 100 of 1,234").
+        // Every figure is tabular (`tabular-nums`), so a digit is the same width whichever digit it is.
+        <div className={cx("grid grid-cols-[1fr_auto_1fr] items-center gap-3 border-t border-secondary px-6 py-3", className)}>
+            <div className="flex items-center gap-3">
+                <div className="flex shrink-0 items-center gap-2">
+                    <span className="text-sm font-medium text-secondary whitespace-nowrap">Rows per page</span>
+                    <NativeSelect
+                        size="sm"
+                        aria-label="Rows per page"
+                        value={String(pageSize)}
+                        onChange={(e) => onPageSizeChange(Number(e.target.value))}
+                        options={pageSizeOptions.map((size) => ({ label: String(size), value: String(size) }))}
+                        className="w-20 tabular-nums"
+                    />
+                </div>
                 <Button color="secondary" size="md" iconLeading={ArrowLeft} isDisabled={page <= 1} onPress={() => onPageChange(page - 1)}>
                     Previous
                 </Button>
@@ -497,7 +506,7 @@ const TableCardPaginationNumbered = ({ page, pageCount, onPageChange, pageSize, 
                             onClick={() => onPageChange(item)}
                             aria-current={item === page ? "page" : undefined}
                             className={cx(
-                                "flex size-10 shrink-0 items-center justify-center rounded-md text-sm font-medium outline-focus-ring",
+                                "flex size-10 shrink-0 items-center justify-center rounded-md text-sm font-medium tabular-nums outline-focus-ring",
                                 item === page ? "bg-primary_hover text-secondary" : "text-quaternary hover:bg-primary_hover",
                             )}
                         >
@@ -507,14 +516,12 @@ const TableCardPaginationNumbered = ({ page, pageCount, onPageChange, pageSize, 
                 )}
             </div>
 
-            <div className="flex flex-1 items-center justify-end">
+            <div className="flex items-center justify-end gap-3">
                 <Button color="secondary" size="md" iconTrailing={ArrowRight} isDisabled={page >= pageCount} onPress={() => onPageChange(page + 1)}>
                     Next
                 </Button>
-            </div>
-
-            <div className="flex shrink-0 items-center">
-                <span className="text-sm font-medium whitespace-nowrap text-secondary">
+                {/* A fixed minimum width, right-aligned, so Next does not move as the range grows from "1 - 4 of 4" to "51 - 100 of 1,234". */}
+                <span className="min-w-32 text-right text-sm font-medium whitespace-nowrap text-secondary tabular-nums">
                     {rangeStart} - {rangeEnd} of {totalCount}
                 </span>
             </div>

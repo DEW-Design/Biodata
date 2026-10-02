@@ -2,7 +2,7 @@
 
 import { Suspense, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { ChevronDown, Upload01, User01, SearchLg, Plus, ArrowLeft, Trash01 } from "@untitledui/icons";
+import { ArrowLeft, ArrowRight, ChevronDown, Plus, SearchLg, Trash01, Upload01, User01 } from "@untitledui/icons";
 import { Input, InputBase } from "@/components/base/input/input";
 import { InputGroup } from "@/components/base/input/input-group";
 import { Button } from "@/components/base/buttons/button";
@@ -171,7 +171,7 @@ function SetupProfileForm() {
               </div>
             </div>
           </div>
-          <Button type="submit" color="primary" size="md" className="w-full" isDisabled={!step1Valid}>
+          <Button iconTrailing={ArrowRight} type="submit" color="primary" size="md" className="w-full" isDisabled={!step1Valid}>
             Continue
           </Button>
         </form>
@@ -272,7 +272,7 @@ function SetupProfileForm() {
             </Button>
           </div>
           <div className="flex w-full flex-col items-center gap-6">
-            <Button type="submit" color="primary" size="md" className="w-full" isDisabled={!step2Valid}>
+            <Button iconTrailing={ArrowRight} type="submit" color="primary" size="md" className="w-full" isDisabled={!step2Valid}>
               Continue
             </Button>
             <Button color="link-gray" size="sm" iconLeading={ArrowLeft} onClick={() => goToStep(1)}>
@@ -312,7 +312,7 @@ function SetupProfileForm() {
             </div>
           </div>
           <div className="flex w-full flex-col items-center gap-6">
-            <Button type="submit" color="primary" size="md" className="w-full" isDisabled={!step3Valid}>
+            <Button iconTrailing={ArrowRight} type="submit" color="primary" size="md" className="w-full" isDisabled={!step3Valid}>
               Continue
             </Button>
             <Button color="link-gray" size="sm" iconLeading={ArrowLeft} onClick={() => goToStep(2)}>

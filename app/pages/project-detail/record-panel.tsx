@@ -14,24 +14,7 @@
 
 import { useEffect, useRef, useState, type Key as ReactKey } from "react";
 import { SubmenuTrigger, type Key } from "react-aria-components";
-import {
-  Activity,
-  ChevronDownDouble,
-  ChevronRight,
-  ChevronUpDouble,
-  DotsVertical,
-  Eye,
-  Edit02,
-  Flag01,
-  Folder,
-  InfoCircle,
-  Maximize02,
-  MessageSquare01,
-  Minimize02,
-  Paperclip,
-  Target05,
-  Trash01,
-} from "@untitledui/icons";
+import { Activity, ChevronDownDouble, ChevronRight, ChevronUpDouble, DotsVertical, Edit02, Eye, Flag01, Folder, InfoCircle, Maximize02, MessageSquare01, Minimize02, Paperclip, Target05, Trash01 } from "@untitledui/icons";
 import { Accordion } from "@/components/base/accordion/accordion";
 import { Button } from "@/components/base/buttons/button";
 import { cx } from "@/utils/cx";
@@ -154,7 +137,7 @@ export function SectionFields({
             <span className="ml-1 text-tertiary">{m.unit}</span>
           )}
           {m.method && (
-            <span className="block text-xs text-quaternary">{m.method}</span>
+            <span className="block text-xs text-tertiary">{m.method}</span>
           )}
         </>
       }
@@ -194,7 +177,8 @@ export function SectionFields({
               labelWidth={labelWidth}
               divider={false}
             />
-            <LocationDetailsTable lat={lat} lon={lon} />
+            {/* A restricted record shows no coordinates, rounded or not: only its block on the map. */}
+            {!record.locationNote && <LocationDetailsTable lat={lat} lon={lon} />}
           </div>
         </>
       )}
@@ -669,7 +653,7 @@ export function useDeleteRecord(
   const subtree = record ? store.subtreeOf(record.id) : [];
   const inner = subtree.length - 1;
   const modal = record ? (
-    <DestructiveModal
+    <DestructiveModal confirmIcon={Trash01}
       isOpen={open}
       onOpenChange={setOpen}
       title={`Delete ${record.name}?`}
@@ -765,10 +749,10 @@ export function RecordPanel({
             <h2 className="text-lg font-semibold text-primary">
               {store.project.details.shortTitle}
             </h2>
-            <span className="text-sm text-quaternary">Project</span>
+            <span className="text-sm text-tertiary">Project</span>
           </div>
           <p className="text-sm text-tertiary">
-            BD-5039 · {store.records.length} records. Pick a record in the tree
+            {store.meta.code} · {store.records.length} records. Pick a record in the tree
             or the table to see its details.
           </p>
         </div>
@@ -821,7 +805,7 @@ export function RecordPanel({
           <div className="flex min-w-0 flex-col gap-0.5">
             <h2 className="flex flex-wrap items-baseline gap-x-2 text-lg font-semibold text-balance text-primary">
               {record.name}
-              <span className="text-sm font-normal text-quaternary">
+              <span className="text-sm font-normal text-tertiary">
                 {record.type}
               </span>
             </h2>

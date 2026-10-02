@@ -89,7 +89,7 @@ export function RecordPeekCard({ record, onClose, className }: { record: DetailR
       {view.restricted && (
         <p className="flex items-center gap-1.5 text-sm text-tertiary">
           <Lock01 className="size-4 shrink-0" />
-          Location is approximate. Full precision needs a Data Licencing Agreement (DLA).
+          Location is shown only as a block. Full precision needs a Data Licencing Agreement (DLA).
         </p>
       )}
 

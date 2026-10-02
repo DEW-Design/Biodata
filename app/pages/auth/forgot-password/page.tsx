@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Mail01, ArrowLeft } from "@untitledui/icons";
+import { ArrowLeft, Key01, Mail01 } from "@untitledui/icons";
 import { Input } from "@/components/base/input/input";
 import { Button } from "@/components/base/buttons/button";
 import { AuthShell, AuthHeader } from "@/app/pages/auth/_shared/auth-shell";
@@ -23,7 +23,7 @@ export default function ForgotPasswordPage() {
       <form onSubmit={handleSubmit} className="flex w-full flex-col gap-6">
         <Input label="Email" type="email" icon={Mail01} placeholder="Enter your email" value={email} onChange={setEmail} isRequired />
         <div className="flex flex-col items-center gap-6">
-          <Button type="submit" color="primary" size="md" className="w-full">
+          <Button iconLeading={Key01} type="submit" color="primary" size="md" className="w-full">
             Reset password
           </Button>
           <Button color="link-gray" size="sm" iconLeading={ArrowLeft} href="/pages/auth/login">

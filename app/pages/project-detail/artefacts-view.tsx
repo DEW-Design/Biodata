@@ -16,6 +16,7 @@ import {
   ArrowNarrowRight,
   LayoutGrid01,
   Table as TableIcon,
+  Tag01,
 } from "@untitledui/icons";
 import { Badge } from "@/components/base/badges/badges";
 import { Button } from "@/components/base/buttons/button";
@@ -25,12 +26,9 @@ import {
   artefactTypeMeta,
   type Artefact,
 } from "@/app/pages/_shared/artefact-lightbox";
-import {
-  ListFilterButton,
-  matchesFilters,
-  type FilterSection,
-  type FilterSelection,
-} from "@/app/pages/_shared/list-filter";
+import { type FilterSection, useListFilter } from "@/app/pages/_shared/list-filter";
+import { AttributeFilterChips } from "@/app/pages/_shared/attribute-filter";
+import { FilterMenu } from "@/app/pages/_shared/filter-menu";
 import { ToolbarSearch } from "@/app/pages/_shared/toolbar-search";
 import { segmentClass, segmentTrayClass } from "./segmented";
 
@@ -47,7 +45,6 @@ export function ArtefactsView({
 }) {
   const [view, setView] = useState<"cards" | "table">("cards");
   const [query, setQuery] = useState("");
-  const [filter, setFilter] = useState<FilterSelection>({});
   const [sort, setSort] = useState<SortDescriptor>({
     column: "title",
     direction: "ascending",
@@ -65,14 +62,17 @@ export function ArtefactsView({
     {
       id: "type",
       label: "Type",
+      icon: Tag01,
       options: types.map((t) => ({ id: t, label: typeLabel(t) })),
     },
   ];
+  const filter = useListFilter(sections, { type: (x: FieldArtefact) => x.type }, () => setPage(1));
   const q = query.trim().toLowerCase();
+  const passesFilter = filter.matches;
   const rows = useMemo(() => {
     const list = artefacts.filter(
       (a) =>
-        matchesFilters(a, filter, { type: (x) => x.type }) &&
+        passesFilter(a) &&
         (!q ||
           `${a.title} ${a.recordLabel} ${a.creator}`.toLowerCase().includes(q)),
     );
@@ -85,7 +85,7 @@ export function ArtefactsView({
       );
       return sort.direction === "ascending" ? cmp : -cmp;
     });
-  }, [artefacts, filter, q, sort]);
+  }, [artefacts, passesFilter, q, sort]);
   const pageCount = Math.max(1, Math.ceil(rows.length / pageSize));
   const current = Math.min(page, pageCount);
   const paged = rows.slice((current - 1) * pageSize, current * pageSize);
@@ -129,15 +129,9 @@ export function ArtefactsView({
             setPage(1);
           }}
         />
-        <ListFilterButton
-          sections={sections}
-          selection={filter}
-          onChange={(next) => {
-            setFilter(next);
-            setPage(1);
-          }}
-        />
+        <FilterMenu filter={filter} />
       </div>
+      <AttributeFilterChips filter={filter} />
 
       {rows.length === 0 ? (
         <div className="flex flex-col items-center gap-1 rounded-xl border border-secondary p-10 text-center">
@@ -163,7 +157,7 @@ export function ArtefactsView({
         </div>
       ) : (
         <TableCard.Root className="flex max-h-[calc(100dvh-16rem)] min-h-48 flex-col">
-          <Table
+          <Table layout="fixed" className="min-w-[1100px]"
             aria-label="Artefacts and attachments"
             bodyScrollable
             sortDescriptor={sort}
@@ -173,13 +167,13 @@ export function ArtefactsView({
             }}
           >
             <Table.Header sticky>
-              <Table.Head id="title" label="File" isRowHeader allowsSorting />
-              <Table.Head id="type" label="Type" allowsSorting />
-              <Table.Head id="size" label="Size" />
-              <Table.Head id="recordLabel" label="Attached to" allowsSorting />
-              <Table.Head id="creator" label="Added by" allowsSorting />
-              <Table.Head id="created" label="Date" />
-              <Table.Head id="open" label="" />
+              <Table.Head id="title" label="File" isRowHeader allowsSorting className="w-[26%]" />
+              <Table.Head id="type" label="Type" allowsSorting className="w-[11%]" />
+              <Table.Head id="size" label="Size" className="w-[8%]" />
+              <Table.Head id="recordLabel" label="Attached to" allowsSorting className="w-[20%]" />
+              <Table.Head id="creator" label="Added by" allowsSorting className="w-[13%]" />
+              <Table.Head id="created" label="Date" className="w-[11%]" />
+              <Table.Head id="open" label="" className="w-[11%]" />
             </Table.Header>
             <Table.Body items={paged}>
               {(a) => {

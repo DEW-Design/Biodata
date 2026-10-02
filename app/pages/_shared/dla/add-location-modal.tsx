@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, type FC } from "react";
-import { Circle, MarkerPin02, Pentagon, UploadCloud02 } from "@untitledui/icons";
+import { Circle, MarkerPin02, Pentagon, Plus, UploadCloud02, XClose } from "@untitledui/icons";
 import { Button } from "@/components/base/buttons/button";
 import { Input } from "@/components/base/input/input";
 import { InputFile } from "@/components/base/input/input-file";
@@ -236,10 +236,10 @@ export function AddLocationModal({ isOpen, onOpenChange, onAdd }: { isOpen: bool
 
                     </div>
                     <ModalFooter>
-                        <Button color="secondary" size="md" slot="close">
+                        <Button iconLeading={XClose} color="secondary" size="md" slot="close">
                             Cancel
                         </Button>
-                        <Button color="primary" size="md" isDisabled={!canAdd} onPress={handleAdd}>
+                        <Button iconLeading={Plus} color="primary" size="md" isDisabled={!canAdd} onPress={handleAdd}>
                             Add location
                         </Button>
                     </ModalFooter>

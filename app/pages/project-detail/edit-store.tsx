@@ -8,12 +8,14 @@
 //   Editing a project section therefore reuses the registration's own section forms and rules
 //   unchanged, including adding and removing contacts, managers, permits, species and locations.
 // - Project records and their attachments are a list that can be added to, edited and deleted.
+// - What the store starts from is the `seed` (project-seed.ts): Adelaide Hills' hand-written records,
+//   or another project's records built from Explore's data.
 
 import { createContext, useCallback, useContext, useMemo, useState, type ReactNode } from "react";
 import type { Artefact } from "@/app/pages/_shared/artefact-lightbox";
 import type { FormState } from "@/app/pages/project-registration/option-2/sections";
-import { registrationDataCollection, registrationProjectDetails, registrationRestrictions } from "./project-registration-data";
-import { SURVEY_ARTEFACTS, SURVEY_RECORDS, type SurveyRecord } from "./survey-data";
+import type { ProjectMeta, ProjectSeed } from "./project-seed";
+import type { SurveyRecord } from "./survey-data";
 
 export type ProjectStatus = "Draft" | "Under review" | "Active" | "Completed";
 export const PROJECT_STATUSES: ProjectStatus[] = ["Draft", "Under review", "Active", "Completed"];
@@ -25,6 +27,8 @@ export type SurveyArtefact = Artefact & { recordId: string };
 
 interface Store {
   canEdit: boolean;
+  /** Which project this is: its route id, its own ID (BD-5039), its publisher. */
+  meta: ProjectMeta;
   project: ProjectState;
   saveProject: (next: ProjectState) => void;
   records: SurveyRecord[];
@@ -43,15 +47,10 @@ interface Store {
 
 const StoreContext = createContext<Store | null>(null);
 
-export function EditStoreProvider({ canEdit, children }: { canEdit: boolean; children: ReactNode }) {
-  const [project, setProject] = useState<ProjectState>(() => ({
-    details: registrationProjectDetails,
-    collection: registrationDataCollection,
-    restrictions: registrationRestrictions,
-    status: "Active",
-  }));
-  const [records, setRecords] = useState<SurveyRecord[]>(SURVEY_RECORDS);
-  const [artefacts, setArtefacts] = useState<SurveyArtefact[]>(SURVEY_ARTEFACTS);
+export function EditStoreProvider({ canEdit, seed, children }: { canEdit: boolean; seed: ProjectSeed; children: ReactNode }) {
+  const [project, setProject] = useState<ProjectState>(seed.project);
+  const [records, setRecords] = useState<SurveyRecord[]>(seed.records);
+  const [artefacts, setArtefacts] = useState<SurveyArtefact[]>(seed.artefacts);
 
   const byId = useMemo(() => new Map(records.map((r) => [r.id, r])), [records]);
   const recordById = useCallback((id: string | null | undefined) => (id ? byId.get(id) : undefined), [byId]);
@@ -95,6 +94,7 @@ export function EditStoreProvider({ canEdit, children }: { canEdit: boolean; chi
   const store = useMemo<Store>(
     () => ({
       canEdit,
+      meta: seed.meta,
       project,
       saveProject: setProject,
       records,
@@ -109,7 +109,7 @@ export function EditStoreProvider({ canEdit, children }: { canEdit: boolean; chi
       artefactsFor: (recordId) => artefacts.filter((a) => a.recordId === recordId),
       setArtefactsFor: (recordId, next) => setArtefacts((as) => [...as.filter((a) => a.recordId !== recordId), ...next]),
     }),
-    [canEdit, project, records, recordById, childrenOf, ancestorsOf, subtreeOf, deleteRecord, artefacts],
+    [canEdit, seed.meta, project, records, recordById, childrenOf, ancestorsOf, subtreeOf, deleteRecord, artefacts],
   );
   return <StoreContext.Provider value={store}>{children}</StoreContext.Provider>;
 }

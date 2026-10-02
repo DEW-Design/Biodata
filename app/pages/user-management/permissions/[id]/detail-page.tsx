@@ -19,7 +19,7 @@ function Detail() {
   const record = usePermission(id);
   const hydrated = useUmHydrated();
   return (
-    <UmShell area="permissions" breadcrumbCurrent={record ? record.name : id}>
+    <UmShell area="permissions" recordId={id} breadcrumbCurrent={record ? record.name : id}>
       {record ? <PermissionDetail key={record.id} permission={record} /> : hydrated ? <UmNotFound kind="permission" id={id} backHref="/pages/user-management/permissions" /> : null}
     </UmShell>
   );

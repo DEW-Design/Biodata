@@ -100,12 +100,12 @@ export function ArtefactTile({ artefact, onOpen }: { artefact: Artefact; onOpen:
       </div>
       <div className="flex flex-col gap-1 px-0.5 pb-0.5">
         <p className="truncate text-xs font-medium text-primary">{artefact.title}</p>
-        <p className="truncate text-xs text-quaternary">{artefact.recordLabel}</p>
+        <p className="truncate text-xs text-tertiary">{artefact.recordLabel}</p>
         <div className="flex items-center gap-1.5">
           <Badge size="sm" color={meta.badgeColor}>
             {artefact.type}
           </Badge>
-          <span className="text-xs text-quaternary">{artefact.size}</span>
+          <span className="text-xs text-tertiary">{artefact.size}</span>
         </div>
       </div>
     </button>
@@ -199,7 +199,7 @@ export function ArtefactLightbox({
                       >
                         <itemMeta.icon className="size-4 shrink-0 text-quaternary" />
                         <span className="flex-1 truncate text-sm text-primary">{item.title}</span>
-                        <span className="shrink-0 text-xs text-quaternary">{item.size}</span>
+                        <span className="shrink-0 text-xs text-tertiary">{item.size}</span>
                       </button>
                     );
                   })}

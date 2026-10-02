@@ -220,3 +220,60 @@ adds noise is a defect, the same as a bug, however correct the behaviour behind 
   with the field as wide as a text column; the designer: "the # in this is too big and ugly ... Make
   sure you do visually aesthetic" (30 Sept 2026).
 - **Enforcement:** `REVIEW` (a live screenshot and `/emil-design-foundations`, §0.6 item 4).
+
+### §3.12 Every action button carries an icon
+
+Every action button MUST carry an icon that names its action: on the left of the label (`iconLeading`), or a
+forward arrow on the right (`iconTrailing`) for a button that moves on. An action button is a filled or outlined
+`Button` with a text label: `primary`, `secondary`, `tertiary` or a destructive colour.
+
+- **Not action buttons.** An icon-only button (an `aria-label`, no text) and a link-style button (`link-color`,
+  `link-gray`, `link-destructive`) are not covered; they may still carry an icon.
+- **One icon per action (§2.4).** The same action has the same icon on every screen. Workflow actions on a record
+  (`RecordAction`, whose `icon` is required) and the buttons in forms, modals and the auth flow use this set:
+
+  | Action | Icon |
+  | --- | --- |
+  | Create, add, new, request | `Plus` |
+  | Continue, next (trailing) | `ArrowRight` |
+  | Back | `ArrowLeft` |
+  | Go to another screen (trailing) | `ArrowNarrowRight` |
+  | Cancel | `XClose` |
+  | Keep editing, back out of a prompt | `ArrowLeft` |
+  | Discard, delete, remove | `Trash01` |
+  | Save, save draft | `Save01` |
+  | Done | `Check` |
+  | Approve, accept, resolve | `CheckCircle` |
+  | Reject | `XCircle` |
+  | Start or resume a review | `PlayCircle` |
+  | Put on hold, disable, deactivate | `PauseCircle` |
+  | Activate, enable, reactivate | `Power01` |
+  | Archive, restore | `Archive`, `FlipBackward` |
+  | Cancel an agreement or request | `SlashCircle01` |
+  | Edit, change | `Edit05` |
+  | Download, export | `Download01` |
+  | Upload, replace a file | `Upload01` |
+  | Search | `SearchLg` |
+  | Reset, re-generate, show everything again | `RefreshCcw01` |
+  | Select all | `CheckDone01` |
+  | Log in, sign in | `LogIn01` |
+  | Sign up | `UserPlus01` |
+  | Request access, reset a password | `Key01` |
+  | Open a report, open guides | `BarChart01`, `BookOpen01` |
+  | Flag, add a link | `Flag01`, `Link01` |
+
+  An action not in the set takes the icon Figma draws, or the closest existing one (§2.4), and is added here.
+- **Modals and shared components.** A modal's buttons are action buttons. `ConfirmationModal`, `DestructiveModal` and
+  `FormModal` require `confirmIcon` / `submitIcon` (an action is never the same twice, so there is no default) and
+  default Cancel to `XClose`; "Keep editing" on a discard prompt takes `ArrowLeft` (`cancelIcon`). A button-style
+  alert takes `confirmIcon` (`PageBanner` requires `actionIcon`). The file field's Browse, multi-select's Reset and
+  Select all, and the table pagination's Previous and Next carry theirs. A component that renders a text button of
+  its own carries an icon for it, required where the action varies.
+- **Origin:** the DLA record page's Approve, Reject and Start review buttons had no icon beside Edit and Download,
+  which did, and some 50 other filled and outlined buttons across the forms, the auth flow and the registration
+  flow had none; the check then missed every modal, because their buttons live in a shared component (the Approve
+  request modal's Cancel and Upload and Approve, the file field's Browse), so the same gap was found again
+  (designer, 1 Oct 2026, section 0.8).
+- **Enforcement:** `AUTO §3.12` (an action button with no icon anywhere under `app/pages`, the auth flow and the
+  home page included, or in `components/application`, `components/base` and `components/custom`; the two stale
+  unlinked drafts are exempt), and `tsc` for `RecordAction.icon` and the modals' required icon props.

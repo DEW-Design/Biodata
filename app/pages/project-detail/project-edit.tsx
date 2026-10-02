@@ -13,7 +13,7 @@
 
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { createPortal } from "react-dom";
-import { Plus, Trash01 } from "@untitledui/icons";
+import { ArrowLeft, Plus, Save01, Trash01, XClose } from "@untitledui/icons";
 import { Button } from "@/components/base/buttons/button";
 import { Checkbox } from "@/components/base/checkbox/checkbox";
 import { Input } from "@/components/base/input/input";
@@ -391,7 +391,7 @@ function CardForm({ id, ...props }: FormProps & { id: ProjectCardId }) {
 }
 
 function CardDrawer({ id, onClose, onOpenNext }: { id: ProjectCardId; onClose: () => void; onOpenNext: (next: ProjectCardId) => void }) {
-  const { project, saveProject } = useEditStore();
+  const { project, saveProject, meta } = useEditStore();
   const [draft, setDraft] = useState<ProjectState>(project);
   const [dirty, setDirty] = useState(false);
   const [attempted, setAttempted] = useState(false);
@@ -416,7 +416,7 @@ function CardDrawer({ id, onClose, onOpenNext }: { id: ProjectCardId; onClose: (
   };
 
   return (
-    <EditDrawer isOpen title={`Edit ${title}`} context={`Project BD-5039 · ${project.details.shortTitle}`} isDirty={dirty} onClose={onClose}>
+    <EditDrawer isOpen title={`Edit ${title}`} context={`Project ${meta.code} · ${project.details.shortTitle}`} isDirty={dirty} onClose={onClose}>
       {(requestClose): ReactNode => (
         <FormPage
           eyebrow={`Edit · ${CARD_GROUP[id]}`}
@@ -521,10 +521,10 @@ export function InlineCardEditor({
           {dirty && <span className="text-quaternary"> · Unsaved changes</span>}
         </p>
         <div className="flex items-center gap-3">
-          <Button color="secondary" onClick={() => (dirty ? setConfirm(true) : onClose())}>
+          <Button iconLeading={XClose} color="secondary" onClick={() => (dirty ? setConfirm(true) : onClose())}>
             Cancel
           </Button>
-          <Button color="primary" onClick={save}>
+          <Button iconLeading={Save01} color="primary" onClick={save}>
             {id === "add-restriction" ? "Add restrictions" : "Save changes"}
           </Button>
         </div>
@@ -541,7 +541,7 @@ export function InlineCardEditor({
       )}
       <CardForm id={id} draft={draft} update={update} showErrors={attempted} />
       {footer && createPortal(bar, footer)}
-      <ConfirmationModal
+      <ConfirmationModal confirmIcon={Trash01} cancelIcon={ArrowLeft}
         isOpen={confirm}
         onOpenChange={setConfirm}
         title="Discard your changes?"

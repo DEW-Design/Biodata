@@ -3,7 +3,7 @@
 import { useState, type ReactNode } from "react";
 import type { Key } from "react-aria-components";
 import { parseDate } from "@internationalized/date";
-import { Archive, ArrowNarrowLeft, Download01, Edit05, RefreshCcw01, SearchMd, Trash01 } from "@untitledui/icons";
+import { Archive, ArrowNarrowLeft, Download01, Edit05, RefreshCcw01, SearchMd, Trash01, Power01, Rows01, File06, ClockRewind } from "@untitledui/icons";
 import { AlertFullWidth } from "@/components/application/alerts/alerts";
 import { DestructiveModal, FormModal } from "@/components/application/modals/modal";
 import { Tab, TabList, TabPanel, Tabs } from "@/components/application/tabs/tabs";
@@ -81,6 +81,7 @@ function EntriesTable({ cv, entries }: { cv: Cv; entries: CvEntry[] }) {
   const paged = rows.slice((currentPage - 1) * pageSize, currentPage * pageSize);
   const heading = (id: string, label: string) => (descriptive && cv.mapping[id]?.length ? `${label} (${cv.mapping[id].map((c) => columnLabel(cv.sourceTable, c)).join(" + ")})` : label);
 
+  const colWidth = `${100 / (columns.length + 1 + cv.customColumns.length)}%`;
   return (
     <div className="flex flex-col gap-3">
       <div className="w-full max-w-xs">
@@ -100,12 +101,13 @@ function EntriesTable({ cv, entries }: { cv: Cv; entries: CvEntry[] }) {
         <p className="py-4 text-sm text-tertiary">{entries.length === 0 ? "No entries yet." : "No entries match your search."}</p>
       ) : (
         <TableCard.Root size="sm">
-          <Table bodyScrollable size="sm" aria-label={`${cv.name} entries`}>
+          <Table layout="fixed" className="min-w-[800px]" bodyScrollable size="sm" aria-label={`${cv.name} entries`}>
             <Table.Header size="sm">
+              {/* The columns are the vocabulary's own, so they share the width evenly (CONTRACTS 4.2f). */}
               {[
-                ...columns.map((f) => <Table.Head key={f.id} id={f.id} label={heading(f.id, f.label)} isRowHeader={f.id === (cv.type === "reference" && cv.idKind === "number" ? "name" : "code")} />),
-                <Table.Head key="status" id="status" label="Available to users" />,
-                ...cv.customColumns.map((c) => <Table.Head key={c.id} id={c.id} label={heading(c.id, c.label)} />),
+                ...columns.map((f) => <Table.Head key={f.id} id={f.id} style={{ width: colWidth }} label={heading(f.id, f.label)} isRowHeader={f.id === (cv.type === "reference" && cv.idKind === "number" ? "name" : "code")} />),
+                <Table.Head key="status" id="status" style={{ width: colWidth }} label="Available to users" />,
+                ...cv.customColumns.map((c) => <Table.Head key={c.id} id={c.id} style={{ width: colWidth }} label={heading(c.id, c.label)} />),
               ]}
             </Table.Header>
             <Table.Body items={paged}>
@@ -275,9 +277,9 @@ export function CvDetail({
       <Tabs selectedKey={tab} onSelectionChange={setTab}>
         <div className="px-6 pt-4">
           <TabList aria-label="Vocabulary sections" type="underline" size="md">
-            <Tab id="entries" label="Entries" badge={activeCount} />
-            <Tab id="details" label="Details" />
-            <Tab id="history" label="History" />
+            <Tab id="entries" label="Entries" icon={Rows01} badge={activeCount} />
+            <Tab id="details" label="Details" icon={File06} />
+            <Tab id="history" label="History" icon={ClockRewind} />
           </TabList>
         </div>
 
@@ -354,6 +356,7 @@ export function CvDetail({
       </Tabs>
 
       <DestructiveModal
+        confirmIcon={Trash01}
         isOpen={confirmDelete}
         onOpenChange={setConfirmDelete}
         title={`Delete draft ${cv.name || cv.id}?`}
@@ -365,6 +368,7 @@ export function CvDetail({
         }}
       />
       <DestructiveModal
+        confirmIcon={Archive}
         isOpen={confirmArchive}
         onOpenChange={setConfirmArchive}
         title={`Archive ${cv.name}?`}
@@ -376,6 +380,7 @@ export function CvDetail({
         }}
       />
       <FormModal
+        submitIcon={Power01}
         isOpen={reactivateOpen}
         onOpenChange={setReactivateOpen}
         icon={RefreshCcw01}

@@ -6,18 +6,17 @@ import { useRouter, useSearchParams } from "next/navigation";
 import type { Key } from "react-aria-components";
 import { Tabs } from "react-aria-components";
 import { TabList, Tab } from "@/components/application/tabs/tabs";
-import { ChevronDown, ArrowNarrowRight, User01, PieChart03 } from "@untitledui/icons";
+import { ChevronDown, ArrowNarrowRight, Folder, User01, PieChart03 } from "@untitledui/icons";
 import { Button } from "@/components/base/buttons/button";
 import { HomeTabPanels } from "@/app/pages/_shared/home-tab-panels";
 import { DataOverviewContent } from "@/app/pages/_shared/data-overview";
 import { ProjectListContent } from "@/app/pages/_shared/project-list-content";
 import { PrimaryRail } from "@/app/pages/_shared/primary-rail";
-import { SidebarFooterLinks } from "@/app/pages/_shared/sidebar-footer-links";
 import { sectionIcons } from "@/app/pages/_shared/nav-icons";
 import { AppHeader } from "@/app/pages/_shared/app-header";
 import { ProjectsSidebar, readProjectScope, type ProjectScope } from "@/app/pages/_shared/projects-sidebar";
 import { GuestAboutAside, GuestGradientCard } from "@/app/pages/_shared/guest-home";
-import { MobileNavTrigger } from "@/app/pages/_shared/mobile-nav";
+import { MobileNavItem, MobileNavTrigger } from "@/app/pages/_shared/mobile-nav";
 import { PrototypeTools } from "@/app/_prototype-tools/prototype-tools";
 import { useUserRole } from "@/lib/use-user-role";
 import { useRoleHref } from "@/lib/use-role-href";
@@ -153,7 +152,7 @@ function ProjectList() {
   const roleHref = useRoleHref();
   const [activeSection, setActiveSection] = useState("Projects");
   const [homeTab, setHomeTab] = useState<Key>("dashboard");
-  // My projects / All projects, kept in the URL so links and back/forward land on the same list.
+  // All projects / My projects, kept in the URL so links and back/forward land on the same list.
   const searchParams = useSearchParams();
   const scope = readProjectScope(searchParams.get("scope"));
   const setScope = (next: ProjectScope) => {
@@ -203,53 +202,15 @@ function ProjectList() {
             {!isPublicUser && activeSection === "Home"
               ? ((close: () => void) => (
                   <>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setHomeTab("dashboard");
-                        close();
-                      }}
-                      className={cx(
-                        "rounded-md px-3 py-2 text-left text-sm font-medium outline-brand focus-visible:outline-2 focus-visible:outline-offset-2",
-                        homeTab === "dashboard" ? "bg-secondary text-primary" : "text-primary hover:bg-secondary",
-                      )}
-                    >
-                      My BioData
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setHomeTab("overview");
-                        close();
-                      }}
-                      className={cx(
-                        "rounded-md px-3 py-2 text-left text-sm font-medium outline-brand focus-visible:outline-2 focus-visible:outline-offset-2",
-                        homeTab === "overview" ? "bg-secondary text-primary" : "text-primary hover:bg-secondary",
-                      )}
-                    >
-                      Flora and Fauna Dashboard
-                    </button>
+                    <MobileNavItem icon={User01} active={homeTab === "dashboard"} onPress={() => { setHomeTab("dashboard"); close(); }}>My BioData</MobileNavItem>
+                    <MobileNavItem icon={PieChart03} active={homeTab === "overview"} onPress={() => { setHomeTab("overview"); close(); }}>Flora and Fauna Dashboard</MobileNavItem>
                   </>
                 ))
               : !isPublicUser && activeSection === "Projects"
                 ? ((close: () => void) => (
                     <>
-                      {(["mine", "all"] as const).map((key) => (
-                        <button
-                          key={key}
-                          type="button"
-                          onClick={() => {
-                            setScope(key);
-                            close();
-                          }}
-                          className={cx(
-                            "rounded-md px-3 py-2 text-left text-sm font-medium outline-brand focus-visible:outline-2 focus-visible:outline-offset-2",
-                            scope === key ? "bg-secondary text-primary" : "text-primary hover:bg-secondary",
-                          )}
-                        >
-                          {key === "mine" ? "My projects" : "All projects"}
-                        </button>
-                      ))}
+                      <MobileNavItem icon={Folder} active={scope === "all"} onPress={() => { setScope("all"); close(); }}>All projects</MobileNavItem>
+                      <MobileNavItem icon={User01} active={scope === "mine"} onPress={() => { setScope("mine"); close(); }}>My projects</MobileNavItem>
                     </>
                   ))
                 : undefined}
@@ -281,7 +242,7 @@ function ProjectList() {
               {iconRail}
               <GuestAboutAside sectionLabel={activeSection} />
 
-              <main className="flex flex-1 flex-col overflow-y-auto">
+              <main className="flex flex-1 flex-col overflow-y-auto [scrollbar-gutter:stable]">
                 <div className="p-6">
                   <GuestGradientCard tab={guestDashboardTab} />
                 </div>
@@ -311,26 +272,25 @@ function ProjectList() {
                     <Tab id="overview" label="Flora and Fauna Dashboard" icon={PieChart03} />
                   </TabList>
                 </div>
-                <SidebarFooterLinks />
               </aside>
 
               {/* ── Main content: Home's tab panels render the shared real dashboard content
                   (see app/pages/_shared/home-dashboard.tsx and data-overview.tsx) ── */}
-              <main className="flex flex-1 flex-col overflow-y-auto">
+              <main className="flex flex-1 flex-col overflow-y-auto [scrollbar-gutter:stable]">
                 <HomeTabPanels />
               </main>
             </Tabs>
           );
         }
 
-        // Projects: the same column as project detail (My projects / All projects, Actions, project
+        // Projects: the same column as project detail (All projects / My projects, Actions, project
         // guides) for every persona; a public user sees All projects only. The scope is in the URL.
         if (activeSection === "Projects") {
           return (
             <div className="flex flex-1 overflow-hidden">
               {iconRail}
               <ProjectsSidebar sectionLabel={activeSectionNode.label} scope={scope} onScopeChange={setScope} />
-              <main className="flex flex-1 flex-col overflow-y-auto">
+              <main className="flex flex-1 flex-col overflow-y-auto [scrollbar-gutter:stable]">
                 <ProjectListContent scope={isPublicUser ? "all" : scope} />
               </main>
             </div>
@@ -347,12 +307,11 @@ function ProjectList() {
                 <p className="mb-3 text-xs font-semibold tracking-wide text-quaternary uppercase">{activeSectionNode.label}</p>
                 {activeSectionNode.items?.map((item) => <NavTree key={item.label} node={item} depth={1} />)}
               </div>
-              <SidebarFooterLinks />
             </aside>
 
             {/* ── Main content: Home and Projects are intercepted above (their own Tabs
                 boundary) - every other section is an honest placeholder until it's scoped ── */}
-            <main className="flex flex-1 flex-col overflow-y-auto">
+            <main className="flex flex-1 flex-col overflow-y-auto [scrollbar-gutter:stable]">
               <SectionPlaceholder node={activeSectionNode} />
             </main>
           </div>

@@ -3,7 +3,7 @@
 import { useState } from "react";
 import type { DateValue, Key, Selection } from "react-aria-components";
 import { getLocalTimeZone, today } from "@internationalized/date";
-import { Plus, SearchMd, Trash01 } from "@untitledui/icons";
+import { ArrowLeft, Plus, SearchMd, Trash01 } from "@untitledui/icons";
 import { DestructiveModal } from "@/components/application/modals/modal";
 import { TreeView } from "@/components/application/tree-view/tree-view";
 import { Button } from "@/components/base/buttons/button";
@@ -36,7 +36,7 @@ const isoOf = (d: DateValue | null) => (d ? d.toString() : "");
 
 function DiscardModal({ isOpen, onOpenChange, what, onDiscard }: { isOpen: boolean; onOpenChange: (o: boolean) => void; what: string; onDiscard: () => void }) {
   return (
-    <DestructiveModal
+    <DestructiveModal confirmIcon={Trash01} cancelIcon={ArrowLeft}
       isOpen={isOpen}
       onOpenChange={onOpenChange}
       title={`Discard this ${what}?`}

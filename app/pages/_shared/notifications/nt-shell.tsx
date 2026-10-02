@@ -4,7 +4,7 @@ import type { ReactNode } from "react";
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ArrowNarrowRight, Database01, SearchMd } from "@untitledui/icons";
+import { ArrowNarrowRight, Database01, SearchMd, Bell01, Tag01 } from "@untitledui/icons";
 import { Input } from "@/components/base/input/input";
 import { useRegisterTool } from "@/app/_prototype-tools/tools";
 import { Button } from "@/components/base/buttons/button";
@@ -15,7 +15,6 @@ import { FormSidebarSlotContext } from "@/app/pages/_shared/form-section-list";
 import { MobileNavTrigger } from "@/app/pages/_shared/mobile-nav";
 import { sectionIcons } from "@/app/pages/_shared/nav-icons";
 import { PrimaryRail } from "@/app/pages/_shared/primary-rail";
-import { SidebarFooterLinks } from "@/app/pages/_shared/sidebar-footer-links";
 import { PrototypeTools } from "@/app/_prototype-tools/prototype-tools";
 import { SENSITIVITY, formatShortDate, ntStateMeta, ntTemplate, recipientsSummary, triggerSummary } from "@/app/pages/_shared/notifications/nt-data";
 import { useRecipientLabels, useSampleVolume } from "@/app/pages/_shared/notifications/nt-directory";
@@ -82,9 +81,9 @@ function CategoryNav({ category }: { category: string }) {
       <div className="min-h-0 flex-1 overflow-y-auto">
         <Tabs orientation="vertical" selectedKey={category || "all"} onSelectionChange={(key) => router.push(roleHref(key === "all" ? root : `${root}?category=${encodeURIComponent(String(key))}`))}>
           <TabList aria-label="Categories" orientation="vertical" type="button-brand" fullWidth className="w-full">
-            <Tab id="all" label="All notifications" badge={items.length} />
+            <Tab id="all" label="All notifications" icon={Bell01} badge={items.length} />
             {categories.map((c) => (
-              <Tab key={c} id={c} label={c} badge={counts.get(c) ?? 0} />
+              <Tab key={c} id={c} label={c} icon={Tag01} badge={counts.get(c) ?? 0} />
             ))}
           </TabList>
         </Tabs>
@@ -220,7 +219,6 @@ export function NtShell({
               ))}
             </div>
           )}
-          <SidebarFooterLinks />
         </aside>
 
         <main className="flex min-h-0 flex-1 flex-col overflow-hidden">

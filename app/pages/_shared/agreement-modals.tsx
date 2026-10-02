@@ -21,6 +21,7 @@ export function RejectModal({
   placeholder = "Enter a description…",
   icon = XCircle,
   iconColor = "error",
+  submitIcon = XCircle,
 }: {
   id: string;
   isOpen: boolean;
@@ -35,6 +36,8 @@ export function RejectModal({
   /** The featured icon above the title (Untitled UI's form modals always carry one). */
   icon?: FC<{ className?: string }>;
   iconColor?: "error" | "gray" | "warning";
+  /** The icon on the submit button (CONTRACTS 3.12): a rejection by default; pass the action's own for another decision. */
+  submitIcon?: FC<{ className?: string }>;
 }) {
   const [reason, setReason] = useState("");
   const [attempted, setAttempted] = useState(false);
@@ -54,6 +57,7 @@ export function RejectModal({
       title={title}
       description={description ?? `Provide a reason for rejecting ${id}`}
       submitLabel={submitLabel}
+      submitIcon={submitIcon}
       size="sm"
       onSubmit={() => {
         setAttempted(true);

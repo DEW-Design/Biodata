@@ -33,7 +33,7 @@ function NominationRecord() {
   const roleHref = useRoleHref();
 
   return (
-    <NominationShell breadcrumbCurrent={id}>
+    <NominationShell recordId={id} breadcrumbCurrent={id}>
       {nomination ? (
         <NominationDetail
           key={nomination.id}

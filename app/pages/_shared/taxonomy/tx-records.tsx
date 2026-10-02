@@ -3,7 +3,7 @@
 import { useState, type FC } from "react";
 import { useRouter } from "next/navigation";
 import { ListBox, ListBoxItem, ToggleButton, ToggleButtonGroup } from "react-aria-components";
-import { ChevronDown, Dataflow03, Edit02, GitBranch01, GitMerge, PencilLine, Plus, Table as TableIcon, Trash01 } from "@untitledui/icons";
+import { ChevronDown, Dataflow03, Edit02, GitBranch01, GitMerge, PencilLine, Plus, Table as TableIcon, Trash01, Feather, Flag01, ArrowLeft, Save01, XClose, File06, Type01, Map02, Globe01, MarkerPin04, BookClosed, List } from "@untitledui/icons";
 import { AlertFullWidth } from "@/components/application/alerts/alerts";
 import { ConfirmationModal, DestructiveModal } from "@/components/application/modals/modal";
 import { SectionHeader } from "@/components/application/section-headers/section-headers";
@@ -15,7 +15,9 @@ import { Button } from "@/components/base/buttons/button";
 import { Dropdown } from "@/components/base/dropdown/dropdown";
 import { HeroMeta, RecordBackLink, RecordHero } from "@/app/pages/_shared/record-hero";
 import { RecordActionBar } from "@/app/pages/_shared/record-action-bar";
-import { ListFilterButton, matchesFilters, type FilterGetters, type FilterSection, type FilterSelection } from "@/app/pages/_shared/list-filter";
+import { type FilterGetters, type FilterSection, type FilterSelection, useSelectionFilter } from "@/app/pages/_shared/list-filter";
+import { AttributeFilterChips } from "@/app/pages/_shared/attribute-filter";
+import { FilterMenu } from "@/app/pages/_shared/filter-menu";
 import { ToolbarSearch } from "@/app/pages/_shared/toolbar-search";
 import { segmentClass, segmentTrayClass } from "@/app/pages/project-detail/segmented";
 import { FieldGrid, FieldGridView, NOT_PROVIDED, withValue } from "@/app/pages/_shared/taxonomy/tx-fields";
@@ -25,6 +27,19 @@ import { deleteSynonym, saveSynonym, saveTaxon, useTaxa, useTaxaHydrated, useTax
 import { ATTRIBUTE_COLUMNS, CHANGE_META, TX_ROOT, CHANGE_TYPES, GROUP_PLURAL, synonymFieldsFor, tabsFor, type ChangeType, type FieldDef, type Kingdom, type Synonym, type TabDef, type Taxon } from "@/app/pages/_shared/taxonomy/tx-data";
 import { useRoleHref } from "@/lib/use-role-href";
 import { cx } from "@/utils/cx";
+
+// An icon for each species tab (CONTRACTS 3.13), the one the app uses for the same thing; the tabs themselves come from
+// the Figma field definitions (tx-data.ts), unchanged.
+const TAB_ICON: Record<string, FC<{ className?: string }>> = {
+  main: File06,
+  speciesStatus: Flag01,
+  commonName: Type01,
+  saRegions: Map02,
+  ausDistribution: Globe01,
+  regionalData: MarkerPin04,
+  speciesReference: BookClosed,
+  attributes: List,
+};
 
 // Taxonomy Management finds and shows a species the way every collection in the app does ("List ->
 // deep dive", ref-shell.md): a species table (4.2) with the hierarchy as a secondary view, and a
@@ -111,11 +126,15 @@ export function SpeciesList({ kingdom }: { kingdom: Kingdom | null }) {
   const scoped = all.filter((t) => !kingdom || t.kingdom === kingdom);
   const q = search.trim().toLowerCase();
   const sections: FilterSection[] = [
-    { id: "group", label: "Group", options: [...new Set(scoped.map((t) => GROUP_PLURAL[t.group]))].sort().map((g) => ({ id: g, label: g })) },
-    { id: "status", label: "Status", options: [{ id: "current", label: "Current" }, { id: "superseded", label: "Superseded" }] },
+    { id: "group", label: "Group", icon: Feather, options: [...new Set(scoped.map((t) => GROUP_PLURAL[t.group]))].sort().map((g) => ({ id: g, label: g })) },
+    { id: "status", label: "Status", icon: Flag01, options: [{ id: "current", label: "Current" }, { id: "superseded", label: "Superseded" }] },
   ];
   const getters: FilterGetters<Taxon> = { group: (t) => GROUP_PLURAL[t.group], status: (t) => (t.current ? "current" : "superseded") };
-  const rows = scoped.filter((t) => matchesQuery(t, q) && matchesFilters(t, filters, getters)).sort((a, b) => (a.common || a.scientific).localeCompare(b.common || b.scientific));
+  const filter = useSelectionFilter(sections, getters, filters, (next) => {
+    setFilters(next);
+    setPage(1);
+  });
+  const rows = scoped.filter((t) => matchesQuery(t, q) && filter.matches(t)).sort((a, b) => (a.common || a.scientific).localeCompare(b.common || b.scientific));
   const pageCount = Math.max(1, Math.ceil(rows.length / pageSize));
   const currentPage = Math.min(page, pageCount);
   const paged = rows.slice((currentPage - 1) * pageSize, currentPage * pageSize);
@@ -149,16 +168,7 @@ export function SpeciesList({ kingdom }: { kingdom: Kingdom | null }) {
               setPage(1);
             }}
           />
-          <div>
-            <ListFilterButton
-              sections={sections}
-              selection={filters}
-              onChange={(next) => {
-                setFilters(next);
-                setPage(1);
-              }}
-            />
-          </div>
+          <FilterMenu filter={filter} />
           <div className="ml-auto">
             <ViewSwitch
               label="Show species as"
@@ -171,6 +181,7 @@ export function SpeciesList({ kingdom }: { kingdom: Kingdom | null }) {
             />
           </div>
         </div>
+        <AttributeFilterChips filter={filter} />
 
         {rows.length === 0 ? (
           <p className="py-6 text-sm text-tertiary">{q ? `No species match "${search.trim()}".` : "No species match your filters."}</p>
@@ -180,14 +191,14 @@ export function SpeciesList({ kingdom }: { kingdom: Kingdom | null }) {
           </div>
         ) : (
           <TableCard.Root className="flex min-h-48 flex-1 flex-col">
-            <Table bodyScrollable aria-label={title}>
+            <Table layout="fixed" className="min-w-[1000px]" bodyScrollable aria-label={title}>
               <Table.Header sticky>
-                <Table.Head id="name" label="Species" isRowHeader />
-                <Table.Head id="nsx" label="NSX Code" />
-                <Table.Head id="family" label="Family" />
-                <Table.Head id="group" label="Group" />
-                <Table.Head id="synonyms" label="Synonyms" />
-                <Table.Head id="status" label="Status" />
+                <Table.Head id="name" label="Species" isRowHeader className="w-[28%]" />
+                <Table.Head id="nsx" label="NSX Code" className="w-[12%]" />
+                <Table.Head id="family" label="Family" className="w-[18%]" />
+                <Table.Head id="group" label="Group" className="w-[14%]" />
+                <Table.Head id="synonyms" label="Synonyms" className="w-[14%]" />
+                <Table.Head id="status" label="Status" className="w-[14%]" />
               </Table.Header>
               <Table.Body items={paged}>
                 {(t) => (
@@ -547,8 +558,8 @@ export function SpeciesRecord({ id }: { id: string }) {
         {view === "details" ? (
           <Tabs selectedKey={tab} onSelectionChange={(k) => setTab(String(k))} className="px-6 pt-4">
             <div className="overflow-x-auto">
-              <TabList aria-label="Species details" type="underline" items={tabs.map((t) => ({ id: t.id, label: t.label }))} className="w-max min-w-full">
-                {(item) => <Tab id={item.id} label={item.label} />}
+              <TabList aria-label="Species details" type="underline" items={tabs.map((t) => ({ id: t.id, label: t.label, icon: TAB_ICON[t.id] ?? File06 }))} className="w-max min-w-full">
+                {(item) => <Tab id={item.id} label={item.label} icon={item.icon} />}
               </TabList>
             </div>
             {tabs.map((t) => (
@@ -597,16 +608,18 @@ export function SpeciesRecord({ id }: { id: string }) {
             {dirty ? " · Unsaved changes" : ""}
           </p>
           <div className="flex items-center gap-3">
-            <Button color="secondary" onClick={() => (dirty ? setConfirm("cancel") : stopEditing())}>
+            <Button iconLeading={XClose} color="secondary" onClick={() => (dirty ? setConfirm("cancel") : stopEditing())}>
               Cancel
             </Button>
-            <Button color="primary" isDisabled={!dirty} onClick={save}>
+            <Button iconLeading={editing === "synonym" && !synSaved ? Plus : Save01} color="primary" isDisabled={!dirty} onClick={save}>
               {editing === "synonym" && !synSaved ? "Add synonym" : "Save changes"}
             </Button>
           </div>
         </div>
       )}
       <ConfirmationModal
+        confirmIcon={Trash01}
+        cancelIcon={ArrowLeft}
         isOpen={confirm === "cancel"}
         onOpenChange={(open) => !open && setConfirm(null)}
         title="Discard your changes?"
@@ -619,6 +632,7 @@ export function SpeciesRecord({ id }: { id: string }) {
         }}
       />
       <DestructiveModal
+        confirmIcon={Trash01}
         isOpen={!!removing}
         onOpenChange={(open) => !open && setRemoving(null)}
         title="Remove this synonym?"

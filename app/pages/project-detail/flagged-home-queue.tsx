@@ -95,7 +95,7 @@ export function FlaggedConceptsHomeQueue() {
                         {e.projectCode} · {e.projectName} · {e.reason}
                       </p>
                     </div>
-                    <span className="shrink-0 text-xs text-quaternary">
+                    <span className="shrink-0 text-xs text-tertiary">
                       {waited(e.daysWaiting)}
                     </span>
                   </Link>

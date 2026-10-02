@@ -185,6 +185,27 @@ export const designSystemConfig: DesignSystemConfig = {
     },
   },
 
+  "button-utility": {
+    title: "Button utility",
+    enabled: true,
+    colors: [
+      { key: "secondary", label: "Secondary", enabled: true },
+      { key: "tertiary",  label: "Tertiary",  enabled: true },
+    ],
+    sizes: [
+      { key: "xs", label: "XS", enabled: true },
+      { key: "sm", label: "SM", enabled: true },
+    ],
+    features: {
+      playground: true,
+      withTooltip: true,
+      asLink: true,
+      disabled: true,
+      usage: true,
+      figma: true,
+    },
+  },
+
   checkbox: {
     title: "Checkbox",
     enabled: true,
@@ -376,6 +397,24 @@ export const designSystemConfig: DesignSystemConfig = {
     features: {
       playground: true,
       fullWidth: true,
+      usage: true,
+      figma: true,
+    },
+  },
+
+  "text-editor": {
+    title: "Text editor",
+    enabled: true,
+    types: [
+      { key: "simple",   label: "Simple",   enabled: true },
+      { key: "advanced", label: "Advanced", enabled: true },
+    ],
+    features: {
+      playground: true,
+      bubbleMenu: true,
+      characterLimit: true,
+      disabled: true,
+      invalid: true,
       usage: true,
       figma: true,
     },

@@ -1,5 +1,6 @@
 "use client";
 
+import { ArrowRight, XClose, Columns03, ClockRewind } from "@untitledui/icons";
 import { useState } from "react";
 import type { Key } from "react-aria-components";
 import { Tab, TabList, TabPanel, Tabs } from "@/components/application/tabs/tabs";
@@ -110,8 +111,8 @@ export function VmRecordPage({ batch, record }: { batch: VmBatch; record: VmReco
 
         <Tabs className="flex flex-col gap-4 px-6 py-6" selectedKey={tab} onSelectionChange={(k: Key) => setTab(k as "comparison" | "history")}>
           <TabList aria-label="Record" type="underline" size="sm">
-            <Tab id="comparison" label="Comparison" />
-            <Tab id="history" label="History" />
+            <Tab id="comparison" label="Comparison" icon={Columns03} />
+            <Tab id="history" label="History" icon={ClockRewind} />
           </TabList>
           <TabPanel id="comparison">
             {/* The batch's own comparison, for this one record, so it reads the same in both places. */}
@@ -166,10 +167,10 @@ export function VmRecordPage({ batch, record }: { batch: VmBatch; record: VmReco
               <span className="text-quaternary"> on this record</span>
             </p>
             <div className="flex items-center gap-3">
-              <Button color="secondary" isDisabled={ignoreRefs.length === 0} onPress={() => setIgnoring(true)}>
+              <Button iconLeading={XClose} color="secondary" isDisabled={ignoreRefs.length === 0} onPress={() => setIgnoring(true)}>
                 Ignore
               </Button>
-              <Button color="primary" onPress={() => setPushing(true)}>
+              <Button iconTrailing={ArrowRight} color="primary" onPress={() => setPushing(true)}>
                 Review and push
               </Button>
             </div>

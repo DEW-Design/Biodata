@@ -26,7 +26,7 @@ function DlaDeepDive() {
   const roleHref = useRoleHref();
 
   return (
-    <DlaShell breadcrumbCurrent={id}>
+    <DlaShell recordId={id} breadcrumbCurrent={id}>
       {dla ? (
         <DlaDetail
           key={dla.id}

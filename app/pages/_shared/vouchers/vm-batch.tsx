@@ -1,13 +1,15 @@
 "use client";
 
 import { useState } from "react";
-import { Download01 } from "@untitledui/icons";
+import { Download01, Columns03, Flag01, Hash01, ArrowRight, XClose } from "@untitledui/icons";
 import { TableCard } from "@/components/application/table/table";
 import { toast } from "@/components/application/toast/toast";
 import { Button } from "@/components/base/buttons/button";
 import { Toggle } from "@/components/base/toggle/toggle";
 import { downloadCsv } from "@/app/pages/_shared/agreement-actions";
-import { ListFilterButton, type FilterSection, type FilterSelection } from "@/app/pages/_shared/list-filter";
+import { type FilterGetters, type FilterSection, type FilterSelection, useSelectionFilter } from "@/app/pages/_shared/list-filter";
+import { AttributeFilterChips } from "@/app/pages/_shared/attribute-filter";
+import { FilterMenu } from "@/app/pages/_shared/filter-menu";
 import { RecordActionBar } from "@/app/pages/_shared/record-action-bar";
 import { HeroMeta, RecordBackLink, RecordHero } from "@/app/pages/_shared/record-hero";
 import { ToolbarSearch } from "@/app/pages/_shared/toolbar-search";
@@ -143,11 +145,21 @@ export function VmBatchPage({ batch }: { batch: VmBatch }) {
       ),
     );
 
+  // What each filter reads off a record, the same rules as the rows above use.
+  const filterGetters: FilterGetters<VmRecord> = {
+    status: (r) => resultOf(r),
+    field: (r) => FIELDS.filter((f) => fieldStatus(batch, r, f.key, decisions, edits).differs).map((f) => f.key),
+    key: (r) => r.matchedOn,
+  };
   const filterSections: FilterSection[] = [
-    { id: "status", label: "Status", options: STATUS_ORDER.map((s) => ({ id: s, label: RESULT_META[s].label })) },
-    { id: "field", label: "Field that differs", options: FIELDS.map((f) => ({ id: f.key, label: f.label })) },
-    { id: "key", label: "Key match", options: (Object.keys(MATCH_LABEL) as MatchKey[]).map((k) => ({ id: k, label: MATCH_LABEL[k] })) },
+    { id: "status", label: "Status", icon: Flag01, options: STATUS_ORDER.map((s) => ({ id: s, label: RESULT_META[s].label })) },
+    { id: "field", label: "Field that differs", icon: Columns03, options: FIELDS.map((f) => ({ id: f.key, label: f.label })) },
+    { id: "key", label: "Key match", icon: Hash01, options: (Object.keys(MATCH_LABEL) as MatchKey[]).map((k) => ({ id: k, label: MATCH_LABEL[k] })) },
   ];
+  const filter = useSelectionFilter(filterSections, filterGetters, filters, (next) => {
+    setFilters(next);
+    resetPage();
+  });
   const plan = pushing ? pushPlan(pushing) : null;
   const onlyReview = statusFilter.size === 1 && statusFilter.has("review");
 
@@ -179,20 +191,12 @@ export function VmBatchPage({ batch }: { batch: VmBatch }) {
               resetPage();
             }}
           />
-          <div>
-            <ListFilterButton
-              sections={filterSections}
-              selection={filters}
-              onChange={(next) => {
-                setFilters(next);
-                resetPage();
-              }}
-            />
-          </div>
+          <FilterMenu filter={filter} />
           <div className="ml-auto">
             <Toggle size="sm" label="Show matching fields" isSelected={showMatching} onChange={setShowMatching} />
           </div>
         </div>
+        <AttributeFilterChips filter={filter} />
 
         {rows.length === 0 ? (
           <div className="flex flex-col items-start gap-2 py-6">
@@ -261,10 +265,10 @@ export function VmBatchPage({ batch }: { batch: VmBatch }) {
               )}
             </p>
             <div className="flex items-center gap-3">
-              <Button color="secondary" isDisabled={ignoreRefs().length === 0} onPress={() => setIgnoring(true)}>
+              <Button iconLeading={XClose} color="secondary" isDisabled={ignoreRefs().length === 0} onPress={() => setIgnoring(true)}>
                 Ignore
               </Button>
-              <Button color="primary" isDisabled={selectedRows.length === 0} onPress={() => setPushing(selectedRows.map((r) => r.id))}>
+              <Button iconTrailing={ArrowRight} color="primary" isDisabled={selectedRows.length === 0} onPress={() => setPushing(selectedRows.map((r) => r.id))}>
                 Review and push
               </Button>
             </div>

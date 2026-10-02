@@ -6,7 +6,8 @@ import { CURRENT_USER_NAME, sortRows, type AgreementScope, type SortValue } from
 import { dsaStatusOrder } from "@/app/pages/_shared/dsa/dsa-data";
 import { ToolbarSearch } from "@/app/pages/_shared/toolbar-search";
 
-import { Clock, Edit05, Plus } from "@untitledui/icons";
+import { Clock, Edit05, Plus, SearchLg, Building02, Calendar, Flag01, Share07, User01 } from "@untitledui/icons";
+import { ListEmptyState } from "@/app/pages/_shared/list-empty-state";
 import { Avatar } from "@/components/base/avatar/avatar";
 import { Badge, CountBadge } from "@/components/base/badges/badges";
 import { Button } from "@/components/base/buttons/button";
@@ -17,7 +18,9 @@ import { DsaEmptyState } from "@/app/pages/_shared/dsa/dsa-detail";
 import { contactName, dsaStatusMeta, formatShortDate, type Dsa, type DsaStatus } from "@/app/pages/_shared/dsa/dsa-data";
 import { useDsas } from "@/app/pages/_shared/dsa/dsa-store";
 import { TaskItem } from "@/app/pages/_shared/home-dashboard";
-import { ListFilterButton, matchesFilters, monthOptions, optionsFromValues, type FilterGetters, type FilterSection, type FilterSelection } from "@/app/pages/_shared/list-filter";
+import { monthOptions, optionsFromValues, type FilterGetters, type FilterSection, useListFilter } from "@/app/pages/_shared/list-filter";
+import { AttributeFilterChips } from "@/app/pages/_shared/attribute-filter";
+import { FilterMenu } from "@/app/pages/_shared/filter-menu";
 import { useRoleHref } from "@/lib/use-role-href";
 
 // The DSA list: a table of agreements in one status bucket (chosen in column 2), each row linking to
@@ -155,18 +158,29 @@ export function DsaListContent({
             }}
           />
           {rows.length === 0 ? (
-            <p className="py-6 text-sm text-tertiary">No {dsaStatusMeta[status].label.toLowerCase()} agreements match your search.</p>
+            <ListEmptyState
+              icon={SearchLg}
+              title={`No ${dsaStatusMeta[status].label.toLowerCase()} agreements match`}
+              description="Try a different search."
+              action={{
+                label: "Show all agreements",
+                onPress: () => {
+                  setSearch("");
+                  setPage(1);
+                },
+              }}
+            />
           ) : (
             <TableCard.Root className="flex min-h-48 flex-1 flex-col">
-              <Table bodyScrollable aria-label={`${dsaStatusMeta[status].label} Data Sharing Agreements`}>
+              <Table layout="fixed" className="min-w-[1000px]" bodyScrollable aria-label={`${dsaStatusMeta[status].label} Data Sharing Agreements`}>
                 <Table.Header sticky>
                   {/* `label` (not children) - Table.Head only applies the header treatment to the prop. */}
-                  <Table.Head id="id" label="Agreement" isRowHeader />
-                  <Table.Head id="partner" label="Data partner" />
-                  <Table.Head id="period" label="Agreement period" />
-                  <Table.Head id="requester" label="Requested by" />
-                  <Table.Head id="via" label="Shared via" />
-                  <Table.Head id="updated" label="Updated" />
+                  <Table.Head id="id" label="Agreement" isRowHeader className="w-[15%]" />
+                  <Table.Head id="partner" label="Data partner" className="w-[19%]" />
+                  <Table.Head id="period" label="Agreement period" className="w-[20%]" />
+                  <Table.Head id="requester" label="Requested by" className="w-[18%]" />
+                  <Table.Head id="via" label="Shared via" className="w-[17%]" />
+                  <Table.Head id="updated" label="Updated" className="w-[11%]" />
                 </Table.Header>
                 <Table.Body items={paged}>
                   {(dsa) => (
@@ -234,7 +248,7 @@ export function DsaListContent({
 }
 
 // ── All statuses, scoped My / All (rolled in from /proto/collection-sidebar's "My Items") ──
-// The production list. My/All is a scope chosen in column 2 (`AgreementScopeNav`); this table shows
+// The production list. All/My is a scope chosen in column 2 (`AgreementScopeNav`); this table shows
 // every status at once, with a status filter (`?status=` seeds it, so banner links still land on a
 // status) and a Status column. The one-bucket list above stays for the lab that still uses it.
 
@@ -262,22 +276,22 @@ export function DsaAllList({ scope, initialStatuses = [], banner }: { scope: Agr
   const scoped = scope === "mine" ? all.filter((d) => contactName(d.requestedBy) === CURRENT_USER_NAME) : all;
   const roleHref = useRoleHref();
   const [search, setSearch] = useState("");
-  const [filters, setFilters] = useState<FilterSelection>({ status: new Set<string>(initialStatuses) });
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(50);
   const [sort, setSort] = useState<SortDescriptor>({ column: "updated", direction: "descending" });
 
   const filterSections: FilterSection[] = [
-    { id: "status", label: "Status", options: dsaStatusOrder.map((id) => ({ id, label: dsaStatusMeta[id].label })) },
-    { id: "partner", label: "Data partner", searchable: true, options: optionsFromValues(scoped.map((d) => d.partner)) },
-    { id: "requester", label: "Requested by", searchable: true, options: optionsFromValues(scoped.map((d) => contactName(d.requestedBy))) },
-    { id: "sharing", label: "Shared via", options: [{ id: "offline", label: "Offline" }, { id: "system", label: "API system" }] },
-    { id: "updated", label: "Updated", options: monthOptions(scoped.map((d) => d.updatedAt)) },
+    { id: "status", label: "Status", icon: Flag01, options: dsaStatusOrder.map((id) => ({ id, label: dsaStatusMeta[id].label })) },
+    { id: "partner", label: "Data partner", icon: Building02, searchable: true, options: optionsFromValues(scoped.map((d) => d.partner)) },
+    { id: "requester", label: "Requested by", icon: User01, searchable: true, options: optionsFromValues(scoped.map((d) => contactName(d.requestedBy))) },
+    { id: "sharing", label: "Shared via", icon: Share07, options: [{ id: "offline", label: "Offline" }, { id: "system", label: "API system" }] },
+    { id: "updated", label: "Updated", icon: Calendar, options: monthOptions(scoped.map((d) => d.updatedAt)) },
   ];
+  const filter = useListFilter(filterSections, dsaFilterGetters, () => setPage(1), { status: new Set<string>(initialStatuses) });
 
   const query = search.trim().toLowerCase();
   const matching = scoped
-    .filter((d) => matchesFilters(d, filters, dsaFilterGetters))
+    .filter(filter.matches)
     .filter((d) => !query || [d.id, d.partner, contactName(d.requestedBy)].some((v) => v.toLowerCase().includes(query)));
   const filtered = sortRows(matching, sort, dsaSortKeys);
   const pageCount = Math.max(1, Math.ceil(filtered.length / pageSize));
@@ -314,22 +328,26 @@ export function DsaAllList({ scope, initialStatuses = [], banner }: { scope: Agr
               setPage(1);
             }}
           />
-          <div>
-            <ListFilterButton
-              sections={filterSections}
-              selection={filters}
-              onChange={(next) => {
-                setFilters(next);
-                setPage(1);
-              }}
-            />
-          </div>
+          <FilterMenu filter={filter} />
         </div>
+        <AttributeFilterChips filter={filter} />
         {filtered.length === 0 ? (
-          <p className="py-6 text-sm text-tertiary">No agreements match your search and filters.</p>
+          <ListEmptyState
+            icon={SearchLg}
+            title="No agreements match"
+            description="Try a different search, or remove a filter."
+            action={{
+              label: "Show all agreements",
+              onPress: () => {
+                setSearch("");
+                filter.clear();
+                setPage(1);
+              },
+            }}
+          />
         ) : (
           <TableCard.Root className="flex min-h-48 flex-1 flex-col">
-            <Table
+            <Table layout="fixed" className="min-w-[840px]"
               bodyScrollable
               aria-label="Data Sharing Agreements"
               sortDescriptor={sort}
@@ -339,11 +357,11 @@ export function DsaAllList({ scope, initialStatuses = [], banner }: { scope: Agr
               }}
             >
               <Table.Header sticky>
-                <Table.Head id="id" label="Agreement" isRowHeader />
-                <Table.Head id="partner" label="Data partner" allowsSorting />
-                <Table.Head id="status" label="Status" allowsSorting />
-                <Table.Head id="requester" label="Requested by" allowsSorting />
-                <Table.Head id="updated" label="Updated" allowsSorting />
+                <Table.Head id="id" label="Agreement" isRowHeader className="w-[19%]" />
+                <Table.Head id="partner" label="Data partner" allowsSorting className="w-[23%]" />
+                <Table.Head id="status" label="Status" allowsSorting className="w-[18%]" />
+                <Table.Head id="requester" label="Requested by" allowsSorting className="w-[24%]" />
+                <Table.Head id="updated" label="Updated" allowsSorting className="w-[16%]" />
               </Table.Header>
               <Table.Body items={paged}>
                 {(dsa) => (

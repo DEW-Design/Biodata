@@ -3,12 +3,14 @@
 import { ExploreLayoutSwitcher } from "@/app/pages/observations/layout-switcher";
 import { ObservationsExplore } from "@/app/pages/observations/observations-search";
 
-// Explore, first layout: search on the map, press Search, land on a results page. The second layout
-// is at /pages/observations/option-2; the floating options control switches between them.
+// Explore, first layout: one floating card over the map. Search areas are layers (show, hide, rename,
+// resize, remove), adding one is a single menu, and the card grows a results list in place with no
+// Search step. See observations-search.tsx. The second layout is at /pages/observations/option-2;
+// the floating options control switches between them.
 export default function ObservationsPage() {
   return (
     <>
-      <ObservationsExplore layout="classic" />
+      <ObservationsExplore layout="float" />
       <ExploreLayoutSwitcher current="option-1" />
     </>
   );

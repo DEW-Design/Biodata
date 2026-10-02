@@ -2,7 +2,7 @@
 
 import { useState, type ReactNode } from "react";
 import type { SortDescriptor } from "react-aria-components";
-import { Plus } from "@untitledui/icons";
+import { Plus, Building02, Calendar, Flag01, Key01, Tag01 } from "@untitledui/icons";
 import { Avatar } from "@/components/base/avatar/avatar";
 import { Badge, CountBadge } from "@/components/base/badges/badges";
 import { Button } from "@/components/base/buttons/button";
@@ -10,7 +10,9 @@ import { ToolbarSearch } from "@/app/pages/_shared/toolbar-search";
 import { SectionHeader } from "@/components/application/section-headers/section-headers";
 import { Table, TableCard } from "@/components/application/table/table";
 import { sortRows, type SortValue } from "@/app/pages/_shared/agreement-scope";
-import { ListFilterButton, matchesFilters, monthOptions, optionsFromValues, type FilterGetters, type FilterSection, type FilterSelection } from "@/app/pages/_shared/list-filter";
+import { monthOptions, optionsFromValues, useListFilter, type FilterGetters, type FilterSection } from "@/app/pages/_shared/list-filter";
+import { AttributeFilterChips, type AttributeFilterApi } from "@/app/pages/_shared/attribute-filter";
+import { FilterMenu } from "@/app/pages/_shared/filter-menu";
 import {
   accessStatusMeta,
   accessStatusOrder,
@@ -38,8 +40,14 @@ import { useRoleHref } from "@/lib/use-role-href";
 
 const NotApplicable = () => <span className="text-quaternary">Not applicable</span>;
 
-function usePaging<T>(rows: T[]) {
+function usePaging<T>(rows: T[], resetOn: unknown) {
   const [page, setPage] = useState(1);
+  // Back to page 1 when what is filtered changes (adjusting state while rendering, the React way, not an effect).
+  const [seen, setSeen] = useState(resetOn);
+  if (seen !== resetOn) {
+    setSeen(resetOn);
+    setPage(1);
+  }
   const [pageSize, setPageSize] = useState(50);
   const pageCount = Math.max(1, Math.ceil(rows.length / pageSize));
   const currentPage = Math.min(page, pageCount);
@@ -62,7 +70,7 @@ function usePaging<T>(rows: T[]) {
   };
 }
 
-function ListFrame({
+function ListFrame<R>({
   title,
   count,
   subheading,
@@ -81,7 +89,7 @@ function ListFrame({
   search: string;
   onSearch: (value: string) => void;
   searchPlaceholder: string;
-  filter: ReactNode;
+  filter: AttributeFilterApi<R>;
   empty: boolean;
   children: ReactNode;
 }) {
@@ -102,8 +110,9 @@ function ListFrame({
       <div className="flex min-h-0 flex-1 flex-col gap-4 p-6">
         <div className="flex shrink-0 flex-wrap items-center gap-3">
           <ToolbarSearch label={`Search ${title.toLowerCase()}`} placeholder={searchPlaceholder} value={search} onChange={onSearch} />
-          <div>{filter}</div>
+          <FilterMenu filter={filter} />
         </div>
+        <AttributeFilterChips filter={filter} />
         {empty ? <p className="py-6 text-sm text-tertiary">Nothing matches your search and filters.</p> : children}
       </div>
     </div>
@@ -126,7 +135,6 @@ export function UsersList() {
   const roles = useRoles();
   const roleHref = useRoleHref();
   const [search, setSearch] = useState("");
-  const [filters, setFilters] = useState<FilterSelection>({});
   const [sort, setSort] = useState<SortDescriptor>({ column: "name", direction: "ascending" });
   const systemRoles = roles.filter((r) => r.kind === "system");
 
@@ -138,22 +146,23 @@ export function UsersList() {
     updated: (u) => u.updatedAt.slice(0, 7),
   };
   const sections: FilterSection[] = [
-    { id: "status", label: "Status", options: userStatusOrder.map((id) => ({ id, label: userStatusMeta[id].label })) },
-    { id: "type", label: "User type", options: userTypeOrder.map((id) => ({ id, label: id })) },
-    { id: "organisation", label: "Organisation", searchable: true, options: optionsFromValues(users.map(organisationLabel)) },
-    { id: "systemRole", label: "System role", options: systemRoles.map((r) => ({ id: r.id, label: r.name })) },
-    { id: "updated", label: "Updated", options: monthOptions(users.map((u) => u.updatedAt)) },
+    { id: "status", label: "Status", icon: Flag01, options: userStatusOrder.map((id) => ({ id, label: userStatusMeta[id].label })) },
+    { id: "type", label: "User type", icon: Tag01, options: userTypeOrder.map((id) => ({ id, label: id })) },
+    { id: "organisation", label: "Organisation", icon: Building02, searchable: true, options: optionsFromValues(users.map(organisationLabel)) },
+    { id: "systemRole", label: "System role", icon: Key01, options: systemRoles.map((r) => ({ id: r.id, label: r.name })) },
+    { id: "updated", label: "Updated", icon: Calendar, options: monthOptions(users.map((u) => u.updatedAt)) },
   ];
+  const filter = useListFilter(sections, getters);
 
   const query = search.trim().toLowerCase();
   const rows = sortRows(
     users
-      .filter((u) => matchesFilters(u, filters, getters))
+      .filter(filter.matches)
       .filter((u) => !query || [fullName(u), u.username, u.email, u.position, organisationLabel(u)].some((v) => v.toLowerCase().includes(query))),
     sort,
     userSortKeys,
   );
-  const { paged, reset, footer } = usePaging(rows);
+  const { paged, reset, footer } = usePaging(rows, filter.applied);
 
   return (
     <ListFrame
@@ -171,27 +180,18 @@ export function UsersList() {
         reset();
       }}
       searchPlaceholder="Search name, username, email or organisation"
-      filter={
-        <ListFilterButton
-          sections={sections}
-          selection={filters}
-          onChange={(next) => {
-            setFilters(next);
-            reset();
-          }}
-        />
-      }
+      filter={filter}
       empty={rows.length === 0}
     >
       <TableCard.Root className="flex min-h-48 flex-1 flex-col">
-        <Table bodyScrollable aria-label="Users" sortDescriptor={sort} onSortChange={(next) => { setSort(next); reset(); }}>
+        <Table layout="fixed" className="min-w-[880px]" bodyScrollable aria-label="Users" sortDescriptor={sort} onSortChange={(next) => { setSort(next); reset(); }}>
           <Table.Header sticky>
-            <Table.Head id="name" label="User" isRowHeader allowsSorting />
-            <Table.Head id="position" label="Position" allowsSorting />
-            <Table.Head id="organisation" label="Organisation" allowsSorting />
-            <Table.Head id="type" label="User type" allowsSorting />
-            <Table.Head id="status" label="Status" allowsSorting />
-            <Table.Head id="updated" label="Updated" allowsSorting />
+            <Table.Head id="name" label="User" isRowHeader allowsSorting className="w-[31%]" />
+            <Table.Head id="position" label="Position" allowsSorting className="w-[13%]" />
+            <Table.Head id="organisation" label="Organisation" allowsSorting className="w-[15%]" />
+            <Table.Head id="type" label="User type" allowsSorting className="w-[12%]" />
+            <Table.Head id="status" label="Status" allowsSorting className="w-[14%]" />
+            <Table.Head id="updated" label="Updated" allowsSorting className="w-[15%]" />
           </Table.Header>
           <Table.Body items={paged}>
             {(u) => (
@@ -239,7 +239,6 @@ export function RolesList() {
   const users = useUsers();
   const roleHref = useRoleHref();
   const [search, setSearch] = useState("");
-  const [filters, setFilters] = useState<FilterSelection>({});
   const [sort, setSort] = useState<SortDescriptor>({ column: "kind", direction: "ascending" });
   const userCount = (r: UmRole) => users.filter((u) => u.roleIds.includes(r.id)).length;
 
@@ -259,20 +258,21 @@ export function RolesList() {
     status: (r) => r.status,
   };
   const sections: FilterSection[] = [
-    { id: "kind", label: "Type", options: [{ id: "system", label: "System role" }, { id: "custom", label: "Custom role" }] },
-    { id: "department", label: "Department", searchable: true, options: optionsFromValues(roles.flatMap((r) => (r.department ? [r.department] : []))) },
-    { id: "status", label: "Status", options: accessStatusOrder.map((id) => ({ id, label: accessStatusMeta[id].label })) },
+    { id: "kind", label: "Type", icon: Tag01, options: [{ id: "system", label: "System role" }, { id: "custom", label: "Custom role" }] },
+    { id: "department", label: "Department", icon: Building02, searchable: true, options: optionsFromValues(roles.flatMap((r) => (r.department ? [r.department] : []))) },
+    { id: "status", label: "Status", icon: Flag01, options: accessStatusOrder.map((id) => ({ id, label: accessStatusMeta[id].label })) },
   ];
+  const filter = useListFilter(sections, getters);
 
   const query = search.trim().toLowerCase();
   const rows = sortRows(
     roles
-      .filter((r) => matchesFilters(r, filters, getters))
+      .filter(filter.matches)
       .filter((r) => !query || [r.name, r.code, r.department ?? "", r.roleType].some((v) => v.toLowerCase().includes(query))),
     sort,
     sortKeys,
   );
-  const { paged, reset, footer } = usePaging(rows);
+  const { paged, reset, footer } = usePaging(rows, filter.applied);
 
   return (
     <ListFrame
@@ -290,28 +290,19 @@ export function RolesList() {
         reset();
       }}
       searchPlaceholder="Search role, code or department"
-      filter={
-        <ListFilterButton
-          sections={sections}
-          selection={filters}
-          onChange={(next) => {
-            setFilters(next);
-            reset();
-          }}
-        />
-      }
+      filter={filter}
       empty={rows.length === 0}
     >
       <TableCard.Root className="flex min-h-48 flex-1 flex-col">
-        <Table bodyScrollable aria-label="Roles" sortDescriptor={sort} onSortChange={(next) => { setSort(next); reset(); }}>
+        <Table layout="fixed" className="min-w-[840px]" bodyScrollable aria-label="Roles" sortDescriptor={sort} onSortChange={(next) => { setSort(next); reset(); }}>
           <Table.Header sticky>
-            <Table.Head id="name" label="Role" isRowHeader allowsSorting />
-            <Table.Head id="kind" label="Type" allowsSorting />
-            <Table.Head id="department" label="Department" allowsSorting />
-            <Table.Head id="roleType" label="Role type" allowsSorting />
-            <Table.Head id="permissions" label="Permissions" allowsSorting />
-            <Table.Head id="users" label="Users" allowsSorting />
-            <Table.Head id="status" label="Status" allowsSorting />
+            <Table.Head id="name" label="Role" isRowHeader allowsSorting className="w-[14%]" />
+            <Table.Head id="kind" label="Type" allowsSorting className="w-[11%]" />
+            <Table.Head id="department" label="Department" allowsSorting className="w-[15%]" />
+            <Table.Head id="roleType" label="Role type" allowsSorting className="w-[16%]" />
+            <Table.Head id="permissions" label="Permissions" allowsSorting className="w-[15%]" />
+            <Table.Head id="users" label="Users" allowsSorting className="w-[11%]" />
+            <Table.Head id="status" label="Status" allowsSorting className="w-[18%]" />
           </Table.Header>
           <Table.Body items={paged}>
             {(r) => (
@@ -359,7 +350,6 @@ export function PermissionsList() {
   const roles = useRoles();
   const roleHref = useRoleHref();
   const [search, setSearch] = useState("");
-  const [filters, setFilters] = useState<FilterSelection>({});
   const [sort, setSort] = useState<SortDescriptor>({ column: "category", direction: "ascending" });
   const roleCount = (p: UmPermission) => roles.filter((r) => r.permissionIds.includes(p.id)).length;
 
@@ -376,19 +366,20 @@ export function PermissionsList() {
     status: (p) => p.status,
   };
   const sections: FilterSection[] = [
-    { id: "category", label: "Category", searchable: true, options: optionsFromValues(permissions.map((p) => p.category)) },
-    { id: "status", label: "Status", options: accessStatusOrder.map((id) => ({ id, label: accessStatusMeta[id].label })) },
+    { id: "category", label: "Category", icon: Tag01, searchable: true, options: optionsFromValues(permissions.map((p) => p.category)) },
+    { id: "status", label: "Status", icon: Flag01, options: accessStatusOrder.map((id) => ({ id, label: accessStatusMeta[id].label })) },
   ];
+  const filter = useListFilter(sections, getters);
 
   const query = search.trim().toLowerCase();
   const rows = sortRows(
     permissions
-      .filter((p) => matchesFilters(p, filters, getters))
+      .filter(filter.matches)
       .filter((p) => !query || [p.name, p.code, p.category, p.description].some((v) => v.toLowerCase().includes(query))),
     sort,
     sortKeys,
   );
-  const { paged, reset, footer } = usePaging(rows);
+  const { paged, reset, footer } = usePaging(rows, filter.applied);
 
   return (
     <ListFrame
@@ -406,27 +397,18 @@ export function PermissionsList() {
         reset();
       }}
       searchPlaceholder="Search permission, code or category"
-      filter={
-        <ListFilterButton
-          sections={sections}
-          selection={filters}
-          onChange={(next) => {
-            setFilters(next);
-            reset();
-          }}
-        />
-      }
+      filter={filter}
       empty={rows.length === 0}
     >
       <TableCard.Root className="flex min-h-48 flex-1 flex-col">
-        <Table bodyScrollable aria-label="Permissions" sortDescriptor={sort} onSortChange={(next) => { setSort(next); reset(); }}>
+        <Table layout="fixed" className="min-w-[840px]" bodyScrollable aria-label="Permissions" sortDescriptor={sort} onSortChange={(next) => { setSort(next); reset(); }}>
           <Table.Header sticky>
-            <Table.Head id="name" label="Permission" isRowHeader allowsSorting />
-            <Table.Head id="code" label="Code" allowsSorting />
-            <Table.Head id="category" label="Category" allowsSorting />
-            <Table.Head id="roles" label="Roles" allowsSorting />
-            <Table.Head id="status" label="Status" allowsSorting />
-            <Table.Head id="updated" label="Updated" allowsSorting />
+            <Table.Head id="name" label="Permission" isRowHeader allowsSorting className="w-[22%]" />
+            <Table.Head id="code" label="Code" allowsSorting className="w-[14%]" />
+            <Table.Head id="category" label="Category" allowsSorting className="w-[16%]" />
+            <Table.Head id="roles" label="Roles" allowsSorting className="w-[12%]" />
+            <Table.Head id="status" label="Status" allowsSorting className="w-[16%]" />
+            <Table.Head id="updated" label="Updated" allowsSorting className="w-[20%]" />
           </Table.Header>
           <Table.Body items={paged}>
             {(p) => (

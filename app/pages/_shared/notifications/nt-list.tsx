@@ -2,13 +2,15 @@
 
 import { useState } from "react";
 import type { SortDescriptor } from "react-aria-components";
-import { Plus } from "@untitledui/icons";
+import { Plus, Activity, Calendar, Flag01, Lock01, Zap } from "@untitledui/icons";
 import { Badge, CountBadge } from "@/components/base/badges/badges";
 import { Button } from "@/components/base/buttons/button";
 import { SectionHeader } from "@/components/application/section-headers/section-headers";
 import { Table, TableCard } from "@/components/application/table/table";
 import { sortRows, type SortValue } from "@/app/pages/_shared/agreement-scope";
-import { ListFilterButton, matchesFilters, monthOptions, type FilterGetters, type FilterSection, type FilterSelection } from "@/app/pages/_shared/list-filter";
+import { monthOptions, type FilterGetters, type FilterSection, type FilterSelection, useSelectionFilter } from "@/app/pages/_shared/list-filter";
+import { AttributeFilterChips } from "@/app/pages/_shared/attribute-filter";
+import { FilterMenu } from "@/app/pages/_shared/filter-menu";
 import { ToolbarSearch } from "@/app/pages/_shared/toolbar-search";
 import { NT_EVENTS, SENSITIVITY, effectiveTo, formatShortDate, ntStateMeta, ntStateOrder, recipientsSummary, triggerShort, triggerSummary, type Notification, type NtState } from "@/app/pages/_shared/notifications/nt-data";
 import { useRecipientLabels } from "@/app/pages/_shared/notifications/nt-directory";
@@ -57,16 +59,20 @@ export function NtList({ category, initialStatuses = [] }: { category: string; i
 
   const usedEvents = new Set(scoped.map((n) => (n.trigger.kind === "event" ? n.trigger.event : "")));
   const filterSections: FilterSection[] = [
-    { id: "status", label: "Status", options: ntStateOrder.map((id) => ({ id, label: ntStateMeta[id].label })) },
-    { id: "trigger", label: "Trigger", options: [{ id: "event", label: "When something happens" }, { id: "schedule", label: "On a schedule" }] },
-    { id: "event", label: "Event", options: NT_EVENTS.filter((e) => usedEvents.has(e.id)).map((e) => ({ id: e.id, label: e.label })) },
-    { id: "sensitivity", label: "Classification", options: Object.entries(SENSITIVITY).map(([id, s]) => ({ id, label: s.label })) },
-    { id: "updated", label: "Updated", options: monthOptions(scoped.map((n) => n.updatedAt)) },
+    { id: "status", label: "Status", icon: Flag01, options: ntStateOrder.map((id) => ({ id, label: ntStateMeta[id].label })) },
+    { id: "trigger", label: "Trigger", icon: Zap, options: [{ id: "event", label: "When something happens" }, { id: "schedule", label: "On a schedule" }] },
+    { id: "event", label: "Event", icon: Activity, options: NT_EVENTS.filter((e) => usedEvents.has(e.id)).map((e) => ({ id: e.id, label: e.label })) },
+    { id: "sensitivity", label: "Classification", icon: Lock01, options: Object.entries(SENSITIVITY).map(([id, s]) => ({ id, label: s.label })) },
+    { id: "updated", label: "Updated", icon: Calendar, options: monthOptions(scoped.map((n) => n.updatedAt)) },
   ];
+  const filter = useSelectionFilter(filterSections, filterGetters, filters, (next) => {
+    setFilters(next);
+    setPage(1);
+  });
 
   const query = search.trim().toLowerCase();
   const matching = scoped
-    .filter((n) => matchesFilters(n, filters, filterGetters))
+    .filter((n) => filter.matches(n))
     .filter((n) => !query || [n.name, n.id, n.description, n.subject, triggerSummary(n.trigger), triggerShort(n.trigger)].some((v) => v.toLowerCase().includes(query)));
   const rows = sortRows(matching, sort, sortKeys);
   const pageCount = Math.max(1, Math.ceil(rows.length / pageSize));
@@ -106,17 +112,9 @@ export function NtList({ category, initialStatuses = [] }: { category: string; i
               resetPage();
             }}
           />
-          <div>
-            <ListFilterButton
-              sections={filterSections}
-              selection={filters}
-              onChange={(next) => {
-                setFilters(next);
-                resetPage();
-              }}
-            />
-          </div>
+          <FilterMenu filter={filter} />
         </div>
+        <AttributeFilterChips filter={filter} />
 
         {rows.length === 0 ? (
           <div className="flex flex-col items-start gap-2 py-6">
@@ -143,7 +141,7 @@ export function NtList({ category, initialStatuses = [] }: { category: string; i
           </div>
         ) : (
           <TableCard.Root className="flex min-h-48 flex-1 flex-col">
-            <Table
+            <Table layout="fixed" className="min-w-[1000px]"
               bodyScrollable
               aria-label="Notifications"
               sortDescriptor={sort}
@@ -153,12 +151,12 @@ export function NtList({ category, initialStatuses = [] }: { category: string; i
               }}
             >
               <Table.Header sticky>
-                <Table.Head id="name" label="Notification" isRowHeader allowsSorting />
-                <Table.Head id="sent" label="Trigger" allowsSorting />
-                <Table.Head id="to" label="Recipients" />
-                {!category ? <Table.Head id="category" label="Category" allowsSorting /> : null}
-                <Table.Head id="status" label="Status" allowsSorting />
-                <Table.Head id="updated" label="Updated" allowsSorting />
+                <Table.Head id="name" label="Notification" isRowHeader allowsSorting className="w-[30%]" />
+                <Table.Head id="sent" label="Trigger" allowsSorting className="w-[22%]" />
+                <Table.Head id="to" label="Recipients" className="w-[16%]" />
+                {!category ? <Table.Head id="category" label="Category" allowsSorting className="w-[12%]" /> : null}
+                <Table.Head id="status" label="Status" allowsSorting className="w-[10%]" />
+                <Table.Head id="updated" label="Updated" allowsSorting className="w-[10%]" />
               </Table.Header>
               <Table.Body items={paged}>
                 {(n) => (
@@ -170,14 +168,14 @@ export function NtList({ category, initialStatuses = [] }: { category: string; i
                       </div>
                     </Table.Cell>
                     <Table.Cell>
-                      <span className="text-sm whitespace-nowrap text-secondary">{triggerShort(n.trigger)}</span>
+                      <span className="text-sm text-secondary">{triggerShort(n.trigger)}</span>
                     </Table.Cell>
                     <Table.Cell>
                       <span className="block max-w-56 truncate text-sm text-secondary">{recipientsSummary(effectiveTo(n), labelFor(n.trigger))}</span>
                     </Table.Cell>
                     {!category ? (
                       <Table.Cell>
-                        <span className="text-sm whitespace-nowrap text-secondary">{n.category || <span className="text-quaternary">Not provided</span>}</span>
+                        <span className="text-sm text-secondary">{n.category || <span className="text-quaternary">Not provided</span>}</span>
                       </Table.Cell>
                     ) : null}
                     <Table.Cell>

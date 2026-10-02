@@ -4,7 +4,7 @@ import type { ReactNode } from "react";
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ArrowNarrowRight } from "@untitledui/icons";
+import { ArrowNarrowRight, Key01, UserCheck01, Users01 } from "@untitledui/icons";
 import { Button } from "@/components/base/buttons/button";
 import { Tab, TabList, Tabs } from "@/components/application/tabs/tabs";
 import { ActionsGroup, downloadCsv } from "@/app/pages/_shared/agreement-actions";
@@ -12,9 +12,9 @@ import { AppHeader } from "@/app/pages/_shared/app-header";
 import { FormSidebarSlotContext } from "@/app/pages/_shared/form-section-list";
 import { MobileNavTrigger } from "@/app/pages/_shared/mobile-nav";
 import { sectionIcons } from "@/app/pages/_shared/nav-icons";
+import { UmSwitcher } from "@/app/pages/_shared/user-management/um-switcher";
 import { PrimaryRail } from "@/app/pages/_shared/primary-rail";
 import { PrototypeTools } from "@/app/_prototype-tools/prototype-tools";
-import { SidebarFooterLinks } from "@/app/pages/_shared/sidebar-footer-links";
 import { accessStatusMeta, fullName, organisationLabel, userStatusMeta, userType } from "@/app/pages/_shared/user-management/um-data";
 import { usePermissions, useRoles, useUsers } from "@/app/pages/_shared/user-management/um-store";
 import { useFeatureAccess } from "@/lib/use-feature-access";
@@ -28,7 +28,7 @@ import { USER_MANAGEMENT_SECTION_LABEL, keyHref, navForRole, type NavNode } from
 //
 // Column 2 is the switcher between the three areas the wireframe (Figma YMproGZfrFB5jUqPHPxMhk,
 // node 1558:10575) draws as separate two-pane screens - Users, Roles, Permissions - the same
-// vertical `Tabs` (`button-brand`) as DLA's My / All, with an Actions group under it. Main is a
+// vertical `Tabs` (`button-brand`) as DLA's All / My, with an Actions group under it. Main is a
 // list -> deep dive (CONTEXT.md), not the wireframe's side-by-side list and detail.
 const CURRENT_KEY = "user-management";
 
@@ -95,9 +95,9 @@ function AreaNav({ area }: { area: UmArea }) {
       <p className="mb-3 text-xs font-semibold tracking-wide text-quaternary uppercase">{USER_MANAGEMENT_SECTION_LABEL}</p>
       <Tabs orientation="vertical" selectedKey={area} onSelectionChange={(key) => router.push(roleHref(umAreaPath[key as UmArea]))}>
         <TabList aria-label={USER_MANAGEMENT_SECTION_LABEL} orientation="vertical" type="button-brand" fullWidth className="w-full">
-          <Tab id="users" label="Users" badge={users.length} />
-          <Tab id="roles" label="Roles" badge={roles.length} />
-          <Tab id="permissions" label="Permissions" badge={permissions.length} />
+          <Tab id="users" label="All users" icon={Users01} badge={users.length} />
+          <Tab id="roles" label="All roles" icon={UserCheck01} badge={roles.length} />
+          <Tab id="permissions" label="All permissions" icon={Key01} badge={permissions.length} />
         </TabList>
       </Tabs>
       <ActionsGroup onExportCsv={exportCsv} showCreateReport={false} />
@@ -108,12 +108,15 @@ function AreaNav({ area }: { area: UmArea }) {
 export function UmShell({
   area,
   breadcrumbCurrent,
+  recordId,
   formSidebar = false,
   children,
 }: {
   area: UmArea;
   /** The page's final crumb (a name, "Add user"). When set, the area crumb links back to its list. */
   breadcrumbCurrent?: string;
+  /** The ID of the record a deep-dive page shows (not set on forms): the area crumb becomes a switcher over that area's records. */
+  recordId?: string;
   /** A form with sections: column 2 becomes its section list (the form portals in via `FormSidebar`). */
   formSidebar?: boolean;
   children: ReactNode;
@@ -179,7 +182,9 @@ export function UmShell({
                 {activeSection}
               </Link>
               <span>/</span>
-              {breadcrumbCurrent ? (
+              {recordId ? (
+                <UmSwitcher area={area} currentId={recordId} listHref={umAreaPath[area]} />
+              ) : breadcrumbCurrent ? (
                 <Link href={roleHref(umAreaPath[area])} className="hover:text-primary">
                   {areaLabel[area]}
                 </Link>
@@ -210,7 +215,6 @@ export function UmShell({
               ))}
             </div>
           )}
-          <SidebarFooterLinks />
         </aside>
 
         <main className="flex min-h-0 flex-1 flex-col overflow-hidden">

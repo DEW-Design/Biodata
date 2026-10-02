@@ -109,25 +109,6 @@ function QuickAction({ icon, label, href }: { icon: FC<{ className?: string }>; 
   );
 }
 
-// A quick-actions button for an operation that's scoped (it's a real item in
-// lib/registered-user-nav.ts) but doesn't have a page yet - disabled with a tooltip explaining why,
-// rather than either a dead link or leaving it out of the row entirely. See dashboard/option-2's
-// copy of this pattern for why the tooltip is wired to a `Focusable` wrapper instead of straight to
-// the disabled button (its own hover is suppressed while disabled).
-function DisabledQuickAction({ icon, label, note }: { icon: FC<{ className?: string }>; label: string; note: string }) {
-  return (
-    <Tooltip title={note}>
-      <Focusable>
-        <span className="inline-flex">
-          <Button color="secondary" iconLeading={icon} isDisabled>
-            {label}
-          </Button>
-        </span>
-      </Focusable>
-    </Tooltip>
-  );
-}
-
 // One row in the "needs your attention" list. `actionHref` is only set when there's a real page
 // behind it (project-list, project-detail); DLA requests and species nominations don't have one
 // yet, so those rows are status-only, no fake link, same "honest, not a placeholder" convention as
@@ -522,7 +503,7 @@ function AdminHomeDashboardContent() {
         <div className="flex flex-wrap items-center gap-2">
           <QuickAction icon={UserCheck01} label="User Management" href={roleHref("/pages/user-management")} />
           {canManageVocab && <QuickAction icon={Database01} label="Controlled Vocabulary" href={roleHref("/pages/ctrl-vocab")} />}
-          <DisabledQuickAction icon={BarChartSquare01} label="Reports" note="Coming soon - reporting isn't built yet" />
+          <QuickAction icon={BarChartSquare01} label="Reports" href={roleHref("/pages/reports")} />
         </div>
       </div>
 

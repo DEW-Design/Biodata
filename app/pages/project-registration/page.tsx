@@ -32,7 +32,7 @@
 import { Suspense, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { LogIn01, UserPlus01 } from "@untitledui/icons";
+import { LogIn01, Save01, UserPlus01 } from "@untitledui/icons";
 import { Button } from "@/components/base/buttons/button";
 import { toast } from "@/components/application/toast/toast";
 import { useUserRole } from "@/lib/use-user-role";
@@ -149,7 +149,7 @@ function ProjectRegistrationForm() {
                             <Button color="link-gray" onClick={() => router.back()}>
                                 Cancel
                             </Button>
-                            <Button color="secondary" onClick={handleSaveDraft}>
+                            <Button iconLeading={Save01} color="secondary" onClick={handleSaveDraft}>
                                 Save Draft
                             </Button>
                         </div>

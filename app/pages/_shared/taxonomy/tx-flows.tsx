@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowNarrowRight, GitBranch01, GitMerge, PencilLine, Plus } from "@untitledui/icons";
+import { ArrowNarrowRight, GitBranch01, GitMerge, PencilLine, Plus, ArrowLeft, Trash01 } from "@untitledui/icons";
 import { ConfirmationModal } from "@/components/application/modals/modal";
 import { toast } from "@/components/application/toast/toast";
 import { RadioGroupIconCard } from "@/components/base/radio-groups/radio-group-icon-card";
@@ -271,6 +271,8 @@ export function TaxonChangeFlow({ initialType, from }: { initialType: ChangeType
         )}
       </FormPage>
       <ConfirmationModal
+        confirmIcon={Trash01}
+        cancelIcon={ArrowLeft}
         isOpen={confirmLeave}
         onOpenChange={setConfirmLeave}
         title="Leave this taxon change?"

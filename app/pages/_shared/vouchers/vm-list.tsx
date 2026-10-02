@@ -1,5 +1,6 @@
 "use client";
 
+import { Calendar, Flag01 } from "@untitledui/icons";
 import { useState } from "react";
 import type { SortDescriptor } from "react-aria-components";
 import { Badge, CountBadge } from "@/components/base/badges/badges";
@@ -7,7 +8,9 @@ import { Button } from "@/components/base/buttons/button";
 import { SectionHeader } from "@/components/application/section-headers/section-headers";
 import { Table, TableCard } from "@/components/application/table/table";
 import { sortRows, type SortValue } from "@/app/pages/_shared/agreement-scope";
-import { ListFilterButton, matchesFilters, monthOptions, type FilterGetters, type FilterSection, type FilterSelection } from "@/app/pages/_shared/list-filter";
+import { monthOptions, type FilterGetters, type FilterSection, type FilterSelection, useSelectionFilter } from "@/app/pages/_shared/list-filter";
+import { AttributeFilterChips } from "@/app/pages/_shared/attribute-filter";
+import { FilterMenu } from "@/app/pages/_shared/filter-menu";
 import { ToolbarSearch } from "@/app/pages/_shared/toolbar-search";
 import { BATCHES, BATCH_STATUS, BATCH_STATUS_ORDER, SOURCE_LABEL, readDate, type VmBatch, type VmSource } from "@/app/pages/_shared/vouchers/vm-data";
 import { useVmRoot } from "@/app/pages/_shared/vouchers/vm-root";
@@ -58,12 +61,16 @@ export function VmList({ source }: { source: VmSource | "" }) {
   const resetPage = () => setPage(1);
 
   const filterSections: FilterSection[] = [
-    { id: "status", label: "Status", options: BATCH_STATUS_ORDER.map((s) => ({ id: s, label: BATCH_STATUS[s].label })) },
-    { id: "ran", label: "Ran in", options: monthOptions(all.map((r) => r.ranOn)) },
+    { id: "status", label: "Status", icon: Flag01, options: BATCH_STATUS_ORDER.map((s) => ({ id: s, label: BATCH_STATUS[s].label })) },
+    { id: "ran", label: "Ran in", icon: Calendar, options: monthOptions(all.map((r) => r.ranOn)) },
   ];
+  const filter = useSelectionFilter(filterSections, filterGetters, filters, (next) => {
+    setFilters(next);
+    resetPage();
+  });
 
   const query = search.trim().toLowerCase();
-  const narrowedBySearch = all.filter((r) => matchesFilters(r, filters, filterGetters)).filter((r) => !query || r.id.includes(query));
+  const narrowedBySearch = all.filter((r) => filter.matches(r)).filter((r) => !query || r.id.includes(query));
   const rows = sortRows(narrowedBySearch, sort, sortKeys);
   const pageCount = Math.max(1, Math.ceil(rows.length / pageSize));
   const currentPage = Math.min(page, pageCount);
@@ -100,17 +107,9 @@ export function VmList({ source }: { source: VmSource | "" }) {
               resetPage();
             }}
           />
-          <div>
-            <ListFilterButton
-              sections={filterSections}
-              selection={filters}
-              onChange={(next) => {
-                setFilters(next);
-                resetPage();
-              }}
-            />
-          </div>
+          <FilterMenu filter={filter} />
         </div>
+        <AttributeFilterChips filter={filter} />
 
         {rows.length === 0 ? (
           <div className="flex flex-col items-start gap-2 py-6">
@@ -133,7 +132,7 @@ export function VmList({ source }: { source: VmSource | "" }) {
           </div>
         ) : (
           <TableCard.Root className="flex min-h-48 flex-1 flex-col">
-            <Table
+            <Table layout="fixed" className="min-w-[1000px]"
               bodyScrollable
               aria-label="Scan batches"
               sortDescriptor={sort}
@@ -143,13 +142,13 @@ export function VmList({ source }: { source: VmSource | "" }) {
               }}
             >
               <Table.Header sticky>
-                <Table.Head id="id" label="Batch" isRowHeader allowsSorting />
-                <Table.Head id="ranOn" label="Ran on" allowsSorting />
-                {!source ? <Table.Head id="source" label="Source" /> : null}
-                <Table.Head id="checked" label="Records checked" allowsSorting />
-                <Table.Head id="different" label="Differences" tooltip="Fields whose values differ between the source and BioData" allowsSorting />
-                <Table.Head id="decided" label="Decided" allowsSorting />
-                <Table.Head id="status" label="Status" allowsSorting />
+                <Table.Head id="id" label="Batch" isRowHeader allowsSorting className="w-[16%]" />
+                <Table.Head id="ranOn" label="Ran on" allowsSorting className="w-[14%]" />
+                {!source ? <Table.Head id="source" label="Source" className="w-[16%]" /> : null}
+                <Table.Head id="checked" label="Records checked" allowsSorting className="w-[14%]" />
+                <Table.Head id="different" label="Differences" tooltip="Fields whose values differ between the source and BioData" allowsSorting className="w-[14%]" />
+                <Table.Head id="decided" label="Decided" allowsSorting className="w-[12%]" />
+                <Table.Head id="status" label="Status" allowsSorting className="w-[14%]" />
               </Table.Header>
               <Table.Body items={paged} dependencies={[summaries, source]}>
                 {(r) => (
@@ -185,7 +184,7 @@ export function VmList({ source }: { source: VmSource | "" }) {
                       {r.s.updated + r.s.ignored === 0 ? (
                         <Count n={0} />
                       ) : (
-                        <span className="text-sm whitespace-nowrap text-secondary tabular-nums">{[r.s.updated && `${r.s.updated} updated`, r.s.ignored && `${r.s.ignored} ignored`].filter(Boolean).join(" · ")}</span>
+                        <span className="text-sm text-secondary tabular-nums">{[r.s.updated && `${r.s.updated} updated`, r.s.ignored && `${r.s.ignored} ignored`].filter(Boolean).join(" · ")}</span>
                       )}
                     </Table.Cell>
                     <Table.Cell>

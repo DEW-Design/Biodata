@@ -4,7 +4,7 @@ import type { ReactNode } from "react";
 import { Fragment, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ArrowNarrowRight } from "@untitledui/icons";
+import { ArrowNarrowRight, SwitchHorizontal01, Building02 } from "@untitledui/icons";
 import { Button } from "@/components/base/buttons/button";
 import { Tab, TabList, Tabs } from "@/components/application/tabs/tabs";
 import { ActionsGroup, downloadCsv } from "@/app/pages/_shared/agreement-actions";
@@ -12,7 +12,6 @@ import { AppHeader } from "@/app/pages/_shared/app-header";
 import { MobileNavTrigger } from "@/app/pages/_shared/mobile-nav";
 import { sectionIcons } from "@/app/pages/_shared/nav-icons";
 import { PrimaryRail } from "@/app/pages/_shared/primary-rail";
-import { SidebarFooterLinks } from "@/app/pages/_shared/sidebar-footer-links";
 import { PrototypeTools } from "@/app/_prototype-tools/prototype-tools";
 import { BATCHES, BATCH_STATUS, SOURCES, SOURCE_LABEL, readDate, type VmSource } from "@/app/pages/_shared/vouchers/vm-data";
 import { VmOptionSwitcher, useVmRoot } from "@/app/pages/_shared/vouchers/vm-root";
@@ -64,9 +63,9 @@ function SourceNav({ source }: { source: VmSource | "" }) {
       <div className="min-h-0 flex-1 overflow-y-auto">
         <Tabs orientation="vertical" selectedKey={source || "all"} onSelectionChange={(key) => router.push(roleHref(key === "all" ? root : `${root}?source=${String(key)}`))}>
           <TabList aria-label="Sources" orientation="vertical" type="button-brand" fullWidth className="w-full">
-            <Tab id="all" label="All batches" badge={badge(needing())} />
+            <Tab id="all" label="All batches" icon={SwitchHorizontal01} badge={badge(needing())} />
             {SOURCES.map((s) => (
-              <Tab key={s} id={s} label={SOURCE_LABEL[s]} badge={badge(needing(s))} />
+              <Tab key={s} id={s} label={SOURCE_LABEL[s]} icon={Building02} badge={badge(needing(s))} />
             ))}
           </TabList>
         </Tabs>
@@ -191,7 +190,6 @@ export function VmShell({
               ))}
             </div>
           )}
-          <SidebarFooterLinks />
         </aside>
 
         <main className="flex min-h-0 flex-1 flex-col overflow-hidden">{main}</main>

@@ -1,12 +1,16 @@
 "use client";
 
 import { useState } from "react";
+import { File06, SearchLg, Tag01 } from "@untitledui/icons";
+import { ListEmptyState } from "@/app/pages/_shared/list-empty-state";
 import type { SortDescriptor } from "react-aria-components";
 import { CountBadge } from "@/components/base/badges/badges";
 import { Table, TableCard } from "@/components/application/table/table";
 import { sortRows, type SortValue } from "@/app/pages/_shared/agreement-scope";
 import { artefactTypeMeta, type Artefact, type ArtefactType } from "@/app/pages/_shared/artefact-lightbox";
-import { ListFilterButton, matchesFilters, type FilterGetters, type FilterSection, type FilterSelection } from "@/app/pages/_shared/list-filter";
+import { type FilterGetters, type FilterSection, useListFilter } from "@/app/pages/_shared/list-filter";
+import { AttributeFilterChips } from "@/app/pages/_shared/attribute-filter";
+import { FilterMenu } from "@/app/pages/_shared/filter-menu";
 import { ToolbarSearch } from "@/app/pages/_shared/toolbar-search";
 
 // A project's artefacts and attachments as a table (the Explore Artefacts table's shape, without its
@@ -39,17 +43,17 @@ const filterGetters: FilterGetters<Artefact> = { type: (a) => a.type };
 
 export function ArtefactTable({ artefacts, onOpen }: { artefacts: Artefact[]; onOpen: (index: number) => void }) {
   const [search, setSearch] = useState("");
-  const [filters, setFilters] = useState<FilterSelection>({});
   const [sort, setSort] = useState<SortDescriptor>({ column: "created", direction: "descending" });
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(50);
 
   const types = (Object.keys(artefactTypeLabel) as ArtefactType[]).filter((t) => artefacts.some((a) => a.type === t));
-  const filterSections: FilterSection[] = [{ id: "type", label: "Type", options: types.map((id) => ({ id, label: artefactTypeLabel[id] })) }];
+  const filterSections: FilterSection[] = [{ id: "type", label: "Type", icon: Tag01, options: types.map((id) => ({ id, label: artefactTypeLabel[id] })) }];
+  const filter = useListFilter(filterSections, filterGetters, () => setPage(1));
 
   const query = search.trim().toLowerCase();
   const matching = artefacts
-    .filter((a) => matchesFilters(a, filters, filterGetters))
+    .filter(filter.matches)
     .filter((a) => !query || [a.title, a.recordLabel, a.creator, a.format, artefactTypeLabel[a.type]].some((v) => v.toLowerCase().includes(query)));
   const rows = sortRows(matching, sort, sortKeys);
   const pageCount = Math.max(1, Math.ceil(rows.length / pageSize));
@@ -72,20 +76,30 @@ export function ArtefactTable({ artefacts, onOpen }: { artefacts: Artefact[]; on
             setPage(1);
           }}
         />
-        <ListFilterButton
-          sections={filterSections}
-          selection={filters}
-          onChange={(next) => {
-            setFilters(next);
-            setPage(1);
+        <FilterMenu filter={filter} />
+      </div>
+      <AttributeFilterChips filter={filter} />
+      {rows.length === 0 ? (
+        artefacts.length === 0 ? (
+        <ListEmptyState icon={File06} title="No artefacts yet" description="Files and attachments added to this project appear here." />
+      ) : (
+        <ListEmptyState
+          icon={SearchLg}
+          title="No artefacts match"
+          description="Try a different search, or remove a filter."
+          action={{
+            label: "Show all artefacts",
+            onPress: () => {
+              setSearch("");
+              filter.clear();
+              setPage(1);
+            },
           }}
         />
-      </div>
-      {rows.length === 0 ? (
-        <p className="py-6 text-sm text-tertiary">{artefacts.length === 0 ? "No artefacts or attachments yet." : "No artefacts match your search and filters."}</p>
+      )
       ) : (
         <TableCard.Root>
-          <Table
+          <Table layout="fixed" className="min-w-[1050px]"
             bodyScrollable
             aria-label="Artefacts and attachments"
             sortDescriptor={sort}
@@ -96,12 +110,12 @@ export function ArtefactTable({ artefacts, onOpen }: { artefacts: Artefact[]; on
             onRowAction={(key) => onOpen(artefacts.findIndex((a) => a.id === key))}
           >
             <Table.Header sticky>
-              <Table.Head id="title" label="Attached resource" isRowHeader allowsSorting />
-              <Table.Head id="type" label="Type" allowsSorting />
-              <Table.Head id="record" label="Attached to" allowsSorting />
-              <Table.Head id="creator" label="Creator" allowsSorting />
-              <Table.Head id="created" label="Created" allowsSorting />
-              <Table.Head id="size" label="Size" />
+              <Table.Head id="title" label="Attached resource" isRowHeader allowsSorting className="w-[30%]" />
+              <Table.Head id="type" label="Type" allowsSorting className="w-[11%]" />
+              <Table.Head id="record" label="Attached to" allowsSorting className="w-[20%]" />
+              <Table.Head id="creator" label="Creator" allowsSorting className="w-[15%]" />
+              <Table.Head id="created" label="Created" allowsSorting className="w-[13%]" />
+              <Table.Head id="size" label="Size" className="w-[11%]" />
             </Table.Header>
             <Table.Body items={paged}>
               {(a) => {

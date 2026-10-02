@@ -31,6 +31,14 @@ import {
   FilterLines,
   Dataflow03,
   Table as TableIcon,
+  MarkerPin04,
+  Feather,
+  Database01,
+  FileCheck02,
+  Link01,
+  Lock01,
+  Paperclip,
+  MessageSquare01,
 } from "@untitledui/icons";
 import { Input } from "@/components/base/input/input";
 import { Button } from "@/components/base/buttons/button";
@@ -46,12 +54,11 @@ import { Breadcrumb } from "@/components/scaffold/breadcrumb";
 import { FeaturedIcon } from "@/components/foundations/featured-icon/featured-icon";
 import { HomeTabPanels } from "@/app/pages/_shared/home-tab-panels";
 import { PrimaryRail } from "@/app/pages/_shared/primary-rail";
-import { SidebarFooterLinks } from "@/app/pages/_shared/sidebar-footer-links";
 import { sectionIcons } from "@/app/pages/_shared/nav-icons";
 import { AppHeader } from "@/app/pages/_shared/app-header";
 import { ArtefactLightbox, type Artefact } from "@/app/pages/_shared/artefact-lightbox";
 import { ArtefactTable } from "@/app/pages/_shared/artefact-table";
-import { MobileNavTrigger } from "@/app/pages/_shared/mobile-nav";
+import { MobileNavItem, MobileNavTrigger } from "@/app/pages/_shared/mobile-nav";
 import { PrototypeTools } from "@/app/_prototype-tools/prototype-tools";
 import { ProjectDetailLayoutSwitcher } from "@/app/pages/_shared/project-detail-layout-switcher";
 import { BentoCard } from "@/app/pages/_shared/bento-card";
@@ -1122,32 +1129,8 @@ function ProjectDetail({ notice }: ProjectDetailProps) {
             {!isPublicUser && activeSection === "Home" &&
               ((close: () => void) => (
                 <>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setHomeTab("dashboard");
-                      close();
-                    }}
-                    className={cx(
-                      "rounded-md px-3 py-2 text-left text-sm font-medium outline-brand focus-visible:outline-2 focus-visible:outline-offset-2",
-                      homeTab === "dashboard" ? "bg-secondary text-primary" : "text-primary hover:bg-secondary",
-                    )}
-                  >
-                    My BioData
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setHomeTab("overview");
-                      close();
-                    }}
-                    className={cx(
-                      "rounded-md px-3 py-2 text-left text-sm font-medium outline-brand focus-visible:outline-2 focus-visible:outline-offset-2",
-                      homeTab === "overview" ? "bg-secondary text-primary" : "text-primary hover:bg-secondary",
-                    )}
-                  >
-                    Flora and Fauna Dashboard
-                  </button>
+                  <MobileNavItem icon={User01} active={homeTab === "dashboard"} onPress={() => { setHomeTab("dashboard"); close(); }}>My BioData</MobileNavItem>
+                  <MobileNavItem icon={PieChart03} active={homeTab === "overview"} onPress={() => { setHomeTab("overview"); close(); }}>Flora and Fauna Dashboard</MobileNavItem>
                 </>
               ))}
           </MobileNavTrigger>
@@ -1187,12 +1170,11 @@ function ProjectDetail({ notice }: ProjectDetailProps) {
                     <Tab id="overview" label="Flora and Fauna Dashboard" icon={PieChart03} />
                   </TabList>
                 </div>
-                <SidebarFooterLinks />
               </aside>
 
               {/* ── Main content: Home's tab panels render the shared real dashboard content
                   (see app/pages/_shared/home-dashboard.tsx and data-overview.tsx) ── */}
-              <main className="flex flex-1 flex-col overflow-y-auto">
+              <main className="flex flex-1 flex-col overflow-y-auto [scrollbar-gutter:stable]">
                 <HomeTabPanels />
               </main>
             </Tabs>
@@ -1321,12 +1303,11 @@ function ProjectDetail({ notice }: ProjectDetailProps) {
                   activeSectionNode.items?.map((item) => <NavTree key={item.label} node={item} depth={1} />)
                 )}
               </div>
-              <SidebarFooterLinks />
             </aside>
 
             {/* ── Main content: Projects has this screen's own content - every other section is an
                 honest placeholder (see SectionPlaceholder above) until it's actually scoped ── */}
-            <main className="flex min-w-0 flex-1 flex-col overflow-y-auto">
+            <main className="flex min-w-0 flex-1 flex-col overflow-y-auto [scrollbar-gutter:stable]">
               {activeSection === "Projects" ? (
                 <>
                   {/* Sidebar toggle and "Back to projects" sit together at the top of column 3, above
@@ -1396,15 +1377,15 @@ function ProjectDetail({ notice }: ProjectDetailProps) {
                       <ContentTabs selectedKey={detailTab} onSelectionChange={setDetailTab} className="flex flex-1 flex-col">
                         <div className="flex items-end gap-4 px-6 pt-4">
                           <TabList aria-label="Project views" type="underline" size="md" className="min-w-0 flex-1 overflow-x-auto">
-                            <Tab id="overview" label="Overview" />
-                            <Tab id="locations" label="Locations" />
-                            <Tab id="species" label="Species" />
-                            <Tab id="data-collection" label="Data Collection Scope" />
-                            <Tab id="permit" label="Permit" />
-                            <Tab id="uri-doi" label="URI/DOI" />
-                            <Tab id="restrictions" label="Privacy and Restrictions" />
-                            <Tab id="artefacts" label="Artefacts & Attachments" />
-                            <Tab id="comments" label="Comments" />
+                            <Tab id="overview" label="Overview" icon={Grid01} />
+                            <Tab id="locations" label="Locations" icon={MarkerPin04} />
+                            <Tab id="species" label="Species" icon={Feather} />
+                            <Tab id="data-collection" label="Data Collection Scope" icon={Database01} />
+                            <Tab id="permit" label="Permit" icon={FileCheck02} />
+                            <Tab id="uri-doi" label="URI/DOI" icon={Link01} />
+                            <Tab id="restrictions" label="Privacy and Restrictions" icon={Lock01} />
+                            <Tab id="artefacts" label="Artefacts & Attachments" icon={Paperclip} />
+                            <Tab id="comments" label="Comments" icon={MessageSquare01} />
                           </TabList>
                           {/* Not a Tabs boundary - nesting one inside this Tabs' own tree would fight
                               react-aria's collection - so the same segmented look is a single-select

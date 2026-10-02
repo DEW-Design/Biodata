@@ -2,7 +2,7 @@
 
 import { useState, type ReactNode } from "react";
 import type { Key } from "react-aria-components";
-import { ArrowNarrowLeft, Download01, Edit05, Eye, EyeOff, Mail01, PauseCircle, Phone01, SearchLg, SearchMd, SlashCircle01, Trash01 } from "@untitledui/icons";
+import { ArrowNarrowLeft, CheckCircle, Download01, Edit05, Eye, EyeOff, Mail01, PauseCircle, Phone01, PlayCircle, Plus, SearchLg, SearchMd, SlashCircle01, Trash01, XCircle, Grid01, Share07, ClockRewind } from "@untitledui/icons";
 import { RecordActionBar, type RecordAction } from "@/app/pages/_shared/record-action-bar";
 import { RecordBackLink, RecordHero, RecordRow } from "@/app/pages/_shared/record-hero";
 import { AlertFullWidth } from "@/components/application/alerts/alerts";
@@ -204,11 +204,11 @@ export function DsaDetail({
   const editAction: RecordAction = { id: "edit", label: isDraft ? "Edit draft" : "Edit agreement", icon: Edit05, onPress: onEdit };
   const actions: { primary?: RecordAction; secondary: RecordAction[]; menu: RecordAction[] } = { secondary: [], menu: [] };
   if (isDraft) actions.primary = editAction;
-  else if (dsa.status === "submitted") actions.primary = { id: "start", label: "Start review", onPress: onStartReview };
-  else if (dsa.status === "under_review") actions.primary = { id: "approve", label: "Approve", onPress: () => setConfirm("approve") };
-  else if (dsa.status === "on_hold") actions.primary = { id: "resume", label: "Resume review", onPress: onResume };
+  else if (dsa.status === "submitted") actions.primary = { id: "start", label: "Start review", icon: PlayCircle, onPress: onStartReview };
+  else if (dsa.status === "under_review") actions.primary = { id: "approve", label: "Approve", icon: CheckCircle, onPress: () => setConfirm("approve") };
+  else if (dsa.status === "on_hold") actions.primary = { id: "resume", label: "Resume review", icon: PlayCircle, onPress: onResume };
   actions.secondary.push({ id: "download", label: "Download PDF", icon: Download01, isDisabled: !dsa.agreementFile, onPress: () => toast.brand("Download isn't wired up yet", { description: "Agreement PDFs aren't stored in this preview, so there is no file to download." }) });
-  if (dsa.status === "under_review") actions.secondary.push({ id: "reject", label: "Reject", onPress: () => setRejectOpen(true) });
+  if (dsa.status === "under_review") actions.secondary.push({ id: "reject", label: "Reject", icon: XCircle, onPress: () => setRejectOpen(true) });
   if (canEdit && !isDraft) (inReview ? actions.menu : actions.secondary).push(editAction);
   if (dsa.status === "under_review") actions.menu.unshift({ id: "hold", label: "Put on hold", icon: PauseCircle, onPress: onHold });
   if (isDraft) actions.menu.push({ id: "delete", label: "Delete draft", icon: Trash01, destructive: true, onPress: () => setConfirm("delete") });
@@ -289,9 +289,9 @@ export function DsaDetail({
       <Tabs selectedKey={tab} onSelectionChange={setTab}>
         <div className="px-6 pt-4">
           <TabList aria-label="Agreement sections" type="underline" size="md">
-            <Tab id="overview" label="Overview" />
-            <Tab id="sharing" label="Data Sharing" />
-            <Tab id="audit" label="Audit Log" />
+            <Tab id="overview" label="Overview" icon={Grid01} />
+            <Tab id="sharing" label="Data Sharing" icon={Share07} />
+            <Tab id="audit" label="Audit Log" icon={ClockRewind} />
           </TabList>
         </div>
 
@@ -424,7 +424,7 @@ export function DsaDetail({
         {systemOpen && <SystemPanelBody system={systemOpen} />}
       </SidePanel>
 
-      <DestructiveModal
+      <DestructiveModal confirmIcon={confirm === "delete" ? Trash01 : SlashCircle01}
         isOpen={confirm === "delete" || confirm === "cancel"}
         onOpenChange={(open) => !open && setConfirm(null)}
         title={confirm === "delete" ? `Delete draft ${dsa.id}?` : `Cancel ${dsa.id}?`}
@@ -441,7 +441,7 @@ export function DsaDetail({
           else onCancel();
         }}
       />
-      <ConfirmationModal
+      <ConfirmationModal confirmIcon={CheckCircle}
         isOpen={confirm === "approve"}
         onOpenChange={(open) => !open && setConfirm(null)}
         title={`Approve ${dsa.id}?`}
@@ -491,7 +491,7 @@ export function DsaEmptyState({ status, newHref }: { status: DsaStatus; newHref:
         </div>
       </div>
       {copy.cta && (
-        <Button color="primary" href={newHref}>
+        <Button iconLeading={Plus} color="primary" href={newHref}>
           New agreement
         </Button>
       )}

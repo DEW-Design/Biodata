@@ -3,16 +3,17 @@
 import { Suspense, type ReactNode } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { AlertFullWidth } from "@/components/application/alerts/alerts";
-import { ProjectDetailView } from "@/app/pages/project-detail/option-2/project-detail-view";
+import { ProjectDetailTemplate } from "@/app/pages/project-detail/project-detail-template";
+import { projectDetailsPath } from "@/app/pages/_shared/project-routes";
 import type { DetailRecord } from "@/app/pages/_shared/map-search/record-detail";
 import { recordAccess } from "@/app/pages/_shared/map-search/record-access";
 import { findObservation, findOccurrence, rootProjectForParentEventId, rootProjectOfEvent, searchEvents } from "@/app/pages/_shared/map-search/search-data";
 import { useUserRole } from "@/lib/use-user-role";
-import { ProjectDetailsView, ProjectNotFound, ProjectRecordView } from "./project-details-view";
+import { ProjectNotFound, ProjectRecordView } from "./project-details-view";
 
 // /pages/project-list/[id]/project-details, and .../[kind]/[recordId] for a record's own page.
-// Adelaide Hills keeps its hand-written project page; every other project's page is built from
-// Explore's data. A record (occurrence, observation, or event) gets its own page in the project's
+// Every project's page is the project page template (project-detail-template.tsx): Adelaide Hills
+// with its hand-written records, every other project built from Explore's data. A record (occurrence, observation, or event) gets its own page in the project's
 // shell (ProjectRecordView), for every project. A record a public user may not see (Level 2 and
 // above), or one that doesn't belong to this project, is not shown: the project page says why.
 
@@ -75,6 +76,5 @@ function Route() {
   }
 
   if (record && !hidden) return <ProjectRecordView project={project} record={record} />;
-  if (project.id === "adelaide-hills") return <ProjectDetailView notice={notice} />;
-  return <ProjectDetailsView project={project} notice={notice} />;
+  return <ProjectDetailTemplate projectId={project.id} basePath={projectDetailsPath(project.id)} notice={notice} />;
 }
