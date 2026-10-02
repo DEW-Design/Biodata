@@ -16,16 +16,17 @@ paths:
 
 # Reference: user roles and the role-access matrix
 
-The six roles, what each sees, how a role is chosen and previewed, and how a feature is gated. Rules live
+The seven roles, what each sees, how a role is chosen and previewed, and how a feature is gated. Rules live
 in CONTRACTS.md (persona consistency §3.4, three columns §3.7); this is the how-to behind them.
 
 ## User roles
 
-Six roles, highest to lowest privilege. The order of `USER_ROLES` in `lib/user-role.ts` is the hierarchy:
+Seven roles, highest to lowest privilege. The order of `USER_ROLES` in `lib/user-role.ts` is the hierarchy:
 
 | Role | Who | Org pill | Nav (`navForRole`) |
 | --- | --- | --- | --- |
-| `biodata-admin` | DEW super-user, admins the platform. Passes every feature check. | DEW | `biodataAdminNav`: the registered tree plus User Management and DSA |
+| `biodata-super-admin` | BioData Super Admin (DEW). Everything a BioData Admin has, plus Controlled Vocabulary and Voucher Management. Passes every feature check. | DEW | `biodataSuperAdminNav`: the admin tree plus Controlled Vocabulary and Voucher Management after DSA |
+| `biodata-admin` | DEW admin, admins the platform. Passes every feature check except the super admin's own (`SUPER_ADMIN_ONLY` in `config/role-access.config.ts`: today, `ctrlVocabManagement` and `voucherManagement`). | DEW | `biodataAdminNav`: the registered tree plus User Management and DSA |
 | `biodata-user` | DEW staff | DEW | `registeredUserNav` |
 | `privileged-admin` | Admin of a partner organisation | ORG | `registeredUserNav` |
 | `privileged-user` | Member of a partner organisation (Birds SA and the like) | ORG | `registeredUserNav` |
@@ -39,7 +40,11 @@ Six roles, highest to lowest privilege. The order of `USER_ROLES` in `lib/user-r
   no DLA, Nominate Sensitive Species, Reports or Template Finder section, not even as a hidden leaf. Home is
   the Flora and Fauna dashboard with the sign-up card. Column 2 is the one place that explains
   (`GuestAboutAside`, the §3.10 exception). Features reduce for this role; screens are never redesigned for it.
-- **The type stays six.** Build for a role only when the designer asks. The designer's standing focus is
+- **Controlled Vocabulary is a BioData Super Admin feature only** (the designer, 30 Sept 2026; BRD REQ-18.1:
+  "BioData Admin users shall not have access"). **Voucher Management is the same** (the designer, 1 Oct 2026). Anywhere a screen asks "is this an admin", it calls
+  `isBiodataAdmin(role)` (`lib/user-role.ts`), which is true for both admin roles, so the super admin never loses
+  something an admin has; a feature only the super admin gets goes in `SUPER_ADMIN_ONLY`.
+- **The type stays seven.** Build for a role only when the designer asks. The designer's standing focus is
   `registered-user` and `public-user`; on direct request, `biodata-admin` also has DSA, User Management, DLA
   approval and nomination review. The `privileged-*` roles and `biodata-user` have matrix entries but no
   screens of their own.
@@ -56,7 +61,7 @@ Six roles, highest to lowest privilege. The order of `USER_ROLES` in `lib/user-r
 - **Previewing is a dev tool, not a feature:** the "Viewing as" tool on the Prototype tools bar
   (`app/_prototype-tools/`, §3.8) rewrites `userRole`. If the chosen role can't see the current page (a
   `wholePageGates` entry in `prototype-tools.tsx`), it goes to that role's Home instead of stopping on the
-  restriction message. Role names on the bar: BioData Admin, BioData User, Privileged Admin, Privileged User,
+  restriction message. Role names on the bar: BioData Super Admin, BioData Admin, BioData User, Privileged Admin, Privileged User,
   Registered User, Public user. There is no separate floating role button; don't build one.
 
 ## Role access matrix (`config/role-access.config.ts`)
@@ -64,8 +69,9 @@ Six roles, highest to lowest privilege. The order of `USER_ROLES` in `lib/user-r
 Per-feature visibility is decided in one place: `roleAccessMatrix`, a `FeatureKey -> UserRole[]` map the
 designer owns. It is data, separate from `design-system.config.ts` (which doc variant shows).
 
-- **Build for `biodata-admin` first, then gate down.** `hasFeatureAccess` always passes `biodata-admin`; an
-  entry lists which other roles also get the feature. A feature with no entry is visible to everyone.
+- **Build for `biodata-admin` first, then gate down.** `hasFeatureAccess` always passes `biodata-super-admin`,
+  and `biodata-admin` for everything outside `SUPER_ADMIN_ONLY`; an entry lists which other roles also get the
+  feature. A feature with no entry is visible to everyone.
 - **Call site:** `useFeatureAccess(feature)` (`lib/use-feature-access.ts`), never an inline role check (§3.4).
   Same `<Suspense>` need as `useUserRole`.
 - **Don't invent entries.** Add a key only when the designer says a feature is restricted, or when a decided

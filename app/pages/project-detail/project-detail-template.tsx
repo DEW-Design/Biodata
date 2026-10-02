@@ -13,11 +13,17 @@
 //
 //  - Project: the whole registration (Overview, Data collection and storage, Privacy and
 //    restrictions) as one readable page with an "On this page" list (project-tab.tsx).
-//  - Survey records: every event, occurrence and observation in a tree or a table, beside a record
+//  - Project records: every event, occurrence and observation in a tree or a table, beside a record
 //    inspector that shows the selected record's metadata grouped by Darwin Core class
 //    (records-explorer.tsx, record-inspector.tsx).
 //  - Species: every species recorded in the project, with where and when.
 //  - Artefacts and attachments: every file attached to a record, each linked back to its record.
+//
+// The Project tab opens with Project at a glance: a Datasets card (registered users and above; the
+// last upload and what is happening with it) above a records card (records by kind, then species,
+// flagged concepts and artefacts as rows on them). The Datasets card's View all opens the project's
+// Datasets page (`?view=datasets`, datasets-view.tsx): every upload to this project, the one in progress
+// with its pre-flight validation, and each dataset's own page (`&dataset=<id>`).
 //
 // Everyone but public users can edit: project metadata on the Project tab and each record's metadata
 // in the inspector, through one shared card and edit flow (editable-section.tsx). Edits are kept for
@@ -48,6 +54,7 @@ import {
   type Artefact,
 } from "@/app/pages/_shared/artefact-lightbox";
 import { ArtefactsView } from "./artefacts-view";
+import { DatasetsScreen } from "./datasets-view";
 import { ReviewScreen, useLiveEntries, useReviewItems } from "./review-view";
 import { useCanReview } from "./field-notes";
 import { allFiles, recordFieldKeys, useFieldNotes } from "./field-notes-store";
@@ -176,16 +183,24 @@ function ProjectDetail({ basePath, layoutSwitcher = false, notice }: ProjectDeta
   const species = useProjectSpecies();
   // Reviewing flagged concepts is an admin's job (BioData Admin, Privileged Admin). It is management
   // work, not a view of the records, so it is its own screen (`?view=review`, same route so the
-  // session's edits stay), opened from a banner in Survey records or from the admin's Home.
+  // session's edits stay), opened from a banner in Project records, from Project at a glance, or from the admin's Home.
   const canReview = useCanReview();
   const openReviews = useReviewItems().open.length;
   const liveEntries = useLiveEntries();
   const searchParams = useSearchParams();
   const reviewing = canReview && searchParams.get("view") === "review";
   const reviewItem = searchParams.get("item");
-  const openReview = () => router.push(roleHref(`${basePath}?view=review`));
+  // The project's Datasets page (datasets-view.tsx): its own view on the same route, like review.
+  const viewingDatasets = !reviewing && searchParams.get("view") === "datasets";
+  const datasetParam = searchParams.get("dataset");
+  const datasetsHref = roleHref(`${basePath}?view=datasets`);
+  const datasetHref = (id: string) => roleHref(`${basePath}?view=datasets&dataset=${encodeURIComponent(id)}`);
+  // The review returns to where it was opened from (`&from=`): the Project tab's at-a-glance, or
+  // Project records' banner. Anything else (an old link) goes back to Project records.
+  const reviewFrom: DetailTab = searchParams.get("from") === "project" ? "project" : "records";
+  const openReview = (from: DetailTab) => router.push(roleHref(`${basePath}?view=review&from=${from}`));
   const closeReview = () => {
-    setDetailTab("records");
+    setDetailTab(reviewFrom);
     router.push(roleHref(basePath));
   };
   // Artefacts and attachments belong to a property: every file attached to a field, from the
@@ -272,7 +287,7 @@ function ProjectDetail({ basePath, layoutSwitcher = false, notice }: ProjectDeta
   };
 
   // "Go to record" from the all-projects Flagged concepts page arrives as `?record=<id>&field=<key>`:
-  // open that record in Survey records at the field, once per link (adjusted during render).
+  // open that record in Project records at the field, once per link (adjusted during render).
   const recordParam = searchParams.get("record");
   const fieldParam = searchParams.get("field");
   const [openedFromUrl, setOpenedFromUrl] = useState<string | null>(null);
@@ -317,6 +332,24 @@ function ProjectDetail({ basePath, layoutSwitcher = false, notice }: ProjectDeta
               current="Flagged concepts"
               orgLabel={orgLabel}
             />
+          ) : activeSection === "Projects" && viewingDatasets ? (
+            <Breadcrumb
+              section={
+                <span className="flex items-center gap-2">
+                  <ProjectSwitcher currentProjectId={meta.id} />
+                  <span className="text-quaternary">/</span>
+                  <button
+                    type="button"
+                    onClick={() => router.push(roleHref(basePath))}
+                    className="text-tertiary hover:text-primary"
+                  >
+                    {projectTitle}
+                  </button>
+                </span>
+              }
+              current="Datasets"
+              orgLabel={orgLabel}
+            />
           ) : activeSection === "Projects" ? (
             <Breadcrumb
               section={<ProjectSwitcher currentProjectId={meta.id} />}
@@ -346,7 +379,7 @@ function ProjectDetail({ basePath, layoutSwitcher = false, notice }: ProjectDeta
             key={reviewItem ?? "review"}
             entries={liveEntries}
             initialItem={reviewItem}
-            exitLabel="Back to survey records"
+            exitLabel={reviewFrom === "project" ? "Back to project" : "Back to project records"}
             onExit={closeReview}
             onGoToRecord={(entry) => {
               router.push(roleHref(basePath));
@@ -356,9 +389,16 @@ function ProjectDetail({ basePath, layoutSwitcher = false, notice }: ProjectDeta
         ) : (
           <>
             {/* No column 2 on the project page (designer, 30 Sept 2026, CONTRACTS 3.7): the project's actions
-                are in the hero's "..." menu, its records are on the Survey records tab. */}
+                are in the hero's "..." menu, its records are on the Project records tab. */}
             <main className="flex min-w-0 flex-1 flex-col overflow-y-auto [scrollbar-gutter:stable]">
-              {activeSection === "Projects" ? (
+              {activeSection === "Projects" && viewingDatasets ? (
+                <DatasetsScreen
+                  datasetId={datasetParam}
+                  projectHref={roleHref(basePath)}
+                  datasetsHref={datasetsHref}
+                  datasetHref={datasetHref}
+                />
+              ) : activeSection === "Projects" ? (
                 <div className="flex flex-col pb-6">
                   <RecordBackLink href={roleHref("/pages/project-list")}>Back to projects</RecordBackLink>
 
@@ -380,7 +420,7 @@ function ProjectDetail({ basePath, layoutSwitcher = false, notice }: ProjectDeta
                       <Tab id="project" label="Project" icon={Folder} />
                       <Tab
                         id="records"
-                        label="Survey records"
+                        label="Project records"
                         icon={Database01}
                         badge={records.length}
                       />
@@ -401,9 +441,14 @@ function ProjectDetail({ basePath, layoutSwitcher = false, notice }: ProjectDeta
                     <TabPanel id="project" className="pt-6">
                       <ProjectTab
                         layout="v3"
-                        artefactCount={artefacts.length}
                         onGoToRecords={goToRecords}
                         onGoToArtefacts={() => setDetailTab("artefacts")}
+                        onGoToDatasets={() => router.push(datasetsHref)}
+                        onGoToDataset={(id) => router.push(datasetHref(id))}
+                        artefactKinds={artefacts.map((a) => a.type)}
+                        artefactRecordCount={new Set(artefacts.map((a) => a.recordId)).size}
+                        onGoToSpecies={() => setDetailTab("species")}
+                        onGoToFlagged={() => openReview("project")}
                       />
                     </TabPanel>
 
@@ -411,13 +456,13 @@ function ProjectDetail({ basePath, layoutSwitcher = false, notice }: ProjectDeta
                       {canReview && openReviews > 0 && (
                         <AlertFullWidth
                           contained
-                          wrap
+                          inline
                           color="warning"
                           actionType="link"
-                          title={`${openReviews} flagged concept${openReviews === 1 ? "" : "s"} need${openReviews === 1 ? "s" : ""} review`}
-                          description="Across this project."
+                          title={`${openReviews} flagged concept${openReviews === 1 ? "" : "s"}`}
+                          description={`need${openReviews === 1 ? "s" : ""} review across this project`}
                           confirmLabel="Review"
-                          onConfirm={openReview}
+                          onConfirm={() => openReview("records")}
                         />
                       )}
                       <RecordsExplorer

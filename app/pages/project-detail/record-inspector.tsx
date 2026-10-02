@@ -1,6 +1,6 @@
 "use client";
 
-// The record inspector: the right-hand pane of the Survey records explorer. Picking any event,
+// The record inspector: the right-hand pane of the Project records explorer. Picking any event,
 // occurrence or observation (in the tree or the table) shows its metadata here without leaving the
 // list, the master-detail pattern of GBIF's occurrence pages, Finder's preview column and Linear's
 // issue panel. Metadata is grouped by Darwin Core class in the order the BDBSA "Details Container"
@@ -13,7 +13,6 @@
 // edits the project, so every edit on the page works the same way.
 
 import { displayValue } from "./field-schema";
-import dynamic from "next/dynamic";
 import { createElement, useState, type ReactNode } from "react";
 import { ChevronDown, ChevronRight, Edit02, File06, Folder, InfoCircle, Maximize02, Plus, Trash01 } from "@untitledui/icons";
 import { Accordion } from "@/components/base/accordion/accordion";
@@ -27,6 +26,7 @@ import { SpeciesPhoto } from "@/app/pages/_shared/map-search/species-photo";
 import { speciesImage } from "@/app/pages/_shared/map-search/species-images";
 import { LocationDetailsTable } from "@/app/pages/_shared/location-details-table";
 import { recordMapShape } from "./record-map";
+import { ExpandableMap } from "@/app/pages/_shared/map-search/expandable-map";
 import { artefactTypeMeta, type Artefact } from "@/app/pages/_shared/artefact-lightbox";
 import { cx } from "@/utils/cx";
 import { useEditStore } from "./edit-store";
@@ -34,10 +34,6 @@ import { childOptions, createRecord, type ChildOption } from "./record-rules";
 import { RecordDrawer } from "./record-form";
 import { formatDate, typeDescription, type MetaSection, type RecordKind, type SurveyRecord } from "./survey-data";
 
-const LocationMap = dynamic(() => import("@/app/pages/_shared/map-search/sa-map"), {
-  ssr: false,
-  loading: () => <div className="h-40 w-full animate-pulse rounded-lg bg-secondary" />,
-});
 
 export const KIND_LABEL: Record<RecordKind, string> = { event: "Event", occurrence: "Occurrence", observation: "Observation" };
 export const KIND_PLURAL: Record<RecordKind, string> = { event: "Events", occurrence: "Occurrences", observation: "Observations" };
@@ -128,9 +124,7 @@ function SectionBody({ record, section }: { record: SurveyRecord; section: MetaS
     <div className="flex flex-col gap-3">
       {section.withMap && (
         <>
-          <div className="relative isolate h-40 overflow-hidden rounded-lg border border-secondary">
-            <LocationMap {...recordMapShape(record, lat, lon)} onBoundaryAdd={() => {}} activeDrawTool={null} onDrawToolChange={() => {}} className="size-full" />
-          </div>
+          <ExpandableMap title={`${record.name} · location`} {...recordMapShape(record, lat, lon)} onBoundaryAdd={() => {}} activeDrawTool={null} onDrawToolChange={() => {}} className="h-40" />
           {!record.locationNote && <LocationDetailsTable lat={lat} lon={lon} />}
         </>
       )}

@@ -13,7 +13,7 @@
 | `.claude/rules/ref-ingest.md` | Current practice only: Figma as source of truth, new component workflow, QA check, doc page template, generated `/test-*` screens, custom components | `components/**`, doc pages, nav and design-system config |
 | `.claude/rules/ref-scaffold.md` | DEW vs Scaffold: what is product and what operates or wraps it (doc controls, lab controls, the Prototype tools bar) | `components/**`, doc pages, `app/proto/**`, `app/_prototype-tools/**` |
 | `.claude/rules/ref-domain.md` | BDBSA domain research: the data hierarchy, access tiers, partner organisations, the confirmed data model | map-search, project, observation and nomination files |
-| `.claude/rules/ref-roles.md` | Current practice only: the six user roles, choosing and previewing a role, the role-access matrix, record access levels | role, header, rail and nav files |
+| `.claude/rules/ref-roles.md` | Current practice only: the seven user roles (Controlled Vocabulary is a BioData Super Admin feature only), choosing and previewing a role, the role-access matrix, record access levels | role, header, rail and nav files |
 | `context/archive/final-check.md` | The old "Final check" list, kept verbatim with a table of the clause each bullet became | never (archive) |
 | `context/archive/exploratory-layouts-history.md` | Four superseded bullets of "Exploratory page layouts" (nav-chrome exemption, Projects becoming a leaf, public-user across the option-1 shells, the project-detail rejected options), with a table of where each topic lives now | never (archive) |
 | `context/archive/ref-shell-history.md` | `ref-shell.md` verbatim as it stood before the 2026-09-29 trim: the option-1 shell history, worked examples, the Supabase pattern catalog | never (archive) |

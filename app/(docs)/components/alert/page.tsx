@@ -62,6 +62,7 @@ const fullWidthProps = [
   { name: "hideDismissButton", type: "boolean",                                             default: "false" },
   { name: "contained",    type: "boolean",                                                  default: "false" },
   { name: "wrap",         type: "boolean",                                                  default: "false" },
+  { name: "inline",       type: "boolean",                                                  default: "false" },
 ];
 
 export default function AlertPage() {
@@ -304,7 +305,7 @@ export default function AlertPage() {
           <p className="text-balance">
             Pass <code>contained</code> for an alert that sits among other content, such as a form or a record page: a rounded card with a border and a
             background tinted by <code>color</code>. The card&apos;s look comes from the component; don&apos;t add border, background or padding classes.
-            Add <code>wrap</code> when the description is longer than a line.
+            Add <code>wrap</code> when the description is longer than a line, or <code>inline</code> to keep a short notice and its action on one line.
           </p>
           <div className="flex flex-col gap-3">
             <AlertFullWidth
@@ -324,6 +325,16 @@ export default function AlertPage() {
               title="Details missing"
               description="Complete these to continue: Project name, Abstract, Start date."
               confirmLabel=""
+            />
+            <AlertFullWidth
+              contained
+              inline
+              color="warning"
+              title="7 flagged concepts"
+              description="need review across this project"
+              confirmLabel="Review"
+              actionType="link"
+              onConfirm={() => {}}
             />
           </div>
         </>

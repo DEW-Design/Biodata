@@ -1,41 +1,31 @@
 "use client";
 
 import { useState } from "react";
-import dynamic from "next/dynamic";
 import { Map01, Plus, Trash01 } from "@untitledui/icons";
 import { Badge } from "@/components/base/badges/badges";
 import { Button } from "@/components/base/buttons/button";
 import { AddLocationModal } from "@/app/pages/_shared/dla/add-location-modal";
 import { boundarySummary } from "@/app/pages/_shared/map-search/geo";
+import { ExpandableMap } from "@/app/pages/_shared/map-search/expandable-map";
 import { areaMethodLabel, type NominationArea } from "@/app/pages/_shared/nominations/nomination-data";
 
 // The Location attribute's areas: the places whose records of this species are obscured. Adding
 // one reuses DLA's "Add a Location" modal (shapefile, draw on the map, national park, coordinates),
-// which is the same four methods the lo-fi draws; the map preview reuses Explore's SAMap. Nothing
+// which is the same four methods the lo-fi draws; the map preview reuses Explore's SAMap, with the shared Full screen button (ExpandableMap). Nothing
 // here is a new component - it composes existing ones for this attribute.
-
-const SAMap = dynamic(() => import("@/app/pages/_shared/map-search/sa-map"), {
-  ssr: false,
-  loading: () => (
-    <div className="flex size-full items-center justify-center bg-secondary">
-      <p className="text-sm text-tertiary">Loading map…</p>
-    </div>
-  ),
-});
 
 /** A read-only map of the areas, fitted to them. */
 export function AreasMap({ areas, className = "h-72" }: { areas: NominationArea[]; className?: string }) {
   return (
-    <div className={`overflow-hidden rounded-lg border border-secondary ${className}`}>
-      <SAMap
-        boundaries={areas.map((a) => a.boundary)}
-        onBoundaryAdd={() => {}}
-        activeDrawTool={null}
-        onDrawToolChange={() => {}}
-        fitRequest={{ key: areas.length, boundaries: areas.map((a) => a.boundary) }}
-        className="size-full"
-      />
-    </div>
+    <ExpandableMap
+      title="Obscured areas"
+      boundaries={areas.map((a) => a.boundary)}
+      onBoundaryAdd={() => {}}
+      activeDrawTool={null}
+      onDrawToolChange={() => {}}
+      fitRequest={{ key: areas.length, boundaries: areas.map((a) => a.boundary) }}
+      className={className}
+    />
   );
 }
 

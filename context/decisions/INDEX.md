@@ -233,36 +233,69 @@ Not imported into every session on purpose: read or grep it when a task needs hi
 - [2026-09-29] bc8ad0fb ("Project detail Option 2 (v3 records), flagged concepts review across projects, My/All projects... - `2026-09-29-63-bc8ad0fb-project-detail-option-2-v3-records-flagged.md`
 - [2026-09-30] Project-detail Option 3 (About, Records and Species) removed, per direct instruction ahead of merging... - `2026-09-30-01-project-detail-option-3-about-records-and-species.md`
 - [2026-09-30] sai-wips reconciled with origin's rule-loading restructure, pushed, merged into main - `2026-09-30-02-sai-wips-reconciled-with-origin-s-rule-loading.md`
+- [2026-09-30] Project detail: flagged banner back on one line, Survey at a glance as four boxes, every embedded map gets... - `2026-09-30-03-project-detail-flagged-banner-back-on-one-line.md`
 - [2026-09-30] Rail order: Template Finder now sits before Reports - `2026-09-30-03-rail-order-template-finder-now-sits-before-reports.md`
 - [2026-09-30] Explore option 1 and option 2 swapped - `2026-09-30-04-explore-option-1-and-option-2-swapped.md`
+- [2026-09-30] Survey at a glance redesigned as one summary card; flagged concepts replaces questionable records; public... - `2026-09-30-04-survey-at-a-glance-redesigned-as-one-summary.md`
 - [2026-09-30] One project page template for every project, in Option 1's look - `2026-09-30-05-one-project-page-template-for-every-project-in.md`
+- [2026-09-30] Survey at a glance cells rebuilt with featured icons, one aligned row structure and an icon-only Upload - `2026-09-30-05-survey-at-a-glance-cells-rebuilt-with-featured.md`
+- [2026-09-30] Datasets cell shows the latest upload live and opens it - `2026-09-30-06-datasets-cell-shows-the-latest-upload-live-and.md`
 - [2026-09-30] Project guides hidden for BioData Admin, Option 2 kept - `2026-09-30-06-project-guides-hidden-for-biodata-admin-option-2.md`
+- [2026-09-30] A project is never called a survey: Survey records becomes Project records everywhere - `2026-09-30-07-a-project-is-never-called-a-survey-survey.md`
 - [2026-09-30] Cognitive load audit of project details, and three shell changes approved - `2026-09-30-07-cognitive-load-audit-of-project-details-and-three.md`
+- [2026-09-30] Flagged concepts review returns to where it was opened; Option 3 tells Project at a glance as one records card - `2026-09-30-08-flagged-concepts-review-returns-to-where-it-was.md`
 - [2026-09-30] Project page shell: no column 2, breadcrumb project switcher, legal links in the rail - `2026-09-30-08-project-page-shell-no-column-2-breadcrumb-project.md`
+- [2026-09-30] Option 3: the last upload told as its journey, and species as what the records yield - `2026-09-30-09-option-3-the-last-upload-told-as-its.md`
 - [2026-09-30] Project page feedback: view toggles right, standard alert, legal icon hover - `2026-09-30-09-project-page-feedback-view-toggles-right-standard-alert.md`
 - [2026-09-30] Dropdown menus sit 12px from their trigger - `2026-09-30-10-dropdown-menus-sit-12px-from-their-trigger.md`
+- [2026-09-30] Option 3: the last upload on project home is a one-row snapshot - `2026-09-30-10-option-3-the-last-upload-on-project-home.md`
 - [2026-09-30] Breadcrumb project switcher is now the searchable ComboBox - `2026-09-30-11-breadcrumb-project-switcher-is-now-the-searchable-combobox.md`
+- [2026-09-30] Option 3: datasets get their own card above the records card - `2026-09-30-11-option-3-datasets-get-their-own-card-above.md`
+- [2026-09-30] Project at a glance moves into Option 1; Option 3 retired; the Datasets card is for roles that can upload - `2026-09-30-12-project-at-a-glance-moves-into-option-1.md`
 - [2026-09-30] Project switcher: a popup with the ComboBox search inside, not a morphing crumb - `2026-09-30-12-project-switcher-a-popup-with-the-combobox-search.md`
 - [2026-09-30] Add menu: User first - `2026-09-30-13-add-menu-user-first.md`
+- [2026-09-30] The flagged concepts row is for admins only and always opens the management page - `2026-09-30-13-the-flagged-concepts-row-is-for-admins-only.md`
+- [2026-09-30] Controlled Vocabulary built as three options for BioData Admin - `2026-09-30-14-controlled-vocabulary-built-as-three-options-for-biodata.md`
 - [2026-09-30] Project page typography pass: one hero, readable small text, one font - `2026-09-30-14-project-page-typography-pass-one-hero-readable-small.md`
+- [2026-09-30] Controlled Vocabulary Option 3 two steps Code or No and tracked templates - `2026-09-30-15-controlled-vocabulary-option-3-two-steps-code-or.md`
 - [2026-09-30] Proposal: the faint grey text token (text-quaternary) fails contrast - `2026-09-30-15-proposal-the-faint-grey-text-token-text-quaternary.md`
+- [2026-09-30] Controlled Vocabulary Option 3 rebuilt for hundreds of vocabularies - `2026-09-30-16-controlled-vocabulary-option-3-rebuilt-for-hundreds-of.md`
 - [2026-09-30] Faint grey text token left as is - `2026-09-30-16-faint-grey-text-token-left-as-is.md`
+- [2026-09-30] Controlled Vocabulary rows reorder and duplicate, availability switch, real sample data, descriptive picks... - `2026-09-30-17-controlled-vocabulary-rows-reorder-and-duplicate-availabilit.md`
 - [2026-09-30] Data Ingestion Report Pre-Flight Validation built under Reports - `2026-09-30-17-data-ingestion-report-pre-flight-validation-built-under.md`
+- [2026-09-30] BioData Super Admin role, Controlled Vocabulary on one route, calendar date fields - `2026-09-30-18-biodata-super-admin-role-controlled-vocabulary-on-one.md`
 - [2026-09-30] Reports landing page with cards; the ingestion report is one of them - `2026-09-30-18-reports-landing-page-with-cards-the-ingestion-report.md`
 - [2026-09-30] Attribute filter on the Data Ingestion Report - `2026-09-30-19-attribute-filter-on-the-data-ingestion-report.md`
+- [2026-09-30] Controlled Vocabulary automatic ID kept apart from Order, resizable text columns - `2026-09-30-19-controlled-vocabulary-automatic-id-kept-apart-from-order.md`
+- [2026-09-30] Controlled Vocabulary column widths remembered per vocabulary - `2026-09-30-20-controlled-vocabulary-column-widths-remembered-per-vocabular.md`
 - [2026-09-30] Empty tables get a real empty state - `2026-09-30-20-empty-tables-get-a-real-empty-state.md`
+- [2026-09-30] Controlled Vocabulary Order typed or picked, ID beside it, floating row actions - `2026-09-30-21-controlled-vocabulary-order-typed-or-picked-id-beside.md`
 - [2026-09-30] Filter options lab for the Data Ingestion Report - `2026-09-30-21-filter-options-lab-for-the-data-ingestion-report.md`
+- [2026-09-30] Controlled Vocabulary Order field cleaned up, contract 2.12 nothing on screen without a purpose - `2026-09-30-22-controlled-vocabulary-order-field-cleaned-up-contract-2.md`
 - [2026-09-30] Filter lab option B: pills keep the toolbar one line - `2026-09-30-22-filter-lab-option-b-pills-keep-the-toolbar.md`
+- [2026-09-30] Controlled Vocabulary ID editable, Order an optional column - `2026-09-30-23-controlled-vocabulary-id-editable-order-an-optional-column.md`
+- [2026-09-30] Taxonomy Management built in three layout options - `2026-09-30-24-taxonomy-management-built-in-three-layout-options.md`
+- [2026-09-30] Taxonomy Management Option 3 chosen, record and synonyms reworked - `2026-09-30-25-taxonomy-management-option-3-chosen-record-and-synonyms.md`
 - [2026-10-01] Explore drops column 2, search areas live in the card - `2026-10-01-01-explore-drops-column-2-search-areas-live-in.md`
+- [2026-10-01] Taxonomy Management Options 1 and 2 retired, Option 3 moved to the plain route - `2026-10-01-01-taxonomy-management-options-1-and-2-retired-option.md`
+- [2026-10-01] Notification Management built for BioData Admin and above - `2026-10-01-02-notification-management-built-for-biodata-admin-and-above.md`
 - [2026-10-01] Result card badges sit beside the name - `2026-10-01-02-result-card-badges-sit-beside-the-name.md`
+- [2026-10-01] Notification Management round 2 list recipients audit log and the toolbar gap contract - `2026-10-01-03-notification-management-round-2-list-recipients-audit-log.md`
 - [2026-10-01] Restricted records are shown as a grid block - `2026-10-01-03-restricted-records-are-shown-as-a-grid-block.md`
 - [2026-10-01] Areas rows on one line and the banner pattern documented - `2026-10-01-04-areas-rows-on-one-line-and-the-banner.md`
+- [2026-10-01] Notification attachments removable in the preview and 4.2d approved - `2026-10-01-04-notification-attachments-removable-in-the-preview-and-4.md`
 - [2026-10-01] Add area stays primary - `2026-10-01-05-add-area-stays-primary.md`
+- [2026-10-01] Notification Management Option 2 a clearer layout over the same features - `2026-10-01-05-notification-management-option-2-a-clearer-layout-over.md`
 - [2026-10-01] Eight more reports built on one shared report table - `2026-10-01-06-eight-more-reports-built-on-one-shared-report.md`
+- [2026-10-01] Prototype tools bar kept inside the window - `2026-10-01-06-prototype-tools-bar-kept-inside-the-window.md`
 - [2026-10-01] Scope switches list All before My - `2026-10-01-07-scope-switches-list-all-before-my.md`
+- [2026-10-01] Voucher Management built for BioData Super Admin - `2026-10-01-07-voucher-management-built-for-biodata-super-admin.md`
 - [2026-10-01] Every column 2 item has an icon - `2026-10-01-08-every-column-2-item-has-an-icon.md`
+- [2026-10-01] Voucher Management sources in column 2, one comparison table, status under Filter, Option 2 retired - `2026-10-01-08-voucher-management-sources-in-column-2-one-comparison.md`
 - [2026-10-01] Drop the every-area-is-hidden hint - `2026-10-01-09-drop-the-every-area-is-hidden-hint.md`
+- [2026-10-01] Voucher Management Observed by read-only, matching-fields switch back, resizable columns shared with... - `2026-10-01-09-voucher-management-observed-by-read-only-matching-fields.md`
 - [2026-10-01] User Management tabs read All users, All roles, All permissions - `2026-10-01-10-user-management-tabs-read-all-users-all-roles.md`
+- [2026-10-01] Voucher Management NSX codes beside every scientific name, Your update always a value, row actions in one menu - `2026-10-01-10-voucher-management-nsx-codes-beside-every-scientific-name.md`
 - [2026-10-01] What is a project moves above the list as an explainer card - `2026-10-01-11-what-is-a-project-moves-above-the-list.md`
 - [2026-10-01] Explore empty card hint typography review - `2026-10-01-12-explore-empty-card-hint-typography-review.md`
 - [2026-10-01] Every action button carries an icon - `2026-10-01-13-every-action-button-carries-an-icon.md`
@@ -289,3 +322,8 @@ Not imported into every session on purpose: read or grep it when a task needs hi
 - [2026-10-01] Text editor: colour picker and font family picker removed - `2026-10-01-34-text-editor-colour-picker-and-font-family-picker.md`
 - [2026-10-01] Button utility ingested: override, inventory, doc page - `2026-10-01-35-button-utility-ingested-override-inventory-doc-page.md`
 - [2026-10-01] Button utility aria-label fix, text-editor buttons moved onto ButtonUtility, typography re-check - `2026-10-01-36-button-utility-aria-label-fix-text-editor-buttons.md`
+- [2026-10-02] Voucher Management Option 2 a row per field coloured by status, bg-warning-primary token added - `2026-10-02-01-voucher-management-option-2-a-row-per-field.md`
+- [2026-10-02] Voucher Management ignoring needs a reason, ignored lines say where and why, no-taxon note up front - `2026-10-02-02-voucher-management-ignoring-needs-a-reason-ignored-lines.md`
+- [2026-10-02] Voucher Management Needs review shows only lines to review, a missing taxon is said up front with Add taxon - `2026-10-02-03-voucher-management-needs-review-shows-only-lines-to.md`
+- [2026-10-02] Merge main (sai-wips PR 11) into mohan-wips - `2026-10-02-04-merge-main-sai-wips-pr-11-into-mohan.md`
+- [2026-10-02] Notification message uses the rich text editor; artefacts view switch moves right - `2026-10-02-05-notification-message-uses-the-rich-text-editor-artefacts.md`

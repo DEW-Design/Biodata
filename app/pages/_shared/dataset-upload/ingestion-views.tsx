@@ -113,6 +113,40 @@ export function IngestionProblems({ view, projectId, datasetId, onRetry }: { vie
   );
 }
 
+/** The run itself: the progress bar, the three stages (the first is pre-flight validation against
+ *  the data model) and, once it ends badly, why and what to do. Shared by the chip's popover and the
+ *  project's Datasets page, so both say the same thing the same way. */
+export function IngestionDetail({ view, projectId, datasetId, onRetry }: { view: RunView; projectId: string; datasetId?: string; onRetry: () => void }) {
+  const percent = Math.round(view.overall * 100);
+  return (
+    <>
+      <div className="flex flex-col gap-1.5">
+        <ProgressBarBase value={percent} progressClassName={view.failed ? "bg-fg-error-primary" : undefined} />
+        <div className="flex items-center justify-between gap-3 text-xs text-tertiary">
+          <span className="tabular-nums">{view.done ? "" : estimateOf(view)}</span>
+          <span className="tabular-nums">{percent}%</span>
+        </div>
+      </div>
+      <Progress.IconsWithText
+        type="number"
+        orientation="vertical"
+        size="sm"
+        items={STAGES.map((stage, i) => ({
+          title: stage.label,
+          description: stageDetail(i, view),
+          status: view.stagePercents[i] === 100 && view.failedStage !== i ? ("complete" as const) : view.stagePercents[i] > 0 ? ("current" as const) : ("incomplete" as const),
+          error: view.failedStage === i || (view.partial && i === 1),
+        }))}
+      />
+      {view.done && (view.failed || view.partial) && (
+        <div className="flex flex-col gap-4 border-t border-secondary pt-4">
+          <IngestionProblems view={view} projectId={projectId} datasetId={datasetId} onRetry={onRetry} />
+        </div>
+      )}
+    </>
+  );
+}
+
 // The gap between the chip and its popover, in the spacing scale: 2 units of the 4px base
 // (spacing-2, 0.5rem). The shared Popover defaults to 4px, which reads as touching for a panel this
 // size; every other dropdown keeps that default.
@@ -184,29 +218,7 @@ export function IngestionChip({
               {status.label}
             </Badge>
           </div>
-          <div className="flex flex-col gap-1.5">
-            <ProgressBarBase value={percent} progressClassName={view.failed ? "bg-fg-error-primary" : undefined} />
-            <div className="flex items-center justify-between gap-3 text-xs text-tertiary">
-              <span className="tabular-nums">{view.done ? "" : estimateOf(view)}</span>
-              <span className="tabular-nums">{percent}%</span>
-            </div>
-          </div>
-          <Progress.IconsWithText
-            type="number"
-            orientation="vertical"
-            size="sm"
-            items={STAGES.map((stage, i) => ({
-              title: stage.label,
-              description: stageDetail(i, view),
-              status: view.stagePercents[i] === 100 && view.failedStage !== i ? ("complete" as const) : view.stagePercents[i] > 0 ? ("current" as const) : ("incomplete" as const),
-              error: view.failedStage === i || (view.partial && i === 1),
-            }))}
-          />
-          {view.done && (view.failed || view.partial) && (
-            <div className="flex flex-col gap-4 border-t border-secondary pt-4">
-              <IngestionProblems view={view} projectId={projectId} datasetId={datasetId} onRetry={onRetry} />
-            </div>
-          )}
+          <IngestionDetail view={view} projectId={projectId} datasetId={datasetId} onRetry={onRetry} />
           <ul className="m-0 flex list-none flex-col gap-1 border-t border-secondary p-0 pt-3 text-xs text-tertiary">
             <li className="flex items-center gap-2">
               <File06 className="size-4 shrink-0 text-fg-quaternary" />

@@ -20,6 +20,7 @@ import { SidePanel } from "@/app/pages/_shared/map-search/side-panel";
 import { useRoleHref } from "@/lib/use-role-href";
 import { contactName, dsaScopeOptions, dsaStatusMeta, formatShortDate, todayIso, type Dsa, type DsaContact, type DsaStatus, type DsaSystem } from "@/app/pages/_shared/dsa/dsa-data";
 import { cx } from "@/utils/cx";
+import { AuditLog, milestones } from "@/app/pages/_shared/audit-log";
 
 // The DSA deep dive at /pages/dsa/<id> (lo-fi frame "DSA List", right-hand pane, Figma node 3:15089),
 // restructured to borrow project-detail's own information arrangement directly, per direct request
@@ -399,21 +400,23 @@ export function DsaDetail({
         </TabPanel>
 
         <TabPanel id="audit" className="p-6">
-          <div className="rounded-lg border border-secondary">
-            {[...dsa.history].reverse().map((e, i) => (
-              <RecordRow key={`${e.status}-${e.at}-${i}`} label={formatShortDate(e.at)}>
-                <span className="flex flex-col gap-1">
-                  <span className="flex flex-wrap items-center gap-2">
-                    <Badge size="sm" color={dsaStatusMeta[e.status].badgeColor}>
-                      {dsaStatusMeta[e.status].label}
-                    </Badge>
-                    <span className="text-tertiary">{e.by}</span>
+          <AuditLog id={dsa.id} idLabel="DSA ID" items={milestones(dsa.history, { label: "Activated", is: (e) => e.status === "active" }, { created: dsa.createdAt, updated: dsa.updatedAt })} changeCount={dsa.history.length}>
+            <div className="rounded-lg border border-secondary">
+              {[...dsa.history].reverse().map((e, i) => (
+                <RecordRow key={`${e.status}-${e.at}-${i}`} label={formatShortDate(e.at)}>
+                  <span className="flex flex-col gap-1">
+                    <span className="flex flex-wrap items-center gap-2">
+                      <Badge size="sm" color={dsaStatusMeta[e.status].badgeColor}>
+                        {dsaStatusMeta[e.status].label}
+                      </Badge>
+                      <span className="text-tertiary">{e.by}</span>
+                    </span>
+                    {e.note && <span className="max-w-prose text-secondary">{e.note}</span>}
                   </span>
-                  {e.note && <span className="max-w-prose text-secondary">{e.note}</span>}
-                </span>
-              </RecordRow>
-            ))}
-          </div>
+                </RecordRow>
+              ))}
+            </div>
+          </AuditLog>
         </TabPanel>
       </Tabs>
 

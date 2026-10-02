@@ -18,6 +18,7 @@ import { AreaList, AreasMap } from "@/app/pages/_shared/nominations/nomination-a
 import { attributeLabel, attributeValueLabel, formatShortDate, nominationStatusMeta, protectionMeta, speciesFor, type Nomination } from "@/app/pages/_shared/nominations/nomination-data";
 import { useFeatureAccess } from "@/lib/use-feature-access";
 import { useRoleHref } from "@/lib/use-role-href";
+import { AuditLog, milestones } from "@/app/pages/_shared/audit-log";
 
 // A nomination's own page, laid out like the project page (every record page follows it): a Back
 // link, the gradient identity card with the actions at its top right (one white button, the rest in
@@ -221,21 +222,23 @@ export function NominationDetail({
         </TabPanel>
 
         <TabPanel id="history" className="p-6">
-          <div className="rounded-lg border border-secondary">
-            {[...n.history].reverse().map((e, i) => (
-              <RecordRow key={`${e.status}-${e.at}-${i}`} label={formatShortDate(e.at)}>
-                <span className="flex flex-col gap-1">
-                  <span className="flex flex-wrap items-center gap-2">
-                    <Badge size="sm" color={nominationStatusMeta[e.status].badgeColor}>
-                      {nominationStatusMeta[e.status].label}
-                    </Badge>
-                    <span className="text-tertiary">{e.by}</span>
+          <AuditLog id={n.id} idLabel="Nomination ID" items={milestones(n.history, { label: "Decided", is: (e) => e.status === "accepted" || e.status === "rejected" }, { created: n.createdAt, updated: n.updatedAt })} changeCount={n.history.length}>
+            <div className="rounded-lg border border-secondary">
+              {[...n.history].reverse().map((e, i) => (
+                <RecordRow key={`${e.status}-${e.at}-${i}`} label={formatShortDate(e.at)}>
+                  <span className="flex flex-col gap-1">
+                    <span className="flex flex-wrap items-center gap-2">
+                      <Badge size="sm" color={nominationStatusMeta[e.status].badgeColor}>
+                        {nominationStatusMeta[e.status].label}
+                      </Badge>
+                      <span className="text-tertiary">{e.by}</span>
+                    </span>
+                    {e.note && <span className="max-w-prose text-secondary">{e.note}</span>}
                   </span>
-                  {e.note && <span className="max-w-prose text-secondary">{e.note}</span>}
-                </span>
-              </RecordRow>
-            ))}
-          </div>
+                </RecordRow>
+              ))}
+            </div>
+          </AuditLog>
         </TabPanel>
       </ContentTabs>
 

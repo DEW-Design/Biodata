@@ -1,11 +1,18 @@
 "use client";
 
-import { useRef, useState, useSyncExternalStore } from "react";
+import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 
 // Drag-anywhere positioning for the Prototype tools bar: the position
 // is an offset from the right and bottom edges (so it survives a window resize), remembered per
 // storage key in localStorage. A press that moves less than 4px is a click, not a drag: callers
 // read `wasDrag()` in their press handler and ignore the press when it returns true.
+//
+// The bar is always kept inside the window. The saved offset is only where it was put: on every
+// render, window resize and change in the bar's own size (a screen adding a tool) it is clamped so the
+// whole bar stays on screen, with the right edge (the role) winning when the bar is wider than the
+// window. The saved value itself is left alone, so a wider window puts the bar back where it was put.
+// Without this, a bar dragged left on a wide screen went off the left edge of a narrower one, or once a
+// screen added tools, taking the role switcher with it (the designer, 1 Oct 2026).
 
 export interface EdgeOffset {
   right: number;
@@ -49,8 +56,30 @@ export function useDragPosition(
     () => null,
   );
   const [live, setLive] = useState<EdgeOffset | null>(null);
-  const position = live ?? parse(raw) ?? fallback;
+  const wanted = live ?? parse(raw) ?? fallback;
   const dragged = useRef(false);
+
+  // The window's and the bar's sizes, kept current so the bar can be clamped inside the window.
+  const [el, attach] = useState<HTMLElement | null>(null);
+  const [box, setBox] = useState<{ vw: number; vh: number; w: number; h: number } | null>(null);
+  useEffect(() => {
+    if (!el) return;
+    const measure = () => {
+      const r = el.getBoundingClientRect();
+      setBox((prev) => (prev && prev.vw === window.innerWidth && prev.vh === window.innerHeight && prev.w === r.width && prev.h === r.height ? prev : { vw: window.innerWidth, vh: window.innerHeight, w: r.width, h: r.height }));
+    };
+    measure();
+    const observer = new ResizeObserver(measure);
+    observer.observe(el);
+    window.addEventListener("resize", measure);
+    return () => {
+      observer.disconnect();
+      window.removeEventListener("resize", measure);
+    };
+  }, [el]);
+
+  const clamp = (value: number, size: number, viewport: number) => Math.max(EDGE_MARGIN, Math.min(value, viewport - size - EDGE_MARGIN));
+  const position: EdgeOffset = box ? { right: clamp(wanted.right, box.w, box.vw), bottom: clamp(wanted.bottom, box.h, box.vh) } : wanted;
 
   const onPointerDown = (e: React.PointerEvent<HTMLElement>) => {
     if (e.button !== 0) return;
@@ -100,7 +129,9 @@ export function useDragPosition(
   };
 
   return {
-    style: { right: position.right, bottom: position.bottom },
+    style: { right: position.right, bottom: position.bottom, maxWidth: `calc(100vw - ${EDGE_MARGIN * 2}px)` },
+    /** Pass as the positioned element's ref, so it can be kept inside the window. */
+    attach,
     isDragging: live !== null,
     /** Attach with onPointerDownCapture, so a drag can start from any button inside. */
     onPointerDown,

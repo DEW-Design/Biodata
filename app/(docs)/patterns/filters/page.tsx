@@ -51,9 +51,9 @@ function FilterDemo() {
         </p>
       </div>
       <AttributeFilterChips filter={filter} />
-      <ul className="m-0 flex list-none flex-col divide-y divide-secondary rounded-lg border border-secondary p-0">
+      <ul className="m-0 flex list-none flex-col rounded-lg border border-secondary p-0">
         {rows.map((r) => (
-          <li key={r.id} className="m-0 flex items-center justify-between gap-3 px-4 py-3">
+          <li key={r.id} className="m-0 flex items-center justify-between gap-3 border-t border-secondary px-4 py-3 first:border-t-0">
             <span className="flex flex-col">
               <span className="text-sm font-medium text-primary">{r.project}</span>
               <span className="text-xs text-tertiary">
