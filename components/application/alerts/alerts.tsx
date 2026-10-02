@@ -163,6 +163,13 @@ interface AlertFullWidthProps {
      * @default false
      */
     wrap?: boolean;
+    /**
+     * With `contained`: one line instead of stacked. The title and description run on together and
+     * the actions sit at the right, wrapping under the text only when the card is too narrow. Use for
+     * a short notice with one action ("7 flagged concepts need review across this project · Review").
+     * @default false
+     */
+    inline?: boolean;
 }
 
 const tintMap: Record<NonNullable<AlertFullWidthProps["color"]>, { bg: string; border: string }> = {
@@ -190,6 +197,7 @@ export const AlertFullWidth = ({
     hideDismissButton = false,
     contained = false,
     wrap = false,
+    inline = false,
 }: AlertFullWidthProps) => {
     const tone = tintedBackground ? tintMap[color] : tintMap.default;
     const icon = (
@@ -225,6 +233,20 @@ export const AlertFullWidth = ({
     // Contained card: the icon at the top left, then the title with the description under it at full
     // width, then the actions as a row beneath the text (the floating alert's layout). Laying the
     // title and description side by side squeezed the description into a narrow second column.
+    if (contained && inline) {
+        return (
+            <div className={cx("font-barlow relative flex flex-wrap items-center gap-x-3 gap-y-2 rounded-lg border p-4", tintMap[color].bg, tintMap[color].border, className)}>
+                {icon}
+                <p className={cx("min-w-0 flex-1 text-sm text-balance text-tertiary", onClose && "pr-8")}>
+                    <span className="font-semibold text-secondary">{title}</span>
+                    {description && <> {description}</>}
+                </p>
+                {actions}
+                {onClose && <CloseButton onClick={onClose} size="sm" label={dismissLabel} className="absolute top-2 right-2" />}
+            </div>
+        );
+    }
+
     if (contained) {
         return (
             <div className={cx("font-barlow relative flex items-start gap-3 rounded-lg border p-4", tintMap[color].bg, tintMap[color].border, className)}>

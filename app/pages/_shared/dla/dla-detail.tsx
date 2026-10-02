@@ -6,13 +6,12 @@ import type { Key } from "react-aria-components";
 import { parseDate } from "@internationalized/date";
 import { ArrowNarrowLeft, CheckCircle, Download01, Edit05, PauseCircle, PlayCircle, Plus, SearchLg, SlashCircle01, Trash01, XCircle, Grid01, MarkerPin04, FileCheck02, ClockRewind } from "@untitledui/icons";
 import { RecordActionBar, type RecordAction } from "@/app/pages/_shared/record-action-bar";
-import { AuditLog } from "@/app/pages/_shared/audit-log";
 import { RecordBackLink, RecordHero } from "@/app/pages/_shared/record-hero";
 import { AlertFullWidth } from "@/components/application/alerts/alerts";
 import { Badge } from "@/components/base/badges/badges";
 import { Button } from "@/components/base/buttons/button";
 import { Checkbox } from "@/components/base/checkbox/checkbox";
-import { InputDate } from "@/components/base/input/input-date";
+import { InputDatePicker } from "@/components/custom/date-picker/input-date-picker";
 import { InputFile } from "@/components/base/input/input-file";
 import { TextArea } from "@/components/base/textarea/textarea";
 import { FeaturedIcon } from "@/components/foundations/featured-icon/featured-icon";
@@ -40,6 +39,8 @@ import {
 import { useFeatureAccess } from "@/lib/use-feature-access";
 import { useRoleHref } from "@/lib/use-role-href";
 import { cx } from "@/utils/cx";
+import { AuditLog, milestones } from "@/app/pages/_shared/audit-log";
+import { AuditFeed } from "@/app/pages/_shared/audit-feed";
 
 // The DLA deep dive at /pages/dla/<id> (wireframe "View - Data Licence Agreement", Figma
 // YMproGZfrFB5jUqPHPxMhk node 33:43259), rebuilt on the same information arrangement DSA and
@@ -197,8 +198,8 @@ function ApproveModal({ dla, isOpen, onOpenChange, onApprove }: { dla: Dla; isOp
       }}
     >
       <div className="grid grid-cols-2 gap-3">
-        <InputDate label="Agreement Start Date" value={validFrom ? parseDate(validFrom) : null} onChange={(v) => setValidFrom(v ? v.toString() : "")} />
-        <InputDate label="Agreement End Date" value={validTo ? parseDate(validTo) : null} onChange={(v) => setValidTo(v ? v.toString() : "")} />
+        <InputDatePicker label="Agreement Start Date" value={validFrom ? parseDate(validFrom) : null} onChange={(v) => setValidFrom(v ? v.toString() : "")} />
+        <InputDatePicker label="Agreement End Date" value={validTo ? parseDate(validTo) : null} onChange={(v) => setValidTo(v ? v.toString() : "")} />
       </div>
       <InputFile
         label="Attach Agreement"
@@ -469,7 +470,9 @@ export function DlaDetail({
           )}
 
           <TabPanel id="audit">
-            <AuditLog events={dla.history} statusMeta={dlaStatusMeta} noun="request" />
+            <AuditLog id={dla.id} idLabel="DLA ID" items={milestones(dla.history, { label: "Activated", is: (e) => e.status === "active" }, { created: dla.submittedAt, updated: dla.updatedAt })} changeCount={dla.history.length}>
+              <AuditFeed events={dla.history} statusMeta={dlaStatusMeta} noun="request" />
+            </AuditLog>
           </TabPanel>
         </div>
       </Tabs>

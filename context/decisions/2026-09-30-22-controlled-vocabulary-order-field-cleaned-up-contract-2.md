@@ -1,0 +1,9 @@
+# 2026-09-30 - Controlled Vocabulary Order field cleaned up, contract 2.12 nothing on screen without a purpose
+
+- **Sept 30 2026: Controlled Vocabulary Order field cleaned up, contract 2.12 nothing on screen without a purpose.** Follows 2026-09-30-21. The designer, on the Entries grid: "the # in this is too big and ugly. why are giving dirty stuff. Make sure you do visually aesthetic add to contracts."
+  - **Order field:** the # icon is gone. `ComboBox` gained an opt-in `hideIcon` prop (1.6, default unchanged for every other caller) and the Order field uses it, so it shows only the number. The Order column is 88 px (was as wide as a text column) and its dropdown 80 px.
+  - **Row layout:** the spare-width column now sits after "Available to users" in both grids, so a row reads as one block (Order, ID, text, the switch) with only the floating "..." at the right edge; before, a wide gap separated the text from its own switch.
+  - **Contract 2.12 "Nothing on screen without a purpose":** added to `CONTRACTS.md` (build scope in `contracts/rule-scopes.json`, `npm run contracts:rules` run): no icon that doesn't carry meaning, fields sized to what they hold, repeated per-row controls recede, and every visible change is checked in a live screenshot with `/emil-design-foundations` before it is shown. `REVIEW`. A change to the contracts, flagged in the audit (9.4), made on the designer's instruction.
+  - **Verified:** `tsc` and `eslint` (combobox and the Controlled Vocabulary folder) clean. Live Chrome as BioData Super Admin on Measurement's Entries: Order 1 to 8 with no icon, the ID muted beside it, the switch right after Value.
+  - **Not clean:** `check:contracts` fails on one dead utility class in `app/pages/_shared/taxonomy/tx-editor.tsx`, a new, untracked folder another session created at the same time; not touched here.
+  - **Open:** none new. Not committed.

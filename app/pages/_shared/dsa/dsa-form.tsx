@@ -11,7 +11,7 @@ import { Badge } from "@/components/base/badges/badges";
 import { Button } from "@/components/base/buttons/button";
 import { Checkbox } from "@/components/base/checkbox/checkbox";
 import { Input } from "@/components/base/input/input";
-import { InputDate } from "@/components/base/input/input-date";
+import { InputDatePicker } from "@/components/custom/date-picker/input-date-picker";
 import { InputFile } from "@/components/base/input/input-file";
 import { MultiSelect } from "@/components/base/select/multi-select";
 import { TextArea } from "@/components/base/textarea/textarea";
@@ -406,7 +406,7 @@ export function DsaForm({
             </FormRow>
             <FormRow title="Agreement period" required>
               <div className="grid gap-4 sm:grid-cols-2">
-                <InputDate
+                <InputDatePicker
                   label="Valid from"
                   isRequired
                   isDisabled={isEditingLive}
@@ -415,7 +415,7 @@ export function DsaForm({
                   isInvalid={!!errors.validFrom}
                   hint={errors.validFrom}
                 />
-                <InputDate
+                <InputDatePicker
                   label="Valid to"
                   isRequired
                   isDisabled={isEditingLive}

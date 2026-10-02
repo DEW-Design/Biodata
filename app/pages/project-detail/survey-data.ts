@@ -1,4 +1,4 @@
-// The survey records for Adelaide Hills Bushland Survey, the hand-written seed of the project page template
+// The project records for Adelaide Hills Bushland Survey, the hand-written seed of the project page template
 // (project-seed.ts). Every other project's records are built from Explore's data instead.
 //
 // One project, Adelaide Hills Bushland Survey (BD-5039), modelled the way a Darwin Core user reads a

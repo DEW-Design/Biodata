@@ -4,7 +4,8 @@
  * straight out of a URL search param - see `useUserRole` in `lib/use-user-role.ts`.
  *
  * Ordered highest to lowest privilege - this is the real hierarchy, not just a list:
- * biodata-admin (DEW, super user) > biodata-user (DEW) > privileged-admin (partner org admin) >
+ * biodata-super-admin (DEW; everything biodata-admin has, plus Controlled Vocabulary) >
+ * biodata-admin (DEW, admin) > biodata-user (DEW) > privileged-admin (partner org admin) >
  * privileged-user (partner org member) > registered-user (no org) > public-user (not signed in).
  * biodata-admin/biodata-user are themselves an organisation - DEW - which is why org-affiliated
  * chrome (e.g. the breadcrumb's org switcher) applies to them too, not just privileged-*.
@@ -15,6 +16,7 @@
  * remove them from this list either.
  */
 export const USER_ROLES = [
+  "biodata-super-admin",
   "biodata-admin",
   "biodata-user",
   "privileged-admin",
@@ -41,5 +43,14 @@ export function isUserRole(value: string | null | undefined): value is UserRole 
  * Flagged directly by the user: DEW for the `biodata-*` roles, ORG stays for `privileged-*`.
  */
 export function orgLabelForRole(role: UserRole): string {
-  return role === "biodata-admin" || role === "biodata-user" ? "DEW" : "ORG";
+  return isBiodataAdmin(role) || role === "biodata-user" ? "DEW" : "ORG";
+}
+
+/**
+ * A BioData Admin, or the BioData Super Admin above them (Sept 30 2026: "This role will see
+ * everything that the Biodata Admin has but CV is an additional one"). Anywhere a screen asks "is this
+ * an admin", it asks this, so the super admin never loses something an admin has.
+ */
+export function isBiodataAdmin(role: UserRole): boolean {
+  return role === "biodata-admin" || role === "biodata-super-admin";
 }

@@ -15,6 +15,8 @@ import { isReactComponent } from "@/utils/is-react-component";
 
 interface ComboBoxProps extends Omit<AriaComboBoxProps<SelectItemType>, "children" | "items">, RefAttributes<HTMLDivElement>, CommonProps {
     shortcut?: boolean;
+    /** No leading icon (the search glass is the default). For a short value picker, such as a number, where a glass would only crowd the field. */
+    hideIcon?: boolean;
     items?: SelectItemType[];
     popoverClassName?: string;
     shortcutClassName?: string;
@@ -84,12 +86,13 @@ interface ComboBoxValueProps extends AriaGroupProps {
     placeholder?: string;
     shortcutClassName?: string;
     icon?: FC | ReactNode;
+    hideIcon?: boolean;
     onFocus?: FocusEventHandler;
     onPointerEnter?: PointerEventHandler;
     ref?: Ref<HTMLDivElement>;
 }
 
-const ComboBoxValue = ({ size, shortcut, placeholder, shortcutClassName, icon: IconProp, ref, ...otherProps }: ComboBoxValueProps) => {
+const ComboBoxValue = ({ size, shortcut, placeholder, shortcutClassName, icon: IconProp, hideIcon = false, ref, ...otherProps }: ComboBoxValueProps) => {
     const state = useContext(ComboBoxStateContext);
 
     const value = state?.selectedItem?.value || null;
@@ -115,7 +118,7 @@ const ComboBoxValue = ({ size, shortcut, placeholder, shortcutClassName, icon: I
                 )
             }
         >
-            {isReactComponent(IconProp) ? (
+            {hideIcon ? null : isReactComponent(IconProp) ? (
                 <IconProp data-icon className="pointer-events-none" aria-hidden="true" />
             ) : isValidElement(IconProp) ? (
                 IconProp
@@ -168,6 +171,7 @@ export const ComboBox = ({
     items,
     shortcutClassName,
     icon,
+    hideIcon,
     listboxHeader,
     listboxFooter,
     popoverMinWidth,
@@ -211,6 +215,7 @@ export const ComboBox = ({
                             shortcut={shortcut}
                             shortcutClassName={shortcutClassName}
                             icon={icon}
+                            hideIcon={hideIcon}
                             size={size}
                             // This is a workaround to correctly calculating the trigger width
                             // while using ResizeObserver wasn't 100% reliable.

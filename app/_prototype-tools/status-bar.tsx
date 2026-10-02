@@ -71,7 +71,7 @@ export function StatusBar({ tools }: { tools: Tool[] }) {
   const t = (transition: Transition) => (reduce ? INSTANT : transition);
 
   const [dragEpoch, setDragEpoch] = useState(0);
-  const drag = useDragPosition("status-bar", DEFAULT_POSITION, () =>
+  const { attach: attachBar, ...drag } = useDragPosition("status-bar", DEFAULT_POSITION, () =>
     setDragEpoch((n) => n + 1),
   );
   const [collapsed, setCollapsed] = useCollapsed();
@@ -130,6 +130,7 @@ export function StatusBar({ tools }: { tools: Tool[] }) {
 
   return (
     <div
+      ref={attachBar}
       className={cx("fixed touch-none select-none", TOOLS_Z)}
       style={{ ...drag.style, ...VARS }}
       onPointerDownCapture={drag.onPointerDown}

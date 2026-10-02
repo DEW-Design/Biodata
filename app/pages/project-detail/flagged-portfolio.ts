@@ -2,7 +2,7 @@
 
 // Flagged concepts across every project, for the admin's "Flagged concepts" page (29 Sept 2026).
 //
-// Adelaide Hills Bushland Survey (BD-5039) is the one project with full survey records in this
+// Adelaide Hills Bushland Survey (BD-5039) is the one project with full project records in this
 // preview: its flagged concepts come live from the field-notes store (review-view.tsx). The other
 // projects have no record detail yet, so their flagged concepts are example entries kept here, in
 // their own persisted store, so resolving one survives a reload the same way. The projects, species,
@@ -50,7 +50,7 @@ export const daysSince = (date: string): number | null => {
     : Math.max(0, Math.floor((Date.now() - t) / 86_400_000));
 };
 
-/** The project with live survey records. */
+/** The project with live project records. */
 export const LIVE_PROJECT = {
   code: "BD-5039",
   name: "Adelaide Hills Bushland Survey",

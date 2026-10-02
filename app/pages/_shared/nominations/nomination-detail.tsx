@@ -9,7 +9,6 @@ import { AlertFullWidth } from "@/components/application/alerts/alerts";
 import { Tab, TabList, TabPanel } from "@/components/application/tabs/tabs";
 import { ConfirmationModal, DestructiveModal } from "@/components/application/modals/modal";
 import { RejectModal } from "@/app/pages/_shared/agreement-modals";
-import { AuditLog } from "@/app/pages/_shared/audit-log";
 import { CURRENT_USER_NAME } from "@/app/pages/_shared/agreement-scope";
 import { RecordActionBar, type RecordAction } from "@/app/pages/_shared/record-action-bar";
 import { HeroMeta, RecordBackLink, RecordHero, RecordRow } from "@/app/pages/_shared/record-hero";
@@ -19,6 +18,8 @@ import { AreaList, AreasMap } from "@/app/pages/_shared/nominations/nomination-a
 import { attributeLabel, attributeValueLabel, formatShortDate, nominationStatusMeta, protectionMeta, speciesFor, type Nomination } from "@/app/pages/_shared/nominations/nomination-data";
 import { useFeatureAccess } from "@/lib/use-feature-access";
 import { useRoleHref } from "@/lib/use-role-href";
+import { AuditLog, milestones } from "@/app/pages/_shared/audit-log";
+import { AuditFeed } from "@/app/pages/_shared/audit-feed";
 
 // A nomination's own page, laid out like the project page (every record page follows it): a Back
 // link, the gradient identity card with the actions at its top right (one white button, the rest in
@@ -222,7 +223,9 @@ export function NominationDetail({
         </TabPanel>
 
         <TabPanel id="history" className="p-6">
-          <AuditLog events={n.history} statusMeta={nominationStatusMeta} noun="nomination" />
+          <AuditLog id={n.id} idLabel="Nomination ID" items={milestones(n.history, { label: "Decided", is: (e) => e.status === "accepted" || e.status === "rejected" }, { created: n.createdAt, updated: n.updatedAt })} changeCount={n.history.length}>
+            <AuditFeed events={n.history} statusMeta={nominationStatusMeta} noun="nomination" />
+          </AuditLog>
         </TabPanel>
       </ContentTabs>
 

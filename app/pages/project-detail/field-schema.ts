@@ -1,7 +1,7 @@
-// The field types of survey records, and the rules that turn a type into a control. One source for
+// The field types of project records, and the rules that turn a type into a control. One source for
 // every event, occurrence and observation, so a rule set for one record type applies to all of them
 // (designer instruction, 28 Sept 2026: "anything I give you for context must be applied across all
-// the survey records").
+// the project records").
 //
 // Field lists come from the Figma "Details Container / Edit" frames (file YMproGZfrFB5jUqPHPxMhk),
 // which annotate every field with its type. Site is the first (node 1970:143519); the others follow.

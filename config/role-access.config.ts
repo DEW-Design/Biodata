@@ -20,10 +20,10 @@
  * right now.
  */
 
-import type { UserRole } from "@/lib/user-role";
+import { isBiodataAdmin, type UserRole } from "@/lib/user-role";
 
 /** One entry per gated product feature. Add a key as a feature is actually gated - don't pre-populate speculatively. */
-export type FeatureKey = "orgSwitcher" | "metricCardCustomization" | "dsaManagement" | "dlaAccess" | "dlaApproval" | "userManagement" | "restrictedData" | "nominationAccess" | "nominationReview" | "datasetUpload" | "templateFinder" | "reports";
+export type FeatureKey = "orgSwitcher" | "metricCardCustomization" | "dsaManagement" | "dlaAccess" | "dlaApproval" | "userManagement" | "restrictedData" | "nominationAccess" | "nominationReview" | "datasetUpload" | "templateFinder" | "ctrlVocabManagement" | "taxonomyManagement" | "notificationManagement" | "voucherManagement" | "reports";
 
 /** Feature -> the roles (besides biodata-admin, which always passes) allowed to see it. */
 export const roleAccessMatrix: Record<FeatureKey, UserRole[]> = {
@@ -77,6 +77,22 @@ export const roleAccessMatrix: Record<FeatureKey, UserRole[]> = {
   datasetUpload: ["registered-user", "privileged-user", "privileged-admin", "biodata-user"],
   // Every signed-in role; a public user has no Template Finder section (context/decisions/2026-09-21-04).
   templateFinder: ["registered-user", "privileged-user", "privileged-admin", "biodata-user"],
+  // Controlled Vocabulary (/pages/ctrl-vocab): create, edit, archive and reactivate vocabularies.
+  // BioData Super Admin only (BRD REQ-18.1: "BioData Admin users shall not have access"), per the
+  // designer, Sept 30 2026. See SUPER_ADMIN_ONLY below: the one feature a BioData Admin does not get.
+  ctrlVocabManagement: [],
+  // Taxonomy Management (/pages/taxonomy): view and edit a species' taxonomy, and Rename, Combine,
+  // Split and Append taxa. BioData Admin and above, per the designer (Sept 30 2026): the admin bypass
+  // passes BioData Admin and Super Admin, and no other role is listed.
+  taxonomyManagement: [],
+  // Notification Management (/pages/notifications): the automated emails BioData SA sends, created,
+  // edited, enabled and disabled. BioData Admin and above, per the designer (1 Oct 2026): the admin
+  // bypass passes BioData Admin and Super Admin, and no other role is listed.
+  notificationManagement: [],
+  // Voucher Management (/pages/vouchers): review the differences a scheduled scan finds between
+  // BioData's vouchered records and the Herbarium's or the SA Museum's, and push or ignore each one.
+  // BioData Super Admin only, per the designer (1 Oct 2026): listed in SUPER_ADMIN_ONLY below.
+  voucherManagement: [],
   // Reports (/pages/reports): every signed-in role, like the Template Finder; a public user has no Reports
   // section. What a role sees inside a report is decided by the report (the ingestion report shows a
   // registered user their own runs and BioData Admin all of them).
@@ -100,7 +116,11 @@ export function showsProjectExplainer(role: UserRole): boolean {
  * matrix, per the "build for admin, hide for everyone else" convention) - every other role is
  * checked against `roleAccessMatrix`.
  */
+/** Features for the BioData Super Admin alone: a BioData Admin, who otherwise passes every check, does not get these. */
+const SUPER_ADMIN_ONLY: FeatureKey[] = ["ctrlVocabManagement", "voucherManagement"];
+
 export function hasFeatureAccess(feature: FeatureKey, role: UserRole): boolean {
-  if (role === "biodata-admin") return true;
+  if (role === "biodata-super-admin") return true;
+  if (isBiodataAdmin(role)) return !SUPER_ADMIN_ONLY.includes(feature);
   return roleAccessMatrix[feature].includes(role);
 }

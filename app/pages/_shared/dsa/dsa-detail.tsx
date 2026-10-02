@@ -4,7 +4,6 @@ import { useState, type ReactNode } from "react";
 import type { Key } from "react-aria-components";
 import { ArrowNarrowLeft, CheckCircle, Download01, Edit05, Eye, EyeOff, Mail01, PauseCircle, Phone01, PlayCircle, Plus, SearchLg, SearchMd, SlashCircle01, Trash01, XCircle, Grid01, Share07, ClockRewind } from "@untitledui/icons";
 import { RecordActionBar, type RecordAction } from "@/app/pages/_shared/record-action-bar";
-import { AuditLog } from "@/app/pages/_shared/audit-log";
 import { RecordBackLink, RecordHero } from "@/app/pages/_shared/record-hero";
 import { AlertFullWidth } from "@/components/application/alerts/alerts";
 import { Badge, CountBadge } from "@/components/base/badges/badges";
@@ -21,6 +20,8 @@ import { SidePanel } from "@/app/pages/_shared/map-search/side-panel";
 import { useRoleHref } from "@/lib/use-role-href";
 import { contactName, dsaScopeOptions, dsaStatusMeta, formatShortDate, todayIso, type Dsa, type DsaContact, type DsaStatus, type DsaSystem } from "@/app/pages/_shared/dsa/dsa-data";
 import { cx } from "@/utils/cx";
+import { AuditLog, milestones } from "@/app/pages/_shared/audit-log";
+import { AuditFeed } from "@/app/pages/_shared/audit-feed";
 
 // The DSA deep dive at /pages/dsa/<id> (lo-fi frame "DSA List", right-hand pane, Figma node 3:15089),
 // restructured to borrow project-detail's own information arrangement directly, per direct request
@@ -400,7 +401,9 @@ export function DsaDetail({
         </TabPanel>
 
         <TabPanel id="audit" className="p-6">
-          <AuditLog events={dsa.history} statusMeta={dsaStatusMeta} noun="agreement" />
+          <AuditLog id={dsa.id} idLabel="DSA ID" items={milestones(dsa.history, { label: "Activated", is: (e) => e.status === "active" }, { created: dsa.createdAt, updated: dsa.updatedAt })} changeCount={dsa.history.length}>
+            <AuditFeed events={dsa.history} statusMeta={dsaStatusMeta} noun="agreement" />
+          </AuditLog>
         </TabPanel>
       </Tabs>
 

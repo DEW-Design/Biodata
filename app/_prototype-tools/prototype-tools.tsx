@@ -22,6 +22,10 @@ const wholePageGates: { prefix?: string; pattern?: RegExp; feature: FeatureKey }
   { prefix: "/pages/user-management", feature: "userManagement" },
   { prefix: "/pages/nominations", feature: "nominationAccess" },
   { prefix: "/pages/template-finder", feature: "templateFinder" },
+  { prefix: "/pages/ctrl-vocab", feature: "ctrlVocabManagement" },
+  { prefix: "/pages/taxonomy", feature: "taxonomyManagement" },
+  { prefix: "/pages/notifications", feature: "notificationManagement" },
+  { prefix: "/pages/vouchers", feature: "voucherManagement" },
   { prefix: "/pages/reports", feature: "reports" },
   { pattern: /^\/pages\/project-list\/[^/]+\/upload$/, feature: "datasetUpload" },
 ];
@@ -29,6 +33,7 @@ const wholePageGates: { prefix?: string; pattern?: RegExp; feature: FeatureKey }
 // Role names as User Management writes them (um-data.ts). A public user has no account, so the
 // name says what you see: the signed-out site.
 const ROLE_OPTIONS: Record<UserRole, Omit<ToolOption, "id">> = {
+  "biodata-super-admin": { label: "BioData Super Admin", description: "BioData Admin plus Controlled Vocabulary and Voucher Management" },
   "biodata-admin": { label: "BioData Admin" },
   "biodata-user": { label: "BioData User" },
   "privileged-admin": { label: "Privileged Admin" },

@@ -1,131 +1,82 @@
 "use client";
 
-import { Zap } from "@untitledui/icons";
-import type { BadgeColors } from "@/components/base/badges/badge-types";
-import { Avatar } from "@/components/base/avatar/avatar";
-import { Badge } from "@/components/base/badges/badges";
-import { localIsoDate } from "@/app/pages/_shared/agreement-status";
+import { useState, type ReactNode } from "react";
+import { Button } from "@/components/base/buttons/button";
+import { formatShortDate } from "@/app/pages/_shared/dsa/dsa-data";
 
-// The Audit Log tab of a record page (DLA, DSA, nominations): who moved the record to which status, and when, newest
-// first. One sentence per move, taken from the activity feed Vercel uses in its team settings (Mobbin research, 2 Oct
-// 2026): the person is the subject, the status is the badge, the date sits at the right. A run of moves by the same
-// person shares one header and the lines under it drop the name. The newest move carries a "Current" chip. A note (a
-// rejection reason, an on-hold note) sits under its move. "System" is the clock moving a record (Approved to Active).
+// The audit log every record's History (or Audit Log) tab opens with, from the Figma "Notification
+// Management" audit log (YMproGZfrFB5jUqPHPxMhk, node 1584:22819): who created the record and when, who
+// made it live and when, and who changed it last and when, as "on" and "by" pairs side by side. The
+// designer, 1 Oct 2026: "do the same everywhere we show the history tab", with the full list of
+// changes kept behind "Show all changes" (the Figma's "Hide Logs").
+//
+// Each record says which of its own events is the middle milestone (a DLA becoming Active, a
+// nomination being decided, a dataset being approved) and passes its full event list as children.
+// A milestone that hasn't happened yet reads "Not yet". Type: the label is RecordRow's, the value the
+// list name cell's.
 
 export interface AuditEvent {
-  status: string;
-  /** `YYYY-MM-DD`. */
+  /** ISO date or date and time. */
   at: string;
   by: string;
-  note?: string;
 }
 
-type StatusMeta = Record<string, { label: string; badgeColor: BadgeColors }>;
-
-const SYSTEM = "System";
-// The same three-letter months formatShortDate writes everywhere else (toLocaleDateString gives "Sept").
-const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-
-function initialsOf(name: string): string {
-  return name
-    .split(/\s+/)
-    .filter(Boolean)
-    .map((part) => part[0])
-    .slice(0, 2)
-    .join("")
-    .toUpperCase();
+export interface AuditMilestone {
+  /** "Created", "Activated", "Decided", "Last modified". */
+  label: string;
+  event?: AuditEvent;
 }
 
-function parse(iso: string): Date {
-  const [y, m, d] = iso.split("-").map(Number);
-  return new Date(y, m - 1, d);
-}
+const dateOf = (at: string) => formatShortDate(at.slice(0, 10));
 
-/** Today and Yesterday for the last two days, the date otherwise (only dates are stored, not times). */
-function whenLabel(iso: string): string {
-  const today = localIsoDate();
-  if (iso === today) return "Today";
-  if (iso === localIsoDate(new Date(parse(today).getTime() - 24 * 60 * 60 * 1000))) return "Yesterday";
-  const date = parse(iso);
-  return `${date.getDate()} ${MONTHS[date.getMonth()]} ${date.getFullYear()}`;
-}
-
-function Actor({ name }: { name: string }) {
-  return name === SYSTEM ? <Avatar size="xs" alt={SYSTEM} placeholderIcon={Zap} /> : <Avatar size="xs" initials={initialsOf(name)} alt={name} />;
-}
-
-function Move({ event, meta, current, withName }: { event: AuditEvent; meta: StatusMeta; current: boolean; withName: boolean }) {
-  const status = meta[event.status];
+function Pair({ label, value }: { label: string; value: ReactNode }) {
   return (
-    <div className="flex min-w-0 flex-1 flex-col gap-1">
-      <div className="flex items-baseline justify-between gap-4">
-        <p className="m-0 flex min-w-0 flex-wrap items-center gap-x-1.5 gap-y-1 text-sm text-secondary">
-          {withName && <span className="font-medium text-primary">{event.by}</span>}
-          {event.status === "draft" ? "created this as" : "moved this to"}
-          <Badge size="sm" color={status.badgeColor}>
-            {status.label}
-          </Badge>
-          {current && (
-            <Badge size="sm" type="modern" color="gray">
-              Current
-            </Badge>
-          )}
-        </p>
-        <time dateTime={event.at} className="shrink-0 text-sm text-tertiary tabular-nums">
-          {whenLabel(event.at)}
-        </time>
-      </div>
-      {event.note && <p className="m-0 max-w-prose text-sm text-balance text-secondary">{event.note}</p>}
+    <div className="flex min-w-0 flex-col gap-1">
+      <p className="m-0 text-sm text-secondary">{label}</p>
+      <p className="m-0 text-sm font-medium text-primary">{value}</p>
     </div>
   );
 }
 
-/** `events` are in the order they happened (oldest first), as the stores keep them. */
-export function AuditLog({ events, statusMeta, noun }: { events: AuditEvent[]; statusMeta: StatusMeta; noun: string }) {
-  if (events.length === 0) {
-    return (
-      <div className="rounded-lg border border-secondary">
-        <p className="m-0 p-6 text-sm text-tertiary">No status changes have been recorded for this {noun}.</p>
-      </div>
-    );
-  }
+/**
+ * The created, middle and last-modified milestones of a chronological event list. `dates` is the
+ * record's own created and updated dates: a record kept from before its events were logged still
+ * says when it was created and last changed, by "Not recorded", never "Not yet".
+ */
+export function milestones<E extends AuditEvent>(events: E[], middle: { label: string; is: (e: E) => boolean }, dates?: { created?: string; updated?: string }): AuditMilestone[] {
+  const known = (at?: string) => (at ? { at, by: "Not recorded" } : undefined);
+  return [
+    { label: "Created", event: events[0] ?? known(dates?.created) },
+    { label: middle.label, event: events.find(middle.is) },
+    { label: "Last modified", event: events[events.length - 1] ?? known(dates?.updated ?? dates?.created) },
+  ];
+}
 
-  const newestFirst = [...events].reverse();
-  // Consecutive moves by the same person share a header.
-  const groups: { by: string; items: { event: AuditEvent; index: number }[] }[] = [];
-  newestFirst.forEach((event, index) => {
-    const last = groups[groups.length - 1];
-    if (last && last.by === event.by) last.items.push({ event, index });
-    else groups.push({ by: event.by, items: [{ event, index }] });
-  });
-
+export function AuditLog({ id, idLabel = "ID", items, changeCount, children }: { id?: string; idLabel?: string; items: AuditMilestone[]; changeCount: number; children: ReactNode }) {
+  const [open, setOpen] = useState(false);
   return (
-    <ol aria-label="Audit log" className="m-0 flex list-none flex-col rounded-lg border border-secondary p-0">
-      {groups.map((group) => {
-        const first = group.items[0];
-        const single = group.items.length === 1;
-        return (
-          <li key={`${group.by}-${first.index}`} className="flex gap-3 border-b border-secondary px-4 py-3 last:border-b-0">
-            <div className="shrink-0 pt-px">
-              <Actor name={group.by} />
-            </div>
-            {single ? (
-              <Move event={first.event} meta={statusMeta} current={first.index === 0} withName />
-            ) : (
-              <div className="flex min-w-0 flex-1 flex-col gap-2">
-                <p className="m-0 pt-0.5 text-sm font-medium text-primary">{group.by}</p>
-                <ul className="m-0 flex list-none flex-col gap-2 p-0">
-                  {group.items.map(({ event, index }) => (
-                    <li key={`${event.status}-${event.at}-${index}`} className="flex">
-                      <Move event={event} meta={statusMeta} current={index === 0} withName={false} />
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            )}
-          </li>
-        );
-      })}
-    </ol>
+    <div className="flex flex-col gap-3">
+      {id && (
+        <p className="m-0 text-sm text-secondary">
+          {idLabel}: <span className="font-medium text-primary tabular-nums">{id}</span>
+        </p>
+      )}
+      <div className="rounded-lg border border-secondary">
+        {items.map((m) => (
+          <div key={m.label} className="grid grid-cols-2 gap-6 border-b border-secondary px-4 py-3 last:border-b-0">
+            <Pair label={`${m.label} on`} value={m.event ? dateOf(m.event.at) : "Not yet"} />
+            <Pair label={`${m.label} by`} value={m.event ? m.event.by : "Not yet"} />
+          </div>
+        ))}
+      </div>
+      {changeCount > 0 && (
+        <div className="flex justify-end">
+          <Button color="link-color" size="sm" onPress={() => setOpen((v) => !v)} aria-expanded={open}>
+            {open ? "Hide all changes" : `Show all changes (${changeCount})`}
+          </Button>
+        </div>
+      )}
+      {open && children}
+    </div>
   );
 }

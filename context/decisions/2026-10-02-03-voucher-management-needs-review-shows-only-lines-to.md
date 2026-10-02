@@ -1,0 +1,13 @@
+# 2026-10-02 - Voucher Management Needs review shows only lines to review, a missing taxon is said up front with Add taxon
+
+- **Oct 2 2026: Needs review shows only lines to review; a missing taxon is said up front, with Add taxon.** Follows 2026-10-02-02. Both options.
+  - **Needs review hides decided lines** ("we dont have to show already updated records in needs review?"): with the batch narrowed to Needs review (the Status filter's only choice), a record shows only its lines still to review; updated, ignored and Observed by lines are left out (`CompareTable reviewOnly`). They show under All, Updated and Ignored, and with "Show matching fields" on.
+  - **A missing taxon, on the screen** ("the admin has to go to the edit screen to find out that the taxon is not yet there in the system ... Think and come with a better UX"). The line no longer pretends to have a value:
+    - the source's name carries a "Not in BioData" badge (warning) on its second line, beside the authorship, wherever it shows (table, Edit dialog, record page);
+    - Your update says "Add the taxon first", "Not in BioData's taxonomy yet" under it, and a visible Add taxon link to Taxonomy Management's Append (`/pages/taxonomy/new?type=append&from=<BioData's current taxon>`, which starts with that taxon's order, family and genus); the line's menu has Add in Taxonomy Management, Choose another taxon, Ignore difference;
+    - once the taxon exists, the line finds it by itself: the badge becomes the new NSX code and Your update holds the new taxon, ready to push. Verified end to end in the browser: Add taxon, Append completed (P09001, Eucalyptus leucoxylon subsp. pruinosa), back to the batch, the line resolved;
+    - a deliberately chosen other taxon still shows as the update.
+  - **A value equal to BioData's is never an update**: the designer's browser held the current name as the name's update, which hid the problem and would have shadowed the new taxon. `useProposal` ignores such a value, setting one clears it, and push skips any change equal to what BioData holds (the confirmation says a name needs its taxon added, or another chosen).
+  - **Proposed, not built:** Add taxon could prefill the full new name (species, rank, infraspecific name) from the source. That needs Taxonomy Management's Append to read them from the link, a change to that module, so it waits for the designer.
+  - **Verified:** `tsc`, `eslint`, `check:contracts` clean. Playwright at 1512x900, Option 2: Needs review rows as above; the badge on the second line, the line 48px; the full Append loop; zero console errors. Not committed.
+  - **Open:** prefilling Append from the source's name; which option to keep; earlier items.

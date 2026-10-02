@@ -351,6 +351,7 @@
   --ui-bg-error-solid_hover:   var(--color-error-700);
   --ui-bg-error-secondary:     var(--color-error-100);
   --ui-bg-warning-solid:       var(--color-warning-600);
+  --ui-bg-warning-primary:     var(--color-warning-50);
   --ui-bg-warning-secondary:   var(--color-warning-100);
   --ui-bg-success-solid:       var(--color-success-600);
   --ui-bg-success-secondary:   var(--color-success-100);
@@ -466,6 +467,7 @@
 @utility bg-error-solid_hover   { background-color: var(--ui-bg-error-solid_hover); }
 @utility bg-error-secondary     { background-color: var(--ui-bg-error-secondary); }
 @utility bg-warning-solid       { background-color: var(--ui-bg-warning-solid); }
+@utility bg-warning-primary     { background-color: var(--ui-bg-warning-primary); }
 @utility bg-warning-secondary   { background-color: var(--ui-bg-warning-secondary); }
 @utility bg-overlay             { background-color: var(--ui-bg-overlay); }
 @utility bg-success-solid       { background-color: var(--ui-bg-success-solid); }

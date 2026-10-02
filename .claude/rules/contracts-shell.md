@@ -299,6 +299,20 @@ and a scrolling table does it itself (`bodyScrollable`), so nothing moves when r
   and no `scrollbar-gutter`, under `app/pages`). The scrollbar half cannot be seen in the headless browser used for
   checks, which hides scrollbars: it is `REVIEW` to look at in a real browser with scrollbars always shown.
 
+**One gap under the header (§4.2g).** Under a `SectionHeader`, the collection body (any notice, the toolbar,
+the table) sits in one wrapper with `p-6`: the same 24px between the header's divider and the search on every
+list, and 24px to the sides and bottom.
+
+- MUST wrap the body that follows `</SectionHeader.Root>` in a `div` with `p-6` (`flex min-h-0 flex-1 flex-col
+  gap-4 p-6`, as every list does).
+- MUST NOT give that wrapper side and bottom padding only (`px-6 pb-6`) or none at all: the search then sits
+  flush against the header's divider.
+- **Origin:** the Notification Management list and the project's Datasets view both shipped with `px-6 pb-6`,
+  the search box touching the divider, while every other list used `p-6`; the designer: "This error is recurring
+  fix it and add to contracts" (1 Oct 2026).
+- **Enforcement:** `AUTO §4.2g` (in a file with `<ToolbarSearch>`, no `div` between `</SectionHeader.Root>` and the
+  first `<ToolbarSearch>` carries `p-6`, `pt-6` or `py-6`).
+
 ### §4.3 Cognitive load
 
 More than five or six field groups needs tiering. A conditional field is conditional in the UI. One focal
@@ -337,19 +351,21 @@ record) is laid out like the project page (`/pages/project-detail`):
    after it is the record's name. On the list page itself the crumb is plain. The section's name is the same in
    the breadcrumb, the rail and column 2 ("Reports", not "Reports (All Users)": who sees what is the content's
    rule, not part of the name).
-6. **The Audit Log tab.** A record's history of status moves (DLA, DSA, nominations) is `AuditLog`
-   (`app/pages/_shared/audit-log.tsx`, documented at `/patterns/audit-log`), never a hand-built list of `RecordRow`s: one
-   sentence per move, newest first, in a bordered list. The person is the subject (a small avatar and their name, "System"
-   with a bolt for a move the clock made), then "moved this to" (or "created this as" for a draft) and the status as its
-   `Badge`; the date sits at the right ("Today", "Yesterday", then "23 Sep 2026"). The newest move carries a "Current" chip.
-   Consecutive moves by the same person share one header and the lines under it drop the name. A note (a rejection reason,
-   an on-hold note) sits under its move. A log that is somehow empty says so. It lists status moves only, never a field
-   edit, and never an invented step: a record saved before logs existed is rebuilt from its own dates with a note that
-   earlier steps were not recorded.
+6. **The Audit Log tab.** A record's history (DLA, DSA, nominations) is `AuditLog` (`app/pages/_shared/audit-log.tsx`,
+   documented at `/patterns/audit-log`), never a hand-built list of `RecordRow`s. It opens with the record's ID and its
+   created, activated (or decided) and last-modified milestones as "on" and "by" pairs, and a "Show all changes (N)" link
+   opens the full list. That list is `AuditFeed` (`app/pages/_shared/audit-feed.tsx`): one sentence per status move,
+   newest first, in a bordered list. The person is the subject (a small avatar and their name, "System" with a bolt for a
+   move the clock made), then "moved this to" (or "created this as" for a draft) and the status as its `Badge`; the date sits
+   at the right ("Today", "Yesterday", then "23 Sep 2026"). The newest move carries a "Current" chip. Consecutive moves by
+   the same person share one header and the lines under it drop the name. A note (a rejection reason, an on-hold note) sits
+   under its move. A log that is somehow empty says so. It lists status moves only, never a field edit, and never an
+   invented step: a record saved before logs existed is rebuilt from its own dates with a note that earlier steps were not
+   recorded.
 
 - MUST NOT put a record's actions in a bar above the card, or stack its content without tabs.
 - MUST NOT build a second switcher: a collection's record pages reuse `BreadcrumbSwitcher`.
-- MUST NOT build a second audit log: a record page's Audit Log tab reuses `AuditLog`.
+- MUST NOT build a second audit log: a record page's Audit Log tab reuses `AuditLog` and `AuditFeed`.
 - **Origin:** the nomination record page shipped with its actions above the card and no tabs, after
   the designer had already asked for every record page to follow the project page. The reports were first built
   with a plain section header and no breadcrumb switcher; the designer asked why they did not follow the project

@@ -7,7 +7,7 @@
 //   project-registration/option-2/sections.ts: details, collection, restrictions) plus a status.
 //   Editing a project section therefore reuses the registration's own section forms and rules
 //   unchanged, including adding and removing contacts, managers, permits, species and locations.
-// - Survey records and their attachments are a list that can be added to, edited and deleted.
+// - Project records and their attachments are a list that can be added to, edited and deleted.
 // - What the store starts from is the `seed` (project-seed.ts): Adelaide Hills' hand-written records,
 //   or another project's records built from Explore's data.
 

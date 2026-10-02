@@ -4,7 +4,7 @@
 // records shows here (field-notes-store.ts is the source). Two views of the same list, switched with the
 // same control as the records' Tree / Table switch: Cards (the file tiles) and Table (one row per file,
 // sortable, paginated). Search and a Type filter sit in the standard collection toolbar (CONTRACTS
-// 4.2c). A card or a row opens the file in the viewer; "Go to record" goes to the record it belongs to.
+// 4.2c), with the view switch at its right end, where the records' switch sits. A card or a row opens the file in the viewer; "Go to record" goes to the record it belongs to.
 
 import { createElement, useMemo, useState } from "react";
 import {
@@ -30,6 +30,7 @@ import { type FilterSection, useListFilter } from "@/app/pages/_shared/list-filt
 import { AttributeFilterChips } from "@/app/pages/_shared/attribute-filter";
 import { FilterMenu } from "@/app/pages/_shared/filter-menu";
 import { ToolbarSearch } from "@/app/pages/_shared/toolbar-search";
+import { cx } from "@/utils/cx";
 import { segmentClass, segmentTrayClass } from "./segmented";
 
 export type FieldArtefact = Artefact & { recordId: string; fieldKey: string };
@@ -96,30 +97,10 @@ export function ArtefactsView({
     <div className="flex flex-col gap-4">
       <p className="text-sm text-balance text-tertiary">
         Files, photos, recordings and links attached to the fields of this
-        project&apos;s records, in Survey records. Each one opens in the viewer;
+        project&apos;s records, in Project records. Each one opens in the viewer;
         &ldquo;Go to record&rdquo; shows the record it belongs to.
       </p>
       <div className="flex flex-wrap items-center gap-3">
-        <ToggleButtonGroup
-          aria-label="Artefacts view"
-          selectionMode="single"
-          disallowEmptySelection
-          selectedKeys={[view]}
-          onSelectionChange={(keys) => {
-            const next = Array.from(keys)[0];
-            if (next === "cards" || next === "table") setView(next);
-          }}
-          className={segmentTrayClass}
-        >
-          <ToggleButton id="cards" className={segmentClass}>
-            <LayoutGrid01 className="size-4" />
-            Cards
-          </ToggleButton>
-          <ToggleButton id="table" className={segmentClass}>
-            <TableIcon className="size-4" />
-            Table
-          </ToggleButton>
-        </ToggleButtonGroup>
         <ToolbarSearch
           label="Search artefacts"
           placeholder="Search by file, record or who added it"
@@ -130,6 +111,26 @@ export function ArtefactsView({
           }}
         />
         <FilterMenu filter={filter} />
+        <ToggleButtonGroup
+          aria-label="Artefacts view"
+          selectionMode="single"
+          disallowEmptySelection
+          selectedKeys={[view]}
+          onSelectionChange={(keys) => {
+            const next = Array.from(keys)[0];
+            if (next === "cards" || next === "table") setView(next);
+          }}
+          className={cx(segmentTrayClass, "ml-auto")}
+        >
+          <ToggleButton id="cards" className={segmentClass}>
+            <LayoutGrid01 className="size-4" />
+            Cards
+          </ToggleButton>
+          <ToggleButton id="table" className={segmentClass}>
+            <TableIcon className="size-4" />
+            Table
+          </ToggleButton>
+        </ToggleButtonGroup>
       </div>
       <AttributeFilterChips filter={filter} />
 
