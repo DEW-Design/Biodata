@@ -91,7 +91,6 @@ const NO = "No";
 
 export function SpecimenDbRefreshReport() {
   const role = useUserRole();
-  const isAdmin = role === "biodata-admin";
   const rows = useMemo(() => refreshRowsFor(role), [role]);
 
   // The values a filter offers come from the rows the person can see, so no option leads to an empty table.
@@ -114,7 +113,6 @@ export function SpecimenDbRefreshReport() {
     <DataReport
       title="SpecimenDB Refresh Report"
       subtitle="The batches of specimen records refreshed from SpecimenDB into BioData, in Darwin Core, and any record that could not be refreshed."
-      scope={isAdmin ? "All projects" : "Your projects"}
       latest={(r) => r.batchDate}
       icon={Database01}
       rows={rows}

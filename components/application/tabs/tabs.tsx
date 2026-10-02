@@ -70,7 +70,9 @@ const sizes = {
         line: "pl-2.5 pr-3 py-0.5",
     },
     md: {
-        base: "text-md font-semibold gap-1.5 *:data-icon:size-5",
+        // The label renders at 14px (`text-md` is not a defined class), so the icon is 16px like `sm`'s: a 20px icon beside
+        // 14px text read as too big. Same icon size at both tab sizes.
+        base: "text-md font-semibold gap-1.5 *:data-icon:size-4",
         "button-brand": "py-2.5 px-2.5",
         "button-gray": "py-2.5 px-2.5",
         "button-border": "py-2.5 px-2.5",

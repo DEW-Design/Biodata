@@ -754,9 +754,10 @@ record) is laid out like the project page (`/pages/project-detail`):
 4. Underline `Tabs`, each panel a bordered card of label/value rows (`RecordRow`). A report is a record whose
    content is a table: under its card come the report's counts (`MetricTile`s), then search, the attribute filter
    and the table (`DataReport`, `app/pages/_shared/reports/report-table.tsx`); a report with parts has underline
-   `Tabs` for them. Its eyebrow is "Report"; its facts are who it is for (Scope, stated once, so the description is
-   the same for every role), the date of its newest record where its rows carry a date, the report's own totals
-   (Events, Occurrences, Observations; Total records), and its columns (and its rows, unless a total already says it).
+   `Tabs` for them. Its eyebrow is "Report"; its facts are the date of its newest record where its rows carry a date and
+   the report's own totals (Events, Occurrences, Observations; Total records), and nothing that restates the table: no row
+   count (the table's footer says it), no column count (the Columns button says it), no scope line (the description is the
+   same for every role, and the rows are what the role may see).
    A breakdown of those totals (species groups, errors by kind) is a row of `MetricTile`s under the card, an overview.
    A report has no next step, so all its actions (Export CSV) are in the card's "..." menu, like the other record
    pages, with no white button. A project scope is a Select right after the search, before the Filter button, not a row of its own.
@@ -772,14 +773,25 @@ record) is laid out like the project page (`/pages/project-detail`):
    after it is the record's name. On the list page itself the crumb is plain. The section's name is the same in
    the breadcrumb, the rail and column 2 ("Reports", not "Reports (All Users)": who sees what is the content's
    rule, not part of the name).
+6. **The Audit Log tab.** A record's history of status moves (DLA, DSA, nominations) is `AuditLog`
+   (`app/pages/_shared/audit-log.tsx`, documented at `/patterns/audit-log`), never a hand-built list of `RecordRow`s: one
+   sentence per move, newest first, in a bordered list. The person is the subject (a small avatar and their name, "System"
+   with a bolt for a move the clock made), then "moved this to" (or "created this as" for a draft) and the status as its
+   `Badge`; the date sits at the right ("Today", "Yesterday", then "23 Sep 2026"). The newest move carries a "Current" chip.
+   Consecutive moves by the same person share one header and the lines under it drop the name. A note (a rejection reason,
+   an on-hold note) sits under its move. A log that is somehow empty says so. It lists status moves only, never a field
+   edit, and never an invented step: a record saved before logs existed is rebuilt from its own dates with a note that
+   earlier steps were not recorded.
 
 - MUST NOT put a record's actions in a bar above the card, or stack its content without tabs.
 - MUST NOT build a second switcher: a collection's record pages reuse `BreadcrumbSwitcher`.
+- MUST NOT build a second audit log: a record page's Audit Log tab reuses `AuditLog`.
 - **Origin:** the nomination record page shipped with its actions above the card and no tabs, after
   the designer had already asked for every record page to follow the project page. The reports were first built
   with a plain section header and no breadcrumb switcher; the designer asked why they did not follow the project
   page, and for the project page's switcher to apply "across all instances where we do a deep dive into a deep
-  page" (1 Oct 2026).
+  page" (1 Oct 2026). The Audit Log tab was a date column beside a badge and a bare name, on three record pages; the
+  designer asked for audit-log patterns from Mobbin and chose Vercel's activity feed (2 Oct 2026).
 - **Enforcement:** `REVIEW`. First occurrence of the switcher gap, so no `AUTO` check yet (§0.8); one is due if a record
   page ships with a plain section crumb again.
 

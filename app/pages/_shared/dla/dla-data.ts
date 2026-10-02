@@ -16,6 +16,7 @@ import type { Boundary } from "@/app/pages/_shared/map-search/geo";
 export type { AgreementStatus as DlaStatus, AgreementEvent as DlaEvent } from "@/app/pages/_shared/agreement-status";
 export { agreementStatusOrder as dlaStatusOrder, agreementStatusMeta as dlaStatusMeta } from "@/app/pages/_shared/agreement-status";
 import type { AgreementStatus as DlaStatus, AgreementEvent as DlaEvent } from "@/app/pages/_shared/agreement-status";
+import { localIsoDate } from "@/app/pages/_shared/agreement-status";
 import { REVIEWING_ADMIN_NAME } from "@/app/pages/_shared/agreement-scope";
 
 // Level 1 (public, no DLA needed) is the tier already documented sitewide (see .claude/rules/ref-domain.md, "BDBSA
@@ -157,7 +158,7 @@ export function formatLongDate(iso: string): string {
 }
 
 export function todayIso(): string {
-  return new Date().toISOString().slice(0, 10);
+  return localIsoDate();
 }
 
 export function requestorName(r: DlaRequestor): string {

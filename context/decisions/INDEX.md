@@ -289,3 +289,14 @@ Not imported into every session on purpose: read or grep it when a task needs hi
 - [2026-10-01] Text editor: colour picker and font family picker removed - `2026-10-01-34-text-editor-colour-picker-and-font-family-picker.md`
 - [2026-10-01] Button utility ingested: override, inventory, doc page - `2026-10-01-35-button-utility-ingested-override-inventory-doc-page.md`
 - [2026-10-01] Button utility aria-label fix, text-editor buttons moved onto ButtonUtility, typography re-check - `2026-10-01-36-button-utility-aria-label-fix-text-editor-buttons.md`
+- [2026-10-02] DLA and DSA audit logs: rebuilt for older records, system moves logged, local dates - `2026-10-02-01-dla-and-dsa-audit-logs-rebuilt-for-older.md`
+- [2026-10-02] Tab icons: size md underline tabs use a 16px icon like sm - `2026-10-02-02-tab-icons-size-md-underline-tabs-use-a.md`
+- [2026-10-02] Audit Log tab: one shared AuditLog, a sentence per status move (Vercel activity feed) - `2026-10-02-03-audit-log-tab-one-shared-auditlog-a-sentence.md`
+- [2026-10-02] Data Ingestion report: a failed dataset opens its Data Validation Error report - `2026-10-02-04-data-ingestion-report-a-failed-dataset-opens-its.md`
+- [2026-10-02] Report cards: Rows, Columns and Scope facts removed - `2026-10-02-05-report-cards-rows-columns-and-scope-facts-removed.md`
+- [2026-10-02] Data Ingestion report: the Record ID of a run with errors opens its Data Validation Error report - `2026-10-02-06-data-ingestion-report-the-record-id-of-a.md`
+- [2026-10-02] Data Validation Error report: Project and Dataset selects in the card, as option 2 - `2026-10-02-07-data-validation-error-report-project-and-dataset-selects.md`
+- [2026-10-02] Option 2 pickers become quiet on-dark pills; Select gets an opt-in onDark - `2026-10-02-08-option-2-pickers-become-quiet-on-dark-pills.md`
+- [2026-10-02] Option 2 pickers moved into the toolbar; the on-dark Select pill is withdrawn - `2026-10-02-09-option-2-pickers-moved-into-the-toolbar-the.md`
+- [2026-10-02] Layout lab /proto/layouts: how much room the table gets on a report page - `2026-10-02-10-layout-lab-proto-layouts-how-much-room-the.md`
+- [2026-10-02] Data Validation Error report: Map visualise is the card's primary button - `2026-10-02-11-data-validation-error-report-map-visualise-is-the.md`

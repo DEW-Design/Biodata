@@ -9,6 +9,7 @@ import { AlertFullWidth } from "@/components/application/alerts/alerts";
 import { Tab, TabList, TabPanel } from "@/components/application/tabs/tabs";
 import { ConfirmationModal, DestructiveModal } from "@/components/application/modals/modal";
 import { RejectModal } from "@/app/pages/_shared/agreement-modals";
+import { AuditLog } from "@/app/pages/_shared/audit-log";
 import { CURRENT_USER_NAME } from "@/app/pages/_shared/agreement-scope";
 import { RecordActionBar, type RecordAction } from "@/app/pages/_shared/record-action-bar";
 import { HeroMeta, RecordBackLink, RecordHero, RecordRow } from "@/app/pages/_shared/record-hero";
@@ -221,21 +222,7 @@ export function NominationDetail({
         </TabPanel>
 
         <TabPanel id="history" className="p-6">
-          <div className="rounded-lg border border-secondary">
-            {[...n.history].reverse().map((e, i) => (
-              <RecordRow key={`${e.status}-${e.at}-${i}`} label={formatShortDate(e.at)}>
-                <span className="flex flex-col gap-1">
-                  <span className="flex flex-wrap items-center gap-2">
-                    <Badge size="sm" color={nominationStatusMeta[e.status].badgeColor}>
-                      {nominationStatusMeta[e.status].label}
-                    </Badge>
-                    <span className="text-tertiary">{e.by}</span>
-                  </span>
-                  {e.note && <span className="max-w-prose text-secondary">{e.note}</span>}
-                </span>
-              </RecordRow>
-            ))}
-          </div>
+          <AuditLog events={n.history} statusMeta={nominationStatusMeta} noun="nomination" />
         </TabPanel>
       </ContentTabs>
 

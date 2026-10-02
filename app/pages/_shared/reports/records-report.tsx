@@ -251,9 +251,7 @@ export function RecordsReport() {
   const common = {
     title: "Events, Occurrences and Observations Report",
     subtitle: "Every event, occurrence and observation, one tab for each.",
-    scope: role === "biodata-admin" ? "All projects" : "Your projects",
     scopeControl: <ReportScopeSelect projects={projects} value={scope} onChange={setScope} />,
-    showRows: false,
     facts: [
       { label: "Datasets", value: datasetTotal.toLocaleString("en-AU") },
       { label: "Events", value: counts.events.toLocaleString("en-AU") },

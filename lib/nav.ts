@@ -68,6 +68,7 @@ export const rawNav: NavSection[] = [
       { title: "Tree selection", href: "/patterns/tree-view", description: "Multi-select file/folder tree composed from Tree view + the base Checkbox - cascading selection and indeterminate parents." },
       { title: "Banners", href: "/patterns/banners", description: "The one full-width notice under the header - one fact about the screen, one next step, one close control - and the explainer card for how something works. Explore's data-access notice and the Nominations explainer use them." },
       { title: "Filters", href: "/patterns/filters", description: "The one filter for every table that can be filtered: a Filter button that opens a contextual menu of the attributes, each opening its values beside it (searchable when the list grows with the data), with the filters that are on shown as chips under the toolbar." },
+      { title: "Audit log", href: "/patterns/audit-log", description: "The Audit Log tab of a record page - one sentence per status move, newest first, with the person, the status badge and the date, a Current chip on the newest move, and same-person runs under one header." },
       { title: "Empty states", href: "/patterns/empty-states", description: "Documentation coming soon." },
       { title: "Loading states", href: "/patterns/loading-states", description: "Documentation coming soon." },
       { title: "Feedback", href: "/patterns/feedback", description: "Documentation coming soon." },

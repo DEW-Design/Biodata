@@ -79,6 +79,7 @@ The docs site (`app/(docs)`) is organized into three sections: **primitives** (d
 | [Tree selection](/patterns/tree-view) | Multi-select file/folder tree composed from Tree view + the base Checkbox - cascading selection and indeterminate parents. |
 | [Banners](/patterns/banners) | The one full-width notice under the header - one fact about the screen, one next step, one close control - and the explainer card for how something works. Explore's data-access notice and the Nominations explainer use them. |
 | [Filters](/patterns/filters) | The one filter for every table that can be filtered: a Filter button that opens a contextual menu of the attributes, each opening its values beside it (searchable when the list grows with the data), with the filters that are on shown as chips under the toolbar. |
+| [Audit log](/patterns/audit-log) | The Audit Log tab of a record page - one sentence per status move, newest first, with the person, the status badge and the date, a Current chip on the newest move, and same-person runs under one header. |
 | [Empty states](/patterns/empty-states) | 🚧 Documentation coming soon. |
 | [Loading states](/patterns/loading-states) | 🚧 Documentation coming soon. |
 | [Feedback](/patterns/feedback) | 🚧 Documentation coming soon. |

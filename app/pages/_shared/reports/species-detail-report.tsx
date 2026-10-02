@@ -122,14 +122,11 @@ export function SpeciesDetailReport() {
 
   const groupTiles = GROUP_TILES.filter((t) => allRows.some((r) => r.group === t.group)).map((t) => ({ label: t.label, icon: SPECIES_GROUP_ICON[t.group], value: rows.filter((r) => r.group === t.group).length }));
 
-  const isAdmin = role === "biodata-admin";
   return (
     <DataReport
       title="Species Detail Report"
       subtitle="Every species record, with the observation made for it."
-      scope={isAdmin ? "All projects" : "Your projects"}
       scopeControl={<ReportScopeSelect projects={projects} value={scope} onChange={setScope} />}
-      showRows={false}
       facts={[
         { label: "Events", value: counts.events.toLocaleString("en-AU") },
         { label: "Occurrences", value: counts.occurrences.toLocaleString("en-AU") },

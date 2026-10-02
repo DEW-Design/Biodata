@@ -6,7 +6,8 @@ import type { Key } from "react-aria-components";
 import { parseDate } from "@internationalized/date";
 import { ArrowNarrowLeft, CheckCircle, Download01, Edit05, PauseCircle, PlayCircle, Plus, SearchLg, SlashCircle01, Trash01, XCircle, Grid01, MarkerPin04, FileCheck02, ClockRewind } from "@untitledui/icons";
 import { RecordActionBar, type RecordAction } from "@/app/pages/_shared/record-action-bar";
-import { RecordBackLink, RecordHero, RecordRow } from "@/app/pages/_shared/record-hero";
+import { AuditLog } from "@/app/pages/_shared/audit-log";
+import { RecordBackLink, RecordHero } from "@/app/pages/_shared/record-hero";
 import { AlertFullWidth } from "@/components/application/alerts/alerts";
 import { Badge } from "@/components/base/badges/badges";
 import { Button } from "@/components/base/buttons/button";
@@ -468,21 +469,7 @@ export function DlaDetail({
           )}
 
           <TabPanel id="audit">
-            <div className="rounded-lg border border-secondary">
-              {[...dla.history].reverse().map((e, i) => (
-                <RecordRow key={`${e.status}-${e.at}-${i}`} label={formatShortDate(e.at)}>
-                  <span className="flex flex-col gap-1">
-                    <span className="flex flex-wrap items-center gap-2">
-                      <Badge size="sm" color={dlaStatusMeta[e.status].badgeColor}>
-                        {dlaStatusMeta[e.status].label}
-                      </Badge>
-                      <span className="text-tertiary">{e.by}</span>
-                    </span>
-                    {e.note && <span className="max-w-prose text-secondary">{e.note}</span>}
-                  </span>
-                </RecordRow>
-              ))}
-            </div>
+            <AuditLog events={dla.history} statusMeta={dlaStatusMeta} noun="request" />
           </TabPanel>
         </div>
       </Tabs>

@@ -1,0 +1,7 @@
+# 2026-10-02 - Data Validation Error report: Map visualise is the card's primary button
+
+- **Oct 2 2026: Data Validation Error report: Map visualise is the card's primary button.** The designer asked, off a screenshot of the card's "..." menu, for "Map visualise" to come out of the menu and sit where "Upload dataset" sits on the project page's gradient card.
+  - **Built:** `Map visualise` (the `Map01` icon, the action-button icon set in 3.12) is now the card's primary action, the white button at the top right through `RecordActionBar onDark`, the same component and position as "Upload dataset" (measured at 1440 x 900: same top edge, 36px high, right edge at 1356px on both pages). The "..." menu keeps Download error report and Download source dataset. Both layouts of the report (and the layout lab) get it, since they share the card.
+  - **Still disabled:** uploaded files are never read in this preview, so there is no dataset coordinate to put on a map; the button is shown, dimmed, rather than promised. It is the same reason "Download source dataset" is disabled.
+  - **Verified:** `tsc`, `eslint`, `check:contracts`; live as BioData Admin on both routes: the button is in the card and not in the menu; zero console errors.
+  - **Open:** a disabled primary action is the card's most prominent control. Either it stays disabled until a map view exists, or it opens Explore filtered to the dataset's records, which needs a decision on what that shows. A reason on hover is not built (the design system tooltip does not fire on a disabled button). Not committed.

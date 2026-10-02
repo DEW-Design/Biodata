@@ -96,6 +96,7 @@ const SCREENS: Screen[] = [
   { area: "Reports", name: "Project Sensitive and Restriction Report", path: "/pages/reports/sensitive-restriction", access: "Signed in", description: "Every restriction on a project, with reviewer and treatment." },
   { area: "Reports", name: "Voucher ID Update Report", path: "/pages/reports/voucher-id-update", access: "Signed in", description: "Museum or herbarium voucher details beside BioData's, with the mismatch." },
   { area: "Reports", name: "Data Validation Error Report", path: "/pages/reports/data-validation-error", access: "Signed in", description: "The errors found in one chosen dataset." },
+  { area: "Reports", name: "Data Validation Error Report (option 2)", path: "/pages/reports/data-validation-error/option-2", access: "Signed in", description: "The same report with the Project and Dataset selects as the first row of the card." },
   { area: "Reports", name: "SpecimenDB Refresh Report", path: "/pages/reports/specimendb-refresh", access: "Signed in", description: "Specimen batches refreshed from SpecimenDB, in Darwin Core." },
   { area: "Reports", name: "Project Detail Report", path: "/pages/reports/project-detail", access: "Signed in", description: "Every project's registration and record counts in one table." },
   { area: "Reports", name: "Species Detail Report", path: "/pages/reports/species-detail", access: "Signed in", description: "Every species record with its codes, voucher and measurements." },

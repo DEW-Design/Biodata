@@ -1,12 +1,13 @@
 "use client";
 
-import { useCallback, useMemo, useState, type FC, type ReactNode } from "react";
+import { cloneElement, isValidElement, useCallback, useMemo, useState, type FC, type ReactElement, type ReactNode } from "react";
 import type { SortDescriptor } from "react-aria-components";
 import { SearchLg } from "@untitledui/icons";
 import { HeroMeta, RecordHero } from "@/app/pages/_shared/record-hero";
+import { SectionHeader } from "@/components/application/section-headers/section-headers";
 import { Table, TableCard } from "@/components/application/table/table";
 import { sortRows, type SortValue } from "@/app/pages/_shared/agreement-scope";
-import { AttributeFilterChips, useAttributeFilter, type Attribute } from "@/app/pages/_shared/attribute-filter";
+import { AttributeFilterChips, useAttributeFilter, type Attribute, type AttributeFilterApi } from "@/app/pages/_shared/attribute-filter";
 import { FilterMenu } from "@/app/pages/_shared/filter-menu";
 import { ListEmptyState } from "@/app/pages/_shared/list-empty-state";
 import { ColumnChooser, useColumnChoice } from "@/app/pages/_shared/reports/column-chooser";
@@ -115,7 +116,29 @@ export function Clamped({ text, max = "max-w-[272px]" }: { text?: string; max?: 
 // ── Tiles ──
 /** The row of counts under a report's heading: the shared `MetricTile` (icon, label, count) in the same compact grid the
  *  project page's "Survey at a glance" and Explore's results use, read-only here because a report's totals go nowhere. */
-export function ReportTiles({ tiles, label }: { tiles: { label: string; value: number | string; icon: FC<{ className?: string }> }[]; label: string }) {
+export function ReportTiles({
+  tiles,
+  label,
+  compact = false,
+}: {
+  tiles: { label: string; value: number | string; icon: FC<{ className?: string }> }[];
+  label: string;
+  /** One quiet line of icon, label and value instead of a row of tiles (used with the slim header while layouts are compared in /proto/layouts). */
+  compact?: boolean;
+}) {
+  if (compact) {
+    return (
+      <div role="group" aria-label={label} className="flex shrink-0 flex-wrap items-center gap-x-6 gap-y-1 px-6 pt-3">
+        {tiles.map((tile) => (
+          <span key={tile.label} className="flex items-center gap-1.5 text-sm text-tertiary">
+            <tile.icon className="size-4 text-fg-quaternary" />
+            {tile.label}
+            <span className="font-medium text-primary tabular-nums">{typeof tile.value === "number" ? tile.value.toLocaleString("en-AU") : tile.value}</span>
+          </span>
+        ))}
+      </div>
+    );
+  }
   // Up to five tiles sit in one row; six do not fit at the width main has beside the rail and column 2 (two labels
   // would wrap and their counts fall out of line), so they go three across and two down (static classes so Tailwind sees them).
   const wide = tiles.length <= 3 ? "lg:grid-cols-3" : tiles.length === 4 ? "lg:grid-cols-4" : tiles.length === 5 ? "lg:grid-cols-5" : "lg:grid-cols-3";
@@ -154,20 +177,20 @@ export interface DataReportProps<R> {
   emptyDescription: string;
   initialSort?: SortDescriptor;
   initialQuery?: string;
-  /** Who the report is for, as its first fact ("All projects", "Your projects"): the role's rule, stated once here and not in the description. */
-  scope?: string;
   /** A row's own date (ms, or an ISO day or time). The newest across all the rows is the "Latest record" fact; leave it out where rows carry no date. */
   latest?: (row: R) => string | number | null | undefined;
-  /** More facts in the hero, after Scope and Latest record (a label and its value): the report's own totals. A function gets the rows in view. */
+  /** More facts in the hero, after Latest record (a label and its value): the report's own totals. A function gets the rows in view. */
   facts?: ReportFact[] | ((rowsInView: R[]) => ReportFact[]);
-  /** Leave the Rows fact out where a total in `facts` already says it (a report whose rows are the occurrences says "Occurrences"). */
-  showRows?: boolean;
   /** Right after the search, before Add filter: a scope such as a project. */
   scopeControl?: ReactNode;
   /** Between the hero and the toolbar: tiles, a project scope, tabs. A function gets the rows in view, so tiles can count them. */
   belowHeader?: RowsSlot<R>;
   /** The hero's actions, `<RecordActionBar onDark .../>`. A function gets the rows in view, so export writes exactly the table's rows. */
   actions?: RowsSlot<R>;
+  /** The card ("card", the record page's gradient identity card) or a slim header ("line": the list screens' title and subheading, the facts on one line, the actions in a plain bar). Compared in /proto/layouts. */
+  header?: "card" | "line";
+  /** A panel of facets beside the table in place of the Filter menu and its chips. Gets the filter and every row, so it can count. Compared in /proto/layouts. */
+  filterPanel?: (filter: AttributeFilterApi<R>, allRows: R[]) => ReactNode;
   /** When this changes the search, filters, sort and page go back to how they start, without remounting (a tab list
    *  in `belowHeader` keeps its keyboard focus). */
   resetKey?: string;
@@ -193,11 +216,11 @@ export function DataReport<R>({
   emptyDescription,
   initialSort,
   initialQuery = "",
-  scope,
   latest,
   facts = [],
-  showRows = true,
   scopeControl,
+  header = "card",
+  filterPanel,
   belowHeader,
   actions,
   resetKey,
@@ -249,7 +272,7 @@ export function DataReport<R>({
   const heroFacts = typeof facts === "function" ? facts(rows) : facts;
 
   const body = (
-    <div className="flex min-h-0 min-w-0 flex-1 flex-col gap-4 p-6">
+    <div className={cx("flex min-h-0 min-w-0 flex-1 flex-col", header === "line" ? "gap-3 px-6 pb-4 pt-3" : "gap-4 p-6")}>
       <div className="flex shrink-0 flex-wrap items-center gap-3">
         <ToolbarSearch
           label={searchLabel}
@@ -265,12 +288,12 @@ export function DataReport<R>({
           }}
         />
         {scopeControl}
-        <FilterMenu filter={filter} />
+        {!filterPanel && <FilterMenu filter={filter} />}
         <div className="ml-auto">
           <ColumnChooser chooser={chooser} />
         </div>
       </div>
-      <AttributeFilterChips filter={filter} />
+      {!filterPanel && <AttributeFilterChips filter={filter} />}
 
       {rows.length === 0 ? (
         allRows.length === 0 ? (
@@ -335,23 +358,55 @@ export function DataReport<R>({
     </div>
   );
 
+  const lineFacts: ReportFact[] = [...(latestDay ? [{ label: "Latest record", value: latestDay }] : []), ...heroFacts];
+  const lineActions = isValidElement(heroActions) ? cloneElement(heroActions as ReactElement<{ onDark?: boolean }>, { onDark: false }) : heroActions;
+
+  const panelled = filterPanel ? (
+    <div className="flex min-h-0 flex-1">
+      <aside aria-label="Filters" className="w-60 shrink-0 overflow-y-auto border-r border-secondary px-4 py-3">
+        {filterPanel(filter, allRows)}
+      </aside>
+      {body}
+    </div>
+  ) : (
+    body
+  );
+
   return (
     <div className="flex min-h-0 flex-1 flex-col">
-      <RecordHero eyebrow="Report" title={title} description={subtitle} actions={heroActions}>
-        {scope ? <HeroMeta label="Scope">{scope}</HeroMeta> : null}
-        {latestDay ? <HeroMeta label="Latest record">{latestDay}</HeroMeta> : null}
-        {heroFacts.map((f) => (
-          <HeroMeta key={f.label} label={f.label}>
-            {f.value}
-          </HeroMeta>
-        ))}
-        {showRows ? <HeroMeta label="Rows">{allRows.length.toLocaleString("en-AU")}</HeroMeta> : null}
-        <HeroMeta label="Columns">{columns.length.toLocaleString("en-AU")}</HeroMeta>
-      </RecordHero>
+      {header === "line" ? (
+        <div className="shrink-0 px-6 pt-4">
+          <div className="flex items-start justify-between gap-4">
+            <div className="flex min-w-0 flex-col gap-1">
+              <SectionHeader.Heading>{title}</SectionHeader.Heading>
+              <SectionHeader.Subheading>{subtitle}</SectionHeader.Subheading>
+              {lineFacts.length > 0 ? (
+                <p className="m-0 flex flex-wrap items-center gap-x-5 gap-y-1 text-sm text-tertiary">
+                  {lineFacts.map((f) => (
+                    <span key={f.label}>
+                      {f.label} <span className="font-medium text-primary tabular-nums">{f.value}</span>
+                    </span>
+                  ))}
+                </p>
+              ) : null}
+            </div>
+            {lineActions}
+          </div>
+        </div>
+      ) : (
+        <RecordHero eyebrow="Report" title={title} description={subtitle} actions={heroActions}>
+          {latestDay ? <HeroMeta label="Latest record">{latestDay}</HeroMeta> : null}
+          {heroFacts.map((f) => (
+            <HeroMeta key={f.label} label={f.label}>
+              {f.value}
+            </HeroMeta>
+          ))}
+        </RecordHero>
+      )}
 
-      {belowHeader ? <div className="flex shrink-0 flex-col pt-4">{resolve(belowHeader)}</div> : null}
+      {belowHeader ? <div className={cx("flex shrink-0 flex-col", header === "line" ? "pt-0" : "pt-4")}>{resolve(belowHeader)}</div> : null}
 
-      {wrapBody ? wrapBody(body) : body}
+      {wrapBody ? wrapBody(panelled) : panelled}
     </div>
   );
 }

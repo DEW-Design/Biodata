@@ -62,9 +62,62 @@ export const agreementStatusMeta: Record<AgreementStatus, { label: string; tabLa
  * granted period (both `Dsa` and `Dla` already carry these under the same field names).
  */
 export function effectiveStatus(status: AgreementStatus, validFrom: string, validTo: string, today: string): AgreementStatus {
-  if (status === "approved" && validFrom && validFrom <= today) return "active";
-  if (status === "active" && validTo && validTo < today) return "closed";
-  return status;
+  const steps = autoTransitions(status, validFrom, validTo, today);
+  return steps.length ? steps[steps.length - 1].status : status;
+}
+
+/** Today's date in the browser's own time zone as `YYYY-MM-DD`. `toISOString()` is UTC, which is a day behind in
+ *  Adelaide until 9:30am (10:30 in summer), so a move made that morning was logged with yesterday's date. */
+export function localIsoDate(date: Date = new Date()): string {
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
+}
+
+function nextDay(iso: string): string {
+  const [y, m, d] = iso.split("-").map(Number);
+  return localIsoDate(new Date(y, m - 1, d + 1));
+}
+
+/**
+ * The moves nobody makes, as audit events: Approved becomes Active on the grant's start date and Active becomes Closed the
+ * day after its end date, both by `"System"`. `effectiveStatus` is the last of these, so the status a record shows and the
+ * trail in its Audit Log can never disagree (the log used to stop at Approved while the record said Active).
+ */
+export function autoTransitions(status: AgreementStatus, validFrom: string, validTo: string, today: string): AgreementEvent[] {
+  const events: AgreementEvent[] = [];
+  let current = status;
+  if (current === "approved" && validFrom && validFrom <= today) {
+    events.push({ status: "active", at: validFrom, by: "System" });
+    current = "active";
+  }
+  if (current === "active" && validTo && validTo < today) {
+    events.push({ status: "closed", at: nextDay(validTo), by: "System" });
+  }
+  return events;
+}
+
+const REBUILT_NOTE = "Earlier steps were not recorded for this record.";
+
+/**
+ * The Audit Log of a record saved in this browser before logs existed. It is rebuilt from what the record does know
+ * (never from a guess): the seed's own trail where the record is one of the seeded ones, otherwise when it was
+ * submitted and where it stands now, with a note saying the steps in between were not recorded.
+ */
+export function rebuildHistory(input: {
+  status: AgreementStatus;
+  submittedAt: string;
+  updatedAt: string;
+  /** Who created the record, and who a status move is attributed to (the reviewer; the requester for a cancellation). */
+  creator: string;
+  reviewer: string;
+  canceller: string;
+  seed?: AgreementEvent[];
+}): AgreementEvent[] {
+  const { status, submittedAt, updatedAt, creator, reviewer, canceller, seed } = input;
+  const standing: AgreementEvent = { status, at: updatedAt, by: status === "cancelled" ? canceller : reviewer, note: REBUILT_NOTE };
+  if (seed?.length) return seed[seed.length - 1].status === status ? [...seed] : [...seed, standing];
+  if (status === "draft") return [{ status, at: updatedAt, by: creator }];
+  const submitted: AgreementEvent = { status: "submitted", at: submittedAt, by: creator };
+  return status === "submitted" ? [submitted] : [submitted, standing];
 }
 
 // Real urgency, not just "whichever active record's `validTo` sorts first" - a record expiring

@@ -3,7 +3,7 @@
 import { useMemo } from "react";
 import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
-import { effectiveStatus } from "@/app/pages/_shared/agreement-status";
+import { autoTransitions, rebuildHistory } from "@/app/pages/_shared/agreement-status";
 import { CURRENT_USER_NAME, REVIEWING_ADMIN_NAME } from "@/app/pages/_shared/agreement-scope";
 import { browserStorage, useHydrated, useRehydrate } from "@/app/pages/_shared/zustand-persist";
 import {
@@ -42,8 +42,8 @@ function actorName(r: DlaRequestor): string {
 function resolve(list: Dla[]): Dla[] {
   const today = todayIso();
   return list.map((d) => {
-    const status = effectiveStatus(d.status, d.validFrom, d.validTo, today);
-    return status === d.status ? d : { ...d, status };
+    const system = autoTransitions(d.status, d.validFrom, d.validTo, today);
+    return system.length ? { ...d, status: system[system.length - 1].status, history: [...d.history, ...system] } : d;
   });
 }
 
@@ -54,15 +54,28 @@ interface DlaStoreState {
 const useDlaStore = create<DlaStoreState>()(
   persist(() => ({ dlas: seedDlas }), {
     name: "biodata-dla",
-    // Bumped when `history` (the Audit tab's log) was added to `Dla` - a browser with requests
-    // already persisted under version 0 has records with no `history` at all, and `transition`/
-    // `saveDla`/the Audit tab's own `[...dla.history]` all assume it's a real array. `migrate`
-    // backfills an empty log rather than fabricating one (CONTRACTS 0.3 - there's no real history
-    // to recover for those records, so an honest empty log, not an invented one).
-    version: 1,
+    // Version 1 added `history` (the Audit Log tab). A browser holding requests saved before that has
+    // records with no `history`, which migrate backfilled with an empty log: a blank Audit Log tab.
+    // Version 2 rebuilds those logs from what each record does know (`rebuildHistory`), never from a guess.
+    version: 2,
     migrate: (persisted) => {
       const state = persisted as { dlas: (Omit<Dla, "history"> & { history?: Dla["history"] })[] };
-      return { dlas: state.dlas.map((d) => ({ ...d, history: d.history ?? [] })) };
+      return {
+        dlas: state.dlas.map((d) => ({
+          ...d,
+          history: d.history?.length
+            ? d.history
+            : rebuildHistory({
+                status: d.status,
+                submittedAt: d.submittedAt,
+                updatedAt: d.updatedAt,
+                creator: actorName(d.requestor),
+                reviewer: REVIEWING_ADMIN_NAME,
+                canceller: actorName(d.requestor),
+                seed: seedDlas.find((x) => x.id === d.id)?.history,
+              }),
+        })),
+      };
     },
     storage: createJSONStorage(browserStorage),
     skipHydration: true,
@@ -83,10 +96,15 @@ function commit(next: Dla[]) {
  *  (the same shape dsa-store.ts's own `transition` and nomination-store.ts's both already use). */
 function transition(id: string, status: DlaStatus, by: string, patch: Partial<Dla> = {}, note?: string) {
   const now = todayIso();
+  // Start from the resolved record, so a move the clock already made (Approved to Active) is in the log before this one.
   commit(
     useDlaStore
       .getState()
-      .dlas.map((d) => (d.id === id ? { ...d, ...patch, status, updatedAt: now, history: [...d.history, { status, at: now, by, ...(note ? { note } : {}) }] } : d)),
+      .dlas.map((d) => {
+        if (d.id !== id) return d;
+        const base = resolve([d])[0];
+        return { ...base, ...patch, status, updatedAt: now, history: [...base.history, { status, at: now, by, ...(note ? { note } : {}) }] };
+      }),
   );
 }
 
@@ -110,7 +128,7 @@ export function useDla(id: string | undefined): Dla | undefined {
 export function saveDla(draft: DlaDraft, intent: "draft" | "submit", existingId?: string): Dla {
   const dlas = useDlaStore.getState().dlas;
   const now = todayIso();
-  const existing = existingId ? dlas.find((d) => d.id === existingId) : undefined;
+  const existing = existingId ? resolve(dlas).find((d) => d.id === existingId) : undefined;
   const status: DlaStatus = intent === "draft" ? "draft" : existing && existing.status !== "draft" ? existing.status : "submitted";
   const changed = !existing || existing.status !== status;
   const history = [...(existing?.history ?? []), ...(changed ? [{ status, at: now, by: actorName(draft.requestor) }] : [])];

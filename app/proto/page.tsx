@@ -49,6 +49,10 @@ const PROTO_LABS: ProtoEntry[] = [
     description: "Dataset as a tree axis alongside Site. Superseded - the confirmed data model doesn't need it.",
   },
   {
+    route: "layouts",
+    description: "How much room the table gets on a report's record page: the gradient card, a slim header, a folding column 2, or a facet panel. Reads the table's real size.",
+  },
+  {
     route: "project-detail",
     description: "project-detail's Overview tab and records tree, before both were folded into the real page.",
   },

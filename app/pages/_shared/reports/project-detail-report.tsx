@@ -108,12 +108,10 @@ export function ProjectDetailReport() {
     ];
   }, [rows]);
 
-  const isAdmin = role === "biodata-admin";
   return (
     <DataReport
       title="Project Detail Report"
       subtitle="Every project, one row each, with its owner, manager, data collection and restrictions."
-      scope={isAdmin ? "All projects" : "Your projects"}
       icon={Folder}
       rows={rows}
       rowId={rowId}

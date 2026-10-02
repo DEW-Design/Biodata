@@ -138,7 +138,6 @@ const NONE = "None";
 
 export function VoucherIdUpdateReport() {
   const role = useUserRole();
-  const isAdmin = role === "biodata-admin";
   const rows = useMemo(() => visibleTo(voucherRows(), role), [role]);
 
   // The values a filter offers come from the rows the person can see, so no option leads to an empty table.
@@ -162,7 +161,6 @@ export function VoucherIdUpdateReport() {
     <DataReport
       title="Voucher ID Update Report"
       subtitle="The voucher details each museum or herbarium holds beside what BioData holds for the same specimen, and the field that disagrees."
-      scope={isAdmin ? "All projects" : "Your projects"}
       latest={(r) => r.batchDate}
       icon={Tag01}
       rows={rows}

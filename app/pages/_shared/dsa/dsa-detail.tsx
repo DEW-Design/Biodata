@@ -4,7 +4,8 @@ import { useState, type ReactNode } from "react";
 import type { Key } from "react-aria-components";
 import { ArrowNarrowLeft, CheckCircle, Download01, Edit05, Eye, EyeOff, Mail01, PauseCircle, Phone01, PlayCircle, Plus, SearchLg, SearchMd, SlashCircle01, Trash01, XCircle, Grid01, Share07, ClockRewind } from "@untitledui/icons";
 import { RecordActionBar, type RecordAction } from "@/app/pages/_shared/record-action-bar";
-import { RecordBackLink, RecordHero, RecordRow } from "@/app/pages/_shared/record-hero";
+import { AuditLog } from "@/app/pages/_shared/audit-log";
+import { RecordBackLink, RecordHero } from "@/app/pages/_shared/record-hero";
 import { AlertFullWidth } from "@/components/application/alerts/alerts";
 import { Badge, CountBadge } from "@/components/base/badges/badges";
 import { Button } from "@/components/base/buttons/button";
@@ -399,21 +400,7 @@ export function DsaDetail({
         </TabPanel>
 
         <TabPanel id="audit" className="p-6">
-          <div className="rounded-lg border border-secondary">
-            {[...dsa.history].reverse().map((e, i) => (
-              <RecordRow key={`${e.status}-${e.at}-${i}`} label={formatShortDate(e.at)}>
-                <span className="flex flex-col gap-1">
-                  <span className="flex flex-wrap items-center gap-2">
-                    <Badge size="sm" color={dsaStatusMeta[e.status].badgeColor}>
-                      {dsaStatusMeta[e.status].label}
-                    </Badge>
-                    <span className="text-tertiary">{e.by}</span>
-                  </span>
-                  {e.note && <span className="max-w-prose text-secondary">{e.note}</span>}
-                </span>
-              </RecordRow>
-            ))}
-          </div>
+          <AuditLog events={dsa.history} statusMeta={dsaStatusMeta} noun="agreement" />
         </TabPanel>
       </Tabs>
 

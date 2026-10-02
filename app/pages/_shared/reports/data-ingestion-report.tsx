@@ -1,16 +1,21 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, type ReactNode } from "react";
+import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { Download01, UploadCloud02 } from "@untitledui/icons";
 import { Badge } from "@/components/base/badges/badges";
 import { Button } from "@/components/base/buttons/button";
+import { cx } from "@/utils/cx";
+import { useRoleHref } from "@/lib/use-role-href";
 import { downloadCsv } from "@/app/pages/_shared/agreement-actions";
 import type { Attribute } from "@/app/pages/_shared/attribute-filter";
 import { optionsFromValues } from "@/app/pages/_shared/list-filter";
 import { projects } from "@/app/pages/_shared/project-list-data";
 import { datasetTemplates } from "@/app/pages/_shared/template-finder/template-data";
 import { Clamped, DataReport, IdCell, NumberCell, TextCell, type ReportColumn } from "@/app/pages/_shared/reports/report-table";
+import { hasErrors } from "@/app/pages/_shared/reports/data-validation-error-report-data";
+import { REPORTS } from "@/app/pages/_shared/reports/reports-data";
 import { useIngestionRuns } from "@/app/pages/_shared/reports/use-ingestion-runs";
 import {
   PROCESSING_STATUSES,
@@ -75,6 +80,46 @@ const WIDTH = {
 
 const FAILURE_CLASS = { some: "text-sm font-medium tabular-nums text-error-primary", none: "text-sm tabular-nums text-secondary" };
 
+const VALIDATION_ERROR_REPORT = REPORTS.find((report) => report.id === "data-validation-error")!.path;
+
+/** Where a run with errors is reported (the report opens on `?dataset=`). */
+function useErrorsHref() {
+  const roleHref = useRoleHref();
+  return (row: IngestionRow) => roleHref(`${VALIDATION_ERROR_REPORT}?dataset=${encodeURIComponent(row.id)}`);
+}
+
+/** A run with errors opens its own Data Validation Error report. Where the run has none (still processing, or passed
+ *  clean) the cell is just its value: that report lists only datasets with errors, so there is nothing to open. */
+function ErrorsLink({ row, children }: { row: IngestionRow; children: ReactNode }) {
+  const href = useErrorsHref();
+  if (!hasErrors(row)) return <>{children}</>;
+  return (
+    <Link
+      href={href(row)}
+      aria-label={`View the validation errors for ${row.id}`}
+      className="group inline-flex rounded-full outline-focus-ring transition duration-100 ease-linear hover:opacity-75 focus-visible:outline-2 focus-visible:outline-offset-2"
+    >
+      {children}
+    </Link>
+  );
+}
+
+/** The Record ID: a link to the run's errors where it has any (brand text with an underline on hover, the link treatment the
+ *  field notes use), the plain ID otherwise. */
+function RecordIdCell({ row }: { row: IngestionRow }) {
+  const href = useErrorsHref();
+  if (!hasErrors(row)) return <IdCell>{row.id}</IdCell>;
+  return (
+    <Link
+      href={href(row)}
+      aria-label={`View the validation errors for ${row.id}`}
+      className="rounded-sm text-sm font-medium text-brand-secondary tabular-nums outline-focus-ring hover:text-brand-secondary_hover hover:underline focus-visible:outline-2 focus-visible:outline-offset-2"
+    >
+      {row.id}
+    </Link>
+  );
+}
+
 /** Nothing while the run is still going, "None" where the file does not apply, otherwise a download of the real CSV. */
 function DownloadCell({ availability, label, onDownload }: { availability: FileAvailability; label: string; onDownload: () => void }) {
   if (availability === "pending") return null;
@@ -87,7 +132,7 @@ function DownloadCell({ availability, label, onDownload }: { availability: FileA
 }
 
 const columns: ReportColumn<IngestionRow>[] = [
-  { id: "id", label: "Record ID", width: WIDTH.id, sticky: true, sort: (r) => r.id, cell: (r) => <IdCell>{r.id}</IdCell> },
+  { id: "id", label: "Record ID", width: WIDTH.id, sticky: true, sort: (r) => r.id, cell: (r) => <RecordIdCell row={r} /> },
   { id: "at", label: "Date and time", width: WIDTH.at, sort: (r) => r.at, cell: (r) => <NumberCell value={formatDateTime(r.at)} /> },
   { id: "project", label: "Project title", width: WIDTH.project, sort: (r) => r.projectTitle, cell: (r) => <TextCell strong>{r.projectTitle}</TextCell> },
   {
@@ -110,7 +155,12 @@ const columns: ReportColumn<IngestionRow>[] = [
     label: "Business rule failures",
     width: WIDTH.failures,
     sort: (r) => r.ruleFailures,
-    cell: (r) => (r.ruleFailures === null ? null : <span className={r.ruleFailures > 0 ? FAILURE_CLASS.some : FAILURE_CLASS.none}>{r.ruleFailures.toLocaleString("en-AU")}</span>),
+    cell: (r) =>
+      r.ruleFailures === null ? null : (
+        <ErrorsLink row={r}>
+          <span className={cx(r.ruleFailures > 0 ? FAILURE_CLASS.some : FAILURE_CLASS.none, "group-hover:underline")}>{r.ruleFailures.toLocaleString("en-AU")}</span>
+        </ErrorsLink>
+      ),
   },
   {
     id: "validation",
@@ -118,9 +168,11 @@ const columns: ReportColumn<IngestionRow>[] = [
     width: WIDTH.validation,
     sort: (r) => validationRank(r.validation),
     cell: (r) => (
-      <Badge size="sm" color={validationColor[r.validation]}>
-        {r.validation}
-      </Badge>
+      <ErrorsLink row={r}>
+        <Badge size="sm" color={validationColor[r.validation]}>
+          {r.validation}
+        </Badge>
+      </ErrorsLink>
     ),
   },
   {
@@ -186,7 +238,7 @@ const columns: ReportColumn<IngestionRow>[] = [
 ];
 
 export function DataIngestionReport() {
-  const { isAdmin, runs } = useIngestionRuns();
+  const { runs } = useIngestionRuns();
   const initialQuery = useSearchParams().get("q") ?? "";
 
   const attributes: Attribute<IngestionRow>[] = useMemo(
@@ -208,7 +260,6 @@ export function DataIngestionReport() {
     <DataReport<IngestionRow>
       title="Data Ingestion Report Pre-Flight Validation"
       subtitle="Every dataset upload, from pre-flight validation through to review and approval."
-      scope={isAdmin ? "All uploads" : "Your uploads and your projects"}
       latest={(r) => r.at}
       icon={UploadCloud02}
       rows={runs}

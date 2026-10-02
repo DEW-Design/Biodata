@@ -9,7 +9,7 @@ import { ReportPage } from "@/app/pages/_shared/reports/report-page";
 export default function DataValidationErrorReportPage() {
   return (
     <ReportPage name="Data Validation Error Report">
-      <DataValidationErrorReport />
+      <DataValidationErrorReport layout="option-1" />
     </ReportPage>
   );
 }
