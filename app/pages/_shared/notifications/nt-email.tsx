@@ -1,9 +1,9 @@
 "use client";
 
-import type { ReactNode } from "react";
+import type { CSSProperties, ReactNode } from "react";
 import { CloseButton } from "@/components/base/buttons/close-button";
 import { cx } from "@/utils/cx";
-import { ABOUT, SENSITIVITY, aboutOf, effectiveTo, formatBytes, ntTemplate, recipientsSummary, sampleValues, variablesFor, type NtDraft, type RecipientLabel } from "@/app/pages/_shared/notifications/nt-data";
+import { ABOUT, SENSITIVITY, aboutOf, bodyText, isHtmlBody, effectiveTo, formatBytes, ntTemplate, recipientsSummary, sampleValues, variablesFor, type NtDraft, type RecipientLabel } from "@/app/pages/_shared/notifications/nt-data";
 
 // The email as it lands in an inbox: the envelope (From, To, Subject), then the message inside its
 // template, with the security classification marked at the top and bottom. Used on the list's preview
@@ -12,7 +12,9 @@ import { ABOUT, SENSITIVITY, aboutOf, effectiveTo, formatBytes, ntTemplate, reci
 //
 // Composed, not a real component (CONTRACTS 1.2): an email preview is content, built from tokens.
 // The template sets the banner; the admin's text sets everything else (the designer, 1 Oct 2026:
-// "Template owns the look"). Two plain-text marks: **bold**, and a line starting "- " is a list item.
+// "Template owns the look"). The message comes from the rich text editor as HTML and is drawn from an
+// allow-list of the tags and styles the editor writes; anything else is dropped. Older messages are plain
+// text with two marks: **bold**, and a line starting "- " is a list item.
 //
 // Variables show their sample values, or the variables themselves with `showVariables`. A variable
 // the trigger doesn't provide is marked in the error colour either way, so a typo is visible before
@@ -108,6 +110,66 @@ function Body({ text, ...rest }: { text: string; samples: Map<string, string>; k
   );
 }
 
+type InlineProps = { samples: Map<string, string>; known: Set<string>; showVariables: boolean };
+
+// The editor's own output: blocks, marks, links and images, with alignment and font size as the only styles.
+const TAGS: Record<string, string> = {
+  p: "m-0",
+  ul: "m-0 list-disc pl-5",
+  ol: "m-0 list-decimal pl-5",
+  li: "",
+  strong: "font-semibold text-primary",
+  b: "font-semibold text-primary",
+  em: "",
+  i: "",
+  u: "",
+  s: "",
+  span: "",
+  blockquote: "m-0 border-l-4 border-secondary pl-4",
+  a: "text-brand-secondary underline",
+  br: "",
+  img: "my-1 max-w-full rounded-md",
+};
+
+function styleOf(el: Element): CSSProperties | undefined {
+  const { textAlign, fontSize } = (el as HTMLElement).style;
+  return textAlign || fontSize ? { textAlign: textAlign as CSSProperties["textAlign"], fontSize: fontSize || undefined } : undefined;
+}
+
+function HtmlNodes({ nodes, ...rest }: { nodes: NodeListOf<ChildNode> } & InlineProps): ReactNode {
+  return Array.from(nodes).map((node, i) => {
+    if (node.nodeType === Node.TEXT_NODE) return <Inline key={i} text={node.textContent ?? ""} {...rest} />;
+    if (node.nodeType !== Node.ELEMENT_NODE) return null;
+    const el = node as Element;
+    const tag = el.tagName.toLowerCase();
+    if (!(tag in TAGS)) return <HtmlNodes key={i} nodes={el.childNodes} {...rest} />;
+    if (tag === "br") return <br key={i} />;
+    if (tag === "img") {
+      const src = el.getAttribute("src") ?? "";
+      // eslint-disable-next-line @next/next/no-img-element -- an image the admin put in the message, not a page asset
+      return /^(https?:|blob:|data:image\/)/.test(src) ? <img key={i} src={src} alt={el.getAttribute("alt") ?? ""} className={TAGS.img} /> : null;
+    }
+    const Tag = tag as "p";
+    const extra = tag === "a" ? { href: el.getAttribute("href") ?? undefined, target: "_blank", rel: "noreferrer" } : {};
+    return (
+      <Tag key={i} className={TAGS[tag] || undefined} style={styleOf(el)} {...extra}>
+        <HtmlNodes nodes={el.childNodes} {...rest} />
+      </Tag>
+    );
+  });
+}
+
+/** The editor's HTML, parsed in the browser (the store only holds it after it has loaded there). */
+function HtmlBody({ html, ...rest }: { html: string } & InlineProps) {
+  if (typeof DOMParser === "undefined") return <p className="m-0">{bodyText(html)}</p>;
+  const doc = new DOMParser().parseFromString(html, "text/html");
+  return (
+    <div className="flex flex-col gap-2">
+      <HtmlNodes nodes={doc.body.childNodes} {...rest} />
+    </div>
+  );
+}
+
 const banner: Record<string, { root: string; eyebrow: string; heading: string }> = {
   basic: { root: "bg-gradient-to-b from-brand-900 via-brand-800 to-brand-700", eyebrow: "text-white/70", heading: "text-white" },
   urgent: { root: "bg-error-solid", eyebrow: "text-white/70", heading: "text-white" },
@@ -167,7 +229,7 @@ export function EmailPreview({
           <h2 className={cx("m-0 text-2xl font-semibold text-balance", look.heading)}>{draft.heading.trim() || draft.subject.trim() ? <Inline text={draft.heading.trim() || draft.subject} {...rest} /> : ntTemplate(draft.template).name}</h2>
         </div>
         <div className="flex flex-col gap-4 px-8 py-7 text-sm text-secondary">
-          {draft.body.trim() ? <Body text={draft.body} {...rest} /> : <p className="m-0 text-quaternary">No message yet.</p>}
+          {bodyText(draft.body).trim() ? isHtmlBody(draft.body) ? <HtmlBody html={draft.body} {...rest} /> : <Body text={draft.body} {...rest} /> : <p className="m-0 text-quaternary">No message yet.</p>}
           {draft.signOff.trim() && (
             <p className="m-0 whitespace-pre-line">
               <Inline text={draft.signOff} {...rest} />

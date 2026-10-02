@@ -280,6 +280,7 @@ export interface NtDraft {
   sensitivity: Sensitivity;
   subject: string;
   heading: string;
+  /** HTML from the rich text editor. Older notifications and the samples hold plain text with **bold** and "- " lists; `bodyHtml` reads both. */
   body: string;
   signOff: string;
   /** Files sent with every email. Only their names and sizes are kept in this preview build. */
@@ -386,6 +387,58 @@ export const effectiveTo = (d: Pick<NtDraft, "to" | "trigger">) => d.to.filter((
 
 // ── Variables in text ──
 
+// ── Message body ──
+
+/** True when the body came from the rich text editor (HTML) rather than the older plain-text marks. */
+export const isHtmlBody = (body: string) => /^\s*</.test(body);
+
+const escapeHtml = (s: string) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+
+/** The body as HTML for the editor: plain text is converted (blank lines make paragraphs, "- " lines a list, ** bold). */
+export function bodyHtml(body: string): string {
+  if (isHtmlBody(body)) return body;
+  const inline = (line: string) => escapeHtml(line).replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>");
+  return body
+    .trim()
+    .split(/\n\s*\n/)
+    .map((block) => {
+      const out: string[] = [];
+      let para: string[] = [];
+      let list: string[] = [];
+      const flush = () => {
+        if (para.length) out.push(`<p>${para.map(inline).join("<br>")}</p>`);
+        if (list.length) out.push(`<ul>${list.map((item) => `<li><p>${inline(item)}</p></li>`).join("")}</ul>`);
+        para = [];
+        list = [];
+      };
+      for (const line of block.split("\n")) {
+        if (/^\s*-\s+/.test(line)) {
+          if (para.length) flush();
+          list.push(line.replace(/^\s*-\s+/, ""));
+        } else {
+          if (list.length) flush();
+          para.push(line);
+        }
+      }
+      flush();
+      return out.join("");
+    })
+    .join("");
+}
+
+/** The body's words without markup: for validation, the history and anything that needs plain text. */
+export function bodyText(body: string): string {
+  if (!isHtmlBody(body)) return body;
+  return body
+    .replace(/<(br|\/p|\/li|\/h[1-6])\s*\/?>/gi, "\n")
+    .replace(/<[^>]+>/g, "")
+    .replace(/&nbsp;/g, " ")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/&amp;/g, "&")
+    .trim();
+}
+
 const VARIABLE = /\{\{\s*([\w.]+)\s*\}\}/g;
 
 export function variablesIn(text: string): string[] {
@@ -396,7 +449,7 @@ export function variablesIn(text: string): string[] {
 export function unknownVariables(draft: NtDraft): { field: "subject" | "heading" | "body" | "signOff"; keys: string[] }[] {
   const known = new Set(variablesFor(draft.trigger).flatMap((g) => g.items.map((i) => i.key)));
   return (["subject", "heading", "body", "signOff"] as const)
-    .map((field) => ({ field, keys: [...new Set(variablesIn(draft[field]).filter((k) => !known.has(k)))] }))
+    .map((field) => ({ field, keys: [...new Set(variablesIn(field === "body" ? bodyText(draft.body) : draft[field]).filter((k) => !known.has(k)))] }))
     .filter((f) => f.keys.length > 0);
 }
 
@@ -443,7 +496,8 @@ export function validateNt(d: NtDraft, intent: "draft" | "publish", all: Notific
   }
 
   if (!d.subject.trim()) e.subject = "Subject";
-  if (!d.body.trim() || /^Hello \{\{user\.name\}\},?$/.test(d.body.trim())) e.body = "Message";
+  const body = bodyText(d.body).trim();
+  if (!body || /^Hello \{\{user\.name\}\},?$/.test(body)) e.body = "Message";
   for (const { field, keys } of unknownVariables(d)) {
     if (!e[field]) e[field] = `${keys.map((k) => `{{${k}}}`).join(", ")} ${keys.length === 1 ? "isn't" : "aren't"} available for this trigger`;
   }
@@ -485,7 +539,7 @@ export function diffNt(before: NtDraft, after: NtDraft, label: RecipientLabel): 
     ["Classification", SENSITIVITY[before.sensitivity].label, SENSITIVITY[after.sensitivity].label],
     ["Subject", before.subject, after.subject],
     ["Heading", before.heading, after.heading],
-    ["Message", before.body, after.body],
+    ["Message", bodyText(before.body), bodyText(after.body)],
     ["Sign-off", before.signOff, after.signOff],
     ["Attachments", files(before), files(after)],
   ];

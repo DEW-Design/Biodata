@@ -1,7 +1,8 @@
 "use client";
 
-import { useRef, useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import type { Key, Selection } from "react-aria-components";
+import type { Editor } from "@tiptap/react";
 import { parseDate } from "@internationalized/date";
 import { Attachment01, Clock, Plus, Send01, Trash01, Zap, ArrowLeft } from "@untitledui/icons";
 import { AlertFullWidth } from "@/components/application/alerts/alerts";
@@ -19,15 +20,17 @@ import { MultiSelect } from "@/components/base/select/multi-select";
 import { SelectItem } from "@/components/base/select/select-item";
 import { Select } from "@/components/base/select/select";
 import { TextArea } from "@/components/base/textarea/textarea";
+import { TextEditor, useEditorContext } from "@/components/base/text-editor/text-editor";
 import { Toggle } from "@/components/base/toggle/toggle";
 import { InputDatePicker } from "@/components/custom/date-picker/input-date-picker";
-import { Gap } from "@/components/scaffold/gap";
+import { cx } from "@/utils/cx";
 import { FormPage } from "@/app/pages/_shared/form-page";
 import { FormRow } from "@/app/pages/_shared/form-row";
 import { FormSectionList, FormSidebar, deriveSectionStatus } from "@/app/pages/_shared/form-section-list";
 import {
   DELAYS,
   FREQUENCIES,
+  bodyHtml,
   MONTH_DAYS,
   NT_EVENTS,
   NT_TEMPLATES,
@@ -79,9 +82,13 @@ import { useCategories, useNotifications } from "@/app/pages/_shared/notificatio
 //   Recipients  who receives it (that person, roles, people), CC and BCC, the sender's name and
 //               reply-to, and whether sent emails are logged.
 //   Message     template, classification, subject, heading, message and sign-off, with the email
-//               previewed beside them as it is typed. Variables are inserted from a menu at the
-//               cursor, and one the trigger doesn't provide is marked in the preview straight away
+//               previewed beside them as it is typed. Each of the four text fields has its own
+//               "Insert variable" at the right of its label, which writes into that field at the
+//               cursor, so it is in reach wherever the admin is writing. One the trigger doesn't provide is marked in the preview straight away
 //               and refused on Add.
+//
+// The message is written in the design system's rich text editor (advanced toolbar) and kept as HTML;
+// the preview draws the same formatting.
 //
 // The Message section is a working surface, like Controlled Vocabulary's Entries grid: its fields
 // stack beside the live preview instead of sitting in label-left FormRows, which would leave the
@@ -107,6 +114,43 @@ function freeName(label: string, all: Notification[], selfId?: string): string {
   let name = label;
   for (let i = 2; taken.has(name.toLowerCase()); i++) name = `${label} ${i}`;
   return name;
+}
+
+/** Hands the message editor to the form, so Insert variable can write into it at the cursor. */
+function EditorHandle({ editorRef }: { editorRef: { current: Editor | null } }) {
+  const { editor } = useEditorContext();
+  useEffect(() => {
+    editorRef.current = editor;
+    return () => {
+      editorRef.current = null;
+    };
+  }, [editor, editorRef]);
+  return null;
+}
+
+/** One field's Insert variable: the variables the trigger provides, at the right of that field's label. */
+function VariableMenu({ field, groups, onInsert, className }: { field: string; groups: ReturnType<typeof variablesFor>; onInsert: (key: string) => void; className?: string }) {
+  return (
+    <div className={cx("z-10 shrink-0", className)}>
+      <Dropdown.Root>
+        <Button iconLeading={Plus} color="link-color" size="sm" aria-label={`Insert variable into ${field}`}>
+          Insert variable
+        </Button>
+        <Dropdown.Popover placement="bottom right" className="w-80">
+          <Dropdown.Menu aria-label={`Variables for ${field}`} onAction={(key) => onInsert(String(key))}>
+            {groups.map((group) => (
+              <Dropdown.Section key={group.group} id={group.group}>
+                <Dropdown.SectionHeader className="px-4 pt-2.5 pb-1 text-xs font-semibold text-quaternary">{group.group}</Dropdown.SectionHeader>
+                {group.items.map((item) => (
+                  <Dropdown.Item key={item.key} id={item.key} label={item.label} addon={`{{${item.key}}}`} />
+                ))}
+              </Dropdown.Section>
+            ))}
+          </Dropdown.Menu>
+        </Dropdown.Popover>
+      </Dropdown.Root>
+    </div>
+  );
 }
 
 const keysOf = (keys: Selection, all: { id: string }[]) => (keys === "all" ? all.map((o) => o.id) : ([...keys] as string[]));
@@ -159,11 +203,10 @@ export function NtForm({
   const [showBcc, setShowBcc] = useState(draft.bcc.length > 0);
   const fileInput = useRef<HTMLInputElement>(null);
 
-  // Insert variable writes into the text field last used, at the cursor.
-  const [lastField, setLastField] = useState<TextField>("body");
+  // Each field's Insert variable writes into that field, at the cursor.
   const subjectRef = useRef<HTMLInputElement>(null);
   const headingRef = useRef<HTMLInputElement>(null);
-  const bodyRef = useRef<HTMLTextAreaElement>(null);
+  const bodyEditor = useRef<Editor | null>(null);
   const signOffRef = useRef<HTMLTextAreaElement>(null);
 
   const isLive = !!initial && initial.state !== "draft";
@@ -194,11 +237,15 @@ export function NtForm({
     });
   };
 
-  const insertVariable = (key: string) => {
-    const field = lastField;
-    const el = { subject: subjectRef, heading: headingRef, body: bodyRef, signOff: signOffRef }[field].current;
-    const value = draft[field];
+  const insertVariable = (field: TextField, key: string) => {
     const token = `{{${key}}}`;
+    if (field === "body") {
+      // The editor keeps its own selection, so the variable lands where the cursor was; onUpdate saves it.
+      bodyEditor.current?.chain().focus().insertContent(token).run();
+      return;
+    }
+    const el = { subject: subjectRef, heading: headingRef, signOff: signOffRef }[field].current;
+    const value = draft[field];
     const at = el?.selectionStart ?? value.length;
     const to = el?.selectionEnd ?? at;
     update({ [field]: value.slice(0, at) + token + value.slice(to) } as Partial<NtDraft>);
@@ -250,11 +297,11 @@ export function NtForm({
     onSaveDraft(draft, directory.label);
   };
 
+  const variables = variablesFor(draft.trigger);
   const title = !initial ? (duplicatedFrom ? `New notification, from ${duplicatedFrom}` : "New notification") : isLive ? `Edit ${initial.name}` : `Edit draft ${initial.name || initial.id}`;
   const textField = (field: TextField) => ({
     value: draft[field],
     onChange: (value: string) => update({ [field]: value } as Partial<NtDraft>),
-    onFocus: () => setLastField(field),
     isInvalid: !!errors[field],
     hint: hintFor(field, fieldLabel[field]),
   });
@@ -614,37 +661,35 @@ export function NtForm({
                 </Select>
               </div>
 
-              <div className="flex items-center justify-between gap-3 border-t border-secondary pt-5">
-                <p className="m-0 text-sm text-tertiary">
-                  Variables go into <span className="font-medium text-secondary">{fieldLabel[lastField]}</span>, at the cursor.
-                </p>
-                <Dropdown.Root>
-                  <Button iconLeading={Plus} color="secondary" size="sm">
-                    Insert variable
-                  </Button>
-                  <Dropdown.Popover placement="bottom right" className="w-80">
-                    <Dropdown.Menu aria-label="Insert variable" onAction={(key) => insertVariable(String(key))}>
-                      {variablesFor(draft.trigger).map((group) => (
-                        <Dropdown.Section key={group.group} id={group.group}>
-                          <Dropdown.SectionHeader className="px-4 pt-2.5 pb-1 text-xs font-semibold text-quaternary">{group.group}</Dropdown.SectionHeader>
-                          {group.items.map((item) => (
-                            <Dropdown.Item key={item.key} id={item.key} label={item.label} addon={`{{${item.key}}}`} />
-                          ))}
-                        </Dropdown.Section>
-                      ))}
-                    </Dropdown.Menu>
-                  </Dropdown.Popover>
-                </Dropdown.Root>
-              </div>
 
-              <Input label="Subject" isRequired placeholder="What the email is about" ref={subjectRef} {...textField("subject")} />
-              <Input label="Heading" placeholder="Leave empty to repeat the subject" ref={headingRef} {...textField("heading")} hint={hintFor("heading", "Heading") ?? "The large line at the top of the email."} />
-              {/* The Untitled UI rich-text editor (the designer, 1 Oct 2026) is a PRO component: the CLI needs
-                  the designer's Untitled UI login. Until then the toolbar is marked here (CONTRACTS 1.2) and
-                  the message keeps its two plain-text marks. */}
-              <Gap name="Rich text editor toolbar" note="Untitled UI PRO text-editor, waiting for the Untitled UI login" />
-              <TextArea label="Message" isRequired rows={10} textAreaRef={bodyRef} {...textField("body")} hint={hintFor("body", "Message") ?? "Put ** around words to make them bold, and start a line with - for a list."} />
-              <TextArea label="Sign-off" rows={2} textAreaRef={signOffRef} {...textField("signOff")} />
+              <div className="relative border-t border-secondary pt-5">
+                <VariableMenu field="Subject" className="absolute top-5 right-0" groups={variables} onInsert={(key) => insertVariable("subject", key)} />
+                <Input label="Subject" isRequired placeholder="What the email is about" ref={subjectRef} {...textField("subject")} />
+              </div>
+              <div className="relative">
+                <VariableMenu field="Heading" className="absolute top-0 right-0" groups={variables} onInsert={(key) => insertVariable("heading", key)} />
+                <Input label="Heading" placeholder="Leave empty to repeat the subject" ref={headingRef} {...textField("heading")} hint={hintFor("heading", "Heading") ?? "The large line at the top of the email."} />
+              </div>
+              <TextEditor.Root
+                content={bodyHtml(draft.body)}
+                placeholder="What the email says"
+                isInvalid={!!errors.body}
+                inputClassName="min-h-60 [&>*+*]:mt-2"
+                onUpdate={({ editor }) => update({ body: editor.getHTML() })}
+              >
+                <EditorHandle editorRef={bodyEditor} />
+                <div className="flex items-center justify-between gap-3">
+                  <TextEditor.Label isRequired>Message</TextEditor.Label>
+                  <VariableMenu field="Message" groups={variables} onInsert={(key) => insertVariable("body", key)} />
+                </div>
+                <TextEditor.Toolbar type="advanced" />
+                <TextEditor.Content />
+                <TextEditor.HintText>{hintFor("body", "Message")}</TextEditor.HintText>
+              </TextEditor.Root>
+              <div className="relative">
+                <VariableMenu field="Sign-off" className="absolute top-0 right-0" groups={variables} onInsert={(key) => insertVariable("signOff", key)} />
+                <TextArea label="Sign-off" rows={2} textAreaRef={signOffRef} {...textField("signOff")} />
+              </div>
 
               <div className="flex flex-col gap-3 border-t border-secondary pt-5">
                 <div className="flex items-center justify-between gap-3">

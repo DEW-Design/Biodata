@@ -326,3 +326,4 @@ Not imported into every session on purpose: read or grep it when a task needs hi
 - [2026-10-02] Voucher Management ignoring needs a reason, ignored lines say where and why, no-taxon note up front - `2026-10-02-02-voucher-management-ignoring-needs-a-reason-ignored-lines.md`
 - [2026-10-02] Voucher Management Needs review shows only lines to review, a missing taxon is said up front with Add taxon - `2026-10-02-03-voucher-management-needs-review-shows-only-lines-to.md`
 - [2026-10-02] Merge main (sai-wips PR 11) into mohan-wips - `2026-10-02-04-merge-main-sai-wips-pr-11-into-mohan.md`
+- [2026-10-02] Notification message uses the rich text editor; artefacts view switch moves right - `2026-10-02-05-notification-message-uses-the-rich-text-editor-artefacts.md`
