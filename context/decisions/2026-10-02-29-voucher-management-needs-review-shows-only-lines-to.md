@@ -1,6 +1,6 @@
 # 2026-10-02 - Voucher Management Needs review shows only lines to review, a missing taxon is said up front with Add taxon
 
-- **Oct 2 2026: Needs review shows only lines to review; a missing taxon is said up front, with Add taxon.** Follows 2026-10-02-02. Both options.
+- **Oct 2 2026: Needs review shows only lines to review; a missing taxon is said up front, with Add taxon.** Follows 2026-10-02-28. Both options.
   - **Needs review hides decided lines** ("we dont have to show already updated records in needs review?"): with the batch narrowed to Needs review (the Status filter's only choice), a record shows only its lines still to review; updated, ignored and Observed by lines are left out (`CompareTable reviewOnly`). They show under All, Updated and Ignored, and with "Show matching fields" on.
   - **A missing taxon, on the screen** ("the admin has to go to the edit screen to find out that the taxon is not yet there in the system ... Think and come with a better UX"). The line no longer pretends to have a value:
     - the source's name carries a "Not in BioData" badge (warning) on its second line, beside the authorship, wherever it shows (table, Edit dialog, record page);

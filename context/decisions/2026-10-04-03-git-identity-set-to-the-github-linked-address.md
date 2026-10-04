@@ -1,0 +1,8 @@
+# 2026-10-04 - Git identity set to the GitHub-linked address; old commits and trailers left as pushed
+
+- **Oct 4 2026: Git identity set to the GitHub-linked address; old commits and trailers left as pushed.** The designer saw "Sai" twice in the history and asked for the GitHub-linked email instead of the MacBook one.
+  - **Cause:** Git had no name or email configured on this machine (repo or global), so it invented `smaniganahalli@Sais-MacBook-Pro.local` from the computer's name. That address is not linked to any GitHub account, so GitHub shows it as a separate, unlinked "Sai Maniganahalli". 22 commits on `sai-wips` (21 Sep to 2 Oct) carry it. It is unrelated to the Co-Authored-By trailer.
+  - **Change (asked for, CONTRACTS 5.2):** this repo's local Git config now sets `user.name` "Sai Maniganahalli" and `user.email` `324686782+saimaniganahalli1@users.noreply.github.com` (the id of the signed-in GitHub account `saimaniganahalli1`; a noreply address always links and keeps the real email out of history). Local config only, no global change. New commits use it.
+  - **Decided, option 1:** the 22 commits already pushed keep their old author. Rewriting them would need a force-push of `sai-wips` and would make it diverge from commits `mohan-wips` already contains. The two pushed commits with a Co-Authored-By trailer (bf283b5, bc8ad0f) are left as they are for the same reason. `mohan-wips` untouched.
+  - **Not done, if it is ever wanted:** a `.mailmap` mapping the old address to the new one (tidies `git log`, unclear for GitHub's pages), or a one-time rewrite with `--force-with-lease` after telling Mohan.
+  - **Open:** none. Not committed, not pushed.

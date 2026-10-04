@@ -323,14 +323,9 @@ Not imported into every session on purpose: read or grep it when a task needs hi
 - [2026-10-01] Button utility ingested: override, inventory, doc page - `2026-10-01-35-button-utility-ingested-override-inventory-doc-page.md`
 - [2026-10-01] Button utility aria-label fix, text-editor buttons moved onto ButtonUtility, typography re-check - `2026-10-01-36-button-utility-aria-label-fix-text-editor-buttons.md`
 - [2026-10-02] DLA and DSA audit logs: rebuilt for older records, system moves logged, local dates - `2026-10-02-01-dla-and-dsa-audit-logs-rebuilt-for-older.md`
-- [2026-10-02] Voucher Management Option 2 a row per field coloured by status, bg-warning-primary token added - `2026-10-02-01-voucher-management-option-2-a-row-per-field.md`
 - [2026-10-02] Tab icons: size md underline tabs use a 16px icon like sm - `2026-10-02-02-tab-icons-size-md-underline-tabs-use-a.md`
-- [2026-10-02] Voucher Management ignoring needs a reason, ignored lines say where and why, no-taxon note up front - `2026-10-02-02-voucher-management-ignoring-needs-a-reason-ignored-lines.md`
 - [2026-10-02] Audit Log tab: one shared AuditLog, a sentence per status move (Vercel activity feed) - `2026-10-02-03-audit-log-tab-one-shared-auditlog-a-sentence.md`
-- [2026-10-02] Voucher Management Needs review shows only lines to review, a missing taxon is said up front with Add taxon - `2026-10-02-03-voucher-management-needs-review-shows-only-lines-to.md`
 - [2026-10-02] Data Ingestion report: a failed dataset opens its Data Validation Error report - `2026-10-02-04-data-ingestion-report-a-failed-dataset-opens-its.md`
-- [2026-10-02] Merge main (sai-wips PR 11) into mohan-wips - `2026-10-02-04-merge-main-sai-wips-pr-11-into-mohan.md`
-- [2026-10-02] Notification message uses the rich text editor; artefacts view switch moves right - `2026-10-02-05-notification-message-uses-the-rich-text-editor-artefacts.md`
 - [2026-10-02] Report cards: Rows, Columns and Scope facts removed - `2026-10-02-05-report-cards-rows-columns-and-scope-facts-removed.md`
 - [2026-10-02] Data Ingestion report: the Record ID of a run with errors opens its Data Validation Error report - `2026-10-02-06-data-ingestion-report-the-record-id-of-a.md`
 - [2026-10-02] Data Validation Error report: Project and Dataset selects in the card, as option 2 - `2026-10-02-07-data-validation-error-report-project-and-dataset-selects.md`
@@ -348,3 +343,11 @@ Not imported into every session on purpose: read or grep it when a task needs hi
 - [2026-10-02] Dataset Validation tab: one status, and the same two-column card as the Datasets list - `2026-10-02-24-dataset-validation-tab-one-status-and-the-same.md`
 - [2026-10-02] Add Project: survey type, methodology from the vocabulary, team in the owner step, species list, per-concept... - `2026-10-02-25-add-project-survey-type-methodology-from-the-vocabulary.md`
 - [2026-10-02] PENDING for the business team: Add Project open questions (methods, survey type templates, storage location,... - `2026-10-02-26-pending-for-the-business-team-add-project-open.md`
+- [2026-10-02] Voucher Management Option 2 a row per field coloured by status, bg-warning-primary token added - `2026-10-02-27-voucher-management-option-2-a-row-per-field.md`
+- [2026-10-02] Voucher Management ignoring needs a reason, ignored lines say where and why, no-taxon note up front - `2026-10-02-28-voucher-management-ignoring-needs-a-reason-ignored-lines.md`
+- [2026-10-02] Voucher Management Needs review shows only lines to review, a missing taxon is said up front with Add taxon - `2026-10-02-29-voucher-management-needs-review-shows-only-lines-to.md`
+- [2026-10-02] Merge main (sai-wips PR 11) into mohan-wips - `2026-10-02-30-merge-main-sai-wips-pr-11-into-mohan.md`
+- [2026-10-02] Notification message uses the rich text editor; artefacts view switch moves right - `2026-10-02-31-notification-message-uses-the-rich-text-editor-artefacts.md`
+- [2026-10-04] Contracts: a merge flow (5.6), ours stands and theirs is appended, no clause or number overridden - `2026-10-04-01-contracts-a-merge-flow-5-6-ours-stands.md`
+- [2026-10-04] Merge flow applied: Mohan's five 2 Oct decisions renumbered 27 to 31, and a check for repeated decision... - `2026-10-04-02-merge-flow-applied-mohan-s-five-2-oct.md`
+- [2026-10-04] Git identity set to the GitHub-linked address; old commits and trailers left as pushed - `2026-10-04-03-git-identity-set-to-the-github-linked-address.md`

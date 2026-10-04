@@ -83,6 +83,7 @@ first when starting a new file in that area (a scoped rule triggers on reading, 
 - §5.3 Documentation (contracts-docs.md)
 - §5.4 Labs never ship (below)
 - §5.5 Contracts load by scope (below)
+- §5.6 Merging another branch: ours stands, theirs is appended (below)
 - §9.1 Overrides (contracts-governance.md)
 - §9.2 The override register (contracts-governance.md)
 - §9.3 The audit (contracts-governance.md)
@@ -279,6 +280,57 @@ governance).
   rules arriving only by accident, or not at all when files were read through the shell.
 - **Enforcement:** `AUTO §5.5` (a generated file is out of date, or a clause has no scope); the shell
   hook; `REVIEW` for following its list.
+
+### §5.6 Merging another branch: ours stands, theirs is appended
+
+When another person's branch is brought into ours (a teammate's `*-wips` into `sai-wips`, or the reverse), the
+branch being merged in is read, never changed, and nothing of the receiving branch's numbering is overridden.
+New information is appended after what is there. Nothing is lost, replaced or renumbered to make room.
+
+1. **The incoming branch is not touched.** The merge, the renames and the fixes happen on the receiving
+   branch, and only that branch is pushed. MUST NOT commit to, rewrite or force-push the incoming branch.
+2. **No clause disappears, and no clause number is reused.** After the merge, every clause number in either
+   side's `CONTRACTS.md` is in the result, with the same number and at least the same strength.
+   - A clause only the incoming side has is added in its Part with the next free number in its series (the
+     highest in use on either side, plus one), whatever number it had there. Every place the incoming work
+     names it (a `AUTO §x.y` tag, a comment in `scripts/check-contracts.mjs`, a decision file) is updated to
+     the new number in the same merge.
+   - A clause both sides changed keeps both changes: the incoming sentences are added to ours, none of ours
+     is dropped. Where the two contradict each other, MUST NOT pick one: ask the designer (§0.4) and leave
+     both visible until answered.
+   - MUST NOT weaken, shorten or drop a clause, an `Origin` line or an `Enforcement` tag to resolve a
+     conflict. Removing a clause is a designer decision (§9.4), never a merge result.
+3. **Generated and registered files follow their source.** `.claude/rules/contracts-*.md` are never merged by
+   hand: merge `CONTRACTS.md` and `contracts/rule-scopes.json` (a union: every clause keeps a scope), then run
+   `npm run contracts:rules`. `contracts/*.json` registers (`overrides.json`, `component-inventory.json`,
+   `figma-colours.json`) are unions: MUST NOT drop an entry, and MUST NOT raise a ratchet count in
+   `contracts/baseline.json` to make the merge pass (§9.4).
+4. **Decision files keep their content and the receiving branch keeps its numbers.** An incoming
+   `context/decisions/` file whose number is already used by a different file is renamed to the next free
+   number after the highest in use that day (appended, never inserted, never swapping ours out), with its
+   content unchanged. A reference to the old name is updated. Then `npm run context:index` rebuilds the
+   index (never edited by hand, §5.1). The merge itself is logged as a new decision file that lists what came
+   in, what was renumbered (old name, new name) and what is still open.
+5. **Reference files (`.claude/rules/ref-*.md`, `CONTEXT.md`) are added to, not replaced.** Incoming
+   paragraphs are added where they belong; where both sides edited the same paragraph, both versions stay
+   until the designer chooses. A file that exists on both sides is never taken wholesale from either one
+   ("local files kept" is not a merge).
+6. **The order:** (a) fetch, then list what the incoming side changed in `CONTRACTS.md`, `contracts/`,
+   `context/`, `.claude/rules` and `scripts/` (`git diff --stat <merge-base> <incoming> -- <those paths>`);
+   (b) merge; (c) renumber and rewrite references as above; (d) `npm run contracts:rules`, then
+   `npm run context:index`; (e) confirm no clause number from either side is missing and no decision file was
+   lost (compare the two sides' lists of `### §` headings and `context/decisions/` file names against the
+   result); (f) `npx tsc --noEmit`, `npm run check:contracts`; (g) log the decision; (h) push the receiving
+   branch only, after the §5.2 trailer check has printed nothing.
+
+- **Origin:** the 2 Oct 2026 merge of `mohan-wips` into `sai-wips`: both branches numbered that day's
+  decisions from 01, so five numbers (01 to 05) were each used twice, and an earlier merge had kept local
+  files over the incoming ones wholesale. The designer: "when normalised, we don't override any numbers.
+  If there's new info, we simply append to ours without any clashes. No contracts can disappear."
+- **Enforcement:** `AUTO §5.1c` (two decision files share a date and number; days up to 1 Oct 2026 had
+  repeats before the check existed, are named in the contracts, and are not renumbered), `AUTO §5.5` (a clause
+  in the scope map is missing from `CONTRACTS.md`, or has no scope), `REVIEW` for the rest, including the order
+  in item 6.
 
 ### §9.5 Consequence
 

@@ -459,6 +459,21 @@ export function runChecks() {
   if (indexProblem) violations.push({ clause: "5.1b", file: "context/decisions/INDEX.md", message: indexProblem });
   for (const message of checkRules()) violations.push({ clause: "5.5", file: ".claude/rules", message });
 
+  // 5.1c no two decision files share a date and number (5.6: a merged-in file whose number is taken is
+  // renamed to the next free one). Days up to LEGACY_REPEATS_THROUGH had repeated numbers before this
+  // check existed and keep them: their names are quoted in the contracts, so they are not renumbered.
+  const LEGACY_REPEATS_THROUGH = "2026-10-01";
+  const byNumber = new Map();
+  for (const f of readdirSync(join(ROOT, "context", "decisions"))) {
+    const m = f.match(/^(\d{4}-\d{2}-\d{2})-(\d+)-.+\.md$/);
+    if (!m || m[1] <= LEGACY_REPEATS_THROUGH) continue;
+    const key = `${m[1]}-${m[2]}`;
+    byNumber.set(key, [...(byNumber.get(key) ?? []), f]);
+  }
+  for (const [key, files] of byNumber) {
+    if (files.length > 1) violations.push({ clause: "5.1c", file: "context/decisions", message: `${key} is used by ${files.length} files (${files.join(", ")}). Rename the later arrival to the next free number after the highest that day, content unchanged (CONTRACTS.md 5.6).` });
+  }
+
   return { violations, improvements, counts };
 }
 
