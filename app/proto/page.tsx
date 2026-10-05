@@ -37,6 +37,10 @@ const PROTO_LABS: ProtoEntry[] = [
     description: "Column 2 for a List to deep dive collection (DSA, DLA): Actions, Status Tabs, My Items.",
   },
   {
+    route: "column-2",
+    description: "What column 2 holds once the actions sit on the page: label only, views and facets, grouped facets (chosen, now the Template Finder), chips with no column, and the rule drawn across five screens.",
+  },
+  {
     route: "dashboard-options",
     description: "How much more the registered-user dashboard should say beyond \"Hi, Olivia\" and three KPI numbers.",
   },
@@ -47,6 +51,10 @@ const PROTO_LABS: ProtoEntry[] = [
   {
     route: "data-provenance",
     description: "Dataset as a tree axis alongside Site. Superseded - the confirmed data model doesn't need it.",
+  },
+  {
+    route: "home-cleanup",
+    description: "The registered user's Home, audited with the design foundations: today, cleaned (headings, duplicate counts, restated status, contrast), and leaner (no Quick actions, tighter lower blocks).",
   },
   {
     route: "layouts",
@@ -71,6 +79,10 @@ const PROTO_LABS: ProtoEntry[] = [
   {
     route: "public-user-explorations",
     description: "Turning the guest dashboard into an account-creation nudge. Superseded by /proto/public-user.",
+  },
+  {
+    route: "site-map",
+    description: "A Pages map for the Prototype tools bar: every screen laid out to jump to, as columns by area, a tree, or a search-first list. Shows which screens the viewed role can open.",
   },
   {
     route: "tab-icons",

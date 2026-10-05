@@ -351,3 +351,14 @@ Not imported into every session on purpose: read or grep it when a task needs hi
 - [2026-10-04] Contracts: a merge flow (5.6), ours stands and theirs is appended, no clause or number overridden - `2026-10-04-01-contracts-a-merge-flow-5-6-ours-stands.md`
 - [2026-10-04] Merge flow applied: Mohan's five 2 Oct decisions renumbered 27 to 31, and a check for repeated decision... - `2026-10-04-02-merge-flow-applied-mohan-s-five-2-oct.md`
 - [2026-10-04] Git identity set to the GitHub-linked address; old commits and trailers left as pushed - `2026-10-04-03-git-identity-set-to-the-github-linked-address.md`
+- [2026-10-05] Template Finder polish: one Download menu per template, even rows, a proper empty state - `2026-10-05-01-template-finder-polish-one-download-menu-per-template.md`
+- [2026-10-05] Column 2 lab: local navigation only, actions on the page (Mobbin patterns, five treatments, open rule... - `2026-10-05-02-column-2-lab-local-navigation-only-actions-on.md`
+- [2026-10-05] Pages map lab for the Prototype tools bar, three layouts - `2026-10-05-03-pages-map-lab-for-the-prototype-tools-bar.md`
+- [2026-10-05] Template Finder column 2: grouped facets chosen and in production, as the Filter menu drawn as places - `2026-10-05-04-template-finder-column-2-grouped-facets-chosen-and.md`
+- [2026-10-05] Labs link to production: an In production button on the Prototype tools bar - `2026-10-05-05-labs-link-to-production-an-in-production-button.md`
+- [2026-10-05] In production link opens as a role that has the feature, not on a restriction page - `2026-10-05-06-in-production-link-opens-as-a-role-that.md`
+- [2026-10-05] In production link: every lab checked against the role-access matrix, persona added for the Home labs - `2026-10-05-07-in-production-link-every-lab-checked-against-the.md`
+- [2026-10-05] Registered user Home audited with the design foundations; cleanup in a lab (home-cleanup) - `2026-10-05-08-registered-user-home-audited-with-the-design-foundations.md`
+- [2026-10-05] Pages tool on the Prototype tools bar with the DEW tree - `2026-10-05-09-pages-tool-on-the-prototype-tools-bar-with.md`
+- [2026-10-05] Pages tool lists only the persona's pages and invites switching - `2026-10-05-10-pages-tool-lists-only-the-persona-s-pages.md`
+- [2026-10-05] Pages tool pared back to a search box, the tree and one line - `2026-10-05-11-pages-tool-pared-back-to-a-search-box.md`

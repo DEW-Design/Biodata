@@ -700,6 +700,12 @@ under the toolbar, with Clear all (`AttributeFilterChips`, `app/pages/_shared/at
 - MUST be the only filter on a table: no second Filter button, popover, side panel, accordion of values or hand-built chips.
   A list is described to it as attributes (`useAttributeFilter`), as sections and getters (`useListFilter`,
   `list-filter.tsx`), or as a selection kept outside the list (`useSelectionFilter`).
+- **Exception (designer, 5 Oct 2026): column 2 may draw the filter as places.** The Template Finder's column 2 lists
+  All templates, then the species types and collection methods under group headings, with counts
+  (`TemplateNav`, chosen in `/proto/column-2`). Those items are this filter, not a second one: choosing one MUST set
+  that attribute in the list's one filter state, so the Filter menu, its chips and column 2 never disagree, and
+  "All templates" clears every filter. Any other screen that does the same follows the same rule and needs the
+  designer's say-so first.
 - MUST apply as values are chosen and MUST NOT have an Apply button (§1.9 item 2). Escape closes the menu a level at a time
   and never changes what is ticked.
 - MUST go back to page 1 whenever a filter changes.
@@ -785,6 +791,17 @@ tension, take the click.
 `option-1 ... option-n` routes are what designers present to stakeholders while a screen is being
 explored. When a direction is chosen the others are deleted. A comparison is presented through
 `LayoutOptionSwitcher`.
+
+A lab (`/proto/<name>`) that has been folded into a page, or that is built for one, is registered in
+`app/_prototype-tools/production-routes.ts`. The Prototype tools bar on that lab then shows "In production" with the
+page's name, which opens the live page with the role being viewed kept, so a folded decision can be seen where it
+shipped. Where the role being viewed cannot use that page at all (a public user and the Template Finder), the link opens
+it as the lowest role that can, and says so ("as Registered User"): it never lands on a restriction message. A lab about
+one persona's version of a page (Home looks different to an admin, a registered user and a public user) names that persona
+in its line, and the link opens the page as that persona. Folding a lab
+into a page is not finished until its line is there.
+
+- **Enforcement:** `REVIEW`. First occurrence, so no `AUTO` check yet (§0.8).
 
 ### §4.5 Generated screens
 

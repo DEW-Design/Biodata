@@ -59,8 +59,7 @@ function TemplateCard({ template }: { template: DatasetTemplate }) {
           <dd className="m-0 font-medium text-secondary">{template.speciesType}</dd>
         </div>
       </dl>
-      <div className="flex items-center gap-2 border-t border-secondary pt-3">
-        <span className="text-sm text-tertiary">Download:</span>
+      <div className="border-t border-secondary pt-3">
         <TemplateDownloads />
       </div>
     </div>

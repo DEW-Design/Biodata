@@ -239,6 +239,12 @@ under the toolbar, with Clear all (`AttributeFilterChips`, `app/pages/_shared/at
 - MUST be the only filter on a table: no second Filter button, popover, side panel, accordion of values or hand-built chips.
   A list is described to it as attributes (`useAttributeFilter`), as sections and getters (`useListFilter`,
   `list-filter.tsx`), or as a selection kept outside the list (`useSelectionFilter`).
+- **Exception (designer, 5 Oct 2026): column 2 may draw the filter as places.** The Template Finder's column 2 lists
+  All templates, then the species types and collection methods under group headings, with counts
+  (`TemplateNav`, chosen in `/proto/column-2`). Those items are this filter, not a second one: choosing one MUST set
+  that attribute in the list's one filter state, so the Filter menu, its chips and column 2 never disagree, and
+  "All templates" clears every filter. Any other screen that does the same follows the same rule and needs the
+  designer's say-so first.
 - MUST apply as values are chosen and MUST NOT have an Apply button (§1.9 item 2). Escape closes the menu a level at a time
   and never changes what is ticked.
 - MUST go back to page 1 whenever a filter changes.

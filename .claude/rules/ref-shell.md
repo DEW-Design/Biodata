@@ -70,7 +70,7 @@ A preview of a real product screen, not a doc page and not a `/test-*` proof.
   to the default role.
 - **Role-gated whole pages** read `useFeatureAccess` (keys in `config/role-access.config.ts`), keep all three
   columns with the restriction in main (§3.7), and are listed in `wholePageGates`
-  (`app/_prototype-tools/prototype-tools.tsx`) so previewing a blocked role goes Home.
+  (`app/_prototype-tools/page-gates.ts`) so previewing a blocked role goes Home.
 - **A notice about the whole screen is a `PageBanner`** (`app/pages/_shared/page-banner.tsx`, documented at
   `/patterns/banners`): full width under the header, outside the scrolling area, one fact and one next step, one
   close control. A notice about one record or section is the contained `AlertFullWidth` inside the content. "What
@@ -99,7 +99,9 @@ single list with no record page).
 2. **Column 2 is navigation and actions only** (§3.10). A role that sees more than its own records gets a
    All / My scope switch (`AgreementScopeNav`, `?scope=`; All first: My is that list narrowed to you); a role with one view gets just the section label (a
    one-option switcher is dishonest UI). An `ActionsGroup` (Export CSV) sits below when there is something to
-   export. Status is a filter in main, not a place in column 2.
+   export. Status is a filter in main, not a place in column 2. **Exception (designer, 5 Oct 2026):** the Template Finder's
+   column 2 lists its species types and collection methods under group headings with counts, because they are the list's own
+   filter drawn as places (`TemplateNav`, one filter state, §4.2d); no other screen does this without the designer's say-so.
 3. **The list is a table page** (§4.2): `SectionHeader` (title, `CountBadge`, subheading, the primary create
    action), a `ToolbarSearch` and the `FilterMenu` (filters apply as they are chosen, and can be seeded
    from the URL, e.g. `?status=`), then `TableCard` with `Table bodyScrollable`, a sticky header and
