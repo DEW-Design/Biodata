@@ -58,10 +58,11 @@ function SectionPlaceholder({ node }: { node: NavNode }) {
 function ScopeNav() {
   const dlas = useDlas();
   const canReview = useFeatureAccess("dlaApproval");
+  const canAll = useFeatureAccess("dlaAllView");
 
   return (
     <div className="flex flex-col gap-1">
-      <AgreementScopeNav heading="Requests" basePath="/pages/dla" defaultScope={canReview ? "all" : "mine"} myLabel="My requests" allLabel="All requests" allIcon={sectionIcons[DLA_SECTION_LABEL]} />
+      <AgreementScopeNav heading="Requests" basePath="/pages/dla" defaultScope={canReview ? "all" : "mine"} myLabel="My requests" allLabel="All requests" allIcon={sectionIcons[DLA_SECTION_LABEL]} showAll={canAll} />
       <ActionsGroup
         onExportCsv={() =>
           downloadCsv(

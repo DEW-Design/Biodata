@@ -46,7 +46,6 @@ export const SCREENS: Screen[] = [
   { area: "Home", name: "Home", path: "/pages/dashboard", access: "Everyone", description: "My BioData and the Flora and Fauna Dashboard; a public user gets the dashboard and the sign-up card." },
   { area: "Projects", name: "Projects", path: "/pages/project-list", access: "Everyone", description: "Every project, with search, filters and sorting." },
   { area: "Projects", name: "Project page, Adelaide Hills (option 1)", path: "/pages/project-detail", access: "Everyone", description: "The project page template on its canonical route: Project, Project records, Species and Artefacts tabs, with editing and flagged concepts." },
-  { area: "Projects", name: "Project page, Adelaide Hills (option 2)", path: "/pages/project-detail/option-2", access: "Everyone", description: "The hand-built project page: tabs with the records tree." },
   { area: "Projects", name: "Project page", path: "/pages/project-list/kangaroo-island/project-details", access: "Everyone", description: "The same template for every project; other projects are built from the shared data (Kangaroo Island shown)." },
   { area: "Projects", name: "Record page", path: "/pages/project-list/kangaroo-island/project-details/occurrences/occ-7", access: "Everyone", description: "One occurrence on its project (a Southern Hairy-nosed Wombat)." },
   { area: "Projects", name: "Upload dataset", path: "/pages/project-list/kangaroo-island/upload", access: "Signed in", description: "Upload a spreadsheet to a project, then the data upload acknowledgement." },

@@ -83,12 +83,13 @@ export function isSectionValid(id: SectionId, s: FormState): boolean {
       return (
         (d.dataOwnerType === "individual" || d.dataOwnerOrgName.trim().length > 0) &&
         contactValid(d.dataOwnerContacts[0]) &&
-        d.projectManagers.some((m) => m.firstName.trim() && m.lastName.trim() && m.email.trim())
+        // An individual owner is the person: they give their role here and have no project managers; an organisation names its managers.
+        (d.dataOwnerType === "individual" ? roleValid(d) : d.projectManagers.some((m) => m.firstName.trim() && m.lastName.trim() && m.email.trim()))
       );
     case "extent":
       return isGeoExtentComplete(c.geographicExtent) && c.focusAreas.length > 0 && (!c.focusAreas.includes("other") || c.focusAreaOther.trim().length > 0);
     case "method":
-      return !!c.surveyType && !!c.collectionMethod && c.methodDetails.trim().length > 0 && roleValid(d);
+      return !!c.surveyType && !!c.collectionMethod && c.methodDetails.trim().length > 0 && (d.dataOwnerType === "individual" || roleValid(d));
     case "restrictions":
       return !s.restrictions.hasRestrictions || s.restrictions.enabledTypes.size > 0;
     case "review":
@@ -118,11 +119,14 @@ export function missingOwnerFields(s: FormState): string[] {
   return out;
 }
 
-/** The team half of the Data owner section (it was the Project team section): the managers. */
+/** The team half of the Data owner section (it was the Project team section): the managers of an organisation, or the role of an individual. */
 export function missingTeamFields(s: FormState): string[] {
   const d = s.details;
   const out: string[] = [];
-  if (!d.projectManagers.some((m) => m.firstName.trim() && m.lastName.trim() && m.email.trim())) out.push("A project manager with a name and email");
+  if (d.dataOwnerType === "individual") {
+    if (!d.roleOfWork) out.push("Your role");
+    else if (d.roleOfWork === "other" && !d.roleOfWorkOther.trim()) out.push("Your role (please specify)");
+  } else if (!d.projectManagers.some((m) => m.firstName.trim() && m.lastName.trim() && m.email.trim())) out.push("A project manager with a name and email");
   return out;
 }
 
@@ -152,8 +156,10 @@ export function missingFields(id: SectionId, s: FormState): string[] {
       if (!c.surveyType) out.push("Survey type");
       if (!c.collectionMethod) out.push("Method of data collection");
       if (blank(c.methodDetails)) out.push("Methodology");
-      if (!d.roleOfWork) out.push("Your role");
-      else if (d.roleOfWork === "other" && blank(d.roleOfWorkOther)) out.push("Your role (please specify)");
+      if (d.dataOwnerType === "organisation") {
+        if (!d.roleOfWork) out.push("Your role");
+        else if (d.roleOfWork === "other" && blank(d.roleOfWorkOther)) out.push("Your role (please specify)");
+      }
       break;
     case "restrictions":
       if (r.hasRestrictions && r.enabledTypes.size === 0) out.push("At least one kind of restriction");
