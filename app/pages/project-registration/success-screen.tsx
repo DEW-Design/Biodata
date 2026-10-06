@@ -1,10 +1,8 @@
 "use client";
 
-import { Focusable } from "react-aria-components";
-import { BookOpen01, CheckCircle, Database01, Download01, FileSearch02, Upload01 } from "@untitledui/icons";
+import { ArrowNarrowRight, CheckCircle, Database01, Download01, FileSearch02, Upload01 } from "@untitledui/icons";
 import { Button } from "@/components/base/buttons/button";
 import { FeaturedIcon } from "@/components/foundations/featured-icon/featured-icon";
-import { Tooltip } from "@/components/base/tooltip/tooltip";
 
 const NEXT_STEPS = [
     { icon: Download01, title: "Download recommended Standard Templates", description: "Access pre-configured templates and standards to help you quickly set up biodiversity monitoring activities and maintain consistency." },
@@ -13,7 +11,7 @@ const NEXT_STEPS = [
     { icon: FileSearch02, title: "Data Extraction - Reports", description: "Generate reports and export project data for analysis, sharing, compliance, or stakeholder reporting." },
 ];
 
-export function SuccessScreen({ projectName, onGoToProjects }: { projectName: string; onGoToProjects: () => void }) {
+export function SuccessScreen({ projectName, onGoToProject }: { projectName: string; onGoToProject: () => void }) {
     return (
         <div className="flex w-full flex-col items-center gap-8 py-6 text-center">
             <div className="flex flex-col items-center gap-3">
@@ -42,17 +40,8 @@ export function SuccessScreen({ projectName, onGoToProjects }: { projectName: st
             </div>
 
             <div className="flex w-full max-w-lg flex-col items-center gap-4 border-t border-secondary pt-6">
-                <Tooltip title="Guided walkthroughs aren't built yet - coming soon.">
-                    <Focusable>
-                        <span className="inline-flex w-full">
-                            <Button iconLeading={BookOpen01} color="primary" size="md" className="w-full" isDisabled>
-                                Learn How
-                            </Button>
-                        </span>
-                    </Focusable>
-                </Tooltip>
-                <Button color="link-gray" size="sm" onClick={onGoToProjects}>
-                    Skip and Go to Project
+                <Button iconTrailing={ArrowNarrowRight} color="primary" size="md" className="w-full" onClick={onGoToProject}>
+                    Go to Project
                 </Button>
             </div>
         </div>

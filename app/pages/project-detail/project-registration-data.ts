@@ -83,6 +83,7 @@ export const registrationDataCollection: DataCollectionState = {
   // Southern Brown Bandicoot already named as a targeted species for this exact project in
   // project-detail's own Data Collection Scope section.
   targetedSpeciesIds: ["Isoodon obesulus", "Macropus giganteus", "Tachyglossus aculeatus"],
+  surveyType: "biological",
   collectionMethod: "systematic",
   methodDetails: "Quarterly transect and quadrat surveys across reserve sites, supplemented by camera traps and incidental records logged by Landcare volunteers.",
   permits: [{ id: 1, type: "scientific-research", number: "SA-2025-0142" }],
@@ -104,11 +105,11 @@ export const registrationRestrictions: RestrictionsState = {
       id: 1,
       speciesId: "Isoodon obesulus",
       scope: "selected",
-      concepts: [{ id: 1, concept: "location", conceptOther: "", value: "10km", values: [], dateFrom: null, dateTo: null }],
+      concepts: [{ id: 1, concept: "location", conceptOther: "", value: "10km", values: [], dateFrom: null, dateTo: null, justification: "" }],
       justification: "Precise den locations withheld to prevent disturbance during population recovery.",
     },
   ],
   locations: [],
-  metadata: { concepts: [], justification: "" },
+  metadata: { concepts: [] },
   otherRestrictions: "",
 };

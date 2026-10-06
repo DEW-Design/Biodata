@@ -258,6 +258,9 @@ const publicUserHref = (path: string) => `${path}?userRole=${LANDING_ROLE}`;
 // species; the hero search carries what was typed there as `?q=`.
 const EXPLORE_ROUTE = publicUserHref("/pages/observations");
 const DASHBOARD_ROUTE = publicUserHref("/pages/dashboard");
+// Contributing needs an account, so every "Contribute Now" on this page goes to the login (designer, 6 Oct 2026); the login page
+// carries the way on to sign up.
+const LOGIN_ROUTE = "/pages/auth/login";
 
 const NAV_LINKS: { label: string; href: string }[] = [
   { label: "What is Biodata", href: "#about" },
@@ -332,7 +335,7 @@ interface WhereToNextItem {
 const whereToNextGrid: WhereToNextItem[] = [
   { title: "Explore BioData SA", description: "Search biodiversity records with rich scientific filters - species, projects, locations and more.", cta: "Start Exploring", href: EXPLORE_ROUTE },
   { title: "Dashboard and Reporting", description: "Explore live indicators, species trends and project statistics at a glance.", cta: "View Dashboard", href: DASHBOARD_ROUTE },
-  { title: "Contribute Data", description: "Share your projects and observations so they can inform conservation and planning across the state.", cta: "Contribute Now", href: "#contribute" },
+  { title: "Contribute Data", description: "Share your projects and observations so they can inform conservation and planning across the state.", cta: "Contribute Now", href: LOGIN_ROUTE },
   { title: "Resources & User Guides", description: "Guides, standards, taxonomy, training and documentation for recording and using biodiversity data.", cta: "Resources & User Guides", href: "#knowledge-centre" },
 ];
 
@@ -864,7 +867,7 @@ export default function BiodataHomePage() {
                   Learn how to Contribute
                   <ArrowNarrowUpRight className="size-5" />
                 </a>
-                <Button color="secondary" href="#contribute" iconTrailing={ArrowNarrowUpRight}>
+                <Button color="secondary" href={LOGIN_ROUTE} iconTrailing={ArrowNarrowUpRight}>
                   Contribute Now
                 </Button>
               </div>

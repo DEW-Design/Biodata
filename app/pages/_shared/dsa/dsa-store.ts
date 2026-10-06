@@ -3,7 +3,7 @@
 import { useMemo } from "react";
 import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
-import { effectiveStatus } from "@/app/pages/_shared/agreement-status";
+import { autoTransitions, rebuildHistory } from "@/app/pages/_shared/agreement-status";
 import { REVIEWING_ADMIN_NAME } from "@/app/pages/_shared/agreement-scope";
 import { browserStorage, useHydrated, useRehydrate } from "@/app/pages/_shared/zustand-persist";
 import { nextDsaId, seedDsas, todayIso, type Dsa, type DsaDraft, type DsaStatus } from "@/app/pages/_shared/dsa/dsa-data";
@@ -27,8 +27,8 @@ import { nextDsaId, seedDsas, todayIso, type Dsa, type DsaDraft, type DsaStatus 
 function resolve(list: Dsa[]): Dsa[] {
   const today = todayIso();
   return list.map((d) => {
-    const status = effectiveStatus(d.status, d.validFrom, d.validTo, today);
-    return status === d.status ? d : { ...d, status };
+    const system = autoTransitions(d.status, d.validFrom, d.validTo, today);
+    return system.length ? { ...d, status: system[system.length - 1].status, history: [...d.history, ...system] } : d;
   });
 }
 
@@ -39,15 +39,28 @@ interface DsaStoreState {
 const useDsaStore = create<DsaStoreState>()(
   persist(() => ({ dsas: seedDsas }), {
     name: "biodata-dsa",
-    // Bumped when `history` (the Audit tab's log) was added to `Dsa` - a browser with agreements
-    // already persisted under version 0 has records with no `history` at all, and `transition`/
-    // `saveDsa`/the Audit tab's own `[...dsa.history]` all assume it's a real array. `migrate`
-    // backfills an empty log rather than fabricating one (CONTRACTS 0.3 - there's no real history
-    // to recover for those records, so an honest empty log, not an invented one).
-    version: 1,
+    // Version 1 added `history` (the Audit Log tab). A browser holding agreements saved before that has
+    // records with no `history`, which migrate backfilled with an empty log: a blank Audit Log tab.
+    // Version 2 rebuilds those logs from what each record does know (`rebuildHistory`), never from a guess.
+    version: 2,
     migrate: (persisted) => {
       const state = persisted as { dsas: (Omit<Dsa, "history"> & { history?: Dsa["history"] })[] };
-      return { dsas: state.dsas.map((d) => ({ ...d, history: d.history ?? [] })) };
+      return {
+        dsas: state.dsas.map((d) => ({
+          ...d,
+          history: d.history?.length
+            ? d.history
+            : rebuildHistory({
+                status: d.status,
+                submittedAt: d.createdAt,
+                updatedAt: d.updatedAt,
+                creator: REVIEWING_ADMIN_NAME,
+                reviewer: REVIEWING_ADMIN_NAME,
+                canceller: REVIEWING_ADMIN_NAME,
+                seed: seedDsas.find((x) => x.id === d.id)?.history,
+              }),
+        })),
+      };
     },
     storage: createJSONStorage(browserStorage),
     skipHydration: true,
@@ -68,10 +81,15 @@ function commit(next: Dsa[]) {
  *  (the same shape nomination-store.ts's own `transition` already uses). */
 function transition(id: string, status: DsaStatus, by: string, patch: Partial<Dsa> = {}, note?: string) {
   const now = todayIso();
+  // Start from the resolved record, so a move the clock already made (Approved to Active) is in the log before this one.
   commit(
     useDsaStore
       .getState()
-      .dsas.map((d) => (d.id === id ? { ...d, ...patch, status, updatedAt: now, history: [...d.history, { status, at: now, by, ...(note ? { note } : {}) }] } : d)),
+      .dsas.map((d) => {
+        if (d.id !== id) return d;
+        const base = resolve([d])[0];
+        return { ...base, ...patch, status, updatedAt: now, history: [...base.history, { status, at: now, by, ...(note ? { note } : {}) }] };
+      }),
   );
 }
 
@@ -94,7 +112,7 @@ export function useDsa(id: string | undefined): Dsa | undefined {
 export function saveDsa(draft: DsaDraft, intent: "draft" | "submit", existingId?: string): Dsa {
   const dsas = useDsaStore.getState().dsas;
   const now = todayIso();
-  const existing = existingId ? dsas.find((d) => d.id === existingId) : undefined;
+  const existing = existingId ? resolve(dsas).find((d) => d.id === existingId) : undefined;
   const status: DsaStatus = intent === "draft" ? "draft" : existing && existing.status !== "draft" ? existing.status : "submitted";
   const changed = !existing || existing.status !== status;
   const history = [...(existing?.history ?? []), ...(changed ? [{ status, at: now, by: REVIEWING_ADMIN_NAME }] : [])];

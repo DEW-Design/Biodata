@@ -39,7 +39,7 @@ import {
 } from "@/app/pages/_shared/dataset-upload/dataset-data";
 import { restartIngestion, useDatasets } from "@/app/pages/_shared/dataset-upload/dataset-store";
 import { TOTAL_MS, rowsFromSize, viewAt, type RunView } from "@/app/pages/_shared/dataset-upload/ingestion";
-import { IngestionDetail, isSystemFault, placedRows, statusOf } from "@/app/pages/_shared/dataset-upload/ingestion-views";
+import { IngestionDetail, isSystemFault, placedRows } from "@/app/pages/_shared/dataset-upload/ingestion-views";
 import { AuditLog, milestones } from "@/app/pages/_shared/audit-log";
 import { useEditStore } from "./edit-store";
 
@@ -236,7 +236,8 @@ function DatasetsList({ rows, projectHref, datasetHref }: { rows: DatasetRow[]; 
         </SectionHeader.Group>
       </SectionHeader.Root>
 
-      <div className="flex min-h-0 flex-1 flex-col gap-4 p-6">
+      {/* The area scrolls when the card above and the table together are taller than the window; the table keeps a floor of its own. */}
+      <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto p-6 [scrollbar-gutter:stable]">
         {current?.view && (
           <section aria-label="Current upload" className="flex shrink-0 flex-col gap-4 rounded-xl border border-secondary bg-primary p-5">
             <div className="flex flex-wrap items-start justify-between gap-3">
@@ -253,8 +254,8 @@ function DatasetsList({ rows, projectHref, datasetHref }: { rows: DatasetRow[]; 
                 </Button>
               </div>
             </div>
-            <div className="flex max-w-2xl flex-col gap-4">
-              <IngestionDetail view={current.view} projectId={meta.id} datasetId={current.dataset.id} onRetry={() => retry(current.dataset.id)} />
+            <div className="flex flex-col gap-4">
+              <IngestionDetail split view={current.view} projectId={meta.id} datasetId={current.dataset.id} onRetry={() => retry(current.dataset.id)} />
             </div>
           </section>
         )}
@@ -271,7 +272,7 @@ function DatasetsList({ rows, projectHref, datasetHref }: { rows: DatasetRow[]; 
         {matches.length === 0 ? (
           <p className="py-6 text-sm text-tertiary">No datasets match your search.</p>
         ) : (
-          <TableCard.Root className="flex min-h-48 flex-1 flex-col">
+          <TableCard.Root className="flex min-h-[24rem] flex-1 flex-col">
             <Table layout="fixed" className="min-w-[1000px]" bodyScrollable aria-label="Datasets">
               <Table.Header sticky>
                 <Table.Head id="id" label="Dataset" isRowHeader className="w-[14%]" />
@@ -343,7 +344,6 @@ function DatasetDetail({ row, datasetId, backHref }: { row: DatasetRow | null; d
     );
   }
   const { dataset: d, view, status } = row;
-  const run = view ? statusOf(view) : null;
   return (
     <div className="flex min-h-0 flex-1 flex-col">
       <RecordBackLink href={backHref}>Back to datasets</RecordBackLink>
@@ -366,17 +366,12 @@ function DatasetDetail({ row, datasetId, backHref }: { row: DatasetRow | null; d
         </div>
 
         <TabPanel id="validation" className="p-6">
-          <section aria-label="Validation" className="flex max-w-2xl flex-col gap-4 rounded-xl border border-secondary bg-primary p-5">
-            <div className="flex items-center justify-between gap-3">
-              <h3 className="text-sm font-semibold text-primary">Pre-flight validation and ingestion</h3>
-              {run && (
-                <Badge size="sm" color={run.color}>
-                  {run.label}
-                </Badge>
-              )}
-            </div>
+          {/* The same card as the Datasets list's latest upload: full width, the run beside what went wrong. The dataset's one status is the
+              hero's; the card does not say it again in a second vocabulary ("Not ingested" under "Validation failed"). */}
+          <section aria-label="Validation" className="flex flex-col gap-4 rounded-xl border border-secondary bg-primary p-5">
+            <h3 className="text-sm font-semibold text-primary">Pre-flight validation and ingestion</h3>
             {view ? (
-              <IngestionDetail view={view} projectId={d.projectId} datasetId={d.id} onRetry={() => retry(d.id)} />
+              <IngestionDetail split view={view} projectId={d.projectId} datasetId={d.id} onRetry={() => retry(d.id)} />
             ) : (
               <p className="text-sm text-quaternary">Not provided</p>
             )}

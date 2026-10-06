@@ -20,8 +20,7 @@ import {
 import { datasetCountsByProject, reportBundlesFor } from "@/app/pages/_shared/reports/report-records";
 import { ALL_PROJECTS, activeScope, ReportScopeSelect } from "@/app/pages/_shared/reports/report-scope-select";
 import { DataReport, IdCell, TextCell } from "@/app/pages/_shared/reports/report-table";
-import { csvExportAction, REPORT_WIDTH as W, emptyColumn, numberColumn, textColumn, type ViewColumn } from "@/app/pages/_shared/reports/report-columns";
-import { RecordActionBar } from "@/app/pages/_shared/record-action-bar";
+import { REPORT_WIDTH as W, emptyColumn, numberColumn, textColumn, type ViewColumn } from "@/app/pages/_shared/reports/report-columns";
 import { useUserRole } from "@/lib/use-user-role";
 
 // The Events, Occurrences and Observations Report: the wireframe's three screens (Figma YMproGZfrFB5jUqPHPxMhk frames
@@ -198,7 +197,8 @@ export function RecordsReport() {
   const searchParams = useSearchParams();
   const tabParam = searchParams.get("tab");
   const tab: RecordTab = isTab(tabParam) ? tabParam : "events";
-  const [scope, setScope] = useState(ALL_PROJECTS);
+  // A generated report (My reports) opens with the project it was made for, `?project=`.
+  const [scope, setScope] = useState(searchParams.get("project") ?? ALL_PROJECTS);
 
   const bundles = useMemo(() => reportBundlesFor(role), [role]);
   const projects = useMemo(() => bundles.map((b) => b.project), [bundles]);
@@ -251,9 +251,7 @@ export function RecordsReport() {
   const common = {
     title: "Events, Occurrences and Observations Report",
     subtitle: "Every event, occurrence and observation, one tab for each.",
-    scope: role === "biodata-admin" ? "All projects" : "Your projects",
     scopeControl: <ReportScopeSelect projects={projects} value={scope} onChange={setScope} />,
-    showRows: false,
     facts: [
       { label: "Datasets", value: datasetTotal.toLocaleString("en-AU") },
       { label: "Events", value: counts.events.toLocaleString("en-AU") },
@@ -305,7 +303,7 @@ export function RecordsReport() {
         initialSort={{ column: "event", direction: "ascending" }}
         belowHeader={belowHeader}
         wrapBody={wrapBody}
-        actions={(inView) => <RecordActionBar onDark menu={[csvExportAction(inView, eventColumns, "events-report.csv")]} />}
+        exportName="events-report"
       />
     );
   } else if (tab === "occurrences") {
@@ -325,7 +323,7 @@ export function RecordsReport() {
         initialSort={{ column: "occurrence", direction: "ascending" }}
         belowHeader={belowHeader}
         wrapBody={wrapBody}
-        actions={(inView) => <RecordActionBar onDark menu={[csvExportAction(inView, occurrenceColumns, "occurrences-report.csv")]} />}
+        exportName="occurrences-report"
       />
     );
   } else {
@@ -345,7 +343,7 @@ export function RecordsReport() {
         initialSort={{ column: "observation", direction: "ascending" }}
         belowHeader={belowHeader}
         wrapBody={wrapBody}
-        actions={(inView) => <RecordActionBar onDark menu={[csvExportAction(inView, observationColumns, "observations-report.csv")]} />}
+        exportName="observations-report"
       />
     );
   }

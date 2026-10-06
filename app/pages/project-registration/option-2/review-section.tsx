@@ -4,7 +4,7 @@ import { Edit05 } from "@untitledui/icons";
 import { getLocalTimeZone } from "@internationalized/date";
 import type { DateValue } from "react-aria-components";
 import { Button } from "@/components/base/buttons/button";
-import { COLLECTION_METHOD_OPTIONS, FOCUS_AREA_OPTIONS, ROLE_OF_WORK_OPTIONS } from "../data";
+import { COLLECTION_METHOD_OPTIONS, FOCUS_AREA_OPTIONS, ROLE_OF_WORK_OPTIONS, SURVEY_TYPE_OPTIONS } from "../data";
 import { geoExtentSummary } from "../geo-extent-picker";
 import { restrictionsSummaryRows } from "../step-3-privacy-restrictions";
 import { STEP_TITLES, type FormState, type SectionId } from "./sections";
@@ -45,6 +45,7 @@ export function ReviewSection({ state, onEdit }: { state: FormState; onEdit: (id
   const managers = d.projectManagers.map(person).filter(Boolean).join(", ");
   const focus = c.focusAreas.map((id) => (id === "other" && c.focusAreaOther ? c.focusAreaOther : (FOCUS_AREA_OPTIONS.find((o) => o.id === id)?.label ?? id))).join(", ");
   const method = COLLECTION_METHOD_OPTIONS.find((o) => o.id === c.collectionMethod)?.label;
+  const surveyType = SURVEY_TYPE_OPTIONS.find((o) => o.id === c.surveyType)?.label;
   const dates = d.startDate ? `${formatDate(d.startDate)} to ${d.endDate ? formatDate(d.endDate) : "ongoing"}` : "";
   const restrictionRows = restrictionsSummaryRows(r);
 
@@ -56,14 +57,16 @@ export function ReviewSection({ state, onEdit }: { state: FormState; onEdit: (id
         <SummaryRow label="Dates" value={dates} onEdit={() => onEdit("basics")} />
         <SummaryRow label="Data owner" value={d.dataOwnerType === "organisation" ? d.dataOwnerOrgName : person(contact)} onEdit={() => onEdit("owner")} />
         <SummaryRow label="Primary contact" value={person(contact) ? `${person(contact)}${contact.email ? ` - ${contact.email}` : ""}` : ""} onEdit={() => onEdit("owner")} />
-        <SummaryRow label="Your role" value={roleLabel} onEdit={() => onEdit("team")} />
-        <SummaryRow label="Project managers" value={managers} onEdit={() => onEdit("team")} />
+        <SummaryRow label="Project managers" value={managers} onEdit={() => onEdit("owner")} />
       </StepCard>
 
       <StepCard title={STEP_TITLES[2]}>
         <SummaryRow label="Geographic extent" value={c.geographicExtent.method ? geoExtentSummary(c.geographicExtent) : ""} onEdit={() => onEdit("extent")} />
         <SummaryRow label="Focus areas" value={focus} onEdit={() => onEdit("extent")} />
+        <SummaryRow label="Survey type" value={surveyType} onEdit={() => onEdit("method")} />
         <SummaryRow label="Method of data collection" value={method} onEdit={() => onEdit("method")} />
+        <SummaryRow label="Methodology" value={c.methodDetails} onEdit={() => onEdit("method")} />
+        <SummaryRow label="Your role" value={roleLabel} onEdit={() => onEdit("method")} />
       </StepCard>
 
       <StepCard title={STEP_TITLES[3]}>

@@ -128,6 +128,29 @@ being remembered.
   became `AUTO §1.9a` (§1.9's own origin line).
 - **Enforcement:** `REVIEW`.
 
+### §0.9 Borrow and reuse patterns from existing pages
+
+Before building a screen, a section or a control, find the closest page that already does the same job and reuse
+its pattern: the same layout, the same components, the same arrangement of information, the same behaviour. The
+product is one system; a new screen is the existing patterns put to a new use, not a new design.
+
+1. **Look first, in this order:** the component in `components/**` and its doc page; the pattern page under
+   `/patterns` and the clauses in §3 and §4; then a sibling screen that has the same shape (a record page beside
+   another record page, a list beside another list, a form beside another form). Name what was borrowed.
+2. **Reuse, then extend.** If the existing pattern is close, use it as it is; if it needs a second behaviour, add
+   an opt-in prop (§1.6) so every screen gains it. MUST NOT copy it, or draw a lookalike beside it.
+3. **A new arrangement needs a reason.** MUST NOT introduce a layout no other page uses (a master and detail list inside a
+   tab, a second kind of card, a one-off table) when an existing one does the job. A real difference is named in the
+   page's header comment and, when it is new for the product, proposed to the designer (§0.4) first.
+4. **Where two pages that do the same job differ, the screen being touched is brought in line** (the sibling grep,
+   §0.6 item 5), not the other way round, unless the designer decides otherwise.
+
+- **Origin:** the user record's Roles and permissions tab was built as a list of roles with a detail panel for the chosen
+  one, a layout no other record page uses, and it repeated the role's name, count and link three times; the other record
+  pages already put a record's own facts on an Overview tab and the things it relates to on a tab each. The designer: "Borrow
+  and reuse patterns from existing pages" (6 Oct 2026).
+- **Enforcement:** `REVIEW` (the end-of-task check names the page borrowed from; §0.7 item 3).
+
 ---
 
 ## PART II - COMPONENTS
@@ -374,10 +397,17 @@ type the date or pick it from the calendar. A person should never have to type a
 
 - MUST NOT render the calendar-less `InputDate` (`components/base/input/input-date.tsx`) on a product
   screen. Its only place is its own doc page.
+- **A required date, or a start-type date, opens as today** (designer, 6 Oct 2026: "ALL DATE FIELDS ACROSS ALL FORMS: Default
+  to current sys date", narrowed to required and start-type dates): a project's start date, an agreement's start or valid-from
+  date, a vocabulary's, user's or notification's start date, a voucher change's date. The person changes it if it is another
+  day. An end date, an expiry, an embargo end and a filter's range stay empty, because empty means "ongoing" or "not narrowed";
+  editing a record keeps the date it holds. The default is in the form's blank draft (`emptyDsaDraft`, `initialProjectDetails`),
+  not in the field.
 - **Origin:** the Controlled Vocabulary, DSA and DLA forms used `InputDate`, typed segments with no
   calendar; the designer asked for the calendar field everywhere ("always remember to use date fields
-  with calendar input field from design system", 30 Sept 2026).
-- **Enforcement:** `AUTO §2.11` (an `<InputDate` under `app/pages` fails).
+  with calendar input field from design system", 30 Sept 2026). Add Project, DLA and DSA then opened with an empty start date
+  while the vocabulary, user and notification forms opened as today (6 Oct 2026).
+- **Enforcement:** `AUTO §2.11` (an `<InputDate` under `app/pages` fails); the default is `REVIEW`.
 
 ### §2.12 Nothing on screen without a purpose
 
@@ -449,11 +479,19 @@ The header is a top-level sibling before the rail + sidebar + main row, full wid
 
 Primary rail, contextual sidebar, main - under the full-width header - on every screen and every persona.
 A role that cannot use a section still gets all three, with the restriction stated in main. Column 2
-always exists and always says something about where you are.
+always exists and always says something about where you are, except on a record page (below).
+
+- **A record page has no column 2 (designer, 6 Oct 2026, generalising the project page's override).** The deep dive of any
+  collection - a project, a DLA, a DSA, a nomination, a user, a role, a permission, a controlled vocabulary, a taxon, a
+  voucher batch, a report - uses the whole width beside the rail. Where you are is the breadcrumb and its switcher over the
+  collection (§4.6 item 5); the record's actions are in its card. The list, and a create or edit form (whose sections are
+  column 2, §4.1), keep their column 2. A role that cannot open the record still gets the restriction with all three columns.
+  A shell takes this from its record props (`recordPage`), so a new collection's shell MUST do the same.
+- **Enforcement:** `AUTO §3.7b` (a shell that draws the Section sidebar and takes a record prop, without `recordPage`).
 
 - Exempt by name: `app/pages/biodata-home` (marketing), `app/pages/auth/**` (auth flow) and `app/pages/page.tsx`
   (the `/pages` screen index, a directory of screens rather than one).
-- **Override (designer, 30 Sept 2026):** the project page (`/pages/project-list/<id>/project-details`,
+- **Override (designer, 30 Sept 2026), now the rule above:** the project page (`/pages/project-list/<id>/project-details`,
   `/pages/project-detail`) and that project's record pages have no column 2, for every persona. The
   project's own actions are in the hero's "..." menu, the records tree is on the Survey records tab, and a
   breadcrumb project switcher replaces going back to the list. Logged in
@@ -596,7 +634,7 @@ scans by shape as well as by word and the same section has the same icon on ever
   Species `Feather`, Survey records and Data Collection Scope `Database01`, Artefacts and attachments `Paperclip`,
   Project and Projects `Folder`, Permit and Agreement `FileCheck02`, Audit log and history `ClockRewind`, Privacy and
   Restrictions `Lock01`, What to protect `Shield01`, Data Sharing `Share07`, Comments `MessageSquare01`, URI/DOI `Link01`,
-  Roles and permissions and Permissions `Key01`, Users `Users01`, Details `File06`, Favourites `Star01`, Uploads
+  Roles `UserCheck01`, Permissions `Key01`, Users `Users01`, Details `File06`, Favourites `Star01`, Uploads
   `UploadCloud02`; Flora and Fauna take the species group icons, and the record kinds the records tree's icons
   (`record-icons.ts`). A new tab takes an icon not already another concept's, and is added here.
 - **Counts** (`badge`) stay after the label; the icon does not replace them.
@@ -700,6 +738,12 @@ under the toolbar, with Clear all (`AttributeFilterChips`, `app/pages/_shared/at
 - MUST be the only filter on a table: no second Filter button, popover, side panel, accordion of values or hand-built chips.
   A list is described to it as attributes (`useAttributeFilter`), as sections and getters (`useListFilter`,
   `list-filter.tsx`), or as a selection kept outside the list (`useSelectionFilter`).
+- **Exception (designer, 5 Oct 2026): column 2 may draw the filter as places.** The Template Finder's column 2 lists
+  All templates, then the species types and collection methods under group headings, with counts
+  (`TemplateNav`, chosen in `/proto/column-2`). Those items are this filter, not a second one: choosing one MUST set
+  that attribute in the list's one filter state, so the Filter menu, its chips and column 2 never disagree, and
+  "All templates" clears every filter. Any other screen that does the same follows the same rule and needs the
+  designer's say-so first.
 - MUST apply as values are chosen and MUST NOT have an Apply button (§1.9 item 2). Escape closes the menu a level at a time
   and never changes what is ticked.
 - MUST go back to page 1 whenever a filter changes.
@@ -786,6 +830,17 @@ tension, take the click.
 explored. When a direction is chosen the others are deleted. A comparison is presented through
 `LayoutOptionSwitcher`.
 
+A lab (`/proto/<name>`) that has been folded into a page, or that is built for one, is registered in
+`app/_prototype-tools/production-routes.ts`. The Prototype tools bar on that lab then shows "In production" with the
+page's name, which opens the live page with the role being viewed kept, so a folded decision can be seen where it
+shipped. Where the role being viewed cannot use that page at all (a public user and the Template Finder), the link opens
+it as the lowest role that can, and says so ("as Registered User"): it never lands on a restriction message. A lab about
+one persona's version of a page (Home looks different to an admin, a registered user and a public user) names that persona
+in its line, and the link opens the page as that persona. Folding a lab
+into a page is not finished until its line is there.
+
+- **Enforcement:** `REVIEW`. First occurrence, so no `AUTO` check yet (§0.8).
+
 ### §4.5 Generated screens
 
 `/test-*` screens prove a Figma frame maps onto the library: every contained widget is real or `<Gap>`,
@@ -805,12 +860,16 @@ record) is laid out like the project page (`/pages/project-detail`):
 4. Underline `Tabs`, each panel a bordered card of label/value rows (`RecordRow`). A report is a record whose
    content is a table: under its card come the report's counts (`MetricTile`s), then search, the attribute filter
    and the table (`DataReport`, `app/pages/_shared/reports/report-table.tsx`); a report with parts has underline
-   `Tabs` for them. Its eyebrow is "Report"; its facts are who it is for (Scope, stated once, so the description is
-   the same for every role), the date of its newest record where its rows carry a date, the report's own totals
-   (Events, Occurrences, Observations; Total records), and its columns (and its rows, unless a total already says it).
+   `Tabs` for them. Its eyebrow is "Report"; its facts are the date of its newest record where its rows carry a date and
+   the report's own totals (Events, Occurrences, Observations; Total records), and nothing that restates the table: no row
+   count (the table's footer says it), no column count (the Columns button says it), no scope line (the description is the
+   same for every role, and the rows are what the role may see).
    A breakdown of those totals (species groups, errors by kind) is a row of `MetricTile`s under the card, an overview.
-   A report has no next step, so all its actions (Export CSV) are in the card's "..." menu, like the other record
-   pages, with no white button. A project scope is a Select right after the search, before the Filter button, not a row of its own.
+   A report has no next step, so all its actions (Export CSV, Export XLSX) are in the card's "..." menu, like the other record
+   pages, with no white button. Every report has both exports (designer, 6 Oct 2026: "Three dot menu to export as CSV, XLSX"),
+   for the rows in view and every column: `DataReport` builds them from the report's columns (`exportName`, `report-export.tsx`),
+   so a report MUST NOT write its own export or leave it out (`tsc` fails a `DataReport` without `exportName`).
+   A project scope is a Select right after the search, before the Filter button, not a row of its own.
    A "Columns" button at the right of the toolbar (`column-chooser.tsx`) opens one popover where columns are shown,
    hidden and reordered (by their handle or the keyboard), the first column pinned and always shown, applying as
    each is chosen with no Apply button (1.9 item 2), and a Reset; its label says how many are hidden.
@@ -823,14 +882,37 @@ record) is laid out like the project page (`/pages/project-detail`):
    after it is the record's name. On the list page itself the crumb is plain. The section's name is the same in
    the breadcrumb, the rail and column 2 ("Reports", not "Reports (All Users)": who sees what is the content's
    rule, not part of the name).
+6. **The Audit Log tab.** A record's history (DLA, DSA, nominations) is `AuditLog` (`app/pages/_shared/audit-log.tsx`,
+   documented at `/patterns/audit-log`), never a hand-built list of `RecordRow`s. It opens with the record's ID and its
+   created, activated (or decided) and last-modified milestones as "on" and "by" pairs, and a "Show all changes (N)" link
+   opens the full list. That list is `AuditFeed` (`app/pages/_shared/audit-feed.tsx`): one sentence per status move,
+   newest first, in a bordered list. The person is the subject (a small avatar and their name, "System" with a bolt for a
+   move the clock made), then "moved this to" (or "created this as" for a draft) and the status as its `Badge`; the date sits
+   at the right ("Today", "Yesterday", then "23 Sep 2026"). The newest move carries a "Current" chip. Consecutive moves by
+   the same person share one header and the lines under it drop the name. A note (a rejection reason, an on-hold note) sits
+   under its move. A log that is somehow empty says so. It lists status moves only, never a field edit, and never an
+   invented step: a record saved before logs existed is rebuilt from its own dates with a note that earlier steps were not
+   recorded.
+7. **The tabs run from the record to what it relates to.** The first tab is **Overview**: the record's own facts that the
+   identity card above it does not already show (a user's ID, username, email, contact number and access dates). A record
+   whose card shows everything has no Overview tab. After it come the things the record holds or is held by, each its own
+   tab and in the order the data rolls up: a user's **Roles**, then the **Permissions** those roles add up to; a role's
+   Permissions, then its Users. A tab is one thing; a tab MUST NOT hold a list that picks between sections of itself (a
+   master and detail), and a fact or count shown in the card or on the tab MUST NOT be repeated inside it. A permission
+   that comes from more than one role names each (the user's Permissions tab). Controlled Vocabulary
+   (Entries, Details, History) and dataset records (Validation, Details, History) have not been brought in line yet:
+   open for the designer (§0.4).
 
 - MUST NOT put a record's actions in a bar above the card, or stack its content without tabs.
 - MUST NOT build a second switcher: a collection's record pages reuse `BreadcrumbSwitcher`.
+- MUST NOT build a second audit log: a record page's Audit Log tab reuses `AuditLog` and `AuditFeed`.
 - **Origin:** the nomination record page shipped with its actions above the card and no tabs, after
   the designer had already asked for every record page to follow the project page. The reports were first built
   with a plain section header and no breadcrumb switcher; the designer asked why they did not follow the project
   page, and for the project page's switcher to apply "across all instances where we do a deep dive into a deep
-  page" (1 Oct 2026).
+  page" (1 Oct 2026). The Audit Log tab was a date column beside a badge and a bare name, on three record pages; the
+  designer asked for audit-log patterns from Mobbin and chose Vercel's activity feed (2 Oct 2026). The user record had
+  "Roles and permissions" and "Details" tabs; the designer: "shouldn't it be overview, role, permission?" (6 Oct 2026).
 - **Enforcement:** `REVIEW`. First occurrence of the switcher gap, so no `AUTO` check yet (§0.8); one is due if a record
   page ships with a plain section crumb again.
 
@@ -850,8 +932,9 @@ contacts carries its own **role** (role or type of work). The role is part of th
 - **Origin:** a "Project team" card with a "Registered by (role)" row appeared on project detail
   Option 3 after the role had already been placed with the data owner's contact, a correction the
   designer had made more than once.
-- **Open, not decided:** the Add Project registration still asks "Your role" in its Project team
-  section; whether that question moves to the data owner's contact in registration is for the designer.
+- **Open, not decided:** the Add Project registration asks "Your role" in Step 2 (Data Collection and Methodology),
+  not Step 1 (the designer, 6 Oct 2026); whether that question moves to the data owner's contact in registration is
+  for the designer.
 - **Enforcement:** `AUTO §4.7` (a "Registered by" label under `app/pages` fails), `REVIEW` for the rest.
 
 ### §4.8 Editing in place on a detail page
@@ -967,6 +1050,57 @@ governance).
   rules arriving only by accident, or not at all when files were read through the shell.
 - **Enforcement:** `AUTO §5.5` (a generated file is out of date, or a clause has no scope); the shell
   hook; `REVIEW` for following its list.
+
+### §5.6 Merging another branch: ours stands, theirs is appended
+
+When another person's branch is brought into ours (a teammate's `*-wips` into `sai-wips`, or the reverse), the
+branch being merged in is read, never changed, and nothing of the receiving branch's numbering is overridden.
+New information is appended after what is there. Nothing is lost, replaced or renumbered to make room.
+
+1. **The incoming branch is not touched.** The merge, the renames and the fixes happen on the receiving
+   branch, and only that branch is pushed. MUST NOT commit to, rewrite or force-push the incoming branch.
+2. **No clause disappears, and no clause number is reused.** After the merge, every clause number in either
+   side's `CONTRACTS.md` is in the result, with the same number and at least the same strength.
+   - A clause only the incoming side has is added in its Part with the next free number in its series (the
+     highest in use on either side, plus one), whatever number it had there. Every place the incoming work
+     names it (a `AUTO §x.y` tag, a comment in `scripts/check-contracts.mjs`, a decision file) is updated to
+     the new number in the same merge.
+   - A clause both sides changed keeps both changes: the incoming sentences are added to ours, none of ours
+     is dropped. Where the two contradict each other, MUST NOT pick one: ask the designer (§0.4) and leave
+     both visible until answered.
+   - MUST NOT weaken, shorten or drop a clause, an `Origin` line or an `Enforcement` tag to resolve a
+     conflict. Removing a clause is a designer decision (§9.4), never a merge result.
+3. **Generated and registered files follow their source.** `.claude/rules/contracts-*.md` are never merged by
+   hand: merge `CONTRACTS.md` and `contracts/rule-scopes.json` (a union: every clause keeps a scope), then run
+   `npm run contracts:rules`. `contracts/*.json` registers (`overrides.json`, `component-inventory.json`,
+   `figma-colours.json`) are unions: MUST NOT drop an entry, and MUST NOT raise a ratchet count in
+   `contracts/baseline.json` to make the merge pass (§9.4).
+4. **Decision files keep their content and the receiving branch keeps its numbers.** An incoming
+   `context/decisions/` file whose number is already used by a different file is renamed to the next free
+   number after the highest in use that day (appended, never inserted, never swapping ours out), with its
+   content unchanged. A reference to the old name is updated. Then `npm run context:index` rebuilds the
+   index (never edited by hand, §5.1). The merge itself is logged as a new decision file that lists what came
+   in, what was renumbered (old name, new name) and what is still open.
+5. **Reference files (`.claude/rules/ref-*.md`, `CONTEXT.md`) are added to, not replaced.** Incoming
+   paragraphs are added where they belong; where both sides edited the same paragraph, both versions stay
+   until the designer chooses. A file that exists on both sides is never taken wholesale from either one
+   ("local files kept" is not a merge).
+6. **The order:** (a) fetch, then list what the incoming side changed in `CONTRACTS.md`, `contracts/`,
+   `context/`, `.claude/rules` and `scripts/` (`git diff --stat <merge-base> <incoming> -- <those paths>`);
+   (b) merge; (c) renumber and rewrite references as above; (d) `npm run contracts:rules`, then
+   `npm run context:index`; (e) confirm no clause number from either side is missing and no decision file was
+   lost (compare the two sides' lists of `### §` headings and `context/decisions/` file names against the
+   result); (f) `npx tsc --noEmit`, `npm run check:contracts`; (g) log the decision; (h) push the receiving
+   branch only, after the §5.2 trailer check has printed nothing.
+
+- **Origin:** the 2 Oct 2026 merge of `mohan-wips` into `sai-wips`: both branches numbered that day's
+  decisions from 01, so five numbers (01 to 05) were each used twice, and an earlier merge had kept local
+  files over the incoming ones wholesale. The designer: "when normalised, we don't override any numbers.
+  If there's new info, we simply append to ours without any clashes. No contracts can disappear."
+- **Enforcement:** `AUTO §5.1c` (two decision files share a date and number; days up to 1 Oct 2026 had
+  repeats before the check existed, are named in the contracts, and are not renumbered), `AUTO §5.5` (a clause
+  in the scope map is missing from `CONTRACTS.md`, or has no scope), `REVIEW` for the rest, including the order
+  in item 6.
 
 ---
 

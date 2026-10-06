@@ -1,17 +1,17 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, type ComponentProps } from "react";
 import { useSearchParams } from "next/navigation";
 import { AlertCircle, AlertTriangle, CheckCircle, Download01, Map01, MarkerPin01, Rows01, Tag01 } from "@untitledui/icons";
 import { Badge } from "@/components/base/badges/badges";
 import { Select } from "@/components/base/select/select";
-import { HeroMeta, RecordHero } from "@/app/pages/_shared/record-hero";
+import { RecordHero } from "@/app/pages/_shared/record-hero";
+import { LayoutOptionSwitcher } from "@/app/pages/_shared/layout-option-switcher";
 import { downloadCsv } from "@/app/pages/_shared/agreement-actions";
 import type { Attribute } from "@/app/pages/_shared/attribute-filter";
 import { ListEmptyState } from "@/app/pages/_shared/list-empty-state";
 import { optionsFromValues } from "@/app/pages/_shared/list-filter";
 import { Clamped, DataReport, SpeciesCell, TextCell, IdCell, ReportTiles, type ReportColumn } from "@/app/pages/_shared/reports/report-table";
-import { RecordActionBar } from "@/app/pages/_shared/record-action-bar";
 import { useIngestionRuns } from "@/app/pages/_shared/reports/use-ingestion-runs";
 import {
   ERROR_CATEGORIES,
@@ -75,8 +75,25 @@ const columns: ReportColumn<ErrorRow>[] = [
 // One icon per tile, in the order `errorTilesFor` lists them: total, clean, with errors, business rule, coordinate, metadata.
 const TILE_ICONS = [Rows01, CheckCircle, AlertTriangle, AlertCircle, MarkerPin01, Tag01];
 
-export function DataValidationErrorReport() {
-  const { isAdmin, runs } = useIngestionRuns();
+// Two ways to choose the dataset, compared while the screen is explored (CONTRACTS 4.4):
+//   option-1: the Project and Dataset selects in a row between the card and the counts;
+//   option-2: the same two selects in the toolbar, right after the search and before Filter, which is where a report's
+//     project scope already lives (Species Detail, Events), so the card keeps only the title and the facts.
+export type ValidationErrorLayout = "option-1" | "option-2";
+
+const LAYOUT_OPTIONS = [
+  { id: "option-1", label: "Option 1", description: "Selects between the card and the counts", href: "/pages/reports/data-validation-error" },
+  { id: "option-2", label: "Option 2", description: "Selects in the toolbar", href: "/pages/reports/data-validation-error/option-2" },
+];
+
+/** What the layout lab (/proto/layouts) changes around the table; the product screens pass nothing. */
+export interface ReportChrome {
+  header?: "card" | "line";
+  filterPanel?: ComponentProps<typeof DataReport<ErrorRow>>["filterPanel"];
+}
+
+export function DataValidationErrorReport({ layout = "option-1", chrome }: { layout?: ValidationErrorLayout; chrome?: ReportChrome }) {
+  const { runs } = useIngestionRuns();
   const requested = useSearchParams().get("dataset");
   const [picked, setPicked] = useState<string | null>(requested);
 
@@ -111,25 +128,64 @@ export function DataValidationErrorReport() {
 
   const title = "Data Validation Error Report";
   const subtitle = "The errors found in a dataset during validation, record by record.";
-  const scope = isAdmin ? "All uploads" : "Your uploads and your projects";
 
   if (!run) {
     return (
       <div className="flex min-h-0 flex-1 flex-col">
-        <RecordHero eyebrow="Report" title={title} description={subtitle}>
-          <HeroMeta label="Scope">{scope}</HeroMeta>
-        </RecordHero>
+        <RecordHero eyebrow="Report" title={title} description={subtitle} />
         <ListEmptyState icon={AlertTriangle} title="No datasets with errors" description="Datasets with validation errors, yours and those on your projects, appear here with each error listed." />
       </div>
     );
   }
 
+  // Option 1: fields with a label above, in a row under the card. Option 2: the toolbar's own small selects (as the project
+  // scope on Species Detail), named by aria-label.
+  const inToolbar = layout === "option-2";
+  const projectSelect = (
+    <Select
+      size={inToolbar ? "sm" : "md"}
+      label={inToolbar ? undefined : "Select project"}
+      aria-label="Project"
+      placeholder="Select project"
+      popoverClassName={inToolbar ? "min-w-[24rem]" : undefined}
+      items={projectOptions}
+      selectedKey={run.projectId}
+      onSelectionChange={(key) => {
+        const next = errored.find((r) => r.projectId === key);
+        if (next && next.id !== run.id) setPicked(next.id);
+      }}
+    >
+      {(item) => <Select.Item id={item.id} label={item.label} />}
+    </Select>
+  );
+  // In the toolbar the dataset field shows its ID alone (the file name would push the ID out of a narrow field); the list
+  // still shows each file name beside its ID.
+  const fileNames = new Map(datasetOptions.map((d) => [d.id, d.supportingText]));
+  const datasetSelect = (
+    <Select
+      size={inToolbar ? "sm" : "md"}
+      label={inToolbar ? undefined : "Select dataset"}
+      aria-label="Dataset"
+      placeholder="Select dataset"
+      popoverClassName={inToolbar ? "min-w-[24rem]" : undefined}
+      items={inToolbar ? datasetOptions.map(({ id, label }) => ({ id, label })) : datasetOptions}
+      selectedKey={run.id}
+      onSelectionChange={(key) => {
+        if (key && key !== run.id) setPicked(String(key));
+      }}
+    >
+      {(item) => <Select.Item id={item.id} label={item.label} supportingText={inToolbar ? fileNames.get(String(item.id)) : item.supportingText} />}
+    </Select>
+  );
+
   return (
-    <DataReport<ErrorRow>
+    <>
+      {!chrome && <LayoutOptionSwitcher ariaLabel="Data Validation Error Report layout to show" options={LAYOUT_OPTIONS} current={layout} />}
+      <DataReport<ErrorRow>
+      header={chrome?.header}
+      filterPanel={chrome?.filterPanel}
       title={title}
       subtitle={subtitle}
-      scope={scope}
-      showRows={false}
       facts={[
         { label: "Ingested", value: formatDateTime(run.at) },
         { label: "Total records", value: tiles[0].value.toLocaleString("en-AU") },
@@ -148,60 +204,45 @@ export function DataValidationErrorReport() {
       noun="errors"
       emptyDescription="Errors found in this dataset appear here."
       initialSort={{ column: "record", direction: "ascending" }}
+      scopeControl={
+        inToolbar ? (
+          <>
+            <div className="w-56 max-w-full shrink-0">{projectSelect}</div>
+            <div className="w-40 max-w-full shrink-0">{datasetSelect}</div>
+          </>
+        ) : undefined
+      }
       belowHeader={
         <>
-          <div className="flex shrink-0 flex-wrap items-start gap-4 px-6 pb-4">
-            <div className="w-full max-w-sm">
-              <Select
-                label="Select project"
-                placeholder="Select project"
-                items={projectOptions}
-                selectedKey={run.projectId}
-                onSelectionChange={(key) => {
-                  const next = errored.find((r) => r.projectId === key);
-                  if (next && next.id !== run.id) setPicked(next.id);
-                }}
-              >
-                {(item) => <Select.Item id={item.id} label={item.label} />}
-              </Select>
+          {!inToolbar && (
+            <div className="flex shrink-0 flex-wrap items-start gap-4 px-6 pb-4">
+              <div className="w-full max-w-sm">{projectSelect}</div>
+              <div className="w-full max-w-lg">{datasetSelect}</div>
             </div>
-            <div className="w-full max-w-lg">
-              <Select
-                label="Select dataset"
-                placeholder="Select dataset"
-                items={datasetOptions}
-                selectedKey={run.id}
-                onSelectionChange={(key) => {
-                  if (key && key !== run.id) setPicked(String(key));
-                }}
-              >
-                {(item) => <Select.Item id={item.id} label={item.label} supportingText={item.supportingText} />}
-              </Select>
-            </div>
-          </div>
-          <ReportTiles tiles={tiles.slice(3).map((t, i) => ({ ...t, icon: TILE_ICONS[i + 3] }))} label={`Errors in ${run.id} by kind`} />
+          )}
+          <ReportTiles compact={chrome?.header === "line"} tiles={tiles.slice(3).map((t, i) => ({ ...t, icon: TILE_ICONS[i + 3] }))} label={`Errors in ${run.id} by kind`} />
         </>
       }
-      actions={
-        // Every action is in the menu, as on the other screens. The source dataset and the map have nothing to show in the
-        // preview (uploaded files are never read), so they are disabled rather than promised.
-        <RecordActionBar
-          onDark
-          menu={[
-            {
-              id: "download-error-report",
-              label: "Download error report",
-              icon: Download01,
-              onPress: () => {
-                const { header, rows } = errorReportCsv(errors);
-                downloadCsv(`${run.id}-error-report.csv`, header, rows);
-              },
+      exportName={`${run.id}-errors`}
+      // Map visualise is the card's one next step, the white button where the project page has Upload dataset; the downloads
+      // are in the menu after the exports. The source dataset and the map have nothing to show in the preview (uploaded files are
+      // never read), so they are disabled rather than promised.
+      extraActions={{
+        primary: { id: "map-visualise", label: "Map visualise", icon: Map01, onPress: () => {}, isDisabled: true },
+        menu: [
+          {
+            id: "download-error-report",
+            label: "Download error report",
+            icon: Download01,
+            onPress: () => {
+              const { header, rows } = errorReportCsv(errors);
+              downloadCsv(`${run.id}-error-report.csv`, header, rows);
             },
-            { id: "download-source", label: "Download source dataset", icon: Download01, onPress: () => {}, isDisabled: true },
-            { id: "map-visualise", label: "Map visualise", icon: Map01, onPress: () => {}, isDisabled: true },
-          ]}
-        />
-      }
-    />
+          },
+          { id: "download-source", label: "Download source dataset", icon: Download01, onPress: () => {}, isDisabled: true },
+        ],
+      }}
+      />
+    </>
   );
 }

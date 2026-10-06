@@ -24,10 +24,9 @@
 // build - a guest can still type this URL directly even though no real entry point ever sends one
 // here).
 //
-// No real backend anywhere in this build - "Create Project" doesn't persist anything. It shows the
-// same real success screen Figma's own wireframe ends on, and "Skip and Go to Project" honestly
-// routes to the real Projects list (there's no new detail page to send it to - same "no match, no
-// substitute" call this build already makes for e.g. the map search's own "Go to project" action).
+// No real backend anywhere in this build - "Create Project" keeps the project in this browser's
+// localStorage (created-projects-store.ts), shows the same real success screen Figma's own wireframe
+// ends on, and "Go to Project" opens the project's page (/pages/project-detail/created?project=<id>).
 
 import { Suspense, useState } from "react";
 import Link from "next/link";
@@ -43,6 +42,7 @@ import { Step1ProjectDetails } from "./step-1-project-details";
 import { Step2DataCollection } from "./step-2-data-collection";
 import { Step3PrivacyRestrictions, isStep3Valid } from "./step-3-privacy-restrictions";
 import { SuccessScreen } from "./success-screen";
+import { createdProjectHref, saveCreatedProject, type CreatedProject } from "@/app/pages/_shared/created-projects-store";
 import { initialProjectDetails, initialDataCollection, initialRestrictions } from "./types";
 import { PrototypeTools } from "@/app/_prototype-tools/prototype-tools";
 import { RegistrationLayoutSwitcher } from "./layout-switcher";
@@ -89,7 +89,8 @@ function ProjectRegistrationForm() {
     const [projectDetails, setProjectDetails] = useState(initialProjectDetails);
     const [dataCollection, setDataCollection] = useState(initialDataCollection);
     const [restrictions, setRestrictions] = useState(initialRestrictions);
-    const [created, setCreated] = useState(false);
+    // The project once it is created: kept in localStorage, and where "Go to Project" leads.
+    const [created, setCreated] = useState<CreatedProject | null>(null);
     // Set only by `RegistrationStepper`'s own onStepClick (jumping back to an already-completed
     // step) - `goToStep`'s normal forward callers (each step's own `onComplete`) never pass this,
     // so Step 2 still opens fresh at Question 1 the first time it's reached, exactly as before.
@@ -117,7 +118,7 @@ function ProjectRegistrationForm() {
     const handleSaveDraft = () => toast.brand("Draft saved", { description: "This is a demo build with no real backend - nothing is actually persisted." });
     const handleCreateProject = () => {
         if (!isStep3Valid(restrictions)) return;
-        setCreated(true);
+        setCreated(saveCreatedProject({ details: projectDetails, collection: dataCollection, restrictions }, role));
     };
 
     return (
@@ -138,7 +139,7 @@ function ProjectRegistrationForm() {
                     <div className="rounded-2xl border border-secondary bg-primary p-8">
                         <SuccessScreen
                             projectName={projectDetails.shortTitle || "Untitled project"}
-                            onGoToProjects={() => router.push(roleHref("/pages/project-list"))}
+                            onGoToProject={() => router.push(roleHref(createdProjectHref(created.id)))}
                         />
                     </div>
                 ) : (
@@ -159,7 +160,7 @@ function ProjectRegistrationForm() {
 
                         <div className="rounded-2xl border border-secondary bg-primary p-8 sm:p-12">
                             {step === 1 && <Step1ProjectDetails value={projectDetails} onChange={setProjectDetails} onComplete={() => goToStep(2)} startAtReview={reviewOnEntry} />}
-                            {step === 2 && <Step2DataCollection value={dataCollection} onChange={setDataCollection} onComplete={() => goToStep(3)} startAtReview={reviewOnEntry} />}
+                            {step === 2 && <Step2DataCollection value={dataCollection} onChange={setDataCollection} role={projectDetails} onRoleChange={(r) => setProjectDetails({ ...projectDetails, ...r })} onComplete={() => goToStep(3)} startAtReview={reviewOnEntry} />}
                             {step === 3 && <Step3PrivacyRestrictions value={restrictions} onChange={setRestrictions} onBackToPreviousStep={() => goToStep(2, { review: true })} onComplete={handleCreateProject} />}
 
                         </div>

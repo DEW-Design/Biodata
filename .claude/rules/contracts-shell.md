@@ -69,11 +69,19 @@ The header is a top-level sibling before the rail + sidebar + main row, full wid
 
 Primary rail, contextual sidebar, main - under the full-width header - on every screen and every persona.
 A role that cannot use a section still gets all three, with the restriction stated in main. Column 2
-always exists and always says something about where you are.
+always exists and always says something about where you are, except on a record page (below).
+
+- **A record page has no column 2 (designer, 6 Oct 2026, generalising the project page's override).** The deep dive of any
+  collection - a project, a DLA, a DSA, a nomination, a user, a role, a permission, a controlled vocabulary, a taxon, a
+  voucher batch, a report - uses the whole width beside the rail. Where you are is the breadcrumb and its switcher over the
+  collection (§4.6 item 5); the record's actions are in its card. The list, and a create or edit form (whose sections are
+  column 2, §4.1), keep their column 2. A role that cannot open the record still gets the restriction with all three columns.
+  A shell takes this from its record props (`recordPage`), so a new collection's shell MUST do the same.
+- **Enforcement:** `AUTO §3.7b` (a shell that draws the Section sidebar and takes a record prop, without `recordPage`).
 
 - Exempt by name: `app/pages/biodata-home` (marketing), `app/pages/auth/**` (auth flow) and `app/pages/page.tsx`
   (the `/pages` screen index, a directory of screens rather than one).
-- **Override (designer, 30 Sept 2026):** the project page (`/pages/project-list/<id>/project-details`,
+- **Override (designer, 30 Sept 2026), now the rule above:** the project page (`/pages/project-list/<id>/project-details`,
   `/pages/project-detail`) and that project's record pages have no column 2, for every persona. The
   project's own actions are in the hero's "..." menu, the records tree is on the Survey records tab, and a
   breadcrumb project switcher replaces going back to the list. Logged in
@@ -135,7 +143,7 @@ scans by shape as well as by word and the same section has the same icon on ever
   Species `Feather`, Survey records and Data Collection Scope `Database01`, Artefacts and attachments `Paperclip`,
   Project and Projects `Folder`, Permit and Agreement `FileCheck02`, Audit log and history `ClockRewind`, Privacy and
   Restrictions `Lock01`, What to protect `Shield01`, Data Sharing `Share07`, Comments `MessageSquare01`, URI/DOI `Link01`,
-  Roles and permissions and Permissions `Key01`, Users `Users01`, Details `File06`, Favourites `Star01`, Uploads
+  Roles `UserCheck01`, Permissions `Key01`, Users `Users01`, Details `File06`, Favourites `Star01`, Uploads
   `UploadCloud02`; Flora and Fauna take the species group icons, and the record kinds the records tree's icons
   (`record-icons.ts`). A new tab takes an icon not already another concept's, and is added here.
 - **Counts** (`badge`) stay after the label; the icon does not replace them.
@@ -239,6 +247,12 @@ under the toolbar, with Clear all (`AttributeFilterChips`, `app/pages/_shared/at
 - MUST be the only filter on a table: no second Filter button, popover, side panel, accordion of values or hand-built chips.
   A list is described to it as attributes (`useAttributeFilter`), as sections and getters (`useListFilter`,
   `list-filter.tsx`), or as a selection kept outside the list (`useSelectionFilter`).
+- **Exception (designer, 5 Oct 2026): column 2 may draw the filter as places.** The Template Finder's column 2 lists
+  All templates, then the species types and collection methods under group headings, with counts
+  (`TemplateNav`, chosen in `/proto/column-2`). Those items are this filter, not a second one: choosing one MUST set
+  that attribute in the list's one filter state, so the Filter menu, its chips and column 2 never disagree, and
+  "All templates" clears every filter. Any other screen that does the same follows the same rule and needs the
+  designer's say-so first.
 - MUST apply as values are chosen and MUST NOT have an Apply button (§1.9 item 2). Escape closes the menu a level at a time
   and never changes what is ticked.
 - MUST go back to page 1 whenever a filter changes.
@@ -332,12 +346,16 @@ record) is laid out like the project page (`/pages/project-detail`):
 4. Underline `Tabs`, each panel a bordered card of label/value rows (`RecordRow`). A report is a record whose
    content is a table: under its card come the report's counts (`MetricTile`s), then search, the attribute filter
    and the table (`DataReport`, `app/pages/_shared/reports/report-table.tsx`); a report with parts has underline
-   `Tabs` for them. Its eyebrow is "Report"; its facts are who it is for (Scope, stated once, so the description is
-   the same for every role), the date of its newest record where its rows carry a date, the report's own totals
-   (Events, Occurrences, Observations; Total records), and its columns (and its rows, unless a total already says it).
+   `Tabs` for them. Its eyebrow is "Report"; its facts are the date of its newest record where its rows carry a date and
+   the report's own totals (Events, Occurrences, Observations; Total records), and nothing that restates the table: no row
+   count (the table's footer says it), no column count (the Columns button says it), no scope line (the description is the
+   same for every role, and the rows are what the role may see).
    A breakdown of those totals (species groups, errors by kind) is a row of `MetricTile`s under the card, an overview.
-   A report has no next step, so all its actions (Export CSV) are in the card's "..." menu, like the other record
-   pages, with no white button. A project scope is a Select right after the search, before the Filter button, not a row of its own.
+   A report has no next step, so all its actions (Export CSV, Export XLSX) are in the card's "..." menu, like the other record
+   pages, with no white button. Every report has both exports (designer, 6 Oct 2026: "Three dot menu to export as CSV, XLSX"),
+   for the rows in view and every column: `DataReport` builds them from the report's columns (`exportName`, `report-export.tsx`),
+   so a report MUST NOT write its own export or leave it out (`tsc` fails a `DataReport` without `exportName`).
+   A project scope is a Select right after the search, before the Filter button, not a row of its own.
    A "Columns" button at the right of the toolbar (`column-chooser.tsx`) opens one popover where columns are shown,
    hidden and reordered (by their handle or the keyboard), the first column pinned and always shown, applying as
    each is chosen with no Apply button (1.9 item 2), and a Reset; its label says how many are hidden.
@@ -350,14 +368,37 @@ record) is laid out like the project page (`/pages/project-detail`):
    after it is the record's name. On the list page itself the crumb is plain. The section's name is the same in
    the breadcrumb, the rail and column 2 ("Reports", not "Reports (All Users)": who sees what is the content's
    rule, not part of the name).
+6. **The Audit Log tab.** A record's history (DLA, DSA, nominations) is `AuditLog` (`app/pages/_shared/audit-log.tsx`,
+   documented at `/patterns/audit-log`), never a hand-built list of `RecordRow`s. It opens with the record's ID and its
+   created, activated (or decided) and last-modified milestones as "on" and "by" pairs, and a "Show all changes (N)" link
+   opens the full list. That list is `AuditFeed` (`app/pages/_shared/audit-feed.tsx`): one sentence per status move,
+   newest first, in a bordered list. The person is the subject (a small avatar and their name, "System" with a bolt for a
+   move the clock made), then "moved this to" (or "created this as" for a draft) and the status as its `Badge`; the date sits
+   at the right ("Today", "Yesterday", then "23 Sep 2026"). The newest move carries a "Current" chip. Consecutive moves by
+   the same person share one header and the lines under it drop the name. A note (a rejection reason, an on-hold note) sits
+   under its move. A log that is somehow empty says so. It lists status moves only, never a field edit, and never an
+   invented step: a record saved before logs existed is rebuilt from its own dates with a note that earlier steps were not
+   recorded.
+7. **The tabs run from the record to what it relates to.** The first tab is **Overview**: the record's own facts that the
+   identity card above it does not already show (a user's ID, username, email, contact number and access dates). A record
+   whose card shows everything has no Overview tab. After it come the things the record holds or is held by, each its own
+   tab and in the order the data rolls up: a user's **Roles**, then the **Permissions** those roles add up to; a role's
+   Permissions, then its Users. A tab is one thing; a tab MUST NOT hold a list that picks between sections of itself (a
+   master and detail), and a fact or count shown in the card or on the tab MUST NOT be repeated inside it. A permission
+   that comes from more than one role names each (the user's Permissions tab). Controlled Vocabulary
+   (Entries, Details, History) and dataset records (Validation, Details, History) have not been brought in line yet:
+   open for the designer (§0.4).
 
 - MUST NOT put a record's actions in a bar above the card, or stack its content without tabs.
 - MUST NOT build a second switcher: a collection's record pages reuse `BreadcrumbSwitcher`.
+- MUST NOT build a second audit log: a record page's Audit Log tab reuses `AuditLog` and `AuditFeed`.
 - **Origin:** the nomination record page shipped with its actions above the card and no tabs, after
   the designer had already asked for every record page to follow the project page. The reports were first built
   with a plain section header and no breadcrumb switcher; the designer asked why they did not follow the project
   page, and for the project page's switcher to apply "across all instances where we do a deep dive into a deep
-  page" (1 Oct 2026).
+  page" (1 Oct 2026). The Audit Log tab was a date column beside a badge and a bare name, on three record pages; the
+  designer asked for audit-log patterns from Mobbin and chose Vercel's activity feed (2 Oct 2026). The user record had
+  "Roles and permissions" and "Details" tabs; the designer: "shouldn't it be overview, role, permission?" (6 Oct 2026).
 - **Enforcement:** `REVIEW`. First occurrence of the switcher gap, so no `AUTO` check yet (§0.8); one is due if a record
   page ships with a plain section crumb again.
 
@@ -377,8 +418,9 @@ contacts carries its own **role** (role or type of work). The role is part of th
 - **Origin:** a "Project team" card with a "Registered by (role)" row appeared on project detail
   Option 3 after the role had already been placed with the data owner's contact, a correction the
   designer had made more than once.
-- **Open, not decided:** the Add Project registration still asks "Your role" in its Project team
-  section; whether that question moves to the data owner's contact in registration is for the designer.
+- **Open, not decided:** the Add Project registration asks "Your role" in Step 2 (Data Collection and Methodology),
+  not Step 1 (the designer, 6 Oct 2026); whether that question moves to the data owner's contact in registration is
+  for the designer.
 - **Enforcement:** `AUTO §4.7` (a "Registered by" label under `app/pages` fails), `REVIEW` for the rest.
 
 ### §4.8 Editing in place on a detail page

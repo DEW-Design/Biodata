@@ -247,8 +247,8 @@ const MultiSelectRoot = ({
                                     )}
                                 </span>
                             ) : !single && hasSelection ? (
-                                <span className={cx("flex items-center", sizes[size].textContainer)}>
-                                    <span className={cx("font-medium text-primary", sizes[size].text)}>
+                                <span className={cx("flex min-w-0 items-center", sizes[size].textContainer)}>
+                                    <span className={cx("truncate font-medium text-primary", sizes[size].text)}>
                                         {selectedCountFormatter ? selectedCountFormatter(selectedCount) : `${selectedCount} selected`}
                                     </span>
                                     {supportingText && <span className={cx("text-tertiary", sizes[size].text)}>{supportingText}</span>}

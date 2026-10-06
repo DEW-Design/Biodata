@@ -39,6 +39,10 @@ export const RESTRICTION_TYPE_META: { key: RestrictionTypeKey; title: string; de
     { key: "other", title: "Other Restrictions", description: "Request protection rules for any other restrictions associated with this project", icon: DotsHorizontal },
 ];
 
+/** The kinds of restriction a person can switch on. "Other restrictions" is hidden for now (the designer,
+ *  2 Oct 2026): a project that already has one still shows and edits it, nothing new can add one. */
+export const OFFERED_RESTRICTION_TYPES = RESTRICTION_TYPE_META.filter((m) => m.key !== "other");
+
 export function isEmbargoValid(embargo: RestrictionsState["embargo"]): boolean {
     return (
         embargo.types.length > 0 &&
@@ -54,7 +58,7 @@ export function isTypeValid(key: RestrictionTypeKey, r: RestrictionsState): bool
     // accordion version let this through silently; each now needs at least one real entry.
     if (key === "species") return r.species.length > 0 && r.species.every(isSpeciesEntryValid);
     if (key === "locations") return r.locations.length > 0;
-    if (key === "metadata") return r.metadata.justification.trim().length > 0 && isConceptRowsValid(r.metadata.concepts, PROJECT_METADATA_CONCEPTS);
+    if (key === "metadata") return isConceptRowsValid(r.metadata.concepts, PROJECT_METADATA_CONCEPTS, true);
     return r.otherRestrictions.trim().length > 0;
 }
 
@@ -190,15 +194,7 @@ export function RestrictionTypeFields({ typeKey, value, onChange }: { typeKey: R
     if (typeKey === "metadata")
         return (
             <div className="flex flex-col gap-4">
-                <ConceptRows rows={value.metadata.concepts} onChange={(concepts) => patch({ metadata: { ...value.metadata, concepts } })} options={PROJECT_METADATA_CONCEPTS} />
-                <TextArea
-                    label="Justification"
-                    placeholder="Reasons for restrictions"
-                    isRequired
-                    rows={3}
-                    value={value.metadata.justification}
-                    onChange={(v) => patch({ metadata: { ...value.metadata, justification: v } })}
-                />
+                <ConceptRows rows={value.metadata.concepts} onChange={(concepts) => patch({ metadata: { ...value.metadata, concepts } })} options={PROJECT_METADATA_CONCEPTS} justifyEach />
             </div>
         );
 
@@ -292,7 +288,7 @@ export function Step3PrivacyRestrictions({
                 onBack={back}
             >
                 <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                    {RESTRICTION_TYPE_META.map(({ key, title, description, icon }) => (
+                    {OFFERED_RESTRICTION_TYPES.map(({ key, title, description, icon }) => (
                         <ChoiceTile key={key} icon={icon} label={title} hint={description} isSelected={value.enabledTypes.has(key)} onClick={() => toggleType(key)} />
                     ))}
                 </div>

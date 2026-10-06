@@ -193,10 +193,17 @@ type the date or pick it from the calendar. A person should never have to type a
 
 - MUST NOT render the calendar-less `InputDate` (`components/base/input/input-date.tsx`) on a product
   screen. Its only place is its own doc page.
+- **A required date, or a start-type date, opens as today** (designer, 6 Oct 2026: "ALL DATE FIELDS ACROSS ALL FORMS: Default
+  to current sys date", narrowed to required and start-type dates): a project's start date, an agreement's start or valid-from
+  date, a vocabulary's, user's or notification's start date, a voucher change's date. The person changes it if it is another
+  day. An end date, an expiry, an embargo end and a filter's range stay empty, because empty means "ongoing" or "not narrowed";
+  editing a record keeps the date it holds. The default is in the form's blank draft (`emptyDsaDraft`, `initialProjectDetails`),
+  not in the field.
 - **Origin:** the Controlled Vocabulary, DSA and DLA forms used `InputDate`, typed segments with no
   calendar; the designer asked for the calendar field everywhere ("always remember to use date fields
-  with calendar input field from design system", 30 Sept 2026).
-- **Enforcement:** `AUTO §2.11` (an `<InputDate` under `app/pages` fails).
+  with calendar input field from design system", 30 Sept 2026). Add Project, DLA and DSA then opened with an empty start date
+  while the vocabulary, user and notification forms opened as today (6 Oct 2026).
+- **Enforcement:** `AUTO §2.11` (an `<InputDate` under `app/pages` fails); the default is `REVIEW`.
 
 ### §2.12 Nothing on screen without a purpose
 

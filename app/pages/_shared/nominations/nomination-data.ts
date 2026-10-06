@@ -118,6 +118,7 @@ export function toEditorRows(attributes: NominationAttribute[]): { rows: Concept
         values: a.values,
         dateFrom: a.dateFrom ? parseDate(a.dateFrom) : null,
         dateTo: a.dateTo ? parseDate(a.dateTo) : null,
+        justification: "",
       }))
     : [{ ...emptyConceptRow(1), concept: "location" }];
   const areas = Object.fromEntries(attributes.map((a) => [a.id, a.areas]));

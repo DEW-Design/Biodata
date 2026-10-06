@@ -1,6 +1,6 @@
 "use client";
 
-// A record's location on a map, read only, with the shared "Full screen" button (ExpandableMap), so every map
+// A record's location on a map, read only, with the shared "Expand" button (ExpandableMap), so every map
 // on the record page can be opened large the same way as the location picker's.
 
 import { blockCentre, generalisedBlock, type Boundary } from "@/app/pages/_shared/map-search/geo";

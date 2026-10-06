@@ -95,6 +95,12 @@ export function addUser(draft: UserDraft): UmUser {
   return record;
 }
 
+/** Saves the edit form: everything the form holds, on the same user. The id, username and lifecycle status stay. */
+export function updateUser(id: string, draft: UserDraft) {
+  const { users } = get();
+  useUmStore.setState({ users: users.map((u) => (u.id === id ? { ...u, ...draft, updatedAt: todayIso() } : u)) });
+}
+
 export function setUserStatus(id: string, status: UserStatus) {
   const { users } = get();
   useUmStore.setState({ users: users.map((u) => (u.id === id ? { ...u, status, updatedAt: todayIso() } : u)) });

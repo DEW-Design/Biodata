@@ -14,7 +14,7 @@ import { cx } from "@/utils/cx";
 
 export const STEPS = [
     { id: 1, title: "Project Identification", description: "Basic information about the project, including title, description, and objectives" },
-    { id: 2, title: "Data Collection and Storage", description: "Types of data collected, storage methods, and any relevant handling procedures" },
+    { id: 2, title: "Data Collection and Methodology", description: "Where and how data is collected, including the survey type and the methodology used" },
     { id: 3, title: "Privacy and Restrictions", description: "Set visibility, embargo, and data sharing options to control who can access project and observation data." },
 ] as const;
 

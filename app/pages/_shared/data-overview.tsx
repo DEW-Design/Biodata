@@ -13,14 +13,14 @@ import { PieChart, categoricalPalette, type PieSlice } from "@/app/pages/_shared
 import { MapView } from "@/app/pages/_shared/map-view";
 import { FloraContent } from "@/app/pages/_shared/flora-content";
 import { FaunaContent } from "@/app/pages/_shared/fauna-content";
+import { ProjectsContent } from "@/app/pages/_shared/projects-content";
 
 // The Home section's second tab (see app/pages/_shared/home-dashboard.tsx for the first) -
 // org-wide accountability numbers, not the signed-in user's own tasks. Restructured from a
 // single "Data Overview" screen into "Flora and Fauna Dashboard": 4 sub-tabs (Overview/Flora/
 // Fauna/Projects), matching the real SA Flora and Fauna dashboard the user shared as a reference.
 // Flora and Fauna are each built off a screenshot of that dashboard's own tab (see
-// flora-content.tsx / fauna-content.tsx); Projects doesn't have its sidebar-shell treatment built yet,
-// so it still renders the honest "hasn't been scoped yet" placeholder rather than invented numbers.
+// flora-content.tsx / fauna-content.tsx / projects-content.tsx).
 //
 // (The Projects/Datasets split lives one level up, in the icon rail's own "Projects" section
 // contextual sidebar - see dashboard's "Projects" Tabs block - not here. First attempt
@@ -74,15 +74,6 @@ const taxonBreakdown: PieSlice[] = [
   { label: "Algae", percent: 0.6, color: categoricalPalette[7] },
   { label: "Other", percent: 0.2, color: categoricalPalette[8] },
 ];
-
-function TabPlaceholder({ label }: { label: string }) {
-  return (
-    <div className="flex min-h-[400px] flex-col items-center justify-center gap-1 rounded-lg border border-dashed border-secondary p-6 text-center">
-      <p className="text-sm font-medium text-primary">{label}</p>
-      <p className="text-sm text-tertiary">This tab hasn&apos;t been scoped yet.</p>
-    </div>
-  );
-}
 
 // The same icons the rest of the app uses for these: the species group icons for Flora and Fauna, the rail's folder for Projects.
 const dataDashboardTabs = [
@@ -267,7 +258,7 @@ export function DataOverviewContent({
           <FaunaContent />
         </TabPanel>
         <TabPanel id="projects" className="p-6">
-          <TabPlaceholder label="Projects" />
+          <ProjectsContent />
         </TabPanel>
       </Tabs>
     </>

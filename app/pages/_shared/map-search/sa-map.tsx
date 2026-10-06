@@ -103,6 +103,20 @@ function keyboardDot(label: string, activate: () => void) {
  *  smaller than the area the record could be in. */
 const MIN_BLOCK_PX = 14;
 
+/** Keeps the map true to the box it is in. Leaflet measures its container once and again only when the window resizes, so a
+ *  map in a dialog that reaches its size after the map mounted drew its shapes for the old size (a circle cut off along a
+ *  straight edge). This re-measures whenever the container itself changes size. */
+function ResizeSync() {
+    const map = useMap();
+    useEffect(() => {
+        const container = map.getContainer();
+        const observer = new ResizeObserver(() => map.invalidateSize({ animate: false }));
+        observer.observe(container);
+        return () => observer.disconnect();
+    }, [map]);
+    return null;
+}
+
 /** A restricted record's block: the square cell of the generalisation grid that contains it, drawn flat with a thin
  *  edge and no centre mark (a blur or a dot would point at a place inside it). Pixel-aware, so it re-sizes itself on
  *  every zoom. */
@@ -169,6 +183,7 @@ function FlyToBoundaries({
 }) {
     const map = useMap();
     const boundariesKey = JSON.stringify(boundaries);
+    const fitted = useRef(false);
 
     useEffect(() => {
         if (boundaries.length === 0) return;
@@ -202,7 +217,15 @@ function FlyToBoundaries({
         const capY = size.y * 0.5;
         const tl = L.point(Math.min(paddingTopLeft[0], capX), Math.min(paddingTopLeft[1], capY));
         const br = L.point(Math.min(paddingBottomRight[0], capX), Math.min(paddingBottomRight[1], capY));
-        map.flyToBounds(bounds, { paddingTopLeft: tl, paddingBottomRight: br, duration: 0.6 });
+        // The first fit of a map is a jump, not a flight: the map mounts at the state-wide zoom, and a flight from there to a
+        // small area scales the drawn shapes up by tens of times for 0.6s (an SVG tens of thousands of pixels wide, which the
+        // browser rasterises in pieces: a circle cut off along straight edges while a dialog opens). Later changes still fly.
+        if (!fitted.current) {
+            fitted.current = true;
+            map.fitBounds(bounds, { paddingTopLeft: tl, paddingBottomRight: br, animate: false });
+        } else {
+            map.flyToBounds(bounds, { paddingTopLeft: tl, paddingBottomRight: br, duration: 0.6 });
+        }
         // Re-fit when the covered area changes (the card widens for Table, the sheet snaps), so the
         // areas always land in the part of the map the user can actually see.
         // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -518,6 +541,7 @@ export default function SAMap({
                     </CircleMarker>
                     ),
                 )}
+                <ResizeSync />
             </MapContainer>
         </div>
     );

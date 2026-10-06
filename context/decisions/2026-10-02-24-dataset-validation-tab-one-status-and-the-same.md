@@ -1,0 +1,9 @@
+# 2026-10-02 - Dataset Validation tab: one status, and the same two-column card as the Datasets list
+
+- **Oct 2 2026: Dataset Validation tab: one status, and the same two-column card as the Datasets list.** Annotated screenshot of a dataset's Validation tab: "Validation screen inconsistent."
+  - **Inconsistency 1, two words for one fact:** the dataset's hero said Status "Validation failed" while the card under it said "Not ingested" (the run's own label) in a second badge. The Datasets list says "Validation failed" for the same dataset. The card's badge is removed: the dataset has one status, the hero's, and the card says what happened in its steps ("Stopped here") and its reasons (4.3: never restate a fact in two treatments on one screen).
+  - **Inconsistency 2, the same card in two shapes:** the Datasets list's latest-upload card had just become two columns (the run left, what went wrong right) at full width, but this tab still stacked everything in a 672px column with the right half empty. It now uses the same `IngestionDetail split` at full width, 306px tall instead of about 680px.
+  - **A clean upload lines up with a failed one:** with nothing wrong, `split` shows the run alone at the same 26rem as beside the problems, instead of a progress bar stretched across the page (a gap the Datasets list had too, now closed there as well).
+  - **Not touched:** the Details and History tabs (label and value lists at 3xl); the chip's popover keeps the stacked layout.
+  - **Verified (a failed, a partial and a clean upload seeded into the browser at 1708 x 1024):** the card is 1596px wide in a 1644px main, no status badge in it, the hero status unchanged, the Datasets list unchanged at 328px; `tsc`, `eslint`, `check:contracts`; zero console errors.
+  - **Open:** Details and History stay narrower than the Validation card; say if they should fill the width too. Not committed, not pushed.

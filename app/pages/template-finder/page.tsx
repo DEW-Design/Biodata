@@ -1,19 +1,8 @@
 "use client";
 
-import { Feather, Tag01 } from "@untitledui/icons";
-
-import { Suspense, useState } from "react";
-import type { SortDescriptor } from "react-aria-components";
-import { CountBadge } from "@/components/base/badges/badges";
-import { SectionHeader } from "@/components/application/section-headers/section-headers";
-import { Table, TableCard } from "@/components/application/table/table";
-import { sortRows, type SortValue } from "@/app/pages/_shared/agreement-scope";
-import { optionsFromValues, type FilterGetters, type FilterSection, useListFilter } from "@/app/pages/_shared/list-filter";
-import { AttributeFilterChips } from "@/app/pages/_shared/attribute-filter";
-import { FilterMenu } from "@/app/pages/_shared/filter-menu";
-import { ToolbarSearch } from "@/app/pages/_shared/toolbar-search";
-import { datasetTemplates, type DatasetTemplate } from "@/app/pages/_shared/template-finder/template-data";
-import { TemplateDownloads } from "@/app/pages/_shared/template-finder/template-downloads";
+import { Suspense } from "react";
+import { TemplateList, useTemplateFilter } from "@/app/pages/_shared/template-finder/template-list";
+import { TemplateNav } from "@/app/pages/_shared/template-finder/template-nav";
 import { TemplateFinderShell } from "@/app/pages/_shared/template-finder/template-finder-shell";
 
 // /pages/template-finder - the standard dataset templates, fitted from the wireframe (Figma
@@ -24,141 +13,30 @@ import { TemplateFinderShell } from "@/app/pages/_shared/template-finder/templat
 //   - the three filter selects and "Find Templates" are the search box and the filter button every
 //     list uses, applying as you choose; the "Project ID / Title" filter is left out, since nothing
 //     links a template to a project yet;
-//   - the Excel and PDF glyphs are named buttons, disabled, as on the upload form (`TemplateDownloads`);
-//   - rows are not links: a template has no page of its own.
+//   - the Excel and PDF glyphs are one Download button that opens the two formats, both "Coming soon"
+//     (`TemplateDownloads`, shared with the upload form), instead of a disabled pair on every row;
+//   - rows are not links: a template has no page of its own;
+//   - column 2 (the designer chose "grouped facets" in /proto/column-2, 5 Oct 2026) lists All templates, then the
+//     species types and collection methods under group headings, with counts. They are the Filter menu's own state,
+//     not a second filter (4.2d).
 // Signed-in roles only (`templateFinder`); a public user gets the shell with the restriction in main.
-
-const sortKeys: Record<string, (t: DatasetTemplate) => SortValue> = {
-  template: (t) => t.title,
-  method: (t) => t.collectionMethod,
-  species: (t) => t.speciesType,
-};
-
-const filterGetters: FilterGetters<DatasetTemplate> = {
-  method: (t) => t.collectionMethod,
-  species: (t) => t.speciesType,
-};
-
-const filterSections: FilterSection[] = [
-  { id: "method", label: "Collection method", icon: Tag01, options: optionsFromValues(datasetTemplates.map((t) => t.collectionMethod)) },
-  { id: "species", label: "Species type", icon: Feather, options: optionsFromValues(datasetTemplates.map((t) => t.speciesType)) },
-];
 
 export default function TemplateFinderPage() {
   return (
     <Suspense fallback={null}>
-      <TemplateFinderShell>
-        <div className="flex min-h-0 flex-1 flex-col overflow-y-auto">
-          <TemplateList />
-        </div>
-      </TemplateFinderShell>
+      <TemplateFinder />
     </Suspense>
   );
 }
 
-function TemplateList() {
-  const [search, setSearch] = useState("");
-  const [page, setPage] = useState(1);
-  const [pageSize, setPageSize] = useState(50);
-  const [sort, setSort] = useState<SortDescriptor>({ column: "template", direction: "ascending" });
-  const filter = useListFilter(filterSections, filterGetters, () => setPage(1));
-
-  const query = search.trim().toLowerCase();
-  const matching = datasetTemplates
-    .filter(filter.matches)
-    .filter((t) => !query || [t.title, t.description].some((v) => v.toLowerCase().includes(query)));
-  const rows = sortRows(matching, sort, sortKeys);
-  const pageCount = Math.max(1, Math.ceil(rows.length / pageSize));
-  const currentPage = Math.min(page, pageCount);
-  const paged = rows.slice((currentPage - 1) * pageSize, currentPage * pageSize);
-
+// Column 2 and the list share one filter: column 2's items are the Filter menu drawn as places (4.2d).
+function TemplateFinder() {
+  const filter = useTemplateFilter();
   return (
-    <div className="flex min-h-0 flex-1 flex-col">
-      <SectionHeader.Root className="shrink-0 p-6">
-        <SectionHeader.Group>
-          <div className="flex flex-1 flex-col gap-1">
-            <div className="flex items-center gap-2">
-              <SectionHeader.Heading>Template Finder</SectionHeader.Heading>
-              <CountBadge count={rows.length} color="brand" />
-            </div>
-            <SectionHeader.Subheading>Browse and download the standard templates for preparing a dataset.</SectionHeader.Subheading>
-          </div>
-        </SectionHeader.Group>
-      </SectionHeader.Root>
-
-      <div className="flex min-h-0 flex-1 flex-col gap-4 p-6">
-        <div className="flex shrink-0 flex-wrap items-center gap-3">
-          <ToolbarSearch
-            label="Search templates"
-            placeholder="Search templates"
-            value={search}
-            onChange={(v) => {
-              setSearch(v);
-              setPage(1);
-            }}
-            onClear={() => {
-              setSearch("");
-              setPage(1);
-            }}
-          />
-          <FilterMenu filter={filter} />
-        </div>
-        <AttributeFilterChips filter={filter} />
-        {rows.length === 0 ? (
-          <p className="py-6 text-sm text-tertiary">No templates match your search and filters.</p>
-        ) : (
-          <TableCard.Root className="flex min-h-48 flex-1 flex-col">
-            <Table layout="fixed" className="min-w-[840px]"
-              bodyScrollable
-              aria-label="Dataset templates"
-              sortDescriptor={sort}
-              onSortChange={(next) => {
-                setSort(next);
-                setPage(1);
-              }}
-            >
-              <Table.Header sticky>
-                <Table.Head id="template" label="Template" isRowHeader allowsSorting className="w-[24%]" />
-                <Table.Head id="method" label="Collection method" allowsSorting className="w-[22%]" />
-                <Table.Head id="species" label="Species type" allowsSorting className="w-[18%]" />
-                <Table.Head id="download" label="Download" className="w-[36%]" />
-              </Table.Header>
-              <Table.Body items={paged}>
-                {(t) => (
-                  <Table.Row id={t.id} textValue={t.title}>
-                    <Table.Cell>
-                      <div className="flex flex-col gap-0.5">
-                        <p className="text-sm font-medium text-primary">{t.title}</p>
-                        <p className="max-w-md text-xs text-balance text-tertiary">{t.description}</p>
-                      </div>
-                    </Table.Cell>
-                    <Table.Cell>
-                      <span className="text-sm text-secondary">{t.collectionMethod}</span>
-                    </Table.Cell>
-                    <Table.Cell>
-                      <span className="text-sm text-secondary">{t.speciesType}</span>
-                    </Table.Cell>
-                    <Table.Cell>
-                      <TemplateDownloads />
-                    </Table.Cell>
-                  </Table.Row>
-                )}
-              </Table.Body>
-            </Table>
-            <TableCard.PaginationNumbered
-              page={currentPage}
-              pageCount={pageCount}
-              onPageChange={setPage}
-              pageSize={pageSize}
-              onPageSizeChange={(size) => {
-                setPageSize(size);
-                setPage(1);
-              }}
-              totalCount={rows.length}
-            />
-          </TableCard.Root>
-        )}
+    <TemplateFinderShell localNav={<TemplateNav filter={filter} />}>
+      <div className="flex min-h-0 flex-1 flex-col overflow-y-auto">
+        <TemplateList filter={filter} />
       </div>
-    </div>
+    </TemplateFinderShell>
   );
 }

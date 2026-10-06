@@ -6,7 +6,7 @@ import type { Key } from "react-aria-components";
 import { parseDate } from "@internationalized/date";
 import { ArrowNarrowLeft, CheckCircle, Download01, Edit05, PauseCircle, PlayCircle, Plus, SearchLg, SlashCircle01, Trash01, XCircle, Grid01, MarkerPin04, FileCheck02, ClockRewind } from "@untitledui/icons";
 import { RecordActionBar, type RecordAction } from "@/app/pages/_shared/record-action-bar";
-import { RecordBackLink, RecordHero, RecordRow } from "@/app/pages/_shared/record-hero";
+import { RecordBackLink, RecordHero } from "@/app/pages/_shared/record-hero";
 import { AlertFullWidth } from "@/components/application/alerts/alerts";
 import { Badge } from "@/components/base/badges/badges";
 import { Button } from "@/components/base/buttons/button";
@@ -40,6 +40,7 @@ import { useFeatureAccess } from "@/lib/use-feature-access";
 import { useRoleHref } from "@/lib/use-role-href";
 import { cx } from "@/utils/cx";
 import { AuditLog, milestones } from "@/app/pages/_shared/audit-log";
+import { AuditFeed } from "@/app/pages/_shared/audit-feed";
 
 // The DLA deep dive at /pages/dla/<id> (wireframe "View - Data Licence Agreement", Figma
 // YMproGZfrFB5jUqPHPxMhk node 33:43259), rebuilt on the same information arrangement DSA and
@@ -470,21 +471,7 @@ export function DlaDetail({
 
           <TabPanel id="audit">
             <AuditLog id={dla.id} idLabel="DLA ID" items={milestones(dla.history, { label: "Activated", is: (e) => e.status === "active" }, { created: dla.submittedAt, updated: dla.updatedAt })} changeCount={dla.history.length}>
-              <div className="rounded-lg border border-secondary">
-                {[...dla.history].reverse().map((e, i) => (
-                  <RecordRow key={`${e.status}-${e.at}-${i}`} label={formatShortDate(e.at)}>
-                    <span className="flex flex-col gap-1">
-                      <span className="flex flex-wrap items-center gap-2">
-                        <Badge size="sm" color={dlaStatusMeta[e.status].badgeColor}>
-                          {dlaStatusMeta[e.status].label}
-                        </Badge>
-                        <span className="text-tertiary">{e.by}</span>
-                      </span>
-                      {e.note && <span className="max-w-prose text-secondary">{e.note}</span>}
-                    </span>
-                  </RecordRow>
-                ))}
-              </div>
+              <AuditFeed events={dla.history} statusMeta={dlaStatusMeta} noun="request" />
             </AuditLog>
           </TabPanel>
         </div>

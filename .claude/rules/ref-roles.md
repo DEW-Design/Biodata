@@ -78,10 +78,14 @@ designer owns. It is data, separate from `design-system.config.ts` (which doc va
   IA already restricts it (as `templateFinder` implements "no Template Finder for public-user").
 - **Two kinds of gate:**
   - **A control:** hide it (`orgSwitcher`, `metricCardCustomization` hides the dashboard card menu for all
-    but `biodata-admin`, `dlaApproval`, `nominationReview`).
+    but `biodata-admin`, `dlaApproval`, `nominationReview`, `nominationAllView`: the All nominations view in column 2, for the BioData User and the
+    Privileged roles, limited to their organisation's; the BioData Admin's All is everyone's).
   - **A whole page:** keep the shell and put the restriction in main (§3.7), and add the route to
     `wholePageGates` (`dsaManagement`, `dlaAccess`, `userManagement`, `nominationAccess`, `datasetUpload`,
-    `templateFinder`, `reports`).
+    `templateFinder`, `reports`). Some reports inside Reports are gated on their own (a `feature` on the report in `reports-data.ts`): the Project Audit Log
+    Report (`projectAuditLog`, BioData Admin only) and the three Specimens and restrictions reports (`specimenReports`, every role with
+    Reports except the Registered User). The landing, the switcher, Create a report and My reports do not offer them, and opening the
+    address shows "This report is not available to your role" (`ReportPage`).
 - **Record access levels** live in one place, `app/pages/_shared/map-search/record-access.ts`: `biodata-admin`
   (`restrictedData`) sees Level 1 to 4 in full; other signed-in roles see restricted records with the location
   shown only as a block (see below) and can request a DLA; `public-user` sees Level 1 only.

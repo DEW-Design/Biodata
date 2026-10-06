@@ -154,6 +154,10 @@ export function UmShell({
       </div>
     );
 
+  // A record's page (a user, a request, a report ...) has no column 2: the whole width is the record (CONTRACTS 3.7). Its
+  // navigation is the breadcrumb switcher, and its actions are in the record's own card.
+  const recordPage = showAreaNav && !!recordId && !formSidebar;
+
   return (
     <div className="font-barlow flex h-screen flex-col overflow-hidden">
       <PrototypeTools />
@@ -200,22 +204,24 @@ export function UmShell({
       <div className="flex flex-1 overflow-hidden">
         <PrimaryRail sections={nav} activeSection={canManage || otherSection ? activeSection : null} onSelectSection={goToSection} />
 
-        <aside aria-label="Section" className="hidden w-[286px] shrink-0 flex-col justify-between gap-6 overflow-y-auto border-r border-secondary bg-secondary p-4 lg:flex">
-          {showAreaNav && formSidebar ? (
-            <div ref={setFormSlot} />
-          ) : showAreaNav ? (
-            <AreaNav area={area} />
-          ) : (
-            <div className="flex flex-col gap-1">
-              <p className="mb-3 text-xs font-semibold tracking-wide text-quaternary uppercase">{otherSection?.label ?? USER_MANAGEMENT_SECTION_LABEL}</p>
-              {otherSection?.items?.map((item) => (
-                <p key={item.label} className="px-2 py-2 text-sm text-tertiary">
-                  {item.label}
-                </p>
-              ))}
-            </div>
-          )}
-        </aside>
+        {!recordPage && (
+          <aside aria-label="Section" className="hidden w-[286px] shrink-0 flex-col justify-between gap-6 overflow-y-auto border-r border-secondary bg-secondary p-4 lg:flex">
+            {showAreaNav && formSidebar ? (
+              <div ref={setFormSlot} />
+            ) : showAreaNav ? (
+              <AreaNav area={area} />
+            ) : (
+              <div className="flex flex-col gap-1">
+                <p className="mb-3 text-xs font-semibold tracking-wide text-quaternary uppercase">{otherSection?.label ?? USER_MANAGEMENT_SECTION_LABEL}</p>
+                {otherSection?.items?.map((item) => (
+                  <p key={item.label} className="px-2 py-2 text-sm text-tertiary">
+                    {item.label}
+                  </p>
+                ))}
+              </div>
+            )}
+          </aside>
+        )}
 
         <main className="flex min-h-0 flex-1 flex-col overflow-hidden">
           <FormSidebarSlotContext.Provider value={formSlot}>{main}</FormSidebarSlotContext.Provider>

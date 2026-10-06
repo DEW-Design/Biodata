@@ -67,18 +67,18 @@ function CategoryNav({ category }: { category: string }) {
   const q = find.trim().toLowerCase();
   const categories = q ? all.filter((c) => c.toLowerCase().includes(q)) : all;
   // Categories grow as admins add them: past six, a finder narrows them, and the list scrolls on its
-  // own so Actions stays in reach (Controlled Vocabulary's column 2).
+  // own (capped, so Actions follows the list directly and stays in reach) (Controlled Vocabulary's column 2).
   const findable = all.length > 6;
 
   return (
-    <div className="flex min-h-0 flex-1 flex-col gap-1">
+    <div className="flex flex-col gap-1">
       <p className="mb-3 text-xs font-semibold tracking-wide text-quaternary uppercase">Categories</p>
       {findable && (
         <div className="mb-2 shrink-0">
           <Input aria-label="Find a category" size="sm" icon={SearchMd} placeholder={`Find among ${all.length} categories`} value={find} onChange={setFind} onClear={find ? () => setFind("") : undefined} />
         </div>
       )}
-      <div className="min-h-0 flex-1 overflow-y-auto">
+      <div className="max-h-[45vh] overflow-y-auto">
         <Tabs orientation="vertical" selectedKey={category || "all"} onSelectionChange={(key) => router.push(roleHref(key === "all" ? root : `${root}?category=${encodeURIComponent(String(key))}`))}>
           <TabList aria-label="Categories" orientation="vertical" type="button-brand" fullWidth className="w-full">
             <Tab id="all" label="All notifications" icon={Bell01} badge={items.length} />
@@ -170,6 +170,9 @@ export function NtShell({
       </div>
     );
 
+  // A record's page (a notification) has no column 2: the whole width is the record (CONTRACTS 3.7).
+  const recordPage = showNav && !!breadcrumbCurrent && !formSidebar;
+
   return (
     <div className="font-barlow flex h-screen flex-col overflow-hidden">
       <PrototypeTools />
@@ -204,22 +207,24 @@ export function NtShell({
       <div className="flex flex-1 overflow-hidden">
         <PrimaryRail sections={nav} activeSection={canManage || otherSection ? activeSection : null} onSelectSection={goToSection} />
 
-        <aside aria-label="Section" className="hidden w-[286px] shrink-0 flex-col justify-between gap-6 overflow-y-auto border-r border-secondary bg-secondary p-4 lg:flex">
-          {showNav && formSidebar ? (
-            <div ref={setFormSlot} />
-          ) : showNav ? (
-            <CategoryNav category={category} />
-          ) : (
-            <div className="flex flex-col gap-1">
-              <p className="mb-3 text-xs font-semibold tracking-wide text-quaternary uppercase">{otherSection?.label ?? NOTIFICATION_SECTION_LABEL}</p>
-              {otherSection?.items?.map((item) => (
-                <p key={item.label} className="px-2 py-2 text-sm text-tertiary">
-                  {item.label}
-                </p>
-              ))}
-            </div>
-          )}
-        </aside>
+        {!recordPage && (
+          <aside aria-label="Section" className="hidden w-[286px] shrink-0 flex-col justify-between gap-6 overflow-y-auto border-r border-secondary bg-secondary p-4 lg:flex">
+            {showNav && formSidebar ? (
+              <div ref={setFormSlot} />
+            ) : showNav ? (
+              <CategoryNav category={category} />
+            ) : (
+              <div className="flex flex-col gap-1">
+                <p className="mb-3 text-xs font-semibold tracking-wide text-quaternary uppercase">{otherSection?.label ?? NOTIFICATION_SECTION_LABEL}</p>
+                {otherSection?.items?.map((item) => (
+                  <p key={item.label} className="px-2 py-2 text-sm text-tertiary">
+                    {item.label}
+                  </p>
+                ))}
+              </div>
+            )}
+          </aside>
+        )}
 
         <main className="flex min-h-0 flex-1 flex-col overflow-hidden">
           <FormSidebarSlotContext.Provider value={formSlot}>{main}</FormSidebarSlotContext.Provider>

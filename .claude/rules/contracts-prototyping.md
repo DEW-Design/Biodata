@@ -31,3 +31,14 @@ everything, the dev tools included.
 `option-1 ... option-n` routes are what designers present to stakeholders while a screen is being
 explored. When a direction is chosen the others are deleted. A comparison is presented through
 `LayoutOptionSwitcher`.
+
+A lab (`/proto/<name>`) that has been folded into a page, or that is built for one, is registered in
+`app/_prototype-tools/production-routes.ts`. The Prototype tools bar on that lab then shows "In production" with the
+page's name, which opens the live page with the role being viewed kept, so a folded decision can be seen where it
+shipped. Where the role being viewed cannot use that page at all (a public user and the Template Finder), the link opens
+it as the lowest role that can, and says so ("as Registered User"): it never lands on a restriction message. A lab about
+one persona's version of a page (Home looks different to an admin, a registered user and a public user) names that persona
+in its line, and the link opens the page as that persona. Folding a lab
+into a page is not finished until its line is there.
+
+- **Enforcement:** `REVIEW`. First occurrence, so no `AUTO` check yet (§0.8).

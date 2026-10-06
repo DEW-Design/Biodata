@@ -1,4 +1,10 @@
 @import "tailwindcss";
+
+/* Tailwind reads every file in the repo for class names. The audit reports and the decision log are prose that quotes class names
+   and patterns (`ring-[var(--color-brand-50|100)]`), and one such line made the CSS fail to parse and the whole dev server answer
+   500. They are never source, so they are not scanned. */
+@source not "../audit";
+@source not "../context";
 @plugin "tailwindcss-animate";
 
 /* ─────────────────────────────────────────────────────────────────────

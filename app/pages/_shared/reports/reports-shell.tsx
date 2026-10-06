@@ -11,6 +11,8 @@ import { AppHeader } from "@/app/pages/_shared/app-header";
 import { MobileNavTrigger } from "@/app/pages/_shared/mobile-nav";
 import { REPORTS } from "@/app/pages/_shared/reports/reports-data";
 import { ReportSwitcher } from "@/app/pages/_shared/reports/report-switcher";
+import { CreateReportModal } from "@/app/pages/_shared/reports/create-report-modal";
+import { ReportsNav } from "@/app/pages/_shared/reports/reports-nav";
 import { PrototypeTools } from "@/app/_prototype-tools/prototype-tools";
 import { useFeatureAccess } from "@/lib/use-feature-access";
 import { useRoleHref } from "@/lib/use-role-href";
@@ -74,6 +76,10 @@ export function ReportsShell({ children, current }: { children: ReactNode; curre
       </div>
     );
 
+  // A record's page (a user, a request, a report ...) has no column 2: the whole width is the record (CONTRACTS 3.7). Its
+  // navigation is the breadcrumb switcher, and its actions are in the record's own card.
+  const recordPage = canAccess && !otherSection && !!current;
+
   return (
     <div className="font-barlow flex h-screen flex-col overflow-hidden">
       <PrototypeTools />
@@ -87,7 +93,9 @@ export function ReportsShell({ children, current }: { children: ReactNode; curre
               const section = nav.find((s) => s.label === label);
               if (section) goToSection(section);
             }}
-          />
+          >
+            {canAccess && !otherSection && !recordPage ? () => <ReportsNav /> : undefined}
+          </MobileNavTrigger>
         }
         section={current && !otherSection ? <ReportSwitcher label={activeSection} currentReportId={REPORTS.find((r) => r.title === current)?.id} /> : activeSection}
         current={current}
@@ -96,18 +104,25 @@ export function ReportsShell({ children, current }: { children: ReactNode; curre
       <div className="flex flex-1 overflow-hidden">
         <PrimaryRail sections={nav} activeSection={canAccess || otherSection ? activeSection : null} onSelectSection={goToSection} />
 
-        <aside aria-label="Section" className="hidden w-[286px] shrink-0 flex-col justify-between gap-6 overflow-y-auto border-r border-secondary bg-secondary p-4 lg:flex">
-          <div className="flex flex-col gap-1">
-            <p className="mb-3 text-xs font-semibold tracking-wide text-quaternary uppercase">{otherSection?.label ?? "Reports"}</p>
-            {otherSection?.items?.map((item) => (
-              <p key={item.label} className="px-2 py-2 text-sm text-tertiary">
-                {item.label}
-              </p>
-            ))}
-          </div>
-        </aside>
+        {!recordPage && (
+          <aside aria-label="Section" className="hidden w-[286px] shrink-0 flex-col justify-between gap-6 overflow-y-auto border-r border-secondary bg-secondary p-4 lg:flex">
+            {canAccess && !otherSection ? (
+              <ReportsNav />
+            ) : (
+              <div className="flex flex-col gap-1">
+                <p className="mb-3 text-xs font-semibold tracking-wide text-quaternary uppercase">{otherSection?.label ?? "Reports"}</p>
+                {otherSection?.items?.map((item) => (
+                  <p key={item.label} className="px-2 py-2 text-sm text-tertiary">
+                    {item.label}
+                  </p>
+                ))}
+              </div>
+            )}
+          </aside>
+        )}
 
         <main className="flex min-h-0 flex-1 flex-col overflow-hidden">{main}</main>
+        {canAccess && <CreateReportModal />}
       </div>
     </div>
   );

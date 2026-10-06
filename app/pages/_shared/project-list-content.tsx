@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { SearchLg, Building02, Calendar, Flag01, User01 } from "@untitledui/icons";
 import { ListEmptyState } from "@/app/pages/_shared/list-empty-state";
 import type { SortDescriptor } from "react-aria-components";
@@ -9,7 +9,8 @@ import { Badge, CountBadge } from "@/components/base/badges/badges";
 import { Table, TableCard } from "@/components/application/table/table";
 import { SectionHeader } from "@/components/application/section-headers/section-headers";
 import { useRoleHref } from "@/lib/use-role-href";
-import { projects, type Project } from "@/app/pages/_shared/project-list-data";
+import { type Project } from "@/app/pages/_shared/project-list-data";
+import { useAllProjects } from "@/app/pages/_shared/created-projects-store";
 import { CURRENT_USER_NAME, sortRows, type SortValue } from "@/app/pages/_shared/agreement-scope";
 import type { ProjectScope } from "@/app/pages/_shared/projects-sidebar";
 import { RECENCY_OPTIONS, optionsFromValues, recencyBucket, type FilterGetters, type FilterSection, useListFilter } from "@/app/pages/_shared/list-filter";
@@ -60,6 +61,7 @@ const projectStatusOrder = ["Draft", "Under review", "Active", "Completed"];
 const UNIT_DAYS: Record<string, number> = { day: 1, week: 7, month: 30, year: 365 };
 /** "3 weeks ago" is 21 days old. */
 const daysAgo = (p: Project): number | null => {
+  if (/^today$/i.test(p.updated.trim())) return 0;
   const m = /^(\d+)\s+(day|week|month|year)s?\s+ago$/i.exec(p.updated.trim());
   return m ? Number(m[1]) * UNIT_DAYS[m[2].toLowerCase()] : null;
 };
@@ -71,10 +73,10 @@ const recency = (p: Project): SortValue => {
 
 // What a project can be filtered on: its columns that you would scan. (Not the ID or the name -
 // search covers those.)
-const projectFilterSections: FilterSection[] = [
+const projectFilterSections = (all: Project[]): FilterSection[] => [
   { id: "status", label: "Status", icon: Flag01, options: projectStatusOrder.map((s) => ({ id: s, label: s })) },
-  { id: "org", label: "Organisation", icon: Building02, searchable: true, options: optionsFromValues(projects.map((p) => p.org)) },
-  { id: "contributor", label: "Contributor", icon: User01, searchable: true, options: optionsFromValues(projects.map((p) => p.contributorName)) },
+  { id: "org", label: "Organisation", icon: Building02, searchable: true, options: optionsFromValues(all.map((p) => p.org)) },
+  { id: "contributor", label: "Contributor", icon: User01, searchable: true, options: optionsFromValues(all.map((p) => p.contributorName)) },
   { id: "updated", label: "Updated", icon: Calendar, options: RECENCY_OPTIONS },
 ];
 const projectFilterGetters: FilterGetters<Project> = {
@@ -101,10 +103,13 @@ export function ProjectListContent({ scope }: { scope?: ProjectScope } = {}) {
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(50);
-  const filter = useListFilter(projectFilterSections, projectFilterGetters, () => setPage(1));
+  // The built-in projects and the ones created in this browser through Add Project.
+  const allProjects = useAllProjects();
+  const filterSections = useMemo(() => projectFilterSections(allProjects), [allProjects]);
+  const filter = useListFilter(filterSections, projectFilterGetters, () => setPage(1));
   const [sort, setSort] = useState<SortDescriptor>({ column: "updated", direction: "descending" });
   const query = search.trim().toLowerCase();
-  const matching = projects
+  const matching = allProjects
     // "My projects": the ones the signed-in person contributes to (the placeholder user).
     .filter((p) => scope !== "mine" || p.contributorName === CURRENT_USER_NAME)
     .filter(filter.matches)

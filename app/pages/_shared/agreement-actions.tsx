@@ -22,6 +22,14 @@ export function downloadCsv(filename: string, header: string[], rows: string[][]
   URL.revokeObjectURL(url);
 }
 
+/** A real .xlsx workbook with one sheet, the header row then the rows. The spreadsheet library is loaded when it is first needed. */
+export async function downloadXlsx(filename: string, header: string[], rows: string[][]) {
+  const { utils, writeFile } = await import("xlsx");
+  const book = utils.book_new();
+  utils.book_append_sheet(book, utils.aoa_to_sheet([header, ...rows]), "Report");
+  writeFile(book, filename);
+}
+
 const actionRowClassName =
   "flex w-full items-center gap-2 rounded-md px-2 py-2 text-left text-sm font-semibold text-quaternary outline-focus-ring transition-colors duration-100 ease-linear hover:bg-tertiary hover:text-primary focus-visible:outline-2";
 

@@ -1,8 +1,10 @@
 "use client";
 
 import { useState, type ReactNode } from "react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
 import type { Key } from "react-aria-components";
-import { Archive, ArrowNarrowLeft, Check, FlipBackward, PauseCircle, Power01, SearchMd, XCircle, Key01, File06, Users01 } from "@untitledui/icons";
+import { Archive, ArrowNarrowLeft, Check, FlipBackward, PauseCircle, Power01, SearchMd, XCircle, Key01, Users01, Grid01, UserCheck01, Edit05 } from "@untitledui/icons";
 import { AlertFullWidth } from "@/components/application/alerts/alerts";
 import { ConfirmationModal, DestructiveModal } from "@/components/application/modals/modal";
 import { Tab, TabList, TabPanel, Tabs } from "@/components/application/tabs/tabs";
@@ -13,7 +15,8 @@ import { Avatar } from "@/components/base/avatar/avatar";
 import { Badge, CountBadge } from "@/components/base/badges/badges";
 import { Button } from "@/components/base/buttons/button";
 import { RecordActionBar, type RecordAction } from "@/app/pages/_shared/record-action-bar";
-import { RecordBackLink, RecordHero } from "@/app/pages/_shared/record-hero";
+import { RecordBackLink, RecordHero, RecordRow } from "@/app/pages/_shared/record-hero";
+import { ContactCard } from "@/app/pages/_shared/contact-card";
 import { Input } from "@/components/base/input/input";
 import { sortRows, type SortValue } from "@/app/pages/_shared/agreement-scope";
 import {
@@ -35,7 +38,6 @@ import {
 } from "@/app/pages/_shared/user-management/um-data";
 import { setPermissionStatus, setRoleStatus, setUserStatus, usePermissions, useRoles, useUsers } from "@/app/pages/_shared/user-management/um-store";
 import { useRoleHref } from "@/lib/use-role-href";
-import { cx } from "@/utils/cx";
 import type { SortDescriptor } from "react-aria-components";
 
 // The three User Management deep dives: a user, a role, a permission (the right-hand pane of the
@@ -54,19 +56,19 @@ function MetaField({ label, children }: { label: string; children: ReactNode }) 
   );
 }
 
-function FactRow({ label, children }: { label: string; children: ReactNode }) {
-  return (
-    <div className="flex flex-wrap items-baseline justify-between gap-x-6 gap-y-1 border-b border-secondary px-6 py-4 last:border-b-0">
-      <span className="text-sm text-tertiary">{label}</span>
-      <span className="text-sm font-medium text-primary">{children}</span>
-    </div>
-  );
-}
-
 const NotProvided = () => <span className="font-normal text-quaternary">Not provided</span>;
 
 /** A role's permissions, grouped by category the way the wireframe draws them, each group a compact accordion item with its count. */
-export function PermissionGroups({ permissions, emptyLabel }: { permissions: UmPermission[]; emptyLabel: string }) {
+export function PermissionGroups({
+  permissions,
+  emptyLabel,
+  grantedBy,
+}: {
+  permissions: UmPermission[];
+  emptyLabel: string;
+  /** For a user with several roles: the names of the roles that grant each permission (by permission id), shown beside it. */
+  grantedBy?: Map<string, string[]>;
+}) {
   if (permissions.length === 0) return <p className="text-sm text-tertiary">{emptyLabel}</p>;
   const categories = [...new Set(permissions.map((p) => p.category))];
   return (
@@ -78,20 +80,33 @@ export function PermissionGroups({ permissions, emptyLabel }: { permissions: UmP
           const inCategory = permissions.filter((p) => p.category === category);
           return {
             id: category,
-            title: `${category} (${inCategory.length})`,
+            // The count is a badge beside the group's name, as it is beside every other heading (not "(2)" in the text).
+            title: (
+              <span className="flex items-center gap-2">
+                {category}
+                <CountBadge count={inCategory.length} color="gray" />
+              </span>
+            ),
             content: (
-              <ul className="flex flex-col gap-3 pb-2">
+              <ul className="flex flex-col gap-4 pt-1 pb-3 pl-4">
                 {inCategory.map((p) => (
                   <li key={p.id} className="flex flex-wrap items-start justify-between gap-2">
                     <div className="flex flex-col">
-                      <span className="text-sm font-medium text-primary">{p.name}</span>
+                      <span className="text-sm font-medium text-secondary">{p.name}</span>
                       <span className="text-sm text-tertiary">{p.description}</span>
                     </div>
-                    {p.status !== "active" && (
-                      <Badge size="sm" color={accessStatusMeta[p.status].badgeColor}>
-                        {accessStatusMeta[p.status].label}
-                      </Badge>
-                    )}
+                    <div className="flex flex-wrap items-center gap-1.5">
+                      {grantedBy?.get(p.id)?.map((role) => (
+                        <Badge key={role} size="sm" color="gray">
+                          {role}
+                        </Badge>
+                      ))}
+                      {p.status !== "active" && (
+                        <Badge size="sm" color={accessStatusMeta[p.status].badgeColor}>
+                          {accessStatusMeta[p.status].label}
+                        </Badge>
+                      )}
+                    </div>
                   </li>
                 ))}
               </ul>
@@ -192,14 +207,15 @@ function userActions(status: UserStatus): UserAction[] {
   }
 }
 
-function ActionButtons<T extends { label: string; icon: RecordAction["icon"]; confirm: "none" | "plain" | "destructive"; primary?: boolean }>({ actions, onPick }: { actions: T[]; onPick: (action: T) => void }) {
+function ActionButtons<T extends { label: string; icon: RecordAction["icon"]; confirm: "none" | "plain" | "destructive"; primary?: boolean }>({ actions, onPick, edit }: { actions: T[]; onPick: (action: T) => void; edit?: RecordAction }) {
   const toAction = (a: T): RecordAction => ({ id: a.label, label: a.label, icon: a.icon, destructive: a.confirm === "destructive", onPress: () => onPick(a) });
+  // The next step of the lifecycle (Reactivate, Restore) leads when there is one; otherwise it is Edit, the way DLA leads with Edit.
   const primary = actions.find((a) => a.primary);
   return (
     <RecordActionBar
       onDark
-      primary={primary && toAction(primary)}
-      secondary={actions.filter((a) => a !== primary && a.confirm !== "destructive").map(toAction)}
+      primary={primary ? toAction(primary) : edit}
+      secondary={[...(primary && edit ? [edit] : []), ...actions.filter((a) => a !== primary && a.confirm !== "destructive").map(toAction)]}
       menu={actions.filter((a) => a.confirm === "destructive").map(toAction)}
     />
   );
@@ -242,14 +258,17 @@ const USER_CONSEQUENCE: Record<UserStatus, string> = {
 };
 
 export function UserDetail({ user }: { user: UmUser }) {
+  const router = useRouter();
   const roleHref = useRoleHref();
   const allRoles = useRoles();
   const permissions = usePermissions();
-  const [tab, setTab] = useState<Key>("roles");
+  const [tab, setTab] = useState<Key>("overview");
   const [pending, setPending] = useState<UserAction | null>(null);
   const roles = allRoles.filter((r) => user.roleIds.includes(r.id));
-  const [selectedRoleId, setSelectedRoleId] = useState<string | undefined>(roles[0]?.id);
-  const selectedRole = roles.find((r) => r.id === selectedRoleId) ?? roles[0];
+  // Permissions roll up to the user: every permission any of their roles grants, once, and which role grants it.
+  const grantedBy = new Map<string, string[]>();
+  for (const r of roles) for (const id of r.permissionIds) grantedBy.set(id, [...(grantedBy.get(id) ?? []), r.name]);
+  const effective = permissions.filter((p) => grantedBy.has(p.id));
   const meta = userStatusMeta[user.status];
 
   const apply = (action: UserAction) => {
@@ -257,43 +276,21 @@ export function UserDetail({ user }: { user: UmUser }) {
     toast.success(`${fullName(user)} is now ${userStatusMeta[action.to].label.toLowerCase()}`);
   };
   const pick = (action: UserAction) => (action.confirm === "none" ? apply(action) : setPending(action));
-  const roleGroup = (kind: UmRole["kind"], heading: string) => {
-    const inGroup = roles.filter((r) => r.kind === kind);
-    if (inGroup.length === 0) return null;
-    return (
-      <div className="flex flex-col gap-1">
-        <p className="px-2 pt-2 text-xs font-semibold tracking-wide text-quaternary uppercase">{heading}</p>
-        {inGroup.map((r) => (
-          <button
-            key={r.id}
-            type="button"
-            onClick={() => setSelectedRoleId(r.id)}
-            aria-pressed={selectedRole?.id === r.id}
-            className={cx(
-              "flex w-full flex-col rounded-md px-2 py-2 text-left outline-focus-ring transition-colors duration-100 ease-linear focus-visible:outline-2",
-              selectedRole?.id === r.id ? "bg-secondary" : "hover:bg-primary_hover",
-            )}
-          >
-            <span className="flex items-center gap-2 text-sm font-medium text-primary">
-              {r.name}
-              {r.status !== "active" && (
-                <Badge size="sm" color={accessStatusMeta[r.status].badgeColor}>
-                  {accessStatusMeta[r.status].label}
-                </Badge>
-              )}
-            </span>
-            {r.kind === "custom" && <span className="text-sm text-tertiary">{rolePath(r)}</span>}
-          </button>
-        ))}
-      </div>
-    );
-  };
-
   return (
     <div className="flex min-h-0 flex-1 flex-col overflow-y-auto">
       <RecordBackLink href={roleHref("/pages/user-management")}>Back to users</RecordBackLink>
 
-      <RecordHero eyebrow="User" title={fullName(user)} actions={<ActionButtons actions={userActions(user.status)} onPick={pick} />}>
+      <RecordHero
+        eyebrow="User"
+        title={fullName(user)}
+        actions={
+          <ActionButtons
+            actions={userActions(user.status)}
+            onPick={pick}
+            edit={{ id: "edit", label: "Edit user", icon: Edit05, onPress: () => router.push(roleHref(`/pages/user-management/users/${user.id}/edit`)) }}
+          />
+        }
+      >
         <MetaField label="Position">{user.position}</MetaField>
         <MetaField label="Organisation">{organisationLabel(user)}</MetaField>
         <MetaField label="User type">{userType(user)}</MetaField>
@@ -319,49 +316,74 @@ export function UserDetail({ user }: { user: UmUser }) {
       <Tabs selectedKey={tab} onSelectionChange={setTab}>
         <div className="px-6 pt-4">
           <TabList aria-label="User sections" type="underline" size="md">
-            <Tab id="roles" label="Roles and permissions" icon={Key01} badge={roles.length} />
-            <Tab id="details" label="Details" icon={File06} />
+            <Tab id="overview" label="Overview" icon={Grid01} />
+            <Tab id="roles" label="Roles" icon={UserCheck01} badge={roles.length} />
+            <Tab id="permissions" label="Permissions" icon={Key01} badge={effective.length} />
           </TabList>
         </div>
 
+        <TabPanel id="overview" className="flex flex-col gap-4 p-6">
+          <p className="text-xs text-tertiary">Last updated {formatShortDate(user.updatedAt)}</p>
+          {/* The same row as the DSA's and the project page's Overview: the record's fields in one bordered card, a rail of who to contact
+              beside it. Position, organisation, type and status are in the card above, so they are not repeated. */}
+          <div className="flex flex-col gap-4 lg:flex-row lg:items-start">
+            <div className="flex min-w-0 flex-1 flex-col rounded-lg border border-secondary">
+              <RecordRow label="User ID">{user.id}</RecordRow>
+              <RecordRow label="Username">{user.username}</RecordRow>
+              <RecordRow label="Display name / alias">{user.displayName || <NotProvided />}</RecordRow>
+              <RecordRow label="Access from">{formatShortDate(user.startDate)}</RecordRow>
+              <RecordRow label="Access until">{user.endDate ? formatShortDate(user.endDate) : "No end date"}</RecordRow>
+            </div>
+            <div className="flex w-full flex-col gap-4 lg:w-80 lg:shrink-0">
+              <ContactCard title="Contact" name={fullName(user)} email={user.email} phone={user.phone} />
+            </div>
+          </div>
+        </TabPanel>
+
+        {/* The roles the person holds: each is a card that opens the role. The tab already counts them. */}
         <TabPanel id="roles" className="p-6">
           {roles.length === 0 ? (
             <p className="text-sm text-tertiary">No roles are assigned to {user.firstName} yet.</p>
           ) : (
-            <div className="flex flex-col gap-4 lg:flex-row lg:items-start">
-              <div className="flex w-full flex-col gap-2 rounded-lg border border-secondary p-2 lg:w-80 lg:shrink-0">
-                {roleGroup("system", "System roles")}
-                {roleGroup("custom", "Custom roles")}
-              </div>
-              {selectedRole && (
-                <div className="flex min-w-0 flex-1 flex-col gap-4">
-                  <div className="flex flex-wrap items-start justify-between gap-3">
-                    <div className="flex flex-col gap-1">
-                      <p className="text-sm font-semibold text-primary">{selectedRole.name}</p>
-                      <p className="text-sm text-balance text-tertiary">{selectedRole.description}</p>
-                    </div>
-                    <Button color="link-color" size="sm" href={roleHref(`/pages/user-management/roles/${selectedRole.id}`)}>
-                      View role
-                    </Button>
-                  </div>
-                  <PermissionGroups permissions={permissions.filter((p) => selectedRole.permissionIds.includes(p.id))} emptyLabel="This role has no permissions yet." />
-                </div>
-              )}
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
+              {roles.map((r) => (
+                <Link
+                  key={r.id}
+                  href={roleHref(`/pages/user-management/roles/${r.id}`)}
+                  className="group flex flex-col gap-2 rounded-xl border border-secondary bg-primary p-4 outline-focus-ring transition duration-100 ease-linear hover:border-primary hover:shadow-xs focus-visible:outline-2 focus-visible:outline-offset-2"
+                >
+                  <span className="flex items-start justify-between gap-2">
+                    <span className="flex min-w-0 flex-col">
+                      <span className="text-sm font-semibold text-primary group-hover:text-brand-700 group-hover:underline">{r.name}</span>
+                      {r.kind === "custom" && <span className="text-xs text-tertiary">{rolePath(r)}</span>}
+                    </span>
+                    <span className="flex shrink-0 items-center gap-1.5">
+                      {r.status !== "active" && (
+                        <Badge size="sm" color={accessStatusMeta[r.status].badgeColor}>
+                          {accessStatusMeta[r.status].label}
+                        </Badge>
+                      )}
+                      <Badge size="sm" color="gray">
+                        {r.kind === "system" ? "System" : "Custom"}
+                      </Badge>
+                    </span>
+                  </span>
+                  <span className="line-clamp-2 text-sm text-tertiary">{r.description}</span>
+                  {/* With one role this is the Permissions tab's own count, so it is shown only when roles are being told apart. */}
+                  {roles.length > 1 && (
+                    <span className="text-sm text-tertiary tabular-nums">
+                      {r.permissionIds.length} permission{r.permissionIds.length === 1 ? "" : "s"}
+                    </span>
+                  )}
+                </Link>
+              ))}
             </div>
           )}
         </TabPanel>
 
-        <TabPanel id="details" className="p-6">
-          <div className="flex max-w-3xl flex-col rounded-lg border border-secondary">
-            <FactRow label="User ID">{user.id}</FactRow>
-            <FactRow label="Username">{user.username}</FactRow>
-            <FactRow label="Display name / alias">{user.displayName || <NotProvided />}</FactRow>
-            <FactRow label="Email">{user.email}</FactRow>
-            <FactRow label="Contact no.">{user.phone || <NotProvided />}</FactRow>
-            <FactRow label="Access from">{formatShortDate(user.startDate)}</FactRow>
-            <FactRow label="Access until">{user.endDate ? formatShortDate(user.endDate) : "No end date"}</FactRow>
-            <FactRow label="Last updated">{formatShortDate(user.updatedAt)}</FactRow>
-          </div>
+        {/* What the roles add up to for this person: each permission once, and with several roles, which one grants it. */}
+        <TabPanel id="permissions" className="p-6">
+          <PermissionGroups permissions={effective} emptyLabel="Their roles grant no permissions yet." grantedBy={roles.length > 1 ? grantedBy : undefined} />
         </TabPanel>
       </Tabs>
 

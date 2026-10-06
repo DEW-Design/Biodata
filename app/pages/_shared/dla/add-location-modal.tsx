@@ -184,6 +184,7 @@ export function AddLocationModal({ isOpen, onOpenChange, onAdd }: { isOpen: bool
                                 <div className="flex gap-2">{drawButtons("flex-1")}</div>
                                 <ExpandableMap
                                     title={name.trim() || "Draw a location"}
+                                    presentation="takeover"
                                     overModal
                                     toolbar={<div className="flex gap-2">{drawButtons()}</div>}
                                     boundaries={drawnBoundary ? [drawnBoundary] : []}

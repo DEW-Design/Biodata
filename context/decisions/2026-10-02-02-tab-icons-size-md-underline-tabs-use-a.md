@@ -1,0 +1,7 @@
+# 2026-10-02 - Tab icons: size md underline tabs use a 16px icon like sm
+
+- **Oct 2 2026: Tab icons: size md underline tabs use a 16px icon like sm.** The designer found the icons on the Home dashboard's Overview / Flora / Fauna / Projects tabs "a smidge too big" and asked for an optically proportionate size across every instance.
+  - **Cause (measured):** `Tabs` size `md` set its icon to 20px (`size-5`), but its label class `text-md` is not defined, so the label renders at 14px. A 20px icon (about 17px of drawn glyph) beside 14px Barlow (cap height about 10px) was too large. Size `sm` already used a 16px icon with the same 14px label.
+  - **Fix, once, in the component (`components/application/tabs/tabs.tsx`):** `md` now uses `*:data-icon:size-4`, the same 16px as `sm`, so both tab sizes have one icon size and the icon sits at about 1.3 times the cap height. Every tab list follows: the DLA, DSA, nomination, user and role records, the project page and its option 2, the Home dashboard, and the Tabs doc page. Gap and label size are unchanged.
+  - **Measured live:** 16px icon beside 14px text on every tab list reached (underline md and sm, the column 2 vertical tabs, the doc page's button tabs); zero page errors.
+  - **Open:** `text-md` in `tabs.tsx` (and in `select-shared.tsx`, `multi-select.tsx`) is a dead class that renders as 14px; replacing it with `text-sm` would also change the line-height by about a pixel, so it was left alone. Not committed.

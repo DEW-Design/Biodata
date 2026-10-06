@@ -15,9 +15,9 @@ import { useRoleHref } from "@/lib/use-role-href";
 import { useUserRole } from "@/lib/use-user-role";
 import { TEMPLATE_FINDER_SECTION_LABEL, keyHref, navForRole, type NavNode } from "@/lib/registered-user-nav";
 
-// The Template Finder's shell, the same shape as NominationShell. It has one view (every template),
-// so column 2 is the section label and the footer links: a one-option switcher would be dishonest
-// UI, and column 2 holds no information (CONTRACTS 3.10).
+// The Template Finder's shell, the same shape as NominationShell. Column 2 is the section label and the local
+// navigation the page hands in (`TemplateNav`: all templates, then the species types and collection methods, which are
+// the list's own filter). It holds no actions - Download is on each row - and no information (CONTRACTS 3.10).
 const CURRENT_KEY = "template-finder";
 
 function SectionPlaceholder({ node }: { node: NavNode }) {
@@ -38,7 +38,7 @@ function SectionPlaceholder({ node }: { node: NavNode }) {
   );
 }
 
-export function TemplateFinderShell({ children }: { children: ReactNode }) {
+export function TemplateFinderShell({ localNav, children }: { /** Column 2's local navigation, under the section label. */ localNav?: ReactNode; children: ReactNode }) {
   const router = useRouter();
   const role = useUserRole();
   const canAccess = useFeatureAccess("templateFinder");
@@ -98,6 +98,7 @@ export function TemplateFinderShell({ children }: { children: ReactNode }) {
                 {item.label}
               </p>
             ))}
+            {!otherSection && canAccess ? localNav : null}
           </div>
         </aside>
 

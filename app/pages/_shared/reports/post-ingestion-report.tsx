@@ -140,7 +140,7 @@ const columns: ReportColumn<PostIngestionRow>[] = [
 ];
 
 export function PostIngestionReport() {
-  const { isAdmin, runs } = useIngestionRuns();
+  const { runs } = useIngestionRuns();
   const initialQuery = useSearchParams().get("q") ?? "";
   const rows = useMemo(() => runs.map(withProjectFacts), [runs]);
 
@@ -163,9 +163,9 @@ export function PostIngestionReport() {
 
   return (
     <DataReport<PostIngestionRow>
+      exportName="project-dataset-post-ingestion-report"
       title="Project Dataset Post Ingestion"
       subtitle="Every dataset submission with the project it went into, through to review and approval."
-      scope={isAdmin ? "All uploads" : "Your uploads and your projects"}
       latest={(r) => r.at}
       icon={Database01}
       rows={rows}

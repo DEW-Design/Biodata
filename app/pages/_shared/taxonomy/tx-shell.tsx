@@ -65,7 +65,7 @@ function NavList({ heading, items, current }: { heading: string; items: { id: st
   );
 }
 
-/** Where you are among the species. */
+/** Where you are among the species, by kingdom. Column 2's label names what the items group by (Categories on Notifications and Controlled Vocabulary, Sources on Voucher Management), never the thing listed: the page heading already says "Species". */
 function KingdomNav({ current }: { current: string }) {
   const base = TX_ROOT;
   const taxa = useTaxa().filter((t) => t.current);
@@ -74,7 +74,7 @@ function KingdomNav({ current }: { current: string }) {
     { id: "Flora", label: "Flora", href: `${base}?kingdom=Flora`, badge: taxa.filter((t) => t.kingdom === "Flora").length, icon: SPECIES_GROUP_ICON.Plant },
     { id: "Fauna", label: "Fauna", href: `${base}?kingdom=Fauna`, badge: taxa.filter((t) => t.kingdom === "Fauna").length, icon: SPECIES_GROUP_ICON.Mammal },
   ];
-  return <NavList heading="Species" items={items} current={current} />;
+  return <NavList heading="Kingdom" items={items} current={current} />;
 }
 
 export function TxShell({
@@ -125,6 +125,10 @@ export function TxShell({
       </div>
     );
 
+  // A record's page (a user, a request, a report ...) has no column 2: the whole width is the record (CONTRACTS 3.7). Its
+  // navigation is the breadcrumb switcher, and its actions are in the record's own card.
+  const recordPage = showNav && !!breadcrumbCurrent && !formSidebar;
+
   return (
     <div className="font-barlow flex h-screen flex-col overflow-hidden">
       <PrototypeTools />
@@ -157,22 +161,24 @@ export function TxShell({
       <div className="flex flex-1 overflow-hidden">
         <PrimaryRail sections={nav} activeSection={canManage || otherSection ? activeSection : null} onSelectSection={goToSection} />
 
-        <aside aria-label="Section" className="hidden w-[286px] shrink-0 flex-col justify-between gap-6 overflow-y-auto border-r border-secondary bg-secondary p-4 lg:flex">
-          {showNav && formSidebar ? (
-            <div ref={setFormSlot} />
-          ) : showNav ? (
-            column2
-          ) : (
-            <div className="flex flex-col gap-1">
-              <p className="mb-3 text-xs font-semibold tracking-wide text-quaternary uppercase">{otherSection?.label ?? TAXONOMY_SECTION_LABEL}</p>
-              {otherSection?.items?.map((item) => (
-                <p key={item.label} className="px-2 py-2 text-sm text-tertiary">
-                  {item.label}
-                </p>
-              ))}
-            </div>
-          )}
-        </aside>
+        {!recordPage && (
+          <aside aria-label="Section" className="hidden w-[286px] shrink-0 flex-col justify-between gap-6 overflow-y-auto border-r border-secondary bg-secondary p-4 lg:flex">
+            {showNav && formSidebar ? (
+              <div ref={setFormSlot} />
+            ) : showNav ? (
+              column2
+            ) : (
+              <div className="flex flex-col gap-1">
+                <p className="mb-3 text-xs font-semibold tracking-wide text-quaternary uppercase">{otherSection?.label ?? TAXONOMY_SECTION_LABEL}</p>
+                {otherSection?.items?.map((item) => (
+                  <p key={item.label} className="px-2 py-2 text-sm text-tertiary">
+                    {item.label}
+                  </p>
+                ))}
+              </div>
+            )}
+          </aside>
+        )}
 
         <main className="flex min-h-0 flex-1 flex-col overflow-hidden">
           <FormSidebarSlotContext.Provider value={formSlot}>{main}</FormSidebarSlotContext.Provider>

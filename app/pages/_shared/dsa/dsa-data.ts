@@ -10,6 +10,7 @@
 export type { AgreementStatus as DsaStatus, AgreementEvent as DsaEvent } from "@/app/pages/_shared/agreement-status";
 export { agreementStatusOrder as dsaStatusOrder, agreementStatusMeta as dsaStatusMeta } from "@/app/pages/_shared/agreement-status";
 import type { AgreementStatus as DsaStatus, AgreementEvent as DsaEvent } from "@/app/pages/_shared/agreement-status";
+import { localIsoDate } from "@/app/pages/_shared/agreement-status";
 import { REVIEWING_ADMIN_NAME } from "@/app/pages/_shared/agreement-scope";
 
 export type DsaScope = "species" | "location" | "project";
@@ -91,7 +92,7 @@ export function formatLongDate(iso: string): string {
 }
 
 export function todayIso(): string {
-  return new Date().toISOString().slice(0, 10);
+  return localIsoDate();
 }
 
 export function contactName(c: DsaContact): string {
@@ -143,7 +144,8 @@ export function emptyDsaDraft(): DsaDraft {
   return {
     partner: "",
     purpose: "",
-    validFrom: "",
+    // Valid from today unless the person chooses another day (designer, 6 Oct 2026: start dates open as today).
+    validFrom: todayIso(),
     validTo: "",
     agreementFile: null,
     requestedBy: emptyContact(),

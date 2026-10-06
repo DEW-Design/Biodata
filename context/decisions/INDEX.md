@@ -322,8 +322,66 @@ Not imported into every session on purpose: read or grep it when a task needs hi
 - [2026-10-01] Text editor: colour picker and font family picker removed - `2026-10-01-34-text-editor-colour-picker-and-font-family-picker.md`
 - [2026-10-01] Button utility ingested: override, inventory, doc page - `2026-10-01-35-button-utility-ingested-override-inventory-doc-page.md`
 - [2026-10-01] Button utility aria-label fix, text-editor buttons moved onto ButtonUtility, typography re-check - `2026-10-01-36-button-utility-aria-label-fix-text-editor-buttons.md`
-- [2026-10-02] Voucher Management Option 2 a row per field coloured by status, bg-warning-primary token added - `2026-10-02-01-voucher-management-option-2-a-row-per-field.md`
-- [2026-10-02] Voucher Management ignoring needs a reason, ignored lines say where and why, no-taxon note up front - `2026-10-02-02-voucher-management-ignoring-needs-a-reason-ignored-lines.md`
-- [2026-10-02] Voucher Management Needs review shows only lines to review, a missing taxon is said up front with Add taxon - `2026-10-02-03-voucher-management-needs-review-shows-only-lines-to.md`
-- [2026-10-02] Merge main (sai-wips PR 11) into mohan-wips - `2026-10-02-04-merge-main-sai-wips-pr-11-into-mohan.md`
-- [2026-10-02] Notification message uses the rich text editor; artefacts view switch moves right - `2026-10-02-05-notification-message-uses-the-rich-text-editor-artefacts.md`
+- [2026-10-02] DLA and DSA audit logs: rebuilt for older records, system moves logged, local dates - `2026-10-02-01-dla-and-dsa-audit-logs-rebuilt-for-older.md`
+- [2026-10-02] Tab icons: size md underline tabs use a 16px icon like sm - `2026-10-02-02-tab-icons-size-md-underline-tabs-use-a.md`
+- [2026-10-02] Audit Log tab: one shared AuditLog, a sentence per status move (Vercel activity feed) - `2026-10-02-03-audit-log-tab-one-shared-auditlog-a-sentence.md`
+- [2026-10-02] Data Ingestion report: a failed dataset opens its Data Validation Error report - `2026-10-02-04-data-ingestion-report-a-failed-dataset-opens-its.md`
+- [2026-10-02] Report cards: Rows, Columns and Scope facts removed - `2026-10-02-05-report-cards-rows-columns-and-scope-facts-removed.md`
+- [2026-10-02] Data Ingestion report: the Record ID of a run with errors opens its Data Validation Error report - `2026-10-02-06-data-ingestion-report-the-record-id-of-a.md`
+- [2026-10-02] Data Validation Error report: Project and Dataset selects in the card, as option 2 - `2026-10-02-07-data-validation-error-report-project-and-dataset-selects.md`
+- [2026-10-02] Option 2 pickers become quiet on-dark pills; Select gets an opt-in onDark - `2026-10-02-08-option-2-pickers-become-quiet-on-dark-pills.md`
+- [2026-10-02] Option 2 pickers moved into the toolbar; the on-dark Select pill is withdrawn - `2026-10-02-09-option-2-pickers-moved-into-the-toolbar-the.md`
+- [2026-10-02] Layout lab /proto/layouts: how much room the table gets on a report page - `2026-10-02-10-layout-lab-proto-layouts-how-much-room-the.md`
+- [2026-10-02] Data Validation Error report: Map visualise is the card's primary button - `2026-10-02-11-data-validation-error-report-map-visualise-is-the.md`
+- [2026-10-02] Merged mohan-wips into sai's work; the audit log is now Mohan's milestones with our feed behind Show all... - `2026-10-02-17-merged-mohan-wips-into-sai-s-work-the.md`
+- [2026-10-02] Column 2 Actions sit under the navigation on Vouchers, Controlled Vocabulary and Notifications - `2026-10-02-18-column-2-actions-sit-under-the-navigation-on.md`
+- [2026-10-02] Project page: Geographic extent card puts the details on the left and the map on the right - `2026-10-02-19-project-page-geographic-extent-card-puts-the-details.md`
+- [2026-10-02] Maps: Exit full screen moves to the left, the same corner as Full screen - `2026-10-02-20-maps-exit-full-screen-moves-to-the-left.md`
+- [2026-10-02] Project page rows: dividers no longer curl at their ends - `2026-10-02-21-project-page-rows-dividers-no-longer-curl-at.md`
+- [2026-10-02] Maps: Expand opens a large modal for view maps; draw maps keep a takeover; one X to close; maps re-measure - `2026-10-02-22-maps-expand-opens-a-large-modal-for-view.md`
+- [2026-10-02] Datasets page: the latest-upload card goes two-column and the page scrolls, so the table is not squeezed - `2026-10-02-23-datasets-page-the-latest-upload-card-goes-two.md`
+- [2026-10-02] Dataset Validation tab: one status, and the same two-column card as the Datasets list - `2026-10-02-24-dataset-validation-tab-one-status-and-the-same.md`
+- [2026-10-02] Add Project: survey type, methodology from the vocabulary, team in the owner step, species list, per-concept... - `2026-10-02-25-add-project-survey-type-methodology-from-the-vocabulary.md`
+- [2026-10-02] PENDING for the business team: Add Project open questions (methods, survey type templates, storage location,... - `2026-10-02-26-pending-for-the-business-team-add-project-open.md`
+- [2026-10-02] Voucher Management Option 2 a row per field coloured by status, bg-warning-primary token added - `2026-10-02-27-voucher-management-option-2-a-row-per-field.md`
+- [2026-10-02] Voucher Management ignoring needs a reason, ignored lines say where and why, no-taxon note up front - `2026-10-02-28-voucher-management-ignoring-needs-a-reason-ignored-lines.md`
+- [2026-10-02] Voucher Management Needs review shows only lines to review, a missing taxon is said up front with Add taxon - `2026-10-02-29-voucher-management-needs-review-shows-only-lines-to.md`
+- [2026-10-02] Merge main (sai-wips PR 11) into mohan-wips - `2026-10-02-30-merge-main-sai-wips-pr-11-into-mohan.md`
+- [2026-10-02] Notification message uses the rich text editor; artefacts view switch moves right - `2026-10-02-31-notification-message-uses-the-rich-text-editor-artefacts.md`
+- [2026-10-04] Contracts: a merge flow (5.6), ours stands and theirs is appended, no clause or number overridden - `2026-10-04-01-contracts-a-merge-flow-5-6-ours-stands.md`
+- [2026-10-04] Merge flow applied: Mohan's five 2 Oct decisions renumbered 27 to 31, and a check for repeated decision... - `2026-10-04-02-merge-flow-applied-mohan-s-five-2-oct.md`
+- [2026-10-04] Git identity set to the GitHub-linked address; old commits and trailers left as pushed - `2026-10-04-03-git-identity-set-to-the-github-linked-address.md`
+- [2026-10-05] Template Finder polish: one Download menu per template, even rows, a proper empty state - `2026-10-05-01-template-finder-polish-one-download-menu-per-template.md`
+- [2026-10-05] Column 2 lab: local navigation only, actions on the page (Mobbin patterns, five treatments, open rule... - `2026-10-05-02-column-2-lab-local-navigation-only-actions-on.md`
+- [2026-10-05] Pages map lab for the Prototype tools bar, three layouts - `2026-10-05-03-pages-map-lab-for-the-prototype-tools-bar.md`
+- [2026-10-05] Template Finder column 2: grouped facets chosen and in production, as the Filter menu drawn as places - `2026-10-05-04-template-finder-column-2-grouped-facets-chosen-and.md`
+- [2026-10-05] Labs link to production: an In production button on the Prototype tools bar - `2026-10-05-05-labs-link-to-production-an-in-production-button.md`
+- [2026-10-05] In production link opens as a role that has the feature, not on a restriction page - `2026-10-05-06-in-production-link-opens-as-a-role-that.md`
+- [2026-10-05] In production link: every lab checked against the role-access matrix, persona added for the Home labs - `2026-10-05-07-in-production-link-every-lab-checked-against-the.md`
+- [2026-10-05] Registered user Home audited with the design foundations; cleanup in a lab (home-cleanup) - `2026-10-05-08-registered-user-home-audited-with-the-design-foundations.md`
+- [2026-10-05] Pages tool on the Prototype tools bar with the DEW tree - `2026-10-05-09-pages-tool-on-the-prototype-tools-bar-with.md`
+- [2026-10-05] Pages tool lists only the persona's pages and invites switching - `2026-10-05-10-pages-tool-lists-only-the-persona-s-pages.md`
+- [2026-10-05] Pages tool pared back to a search box, the tree and one line - `2026-10-05-11-pages-tool-pared-back-to-a-search-box.md`
+- [2026-10-05] Open items to raise at the start of the next session - `2026-10-05-12-open-items-to-raise-at-the-start-of.md`
+- [2026-10-06] Pages panel crit fixes: indent, current tint, Recent, TreeView alignLeaves and weight - `2026-10-06-01-pages-panel-crit-fixes-indent-current-tint-recent.md`
+- [2026-10-06] Pages panel: Recent is a card of its own, All pages scrolls under its label - `2026-10-06-02-pages-panel-recent-is-a-card-of-its.md`
+- [2026-10-06] Data Licence and Data Sharing Agreement reports built on the shared report - `2026-10-06-03-data-licence-and-data-sharing-agreement-reports-built.md`
+- [2026-10-06] Pages panel: area counts and a fade at the foot of the list - `2026-10-06-04-pages-panel-area-counts-and-a-fade-at.md`
+- [2026-10-06] Nominations column 2 per role: My for a registered user, All and My for the rest - `2026-10-06-05-nominations-column-2-per-role-my-for-a.md`
+- [2026-10-06] Expanded map: the close X sits centred in its title bar - `2026-10-06-06-expanded-map-the-close-x-sits-centred-in.md`
+- [2026-10-06] Maps open already framed: no flight from the state view - `2026-10-06-07-maps-open-already-framed-no-flight-from-the.md`
+- [2026-10-06] User record Roles and permissions panel: clearer hierarchy - `2026-10-06-08-user-record-roles-and-permissions-panel-clearer-hierarchy.md`
+- [2026-10-06] User record: roles and permissions roll up instead of repeating - `2026-10-06-09-user-record-roles-and-permissions-roll-up-instead.md`
+- [2026-10-06] Taxonomy column 2 label names the facet, not the thing listed - `2026-10-06-10-taxonomy-column-2-label-names-the-facet-not.md`
+- [2026-10-06] Contract: borrow existing patterns; record tabs run Overview then what it relates to - `2026-10-06-11-contract-borrow-existing-patterns-record-tabs-run-overview.md`
+- [2026-10-06] Record pages use the full width; the user record borrows the DSA record's patterns - `2026-10-06-12-record-pages-use-the-full-width-the-user.md`
+- [2026-10-06] Reports column 2 holds the categories, and the category tabs leave the page - `2026-10-06-13-reports-column-2-holds-the-categories-and-the.md`
+- [2026-10-06] Reports category tabs restored; column 2 mirrors them - `2026-10-06-14-reports-category-tabs-restored-column-2-mirrors-them.md`
+- [2026-10-06] Reports column 2: All and My reports, Create a report, and My reports as generated reports - `2026-10-06-15-reports-column-2-all-and-my-reports-create.md`
+- [2026-10-06] Reports tables carry no icon on each row - `2026-10-06-16-reports-tables-carry-no-icon-on-each-row.md`
+- [2026-10-06] Flora and Fauna Dashboard: the Projects tab built from the reference - `2026-10-06-17-flora-and-fauna-dashboard-the-projects-tab-built.md`
+- [2026-10-06] Full design consistency audit across behaviour, components, layout and copy - `2026-10-06-18-full-design-consistency-audit-across-behaviour-components-la.md`
+- [2026-10-06] Contribute Now goes to login; Tailwind stops scanning audit and decision prose - `2026-10-06-19-contribute-now-goes-to-login-tailwind-stops-scanning.md`
+- [2026-10-06] Add Project: Your role is asked in Step 2, not Step 1 - `2026-10-06-20-add-project-your-role-is-asked-in-step.md`
+- [2026-10-06] Project Audit Log Report built; projects now log their changes - `2026-10-06-21-project-audit-log-report-built-projects-now-log.md`
+- [2026-10-06] Reports: specimen reports hidden from Registered User, export on every report, start dates open as today - `2026-10-06-22-reports-specimen-reports-hidden-from-registered-user-export.md`

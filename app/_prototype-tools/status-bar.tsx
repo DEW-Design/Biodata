@@ -1,10 +1,12 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState, useSyncExternalStore, type CSSProperties } from "react";
-import { ChevronUp, DotsGrid, Sliders01, XClose } from "@untitledui/icons";
+import { ArrowUpRight, ChevronUp, DotsGrid, Sliders01, XClose } from "@untitledui/icons";
+import Link from "next/link";
 import { Button as AriaButton, Toolbar } from "react-aria-components";
 import { animate, AnimatePresence, motion, useMotionValue, useReducedMotion, type Transition } from "motion/react";
 import { cx } from "@/utils/cx";
+import { PagesTool } from "./pages-tool";
 import { ToolMenu } from "./tool-menu";
 import { barValue, type Tool } from "./tools";
 import { useDragPosition } from "./use-drag-position";
@@ -41,6 +43,9 @@ const VARS = {
   "--tool-override": "var(--color-error-300)",
 } as CSSProperties;
 
+/** The bar's colours, for the Scaffold tools that open beside it (the Pages map lab). */
+export const TOOL_VARS = VARS;
+
 const EASE_OUT = [0.23, 1, 0.32, 1] as const;
 const MORPH: Transition = { duration: 0.2, ease: EASE_OUT };
 const FADE_IN: Transition = { duration: 0.15, ease: EASE_OUT };
@@ -66,7 +71,7 @@ function useCollapsed() {
   return [collapsed, set] as const;
 }
 
-export function StatusBar({ tools }: { tools: Tool[] }) {
+export function StatusBar({ tools, production }: { tools: Tool[]; /** The live page this lab is about, when it has one: the bar offers a link to it. */ production?: { label: string; href: string; /** Said after the name when the link opens as a different role than the one being viewed. */ note?: string } }) {
   const reduce = useReducedMotion() ?? false;
   const t = (transition: Transition) => (reduce ? INSTANT : transition);
 
@@ -202,8 +207,19 @@ export function StatusBar({ tools }: { tools: Tool[] }) {
                   className="mx-0.5 size-4 shrink-0 text-[var(--tool-muted)]"
                   aria-hidden="true"
                 />
+                <PagesTool
+                  wasDrag={drag.wasDrag}
+                  closeKey={dragEpoch}
+                  triggerClassName={(open) =>
+                    cx(
+                      "flex h-9 items-center gap-2 rounded-lg px-2.5 text-sm whitespace-nowrap transition-[background-color,scale] duration-150 ease-out active:scale-[0.96]",
+                      open ? "bg-[var(--tool-hover)]" : "hover:bg-[var(--tool-hover)]",
+                      focusRing,
+                    )
+                  }
+                />
                 <AnimatePresence initial={false}>
-                  {tools.map((tool, i) => (
+                  {tools.map((tool) => (
                     <motion.div
                       key={tool.id}
                       initial={settled ? { opacity: 0 } : false}
@@ -211,9 +227,7 @@ export function StatusBar({ tools }: { tools: Tool[] }) {
                       exit={{ opacity: 0, transition: INSTANT }}
                       className="flex items-center gap-1"
                     >
-                      {i > 0 && (
-                        <span aria-hidden="true" className="h-5 w-px bg-[var(--tool-divider)]" />
-                      )}
+                      <span aria-hidden="true" className="h-5 w-px bg-[var(--tool-divider)]" />
                       <ToolChip
                         tool={tool}
                         wasDrag={drag.wasDrag}
@@ -222,6 +236,27 @@ export function StatusBar({ tools }: { tools: Tool[] }) {
                     </motion.div>
                   ))}
                 </AnimatePresence>
+                {production ? (
+                  <>
+                    <span aria-hidden="true" className="h-5 w-px bg-[var(--tool-divider)]" />
+                    <Link
+                      href={production.href}
+                      // A drag that ends on the link is not a click on it.
+                      onClick={(e) => {
+                        if (drag.wasDrag()) e.preventDefault();
+                      }}
+                      className={cx(
+                        "flex h-9 items-center gap-2 rounded-lg px-2.5 text-sm whitespace-nowrap transition-[background-color,scale] duration-150 ease-out hover:bg-[var(--tool-hover)] active:scale-[0.96]",
+                        focusRing,
+                      )}
+                    >
+                      <ArrowUpRight className="size-4 shrink-0 text-[var(--tool-muted)]" aria-hidden="true" />
+                      <span className="text-[var(--tool-label)]">In production</span>
+                      <span className="max-w-44 truncate font-medium text-[var(--tool-fg)]">{production.label}</span>
+                      {production.note ? <span className="text-[var(--tool-muted)]">{production.note}</span> : null}
+                    </Link>
+                  </>
+                ) : null}
                 <span aria-hidden="true" className="h-5 w-px bg-[var(--tool-divider)]" />
                 <AriaButton
                   aria-label="Hide preview tools"

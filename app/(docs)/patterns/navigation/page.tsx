@@ -177,6 +177,14 @@ export default function NavigationPatternPage() {
         <SideNavDemo />
       </Section>
 
+      <h3 className="text-balance">A record page has no contextual sidebar</h3>
+      <p className="text-balance">
+        The deep dive of a collection (a project, an agreement, a nomination, a user, a role, a permission, a vocabulary, a report) uses the whole
+        width beside the rail (contract section 3.7). Where you are is the breadcrumb, whose section crumb switches to another record of the
+        collection; the record&apos;s actions are in its card. A list, and a create or edit form (whose sections are the contextual sidebar),
+        keep it.
+      </p>
+
       <h3 className="text-balance">Items in the contextual sidebar</h3>
       <p className="text-balance">
         Every navigation item in the contextual sidebar carries an icon to the left of its label (contract section 3.11), so the

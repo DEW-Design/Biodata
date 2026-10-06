@@ -58,9 +58,9 @@ function SourceNav({ source }: { source: VmSource | "" }) {
   const needing = (s?: VmSource) => BATCHES.filter((b) => (!s || b.source === s) && summaries.get(b.id)?.status === "review").length;
   const badge = (n: number) => (n > 0 ? n : undefined);
   return (
-    <div className="flex min-h-0 flex-1 flex-col gap-1">
+    <div className="flex flex-col gap-1">
       <p className="mb-3 text-xs font-semibold tracking-wide text-quaternary uppercase">Sources</p>
-      <div className="min-h-0 flex-1 overflow-y-auto">
+      <div>
         <Tabs orientation="vertical" selectedKey={source || "all"} onSelectionChange={(key) => router.push(roleHref(key === "all" ? root : `${root}?source=${String(key)}`))}>
           <TabList aria-label="Sources" orientation="vertical" type="button-brand" fullWidth className="w-full">
             <Tab id="all" label="All batches" icon={SwitchHorizontal01} badge={badge(needing())} />
@@ -134,6 +134,10 @@ export function VmShell({
   const last = crumbs[crumbs.length - 1];
   const middle = crumbs.slice(0, -1);
 
+  // A record's page (a user, a request, a report ...) has no column 2: the whole width is the record (CONTRACTS 3.7). Its
+  // navigation is the breadcrumb switcher, and its actions are in the record's own card.
+  const recordPage = showNav && breadcrumb.length > 0;
+
   return (
     <div className="font-barlow flex h-screen flex-col overflow-hidden">
       <PrototypeTools />
@@ -177,20 +181,22 @@ export function VmShell({
       <div className="flex flex-1 overflow-hidden">
         <PrimaryRail sections={nav} activeSection={canManage || otherSection ? activeSection : null} onSelectSection={goToSection} />
 
-        <aside aria-label="Section" className="hidden w-[286px] shrink-0 flex-col justify-between gap-6 overflow-y-auto border-r border-secondary bg-secondary p-4 lg:flex">
-          {showNav ? (
-            <SourceNav source={source} />
-          ) : (
-            <div className="flex flex-col gap-1">
-              <p className="mb-3 text-xs font-semibold tracking-wide text-quaternary uppercase">{otherSection?.label ?? VOUCHER_SECTION_LABEL}</p>
-              {otherSection?.items?.map((item) => (
-                <p key={item.label} className="px-2 py-2 text-sm text-tertiary">
-                  {item.label}
-                </p>
-              ))}
-            </div>
-          )}
-        </aside>
+        {!recordPage && (
+          <aside aria-label="Section" className="hidden w-[286px] shrink-0 flex-col justify-between gap-6 overflow-y-auto border-r border-secondary bg-secondary p-4 lg:flex">
+            {showNav ? (
+              <SourceNav source={source} />
+            ) : (
+              <div className="flex flex-col gap-1">
+                <p className="mb-3 text-xs font-semibold tracking-wide text-quaternary uppercase">{otherSection?.label ?? VOUCHER_SECTION_LABEL}</p>
+                {otherSection?.items?.map((item) => (
+                  <p key={item.label} className="px-2 py-2 text-sm text-tertiary">
+                    {item.label}
+                  </p>
+                ))}
+              </div>
+            )}
+          </aside>
+        )}
 
         <main className="flex min-h-0 flex-1 flex-col overflow-hidden">{main}</main>
       </div>

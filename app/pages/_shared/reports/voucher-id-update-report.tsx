@@ -63,6 +63,7 @@ function pairColumns(which: "museum" | "biodata", prefix: string): ReportColumn<
       label: `${prefix} - Scientific name`,
       width: W.scientific,
       sort: sort((s) => s.scientific),
+      text: (r) => side(r, which).scientific,
       cell: (r) => <ScientificValue name={side(r, which).scientific} marked={marked(r, "Scientific name")} />,
     },
     {
@@ -138,7 +139,6 @@ const NONE = "None";
 
 export function VoucherIdUpdateReport() {
   const role = useUserRole();
-  const isAdmin = role === "biodata-admin";
   const rows = useMemo(() => visibleTo(voucherRows(), role), [role]);
 
   // The values a filter offers come from the rows the person can see, so no option leads to an empty table.
@@ -160,9 +160,9 @@ export function VoucherIdUpdateReport() {
 
   return (
     <DataReport
+      exportName="voucher-id-update-report"
       title="Voucher ID Update Report"
       subtitle="The voucher details each museum or herbarium holds beside what BioData holds for the same specimen, and the field that disagrees."
-      scope={isAdmin ? "All projects" : "Your projects"}
       latest={(r) => r.batchDate}
       icon={Tag01}
       rows={rows}

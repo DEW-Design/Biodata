@@ -108,7 +108,6 @@ const COLUMNS: ReportColumn<RestrictionRow>[] = [
 export function SensitiveRestrictionReport() {
   const role = useUserRole();
   const nominations = useNominations();
-  const isAdmin = role === "biodata-admin";
   const rows = useMemo(() => visibleTo(allRestrictions(nominations), role), [nominations, role]);
 
   // The values a filter offers come from the rows the person can see, so no option leads to an empty table.
@@ -135,9 +134,9 @@ export function SensitiveRestrictionReport() {
 
   return (
     <DataReport
+      exportName="project-sensitive-and-restriction-report"
       title="Project Sensitive and Restriction Report"
       subtitle="Every restriction applied to a project: embargoes, sensitive species and the treatment each one gets."
-      scope={isAdmin ? "All projects" : "Your projects and nominations"}
       latest={(r) => r.updatedOn}
       icon={Lock01}
       rows={rows}
