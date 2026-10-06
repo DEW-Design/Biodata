@@ -79,7 +79,7 @@ designer owns. It is data, separate from `design-system.config.ts` (which doc va
 - **Two kinds of gate:**
   - **A control:** hide it (`orgSwitcher`, `metricCardCustomization` hides the dashboard card menu for all
     but `biodata-admin`, `dlaApproval`, `nominationReview`, `nominationAllView`: the All nominations view in column 2, for the BioData User and the
-    Privileged roles, limited to their organisation's; the BioData Admin's All is everyone's).
+    Privileged roles, limited to their organisation's; the BioData Admin's All is everyone's; `dlaAllView`: the All requests view on the DLA list, BioData Admin alone; every other role has My requests).
   - **A whole page:** keep the shell and put the restriction in main (§3.7), and add the route to
     `wholePageGates` (`dsaManagement`, `dlaAccess`, `userManagement`, `nominationAccess`, `datasetUpload`,
     `templateFinder`, `reports`). Some reports inside Reports are gated on their own (a `feature` on the report in `reports-data.ts`): the Project Audit Log

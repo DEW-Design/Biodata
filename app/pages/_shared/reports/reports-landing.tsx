@@ -134,7 +134,7 @@ function ReportsCatalogue() {
           ) : view === "cards" ? (
             <div className="flex flex-col gap-8 p-6">
               {tab === "all"
-                ? REPORT_CATEGORIES.map((c) => (
+                ? REPORT_CATEGORIES.filter((c) => reports.some((r) => r.category === c.id)).map((c) => (
                     <section key={c.id} aria-label={c.label} className="flex flex-col gap-3">
                       <h2 className="m-0 text-xs font-semibold tracking-wide text-tertiary uppercase">{c.label}</h2>
                       {cards(reports.filter((r) => r.category === c.id))}

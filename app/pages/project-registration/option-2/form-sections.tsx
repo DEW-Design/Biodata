@@ -107,11 +107,47 @@ function BasicsSection({ state, onChange, showErrors }: SectionProps) {
   );
 }
 
+// Your role: one value (`roleOfWork`), asked once. An organisation owner is asked it in Step 2's Method and details; an individual
+// owner is the person, so it is asked in the Data owner section (the designer, 6 Oct 2026).
+function RoleRow({ state, onChange, showErrors }: SectionProps) {
+  const { patchDetails } = useSectionPatches(state, onChange);
+  const d = state.details;
+  const roleMissing = showErrors && (!d.roleOfWork || (d.roleOfWork === "other" && !d.roleOfWorkOther.trim()));
+
+  return (
+    <FormRow title="Your role" required description="Helps us understand who is contributing to BioData SA.">
+      <Select
+        aria-label="Your role or type of work"
+        isRequired
+        placeholder="Select role or type of work"
+        items={ROLE_OF_WORK_OPTIONS}
+        selectedKey={d.roleOfWork}
+        onSelectionChange={(key) => patchDetails({ roleOfWork: key as string, roleOfWorkOther: key === "other" ? d.roleOfWorkOther : "" })}
+        isInvalid={showErrors && !d.roleOfWork}
+        hint={showErrors && !d.roleOfWork ? "Select your role" : undefined}
+      >
+        {(item) => <Select.Item {...item}>{item.label}</Select.Item>}
+      </Select>
+      {d.roleOfWork === "other" && (
+        <Input
+          label="Please specify"
+          isRequired
+          placeholder="Describe your role or type of work"
+          value={d.roleOfWorkOther}
+          onChange={(v) => patchDetails({ roleOfWorkOther: v })}
+          isInvalid={roleMissing && !d.roleOfWorkOther.trim()}
+          hint={roleMissing && !d.roleOfWorkOther.trim() ? REQUIRED : undefined}
+        />
+      )}
+    </FormRow>
+  );
+}
+
 function OwnerSection(props: SectionProps) {
   return (
     <>
       <OwnerRows {...props} />
-      <TeamRows {...props} />
+      {props.state.details.dataOwnerType === "individual" ? <RoleRow {...props} /> : <TeamRows {...props} />}
     </>
   );
 }
@@ -334,10 +370,9 @@ function OptionalMethodDetails({ state, onChange }: Pick<SectionProps, "state" |
 }
 
 function MethodSection({ state, onChange, showErrors }: SectionProps) {
-  const { patchCollection, patchDetails } = useSectionPatches(state, onChange);
+  const { patchCollection } = useSectionPatches(state, onChange);
   const c = state.collection;
   const d = state.details;
-  const roleMissing = showErrors && (!d.roleOfWork || (d.roleOfWork === "other" && !d.roleOfWorkOther.trim()));
 
   return (
     <>
@@ -354,31 +389,8 @@ function MethodSection({ state, onChange, showErrors }: SectionProps) {
       <FormRow title="Methodology" required description="The survey technique used, from the Survey method vocabulary.">
         <MethodologySelect value={c.methodDetails} onChange={(methodDetails) => patchCollection({ methodDetails })} isInvalid={showErrors && !c.methodDetails.trim()} />
       </FormRow>
-      <FormRow title="Your role" required description="Helps us understand who is contributing to BioData SA.">
-        <Select
-          aria-label="Your role or type of work"
-          isRequired
-          placeholder="Select role or type of work"
-          items={ROLE_OF_WORK_OPTIONS}
-          selectedKey={d.roleOfWork}
-          onSelectionChange={(key) => patchDetails({ roleOfWork: key as string, roleOfWorkOther: key === "other" ? d.roleOfWorkOther : "" })}
-          isInvalid={showErrors && !d.roleOfWork}
-          hint={showErrors && !d.roleOfWork ? "Select your role" : undefined}
-        >
-          {(item) => <Select.Item {...item}>{item.label}</Select.Item>}
-        </Select>
-        {d.roleOfWork === "other" && (
-          <Input
-            label="Please specify"
-            isRequired
-            placeholder="Describe your role or type of work"
-            value={d.roleOfWorkOther}
-            onChange={(v) => patchDetails({ roleOfWorkOther: v })}
-            isInvalid={roleMissing && !d.roleOfWorkOther.trim()}
-            hint={roleMissing && !d.roleOfWorkOther.trim() ? REQUIRED : undefined}
-          />
-        )}
-      </FormRow>
+      {/* An individual owner is asked their role in the Data owner section instead (OwnerRows). */}
+      {d.dataOwnerType === "organisation" && <RoleRow state={state} onChange={onChange} showErrors={showErrors} />}
       <FormRow title="Optional details" description="Only add these if they apply to this project.">
         <OptionalMethodDetails state={state} onChange={onChange} />
       </FormRow>

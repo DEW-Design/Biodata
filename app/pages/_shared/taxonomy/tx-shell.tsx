@@ -74,7 +74,7 @@ function KingdomNav({ current }: { current: string }) {
     { id: "Flora", label: "Flora", href: `${base}?kingdom=Flora`, badge: taxa.filter((t) => t.kingdom === "Flora").length, icon: SPECIES_GROUP_ICON.Plant },
     { id: "Fauna", label: "Fauna", href: `${base}?kingdom=Fauna`, badge: taxa.filter((t) => t.kingdom === "Fauna").length, icon: SPECIES_GROUP_ICON.Mammal },
   ];
-  return <NavList heading="Kingdom" items={items} current={current} />;
+  return <NavList heading="Species" items={items} current={current} />;
 }
 
 export function TxShell({

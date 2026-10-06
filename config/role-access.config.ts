@@ -23,7 +23,7 @@
 import { isBiodataAdmin, type UserRole } from "@/lib/user-role";
 
 /** One entry per gated product feature. Add a key as a feature is actually gated - don't pre-populate speculatively. */
-export type FeatureKey = "orgSwitcher" | "metricCardCustomization" | "dsaManagement" | "dlaAccess" | "dlaApproval" | "userManagement" | "restrictedData" | "nominationAccess" | "nominationReview" | "nominationAllView" | "datasetUpload" | "templateFinder" | "ctrlVocabManagement" | "taxonomyManagement" | "notificationManagement" | "voucherManagement" | "reports" | "projectAuditLog" | "specimenReports";
+export type FeatureKey = "orgSwitcher" | "metricCardCustomization" | "dsaManagement" | "dlaAccess" | "dlaApproval" | "userManagement" | "restrictedData" | "nominationAccess" | "nominationReview" | "nominationAllView" | "datasetUpload" | "templateFinder" | "ctrlVocabManagement" | "taxonomyManagement" | "notificationManagement" | "voucherManagement" | "reports" | "projectAuditLog" | "specimenReports" | "dlaAllView";
 
 /** Feature -> the roles (besides biodata-admin, which always passes) allowed to see it. */
 export const roleAccessMatrix: Record<FeatureKey, UserRole[]> = {
@@ -108,6 +108,10 @@ export const roleAccessMatrix: Record<FeatureKey, UserRole[]> = {
   // role that has Reports except the Registered User, who is not offered them (designer, 6 Oct 2026: "Hide those reports for
   // registered users"). BioData Admin passes through the bypass.
   specimenReports: ["privileged-user", "privileged-admin", "biodata-user"],
+  // The "All requests" view in column 2 of the Data Licence Agreements list (designer, 6 Oct 2026: "Only my requests for DLA for
+  // registered users", then "Privileged / Biodata User will be limited to their own DLA requests"). Every role but BioData Admin has
+  // "My requests" alone. Empty array, not an omitted key, for the same reason as dsaManagement.
+  dlaAllView: [],
 };
 
 /**

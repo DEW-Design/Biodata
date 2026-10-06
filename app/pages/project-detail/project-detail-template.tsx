@@ -47,7 +47,6 @@ import { sectionIcons } from "@/app/pages/_shared/nav-icons";
 import { AppHeader } from "@/app/pages/_shared/app-header";
 import { MobileNavTrigger } from "@/app/pages/_shared/mobile-nav";
 import { PrototypeTools } from "@/app/_prototype-tools/prototype-tools";
-import { ProjectDetailLayoutSwitcher } from "@/app/pages/_shared/project-detail-layout-switcher";
 import { ProjectCardActions } from "@/app/pages/_shared/project-card-actions";
 import {
   ArtefactLightbox,
@@ -143,8 +142,6 @@ export interface ProjectDetailTemplateProps {
   basePath: string;
   /** The project's data, when it is not one the page can find itself (a project created in this browser). */
   seed?: ProjectSeed;
-  /** Shows the layout switcher on the Prototype tools bar (only on the canonical Adelaide Hills route). */
-  layoutSwitcher?: boolean;
   /** An alert shown above the tabs, e.g. that a followed record is not available. */
   notice?: ReactNode;
 }
@@ -174,7 +171,7 @@ function ProjectDetailWithEdits(props: ProjectDetailTemplateProps) {
   );
 }
 
-function ProjectDetail({ basePath, layoutSwitcher = false, notice }: ProjectDetailTemplateProps) {
+function ProjectDetail({ basePath, notice }: ProjectDetailTemplateProps) {
   const router = useRouter();
   const role = useUserRole();
   const nav = navForRole(role);
@@ -307,7 +304,6 @@ function ProjectDetail({ basePath, layoutSwitcher = false, notice }: ProjectDeta
   return (
     <div className="font-barlow flex h-screen flex-col overflow-hidden">
       <PrototypeTools />
-      {layoutSwitcher && <ProjectDetailLayoutSwitcher current="option-1" />}
       <AppHeader
         mobileNav={
           <MobileNavTrigger

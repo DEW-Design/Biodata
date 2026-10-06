@@ -385,3 +385,5 @@ Not imported into every session on purpose: read or grep it when a task needs hi
 - [2026-10-06] Add Project: Your role is asked in Step 2, not Step 1 - `2026-10-06-20-add-project-your-role-is-asked-in-step.md`
 - [2026-10-06] Project Audit Log Report built; projects now log their changes - `2026-10-06-21-project-audit-log-report-built-projects-now-log.md`
 - [2026-10-06] Reports: specimen reports hidden from Registered User, export on every report, start dates open as today - `2026-10-06-22-reports-specimen-reports-hidden-from-registered-user-export.md`
+- [2026-10-06] Page feedback: Reports empty sections, DLA My requests only, Taxonomy label, individual owner role - `2026-10-06-23-page-feedback-reports-empty-sections-dla-my-requests.md`
+- [2026-10-06] Project page option 2 removed; DLA My requests only for every role but BioData Admin - `2026-10-06-24-project-page-option-2-removed-dla-my-requests.md`

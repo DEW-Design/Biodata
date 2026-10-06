@@ -1,6 +1,6 @@
 "use client";
 
-// VERSION 3 of the Project records explorer (route /pages/project-detail/option-2), once compared through
+// VERSION 3 of the Project records explorer (on the project page), once compared through
 // the Version floating button. Same list, filter and search as the current version, plus:
 // - the list and the details panel are split by a handle you can drag (or move with the arrow keys),
 //   so either side can be widened;

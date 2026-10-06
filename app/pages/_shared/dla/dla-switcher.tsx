@@ -3,10 +3,10 @@
 import { useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { BreadcrumbSwitcher } from "@/app/pages/_shared/breadcrumb-switcher";
-import { CURRENT_USER_NAME, useAgreementScope } from "@/app/pages/_shared/agreement-scope";
+import { CURRENT_USER_NAME } from "@/app/pages/_shared/agreement-scope";
+import { useDlaScope } from "@/app/pages/_shared/dla/dla-scope";
 import { requestorName } from "@/app/pages/_shared/dla/dla-data";
 import { useDlas } from "@/app/pages/_shared/dla/dla-store";
-import { useFeatureAccess } from "@/lib/use-feature-access";
 import { useRoleHref } from "@/lib/use-role-href";
 import { DLA_SECTION_LABEL } from "@/lib/registered-user-nav";
 
@@ -18,8 +18,7 @@ export function DlaSwitcher({ currentId }: { currentId: string }) {
   const router = useRouter();
   const roleHref = useRoleHref();
   const dlas = useDlas();
-  const canReview = useFeatureAccess("dlaApproval");
-  const scope = useAgreementScope(canReview ? "all" : "mine");
+  const { scope } = useDlaScope();
 
   const items = useMemo(
     () =>

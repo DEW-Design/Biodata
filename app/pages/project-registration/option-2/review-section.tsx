@@ -57,7 +57,7 @@ export function ReviewSection({ state, onEdit }: { state: FormState; onEdit: (id
         <SummaryRow label="Dates" value={dates} onEdit={() => onEdit("basics")} />
         <SummaryRow label="Data owner" value={d.dataOwnerType === "organisation" ? d.dataOwnerOrgName : person(contact)} onEdit={() => onEdit("owner")} />
         <SummaryRow label="Primary contact" value={person(contact) ? `${person(contact)}${contact.email ? ` - ${contact.email}` : ""}` : ""} onEdit={() => onEdit("owner")} />
-        <SummaryRow label="Project managers" value={managers} onEdit={() => onEdit("owner")} />
+        {d.dataOwnerType === "individual" ? <SummaryRow label="Your role" value={roleLabel} onEdit={() => onEdit("owner")} /> : <SummaryRow label="Project managers" value={managers} onEdit={() => onEdit("owner")} />}
       </StepCard>
 
       <StepCard title={STEP_TITLES[2]}>
@@ -66,7 +66,7 @@ export function ReviewSection({ state, onEdit }: { state: FormState; onEdit: (id
         <SummaryRow label="Survey type" value={surveyType} onEdit={() => onEdit("method")} />
         <SummaryRow label="Method of data collection" value={method} onEdit={() => onEdit("method")} />
         <SummaryRow label="Methodology" value={c.methodDetails} onEdit={() => onEdit("method")} />
-        <SummaryRow label="Your role" value={roleLabel} onEdit={() => onEdit("method")} />
+        {d.dataOwnerType === "organisation" && <SummaryRow label="Your role" value={roleLabel} onEdit={() => onEdit("method")} />}
       </StepCard>
 
       <StepCard title={STEP_TITLES[3]}>

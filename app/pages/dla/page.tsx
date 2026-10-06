@@ -2,11 +2,10 @@
 
 import { Suspense } from "react";
 import { useSearchParams } from "next/navigation";
-import { useAgreementScope } from "@/app/pages/_shared/agreement-scope";
+import { useDlaScope } from "@/app/pages/_shared/dla/dla-scope";
 import { DlaAllList, DlaBanner } from "@/app/pages/_shared/dla/dla-list";
 import { dlaStatusOrder, type DlaStatus } from "@/app/pages/_shared/dla/dla-data";
 import { DlaShell } from "@/app/pages/_shared/dla/dla-shell";
-import { useFeatureAccess } from "@/lib/use-feature-access";
 
 // /pages/dla - the Data Licencing Agreement (DLA) list, the same "list -> deep dive" pattern as
 // Projects/DSA (.claude/rules/ref-shell.md, "List -> deep dive"). Column 2 is the All requests / My requests
@@ -25,8 +24,7 @@ export default function DlaPage() {
 
 function DlaList() {
   const params = useSearchParams();
-  const canReview = useFeatureAccess("dlaApproval");
-  const scope = useAgreementScope(canReview ? "all" : "mine");
+  const { scope } = useDlaScope();
   const statusParam = params.get("status") ?? "";
   const initialStatuses = statusParam.split(",").filter((s): s is DlaStatus => (dlaStatusOrder as string[]).includes(s));
 
