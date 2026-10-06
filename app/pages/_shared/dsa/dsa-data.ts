@@ -144,7 +144,8 @@ export function emptyDsaDraft(): DsaDraft {
   return {
     partner: "",
     purpose: "",
-    validFrom: "",
+    // Valid from today unless the person chooses another day (designer, 6 Oct 2026: start dates open as today).
+    validFrom: todayIso(),
     validTo: "",
     agreementFile: null,
     requestedBy: emptyContact(),

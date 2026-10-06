@@ -2,7 +2,7 @@
 
 import type { FC } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { BarChart01, FileCheck02, Folder, Microscope, UploadCloud02 } from "@untitledui/icons";
+import { BarChart01, ClockRewind, FileCheck02, Folder, Microscope, UploadCloud02 } from "@untitledui/icons";
 import { sectionIcons } from "@/app/pages/_shared/nav-icons";
 import { ActionRow } from "@/app/pages/_shared/agreement-actions";
 import { AgreementScopeNav } from "@/app/pages/_shared/agreement-scope";
@@ -25,6 +25,7 @@ export const CATEGORY_ICONS: Record<ReportCategoryId, FC<{ className?: string }>
   specimens: Microscope,
   "project-data": Folder,
   agreements: FileCheck02,
+  "audit-log": ClockRewind,
 };
 
 /** The chosen item, from `?category=` ("favourites" or a category id); anything else is "all". */

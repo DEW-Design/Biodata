@@ -351,8 +351,11 @@ record) is laid out like the project page (`/pages/project-detail`):
    count (the table's footer says it), no column count (the Columns button says it), no scope line (the description is the
    same for every role, and the rows are what the role may see).
    A breakdown of those totals (species groups, errors by kind) is a row of `MetricTile`s under the card, an overview.
-   A report has no next step, so all its actions (Export CSV) are in the card's "..." menu, like the other record
-   pages, with no white button. A project scope is a Select right after the search, before the Filter button, not a row of its own.
+   A report has no next step, so all its actions (Export CSV, Export XLSX) are in the card's "..." menu, like the other record
+   pages, with no white button. Every report has both exports (designer, 6 Oct 2026: "Three dot menu to export as CSV, XLSX"),
+   for the rows in view and every column: `DataReport` builds them from the report's columns (`exportName`, `report-export.tsx`),
+   so a report MUST NOT write its own export or leave it out (`tsc` fails a `DataReport` without `exportName`).
+   A project scope is a Select right after the search, before the Filter button, not a row of its own.
    A "Columns" button at the right of the toolbar (`column-chooser.tsx`) opens one popover where columns are shown,
    hidden and reordered (by their handle or the keyboard), the first column pinned and always shown, applying as
    each is chosen with no Apply button (1.9 item 2), and a Reset; its label says how many are hidden.

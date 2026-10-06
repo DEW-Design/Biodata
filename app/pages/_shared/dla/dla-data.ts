@@ -232,7 +232,8 @@ export function emptyDlaDraft(): DlaDraft {
   return {
     locations: [],
     purpose: "",
-    requestPeriodFrom: "",
+    // The agreement starts today unless the person chooses another day (designer, 6 Oct 2026: start dates open as today).
+    requestPeriodFrom: todayIso(),
     requestPeriodTo: "",
     validFrom: "",
     validTo: "",

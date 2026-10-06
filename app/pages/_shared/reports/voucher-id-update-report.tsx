@@ -63,6 +63,7 @@ function pairColumns(which: "museum" | "biodata", prefix: string): ReportColumn<
       label: `${prefix} - Scientific name`,
       width: W.scientific,
       sort: sort((s) => s.scientific),
+      text: (r) => side(r, which).scientific,
       cell: (r) => <ScientificValue name={side(r, which).scientific} marked={marked(r, "Scientific name")} />,
     },
     {
@@ -159,6 +160,7 @@ export function VoucherIdUpdateReport() {
 
   return (
     <DataReport
+      exportName="voucher-id-update-report"
       title="Voucher ID Update Report"
       subtitle="The voucher details each museum or herbarium holds beside what BioData holds for the same specimen, and the field that disagrees."
       latest={(r) => r.batchDate}

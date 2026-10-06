@@ -30,10 +30,17 @@ import { ReviewScreen, useLiveEntries } from "../project-detail/review-view";
 export default function FlaggedConceptsPage() {
   return (
     <Suspense fallback={null}>
-      <EditStoreProvider canEdit seed={adelaideHillsSeed}>
-        <FlaggedConcepts />
-      </EditStoreProvider>
+      <FlaggedConceptsWithStore />
     </Suspense>
+  );
+}
+
+function FlaggedConceptsWithStore() {
+  const role = useUserRole();
+  return (
+    <EditStoreProvider canEdit role={role} seed={adelaideHillsSeed}>
+      <FlaggedConcepts />
+    </EditStoreProvider>
   );
 }
 

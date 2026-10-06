@@ -11,8 +11,7 @@ import { countKinds, reportBundlesFor, sumCounts } from "@/app/pages/_shared/rep
 import { ALL_PROJECTS, activeScope, ReportScopeSelect } from "@/app/pages/_shared/reports/report-scope-select";
 import { speciesRowsFor, type SpeciesRow } from "@/app/pages/_shared/reports/species-detail-report-data";
 import { DataReport, ReportTiles, SpeciesCell } from "@/app/pages/_shared/reports/report-table";
-import { csvExportAction, REPORT_WIDTH as W, emptyColumn, idColumn, numberColumn, textColumn, type ViewColumn } from "@/app/pages/_shared/reports/report-columns";
-import { RecordActionBar } from "@/app/pages/_shared/record-action-bar";
+import { REPORT_WIDTH as W, emptyColumn, idColumn, numberColumn, textColumn, type ViewColumn } from "@/app/pages/_shared/reports/report-columns";
 import { useUserRole } from "@/lib/use-user-role";
 
 // The Species Detail Report (Figma YMproGZfrFB5jUqPHPxMhk frame 1583:31367, columns list 1594:65311): one row per
@@ -147,7 +146,7 @@ export function SpeciesDetailReport() {
       emptyDescription="Species recorded in your projects appear here, with the observation made for each."
       initialSort={{ column: "common", direction: "ascending" }}
       belowHeader={<ReportTiles label="Species records by group" tiles={groupTiles} />}
-      actions={(inView) => <RecordActionBar onDark menu={[csvExportAction(inView, columns, "species-detail-report.csv")]} />}
+      exportName="species-detail-report"
     />
   );
 }

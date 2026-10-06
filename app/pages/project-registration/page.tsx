@@ -118,7 +118,7 @@ function ProjectRegistrationForm() {
     const handleSaveDraft = () => toast.brand("Draft saved", { description: "This is a demo build with no real backend - nothing is actually persisted." });
     const handleCreateProject = () => {
         if (!isStep3Valid(restrictions)) return;
-        setCreated(saveCreatedProject({ details: projectDetails, collection: dataCollection, restrictions }));
+        setCreated(saveCreatedProject({ details: projectDetails, collection: dataCollection, restrictions }, role));
     };
 
     return (

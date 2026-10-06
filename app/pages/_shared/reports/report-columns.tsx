@@ -1,16 +1,13 @@
 "use client";
 
-import { Download01 } from "@untitledui/icons";
-import { downloadCsv } from "@/app/pages/_shared/agreement-actions";
-import type { RecordAction } from "@/app/pages/_shared/record-action-bar";
 import { Clamped, IdCell, NumberCell, TextCell, type ReportColumn } from "@/app/pages/_shared/reports/report-table";
 
-// Builders for a report's columns, and the CSV export that goes with them. A column built here also says how it
-// reads as plain text (`text`), which is what Export CSV writes, so the file carries exactly what the table shows.
+// Builders for a report's columns. A column built here also says how it reads as plain text (`text`), which is what the export
+// (Export CSV, Export XLSX; report-export.tsx) writes, so the file carries exactly what the table shows.
 // The cells are the ones report-table.tsx defines; nothing here sets a type style of its own.
 
 export interface ViewColumn<R> extends ReportColumn<R> {
-  /** The cell as plain text: what the CSV export writes. */
+  /** The cell as plain text: what the export writes. */
   text: (row: R) => string;
 }
 
@@ -75,22 +72,5 @@ export function numberColumn<R>(id: string, label: string, width: ReportWidth, g
       const v = get(row);
       return v === undefined ? "" : String(v);
     },
-  };
-}
-
-// ── Export ──
-/** Export CSV for the rows in view, as the hero's action (`<RecordActionBar onDark primary={...} />`): every column, in the
- *  table's order, the rows after search and filters. */
-export function csvExportAction<R>(rows: R[], columns: ViewColumn<R>[], filename: string): RecordAction {
-  return {
-    id: "export-csv",
-    label: "Export CSV",
-    icon: Download01,
-    onPress: () =>
-      downloadCsv(
-        filename,
-        columns.map((c) => c.label),
-        rows.map((r) => columns.map((c) => c.text(r))),
-      ),
   };
 }

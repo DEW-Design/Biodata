@@ -2,6 +2,7 @@
 // for the Figma source and overall design). Pure data - no components import from here except to
 // read/write this shape, so the step files can stay focused on their own JSX.
 
+import { getLocalTimeZone, today } from "@internationalized/date";
 import type { DateValue } from "react-aria-components";
 import type { Boundary } from "@/app/pages/_shared/map-search/geo";
 
@@ -92,7 +93,8 @@ export function initialProjectDetails(): ProjectDetailsState {
         fullTitle: "",
         sameAsShortTitle: true,
         abstract: "",
-        startDate: null,
+        // The project starts today unless the person chooses another day (designer, 6 Oct 2026: start dates open as today).
+        startDate: today(getLocalTimeZone()),
         endDate: null,
         dataOwnerType: "organisation",
         dataOwnerOrgName: "",

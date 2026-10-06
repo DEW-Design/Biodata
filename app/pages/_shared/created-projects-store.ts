@@ -5,9 +5,11 @@ import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
 import { CURRENT_USER_NAME } from "@/app/pages/_shared/agreement-scope";
 import { projects, type Project } from "@/app/pages/_shared/project-list-data";
+import { logProjectCreated } from "@/app/pages/_shared/project-audit-log-store";
 import { browserStorage, useHydrated, useRehydrate } from "@/app/pages/_shared/zustand-persist";
 import { deserializeForm, serializeForm } from "@/app/pages/project-registration/form-storage";
 import type { FormState } from "@/app/pages/project-registration/option-2/sections";
+import type { UserRole } from "@/lib/user-role";
 
 // The projects created in this browser through Add Project, kept in localStorage (the same plumbing as
 // the other stores here; there is no backend). Each is the form exactly as it was submitted, as text
@@ -43,8 +45,8 @@ const useStore = create<CreatedProjectsState>()(
 
 const numberOf = (code: string) => Number(code.replace(/\D/g, "")) || 0;
 
-/** Saves a submitted Add Project form as a new project and returns it. */
-export function saveCreatedProject(form: FormState): CreatedProject {
+/** Saves a submitted Add Project form as a new project and returns it. It is also the first entry of the project's audit log. */
+export function saveCreatedProject(form: FormState, role: UserRole): CreatedProject {
   // Read what is already in localStorage first, so a project created in another tab is not overwritten.
   if (!useStore.persist.hasHydrated()) useStore.persist.rehydrate();
   const existing = useStore.getState().created;
@@ -58,6 +60,7 @@ export function saveCreatedProject(form: FormState): CreatedProject {
     formJson: serializeForm(form),
   };
   useStore.setState({ created: [...existing, project] });
+  logProjectCreated({ code, title: form.details.shortTitle }, role);
   return project;
 }
 

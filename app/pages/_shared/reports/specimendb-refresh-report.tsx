@@ -111,6 +111,7 @@ export function SpecimenDbRefreshReport() {
 
   return (
     <DataReport
+      exportName="specimendb-refresh-report"
       title="SpecimenDB Refresh Report"
       subtitle="The batches of specimen records refreshed from SpecimenDB into BioData, in Darwin Core, and any record that could not be refreshed."
       latest={(r) => r.batchDate}

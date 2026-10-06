@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, type ReactNode } from "react";
-import { parseDate, type CalendarDate } from "@internationalized/date";
+import { getLocalTimeZone, parseDate, today, type CalendarDate } from "@internationalized/date";
 import Link from "next/link";
 import { ArrowNarrowRight, Edit05, UploadCloud02, XClose, Save01, Send01 } from "@untitledui/icons";
 import { Dialog, Modal, ModalFooter, ModalHeader, ModalOverlay } from "@/components/application/modals/modal";
@@ -141,7 +141,7 @@ export function EditValueModal({
   const taxa = useTaxa();
   const [text, setText] = useState(current?.text ?? "");
   const [taxonId, setTaxonId] = useState<string | null>(current?.taxonId ?? null);
-  const [date, setDate] = useState<CalendarDate | null>(current?.date ? parseDate(current.date) : null);
+  const [date, setDate] = useState<CalendarDate | null>(current?.date ? parseDate(current.date) : today(getLocalTimeZone()));
   const [tried, setTried] = useState(false);
   const source = SOURCE_LABEL[record.source];
 

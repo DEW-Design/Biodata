@@ -1,21 +1,22 @@
 import type { FC } from "react";
-import { AlertTriangle, Database01, FileCheck02, Folder, Lock01, Microscope, RefreshCw01, Rows01, Share07, Tag01, UploadCloud02 } from "@untitledui/icons";
+import { AlertTriangle, ClockRewind, Database01, FileCheck02, Folder, Lock01, Microscope, RefreshCw01, Rows01, Share07, Tag01, UploadCloud02 } from "@untitledui/icons";
 import { hasFeatureAccess, type FeatureKey } from "@/config/role-access.config";
 import type { UserRole } from "@/lib/user-role";
 
 // The reports the Reports landing page (/pages/reports) offers, one card each. A report is added here
 // once, when the designer supplies it: its card, its route under /pages/reports/<id> and its page. Only
-// the reports that exist are listed; the admin IA's "Application and System Reports" and "Audit Log
-// Reports" are not, until they are built.
+// the reports that exist are listed; the admin IA's "Application and System Reports" is not, until it is built. The
+// "Audit Log Reports" are one so far, the Project Audit Log Report.
 
 /** How the landing groups the reports (designer, 1 Oct 2026: "Grouped into categories, yep"). The names are the build's. */
-export type ReportCategoryId = "uploads" | "specimens" | "project-data" | "agreements";
+export type ReportCategoryId = "uploads" | "specimens" | "project-data" | "agreements" | "audit-log";
 
 export const REPORT_CATEGORIES: { id: ReportCategoryId; label: string }[] = [
   { id: "uploads", label: "Uploads" },
   { id: "specimens", label: "Specimens and restrictions" },
   { id: "project-data", label: "Project data" },
   { id: "agreements", label: "Agreements" },
+  { id: "audit-log", label: "Audit log" },
 ];
 
 export interface ReportEntry {
@@ -61,6 +62,7 @@ export const REPORTS: ReportEntry[] = [
     description: "Every embargo, sensitive species, sensitive location and other restriction on a project, with who reviewed it and how it is treated.",
     icon: Lock01,
     path: "/pages/reports/sensitive-restriction",
+    feature: "specimenReports",
   },
   {
     id: "voucher-id-update",
@@ -69,6 +71,7 @@ export const REPORTS: ReportEntry[] = [
     description: "Voucher details held by a museum or herbarium beside the ones BioData holds for the same specimen, with the field that disagrees.",
     icon: Tag01,
     path: "/pages/reports/voucher-id-update",
+    feature: "specimenReports",
   },
   {
     id: "data-validation-error",
@@ -85,6 +88,7 @@ export const REPORTS: ReportEntry[] = [
     description: "The batches of specimen records refreshed from SpecimenDB into BioData, in Darwin Core, with any error.",
     icon: RefreshCw01,
     path: "/pages/reports/specimendb-refresh",
+    feature: "specimenReports",
   },
   {
     id: "project-detail",
@@ -129,5 +133,14 @@ export const REPORTS: ReportEntry[] = [
     icon: Share07,
     path: "/pages/reports/dsa-agreement",
     feature: "dsaManagement",
+  },
+  {
+    id: "project-audit-log",
+    category: "audit-log",
+    title: "Project Audit Log Report",
+    description: "Every change to a project, one row per field: what it was, what it is now, who changed it and where from.",
+    icon: ClockRewind,
+    path: "/pages/reports/project-audit-log",
+    feature: "projectAuditLog",
   },
 ];

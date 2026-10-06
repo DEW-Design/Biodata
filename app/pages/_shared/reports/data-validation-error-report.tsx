@@ -12,7 +12,6 @@ import type { Attribute } from "@/app/pages/_shared/attribute-filter";
 import { ListEmptyState } from "@/app/pages/_shared/list-empty-state";
 import { optionsFromValues } from "@/app/pages/_shared/list-filter";
 import { Clamped, DataReport, SpeciesCell, TextCell, IdCell, ReportTiles, type ReportColumn } from "@/app/pages/_shared/reports/report-table";
-import { RecordActionBar } from "@/app/pages/_shared/record-action-bar";
 import { useIngestionRuns } from "@/app/pages/_shared/reports/use-ingestion-runs";
 import {
   ERROR_CATEGORIES,
@@ -224,27 +223,25 @@ export function DataValidationErrorReport({ layout = "option-1", chrome }: { lay
           <ReportTiles compact={chrome?.header === "line"} tiles={tiles.slice(3).map((t, i) => ({ ...t, icon: TILE_ICONS[i + 3] }))} label={`Errors in ${run.id} by kind`} />
         </>
       }
-      actions={
-        // Map visualise is the card's one next step, the white button where the project page has Upload dataset; the downloads
-        // are in the menu. The source dataset and the map have nothing to show in the preview (uploaded files are never read), so
-        // they are disabled rather than promised.
-        <RecordActionBar
-          onDark
-          primary={{ id: "map-visualise", label: "Map visualise", icon: Map01, onPress: () => {}, isDisabled: true }}
-          menu={[
-            {
-              id: "download-error-report",
-              label: "Download error report",
-              icon: Download01,
-              onPress: () => {
-                const { header, rows } = errorReportCsv(errors);
-                downloadCsv(`${run.id}-error-report.csv`, header, rows);
-              },
+      exportName={`${run.id}-errors`}
+      // Map visualise is the card's one next step, the white button where the project page has Upload dataset; the downloads
+      // are in the menu after the exports. The source dataset and the map have nothing to show in the preview (uploaded files are
+      // never read), so they are disabled rather than promised.
+      extraActions={{
+        primary: { id: "map-visualise", label: "Map visualise", icon: Map01, onPress: () => {}, isDisabled: true },
+        menu: [
+          {
+            id: "download-error-report",
+            label: "Download error report",
+            icon: Download01,
+            onPress: () => {
+              const { header, rows } = errorReportCsv(errors);
+              downloadCsv(`${run.id}-error-report.csv`, header, rows);
             },
-            { id: "download-source", label: "Download source dataset", icon: Download01, onPress: () => {}, isDisabled: true },
-          ]}
-        />
-      }
+          },
+          { id: "download-source", label: "Download source dataset", icon: Download01, onPress: () => {}, isDisabled: true },
+        ],
+      }}
       />
     </>
   );

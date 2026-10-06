@@ -4,11 +4,10 @@ import { useMemo } from "react";
 import { FileCheck02 } from "@untitledui/icons";
 import { ListEmptyState } from "@/app/pages/_shared/list-empty-state";
 import { useDsas } from "@/app/pages/_shared/dsa/dsa-store";
-import { RecordActionBar } from "@/app/pages/_shared/record-action-bar";
 import { agreementAttributes } from "@/app/pages/_shared/reports/agreement-report-attributes";
 import { dateColumn, emailColumn, purposeColumn, requestorColumn, reviewColumns, statusColumn } from "@/app/pages/_shared/reports/agreement-report-columns";
 import { dsaRowsFor, type DsaReportRow } from "@/app/pages/_shared/reports/agreement-report-data";
-import { csvExportAction, REPORT_WIDTH as W, idColumn, numberColumn, textColumn, type ViewColumn } from "@/app/pages/_shared/reports/report-columns";
+import { REPORT_WIDTH as W, idColumn, numberColumn, textColumn, type ViewColumn } from "@/app/pages/_shared/reports/report-columns";
 import { DataReport } from "@/app/pages/_shared/reports/report-table";
 import { useFeatureAccess } from "@/lib/use-feature-access";
 import { useUserRole } from "@/lib/use-user-role";
@@ -70,7 +69,7 @@ export function DsaAgreementReport() {
         { label: "Active", value: count(inView, "Active") },
         { label: "Under review", value: count(inView, "Under review") },
       ]}
-      actions={(inView) => <RecordActionBar onDark menu={[csvExportAction(inView, columns, "data-sharing-agreement-report.csv")]} />}
+      exportName="data-sharing-agreement-report"
     />
   );
 }

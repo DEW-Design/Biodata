@@ -134,6 +134,7 @@ export function SensitiveRestrictionReport() {
 
   return (
     <DataReport
+      exportName="project-sensitive-and-restriction-report"
       title="Project Sensitive and Restriction Report"
       subtitle="Every restriction applied to a project: embargoes, sensitive species and the treatment each one gets."
       latest={(r) => r.updatedOn}

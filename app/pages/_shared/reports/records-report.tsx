@@ -20,8 +20,7 @@ import {
 import { datasetCountsByProject, reportBundlesFor } from "@/app/pages/_shared/reports/report-records";
 import { ALL_PROJECTS, activeScope, ReportScopeSelect } from "@/app/pages/_shared/reports/report-scope-select";
 import { DataReport, IdCell, TextCell } from "@/app/pages/_shared/reports/report-table";
-import { csvExportAction, REPORT_WIDTH as W, emptyColumn, numberColumn, textColumn, type ViewColumn } from "@/app/pages/_shared/reports/report-columns";
-import { RecordActionBar } from "@/app/pages/_shared/record-action-bar";
+import { REPORT_WIDTH as W, emptyColumn, numberColumn, textColumn, type ViewColumn } from "@/app/pages/_shared/reports/report-columns";
 import { useUserRole } from "@/lib/use-user-role";
 
 // The Events, Occurrences and Observations Report: the wireframe's three screens (Figma YMproGZfrFB5jUqPHPxMhk frames
@@ -304,7 +303,7 @@ export function RecordsReport() {
         initialSort={{ column: "event", direction: "ascending" }}
         belowHeader={belowHeader}
         wrapBody={wrapBody}
-        actions={(inView) => <RecordActionBar onDark menu={[csvExportAction(inView, eventColumns, "events-report.csv")]} />}
+        exportName="events-report"
       />
     );
   } else if (tab === "occurrences") {
@@ -324,7 +323,7 @@ export function RecordsReport() {
         initialSort={{ column: "occurrence", direction: "ascending" }}
         belowHeader={belowHeader}
         wrapBody={wrapBody}
-        actions={(inView) => <RecordActionBar onDark menu={[csvExportAction(inView, occurrenceColumns, "occurrences-report.csv")]} />}
+        exportName="occurrences-report"
       />
     );
   } else {
@@ -344,7 +343,7 @@ export function RecordsReport() {
         initialSort={{ column: "observation", direction: "ascending" }}
         belowHeader={belowHeader}
         wrapBody={wrapBody}
-        actions={(inView) => <RecordActionBar onDark menu={[csvExportAction(inView, observationColumns, "observations-report.csv")]} />}
+        exportName="observations-report"
       />
     );
   }

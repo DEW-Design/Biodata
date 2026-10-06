@@ -24,8 +24,8 @@ import { cx } from "@/utils/cx";
 // /pages/reports: the reports, as cards or as a table (the same Cards / Table switch the project page's Species tab has),
 // grouped into categories, with Favourites a tab of its own; the same choice is also in column 2 (`ReportsNav`), from `?category=`. Each report has a star, a "..." menu of its actions
 // (open, favourite, copy link) and when it was last opened. What a role sees inside a report is the report's own rule (the
-// ingestion report shows a registered user their runs and BioData Admin all of them); the landing lists every report to
-// every signed-in role.
+// ingestion report shows a registered user their runs and BioData Admin all of them); the landing lists the reports the role is
+// offered (a report with a `feature` the role lacks is left out, `reportsFor`).
 type View = "cards" | "table";
 const categoryLabel = (id: ReportEntry["category"]) => REPORT_CATEGORIES.find((c) => c.id === id)?.label ?? id;
 

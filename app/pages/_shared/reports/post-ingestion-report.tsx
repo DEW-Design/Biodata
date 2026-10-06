@@ -163,6 +163,7 @@ export function PostIngestionReport() {
 
   return (
     <DataReport<PostIngestionRow>
+      exportName="project-dataset-post-ingestion-report"
       title="Project Dataset Post Ingestion"
       subtitle="Every dataset submission with the project it went into, through to review and approval."
       latest={(r) => r.at}

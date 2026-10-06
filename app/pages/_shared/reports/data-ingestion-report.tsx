@@ -131,8 +131,11 @@ function DownloadCell({ availability, label, onDownload }: { availability: FileA
   );
 }
 
+// What the Download columns say in a file: a file that can be downloaded is "Available", none is "None", and one not made yet is empty.
+const fileText = (availability: FileAvailability) => (availability === "ready" ? "Available" : availability === "none" ? "None" : "");
+
 const columns: ReportColumn<IngestionRow>[] = [
-  { id: "id", label: "Record ID", width: WIDTH.id, sticky: true, sort: (r) => r.id, cell: (r) => <RecordIdCell row={r} /> },
+  { id: "id", label: "Record ID", width: WIDTH.id, sticky: true, sort: (r) => r.id, cell: (r) => <RecordIdCell row={r} />, text: (r) => r.id },
   { id: "at", label: "Date and time", width: WIDTH.at, sort: (r) => r.at, cell: (r) => <NumberCell value={formatDateTime(r.at)} /> },
   { id: "project", label: "Project title", width: WIDTH.project, sort: (r) => r.projectTitle, cell: (r) => <TextCell strong>{r.projectTitle}</TextCell> },
   {
@@ -179,6 +182,7 @@ const columns: ReportColumn<IngestionRow>[] = [
     id: "errorFile",
     label: "Download error file",
     width: WIDTH.errorFile,
+    text: (r) => fileText(r.errorFile),
     cell: (r) => (
       <DownloadCell
         availability={r.errorFile}
@@ -194,6 +198,7 @@ const columns: ReportColumn<IngestionRow>[] = [
     id: "successFile",
     label: "Download successful file",
     width: WIDTH.successFile,
+    text: (r) => fileText(r.successFile),
     cell: (r) => (
       <DownloadCell
         availability={r.successFile}
@@ -258,6 +263,7 @@ export function DataIngestionReport() {
 
   return (
     <DataReport<IngestionRow>
+      exportName="data-ingestion-report"
       title="Data Ingestion Report Pre-Flight Validation"
       subtitle="Every dataset upload, from pre-flight validation through to review and approval."
       latest={(r) => r.at}

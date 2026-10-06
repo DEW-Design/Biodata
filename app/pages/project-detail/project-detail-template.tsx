@@ -168,7 +168,7 @@ function ProjectDetailWithEdits(props: ProjectDetailTemplateProps) {
   }, [props.projectId, props.seed, role]);
   if (!seed) return null;
   return (
-    <EditStoreProvider key={`${props.projectId}:${role}`} canEdit={canEdit} seed={seed}>
+    <EditStoreProvider key={`${props.projectId}:${role}`} canEdit={canEdit} role={role} seed={seed}>
       <ProjectDetail {...props} />
     </EditStoreProvider>
   );

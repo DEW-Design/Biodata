@@ -13,6 +13,8 @@
 
 import { createContext, useCallback, useContext, useMemo, useState, type ReactNode } from "react";
 import type { Artefact } from "@/app/pages/_shared/artefact-lightbox";
+import { logProjectChanges } from "@/app/pages/_shared/project-audit-log-store";
+import type { UserRole } from "@/lib/user-role";
 import type { FormState } from "@/app/pages/project-registration/option-2/sections";
 import type { ProjectMeta, ProjectSeed } from "./project-seed";
 import type { SurveyRecord } from "./survey-data";
@@ -47,7 +49,7 @@ interface Store {
 
 const StoreContext = createContext<Store | null>(null);
 
-export function EditStoreProvider({ canEdit, seed, children }: { canEdit: boolean; seed: ProjectSeed; children: ReactNode }) {
+export function EditStoreProvider({ canEdit, role, seed, children }: { canEdit: boolean; /** Who is editing, for the project audit log's Source column. */ role: UserRole; seed: ProjectSeed; children: ReactNode }) {
   const [project, setProject] = useState<ProjectState>(seed.project);
   const [records, setRecords] = useState<SurveyRecord[]>(seed.records);
   const [artefacts, setArtefacts] = useState<SurveyArtefact[]>(seed.artefacts);
@@ -96,7 +98,11 @@ export function EditStoreProvider({ canEdit, seed, children }: { canEdit: boolea
       canEdit,
       meta: seed.meta,
       project,
-      saveProject: setProject,
+      // A save is also an entry in the project audit log: one UPDATE for each field that is different from what it was.
+      saveProject: (next) => {
+        logProjectChanges(seed.meta, project, next, role);
+        setProject(next);
+      },
       records,
       recordById,
       childrenOf,
@@ -109,7 +115,7 @@ export function EditStoreProvider({ canEdit, seed, children }: { canEdit: boolea
       artefactsFor: (recordId) => artefacts.filter((a) => a.recordId === recordId),
       setArtefactsFor: (recordId, next) => setArtefacts((as) => [...as.filter((a) => a.recordId !== recordId), ...next]),
     }),
-    [canEdit, seed.meta, project, records, recordById, childrenOf, ancestorsOf, subtreeOf, deleteRecord, artefacts],
+    [canEdit, role, seed.meta, project, records, recordById, childrenOf, ancestorsOf, subtreeOf, deleteRecord, artefacts],
   );
   return <StoreContext.Provider value={store}>{children}</StoreContext.Provider>;
 }

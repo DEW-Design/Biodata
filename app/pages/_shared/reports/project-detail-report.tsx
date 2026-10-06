@@ -9,8 +9,7 @@ import { optionsFromValues } from "@/app/pages/_shared/list-filter";
 import { datasetCountsByProject, reportBundlesFor } from "@/app/pages/_shared/reports/report-records";
 import { projectRowFor, type ProjectRow } from "@/app/pages/_shared/reports/project-detail-report-data";
 import { DataReport } from "@/app/pages/_shared/reports/report-table";
-import { csvExportAction, REPORT_WIDTH as W, emptyColumn, idColumn, numberColumn, textColumn, type ViewColumn } from "@/app/pages/_shared/reports/report-columns";
-import { RecordActionBar } from "@/app/pages/_shared/record-action-bar";
+import { REPORT_WIDTH as W, emptyColumn, idColumn, numberColumn, textColumn, type ViewColumn } from "@/app/pages/_shared/reports/report-columns";
 import { useUserRole } from "@/lib/use-user-role";
 
 // The Project Detail Report (Figma YMproGZfrFB5jUqPHPxMhk frame 1583:31154, columns list 1583:31033): one row per
@@ -130,7 +129,7 @@ export function ProjectDetailReport() {
         { label: "Occurrences", value: inView.reduce((n, r) => n + r.occurrences, 0).toLocaleString("en-AU") },
         { label: "Observations", value: inView.reduce((n, r) => n + r.observations, 0).toLocaleString("en-AU") },
       ]}
-      actions={(inView) => <RecordActionBar onDark menu={[csvExportAction(inView, columns, "project-detail-report.csv")]} />}
+      exportName="project-detail-report"
     />
   );
 }

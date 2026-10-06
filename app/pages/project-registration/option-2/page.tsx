@@ -120,7 +120,7 @@ function RegistrationFlow() {
       router.push(roleHref(`${BASE_PATH}?section=${missing[0]}`));
       return;
     }
-    setCreated(saveCreatedProject(state));
+    setCreated(saveCreatedProject(state, role));
   };
 
   const handleCancel = () => (dirty ? setConfirmCancel(true) : router.push(roleHref("/pages/project-list")));

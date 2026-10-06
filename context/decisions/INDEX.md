@@ -383,3 +383,5 @@ Not imported into every session on purpose: read or grep it when a task needs hi
 - [2026-10-06] Full design consistency audit across behaviour, components, layout and copy - `2026-10-06-18-full-design-consistency-audit-across-behaviour-components-la.md`
 - [2026-10-06] Contribute Now goes to login; Tailwind stops scanning audit and decision prose - `2026-10-06-19-contribute-now-goes-to-login-tailwind-stops-scanning.md`
 - [2026-10-06] Add Project: Your role is asked in Step 2, not Step 1 - `2026-10-06-20-add-project-your-role-is-asked-in-step.md`
+- [2026-10-06] Project Audit Log Report built; projects now log their changes - `2026-10-06-21-project-audit-log-report-built-projects-now-log.md`
+- [2026-10-06] Reports: specimen reports hidden from Registered User, export on every report, start dates open as today - `2026-10-06-22-reports-specimen-reports-hidden-from-registered-user-export.md`

@@ -10,7 +10,9 @@ import { sortRows, type SortValue } from "@/app/pages/_shared/agreement-scope";
 import { AttributeFilterChips, useAttributeFilter, type Attribute, type AttributeFilterApi } from "@/app/pages/_shared/attribute-filter";
 import { FilterMenu } from "@/app/pages/_shared/filter-menu";
 import { ListEmptyState } from "@/app/pages/_shared/list-empty-state";
+import { RecordActionBar, type RecordAction } from "@/app/pages/_shared/record-action-bar";
 import { ColumnChooser, useColumnChoice } from "@/app/pages/_shared/reports/column-chooser";
+import { reportExportActions } from "@/app/pages/_shared/reports/report-export";
 import { ToolbarSearch } from "@/app/pages/_shared/toolbar-search";
 import { MetricTile } from "@/app/pages/_shared/map-search/metric-tile";
 import { cx } from "@/utils/cx";
@@ -30,8 +32,9 @@ import { cx } from "@/utils/cx";
 //   - an empty table is a `ListEmptyState` (4.2e), told apart as "nothing exists yet" and "nothing matches";
 //   - an empty cell is left empty and is never a stray dash (2.3).
 // A report passes `belowHeader` for what sits between its hero and the toolbar (tiles, a project scope, tabs) and
-// `actions` for the hero's action bar (export); both may be functions of the rows in view.
-// `report-columns.tsx` has the builders for columns that also know how they read as plain text (for the CSV).
+// `extraActions` for what the hero's menu holds besides Export CSV and Export XLSX, which every report has (`exportName`,
+// report-export.tsx); `belowHeader` may be a function of the rows in view.
+// `report-columns.tsx` has the builders for columns that also know how they read as plain text (for the export).
 
 const dayInAdelaide = new Intl.DateTimeFormat("en-AU", { day: "numeric", month: "short", year: "numeric", timeZone: "Australia/Adelaide" });
 const dayAsWritten = new Intl.DateTimeFormat("en-AU", { day: "numeric", month: "short", year: "numeric", timeZone: "UTC" });
@@ -65,6 +68,8 @@ export interface ReportColumn<R> {
   /** What the column sorts by. A column without one is not sortable. */
   sort?: (row: R) => SortValue;
   cell: (row: R) => ReactNode;
+  /** The cell as plain text, for the export. Left out, the export reads the text the cell shows (report-export.tsx). */
+  text?: (row: R) => string;
 }
 
 // ── Cells ──
@@ -185,8 +190,10 @@ export interface DataReportProps<R> {
   scopeControl?: ReactNode;
   /** Between the hero and the toolbar: tiles, a project scope, tabs. A function gets the rows in view, so tiles can count them. */
   belowHeader?: RowsSlot<R>;
-  /** The hero's actions, `<RecordActionBar onDark .../>`. A function gets the rows in view, so export writes exactly the table's rows. */
-  actions?: RowsSlot<R>;
+  /** The file name, without its extension, of the report's Export CSV and Export XLSX: the rows in view, every column. */
+  exportName: string;
+  /** What the hero holds besides export: the white next-step button, and more items for the "..." menu (after the exports). */
+  extraActions?: { primary?: RecordAction; menu?: RecordAction[] };
   /** The card ("card", the record page's gradient identity card) or a slim header ("line": the list screens' title and subheading, the facts on one line, the actions in a plain bar). Compared in /proto/layouts. */
   header?: "card" | "line";
   /** A panel of facets beside the table in place of the Filter menu and its chips. Gets the filter and every row, so it can count. Compared in /proto/layouts. */
@@ -222,7 +229,8 @@ export function DataReport<R>({
   header = "card",
   filterPanel,
   belowHeader,
-  actions,
+  exportName,
+  extraActions,
   resetKey,
   wrapBody,
 }: DataReportProps<R>) {
@@ -267,7 +275,7 @@ export function DataReport<R>({
   };
 
   const resolve = (slot: ReactNode | ((rowsInView: R[]) => ReactNode)) => (typeof slot === "function" ? slot(rows) : slot);
-  const heroActions = actions ? resolve(actions) : null;
+  const heroActions = <RecordActionBar onDark primary={extraActions?.primary} menu={[...reportExportActions(rows, columns, exportName), ...(extraActions?.menu ?? [])]} />;
   const latestDay = latest ? newestDay(allRows, latest) : null;
   const heroFacts = typeof facts === "function" ? facts(rows) : facts;
 
