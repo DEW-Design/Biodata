@@ -24,6 +24,7 @@ import { type TreeCollection, cascadeSelection, createDragPreview, getDescendant
 interface TreeViewContextType {
     size: "sm" | "md";
     showConnectors: boolean;
+    alignLeaves: boolean;
     selectedKeys: "all" | Iterable<Key>;
     collectionRef: RefObject<TreeCollection | null>;
 }
@@ -31,6 +32,7 @@ interface TreeViewContextType {
 const TreeViewContext = createContext<TreeViewContextType>({
     size: "sm",
     showConnectors: false,
+    alignLeaves: false,
     selectedKeys: new Set(),
     collectionRef: { current: null },
 });
@@ -71,6 +73,11 @@ interface TreeViewRootProps<T extends object> extends AriaTreeProps<T> {
     size?: "sm" | "md";
     /** Show vertical connector lines between parent and child items. */
     showConnectors?: boolean;
+    /**
+     * Leave the chevron's place empty on an item with no children, so its label lines up with the labels of siblings that have one
+     * and a child's label sits one step in from its parent's. Off by default; has no effect with `showConnectors`, which does this itself.
+     */
+    alignLeaves?: boolean;
     /** Enable built-in drag and drop. Pass `dragAndDropHooks` directly for full control instead. */
     draggable?: boolean;
     /** Called when items are reordered via drag and drop. */
@@ -82,6 +89,7 @@ interface TreeViewRootProps<T extends object> extends AriaTreeProps<T> {
 const TreeViewRoot = <T extends object>({
     size = "sm",
     showConnectors = false,
+    alignLeaves = false,
     draggable = false,
     onReorder: onReorderProp,
     onMove: onMoveProp,
@@ -196,7 +204,7 @@ const TreeViewRoot = <T extends object>({
 
     const dragAndDropHooks = externalDragAndDropHooks ?? (draggable ? internalDragAndDropHooks : undefined);
 
-    const contextValue = useMemo<TreeViewContextType>(() => ({ size, showConnectors, selectedKeys, collectionRef }), [size, showConnectors, selectedKeys]);
+    const contextValue = useMemo<TreeViewContextType>(() => ({ size, showConnectors, alignLeaves, selectedKeys, collectionRef }), [size, showConnectors, alignLeaves, selectedKeys]);
 
     return (
         <TreeViewContext.Provider value={contextValue}>
@@ -224,13 +232,15 @@ interface TreeViewItemContentProps {
     icon?: FC<{ className?: string }> | ReactNode;
     /** Trailing action element (e.g. drag handle or menu trigger). */
     action?: ReactNode;
+    /** Label weight. `normal` lets an item recede beside `semibold` ones, so a parent reads as the heading of its children. */
+    weight?: "semibold" | "normal";
     /** The text label for the tree item. */
     children: ReactNode;
     className?: string;
 }
 
-const TreeViewItemContent = ({ icon: Icon, action, children, className }: TreeViewItemContentProps) => {
-    const { size, showConnectors, selectedKeys: ctxSelectedKeys, collectionRef } = useContext(TreeViewContext);
+const TreeViewItemContent = ({ icon: Icon, action, weight = "semibold", children, className }: TreeViewItemContentProps) => {
+    const { size, showConnectors, alignLeaves, selectedKeys: ctxSelectedKeys, collectionRef } = useContext(TreeViewContext);
     return (
         <AriaTreeItemContent>
             {(state) => {
@@ -319,6 +329,8 @@ const TreeViewItemContent = ({ icon: Icon, action, children, className }: TreeVi
                     >
                         {connectors}
 
+                        {alignLeaves && !showConnectors && !hasChildItems && <div aria-hidden="true" className="size-4 shrink-0" />}
+
                         {hasChildItems && (
                             <AriaButton slot="chevron" className="flex shrink-0 items-center justify-center outline-hidden">
                                 {isExpanded ? <ChevronDown className="size-4 text-fg-quaternary" /> : <ChevronRight className="size-4 text-fg-quaternary" />}
@@ -347,7 +359,7 @@ const TreeViewItemContent = ({ icon: Icon, action, children, className }: TreeVi
                                     Icon
                                 ) : null)}
 
-                            <span className="min-w-0 flex-1 truncate text-sm font-semibold text-tertiary">{children}</span>
+                            <span className={cx("min-w-0 flex-1 truncate text-sm text-tertiary", weight === "semibold" ? "font-semibold" : "font-normal")}>{children}</span>
 
                             {action}
 

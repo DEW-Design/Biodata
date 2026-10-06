@@ -198,7 +198,8 @@ export function RecordsReport() {
   const searchParams = useSearchParams();
   const tabParam = searchParams.get("tab");
   const tab: RecordTab = isTab(tabParam) ? tabParam : "events";
-  const [scope, setScope] = useState(ALL_PROJECTS);
+  // A generated report (My reports) opens with the project it was made for, `?project=`.
+  const [scope, setScope] = useState(searchParams.get("project") ?? ALL_PROJECTS);
 
   const bundles = useMemo(() => reportBundlesFor(role), [role]);
   const projects = useMemo(() => bundles.map((b) => b.project), [bundles]);

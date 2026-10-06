@@ -33,10 +33,11 @@ export const STEP_TITLES: Record<1 | 2 | 3, string> = {
 
 const FIXED_SECTIONS: Record<Exclude<SectionId, RestrictionTypeKey>, Omit<SectionMeta, "id">> = {
   basics: { step: 1, title: "Project basics", description: "What the project is called, what it is about, and when it runs." },
-  // Project team was rolled into this section (the designer, 2 Oct 2026: "roll all step 3 into step 2").
-  owner: { step: 1, title: "Data owner", description: "The organisation or person responsible for this project's data, who to contact about it, your role, and who manages it day to day." },
+  // Project team was rolled into this section (the designer, 2 Oct 2026: "roll all step 3 into step 2"); your role
+  // then moved to Step 2's Method and details (6 Oct 2026: "Role should be shown in Step 2").
+  owner: { step: 1, title: "Data owner", description: "The organisation or person responsible for this project's data, who to contact about it, and who manages it day to day." },
   extent: { step: 2, title: "Extent and focus", description: "Where the data was collected and which domains the project covers." },
-  method: { step: 2, title: "Method and details", description: "The kind of survey and how the data was collected, plus any permits, identifiers or limitations." },
+  method: { step: 2, title: "Method and details", description: "The kind of survey, how the data was collected and your role in it, plus any permits, identifiers or limitations." },
   restrictions: { step: 3, title: "Restrictions", description: "BDBSA data is open access by default. Choose which protections, if any, apply to this project." },
   review: { step: null, title: "Review and create", description: "Check every section, then create the project." },
 };
@@ -68,6 +69,10 @@ function contactValid(c: ProjectDetailsState["dataOwnerContacts"][number] | unde
   return !!c && c.firstName.trim().length > 0 && c.lastName.trim().length > 0 && c.email.trim().length > 0;
 }
 
+function roleValid(d: ProjectDetailsState): boolean {
+  return !!d.roleOfWork && (d.roleOfWork !== "other" || d.roleOfWorkOther.trim().length > 0);
+}
+
 export function isSectionValid(id: SectionId, s: FormState): boolean {
   const d = s.details;
   const c = s.collection;
@@ -78,14 +83,12 @@ export function isSectionValid(id: SectionId, s: FormState): boolean {
       return (
         (d.dataOwnerType === "individual" || d.dataOwnerOrgName.trim().length > 0) &&
         contactValid(d.dataOwnerContacts[0]) &&
-        !!d.roleOfWork &&
-        (d.roleOfWork !== "other" || d.roleOfWorkOther.trim().length > 0) &&
         d.projectManagers.some((m) => m.firstName.trim() && m.lastName.trim() && m.email.trim())
       );
     case "extent":
       return isGeoExtentComplete(c.geographicExtent) && c.focusAreas.length > 0 && (!c.focusAreas.includes("other") || c.focusAreaOther.trim().length > 0);
     case "method":
-      return !!c.surveyType && !!c.collectionMethod && c.methodDetails.trim().length > 0;
+      return !!c.surveyType && !!c.collectionMethod && c.methodDetails.trim().length > 0 && roleValid(d);
     case "restrictions":
       return !s.restrictions.hasRestrictions || s.restrictions.enabledTypes.size > 0;
     case "review":
@@ -115,12 +118,10 @@ export function missingOwnerFields(s: FormState): string[] {
   return out;
 }
 
-/** The team half of the Data owner section (it was the Project team section): your role and the managers. */
+/** The team half of the Data owner section (it was the Project team section): the managers. */
 export function missingTeamFields(s: FormState): string[] {
   const d = s.details;
   const out: string[] = [];
-  if (!d.roleOfWork) out.push("Your role");
-  else if (d.roleOfWork === "other" && !d.roleOfWorkOther.trim()) out.push("Your role (please specify)");
   if (!d.projectManagers.some((m) => m.firstName.trim() && m.lastName.trim() && m.email.trim())) out.push("A project manager with a name and email");
   return out;
 }
@@ -151,6 +152,8 @@ export function missingFields(id: SectionId, s: FormState): string[] {
       if (!c.surveyType) out.push("Survey type");
       if (!c.collectionMethod) out.push("Method of data collection");
       if (blank(c.methodDetails)) out.push("Methodology");
+      if (!d.roleOfWork) out.push("Your role");
+      else if (d.roleOfWork === "other" && blank(d.roleOfWorkOther)) out.push("Your role (please specify)");
       break;
     case "restrictions":
       if (r.hasRestrictions && r.enabledTypes.size === 0) out.push("At least one kind of restriction");

@@ -56,13 +56,14 @@ export function ExpandableMap({
   const layer = overModal ? MODAL_Z_INDEX : "z-[9999]";
 
   const bar = (
-    <div className="flex shrink-0 items-center justify-between gap-3 border-b border-secondary py-3 pr-14 pl-4 sm:pl-6">
+    <div className="flex min-h-14 shrink-0 items-center justify-between gap-3 border-b border-secondary py-2 pr-14 pl-4 sm:pl-6">
       <p className="m-0 min-w-0 truncate text-sm font-semibold text-primary">{title}</p>
       {toolbar && <div className="flex shrink-0 flex-wrap items-center gap-3">{toolbar}</div>}
     </div>
   );
-  // The close X is in the corner of every dialog in the app (modal.tsx).
-  const close = <CloseButton theme="light" size="sm" label="Close map" className="absolute top-3 right-3 z-20 sm:top-4 sm:right-4" />;
+  // The close X is in the corner of every dialog in the app (modal.tsx). Here it sits inside the title bar: the bar is at least
+  // 56px tall and the X (36px) is 10px from the top, so it is centred in the bar and never reaches the divider under it.
+  const close = <CloseButton theme="light" size="sm" label="Close map" className="absolute top-2.5 right-3 z-20 sm:right-4" />;
 
   return (
     <>

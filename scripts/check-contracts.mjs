@@ -121,6 +121,15 @@ const hardRules = [
     message: "A collection table without bodyScrollable. Every collection screen's table fits the viewport: header, search and pagination stay put and only the rows scroll (Table bodyScrollable + Table.Header sticky, see CONTRACTS.md 4.2).",
   },
   {
+    // 3.7b: a record page has no column 2. A shell that draws the Section sidebar and is told which record it shows must
+    // hide the sidebar for it (`recordPage`).
+    id: "3.7b",
+    name: "record page without column 2",
+    test: (s) => /<aside aria-label="Section"/.test(s) && /\b(recordId|breadcrumbCurrent|currentId)\b/.test(s) && !/\brecordPage\b/.test(s),
+    allow: ["observations/observations-search.tsx"], // Explore: a map screen, not a collection's record page (its own overrides are in 3.7)
+    message: "A shell that draws column 2 and takes a record prop (recordId, breadcrumbCurrent, currentId) without recordPage. A record page uses the whole width: hide the sidebar for it (CONTRACTS.md 3.7).",
+  },
+  {
     id: "4.2d",
     name: "one filter",
     // The three filters this replaced were a popover of every section, an "Add filter" popover and an "All Filters" side

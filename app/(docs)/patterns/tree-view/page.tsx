@@ -29,8 +29,8 @@ export default function TreeViewPatternPage() {
 
       <h2 className="text-balance">Why this pattern</h2>
       <p className="text-balance">
-        React Aria's <code>Tree</code> handles keyboard navigation, expand/collapse, and selection state, but it doesn't render a
-        selection checkbox by itself and has no concept of cascading (tri-state) selection - selecting a parent doesn't select its
+        React Aria&apos;s <code>Tree</code> handles keyboard navigation, expand/collapse, and selection state, but it doesn&apos;t render a
+        selection checkbox by itself and has no concept of cascading (tri-state) selection - selecting a parent doesn&apos;t select its
         children. <code>TreeView</code> layers both on top: its item content renders <code>CheckboxBase</code> from{" "}
         <code>components/base/checkbox/checkbox.tsx</code> for the selection control, and a small utility (
         <code>cascadeSelection</code> in <code>tree-view-utils.ts</code>) diffs each selection change to propagate it up and down the
@@ -93,13 +93,35 @@ import { Folder, File02 } from "@untitledui/icons";
         </code>
       </pre>
       <p className="text-balance">
-        The checkbox only appears when <code>selectionMode</code> is <code>"single"</code> or <code>"multiple"</code>; leave it{" "}
-        <code>"none"</code> (the default) for a plain navigable tree.
+        The checkbox only appears when <code>selectionMode</code> is <code>&quot;single&quot;</code> or <code>&quot;multiple&quot;</code>; leave it{" "}
+        <code>&quot;none&quot;</code> (the default) for a plain navigable tree.
       </p>
+      <p className="text-balance">
+        A plain navigable tree with no connector lines can use <code>alignLeaves</code> on the tree, which leaves the chevron&apos;s place
+        empty on an item with no children so its label lines up with its siblings&apos; and a child sits one step in from its parent, and{" "}
+        <code>weight=&quot;normal&quot;</code> on an item&apos;s content, which lets leaves recede beside <code>semibold</code> parents.
+      </p>
+      <Section label="Navigation, no checkboxes, aligned leaves">
+        <TreeView aria-label="Sections" alignLeaves defaultExpandedKeys={["guides"]} className="w-full max-w-sm">
+          <TreeView.Item id="overview" textValue="Overview">
+            <TreeView.ItemContent>Overview</TreeView.ItemContent>
+          </TreeView.Item>
+          <TreeView.Item id="guides" textValue="Guides">
+            <TreeView.ItemContent>Guides</TreeView.ItemContent>
+            <TreeView.Item id="guides-start" textValue="Getting started">
+              <TreeView.ItemContent weight="normal">Getting started</TreeView.ItemContent>
+            </TreeView.Item>
+            <TreeView.Item id="guides-policies" textValue="Policies">
+              <TreeView.ItemContent weight="normal">Policies</TreeView.ItemContent>
+            </TreeView.Item>
+          </TreeView.Item>
+        </TreeView>
+      </Section>
 
       <h2 className="text-balance">Notes</h2>
       <ul>
-        <li>Selection checkboxes are always rendered at the <code>sm</code> checkbox size, regardless of the tree's own <code>size</code> prop.</li>
+        <li>Selection checkboxes are always rendered at the <code>sm</code> checkbox size, regardless of the tree&apos;s own <code>size</code> prop.</li>
+        <li><code>alignLeaves</code> and <code>weight</code> are opt-in: left out, the tree draws as before. <code>alignLeaves</code> does nothing with <code>showConnectors</code>, which already reserves the place.</li>
         <li>Indeterminate parents render with the same dash glyph as a standalone indeterminate <code>Checkbox</code>.</li>
         <li>This is a composition pattern, not a standalone component - see <code>components/application/tree-view/tree-view.tsx</code> for the implementation.</li>
       </ul>

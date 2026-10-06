@@ -15,7 +15,8 @@
 // per the user's own framing.
 //
 // Sequence: Project name -> Abstract -> Start date -> Data ownership -> Primary contact ->
-// Your role -> Project manager/s -> Review (summary + optional add-ons + "Continue").
+// Project manager/s -> Review (summary + optional add-ons + "Continue"). "Your role" is asked in Step 2
+// (the designer, 6 Oct 2026: "Role should be shown in Step 2").
 // `isStep1Valid` gates the review card's own "Continue to Data Collection" - a final safety net
 // on top of each question's own `cardValid` check, in case the two ever drift apart.
 
@@ -34,7 +35,6 @@ import { LogoUpload } from "./logo-upload";
 import { emptyContact, emptyProjectManager, type ProjectDetailsState, type ProjectManager } from "./types";
 
 export function isStep1Valid(details: ProjectDetailsState): boolean {
-    const roleValid = !!details.roleOfWork && (details.roleOfWork !== "other" || details.roleOfWorkOther.trim().length > 0);
     const ownerValid = details.dataOwnerType === "organisation" ? details.dataOwnerOrgName.trim().length > 0 : true;
     const contact = details.dataOwnerContacts[0];
     const contactValid = !!contact && contact.firstName.trim().length > 0 && contact.lastName.trim().length > 0 && contact.email.trim().length > 0;
@@ -45,12 +45,11 @@ export function isStep1Valid(details: ProjectDetailsState): boolean {
         !!details.startDate &&
         ownerValid &&
         contactValid &&
-        roleValid &&
         managersValid
     );
 }
 
-const TOTAL_QUESTIONS = 7;
+const TOTAL_QUESTIONS = 6;
 
 function ManagerOptionalFields({ manager, onChange }: { manager: ProjectManager; onChange: (patch: Partial<ProjectManager>) => void }) {
     return (
@@ -175,7 +174,6 @@ export function Step1ProjectDetails({
         !!value.startDate,
         value.dataOwnerType === "individual" || value.dataOwnerOrgName.trim().length > 0,
         contact.firstName.trim().length > 0 && contact.lastName.trim().length > 0 && contact.email.trim().length > 0,
-        !!value.roleOfWork && (value.roleOfWork !== "other" || value.roleOfWorkOther.trim().length > 0),
         value.projectManagers.some((m) => m.firstName.trim() && m.lastName.trim() && m.email.trim()),
     ];
 
@@ -238,22 +236,7 @@ export function Step1ProjectDetails({
 
     if (cardIndex === 5) {
         return (
-            <TypeformCard cardKey={5} step={6} totalSteps={TOTAL_QUESTIONS} kicker="About you" title="Lastly - what's your role on this project?" description="This helps us understand who's contributing to BioData SA." nextDisabled={!cardValid[5]} onNext={next} onBack={back}>
-                <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-                    {ROLE_OF_WORK_OPTIONS.map((option) => (
-                        <ChoiceTile key={option.id} label={option.label} isSelected={value.roleOfWork === option.id} onClick={() => patch({ roleOfWork: option.id, roleOfWorkOther: option.id === "other" ? value.roleOfWorkOther : "" })} />
-                    ))}
-                </div>
-                {value.roleOfWork === "other" && (
-                    <Input label="Please specify" placeholder="Describe your role or type of work" isRequired value={value.roleOfWorkOther} onChange={(v) => patch({ roleOfWorkOther: v })} autoFocus />
-                )}
-            </TypeformCard>
-        );
-    }
-
-    if (cardIndex === 6) {
-        return (
-            <TypeformCard cardKey={6} step={7} totalSteps={TOTAL_QUESTIONS} kicker="Project team" title="Who's managing this project day to day?" description="Add at least one project manager - their organisation, role and phone are optional extras you can add if you'd like." nextDisabled={!cardValid[6]} onNext={next} onBack={back}>
+            <TypeformCard cardKey={5} step={6} totalSteps={TOTAL_QUESTIONS} kicker="Project team" title="Who's managing this project day to day?" description="Add at least one project manager - their organisation, role and phone are optional extras you can add if you'd like." nextDisabled={!cardValid[5]} onNext={next} onBack={back}>
                 <div className="flex flex-col gap-4">
                     {value.projectManagers.map((manager, i) => (
                         <ManagerCard
@@ -277,7 +260,6 @@ export function Step1ProjectDetails({
     // Review - a summary of every mandatory answer, plus the genuinely optional detail (a
     // different Full Title, an End Date, more Data Owner contacts) surfaced as explicit "+ Add"
     // choices rather than empty fields shown by default, per the user's own framing.
-    const roleLabel = value.roleOfWork === "other" ? value.roleOfWorkOther : ROLE_OF_WORK_OPTIONS.find((o) => o.id === value.roleOfWork)?.label;
     const managerCount = value.projectManagers.filter((m) => m.firstName.trim() && m.lastName.trim()).length;
 
     return (
@@ -292,8 +274,7 @@ export function Step1ProjectDetails({
                     { label: "Start date", value: value.startDate?.toString(), goToIndex: 2 },
                     { label: "Data owner", value: value.dataOwnerType === "organisation" ? `${value.dataOwnerOrgName}${value.dataOwnerOrgLogo ? " · logo added" : ""}` : `${contact.firstName} ${contact.lastName}`.trim(), goToIndex: 3 },
                     { label: "Primary contact", value: `${contact.firstName} ${contact.lastName}`.trim() + (contact.email ? ` · ${contact.email}` : ""), goToIndex: 4 },
-                    { label: "Your role", value: roleLabel, goToIndex: 5 },
-                    { label: "Project manager/s", value: `${managerCount} added`, goToIndex: 6 },
+                    { label: "Project manager/s", value: `${managerCount} added`, goToIndex: 5 },
                 ].map((row) => (
                     <div key={row.label} className="flex items-center justify-between gap-4 px-4 py-3">
                         <div className="flex min-w-0 flex-col">

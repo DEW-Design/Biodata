@@ -69,11 +69,19 @@ The header is a top-level sibling before the rail + sidebar + main row, full wid
 
 Primary rail, contextual sidebar, main - under the full-width header - on every screen and every persona.
 A role that cannot use a section still gets all three, with the restriction stated in main. Column 2
-always exists and always says something about where you are.
+always exists and always says something about where you are, except on a record page (below).
+
+- **A record page has no column 2 (designer, 6 Oct 2026, generalising the project page's override).** The deep dive of any
+  collection - a project, a DLA, a DSA, a nomination, a user, a role, a permission, a controlled vocabulary, a taxon, a
+  voucher batch, a report - uses the whole width beside the rail. Where you are is the breadcrumb and its switcher over the
+  collection (§4.6 item 5); the record's actions are in its card. The list, and a create or edit form (whose sections are
+  column 2, §4.1), keep their column 2. A role that cannot open the record still gets the restriction with all three columns.
+  A shell takes this from its record props (`recordPage`), so a new collection's shell MUST do the same.
+- **Enforcement:** `AUTO §3.7b` (a shell that draws the Section sidebar and takes a record prop, without `recordPage`).
 
 - Exempt by name: `app/pages/biodata-home` (marketing), `app/pages/auth/**` (auth flow) and `app/pages/page.tsx`
   (the `/pages` screen index, a directory of screens rather than one).
-- **Override (designer, 30 Sept 2026):** the project page (`/pages/project-list/<id>/project-details`,
+- **Override (designer, 30 Sept 2026), now the rule above:** the project page (`/pages/project-list/<id>/project-details`,
   `/pages/project-detail`) and that project's record pages have no column 2, for every persona. The
   project's own actions are in the hero's "..." menu, the records tree is on the Survey records tab, and a
   breadcrumb project switcher replaces going back to the list. Logged in
@@ -135,7 +143,7 @@ scans by shape as well as by word and the same section has the same icon on ever
   Species `Feather`, Survey records and Data Collection Scope `Database01`, Artefacts and attachments `Paperclip`,
   Project and Projects `Folder`, Permit and Agreement `FileCheck02`, Audit log and history `ClockRewind`, Privacy and
   Restrictions `Lock01`, What to protect `Shield01`, Data Sharing `Share07`, Comments `MessageSquare01`, URI/DOI `Link01`,
-  Roles and permissions and Permissions `Key01`, Users `Users01`, Details `File06`, Favourites `Star01`, Uploads
+  Roles `UserCheck01`, Permissions `Key01`, Users `Users01`, Details `File06`, Favourites `Star01`, Uploads
   `UploadCloud02`; Flora and Fauna take the species group icons, and the record kinds the records tree's icons
   (`record-icons.ts`). A new tab takes an icon not already another concept's, and is added here.
 - **Counts** (`badge`) stay after the label; the icon does not replace them.
@@ -368,6 +376,15 @@ record) is laid out like the project page (`/pages/project-detail`):
    under its move. A log that is somehow empty says so. It lists status moves only, never a field edit, and never an
    invented step: a record saved before logs existed is rebuilt from its own dates with a note that earlier steps were not
    recorded.
+7. **The tabs run from the record to what it relates to.** The first tab is **Overview**: the record's own facts that the
+   identity card above it does not already show (a user's ID, username, email, contact number and access dates). A record
+   whose card shows everything has no Overview tab. After it come the things the record holds or is held by, each its own
+   tab and in the order the data rolls up: a user's **Roles**, then the **Permissions** those roles add up to; a role's
+   Permissions, then its Users. A tab is one thing; a tab MUST NOT hold a list that picks between sections of itself (a
+   master and detail), and a fact or count shown in the card or on the tab MUST NOT be repeated inside it. A permission
+   that comes from more than one role names each (the user's Permissions tab). Controlled Vocabulary
+   (Entries, Details, History) and dataset records (Validation, Details, History) have not been brought in line yet:
+   open for the designer (§0.4).
 
 - MUST NOT put a record's actions in a bar above the card, or stack its content without tabs.
 - MUST NOT build a second switcher: a collection's record pages reuse `BreadcrumbSwitcher`.
@@ -377,7 +394,8 @@ record) is laid out like the project page (`/pages/project-detail`):
   with a plain section header and no breadcrumb switcher; the designer asked why they did not follow the project
   page, and for the project page's switcher to apply "across all instances where we do a deep dive into a deep
   page" (1 Oct 2026). The Audit Log tab was a date column beside a badge and a bare name, on three record pages; the
-  designer asked for audit-log patterns from Mobbin and chose Vercel's activity feed (2 Oct 2026).
+  designer asked for audit-log patterns from Mobbin and chose Vercel's activity feed (2 Oct 2026). The user record had
+  "Roles and permissions" and "Details" tabs; the designer: "shouldn't it be overview, role, permission?" (6 Oct 2026).
 - **Enforcement:** `REVIEW`. First occurrence of the switcher gap, so no `AUTO` check yet (§0.8); one is due if a record
   page ships with a plain section crumb again.
 
@@ -397,8 +415,9 @@ contacts carries its own **role** (role or type of work). The role is part of th
 - **Origin:** a "Project team" card with a "Registered by (role)" row appeared on project detail
   Option 3 after the role had already been placed with the data owner's contact, a correction the
   designer had made more than once.
-- **Open, not decided:** the Add Project registration still asks "Your role" in its Project team
-  section; whether that question moves to the data owner's contact in registration is for the designer.
+- **Open, not decided:** the Add Project registration asks "Your role" in Step 2 (Data Collection and Methodology),
+  not Step 1 (the designer, 6 Oct 2026); whether that question moves to the data owner's contact in registration is
+  for the designer.
 - **Enforcement:** `AUTO §4.7` (a "Registered by" label under `app/pages` fails), `REVIEW` for the rest.
 
 ### §4.8 Editing in place on a detail page

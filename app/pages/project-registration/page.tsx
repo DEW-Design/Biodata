@@ -160,7 +160,7 @@ function ProjectRegistrationForm() {
 
                         <div className="rounded-2xl border border-secondary bg-primary p-8 sm:p-12">
                             {step === 1 && <Step1ProjectDetails value={projectDetails} onChange={setProjectDetails} onComplete={() => goToStep(2)} startAtReview={reviewOnEntry} />}
-                            {step === 2 && <Step2DataCollection value={dataCollection} onChange={setDataCollection} onComplete={() => goToStep(3)} startAtReview={reviewOnEntry} />}
+                            {step === 2 && <Step2DataCollection value={dataCollection} onChange={setDataCollection} role={projectDetails} onRoleChange={(r) => setProjectDetails({ ...projectDetails, ...r })} onComplete={() => goToStep(3)} startAtReview={reviewOnEntry} />}
                             {step === 3 && <Step3PrivacyRestrictions value={restrictions} onChange={setRestrictions} onBackToPreviousStep={() => goToStep(2, { review: true })} onComplete={handleCreateProject} />}
 
                         </div>

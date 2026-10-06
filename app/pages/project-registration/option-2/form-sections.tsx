@@ -182,8 +182,9 @@ function OwnerRows({ state, onChange, showErrors }: SectionProps) {
   );
 }
 
-// Your role and the project managers. These were their own "Project team" section; they are part of the
-// Data owner section now (the designer, 2 Oct 2026), so this is rendered by it.
+// The project managers. They were part of a "Project team" section with your role; the section went into the
+// Data owner section (the designer, 2 Oct 2026), and your role moved on to Step 2's Method and details
+// (the designer, 6 Oct 2026), so this is rendered by the Data owner section.
 function TeamRows({ state, onChange, showErrors }: SectionProps) {
   const { patchDetails } = useSectionPatches(state, onChange);
   const d = state.details;
@@ -193,36 +194,10 @@ function TeamRows({ state, onChange, showErrors }: SectionProps) {
     const remaining = d.projectManagers.filter((m) => m.id !== id);
     patchDetails({ projectManagers: removingPrimary && remaining.length ? remaining.map((m, i) => (i === 0 ? { ...m, isPrimary: true } : m)) : remaining });
   };
-  const roleMissing = showErrors && (!d.roleOfWork || (d.roleOfWork === "other" && !d.roleOfWorkOther.trim()));
   const managersMissing = showErrors && !d.projectManagers.some((m) => m.firstName.trim() && m.lastName.trim() && m.email.trim());
 
   return (
     <>
-      <FormRow title="Your role" required description="Helps us understand who is contributing to BioData SA.">
-        <Select
-          aria-label="Your role or type of work"
-          isRequired
-          placeholder="Select role or type of work"
-          items={ROLE_OF_WORK_OPTIONS}
-          selectedKey={d.roleOfWork}
-          onSelectionChange={(key) => patchDetails({ roleOfWork: key as string, roleOfWorkOther: key === "other" ? d.roleOfWorkOther : "" })}
-          isInvalid={showErrors && !d.roleOfWork}
-          hint={showErrors && !d.roleOfWork ? "Select your role" : undefined}
-        >
-          {(item) => <Select.Item {...item}>{item.label}</Select.Item>}
-        </Select>
-        {d.roleOfWork === "other" && (
-          <Input
-            label="Please specify"
-            isRequired
-            placeholder="Describe your role or type of work"
-            value={d.roleOfWorkOther}
-            onChange={(v) => patchDetails({ roleOfWorkOther: v })}
-            isInvalid={roleMissing && !d.roleOfWorkOther.trim()}
-            hint={roleMissing && !d.roleOfWorkOther.trim() ? REQUIRED : undefined}
-          />
-        )}
-      </FormRow>
       <FormRow title="Project managers" required description="Add at least one manager. Organisation, role and phone are optional." error={managersMissing ? "Add at least one manager with a name and email." : undefined}>
         {d.projectManagers.map((manager, i) => (
           <ManagerCard
@@ -359,8 +334,10 @@ function OptionalMethodDetails({ state, onChange }: Pick<SectionProps, "state" |
 }
 
 function MethodSection({ state, onChange, showErrors }: SectionProps) {
-  const { patchCollection } = useSectionPatches(state, onChange);
+  const { patchCollection, patchDetails } = useSectionPatches(state, onChange);
   const c = state.collection;
+  const d = state.details;
+  const roleMissing = showErrors && (!d.roleOfWork || (d.roleOfWork === "other" && !d.roleOfWorkOther.trim()));
 
   return (
     <>
@@ -376,6 +353,31 @@ function MethodSection({ state, onChange, showErrors }: SectionProps) {
       </FormRow>
       <FormRow title="Methodology" required description="The survey technique used, from the Survey method vocabulary.">
         <MethodologySelect value={c.methodDetails} onChange={(methodDetails) => patchCollection({ methodDetails })} isInvalid={showErrors && !c.methodDetails.trim()} />
+      </FormRow>
+      <FormRow title="Your role" required description="Helps us understand who is contributing to BioData SA.">
+        <Select
+          aria-label="Your role or type of work"
+          isRequired
+          placeholder="Select role or type of work"
+          items={ROLE_OF_WORK_OPTIONS}
+          selectedKey={d.roleOfWork}
+          onSelectionChange={(key) => patchDetails({ roleOfWork: key as string, roleOfWorkOther: key === "other" ? d.roleOfWorkOther : "" })}
+          isInvalid={showErrors && !d.roleOfWork}
+          hint={showErrors && !d.roleOfWork ? "Select your role" : undefined}
+        >
+          {(item) => <Select.Item {...item}>{item.label}</Select.Item>}
+        </Select>
+        {d.roleOfWork === "other" && (
+          <Input
+            label="Please specify"
+            isRequired
+            placeholder="Describe your role or type of work"
+            value={d.roleOfWorkOther}
+            onChange={(v) => patchDetails({ roleOfWorkOther: v })}
+            isInvalid={roleMissing && !d.roleOfWorkOther.trim()}
+            hint={roleMissing && !d.roleOfWorkOther.trim() ? REQUIRED : undefined}
+          />
+        )}
       </FormRow>
       <FormRow title="Optional details" description="Only add these if they apply to this project.">
         <OptionalMethodDetails state={state} onChange={onChange} />

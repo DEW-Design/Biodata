@@ -183,6 +183,7 @@ function FlyToBoundaries({
 }) {
     const map = useMap();
     const boundariesKey = JSON.stringify(boundaries);
+    const fitted = useRef(false);
 
     useEffect(() => {
         if (boundaries.length === 0) return;
@@ -216,7 +217,15 @@ function FlyToBoundaries({
         const capY = size.y * 0.5;
         const tl = L.point(Math.min(paddingTopLeft[0], capX), Math.min(paddingTopLeft[1], capY));
         const br = L.point(Math.min(paddingBottomRight[0], capX), Math.min(paddingBottomRight[1], capY));
-        map.flyToBounds(bounds, { paddingTopLeft: tl, paddingBottomRight: br, duration: 0.6 });
+        // The first fit of a map is a jump, not a flight: the map mounts at the state-wide zoom, and a flight from there to a
+        // small area scales the drawn shapes up by tens of times for 0.6s (an SVG tens of thousands of pixels wide, which the
+        // browser rasterises in pieces: a circle cut off along straight edges while a dialog opens). Later changes still fly.
+        if (!fitted.current) {
+            fitted.current = true;
+            map.fitBounds(bounds, { paddingTopLeft: tl, paddingBottomRight: br, animate: false });
+        } else {
+            map.flyToBounds(bounds, { paddingTopLeft: tl, paddingBottomRight: br, duration: 0.6 });
+        }
         // Re-fit when the covered area changes (the card widens for Table, the sheet snaps), so the
         // areas always land in the part of the map the user can actually see.
         // eslint-disable-next-line react-hooks/exhaustive-deps

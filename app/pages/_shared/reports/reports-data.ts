@@ -1,5 +1,7 @@
 import type { FC } from "react";
-import { AlertTriangle, Database01, Folder, Lock01, Microscope, RefreshCw01, Rows01, Tag01, UploadCloud02 } from "@untitledui/icons";
+import { AlertTriangle, Database01, FileCheck02, Folder, Lock01, Microscope, RefreshCw01, Rows01, Share07, Tag01, UploadCloud02 } from "@untitledui/icons";
+import { hasFeatureAccess, type FeatureKey } from "@/config/role-access.config";
+import type { UserRole } from "@/lib/user-role";
 
 // The reports the Reports landing page (/pages/reports) offers, one card each. A report is added here
 // once, when the designer supplies it: its card, its route under /pages/reports/<id> and its page. Only
@@ -7,12 +9,13 @@ import { AlertTriangle, Database01, Folder, Lock01, Microscope, RefreshCw01, Row
 // Reports" are not, until they are built.
 
 /** How the landing groups the reports (designer, 1 Oct 2026: "Grouped into categories, yep"). The names are the build's. */
-export type ReportCategoryId = "uploads" | "specimens" | "project-data";
+export type ReportCategoryId = "uploads" | "specimens" | "project-data" | "agreements";
 
 export const REPORT_CATEGORIES: { id: ReportCategoryId; label: string }[] = [
   { id: "uploads", label: "Uploads" },
   { id: "specimens", label: "Specimens and restrictions" },
   { id: "project-data", label: "Project data" },
+  { id: "agreements", label: "Agreements" },
 ];
 
 export interface ReportEntry {
@@ -25,7 +28,14 @@ export interface ReportEntry {
   category: ReportCategoryId;
   /** Path under /pages/reports (the role is added by `useRoleHref`). */
   path: string;
+  /** A feature a role needs for the report to be offered at all (the role-access matrix). Left out, every role that has Reports is offered it. */
+  feature?: FeatureKey;
+  /** The report can be limited to one project (it has a project scope), so Create a report offers the choice and a generated report keeps it. */
+  scoped?: boolean;
 }
+
+/** The reports a role is offered: a report whose feature the role lacks is not listed, switched to or counted. */
+export const reportsFor = (role: UserRole): ReportEntry[] => REPORTS.filter((r) => !r.feature || hasFeatureAccess(r.feature, role));
 
 export const REPORTS: ReportEntry[] = [
   {
@@ -91,6 +101,7 @@ export const REPORTS: ReportEntry[] = [
     description: "Every species record with its class, codes, voucher and field measurements, across the projects you can report on.",
     icon: Microscope,
     path: "/pages/reports/species-detail",
+    scoped: true,
   },
   {
     id: "events-occurrences-observations",
@@ -99,5 +110,24 @@ export const REPORTS: ReportEntry[] = [
     description: "The survey records of your projects, at each level: events, the occurrences under them and their observations.",
     icon: Rows01,
     path: "/pages/reports/events-occurrences-observations",
+    scoped: true,
+  },
+  {
+    id: "dla-agreement",
+    category: "agreements",
+    title: "Data Licence Agreement Report",
+    description: "Every data licence request and agreement: who asked, what for, who approved it and for how long.",
+    icon: FileCheck02,
+    path: "/pages/reports/dla-agreement",
+    feature: "dlaAccess",
+  },
+  {
+    id: "dsa-agreement",
+    category: "agreements",
+    title: "Data Sharing Agreement Report",
+    description: "Every data sharing agreement with a partner: who asked, who approved it, for how long and how it connects.",
+    icon: Share07,
+    path: "/pages/reports/dsa-agreement",
+    feature: "dsaManagement",
   },
 ];

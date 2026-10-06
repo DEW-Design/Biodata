@@ -362,3 +362,24 @@ Not imported into every session on purpose: read or grep it when a task needs hi
 - [2026-10-05] Pages tool on the Prototype tools bar with the DEW tree - `2026-10-05-09-pages-tool-on-the-prototype-tools-bar-with.md`
 - [2026-10-05] Pages tool lists only the persona's pages and invites switching - `2026-10-05-10-pages-tool-lists-only-the-persona-s-pages.md`
 - [2026-10-05] Pages tool pared back to a search box, the tree and one line - `2026-10-05-11-pages-tool-pared-back-to-a-search-box.md`
+- [2026-10-05] Open items to raise at the start of the next session - `2026-10-05-12-open-items-to-raise-at-the-start-of.md`
+- [2026-10-06] Pages panel crit fixes: indent, current tint, Recent, TreeView alignLeaves and weight - `2026-10-06-01-pages-panel-crit-fixes-indent-current-tint-recent.md`
+- [2026-10-06] Pages panel: Recent is a card of its own, All pages scrolls under its label - `2026-10-06-02-pages-panel-recent-is-a-card-of-its.md`
+- [2026-10-06] Data Licence and Data Sharing Agreement reports built on the shared report - `2026-10-06-03-data-licence-and-data-sharing-agreement-reports-built.md`
+- [2026-10-06] Pages panel: area counts and a fade at the foot of the list - `2026-10-06-04-pages-panel-area-counts-and-a-fade-at.md`
+- [2026-10-06] Nominations column 2 per role: My for a registered user, All and My for the rest - `2026-10-06-05-nominations-column-2-per-role-my-for-a.md`
+- [2026-10-06] Expanded map: the close X sits centred in its title bar - `2026-10-06-06-expanded-map-the-close-x-sits-centred-in.md`
+- [2026-10-06] Maps open already framed: no flight from the state view - `2026-10-06-07-maps-open-already-framed-no-flight-from-the.md`
+- [2026-10-06] User record Roles and permissions panel: clearer hierarchy - `2026-10-06-08-user-record-roles-and-permissions-panel-clearer-hierarchy.md`
+- [2026-10-06] User record: roles and permissions roll up instead of repeating - `2026-10-06-09-user-record-roles-and-permissions-roll-up-instead.md`
+- [2026-10-06] Taxonomy column 2 label names the facet, not the thing listed - `2026-10-06-10-taxonomy-column-2-label-names-the-facet-not.md`
+- [2026-10-06] Contract: borrow existing patterns; record tabs run Overview then what it relates to - `2026-10-06-11-contract-borrow-existing-patterns-record-tabs-run-overview.md`
+- [2026-10-06] Record pages use the full width; the user record borrows the DSA record's patterns - `2026-10-06-12-record-pages-use-the-full-width-the-user.md`
+- [2026-10-06] Reports column 2 holds the categories, and the category tabs leave the page - `2026-10-06-13-reports-column-2-holds-the-categories-and-the.md`
+- [2026-10-06] Reports category tabs restored; column 2 mirrors them - `2026-10-06-14-reports-category-tabs-restored-column-2-mirrors-them.md`
+- [2026-10-06] Reports column 2: All and My reports, Create a report, and My reports as generated reports - `2026-10-06-15-reports-column-2-all-and-my-reports-create.md`
+- [2026-10-06] Reports tables carry no icon on each row - `2026-10-06-16-reports-tables-carry-no-icon-on-each-row.md`
+- [2026-10-06] Flora and Fauna Dashboard: the Projects tab built from the reference - `2026-10-06-17-flora-and-fauna-dashboard-the-projects-tab-built.md`
+- [2026-10-06] Full design consistency audit across behaviour, components, layout and copy - `2026-10-06-18-full-design-consistency-audit-across-behaviour-components-la.md`
+- [2026-10-06] Contribute Now goes to login; Tailwind stops scanning audit and decision prose - `2026-10-06-19-contribute-now-goes-to-login-tailwind-stops-scanning.md`
+- [2026-10-06] Add Project: Your role is asked in Step 2, not Step 1 - `2026-10-06-20-add-project-your-role-is-asked-in-step.md`

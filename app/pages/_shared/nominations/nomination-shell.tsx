@@ -7,7 +7,8 @@ import { useRouter } from "next/navigation";
 import { ArrowNarrowRight } from "@untitledui/icons";
 import { Button } from "@/components/base/buttons/button";
 import { ActionsGroup, downloadCsv } from "@/app/pages/_shared/agreement-actions";
-import { AgreementScopeNav, CURRENT_USER_NAME } from "@/app/pages/_shared/agreement-scope";
+import { AgreementScopeNav } from "@/app/pages/_shared/agreement-scope";
+import { inNominationScope, useNominationScope } from "@/app/pages/_shared/nominations/nomination-scope";
 import { nominationStatusMeta, speciesFor } from "@/app/pages/_shared/nominations/nomination-data";
 import { useNominations } from "@/app/pages/_shared/nominations/nomination-store";
 import { NominationSwitcher } from "@/app/pages/_shared/nominations/nomination-switcher";
@@ -24,9 +25,10 @@ import { NOMINATION_SECTION_LABEL, keyHref, navForRole, type NavNode } from "@/l
 
 // The one shell every nomination route renders through (the list, a nomination's record page, the
 // new and edit forms), the same shape as DlaShell. Column 2:
-//   - the panel (nominationReview) switches between All nominations and My nominations, like DLA;
-//   - everyone else sees only their own nominations, so there is no switch (a one-option switcher
-//     is dishonest UI): column 2 is the section label and the Actions group.
+//   - a role with the All view (nominationAllView, or the BioData Admin) switches between All nominations (its
+//     organisation's, or everyone's for the admin) and My nominations, like DLA;
+//   - a Registered User sees only their own nominations: column 2 lists "My nominations" alone (designer, 6 Oct 2026),
+//     where it used to be the bare section label.
 // Column 2 is navigation and actions only. How a nomination is reviewed is information, so it sits
 // above the table on the list (`ReviewSteps` in nomination-list.tsx), not here.
 // Both get the Actions group (Export CSV of what they can see).
@@ -52,16 +54,20 @@ function SectionPlaceholder({ node }: { node: NavNode }) {
 
 function ScopeNav() {
   const nominations = useNominations();
-  const canReview = useFeatureAccess("nominationReview");
-  const visible = nominations.filter((n) => n.nominator.name === CURRENT_USER_NAME || (canReview && n.status !== "draft"));
+  const { canAll, organisation } = useNominationScope();
+  const visible = nominations.filter((n) => inNominationScope(n, canAll ? "all" : "mine", organisation));
 
   return (
     <div className="flex flex-col gap-1">
-      {canReview ? (
-        <AgreementScopeNav heading="Nominations" basePath="/pages/nominations" defaultScope="all" myLabel="My nominations" allLabel="All nominations" allIcon={sectionIcons[NOMINATION_SECTION_LABEL]} />
-      ) : (
-        <p className="mb-3 text-xs font-semibold tracking-wide text-quaternary uppercase">Nominations</p>
-      )}
+      <AgreementScopeNav
+        heading="Nominations"
+        basePath="/pages/nominations"
+        defaultScope={canAll ? "all" : "mine"}
+        myLabel="My nominations"
+        allLabel="All nominations"
+        allIcon={sectionIcons[NOMINATION_SECTION_LABEL]}
+        showAll={canAll}
+      />
       <ActionsGroup
         onExportCsv={() =>
           downloadCsv(
@@ -124,6 +130,10 @@ export function NominationShell({
       </div>
     );
 
+  // A record's page (a user, a request, a report ...) has no column 2: the whole width is the record (CONTRACTS 3.7). Its
+  // navigation is the breadcrumb switcher, and its actions are in the record's own card.
+  const recordPage = showScopeNav && !!recordId && !formSidebar;
+
   return (
     <div className="font-barlow flex h-screen flex-col overflow-hidden">
       <PrototypeTools />
@@ -158,22 +168,24 @@ export function NominationShell({
       <div className="flex flex-1 overflow-hidden">
         <PrimaryRail sections={nav} activeSection={canAccess || otherSection ? activeSection : null} onSelectSection={goToSection} />
 
-        <aside aria-label="Section" className="hidden w-[286px] shrink-0 flex-col justify-between gap-6 overflow-y-auto border-r border-secondary bg-secondary p-4 lg:flex">
-          {showScopeNav && formSidebar ? (
-            <div ref={setFormSlot} />
-          ) : showScopeNav ? (
-            <ScopeNav />
-          ) : (
-            <div className="flex flex-col gap-1">
-              <p className="mb-3 text-xs font-semibold tracking-wide text-quaternary uppercase">{otherSection?.label ?? NOMINATION_SECTION_LABEL}</p>
-              {otherSection?.items?.map((item) => (
-                <p key={item.label} className="px-2 py-2 text-sm text-tertiary">
-                  {item.label}
-                </p>
-              ))}
-            </div>
-          )}
-        </aside>
+        {!recordPage && (
+          <aside aria-label="Section" className="hidden w-[286px] shrink-0 flex-col justify-between gap-6 overflow-y-auto border-r border-secondary bg-secondary p-4 lg:flex">
+            {showScopeNav && formSidebar ? (
+              <div ref={setFormSlot} />
+            ) : showScopeNav ? (
+              <ScopeNav />
+            ) : (
+              <div className="flex flex-col gap-1">
+                <p className="mb-3 text-xs font-semibold tracking-wide text-quaternary uppercase">{otherSection?.label ?? NOMINATION_SECTION_LABEL}</p>
+                {otherSection?.items?.map((item) => (
+                  <p key={item.label} className="px-2 py-2 text-sm text-tertiary">
+                    {item.label}
+                  </p>
+                ))}
+              </div>
+            )}
+          </aside>
+        )}
 
         <main className="flex min-h-0 flex-1 flex-col overflow-hidden">
           <FormSidebarSlotContext.Provider value={formSlot}>{main}</FormSidebarSlotContext.Provider>

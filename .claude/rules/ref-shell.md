@@ -82,7 +82,7 @@ A preview of a real product screen, not a doc page and not a `/test-*` proof.
 
 1. **Components** (`components/base/**`, `components/application/**`), the DEW layer, never patched for one
    screen.
-2. **Shell:** `AppHeader`, `PrimaryRail`, the legal links as icons at the foot of `PrimaryRail`, column 2 (absent on the project page and on Explore's first layout), `MobileNavTrigger`, and
+2. **Shell:** `AppHeader`, `PrimaryRail`, the legal links as icons at the foot of `PrimaryRail`, column 2 (absent on every record page, §3.7, and on Explore's first layout), `MobileNavTrigger`, and
    `<PrototypeTools />` (§3.1-§3.8; anatomy at `/patterns/navigation`). Borrow it; never draw a new one.
 3. **Screen:** the shell plus the page's own content, built from components and the patterns below.
 4. **Flow:** the unit that gets user-tested (dashboard, project list, project, record). A screen can pass
@@ -98,7 +98,9 @@ single list with no record page).
    `TemplateFinderShell`): header, rail, column 2 and the restricted state. Each route supplies only main.
 2. **Column 2 is navigation and actions only** (§3.10). A role that sees more than its own records gets a
    All / My scope switch (`AgreementScopeNav`, `?scope=`; All first: My is that list narrowed to you); a role with one view gets just the section label (a
-   one-option switcher is dishonest UI). An `ActionsGroup` (Export CSV) sits below when there is something to
+   one-option switcher is dishonest UI). **Exception (designer, 6 Oct 2026):** Nominations lists "My nominations" alone for a
+   Registered User, who only ever sees what they nominated (`AgreementScopeNav showAll={false}`); a BioData User and the
+   Privileged roles get All (their organisation's) and My, the BioData Admin All (everyone's) and My (`nominationAllView`). An `ActionsGroup` (Export CSV) sits below when there is something to
    export. Status is a filter in main, not a place in column 2. **Exception (designer, 5 Oct 2026):** the Template Finder's
    column 2 lists its species types and collection methods under group headings with counts, because they are the list's own
    filter drawn as places (`TemplateNav`, one filter state, §4.2d); no other screen does this without the designer's say-so.

@@ -36,6 +36,7 @@ first when starting a new file in that area (a scoped rule triggers on reading, 
 - §0.6 Definition of done (end-of-task checklist) (below)
 - §0.7 Proactive, not reactive (below)
 - §0.8 Promote a repeated fix (below)
+- §0.9 Borrow and reuse patterns from existing pages (below)
 - §1.1 One source of components (contracts-build.md)
 - §1.2 No match, no substitute: mark it `?` (contracts-build.md)
 - §1.3 Flow-through (contracts-build.md)
@@ -201,6 +202,29 @@ being remembered.
 - **Origin:** `MultiSelect` clearing its selection on Escape was logged as fixed six times before it
   became `AUTO §1.9a` (§1.9's own origin line).
 - **Enforcement:** `REVIEW`.
+
+### §0.9 Borrow and reuse patterns from existing pages
+
+Before building a screen, a section or a control, find the closest page that already does the same job and reuse
+its pattern: the same layout, the same components, the same arrangement of information, the same behaviour. The
+product is one system; a new screen is the existing patterns put to a new use, not a new design.
+
+1. **Look first, in this order:** the component in `components/**` and its doc page; the pattern page under
+   `/patterns` and the clauses in §3 and §4; then a sibling screen that has the same shape (a record page beside
+   another record page, a list beside another list, a form beside another form). Name what was borrowed.
+2. **Reuse, then extend.** If the existing pattern is close, use it as it is; if it needs a second behaviour, add
+   an opt-in prop (§1.6) so every screen gains it. MUST NOT copy it, or draw a lookalike beside it.
+3. **A new arrangement needs a reason.** MUST NOT introduce a layout no other page uses (a master and detail list inside a
+   tab, a second kind of card, a one-off table) when an existing one does the job. A real difference is named in the
+   page's header comment and, when it is new for the product, proposed to the designer (§0.4) first.
+4. **Where two pages that do the same job differ, the screen being touched is brought in line** (the sibling grep,
+   §0.6 item 5), not the other way round, unless the designer decides otherwise.
+
+- **Origin:** the user record's Roles and permissions tab was built as a list of roles with a detail panel for the chosen
+  one, a layout no other record page uses, and it repeated the role's name, count and link three times; the other record
+  pages already put a record's own facts on an Overview tab and the things it relates to on a tab each. The designer: "Borrow
+  and reuse patterns from existing pages" (6 Oct 2026).
+- **Enforcement:** `REVIEW` (the end-of-task check names the page borrowed from; §0.7 item 3).
 
 ### §5.1 Log everything, append-only
 

@@ -38,6 +38,7 @@ export function AgreementScopeNav({
   myLabel,
   allLabel,
   allIcon,
+  showAll = true,
 }: {
   heading: string;
   basePath: string;
@@ -46,16 +47,20 @@ export function AgreementScopeNav({
   allLabel: string;
   /** The section's own icon from the rail (`sectionIcons`), the way "All projects" carries the Projects icon. */
   allIcon: FC<{ className?: string }>;
+  /** False for a role that has no All view (a Registered User on Nominations): column 2 lists "My ..." alone. */
+  showAll?: boolean;
 }) {
   const router = useRouter();
   const roleHref = useRoleHref();
-  const scope = useAgreementScope(defaultScope);
+  const requested = useAgreementScope(defaultScope);
+  // With no All view the address cannot ask for it (`?scope=all` on a Registered User's link): the one item is on.
+  const scope = showAll ? requested : "mine";
   return (
     <div className="flex flex-col gap-1">
       <p className="mb-3 text-xs font-semibold tracking-wide text-quaternary uppercase">{heading}</p>
       <Tabs orientation="vertical" selectedKey={scope} onSelectionChange={(key) => router.push(roleHref(`${basePath}?scope=${key}`))}>
         <TabList aria-label={heading} orientation="vertical" type="button-brand" fullWidth className="w-full">
-          <Tab id="all" label={allLabel} icon={allIcon} />
+          {showAll && <Tab id="all" label={allLabel} icon={allIcon} />}
           <Tab id="mine" label={myLabel} icon={User01} />
         </TabList>
       </Tabs>

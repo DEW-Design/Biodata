@@ -102,6 +102,8 @@ export const SCREENS: Screen[] = [
   { area: "Reports", name: "Project Detail Report", path: "/pages/reports/project-detail", access: "Signed in", description: "Every project's registration and record counts in one table." },
   { area: "Reports", name: "Species Detail Report", path: "/pages/reports/species-detail", access: "Signed in", description: "Every species record with its codes, voucher and measurements." },
   { area: "Reports", name: "Events, Occurrences and Observations Report", path: "/pages/reports/events-occurrences-observations", access: "Signed in", description: "The survey records at each level, in three tabs." },
+  { area: "Reports", name: "Data Licence Agreement Report", path: "/pages/reports/dla-agreement", access: "Signed in", description: "Every data licence request and agreement; a registered user sees theirs, BioData Admin sees all." },
+  { area: "Reports", name: "Data Sharing Agreement Report", path: "/pages/reports/dsa-agreement", access: "BioData Admin", description: "Every data sharing agreement with a partner, with approver, period and integration details." },
   { area: "Unlinked", name: "Projects draft", path: "/pages/projects", access: "Everyone", description: "A stale draft, not linked from anywhere." },
   { area: "Unlinked", name: "Projects draft 2", path: "/pages/projectsv2", access: "Everyone", description: "A stale draft, not linked from anywhere." },
 ];

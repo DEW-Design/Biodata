@@ -11,6 +11,7 @@ import { ExplainerCard } from "@/app/pages/_shared/explainer-card";
 import { SectionHeader } from "@/components/application/section-headers/section-headers";
 import { Table, TableCard } from "@/components/application/table/table";
 import { CURRENT_USER_NAME, sortRows, type AgreementScope, type SortValue } from "@/app/pages/_shared/agreement-scope";
+import { inNominationScope } from "@/app/pages/_shared/nominations/nomination-scope";
 import { TaskItem } from "@/app/pages/_shared/home-dashboard";
 import { monthOptions, optionsFromValues, useListFilter, type FilterGetters, type FilterSection } from "@/app/pages/_shared/list-filter";
 import { AttributeFilterChips } from "@/app/pages/_shared/attribute-filter";
@@ -99,11 +100,11 @@ export function NominationBanner({ canReview }: { canReview: boolean }) {
   return null;
 }
 
-export function NominationList({ scope, initialStatuses = [], canReview }: { scope: AgreementScope; initialStatuses?: NominationStatus[]; canReview: boolean }) {
+export function NominationList({ scope, organisation, initialStatuses = [], canReview }: { scope: AgreementScope; organisation: string | null; initialStatuses?: NominationStatus[]; canReview: boolean }) {
   const all = useNominations();
   const roleHref = useRoleHref();
-  // Someone else's draft isn't submitted yet, so it isn't the panel's to see.
-  const scoped = scope === "mine" ? all.filter((n) => n.nominator.name === CURRENT_USER_NAME) : all.filter((n) => n.status !== "draft" || n.nominator.name === CURRENT_USER_NAME);
+  // Someone else's draft isn't submitted yet, so it isn't anyone else's to see; All is the organisation's (everyone's for the admin).
+  const scoped = all.filter((n) => inNominationScope(n, scope, organisation));
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(50);
@@ -140,7 +141,7 @@ export function NominationList({ scope, initialStatuses = [], canReview }: { sco
               <SectionHeader.Heading>Sensitive species nominations</SectionHeader.Heading>
               <CountBadge count={rows.length} color="brand" />
             </div>
-            <SectionHeader.Subheading>{scope === "mine" ? "Species you nominated, and where each one is in review." : "Every nomination, across every status."}</SectionHeader.Subheading>
+            <SectionHeader.Subheading>{scope === "mine" ? "Species you nominated, and where each one is in review." : organisation ? `Nominations from ${organisation}, across every status.` : "Every nomination, across every status."}</SectionHeader.Subheading>
           </div>
           <SectionHeader.Actions>
             <Button color="primary" iconLeading={Plus} href={roleHref("/pages/nominations/new")}>

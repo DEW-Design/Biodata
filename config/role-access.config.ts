@@ -23,7 +23,7 @@
 import { isBiodataAdmin, type UserRole } from "@/lib/user-role";
 
 /** One entry per gated product feature. Add a key as a feature is actually gated - don't pre-populate speculatively. */
-export type FeatureKey = "orgSwitcher" | "metricCardCustomization" | "dsaManagement" | "dlaAccess" | "dlaApproval" | "userManagement" | "restrictedData" | "nominationAccess" | "nominationReview" | "datasetUpload" | "templateFinder" | "ctrlVocabManagement" | "taxonomyManagement" | "notificationManagement" | "voucherManagement" | "reports";
+export type FeatureKey = "orgSwitcher" | "metricCardCustomization" | "dsaManagement" | "dlaAccess" | "dlaApproval" | "userManagement" | "restrictedData" | "nominationAccess" | "nominationReview" | "nominationAllView" | "datasetUpload" | "templateFinder" | "ctrlVocabManagement" | "taxonomyManagement" | "notificationManagement" | "voucherManagement" | "reports";
 
 /** Feature -> the roles (besides biodata-admin, which always passes) allowed to see it. */
 export const roleAccessMatrix: Record<FeatureKey, UserRole[]> = {
@@ -71,6 +71,10 @@ export const roleAccessMatrix: Record<FeatureKey, UserRole[]> = {
   // Reviewing nominations (the sensitive species panel): Start review, Accept, Reject, Return for
   // more information, and the All nominations view. BioData Admin only, via the bypass.
   nominationReview: [],
+  // The "All nominations" view in column 2 (designer, 6 Oct 2026). A Registered User sees only what they nominated, so
+  // column 2 has "My nominations" alone. A BioData User and the Privileged roles also get "All nominations", which is
+  // their organisation's; BioData Admin (the bypass) gets everyone's. Not review: that stays admin-only above.
+  nominationAllView: ["biodata-user", "privileged-admin", "privileged-user"],
   // Uploading a dataset to a project (/pages/project-list/<id>/upload): every signed-in role (the
   // project-level access check is not modelled in the preview). A guest sees the sign-up invite on
   // the project's "Upload dataset" button, and the restriction on a direct visit.

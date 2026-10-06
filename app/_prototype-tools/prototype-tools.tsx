@@ -8,6 +8,7 @@ import { isPageBlockedFor } from "./page-gates";
 import { productionFor, productionTarget } from "./production-routes";
 import { ROLE_OPTIONS, roleLabel } from "./role-options";
 import { useSetRole } from "./role-switch";
+import { useRecordPage } from "./pages-tool";
 import { StatusBar } from "./status-bar";
 import { useRegisteredTools, type Tool } from "./tools";
 
@@ -20,6 +21,7 @@ export function PrototypeTools() {
   const pathname = usePathname();
   const activeRole = useUserRole();
   const registered = useRegisteredTools();
+  useRecordPage();
 
   const setRole = useSetRole();
   const role: Tool = {

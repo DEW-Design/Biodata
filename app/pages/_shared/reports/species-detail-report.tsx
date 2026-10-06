@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { Feather } from "@untitledui/icons";
 import { SPECIES_GROUP_ICON } from "@/app/pages/_shared/map-search/species-group-icons";
 import type { SpeciesGroup } from "@/app/pages/_shared/map-search/search-data";
@@ -97,7 +98,8 @@ const searchText = (r: SpeciesRow) => [r.common, r.scientific, r.nsx, r.project,
 
 export function SpeciesDetailReport() {
   const role = useUserRole();
-  const [scope, setScope] = useState(ALL_PROJECTS);
+  // A generated report (My reports) opens with the project it was made for, `?project=`.
+  const [scope, setScope] = useState(useSearchParams().get("project") ?? ALL_PROJECTS);
   const bundles = useMemo(() => reportBundlesFor(role), [role]);
   const projects = useMemo(() => bundles.map((b) => b.project), [bundles]);
   const allRows = useMemo(() => bundles.flatMap(speciesRowsFor), [bundles]);

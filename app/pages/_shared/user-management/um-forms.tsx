@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import type { DateValue, Key, Selection } from "react-aria-components";
-import { getLocalTimeZone, today } from "@internationalized/date";
+import { getLocalTimeZone, parseDate, today } from "@internationalized/date";
 import { ArrowLeft, Plus, SearchMd, Trash01 } from "@untitledui/icons";
 import { DestructiveModal } from "@/components/application/modals/modal";
 import { TreeView } from "@/components/application/tree-view/tree-view";
@@ -169,8 +169,21 @@ function userProblems(s: UserFormState): Record<UserSection, string[]> {
   return { details, access, roles };
 }
 
-export function AddUserForm({ onCancel, onSubmit }: { onCancel: () => void; onSubmit: (draft: UserDraft) => void }) {
-  const [s, setS] = useState<UserFormState>({
+/** The form for a new user, or (with `initial`) for changing one who exists: the same three sections, filled in, saving in place. */
+export function AddUserForm({ onCancel, onSubmit, initial }: { onCancel: () => void; onSubmit: (draft: UserDraft) => void; initial?: UserDraft }) {
+  const editing = !!initial;
+  const [s, setS] = useState<UserFormState>(initial ? {
+    firstName: initial.firstName,
+    lastName: initial.lastName,
+    displayName: initial.displayName ?? "",
+    email: initial.email,
+    phone: initial.phone ?? "",
+    position: initial.position,
+    organisation: initial.organisation || INDIVIDUAL,
+    startDate: initial.startDate ? parseDate(initial.startDate) : null,
+    endDate: initial.endDate ? parseDate(initial.endDate) : null,
+    roleIds: initial.roleIds,
+  } : {
     firstName: "",
     lastName: "",
     displayName: "",
@@ -242,20 +255,20 @@ export function AddUserForm({ onCancel, onSubmit }: { onCancel: () => void; onSu
     <div className="flex min-h-0 flex-1 flex-col">
       <FormSidebar>
         <FormSectionList
-          heading="Add user"
+          heading={editing ? "Edit user" : "Add user"}
           groups={[{ sections: items }]}
           progress={{ done: items.filter((i) => i.status === "complete").length, total: USER_SECTIONS.length }}
           onSelect={(id) => proceed(id as UserSection)}
         />
       </FormSidebar>
       <FormPage
-        eyebrow={`Add user - Step ${index + 1} of ${USER_SECTIONS.length}`}
+        eyebrow={`${editing ? "Edit user" : "Add user"} - Step ${index + 1} of ${USER_SECTIONS.length}`}
         title={USER_SECTION_META[section].title}
         subtitle={`${USER_SECTION_META[section].description} Fields marked * are required.`}
         onCancel={() => (dirty ? setConfirmCancel(true) : onCancel())}
         onBack={index > 0 ? () => goTo(USER_SECTIONS[index - 1]!) : undefined}
         problems={showErrors(section) && problems[section].length > 0 ? { items: problems[section] } : undefined}
-        primaryLabel={isLast ? "Add user" : "Continue"}
+        primaryLabel={isLast ? (editing ? "Save changes" : "Add user") : "Continue"}
         primaryIsContinue={!isLast}
         onPrimary={isLast ? submit : () => proceed(USER_SECTIONS[index + 1]!)}
       >

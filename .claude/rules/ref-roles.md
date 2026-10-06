@@ -78,7 +78,8 @@ designer owns. It is data, separate from `design-system.config.ts` (which doc va
   IA already restricts it (as `templateFinder` implements "no Template Finder for public-user").
 - **Two kinds of gate:**
   - **A control:** hide it (`orgSwitcher`, `metricCardCustomization` hides the dashboard card menu for all
-    but `biodata-admin`, `dlaApproval`, `nominationReview`).
+    but `biodata-admin`, `dlaApproval`, `nominationReview`, `nominationAllView`: the All nominations view in column 2, for the BioData User and the
+    Privileged roles, limited to their organisation's; the BioData Admin's All is everyone's).
   - **A whole page:** keep the shell and put the restriction in main (§3.7), and add the route to
     `wholePageGates` (`dsaManagement`, `dlaAccess`, `userManagement`, `nominationAccess`, `datasetUpload`,
     `templateFinder`, `reports`).

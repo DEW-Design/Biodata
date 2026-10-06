@@ -2,7 +2,7 @@
 
 import { useState, type ReactNode } from "react";
 import type { Key } from "react-aria-components";
-import { ArrowNarrowLeft, CheckCircle, Download01, Edit05, Eye, EyeOff, Mail01, PauseCircle, Phone01, PlayCircle, Plus, SearchLg, SearchMd, SlashCircle01, Trash01, XCircle, Grid01, Share07, ClockRewind } from "@untitledui/icons";
+import { ArrowNarrowLeft, CheckCircle, Download01, Edit05, Eye, EyeOff, PauseCircle, PlayCircle, Plus, SearchLg, SearchMd, SlashCircle01, Trash01, XCircle, Grid01, Share07, ClockRewind } from "@untitledui/icons";
 import { RecordActionBar, type RecordAction } from "@/app/pages/_shared/record-action-bar";
 import { RecordBackLink, RecordHero } from "@/app/pages/_shared/record-hero";
 import { AlertFullWidth } from "@/components/application/alerts/alerts";
@@ -14,11 +14,11 @@ import { ConfirmationModal, DestructiveModal } from "@/components/application/mo
 import { Tab, TabList, TabPanel, Tabs } from "@/components/application/tabs/tabs";
 import { Table, TableCard } from "@/components/application/table/table";
 import { toast } from "@/components/application/toast/toast";
-import { BentoCard } from "@/app/pages/_shared/bento-card";
+import { ContactCard } from "@/app/pages/_shared/contact-card";
 import { RejectModal } from "@/app/pages/_shared/agreement-modals";
 import { SidePanel } from "@/app/pages/_shared/map-search/side-panel";
 import { useRoleHref } from "@/lib/use-role-href";
-import { contactName, dsaScopeOptions, dsaStatusMeta, formatShortDate, todayIso, type Dsa, type DsaContact, type DsaStatus, type DsaSystem } from "@/app/pages/_shared/dsa/dsa-data";
+import { contactName, dsaScopeOptions, dsaStatusMeta, formatShortDate, todayIso, type Dsa, type DsaStatus, type DsaSystem } from "@/app/pages/_shared/dsa/dsa-data";
 import { cx } from "@/utils/cx";
 import { AuditLog, milestones } from "@/app/pages/_shared/audit-log";
 import { AuditFeed } from "@/app/pages/_shared/audit-feed";
@@ -78,40 +78,6 @@ function MetaField({ label, children, onDark = false }: { label: string; childre
 }
 
 const NotProvided = () => <span className="text-quaternary">Not provided</span>;
-
-// project-detail's own ContactCard, ported directly (same title/orgLabel header, border-t divider,
-// name line, and a Mail01/Phone01-led row rather than two bare text lines) rather than approximated.
-// `orgLabel` is optional there too - passed for "Agreement requested by" (the partner org, real,
-// distinct information) and omitted for "Agreement custodian (DEW)", whose org is already named in
-// the title itself, so repeating "DEW" as a value one line below would be a literal duplicate.
-function ContactCard({ title, orgLabel, contact }: { title: string; orgLabel?: string; contact: DsaContact }) {
-  const name = contactName(contact);
-  return (
-    <BentoCard className="flex-1">
-      <div className="flex flex-col gap-0.5">
-        <h2 className="text-sm font-semibold text-primary">{title}</h2>
-        {orgLabel && <p className="text-sm text-tertiary">{orgLabel}</p>}
-      </div>
-      <div className="flex flex-col gap-1 border-t border-secondary pt-4">
-        {name ? <p className="text-sm font-medium text-primary">{name}</p> : <NotProvided />}
-        <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-tertiary">
-          {contact.email && (
-            <span className="flex items-center gap-1.5">
-              <Mail01 className="size-3.5 text-quaternary" />
-              {contact.email}
-            </span>
-          )}
-          {contact.phone && (
-            <span className="flex items-center gap-1.5">
-              <Phone01 className="size-3.5 text-quaternary" />
-              {contact.phone}
-            </span>
-          )}
-        </div>
-      </div>
-    </BentoCard>
-  );
-}
 
 function scopeLabels(system: DsaSystem) {
   return system.scopes.map((id) => dsaScopeOptions.find((o) => o.id === id)?.label ?? id).join(", ");
@@ -317,8 +283,8 @@ export function DsaDetail({
               </div>
             </div>
             <div className="flex w-full flex-col gap-4 lg:w-80 lg:shrink-0">
-              <ContactCard title="Agreement requested by" orgLabel={dsa.partner || undefined} contact={dsa.requestedBy} />
-              <ContactCard title="Agreement custodian (DEW)" contact={dsa.custodian} />
+              <ContactCard title="Agreement requested by" orgLabel={dsa.partner || undefined} name={contactName(dsa.requestedBy)} email={dsa.requestedBy.email} phone={dsa.requestedBy.phone} />
+              <ContactCard title="Agreement custodian (DEW)" name={contactName(dsa.custodian)} email={dsa.custodian.email} phone={dsa.custodian.phone} />
             </div>
           </div>
         </TabPanel>

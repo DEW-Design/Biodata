@@ -46,6 +46,30 @@ const pruneNode = (node: MapNode, query: string, role: UserRole): MapNode[] => {
 const flatten = (nodes: MapNode[]): MapNode[] => nodes.flatMap((n) => [n, ...flatten(n.children)]);
 const countOpen = (role: UserRole) => SCREENS.filter((s) => availability(s, role).open).length;
 
+const RECENT_KEY = "prototype-tools-recent-pages";
+const RECENT_KEPT = 8;
+const RECENT_SHOWN = 4;
+
+const readRecent = (): string[] => {
+  try {
+    const parsed: unknown = JSON.parse(window.localStorage.getItem(RECENT_KEY) ?? "[]");
+    return Array.isArray(parsed) ? parsed.filter((p): p is string => typeof p === "string") : [];
+  } catch {
+    return [];
+  }
+};
+
+/** Remember the screens you open, newest first, so the Pages panel can offer the last few. Only screens in the index count (a record
+ *  with some other id is not one), and the panel's own role switching does not add a duplicate. Mounted by the bar, which every
+ *  screen has, so it records even while the bar is folded. */
+export function useRecordPage() {
+  const pathname = usePathname();
+  useEffect(() => {
+    if (!SCREENS.some((s) => s.path === pathname)) return;
+    window.localStorage.setItem(RECENT_KEY, JSON.stringify([pathname, ...readRecent().filter((p) => p !== pathname)].slice(0, RECENT_KEPT)));
+  }, [pathname]);
+}
+
 export function PagesTool({
   wasDrag,
   closeKey,
@@ -95,6 +119,7 @@ function PagesPanel({ close }: { close: () => void }) {
   const roleHref = useRoleHref();
   const setRole = useSetRole();
   const bodyRef = useRef<HTMLDivElement>(null);
+  const scrollRef = useRef<HTMLDivElement>(null);
   const [query, setQuery] = useState("");
   const searching = query.trim() !== "";
 
@@ -105,6 +130,17 @@ function PagesPanel({ close }: { close: () => void }) {
         .map((a) => ({ ...a, roots: a.roots.flatMap((r) => pruneNode(r, query, role)) }))
         .filter((a) => a.roots.length > 0),
     [map, query, role],
+  );
+  // The last few screens opened that this persona can open, other than this one (read once, when the panel opens).
+  const [recentPaths] = useState(readRecent);
+  const recent = useMemo(
+    () =>
+      recentPaths
+        .filter((path) => path !== pathname)
+        .map((path) => SCREENS.find((s) => s.path === path))
+        .filter((s): s is NonNullable<typeof s> => !!s && availability(s, role).open)
+        .slice(0, RECENT_SHOWN),
+    [recentPaths, pathname, role],
   );
   const personas = useMemo(() => USER_ROLES.map((r) => ({ role: r, count: countOpen(r) })), []);
   const openCount = personas.find((p) => p.role === role)?.count ?? 0;
@@ -129,9 +165,18 @@ function PagesPanel({ close }: { close: () => void }) {
   const expandable = useMemo(() => new Set<Key>(areas.flatMap((a) => [areaKey(a.area), ...flatten(a.roots).filter((n) => n.children.length > 0).map((n) => n.screen.path)])), [areas]);
   const expanded = searching ? expandable : opened;
 
-  // Open on the page you are on, not at the top of a long list.
+  // Keep the page you are on in view, scrolling only as far as needed so the recent pages above stay visible.
+  // The tree builds its rows a frame after mounting, so the row is looked for over the next few frames.
   useEffect(() => {
-    bodyRef.current?.querySelector<HTMLElement>(`[data-key="${CSS.escape(pathname)}"]`)?.scrollIntoView({ block: "center" });
+    let frame = 0;
+    let tries = 0;
+    const find = () => {
+      const row = scrollRef.current?.querySelector<HTMLElement>(`[role=treegrid][aria-label=Pages] [data-key="${CSS.escape(pathname)}"]`);
+      if (row) row.scrollIntoView({ block: "nearest" });
+      else if (tries++ < 10) frame = requestAnimationFrame(find);
+    };
+    find();
+    return () => cancelAnimationFrame(frame);
   }, [pathname]);
 
   const go = (path: string) => {
@@ -159,15 +204,19 @@ function PagesPanel({ close }: { close: () => void }) {
     }
   };
 
-  // `topLevel`: a screen standing alone at the top keeps the label in line with the areas' labels, which sit after a chevron.
+  // A screen standing at the top is as heavy as the areas; one inside an area recedes, so the area reads as its heading.
   const renderNode = (node: MapNode, topLevel = false) => (
     <TreeView.Item key={node.screen.path} id={node.screen.path} textValue={node.screen.name}>
-      <TreeView.ItemContent icon={topLevel ? <span aria-hidden="true" className="size-[18px] shrink-0" /> : undefined} className={cx(node.screen.path === pathname && "bg-secondary")}>
+      <TreeView.ItemContent weight={topLevel ? "semibold" : "normal"} className={cx(node.screen.path === pathname && "bg-brand-secondary hover:bg-brand-secondary")}>
         {node.screen.name}
       </TreeView.ItemContent>
       {node.children.map((c) => renderNode(c))}
     </TreeView.Item>
   );
+
+  const sectionLabel = "m-0 text-xs font-semibold tracking-wide text-tertiary uppercase";
+  const showRecent = recent.length > 0 && !searching;
+  const shownCount = areas.reduce((n, a) => n + a.count, 0);
 
   return (
     <>
@@ -185,31 +234,52 @@ function PagesPanel({ close }: { close: () => void }) {
         </SearchField>
       </div>
 
-      <div ref={bodyRef} className="h-[min(50vh,420px)] overflow-y-auto px-1.5 pb-1.5">
-        {areas.length === 0 ? (
-          <p className="m-0 p-3 text-sm text-tertiary">No page matches.</p>
-        ) : (
-          <TreeView aria-label="Pages" selectionMode="none" size="sm" expandedKeys={expanded} onExpandedChange={(keys) => !searching && setOpened(new Set(keys))} onAction={onAction}>
-            {areas.map((a) =>
-              // An area of one screen is that screen, not a group holding one row.
-              a.count === 1 && a.roots[0].children.length === 0 ? (
-                renderNode(a.roots[0], true)
-              ) : (
-                <TreeView.Item key={a.area} id={areaKey(a.area)} textValue={a.area}>
-                  <TreeView.ItemContent>{a.area}</TreeView.ItemContent>
-                  {a.roots.map((r) => renderNode(r))}
+      {/* One height whatever it holds: Recent, when there is any, is a card of its own that stays put; All pages scrolls under its own label. */}
+      <div ref={bodyRef} className="flex h-[min(56vh,480px)] flex-col">
+        {showRecent && (
+          <section aria-label="Recent pages" className="mx-2 mb-2 shrink-0 rounded-lg bg-primary p-1 ring-1 ring-primary">
+            <h2 className={cx(sectionLabel, "px-2 pt-1.5 pb-0.5")}>Recent</h2>
+            <TreeView aria-label="Recent pages" selectionMode="none" size="sm" alignLeaves onAction={onAction}>
+              {recent.map((s) => (
+                <TreeView.Item key={s.path} id={s.path} textValue={s.name}>
+                  <TreeView.ItemContent weight="normal" action={s.area !== s.name ? <span className="shrink-0 text-xs text-quaternary">{s.area}</span> : undefined}>
+                    {s.name}
+                  </TreeView.ItemContent>
                 </TreeView.Item>
-              ),
-            )}
-          </TreeView>
+              ))}
+            </TreeView>
+          </section>
         )}
+        <div className={cx("flex shrink-0 items-baseline justify-between px-4 pb-1", !showRecent && "pt-1")}>
+          <h2 className={sectionLabel}>{searching ? "Results" : "All pages"}</h2>
+          {searching && <span className="text-xs text-quaternary tabular-nums">{shownCount}</span>}
+        </div>
+        <div ref={scrollRef} className="min-h-0 flex-1 overflow-y-auto px-1.5 pb-6 [mask-image:linear-gradient(to_bottom,black_calc(100%-20px),transparent)]">
+          {areas.length === 0 ? (
+            <p className="m-0 p-3 text-sm text-tertiary">No page matches.</p>
+          ) : (
+            <TreeView aria-label="Pages" selectionMode="none" size="sm" alignLeaves expandedKeys={expanded} onExpandedChange={(keys) => !searching && setOpened(new Set(keys))} onAction={onAction}>
+              {areas.map((a) =>
+                // An area of one screen is that screen, not a group holding one row.
+                a.count === 1 && a.roots[0].children.length === 0 ? (
+                  renderNode(a.roots[0], true)
+                ) : (
+                  <TreeView.Item key={a.area} id={areaKey(a.area)} textValue={a.area}>
+                    <TreeView.ItemContent action={<span className="shrink-0 text-xs font-medium text-quaternary tabular-nums">{a.count}</span>}>{a.area}</TreeView.ItemContent>
+                    {a.roots.map((r) => renderNode(r))}
+                  </TreeView.Item>
+                ),
+              )}
+            </TreeView>
+          )}
+        </div>
       </div>
 
       <div className="flex items-center justify-between gap-3 border-t border-secondary px-3 py-2 text-xs text-tertiary">
         <span className="tabular-nums">{openCount} pages</span>
         <MenuTrigger>
           <AriaButton className="flex cursor-pointer items-center gap-1 rounded-md px-1.5 py-1 font-medium text-secondary outline-hidden hover:bg-secondary focus-visible:outline-2 focus-visible:outline-[var(--tool-bg)]">
-            {roleLabel(role)}
+            Switch persona
             <ChevronDown className="size-3.5 text-fg-quaternary" aria-hidden="true" />
           </AriaButton>
           <Popover placement="top end" offset={6} className="min-w-52 rounded-xl bg-primary p-1 font-sans shadow-xl ring-1 ring-secondary outline-hidden">

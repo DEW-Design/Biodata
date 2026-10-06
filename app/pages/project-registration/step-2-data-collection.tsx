@@ -17,8 +17,11 @@
 // Choosing "Other" reveals a required free-text field, same "Other" pattern as Step 1's own role
 // question.
 //
-// Sequence: Geographic Extent -> Project Focus Areas -> Method of Data Collection -> Review
-// (summary + optional add-ons: Targeted Species, Permit, URI/DOI, Limitations and biases).
+// Sequence: Geographic Extent -> Project Focus Areas -> Method of Data Collection -> Your role -> Review
+// (summary + optional add-ons: Targeted Species, Permit, URI/DOI, Limitations and biases). Your role was
+// Step 1's sixth question; the designer moved it here (6 Oct 2026: "Role should be shown in Step 2"). It is
+// still kept on the project details (`roleOfWork`), where the project page reads it, so this step takes it
+// as props beside its own state.
 
 import { useState } from "react";
 import { Plus, Trash01, Edit05, Lock01 } from "@untitledui/icons";
@@ -29,14 +32,24 @@ import { MultiSelect } from "@/components/base/select/multi-select";
 import { Button } from "@/components/base/buttons/button";
 import { TypeformCard, ChoiceTile } from "./typeform-card";
 import { GeoExtentPicker, geoExtentSummary } from "./geo-extent-picker";
-import { FOCUS_AREA_OPTIONS, PERMIT_TYPE_OPTIONS, COLLECTION_METHOD_OPTIONS, REGISTRATION_SPECIES, SURVEY_TYPE_OPTIONS } from "./data";
+import { FOCUS_AREA_OPTIONS, PERMIT_TYPE_OPTIONS, COLLECTION_METHOD_OPTIONS, REGISTRATION_SPECIES, ROLE_OF_WORK_OPTIONS, SURVEY_TYPE_OPTIONS } from "./data";
 import { MethodologySelect, SurveyTypeRadios } from "./methodology-fields";
 import { emptyPermitRow, isGeoExtentComplete, type DataCollectionState } from "./types";
 
 const SPECIES_ITEMS = REGISTRATION_SPECIES.map((s) => ({ id: s.id, label: `${s.commonName} (${s.species})` }));
 
-export function isStep2Valid(collection: DataCollectionState): boolean {
+export interface RoleOfWork {
+    roleOfWork: string | null;
+    roleOfWorkOther: string;
+}
+
+function isRoleValid({ roleOfWork, roleOfWorkOther }: RoleOfWork): boolean {
+    return !!roleOfWork && (roleOfWork !== "other" || roleOfWorkOther.trim().length > 0);
+}
+
+export function isStep2Valid(collection: DataCollectionState, role: RoleOfWork): boolean {
     return (
+        isRoleValid(role) &&
         isGeoExtentComplete(collection.geographicExtent) &&
         collection.focusAreas.length > 0 &&
         (!collection.focusAreas.includes("other") || collection.focusAreaOther.trim().length > 0) &&
@@ -46,16 +59,21 @@ export function isStep2Valid(collection: DataCollectionState): boolean {
     );
 }
 
-const TOTAL_QUESTIONS = 3;
+const TOTAL_QUESTIONS = 4;
 
 export function Step2DataCollection({
     value,
     onChange,
+    role,
+    onRoleChange,
     onComplete,
     startAtReview = false,
 }: {
     value: DataCollectionState;
     onChange: (value: DataCollectionState) => void;
+    /** The person's own role on the project (from the project details, see the header comment). */
+    role: RoleOfWork;
+    onRoleChange: (role: RoleOfWork) => void;
     /** Called from the review card's "Continue to Privacy and Restrictions" - advances the outer
      *  wizard to Step 3, same hand-off shape as Step 1's own `onComplete`. */
     onComplete: () => void;
@@ -94,6 +112,7 @@ export function Step2DataCollection({
         isGeoExtentComplete(value.geographicExtent),
         value.focusAreas.length > 0 && (!value.focusAreas.includes("other") || value.focusAreaOther.trim().length > 0),
         !!value.surveyType && !!value.collectionMethod && value.methodDetails.trim().length > 0,
+        isRoleValid(role),
     ];
 
     if (cardIndex === 0) {
@@ -154,16 +173,32 @@ export function Step2DataCollection({
         );
     }
 
+    if (cardIndex === 3) {
+        return (
+            <TypeformCard cardKey={3} step={4} totalSteps={TOTAL_QUESTIONS} kicker="About you" title="Lastly - what's your role on this project?" description="This helps us understand who's contributing to BioData SA." nextDisabled={!cardValid[3]} onNext={next} onBack={back}>
+                <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+                    {ROLE_OF_WORK_OPTIONS.map((option) => (
+                        <ChoiceTile key={option.id} label={option.label} isSelected={role.roleOfWork === option.id} onClick={() => onRoleChange({ roleOfWork: option.id, roleOfWorkOther: option.id === "other" ? role.roleOfWorkOther : "" })} />
+                    ))}
+                </div>
+                {role.roleOfWork === "other" && (
+                    <Input label="Please specify" placeholder="Describe your role or type of work" isRequired value={role.roleOfWorkOther} onChange={(v) => onRoleChange({ ...role, roleOfWorkOther: v })} autoFocus />
+                )}
+            </TypeformCard>
+        );
+    }
+
     // Review - same shape as Step 1's own closing card: a summary of the mandatory answers with
     // edit-jump links, then every genuinely optional field surfaced as a "+ Add..." choice.
     const surveyTypeLabel = SURVEY_TYPE_OPTIONS.find((o) => o.id === value.surveyType)?.label;
     const methodLabel = COLLECTION_METHOD_OPTIONS.find((o) => o.id === value.collectionMethod)?.label;
+    const roleLabel = role.roleOfWork === "other" ? role.roleOfWorkOther : ROLE_OF_WORK_OPTIONS.find((o) => o.id === role.roleOfWork)?.label;
     const focusAreaLabels = value.focusAreas
         .map((id) => (id === "other" && value.focusAreaOther ? value.focusAreaOther : (FOCUS_AREA_OPTIONS.find((o) => o.id === id)?.label ?? id)))
         .join(", ");
 
     return (
-        <TypeformCard cardKey="review" step={TOTAL_QUESTIONS} totalSteps={TOTAL_QUESTIONS} kicker="Review" title="You're all set for Data Collection" description="Review your answers below, or add a few more optional details before continuing." showQuestionCount={false} nextLabel="Continue to Privacy and Restrictions" nextDisabled={!isStep2Valid(value)} onNext={onComplete} onBack={back}>
+        <TypeformCard cardKey="review" step={TOTAL_QUESTIONS} totalSteps={TOTAL_QUESTIONS} kicker="Review" title="You're all set for Data Collection" description="Review your answers below, or add a few more optional details before continuing." showQuestionCount={false} nextLabel="Continue to Privacy and Restrictions" nextDisabled={!isStep2Valid(value, role)} onNext={onComplete} onBack={back}>
             <div className="flex flex-col rounded-xl border border-secondary [&>*+*]:border-t [&>*+*]:border-[var(--ui-border-secondary)]">
                 {[
                     { label: "Geographic extent", value: geoExtentSummary(value.geographicExtent), goToIndex: 0 },
@@ -171,6 +206,7 @@ export function Step2DataCollection({
                     { label: "Survey type", value: surveyTypeLabel, goToIndex: 2 },
                     { label: "Method of data collection", value: methodLabel, goToIndex: 2 },
                     { label: "Methodology", value: value.methodDetails, goToIndex: 2 },
+                    { label: "Your role", value: roleLabel, goToIndex: 3 },
                 ].map((row) => (
                     <div key={row.label} className="flex items-center justify-between gap-4 px-4 py-3">
                         <div className="flex min-w-0 flex-col">
