@@ -9,7 +9,7 @@ import { useLayoutEffect, useSyncExternalStore } from "react";
 //
 // One bar shows them all (`PrototypeTools`). The role is always there; every other tool is added
 // by the code that owns it, only while it is on screen and has something to do: a
-// screen with layout options to compare registers "layout", a project page with a dataset being
+// screen with layout options to compare registers "layout" (and "version" where one option has versions), a project page with a dataset being
 // ingested registers "ingestion". So a screen shows exactly its own tools, and a screen with
 // nothing else to preview shows just the role.
 
@@ -47,7 +47,7 @@ export const barValue = (tool: Tool) => {
 
 // Left to right. The role sits last, next to the bar's fixed right edge, so it never moves when
 // a screen adds or removes a tool.
-const ORDER = ["layout", "ingestion"];
+const ORDER = ["layout", "version", "ingestion"];
 
 let tools = new Map<string, Tool>();
 let snapshot: Tool[] = [];

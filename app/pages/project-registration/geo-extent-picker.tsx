@@ -17,6 +17,7 @@ import { InputNumber } from "@/components/base/input/input-number";
 import { Select } from "@/components/base/select/select";
 import { SA_NATIONAL_PARKS, boundarySummary, type Boundary } from "@/app/pages/_shared/map-search/geo";
 import { parseShapefileUpload } from "@/app/pages/_shared/map-search/shapefile";
+import { ExpandableMap } from "@/app/pages/_shared/map-search/expandable-map";
 import { Button } from "@/components/base/buttons/button";
 import { cx } from "@/utils/cx";
 import type { GeoExtentValue, GeoMethod } from "./types";
@@ -166,6 +167,7 @@ export function GeoExtentPicker({
     defaultRadiusKm = 25,
     referenceBoundaries = [],
     compactTabs = false,
+    expand = "fullscreen",
 }: {
     value: GeoExtentValue;
     onChange: (value: GeoExtentValue) => void;
@@ -175,6 +177,10 @@ export function GeoExtentPicker({
     referenceBoundaries?: Boundary[];
     /** Short tab names (Shapefile, Draw, List, Coordinates), for a narrow column. */
     compactTabs?: boolean;
+    /** How the drawing map opens larger. "modal" is the shared Expand button and dialog every other map in the app uses
+     *  (`ExpandableMap`), with the draw tools in its title bar; Add Project option 2's version 2 uses it (the designer,
+     *  9 Oct 2026). "fullscreen", the default, keeps this picker's own full screen view for every other caller. */
+    expand?: "fullscreen" | "modal";
 }) {
     const [activeDrawTool, setActiveDrawTool] = useState<"circle" | "polygon" | null>(null);
     const [coordRadius, setCoordRadius] = useState(defaultRadiusKm);
@@ -220,8 +226,10 @@ export function GeoExtentPicker({
                 <TabPanel id="map" className="flex flex-col gap-3 pt-2">
                     <p className="text-sm text-tertiary">Draw a circle or polygon on the map to define this area.</p>
                     <DrawToolButtons activeDrawTool={activeDrawTool} onDrawToolChange={setActiveDrawTool} />
-                    <div className="relative h-64 w-full overflow-hidden rounded-lg border border-secondary">
-                        <SAMap
+                    {expand === "modal" ? (
+                        <ExpandableMap
+                            title="Draw the project's geographic extent"
+                            toolbar={<DrawToolButtons activeDrawTool={activeDrawTool} onDrawToolChange={setActiveDrawTool} />}
                             boundaries={value.boundary ? [value.boundary] : []}
                             outlines={referenceBoundaries}
                             onBoundaryAdd={(boundary) => {
@@ -230,34 +238,50 @@ export function GeoExtentPicker({
                             }}
                             activeDrawTool={activeDrawTool}
                             onDrawToolChange={setActiveDrawTool}
-                            className="size-full"
+                            className="h-64 w-full"
                         />
-                        {/* Positioned top-left, clear of the map's own top-right zoom controls
-                            (app/pages/_shared/map-search/sa-map.tsx's `ZoomControls`, z-[1000]) -
-                            a real, working expand affordance per direct feedback that this inline
-                            view is "a very small window" to draw an accurate boundary in. */}
-                        <Button
-                            color="secondary"
-                            size="sm"
-                            iconLeading={Maximize02}
-                            className="absolute top-3 left-3 z-[1001] shadow-md"
-                            onClick={() => setIsMapExpanded(true)}
-                        >
-                            Full screen
-                        </Button>
-                    </div>
-                    <MapFullscreenOverlay
-                        isOpen={isMapExpanded}
-                        onOpenChange={setIsMapExpanded}
-                        boundary={value.boundary}
-                        outlines={referenceBoundaries}
-                        onBoundaryAdd={(boundary) => {
-                            onChange({ ...value, boundary });
-                            setActiveDrawTool(null);
-                        }}
-                        activeDrawTool={activeDrawTool}
-                        onDrawToolChange={setActiveDrawTool}
-                    />
+                    ) : (
+                        <>
+                            <div className="relative h-64 w-full overflow-hidden rounded-lg border border-secondary">
+                                <SAMap
+                                    boundaries={value.boundary ? [value.boundary] : []}
+                                    outlines={referenceBoundaries}
+                                    onBoundaryAdd={(boundary) => {
+                                        onChange({ ...value, boundary });
+                                        setActiveDrawTool(null);
+                                    }}
+                                    activeDrawTool={activeDrawTool}
+                                    onDrawToolChange={setActiveDrawTool}
+                                    className="size-full"
+                                />
+                                {/* Positioned top-left, clear of the map's own top-right zoom controls
+                                    (app/pages/_shared/map-search/sa-map.tsx's `ZoomControls`, z-[1000]) -
+                                    a real, working expand affordance per direct feedback that this inline
+                                    view is "a very small window" to draw an accurate boundary in. */}
+                                <Button
+                                    color="secondary"
+                                    size="sm"
+                                    iconLeading={Maximize02}
+                                    className="absolute top-3 left-3 z-[1001] shadow-md"
+                                    onClick={() => setIsMapExpanded(true)}
+                                >
+                                    Full screen
+                                </Button>
+                            </div>
+                            <MapFullscreenOverlay
+                                isOpen={isMapExpanded}
+                                onOpenChange={setIsMapExpanded}
+                                boundary={value.boundary}
+                                outlines={referenceBoundaries}
+                                onBoundaryAdd={(boundary) => {
+                                    onChange({ ...value, boundary });
+                                    setActiveDrawTool(null);
+                                }}
+                                activeDrawTool={activeDrawTool}
+                                onDrawToolChange={setActiveDrawTool}
+                            />
+                        </>
+                    )}
                 </TabPanel>
 
                 <TabPanel id="list" className="flex flex-col gap-3 pt-2">

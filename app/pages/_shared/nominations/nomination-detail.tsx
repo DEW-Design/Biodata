@@ -20,6 +20,7 @@ import { useFeatureAccess } from "@/lib/use-feature-access";
 import { useRoleHref } from "@/lib/use-role-href";
 import { AuditLog, milestones } from "@/app/pages/_shared/audit-log";
 import { AuditFeed } from "@/app/pages/_shared/audit-feed";
+import { useNominationVersion } from "@/app/pages/_shared/nominations/nomination-version";
 
 // A nomination's own page, laid out like the project page (every record page follows it): a Back
 // link, the gradient identity card with the actions at its top right (one white button, the rest in
@@ -44,6 +45,7 @@ export function NominationDetail({
   onReturn: (note: string) => void;
 }) {
   const roleHref = useRoleHref();
+  const { base } = useNominationVersion();
   const canReview = useFeatureAccess("nominationReview");
   const [confirm, setConfirm] = useState<null | "accept" | "delete">(null);
   const [rejectOpen, setRejectOpen] = useState(false);
@@ -75,7 +77,7 @@ export function NominationDetail({
 
   return (
     <div className="flex min-h-0 flex-1 flex-col overflow-y-auto">
-      <RecordBackLink href={roleHref("/pages/nominations")}>Back to nominations</RecordBackLink>
+      <RecordBackLink href={roleHref(base)}>Back to nominations</RecordBackLink>
 
       <RecordHero
         eyebrow="Sensitive species nomination"
@@ -289,11 +291,12 @@ export function NominationDetail({
 
 export function NominationNotFound({ id }: { id: string }) {
   const roleHref = useRoleHref();
+  const { base } = useNominationVersion();
   return (
     <div className="flex flex-1 flex-col items-center justify-center gap-3 p-12 text-center">
       <h1 className="text-lg font-semibold text-primary">Nomination not found</h1>
       <p className="max-w-sm text-sm text-balance text-tertiary">There is no nomination {id}. It may have been a draft that was deleted.</p>
-      <Button color="link-color" size="sm" href={roleHref("/pages/nominations")} iconLeading={ArrowNarrowLeft}>
+      <Button color="link-color" size="sm" href={roleHref(base)} iconLeading={ArrowNarrowLeft}>
         Back to nominations
       </Button>
     </div>

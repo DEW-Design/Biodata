@@ -7,6 +7,7 @@ import { inNominationScope, useNominationScope } from "@/app/pages/_shared/nomin
 import { speciesFor } from "@/app/pages/_shared/nominations/nomination-data";
 import { useNominations } from "@/app/pages/_shared/nominations/nomination-store";
 import { useRoleHref } from "@/lib/use-role-href";
+import { useNominationVersion } from "@/app/pages/_shared/nominations/nomination-version";
 import { NOMINATION_SECTION_LABEL } from "@/lib/registered-user-nav";
 
 // The section crumb of a nomination's record page: a searchable switcher over the nominations the list
@@ -17,6 +18,7 @@ export function NominationSwitcher({ currentId }: { currentId: string }) {
   const router = useRouter();
   const roleHref = useRoleHref();
   const nominations = useNominations();
+  const { base } = useNominationVersion();
   const { scope, organisation } = useNominationScope();
 
   const items = useMemo(
@@ -35,9 +37,9 @@ export function NominationSwitcher({ currentId }: { currentId: string }) {
       placeholder="Search nominations"
       items={items}
       currentId={currentId}
-      onSelect={(id) => router.push(roleHref(`/pages/nominations/${id}`))}
+      onSelect={(id) => router.push(roleHref(`${base}/${id}`))}
       viewAllLabel="View all nominations"
-      onViewAll={() => router.push(roleHref("/pages/nominations"))}
+      onViewAll={() => router.push(roleHref(base))}
     />
   );
 }

@@ -15,13 +15,16 @@ import {
   useNominationsHydrated,
 } from "@/app/pages/_shared/nominations/nomination-store";
 import { useRoleHref } from "@/lib/use-role-href";
+import { NominationVersionProvider, useNominationVersion, type NominationVersion } from "@/app/pages/_shared/nominations/nomination-version";
 
-// /pages/nominations/<id> - one nomination's record page.
-export default function NominationDetailPage() {
+// /pages/nominations/<id> - one nomination's record page; version 2's route (/pages/nominations/version-2/<id>) renders it too.
+export default function NominationDetailPage({ version = 1 }: { version?: NominationVersion }) {
   return (
-    <Suspense fallback={null}>
-      <NominationRecord />
-    </Suspense>
+    <NominationVersionProvider version={version}>
+      <Suspense fallback={null}>
+        <NominationRecord />
+      </Suspense>
+    </NominationVersionProvider>
   );
 }
 
@@ -31,6 +34,7 @@ function NominationRecord() {
   const hydrated = useNominationsHydrated();
   const router = useRouter();
   const roleHref = useRoleHref();
+  const { base } = useNominationVersion();
 
   return (
     <NominationShell recordId={id} breadcrumbCurrent={id}>
@@ -42,7 +46,7 @@ function NominationRecord() {
           onDelete={() => {
             deleteNomination(nomination.id);
             toast.success("Draft deleted", { description: nomination.id });
-            router.push(roleHref("/pages/nominations"));
+            router.push(roleHref(base));
           }}
           onStartReview={() => {
             startNominationReview(nomination.id);

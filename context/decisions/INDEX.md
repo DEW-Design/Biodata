@@ -387,3 +387,7 @@ Not imported into every session on purpose: read or grep it when a task needs hi
 - [2026-10-06] Reports: specimen reports hidden from Registered User, export on every report, start dates open as today - `2026-10-06-22-reports-specimen-reports-hidden-from-registered-user-export.md`
 - [2026-10-06] Page feedback: Reports empty sections, DLA My requests only, Taxonomy label, individual owner role - `2026-10-06-23-page-feedback-reports-empty-sections-dla-my-requests.md`
 - [2026-10-06] Project page option 2 removed; DLA My requests only for every role but BioData Admin - `2026-10-06-24-project-page-option-2-removed-dla-my-requests.md`
+- [2026-10-09] Add Project option 2 version 2 and a Version tool - `2026-10-09-01-add-project-option-2-version-2-and-a.md`
+- [2026-10-09] Nominations version 2: species register for the BioData Super Admin - `2026-10-09-02-nominations-version-2-species-register-for-the-biodata.md`
+- [2026-10-09] Species sensitivity: attribute ratings, bulk change, access never below the risk - `2026-10-09-03-species-sensitivity-attribute-ratings-bulk-change-access-nev.md`
+- [2026-10-09] Species sensitivity: attribute values, location areas, labelled ratings, bulk change page - `2026-10-09-04-species-sensitivity-attribute-values-location-areas-labelled.md`

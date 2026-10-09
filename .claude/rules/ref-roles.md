@@ -26,7 +26,7 @@ Seven roles, highest to lowest privilege. The order of `USER_ROLES` in `lib/user
 | Role | Who | Org pill | Nav (`navForRole`) |
 | --- | --- | --- | --- |
 | `biodata-super-admin` | BioData Super Admin (DEW). Everything a BioData Admin has, plus Controlled Vocabulary and Voucher Management. Passes every feature check. | DEW | `biodataSuperAdminNav`: the admin tree plus Controlled Vocabulary and Voucher Management after DSA |
-| `biodata-admin` | DEW admin, admins the platform. Passes every feature check except the super admin's own (`SUPER_ADMIN_ONLY` in `config/role-access.config.ts`: today, `ctrlVocabManagement` and `voucherManagement`). | DEW | `biodataAdminNav`: the registered tree plus User Management and DSA |
+| `biodata-admin` | DEW admin, admins the platform. Passes every feature check except the super admin's own (`SUPER_ADMIN_ONLY` in `config/role-access.config.ts`: today, `ctrlVocabManagement`, `voucherManagement` and `speciesSensitivity`, Species sensitivity in Nominations version 2). | DEW | `biodataAdminNav`: the registered tree plus User Management and DSA |
 | `biodata-user` | DEW staff | DEW | `registeredUserNav` |
 | `privileged-admin` | Admin of a partner organisation | ORG | `registeredUserNav` |
 | `privileged-user` | Member of a partner organisation (Birds SA and the like) | ORG | `registeredUserNav` |

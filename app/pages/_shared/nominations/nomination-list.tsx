@@ -32,6 +32,7 @@ import {
 import { useNominations } from "@/app/pages/_shared/nominations/nomination-store";
 import { SPECIES_GROUP_OPTIONS } from "@/app/pages/project-registration/data";
 import { useRoleHref } from "@/lib/use-role-href";
+import { useNominationVersion } from "@/app/pages/_shared/nominations/nomination-version";
 
 // The nominations list: Section header, search and filter, then the table (CONTRACTS 4.2), fitting
 // the viewport with rows scrolling under a sticky header. A row opens the record. Every status is in
@@ -69,6 +70,7 @@ function ReviewSteps() {
 export function NominationBanner({ canReview }: { canReview: boolean }) {
   const all = useNominations();
   const roleHref = useRoleHref();
+  const { base } = useNominationVersion();
   const waiting = all.filter((n) => n.status === "submitted").length;
   const returned = all.filter((n) => n.status === "returned" && n.nominator.name === CURRENT_USER_NAME);
   if (canReview && waiting > 0)
@@ -80,7 +82,7 @@ export function NominationBanner({ canReview }: { canReview: boolean }) {
         status={nominationStatusMeta.submitted.label}
         statusColor={nominationStatusMeta.submitted.badgeColor}
         actionLabel="Review nominations"
-        actionHref={roleHref("/pages/nominations?scope=all&status=submitted")}
+        actionHref={roleHref(`${base}?scope=all&status=submitted`)}
       />
     );
   if (!canReview && returned.length > 0) {
@@ -93,7 +95,7 @@ export function NominationBanner({ canReview }: { canReview: boolean }) {
         status={nominationStatusMeta.returned.label}
         statusColor={nominationStatusMeta.returned.badgeColor}
         actionLabel={returned.length === 1 ? "Update nomination" : "View nominations"}
-        actionHref={roleHref(returned.length === 1 ? `/pages/nominations/${first.id}` : "/pages/nominations?status=returned")}
+        actionHref={roleHref(returned.length === 1 ? `${base}/${first.id}` : `${base}?status=returned`)}
       />
     );
   }
@@ -103,6 +105,7 @@ export function NominationBanner({ canReview }: { canReview: boolean }) {
 export function NominationList({ scope, organisation, initialStatuses = [], canReview }: { scope: AgreementScope; organisation: string | null; initialStatuses?: NominationStatus[]; canReview: boolean }) {
   const all = useNominations();
   const roleHref = useRoleHref();
+  const { base } = useNominationVersion();
   // Someone else's draft isn't submitted yet, so it isn't anyone else's to see; All is the organisation's (everyone's for the admin).
   const scoped = all.filter((n) => inNominationScope(n, scope, organisation));
   const [search, setSearch] = useState("");
@@ -222,7 +225,7 @@ export function NominationList({ scope, organisation, initialStatuses = [], canR
                   {(n) => {
                     const species = speciesFor(n.speciesId);
                     return (
-                      <Table.Row id={n.id} href={roleHref(`/pages/nominations/${n.id}`)} textValue={`${n.id} ${species?.commonName ?? ""}`} className="group data-[href]:cursor-pointer">
+                      <Table.Row id={n.id} href={roleHref(`${base}/${n.id}`)} textValue={`${n.id} ${species?.commonName ?? ""}`} className="group data-[href]:cursor-pointer">
                         <Table.Cell>
                           <span className="text-sm font-medium whitespace-nowrap text-primary group-hover:text-brand-700 group-hover:underline">{n.id}</span>
                         </Table.Cell>

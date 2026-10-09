@@ -3,15 +3,20 @@
 import type { ReactNode } from "react";
 import { useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { ArrowNarrowRight } from "@untitledui/icons";
+import { usePathname, useRouter } from "next/navigation";
+import { ArrowNarrowRight, Shield03, User01 } from "@untitledui/icons";
+import { Tab, TabList, Tabs } from "@/components/application/tabs/tabs";
 import { Button } from "@/components/base/buttons/button";
 import { ActionsGroup, downloadCsv } from "@/app/pages/_shared/agreement-actions";
-import { AgreementScopeNav } from "@/app/pages/_shared/agreement-scope";
+import { AgreementScopeNav, useAgreementScope } from "@/app/pages/_shared/agreement-scope";
 import { inNominationScope, useNominationScope } from "@/app/pages/_shared/nominations/nomination-scope";
 import { nominationStatusMeta, speciesFor } from "@/app/pages/_shared/nominations/nomination-data";
 import { useNominations } from "@/app/pages/_shared/nominations/nomination-store";
 import { NominationSwitcher } from "@/app/pages/_shared/nominations/nomination-switcher";
+import { NominationVersionTool, SENSITIVITY_PATH, useNominationVersion } from "@/app/pages/_shared/nominations/nomination-version";
+import { SENSITIVITY_SPECIES, accessLevelMeta, appliesToLabel, ratingSummary, releaseRiskMeta } from "@/app/pages/_shared/nominations/species-sensitivity";
+import { latestChanges, ratingOf, useRatingChanges } from "@/app/pages/_shared/nominations/species-sensitivity-store";
+import { SpeciesSensitivitySwitcher } from "@/app/pages/_shared/nominations/species-sensitivity-record";
 import { PrimaryRail } from "@/app/pages/_shared/primary-rail";
 import { sectionIcons } from "@/app/pages/_shared/nav-icons";
 import { AppHeader } from "@/app/pages/_shared/app-header";
@@ -32,6 +37,9 @@ import { NOMINATION_SECTION_LABEL, keyHref, navForRole, type NavNode } from "@/l
 // Column 2 is navigation and actions only. How a nomination is reviewed is information, so it sits
 // above the table on the list (`ReviewSteps` in nomination-list.tsx), not here.
 // Both get the Actions group (Export CSV of what they can see).
+// Version 2 (nomination-version.tsx): the BioData Super Admin's column 2 adds "Species sensitivity" under All and My, one
+// list of places like User Management's; there, Export CSV exports the species' ratings. A species' page is a record page:
+// no column 2, and its section crumb switches species. The Version tool shows everywhere but the forms (version 1's in both).
 const CURRENT_KEY = "nominations";
 
 function SectionPlaceholder({ node }: { node: NavNode }) {
@@ -52,32 +60,82 @@ function SectionPlaceholder({ node }: { node: NavNode }) {
   );
 }
 
+/** Version 2, BioData Super Admin: All, My and Species sensitivity in one list of places. */
+function RegisterScopeNav({ onRegister }: { onRegister: boolean }) {
+  const router = useRouter();
+  const roleHref = useRoleHref();
+  const { base } = useNominationVersion();
+  const scope = useAgreementScope("all");
+  return (
+    <div className="flex flex-col gap-1">
+      <p className="mb-3 text-xs font-semibold tracking-wide text-quaternary uppercase">Nominations</p>
+      <Tabs
+        orientation="vertical"
+        selectedKey={onRegister ? "register" : scope}
+        onSelectionChange={(key) => router.push(roleHref(key === "register" ? SENSITIVITY_PATH : `${base}?scope=${key}`))}
+      >
+        <TabList aria-label="Nominations" orientation="vertical" type="button-brand" fullWidth className="w-full">
+          <Tab id="all" label="All nominations" icon={sectionIcons[NOMINATION_SECTION_LABEL]} />
+          <Tab id="mine" label="My nominations" icon={User01} />
+          <Tab id="register" label="Species sensitivity" icon={Shield03} />
+        </TabList>
+      </Tabs>
+    </div>
+  );
+}
+
+function exportRegister(changes: ReturnType<typeof useRatingChanges>) {
+  const latest = latestChanges(changes);
+  downloadCsv(
+    "species-sensitivity.csv",
+    ["Common name", "Scientific name", "Group", "Applies to", "Data release risk", "User access level", "Last changed", "Changed by"],
+    SENSITIVITY_SPECIES.map((s) => {
+      const rating = ratingOf(latest, s.id);
+      const summary = ratingSummary(rating);
+      const c = latest.get(s.id);
+      return [s.commonName, s.species, s.group, appliesToLabel(rating), releaseRiskMeta[summary.risk].label, accessLevelMeta[summary.access].label, c?.at ?? "", c?.by ?? ""];
+    }),
+  );
+}
+
 function ScopeNav() {
   const nominations = useNominations();
+  const changes = useRatingChanges();
   const { canAll, organisation } = useNominationScope();
+  const { version, base } = useNominationVersion();
+  const pathname = usePathname();
+  const canRate = useFeatureAccess("speciesSensitivity");
+  const withRegister = version === 2 && canRate;
+  const onRegister = withRegister && pathname.startsWith(SENSITIVITY_PATH);
   const visible = nominations.filter((n) => inNominationScope(n, canAll ? "all" : "mine", organisation));
 
   return (
     <div className="flex flex-col gap-1">
-      <AgreementScopeNav
-        heading="Nominations"
-        basePath="/pages/nominations"
-        defaultScope={canAll ? "all" : "mine"}
-        myLabel="My nominations"
-        allLabel="All nominations"
-        allIcon={sectionIcons[NOMINATION_SECTION_LABEL]}
-        showAll={canAll}
-      />
+      {withRegister ? (
+        <RegisterScopeNav onRegister={onRegister} />
+      ) : (
+        <AgreementScopeNav
+          heading="Nominations"
+          basePath={base}
+          defaultScope={canAll ? "all" : "mine"}
+          myLabel="My nominations"
+          allLabel="All nominations"
+          allIcon={sectionIcons[NOMINATION_SECTION_LABEL]}
+          showAll={canAll}
+        />
+      )}
       <ActionsGroup
         onExportCsv={() =>
-          downloadCsv(
-            "sensitive-species-nominations.csv",
-            ["ID", "Species", "Scientific name", "Protection", "Nominated by", "Status", "Updated"],
-            visible.map((n) => {
-              const species = speciesFor(n.speciesId);
-              return [n.id, species?.commonName ?? "", n.speciesId, n.scope === "all" ? "All data" : "Specific attributes", n.nominator.name, nominationStatusMeta[n.status].label, n.updatedAt];
-            }),
-          )
+          onRegister
+            ? exportRegister(changes)
+            : downloadCsv(
+                "sensitive-species-nominations.csv",
+                ["ID", "Species", "Scientific name", "Protection", "Nominated by", "Status", "Updated"],
+                visible.map((n) => {
+                  const species = speciesFor(n.speciesId);
+                  return [n.id, species?.commonName ?? "", n.speciesId, n.scope === "all" ? "All data" : "Specific attributes", n.nominator.name, nominationStatusMeta[n.status].label, n.updatedAt];
+                }),
+              )
         }
       />
     </div>
@@ -88,6 +146,7 @@ export function NominationShell({
   breadcrumbCurrent,
   recordId,
   formSidebar = false,
+  speciesId,
   children,
 }: {
   /** The page-specific final crumb (a nomination ID, "New nomination"). When set, the section crumb links back to the list. */
@@ -96,6 +155,8 @@ export function NominationShell({
   recordId?: string;
   /** A create/edit form is rendered: column 2 becomes the form's section list (portalled via `FormSidebar`). */
   formSidebar?: boolean;
+  /** A species' sensitivity page (version 2): a record page, its section crumb a switcher over the species. */
+  speciesId?: string;
   children: ReactNode;
 }) {
   const router = useRouter();
@@ -103,6 +164,7 @@ export function NominationShell({
   const canAccess = useFeatureAccess("nominationAccess");
   const nav = navForRole(role);
   const roleHref = useRoleHref();
+  const { base } = useNominationVersion();
 
   const [localSection, setLocalSection] = useState<string | null>(null);
   const activeSection = localSection ?? NOMINATION_SECTION_LABEL;
@@ -132,11 +194,12 @@ export function NominationShell({
 
   // A record's page (a user, a request, a report ...) has no column 2: the whole width is the record (CONTRACTS 3.7). Its
   // navigation is the breadcrumb switcher, and its actions are in the record's own card.
-  const recordPage = showScopeNav && !!recordId && !formSidebar;
+  const recordPage = showScopeNav && (!!recordId || !!speciesId) && !formSidebar;
 
   return (
     <div className="font-barlow flex h-screen flex-col overflow-hidden">
       <PrototypeTools />
+      {canAccess && !formSidebar && <NominationVersionTool recordId={recordId} />}
       <AppHeader
         mobileNav={
           <MobileNavTrigger
@@ -152,10 +215,12 @@ export function NominationShell({
           </MobileNavTrigger>
         }
         section={
-          recordId && canAccess && !otherSection ? (
+          speciesId && canAccess && !otherSection ? (
+            <SpeciesSensitivitySwitcher speciesId={speciesId} />
+          ) : recordId && canAccess && !otherSection ? (
             <NominationSwitcher currentId={recordId} />
           ) : breadcrumbCurrent && !otherSection ? (
-            <Link href={roleHref("/pages/nominations")} className="hover:text-primary">
+            <Link href={roleHref(base)} className="hover:text-primary">
               {activeSection}
             </Link>
           ) : (

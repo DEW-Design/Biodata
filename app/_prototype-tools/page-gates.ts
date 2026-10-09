@@ -8,6 +8,7 @@ const wholePageGates: { prefix?: string; pattern?: RegExp; feature: FeatureKey }
   { prefix: "/pages/dsa", feature: "dsaManagement" },
   { prefix: "/pages/dla", feature: "dlaAccess" },
   { prefix: "/pages/user-management", feature: "userManagement" },
+  { prefix: "/pages/nominations/version-2/species-sensitivity", feature: "speciesSensitivity" },
   { prefix: "/pages/nominations", feature: "nominationAccess" },
   { prefix: "/pages/template-finder", feature: "templateFinder" },
   { prefix: "/pages/ctrl-vocab", feature: "ctrlVocabManagement" },
