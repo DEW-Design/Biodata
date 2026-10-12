@@ -61,6 +61,10 @@ const PROTO_LABS: ProtoEntry[] = [
     description: "How much room the table gets on a report's record page: the gradient card, a slim header, a folding column 2, or a facet panel. Reads the table's real size.",
   },
   {
+    route: "post-6-oct",
+    description: "A Linear-style shell with no header and no column 2: account, search and Add in the rail, open pages as tabs, one slim bar over an inset panel. Opens as the Super Admin (the largest scope); a Subtraction control on the tools bar steps from today's lab to a Linear-simple one, one removal at a time.",
+  },
+  {
     route: "project-detail",
     description: "project-detail's Overview tab and records tree, before both were folded into the real page.",
   },

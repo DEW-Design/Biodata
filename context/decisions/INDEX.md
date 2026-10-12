@@ -387,3 +387,10 @@ Not imported into every session on purpose: read or grep it when a task needs hi
 - [2026-10-06] Reports: specimen reports hidden from Registered User, export on every report, start dates open as today - `2026-10-06-22-reports-specimen-reports-hidden-from-registered-user-export.md`
 - [2026-10-06] Page feedback: Reports empty sections, DLA My requests only, Taxonomy label, individual owner role - `2026-10-06-23-page-feedback-reports-empty-sections-dla-my-requests.md`
 - [2026-10-06] Project page option 2 removed; DLA My requests only for every role but BioData Admin - `2026-10-06-24-project-page-option-2-removed-dla-my-requests.md`
+- [2026-10-12] Post 6 Oct lab: a Linear-style shell for the project page - `2026-10-12-01-post-6-oct-lab-a-linear-style-shell.md`
+- [2026-10-12] Post 6 Oct lab: the Linear-style shell at admin scale - `2026-10-12-02-post-6-oct-lab-the-linear-style-shell.md`
+- [2026-10-12] Post 6 Oct lab: a readable project page and full-page Search - `2026-10-12-03-post-6-oct-lab-a-readable-project-page.md`
+- [2026-10-12] Post 6 Oct lab: no DLA or DSA acronyms in labels - `2026-10-12-04-post-6-oct-lab-no-dla-or-dsa.md`
+- [2026-10-12] Post 6 Oct lab: legal links end the nav, and Home to project flow - `2026-10-12-05-post-6-oct-lab-legal-links-end-the.md`
+- [2026-10-12] Post 6 Oct lab: one tab at a time, search for anything, the records branch - `2026-10-12-06-post-6-oct-lab-one-tab-at-a.md`
+- [2026-10-12] Post 6 Oct lab: the process of subtraction, five steps toward Linear - `2026-10-12-07-post-6-oct-lab-the-process-of-subtraction.md`

@@ -45,7 +45,7 @@ export function formatDay(d: DateValue | null): string {
   return d ? d.toDate(getLocalTimeZone()).toLocaleDateString("en-AU", { day: "numeric", month: "short", year: "numeric" }) : "";
 }
 
-const RESTRICTION_DESCRIPTIONS: Record<RestrictionTypeKey, string> = {
+export const RESTRICTION_DESCRIPTIONS: Record<RestrictionTypeKey, string> = {
   embargo: "The whole dataset is withheld from public release until the end date.",
   species: "Records of these species are released with less detail than the rest.",
   locations: "Records from these locations are protected.",
@@ -261,7 +261,7 @@ function Section({ id, title, description, action, children }: { id: string; tit
   );
 }
 
-interface TocItem {
+export interface TocItem {
   id: string;
   label: string;
   children?: TocItem[];
@@ -301,7 +301,7 @@ function useActiveItem(ids: string[]) {
   return { active, pin };
 }
 
-function OnThisPage({ items }: { items: TocItem[] }) {
+export function OnThisPage({ items }: { items: TocItem[] }) {
   const flat = items.flatMap((i) => [i.id, ...(i.children ?? []).map((c) => c.id)]);
   const { active, pin } = useActiveItem(flat);
   const go = (id: string) => {
@@ -530,6 +530,7 @@ export function ProjectTab({
   artefactRecordCount,
   onGoToSpecies,
   layout = "default",
+  lead,
 }: {
   onGoToRecords: (kind: RecordKind | "all") => void;
   onGoToArtefacts: () => void;
@@ -547,6 +548,8 @@ export function ProjectTab({
   artefactRecordCount?: number;
   /** "v3": icon-only card actions on hover and a full-width content column. */
   layout?: "default" | "v3";
+  /** Content above the first section, inside the content column, so "On this page" starts level with it. */
+  lead?: ReactNode;
 }) {
   const { project, saveProject, records, artefacts, canEdit } = useEditStore();
   // Only roles that can upload see the Datasets card.
@@ -604,6 +607,7 @@ export function ProjectTab({
       <LayoutContext.Provider value={layout}>
       <InlineEditContext.Provider value={{ editing, setEditing, open: openCard, focusLabel, footer }}>
       <div className={cx("flex min-w-0 flex-1 flex-col gap-10", layout === "default" && "max-w-4xl")}>
+        {lead}
         <Section
           id="at-a-glance"
           title="Project at a glance"
