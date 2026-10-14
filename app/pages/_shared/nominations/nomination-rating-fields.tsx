@@ -4,17 +4,22 @@ import { Badge } from "@/components/base/badges/badges";
 import { Select } from "@/components/base/select/select";
 import {
   ACCESS_LEVEL_ORDER,
+  OPEN,
   RELEASE_RISK_ORDER,
   STANDARD_ACCESS,
   accessLevelMeta,
   isAccessAllowed,
   releaseRiskMeta,
+  ruleLabel,
   type AccessLevel,
+  type Rating,
   type ReleaseRisk,
-} from "@/app/pages/_shared/nominations/species-sensitivity";
+  type SpeciesRating,
+} from "@/app/pages/_shared/nominations/nomination-rating";
 
-// The risk badge and the two selects, used by the species sensitivity list (bulk change) and a species' page (editing).
-// Choosing a risk sets the level to its standard one; a level below the standard cannot be chosen (species-sensitivity.ts).
+// The risk badge and the two selects, used where a nomination is rated (its record page while under review, the form's Review
+// step), and a rating as read. Choosing a risk sets the level to its standard one; a level below the standard cannot be chosen
+// (nomination-rating.ts).
 // Each risk option carries its treatment (Obfuscated 1 km², Embargo / withheld ...), in the list and in the closed field.
 
 export function RiskBadge({ risk }: { risk: ReleaseRisk }) {
@@ -95,5 +100,44 @@ export function AccessSelect({
     >
       {(item) => <Select.Item {...item}>{item.label}</Select.Item>}
     </Select>
+  );
+}
+
+/** One rating as read: the badge and level, then the treatment and who sees it as held. */
+export function RatingValue({ rating }: { rating: Rating }) {
+  return (
+    <span className="flex flex-col items-start gap-1">
+      <span className="flex flex-wrap items-center gap-2">
+        <RiskBadge risk={rating.risk} />
+        <span>{accessLevelMeta[rating.access].label}</span>
+      </span>
+      <span className="text-tertiary">
+        {releaseRiskMeta[rating.risk].treatment}. Seen as held by {accessLevelMeta[rating.access].who}.
+      </span>
+    </span>
+  );
+}
+
+/** The species' current rating in one value: what an admin reviewing a nomination checks it against. */
+export function CurrentRatingValue({ rating }: { rating: SpeciesRating }) {
+  if (rating.appliesTo === "species")
+    return (
+      <span className="flex flex-col gap-1">
+        <span>Whole species</span>
+        <RatingValue rating={rating} />
+      </span>
+    );
+  return (
+    <div className="flex flex-col gap-3">
+      {rating.attributes.map((a) => (
+        <span key={a.id} className="flex flex-col gap-1">
+          <span>{ruleLabel(a)}</span>
+          <RatingValue rating={a} />
+        </span>
+      ))}
+      <span className="text-tertiary">
+        Every other attribute: {releaseRiskMeta[OPEN.risk].label}, {accessLevelMeta[OPEN.access].label}
+      </span>
+    </div>
   );
 }

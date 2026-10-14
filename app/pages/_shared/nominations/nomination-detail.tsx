@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Tabs as ContentTabs } from "react-aria-components";
+import { Tabs as ContentTabs, type Key } from "react-aria-components";
 import { ArrowNarrowLeft, CheckCircle, Edit05, MessageAlertCircle, PlayCircle, Trash01, XCircle, Grid01, Shield01, ClockRewind } from "@untitledui/icons";
 import { Badge } from "@/components/base/badges/badges";
 import { Button } from "@/components/base/buttons/button";
@@ -14,18 +14,30 @@ import { RecordActionBar, type RecordAction } from "@/app/pages/_shared/record-a
 import { HeroMeta, RecordBackLink, RecordHero, RecordRow } from "@/app/pages/_shared/record-hero";
 import { speciesImage } from "@/app/pages/_shared/map-search/species-images";
 import { SpeciesPhotoCarousel } from "@/app/pages/_shared/map-search/species-photo-carousel";
-import { AreaList, AreasMap } from "@/app/pages/_shared/nominations/nomination-areas";
-import { attributeLabel, attributeValueLabel, formatShortDate, nominationStatusMeta, protectionMeta, speciesFor, type Nomination } from "@/app/pages/_shared/nominations/nomination-data";
+import { AreaList, AreasMap, OwnJustification } from "@/app/pages/_shared/nominations/nomination-areas";
+import { attributeLabel, attributeValueLabel, formatShortDate, kindOf, locationArea, nominationStatusMeta, nominationSubject, protectionMeta, speciesFor, type Nomination } from "@/app/pages/_shared/nominations/nomination-data";
+import { geoExtentSummary } from "@/app/pages/project-registration/geo-extent-picker";
 import { useFeatureAccess } from "@/lib/use-feature-access";
 import { useRoleHref } from "@/lib/use-role-href";
 import { AuditLog, milestones } from "@/app/pages/_shared/audit-log";
 import { AuditFeed } from "@/app/pages/_shared/audit-feed";
 import { useNominationVersion } from "@/app/pages/_shared/nominations/nomination-version";
+import { setNominationRating, useNominations } from "@/app/pages/_shared/nominations/nomination-store";
+import { AccessSelect, CurrentRatingValue, RatingValue, RiskSelect } from "@/app/pages/_shared/nominations/nomination-rating-fields";
+import { STANDARD_ACCESS, areaRatingKey, currentSpeciesRating, nominationRatingKeys, ratingKeyLabel } from "@/app/pages/_shared/nominations/nomination-rating";
 
 // A nomination's own page, laid out like the project page (every record page follows it): a Back
 // link, the gradient identity card with the actions at its top right (one white button, the rest in
 // "..."), a notice saying where it stands and who acts next, then tabs of label/value rows:
 // Overview, What to protect, Audit history.
+// Version 2 (the designer, 12 Oct 2026): the BioData Super Admin's review sets the data release risk and user access level
+// on What to protect, one pair per thing protected (the whole species, or each attribute), kept on the nomination; once accepted
+// they count towards the species' current rating (its accepted nominations' ratings merged). Accept is refused until each has
+// a risk. Both admin roles see the species' current rating at the top of What to protect; a BioData Admin otherwise reviews as
+// in version 1. Both admin roles can edit any nomination past its draft, in the same form, whatever its status: the Super Admin
+// rates it there too (the designer, 12 Oct 2026).
+// A location nomination (version 2) has the same page: its place instead of a species (name, area and map), one rating for the
+// place, kept on the nomination once accepted. The nominator edits it in the same form it was nominated in.
 
 export function NominationDetail({
   nomination,
@@ -45,9 +57,12 @@ export function NominationDetail({
   onReturn: (note: string) => void;
 }) {
   const roleHref = useRoleHref();
-  const { base } = useNominationVersion();
+  const { base, version } = useNominationVersion();
   const canReview = useFeatureAccess("nominationReview");
+  const canRate = useFeatureAccess("nominationRating");
   const [confirm, setConfirm] = useState<null | "accept" | "delete">(null);
+  const [tab, setTab] = useState<Key>("overview");
+  const [showRatingErrors, setShowRatingErrors] = useState(false);
   const [rejectOpen, setRejectOpen] = useState(false);
   const [returnOpen, setReturnOpen] = useState(false);
 
@@ -55,16 +70,61 @@ export function NominationDetail({
   const species = speciesFor(n.speciesId);
   const meta = nominationStatusMeta[n.status];
   const isOwner = n.nominator.name === CURRENT_USER_NAME;
-  const name = species?.commonName ?? n.speciesId;
+  const kind = kindOf(n);
+  const name = nominationSubject(n);
+  const place = kind === "location" && n.location ? locationArea(n.location) : null;
+
   const photo = species ? speciesImage(species.species) : undefined;
   const submittedAt = n.history.find((e) => e.status === "submitted")?.at;
+  // Version 2: the Super Admin rates what the nomination protects while reviewing it, and sees the rating once accepted.
+  const rates = version >= 2 && canRate;
+  const nominations = useNominations();
+  const showsCurrent = version >= 2 && canRate;
+  const current = currentSpeciesRating(nominations, n.speciesId);
+  const rating = n.ratings ?? {};
+  const unrated = rates ? nominationRatingKeys(n).filter((k) => !rating[k]) : [];
+  const unratedNames = unrated.map((k) => ratingKeyLabel(n, k));
+
+  /** The risk and level for one thing protected: fields while under review, the rating once accepted, else nothing. */
+  const ratingFor = (key: string) => {
+    if (!rates) return null;
+    const value = rating[key];
+    if (n.status === "under_review")
+      return (
+        <div className="grid gap-4 border-t border-secondary pt-4 sm:grid-cols-2">
+          <RiskSelect
+            label="Data release risk"
+            value={value?.risk ?? null}
+            isInvalid={showRatingErrors && !value}
+            onChange={(risk) => setNominationRating(n.id, key, { risk, access: STANDARD_ACCESS[risk] })}
+          />
+          <AccessSelect label="User access level" risk={value?.risk ?? null} value={value?.access ?? null} onChange={(access) => value && setNominationRating(n.id, key, { ...value, access })} />
+        </div>
+      );
+    if (n.status === "accepted" && value)
+      return (
+        <div className="border-t border-secondary pt-4">
+          <RatingValue rating={value} />
+        </div>
+      );
+    return null;
+  };
 
   // One primary (the next step for whoever is looking), the natural alternative beside it, the rest
   // in "More actions" with the destructive ones set apart (RecordActionBar).
   const actions: { primary?: RecordAction; secondary: RecordAction[]; menu: RecordAction[] } = { secondary: [], menu: [] };
   if (canReview && n.status === "submitted") actions.primary = { id: "start", label: "Start review", icon: PlayCircle, onPress: onStartReview };
   if (canReview && n.status === "under_review") {
-    actions.primary = { id: "accept", label: "Accept", icon: CheckCircle, onPress: () => setConfirm("accept") };
+    actions.primary = {
+      id: "accept",
+      label: "Accept",
+      icon: CheckCircle,
+      onPress: () => {
+        if (unrated.length === 0) return setConfirm("accept");
+        setShowRatingErrors(true);
+        setTab("protection");
+      },
+    };
     actions.secondary.push({ id: "return", label: "Return for more information", icon: MessageAlertCircle, onPress: () => setReturnOpen(true) });
     actions.secondary.push({ id: "reject", label: "Reject", icon: XCircle, onPress: () => setRejectOpen(true) });
   }
@@ -74,15 +134,19 @@ export function NominationDetail({
   }
   if (isOwner && n.status === "submitted") (actions.primary ? actions.menu : actions.secondary).push({ id: "edit", label: "Edit nomination", icon: Edit05, onPress: onEdit });
   if (isOwner && n.status === "returned") actions.primary = { id: "update", label: "Update and resubmit", icon: Edit05, onPress: onEdit };
+  // Version 2: both admin roles edit any nomination past its draft, whatever its status, unless the nominator's own edit is already offered.
+  const ownEdit = isOwner && ["draft", "submitted", "returned"].includes(n.status);
+  if (version >= 2 && canReview && n.status !== "draft" && !ownEdit)
+    (actions.primary ? actions.menu : actions.secondary).push({ id: "edit", label: "Edit nomination", icon: Edit05, onPress: onEdit });
 
   return (
     <div className="flex min-h-0 flex-1 flex-col overflow-y-auto">
       <RecordBackLink href={roleHref(base)}>Back to nominations</RecordBackLink>
 
       <RecordHero
-        eyebrow="Sensitive species nomination"
+        eyebrow={kind === "location" ? "Sensitive location nomination" : "Sensitive species nomination"}
         title={name}
-        subtitle={species ? <span className="italic">{species.species}</span> : undefined}
+        subtitle={species ? <span className="italic">{species.species}</span> : n.location ? geoExtentSummary(n.location.extent) : undefined}
         actions={<RecordActionBar onDark {...actions} />}
       >
         <HeroMeta label="Nomination">{n.id}</HeroMeta>
@@ -148,7 +212,7 @@ export function NominationDetail({
         )}
       </div>
 
-      <ContentTabs defaultSelectedKey="overview" className="flex flex-1 flex-col">
+      <ContentTabs selectedKey={tab} onSelectionChange={setTab} className="flex flex-1 flex-col">
         <div className="shrink-0 px-6 pt-4">
           <TabList aria-label="Nomination sections" type="underline" size="md">
             <Tab id="overview" label="Overview" icon={Grid01} />
@@ -159,6 +223,14 @@ export function NominationDetail({
 
         <TabPanel id="overview" className="flex flex-col gap-6 p-6 lg:flex-row lg:items-start">
           <div className="min-w-0 flex-1 rounded-lg border border-secondary">
+            {kind === "location" ? (
+              <RecordRow label="Location">
+                <span className="flex flex-col">
+                  <span>{name}</span>
+                  {n.location && <span className="text-tertiary">{geoExtentSummary(n.location.extent)}</span>}
+                </span>
+              </RecordRow>
+            ) : (
             <RecordRow label="Species">
               {species ? (
                 <span className="flex flex-col">
@@ -172,8 +244,9 @@ export function NominationDetail({
                 <span className="text-tertiary">Not provided</span>
               )}
             </RecordRow>
-            <RecordRow label="Protection">{protectionMeta[n.scope].label}</RecordRow>
-            <RecordRow label="Justification">
+            )}
+            {kind === "species" && <RecordRow label="Protection">{protectionMeta[n.scope].label}</RecordRow>}
+            <RecordRow label="Reason">
               <p className={n.justification.trim() ? "m-0 max-w-prose whitespace-pre-line text-balance" : "m-0 text-tertiary"}>{n.justification.trim() || "Not provided"}</p>
             </RecordRow>
             <RecordRow label="Nominated by">
@@ -193,15 +266,57 @@ export function NominationDetail({
           )}
         </TabPanel>
 
-        <TabPanel id="protection" className="p-6">
+        <TabPanel id="protection" className="flex flex-col gap-4 p-6">
+          {showRatingErrors && unrated.length > 0 && (
+            <AlertFullWidth
+              color="error"
+              title="Ratings missing"
+              description={`Set a data release risk before accepting: ${unratedNames.join(", ")}.`}
+              confirmLabel=""
+              contained
+              wrap
+            />
+          )}
           <div className="rounded-lg border border-secondary">
-            <RecordRow label="Protection">
-              <span className="flex flex-col">
-                <span>{protectionMeta[n.scope].label}</span>
-                <span className="text-tertiary">{protectionMeta[n.scope].description}</span>
-              </span>
-            </RecordRow>
-            {n.scope === "selected" &&
+            {showsCurrent && (
+              <RecordRow label="Current rating">
+                {kind === "species" ? (
+                  <CurrentRatingValue rating={current} />
+                ) : n.status === "accepted" && rating.location ? (
+                  <RatingValue rating={rating.location} />
+                ) : (
+                  <span className="flex flex-col">
+                    <span>Not rated</span>
+                    <span className="text-tertiary">The rating is set when the nomination is accepted.</span>
+                  </span>
+                )}
+              </RecordRow>
+            )}
+            {kind === "location" ? (
+              <RecordRow label="Location">
+                <div className="flex flex-col gap-3">
+                  <span>Everything recorded in this area is protected.</span>
+                  {place && (
+                    <>
+                      <AreaList areas={[place]} />
+                      <AreasMap areas={[place]} className="h-72" />
+                    </>
+                  )}
+                  {ratingFor("location")}
+                </div>
+              </RecordRow>
+            ) : (
+              <RecordRow label="Protection">
+                <div className="flex flex-col gap-3">
+                  <span className="flex flex-col">
+                    <span>{protectionMeta[n.scope].label}</span>
+                    <span className="text-tertiary">{protectionMeta[n.scope].description}</span>
+                  </span>
+                  {n.scope === "all" && ratingFor("species")}
+                </div>
+              </RecordRow>
+            )}
+            {kind === "species" && n.scope === "selected" &&
               (n.attributes.length === 0 ? (
                 <RecordRow label="Attributes">
                   <span className="text-tertiary">No attributes chosen yet</span>
@@ -211,12 +326,22 @@ export function NominationDetail({
                   <RecordRow key={a.id} label={attributeLabel(a)}>
                     <div className="flex flex-col gap-3">
                       <span>{attributeValueLabel(a) || <span className="text-tertiary">Not provided</span>}</span>
+                      {a.justification !== undefined && <OwnJustification text={a.justification} />}
                       {a.attribute === "location" && a.areas.length > 0 && (
                         <>
-                          <AreaList areas={a.areas} />
+                          <AreaList
+                            areas={a.areas}
+                            renderArea={(area) => (
+                              <>
+                                {area.justification !== undefined && <OwnJustification text={area.justification} />}
+                                {ratingFor(areaRatingKey(a.id, area.id))}
+                              </>
+                            )}
+                          />
                           <AreasMap areas={a.areas} className="h-72" />
                         </>
                       )}
+                      {a.attribute !== "location" && ratingFor(String(a.id))}
                     </div>
                   </RecordRow>
                 ))
@@ -237,7 +362,13 @@ export function NominationDetail({
         icon={CheckCircle}
         iconColor="success"
         title={`Accept ${n.id}?`}
-        description={`This records the panel's decision to protect ${name} as nominated, and tells ${n.nominator.name}.`}
+        description={
+          rates && kind === "location"
+            ? `This records the panel's decision to protect ${name} with the rating you set, and tells ${n.nominator.name}.`
+            : rates
+            ? `This records the panel's decision to protect ${name} as nominated, adds its data release rating to the species' current one, and tells ${n.nominator.name}.`
+            : `This records the panel's decision to protect ${name} as nominated, and tells ${n.nominator.name}.`
+        }
         confirmLabel="Accept nomination"
         onConfirm={() => {
           setConfirm(null);

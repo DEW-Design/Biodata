@@ -4,7 +4,7 @@ import { useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { BreadcrumbSwitcher } from "@/app/pages/_shared/breadcrumb-switcher";
 import { inNominationScope, useNominationScope } from "@/app/pages/_shared/nominations/nomination-scope";
-import { speciesFor } from "@/app/pages/_shared/nominations/nomination-data";
+import { kindOf, nominationSubject } from "@/app/pages/_shared/nominations/nomination-data";
 import { useNominations } from "@/app/pages/_shared/nominations/nomination-store";
 import { useRoleHref } from "@/lib/use-role-href";
 import { useNominationVersion } from "@/app/pages/_shared/nominations/nomination-version";
@@ -18,16 +18,17 @@ export function NominationSwitcher({ currentId }: { currentId: string }) {
   const router = useRouter();
   const roleHref = useRoleHref();
   const nominations = useNominations();
-  const { base } = useNominationVersion();
+  const { base, version } = useNominationVersion();
   const { scope, organisation } = useNominationScope();
 
   const items = useMemo(
     () =>
       nominations
-        .filter((n) => inNominationScope(n, scope, organisation))
-        .map((n) => ({ id: n.id, label: speciesFor(n.speciesId)?.commonName ?? "Species not chosen", addon: n.id }))
+        // Version 1 lists species nominations only; version 2 names a location nomination by its location.
+        .filter((n) => inNominationScope(n, scope, organisation) && (version >= 2 || kindOf(n) === "species"))
+        .map((n) => ({ id: n.id, label: nominationSubject(n), addon: n.id }))
         .sort((a, b) => a.label.localeCompare(b.label) || a.id.localeCompare(b.id)),
-    [nominations, scope, organisation],
+    [nominations, scope, organisation, version],
   );
 
   return (

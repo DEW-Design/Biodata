@@ -2,7 +2,7 @@
 
 import type { ReactNode, RefAttributes } from "react";
 import { useCallback, useRef, useState } from "react";
-import { CheckDone01, ChevronDown, RefreshCcw01, SearchLg, XClose } from "@untitledui/icons";
+import { CheckDone01, ChevronDown, Plus, RefreshCcw01, SearchLg, XClose } from "@untitledui/icons";
 import { useFilter } from "react-aria";
 import type { Selection } from "react-aria-components";
 import {
@@ -159,6 +159,25 @@ interface MultiSelectProps extends RefAttributes<HTMLDivElement>, CommonProps {
      * @default "multiple"
      */
     selectionMode?: "multiple" | "single";
+    /** Called as the search text changes, to look the items up elsewhere (a list too long to hand over whole). */
+    onSearchChange?: (value: string) => void;
+    /**
+     * Whether the component narrows `items` to the search itself. False when the caller already hands over only the
+     * matches (with `onSearchChange`).
+     * @default true
+     */
+    filterItems?: boolean;
+    /** The matches are still being looked up: a "Searching" row shows under the search box. */
+    isLoading?: boolean;
+    /** The text of that row. @default "Searching" */
+    loadingLabel?: string;
+    /**
+     * Lets a person add what they typed when it is not in the list: a row pinned under the list,
+     * `Add "<typed>"`, shown while the search has text that matches no item's label exactly.
+     */
+    onCreate?: (value: string) => void;
+    /** The label of that row, from the typed text. @default `Add "<typed>"` */
+    createLabel?: (value: string) => string;
 }
 
 const MultiSelectRoot = ({
@@ -187,11 +206,26 @@ const MultiSelectRoot = ({
     selectedCountFormatter,
     supportingText,
     selectionMode = "multiple",
+    onSearchChange,
+    filterItems = true,
+    isLoading = false,
+    loadingLabel = "Searching",
+    onCreate,
+    createLabel = (value) => `Add "${value}"`,
 }: MultiSelectProps) => {
     const single = selectionMode === "single";
     const [isOpen, setOpen] = useState(false);
     const { contains } = useFilter({ sensitivity: "base" });
-    const [searchValue, setSearchValue] = useState("");
+    const [searchValue, setSearchValueState] = useState("");
+    const setSearchValue = useCallback(
+        (value: string) => {
+            setSearchValueState(value);
+            onSearchChange?.(value);
+        },
+        [onSearchChange],
+    );
+    const typed = searchValue.trim();
+    const canCreate = !!onCreate && !!typed && !isLoading && !items?.some((item) => item.label?.trim().toLowerCase() === typed.toLowerCase());
 
     const triggerRef = useRef<HTMLButtonElement>(null);
     const [popoverWidth, setPopoverWidth] = useState("");
@@ -208,7 +242,7 @@ const MultiSelectRoot = ({
 
     const handleClearSearch = useCallback(() => {
         setSearchValue("");
-    }, []);
+    }, [setSearchValue]);
 
     return (
         <SelectContext.Provider value={{ size }}>
@@ -283,7 +317,7 @@ const MultiSelectRoot = ({
                         }
                     >
                         <AriaDialog className="outline-hidden">
-                            <AriaAutocomplete filter={contains} inputValue={searchValue} onInputChange={setSearchValue}>
+                            <AriaAutocomplete filter={filterItems ? contains : undefined} inputValue={searchValue} onInputChange={setSearchValue}>
                                 {showSearch && (
                                     <div className={cx("border-b border-secondary", searchSizes[size].wrapper)}>
                                         <AriaSearchField aria-label="Search" value={searchValue} onChange={setSearchValue} autoFocus className="group/search">
@@ -307,6 +341,25 @@ const MultiSelectRoot = ({
                                     </div>
                                 )}
 
+                                {isLoading && (
+                                    <div role="status" className={cx("flex items-center border-b border-secondary text-tertiary", sizes[size].root, sizes[size].text)}>
+                                        <svg fill="none" viewBox="0 0 20 20" aria-hidden="true" className="size-4 shrink-0 text-fg-quaternary">
+                                            <circle className="stroke-current opacity-30" cx="10" cy="10" r="8" fill="none" strokeWidth="2" />
+                                            <circle
+                                                className="origin-center animate-spin stroke-current"
+                                                cx="10"
+                                                cy="10"
+                                                r="8"
+                                                fill="none"
+                                                strokeWidth="2"
+                                                strokeDasharray="12.5 50"
+                                                strokeLinecap="round"
+                                            />
+                                        </svg>
+                                        {loadingLabel}
+                                    </div>
+                                )}
+
                                 <AriaListBox
                                     aria-label={label || "Options"}
                                     items={items}
@@ -321,18 +374,45 @@ const MultiSelectRoot = ({
                                         // A single choice is made in one pick: close, and focus returns to the trigger.
                                         if (single) setOpen(false);
                                     }}
-                                    renderEmptyState={() => (
-                                        <MultiSelectEmptyState
-                                            title={emptyStateTitle}
-                                            description={emptyStateDescription}
-                                            onClearSearch={searchValue ? handleClearSearch : undefined}
-                                        />
-                                    )}
+                                    // While a lookup runs, or what was typed can be added, the rows above and below say so.
+                                    renderEmptyState={() =>
+                                        isLoading || canCreate ? null : (
+                                            <MultiSelectEmptyState
+                                                title={emptyStateTitle}
+                                                description={emptyStateDescription}
+                                                onClearSearch={searchValue ? handleClearSearch : undefined}
+                                            />
+                                        )
+                                    }
                                     className={cx("overflow-y-auto py-1 outline-hidden", popoverMaxHeights[size])}
                                 >
                                     {children}
                                 </AriaListBox>
                             </AriaAutocomplete>
+
+                            {canCreate && (
+                                <div className="border-t border-secondary p-1">
+                                    <AriaButton
+                                        onPress={() => {
+                                            onCreate?.(typed);
+                                            setSearchValue("");
+                                            setOpen(false);
+                                        }}
+                                        className={(state) =>
+                                            cx(
+                                                "flex w-full cursor-pointer items-center rounded-md text-left font-medium text-brand-secondary outline-hidden",
+                                                sizes[size].root,
+                                                sizes[size].text,
+                                                (state.isHovered || state.isFocusVisible) && "bg-primary_hover",
+                                                state.isFocusVisible && "ring-2 ring-brand ring-inset",
+                                            )
+                                        }
+                                    >
+                                        <Plus data-icon aria-hidden="true" />
+                                        <span className="truncate">{createLabel(typed)}</span>
+                                    </AriaButton>
+                                </div>
+                            )}
 
                             {showFooter && !single && <MultiSelectFooter size={size} onReset={onReset} onSelectAll={onSelectAll} />}
                         </AriaDialog>

@@ -192,7 +192,7 @@ export default function DashboardPage() {
 function Dashboard() {
   const router = useRouter();
   // public-user ("Guest User") reads a different, smaller nav tree entirely - not a filtered view
-  // of registeredUserNav, since whole sections (DLA, Nominate Sensitive Species, Reports, Template
+  // of registeredUserNav, since whole sections (DLA, Sensitive Nominations, Reports, Template
   // Finder) don't exist for a signed-out visitor, not just individual leaves inside them. See
   // lib/registered-user-nav.ts's publicUserNav and .claude/rules/ref-roles.md, "User roles" section for the real
   // IA this is built from.

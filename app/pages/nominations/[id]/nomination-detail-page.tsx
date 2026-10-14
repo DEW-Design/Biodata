@@ -5,6 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 import { toast } from "@/components/application/toast/toast";
 import { NominationDetail, NominationNotFound } from "@/app/pages/_shared/nominations/nomination-detail";
 import { NominationShell } from "@/app/pages/_shared/nominations/nomination-shell";
+import { NominationRecordV3 } from "@/app/pages/_shared/nominations/nomination-record-v3";
 import {
   acceptNomination,
   deleteNomination,
@@ -17,7 +18,7 @@ import {
 import { useRoleHref } from "@/lib/use-role-href";
 import { NominationVersionProvider, useNominationVersion, type NominationVersion } from "@/app/pages/_shared/nominations/nomination-version";
 
-// /pages/nominations/<id> - one nomination's record page; version 2's route (/pages/nominations/version-2/<id>) renders it too.
+// /pages/nominations/<id> - one nomination's record page; versions 2 and 3's routes render it too (version 3 with its own layout).
 export default function NominationDetailPage({ version = 1 }: { version?: NominationVersion }) {
   return (
     <NominationVersionProvider version={version}>
@@ -34,15 +35,17 @@ function NominationRecord() {
   const hydrated = useNominationsHydrated();
   const router = useRouter();
   const roleHref = useRoleHref();
-  const { base } = useNominationVersion();
+  const { base, version } = useNominationVersion();
+  // Version 3 arranges the page around the task in hand (nomination-record-v3.tsx); the actions are the same.
+  const Record = version === 3 ? NominationRecordV3 : NominationDetail;
 
   return (
     <NominationShell recordId={id} breadcrumbCurrent={id}>
       {nomination ? (
-        <NominationDetail
+        <Record
           key={nomination.id}
           nomination={nomination}
-          onEdit={() => router.push(roleHref(`/pages/nominations/${nomination.id}/edit`))}
+          onEdit={() => router.push(roleHref(`${base}/${nomination.id}/edit`))}
           onDelete={() => {
             deleteNomination(nomination.id);
             toast.success("Draft deleted", { description: nomination.id });

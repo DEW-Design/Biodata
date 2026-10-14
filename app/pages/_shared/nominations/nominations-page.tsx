@@ -9,7 +9,7 @@ import { NominationVersionProvider, type NominationVersion } from "@/app/pages/_
 import { nominationStatusOrder, type NominationStatus } from "@/app/pages/_shared/nominations/nomination-data";
 import { useFeatureAccess } from "@/lib/use-feature-access";
 
-// The nominations list, shared by both versions' routes (/pages/nominations and /pages/nominations/version-2).
+// The nominations list, shared by both versions' routes (/pages/nominations and /pages/nominations/version-3).
 export function NominationsPage({ version }: { version: NominationVersion }) {
   return (
     <NominationVersionProvider version={version}>

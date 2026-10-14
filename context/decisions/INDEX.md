@@ -391,3 +391,14 @@ Not imported into every session on purpose: read or grep it when a task needs hi
 - [2026-10-09] Nominations version 2: species register for the BioData Super Admin - `2026-10-09-02-nominations-version-2-species-register-for-the-biodata.md`
 - [2026-10-09] Species sensitivity: attribute ratings, bulk change, access never below the risk - `2026-10-09-03-species-sensitivity-attribute-ratings-bulk-change-access-nev.md`
 - [2026-10-09] Species sensitivity: attribute values, location areas, labelled ratings, bulk change page - `2026-10-09-04-species-sensitivity-attribute-values-location-areas-labelled.md`
+- [2026-10-12] Nominations version 2: the Super Admin rates what to protect while reviewing - `2026-10-12-01-nominations-version-2-the-super-admin-rates-what.md`
+- [2026-10-12] Sensitive Nominations: species sensitivity removed, admins edit, more locations - `2026-10-12-02-sensitive-nominations-species-sensitivity-removed-admins-edi.md`
+- [2026-10-12] Nominations version 3: a nomination's page arranged around the task - `2026-10-12-03-nominations-version-3-a-nomination-s-page-arranged.md`
+- [2026-10-12] Sensitive Nominations: rate on What to protect, admin edit opens there - `2026-10-12-04-sensitive-nominations-rate-on-what-to-protect-admin.md`
+- [2026-10-14] Sensitive Nominations: justification per attribute and area, protection view grouped by reason - `2026-10-14-01-sensitive-nominations-justification-per-attribute-and-area-p.md`
+- [2026-10-14] Taxonomy Management version 2: every rank, Append on one page - `2026-10-14-02-taxonomy-management-version-2-every-rank-append-on.md`
+- [2026-10-14] Taxonomy version 2: one taxon per append, a page for every rank - `2026-10-14-03-taxonomy-version-2-one-taxon-per-append-a.md`
+- [2026-10-14] Home page version 2 in the approved DEW template - `2026-10-14-04-home-page-version-2-in-the-approved-dew.md`
+- [2026-10-14] Taxonomy version 2: Split Taxon, and the hierarchy view opens every rank - `2026-10-14-05-taxonomy-version-2-split-taxon-and-the-hierarchy.md`
+- [2026-10-14] Taxonomy version 2: Combine Taxon - `2026-10-14-06-taxonomy-version-2-combine-taxon.md`
+- [2026-10-14] Taxonomy version 2: Rename Taxon - `2026-10-14-07-taxonomy-version-2-rename-taxon.md`

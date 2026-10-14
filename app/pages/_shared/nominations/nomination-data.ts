@@ -4,7 +4,9 @@ import type { Boundary } from "@/app/pages/_shared/map-search/geo";
 import { CURRENT_USER_NAME } from "@/app/pages/_shared/agreement-scope";
 import { formatShortDate, todayIso, type DlaLocationMethod } from "@/app/pages/_shared/dla/dla-data";
 import { REGISTRATION_SPECIES, SPECIES_CONCEPTS, type ConceptOption, type RegistrationSpecies } from "@/app/pages/project-registration/data";
-import { emptyConceptRow, type ConceptValueRow } from "@/app/pages/project-registration/types";
+import { emptyConceptRow, isGeoExtentComplete, type ConceptValueRow, type GeoExtentValue } from "@/app/pages/project-registration/types";
+import { SA_NATIONAL_PARKS } from "@/app/pages/_shared/map-search/geo";
+import { areaRatingKey, ratingsPerArea, type Rating } from "@/app/pages/_shared/nominations/nomination-rating";
 
 // Sensitive species nominations (Master Flows lo-fi, Figma YMproGZfrFB5jUqPHPxMhk node 1401:10936):
 // one species per nomination, what should be protected (all of its data, or selected attributes),
@@ -34,12 +36,43 @@ export const protectionMeta: Record<ProtectionScope, { label: string; descriptio
   selected: { label: "Specific attributes", description: "Protect only the attributes you choose, such as where it was found." },
 };
 
+/** What is nominated (Nominations version 2, the designer, 12 Oct 2026): a species (the existing flow), or a location, in the
+ *  same form and steps: Location (a name, and the area chosen as the project form chooses one, `GeoExtentPicker`: a shapefile, a
+ *  drawing, a national park or coordinates) with its justification, then Review. A location protects everything recorded in it. A record
+ *  saved before kinds existed is a species. */
+export type NominationKind = "species" | "location";
+
+export interface NominationLocation {
+  name: string;
+  extent: GeoExtentValue;
+}
+
+export const kindOf = (n: { kind?: NominationKind }): NominationKind => n.kind ?? "species";
+
+/** What the nomination is for: the species' common name, or the location's name. */
+export function nominationSubject(n: { kind?: NominationKind; speciesId: string; location?: NominationLocation }): string {
+  if (kindOf(n) === "location") return n.location?.name.trim() || "Location not named";
+  return speciesFor(n.speciesId)?.commonName ?? (n.speciesId || "Species not chosen");
+}
+
+/** A location as one area, so it lists and maps like a Location attribute's areas (`AreaList`, `AreasMap`). A national park
+ *  is drawn as a circle at its centre: the park list holds centres, not surveyed boundaries. */
+export function locationArea(location: NominationLocation, parkRadiusKm = 15): NominationArea | null {
+  const { extent } = location;
+  const park = extent.method === "list" ? SA_NATIONAL_PARKS.find((p) => p.id === extent.parkId) : undefined;
+  const boundary: Boundary | null = extent.boundary ?? (park ? { id: `park-${park.id}`, kind: "circle", center: [park.lat, park.lon], radiusKm: parkRadiusKm, label: park.name } : null);
+  if (!boundary || !extent.method) return null;
+  return { id: `loc-${boundary.id}`, name: location.name.trim() || "Location", method: extent.method, boundary };
+}
+
 /** An area whose records of this species are obscured: drawn on the map, uploaded, picked from the park list, or entered as coordinates. */
 export interface NominationArea {
   id: string;
   name: string;
   method: DlaLocationMethod;
   boundary: Boundary;
+  /** This area's own justification. Absent: the nomination's justification applies (`protectedItems`). */
+  justification?: string;
 }
 
 export function areaMethodLabel(area: NominationArea): string {
@@ -70,6 +103,8 @@ export interface NominationAttribute {
   dateFrom: string | null;
   dateTo: string | null;
   areas: NominationArea[];
+  /** This attribute's own justification (not used by Location, whose areas carry theirs). Absent: the nomination's applies. */
+  justification?: string;
 }
 
 export interface NominationEvent {
@@ -82,10 +117,15 @@ export interface NominationEvent {
 export interface Nomination {
   /** NSS-<year>-<5 digits>. */
   id: string;
+  /** Version 2. Absent on a species nomination. */
+  kind?: NominationKind;
+  /** A location nomination's place. Its `speciesId` is empty, its scope "all" and its attributes none. */
+  location?: NominationLocation;
   /** The species' scientific name, the id `REGISTRATION_SPECIES` uses. */
   speciesId: string;
   scope: ProtectionScope;
   attributes: NominationAttribute[];
+  /** The justification shared by everything protected; an attribute or area may carry its own instead (the designer, 14 Oct 2026). */
   justification: string;
   nominator: { name: string; organisation: string; email: string };
   status: NominationStatus;
@@ -94,9 +134,13 @@ export interface Nomination {
   /** The reviewer's note on the latest decision (why it was returned or rejected, or a note on acceptance). */
   decisionNote?: string;
   history: NominationEvent[];
+  /** Version 2: the data release risk and user access level the BioData Super Admin sets while reviewing, approving or editing,
+   *  one per thing protected: `"species"` for the whole species, `"location"` for a place, else the attribute's id. Once accepted,
+   *  a species nomination's count towards the species' current rating (`currentSpeciesRating`). */
+  ratings?: Record<string, Rating>;
 }
 
-export type NominationDraft = Pick<Nomination, "speciesId" | "scope" | "attributes" | "justification">;
+export type NominationDraft = Pick<Nomination, "speciesId" | "scope" | "attributes" | "justification" | "kind" | "location">;
 
 export function emptyNominationDraft(): NominationDraft {
   return { speciesId: "", scope: "all", attributes: [], justification: "" };
@@ -164,22 +208,50 @@ export function attributeValueLabel(a: NominationAttribute): string {
   }
 }
 
-// ── Sections of the form and what each one needs to be complete. ──
+/** One thing a nomination protects that is justified on its own: a Location attribute's area, or any other chosen attribute.
+ *  `key` is stable while editing (`attr:<id>`, `area:<attribute id>:<area id>`). Each uses the nomination's main justification
+ *  unless it carries its own. */
+export interface ProtectedItem {
+  key: string;
+  label: string;
+  own?: string;
+}
 
-export type NominationSection = "species" | "protection" | "justification" | "review";
+export function protectedItems(attributes: NominationAttribute[]): ProtectedItem[] {
+  return attributes.flatMap((a): ProtectedItem[] => {
+    if (!a.attribute) return [];
+    if (a.attribute === "location") return a.areas.map((ar) => ({ key: areaRatingKey(a.id, ar.id), label: ar.name, own: ar.justification }));
+    return [{ key: `attr:${a.id}`, label: attributeLabel(a), own: a.justification }];
+  });
+}
+
+// ── Sections of the form and what each one needs to be complete. ──
+// Justification is no longer a step (the designer, 14 Oct 2026): it is asked beside what it justifies, on What to protect or
+// Location, once for everything with a way to give an attribute or area its own.
+
+export type NominationSection = "species" | "protection" | "location" | "review";
 
 export const nominationSections: Record<NominationSection, { title: string; description: string }> = {
   species: { title: "Species", description: "Choose the species you want treated as sensitive." },
-  protection: { title: "What to protect", description: "Protect all of its data, or only the attributes you choose." },
-  justification: { title: "Justification", description: "Tell the panel why this species needs protecting." },
+  protection: { title: "What to protect", description: "Protect all of its data, or only the attributes you choose, and tell the panel why." },
+  location: { title: "Location", description: "Name the place, choose its area and tell the panel why. Everything recorded in it is protected." },
   review: { title: "Review and submit", description: "Check the nomination before it goes to the sensitive species panel." },
 };
 
-export const NOMINATION_SECTION_ORDER: NominationSection[] = ["species", "protection", "justification", "review"];
+export const NOMINATION_SECTION_ORDER: NominationSection[] = ["species", "protection", "review"];
+export const LOCATION_SECTION_ORDER: NominationSection[] = ["location", "review"];
+export const sectionOrderFor = (kind: NominationKind) => (kind === "location" ? LOCATION_SECTION_ORDER : NOMINATION_SECTION_ORDER);
 
-/** Missing mandatory details, by section. A draft only needs the species (what identifies it). */
+/** Missing mandatory details, by section. A draft only needs what identifies it: the species, or the location's name. */
 export function missingForNomination(draft: NominationDraft, mode: "draft" | "submit" = "submit"): Record<NominationSection, string[]> {
-  const missing: Record<NominationSection, string[]> = { species: [], protection: [], justification: [], review: [] };
+  const missing: Record<NominationSection, string[]> = { species: [], protection: [], location: [], review: [] };
+  if (kindOf(draft) === "location") {
+    if (!draft.location?.name.trim()) missing.location.push("Name the location");
+    if (mode === "draft") return missing;
+    if (!draft.location || !isGeoExtentComplete(draft.location.extent)) missing.location.push("Define the location's area");
+    if (!draft.justification.trim()) missing.location.push("Enter a reason");
+    return missing;
+  }
   if (!draft.speciesId) missing.species.push("Choose a species");
   if (mode === "draft") return missing;
   if (draft.scope === "selected") {
@@ -192,7 +264,13 @@ export function missingForNomination(draft: NominationDraft, mode: "draft" | "su
       else if (!attributeValueLabel(a).trim()) missing.protection.push(`Give a value for ${attributeLabel(a)}`);
     });
   }
-  if (!draft.justification.trim()) missing.justification.push("Enter a justification");
+  // The shared justification is needed once there is something to justify; an item that has its own needs it filled.
+  const items = draft.scope === "selected" ? protectedItems(draft.attributes) : [];
+  const usesMain = draft.scope === "all" || items.length === 0 || items.some((item) => item.own === undefined);
+  if (usesMain && !draft.justification.trim()) missing.protection.push("Enter the main reason");
+  items.forEach((item) => {
+    if (item.own !== undefined && !item.own.trim()) missing.protection.push(`Enter a reason for ${item.label}`);
+  });
   return missing;
 }
 
@@ -229,7 +307,7 @@ const attr = (id: number, attribute: string, patch: Partial<NominationAttribute>
   ...patch,
 });
 
-export const seedNominations: Nomination[] = [
+const SEEDS: Nomination[] = [
   {
     id: "NSS-2026-00001",
     speciesId: "Litoria raniformis",
@@ -319,6 +397,8 @@ export const seedNominations: Nomination[] = [
     createdAt: "2026-08-11",
     updatedAt: "2026-08-29",
     decisionNote: "Accepted. Nest locations in the Coorong will be obscured in public results.",
+    // The rating the panel set on accepting it.
+    ratings: { "1": { risk: "medium", access: "level-2" }, "2": { risk: "high", access: "level-3" } },
     history: [
       { status: "draft", at: "2026-08-11", by: lana.name },
       { status: "submitted", at: "2026-08-12", by: lana.name },
@@ -355,6 +435,7 @@ export const seedNominations: Nomination[] = [
     createdAt: "2026-06-20",
     updatedAt: "2026-07-09",
     decisionNote: "Accepted. Observer names will be withheld for this species.",
+    ratings: { "1": { risk: "low", access: "level-2" } },
     history: [
       { status: "draft", at: "2026-06-20", by: olivia.name },
       { status: "submitted", at: "2026-06-21", by: olivia.name },
@@ -363,6 +444,185 @@ export const seedNominations: Nomination[] = [
     ],
   },
 ];
+
+// Version 2's location nominations. Real places (the bat cave and the Brolga wetland are documented); the nominators and dates
+// are the preview cast's. NSS-2026-00009 is accepted with the rating the panel set.
+SEEDS.push(
+  {
+    id: "NSS-2026-00008",
+    kind: "location",
+    speciesId: "",
+    scope: "all",
+    attributes: [],
+    location: { name: "Naracoorte Caves bat maternity cave", extent: { method: "list", parkId: "naracoorte-caves", boundary: null } },
+    justification: "The maternity cave of the Southern Bent-wing Bat. Visits during the breeding season disturb the colony, and public records lead people to the cave.",
+    nominator: maya,
+    status: "under_review",
+    createdAt: "2026-10-01",
+    updatedAt: "2026-10-05",
+    history: [
+      { status: "submitted", at: "2026-10-01", by: maya.name },
+      { status: "under_review", at: "2026-10-05", by: PANEL },
+    ],
+  },
+  {
+    id: "NSS-2026-00009",
+    kind: "location",
+    speciesId: "",
+    scope: "all",
+    attributes: [],
+    location: { name: "Bool Lagoon breeding wetland", extent: { method: "map", boundary: { id: "seed-bool-lagoon", kind: "circle", center: [-37.13, 140.7], radiusKm: 5, label: "Bool Lagoon" } } },
+    justification: "Brolga and other waterbirds nest on the lagoon. Exact nest records draw visitors into the breeding area.",
+    nominator: lana,
+    status: "accepted",
+    createdAt: "2026-08-21",
+    updatedAt: "2026-09-10",
+    decisionNote: "Accepted. Records in the wetland are withheld from public results.",
+    ratings: { location: { risk: "high", access: "level-3" } },
+    history: [
+      { status: "submitted", at: "2026-08-21", by: lana.name },
+      { status: "under_review", at: "2026-08-26", by: PANEL },
+      { status: "accepted", at: "2026-09-10", by: PANEL, note: "Accepted. Records in the wetland are withheld from public results." },
+    ],
+  },
+  // More location nominations, one per way of choosing an area and across the statuses, so the Locations tab has a list to
+  // work with (the designer, 12 Oct 2026). Illustrative, like the species seeds: not real nominations.
+  {
+    id: "NSS-2026-00010",
+    kind: "location",
+    speciesId: "",
+    scope: "all",
+    attributes: [],
+    location: { name: "Coorong Hooded Plover nesting beaches", extent: { method: "list", parkId: "coorong", boundary: null } },
+    justification: "Hooded Plovers nest on the open beach from August to March. Public nest records bring walkers and vehicles onto the nesting strip.",
+    nominator: phoenix,
+    status: "submitted",
+    createdAt: "2026-10-08",
+    updatedAt: "2026-10-08",
+    history: [{ status: "submitted", at: "2026-10-08", by: phoenix.name }],
+  },
+  {
+    id: "NSS-2026-00011",
+    kind: "location",
+    speciesId: "",
+    scope: "all",
+    attributes: [],
+    location: {
+      name: "Kangaroo Island Glossy Black-Cockatoo nest trees",
+      extent: { method: "map", boundary: { id: "seed-ki-glossy", kind: "circle", center: [-35.73, 137.33], radiusKm: 4, label: "Glossy Black-Cockatoo nest trees" } },
+    },
+    justification: "The nest hollows are few and known by tree. Published records have led to hollows being disturbed.",
+    nominator: olivia,
+    status: "returned",
+    createdAt: "2026-09-18",
+    updatedAt: "2026-09-30",
+    decisionNote: "Please narrow the area to the nesting gullies, and say whether feeding sites need protecting too.",
+    history: [
+      { status: "submitted", at: "2026-09-18", by: olivia.name },
+      { status: "under_review", at: "2026-09-24", by: PANEL },
+      { status: "returned", at: "2026-09-30", by: PANEL, note: "Please narrow the area to the nesting gullies, and say whether feeding sites need protecting too." },
+    ],
+  },
+  {
+    id: "NSS-2026-00012",
+    kind: "location",
+    speciesId: "",
+    scope: "all",
+    attributes: [],
+    location: { name: "Yellow-footed Rock-wallaby colony, Flinders Ranges", extent: { method: "list", parkId: "flinders-ranges", boundary: null } },
+    justification: "A small colony on the gorge walls. Exact sightings guide people to the rock piles where the wallabies shelter.",
+    nominator: maya,
+    status: "accepted",
+    createdAt: "2026-07-14",
+    updatedAt: "2026-08-04",
+    decisionNote: "Accepted. Coordinates in the park are obscured to 10 km².",
+    ratings: { location: { risk: "medium", access: "level-2" } },
+    history: [
+      { status: "submitted", at: "2026-07-14", by: maya.name },
+      { status: "under_review", at: "2026-07-20", by: PANEL },
+      { status: "accepted", at: "2026-08-04", by: PANEL, note: "Accepted. Coordinates in the park are obscured to 10 km²." },
+    ],
+  },
+  {
+    id: "NSS-2026-00013",
+    kind: "location",
+    speciesId: "",
+    scope: "all",
+    attributes: [],
+    location: { name: "Dalhousie mound springs", extent: { method: "coordinates", boundary: { id: "coordinates", kind: "circle", center: [-26.42, 135.5], radiusKm: 25 } } },
+    justification: "The springs hold fish and snails found nowhere else. Visitor numbers are already managed on site.",
+    nominator: lana,
+    status: "rejected",
+    createdAt: "2026-06-02",
+    updatedAt: "2026-06-20",
+    decisionNote: "Rejected. Visitor access to the springs is already managed on site.",
+    history: [
+      { status: "submitted", at: "2026-06-02", by: lana.name },
+      { status: "under_review", at: "2026-06-09", by: PANEL },
+      { status: "rejected", at: "2026-06-20", by: PANEL, note: "Rejected. Visitor access to the springs is already managed on site." },
+    ],
+  },
+  // A nomination with twelve attributes and three reasons, to stress the page that lists what it protects (the designer, 14 Oct
+  // 2026: "stress test it with more fields like 10 or 12 fields"). Illustrative, not a real nomination.
+  {
+    id: "NSS-2026-00014",
+    speciesId: "Neophema chrysogaster",
+    scope: "selected",
+    attributes: [
+      attr(1, "location", {
+        areas: [
+          area("area-seed-14a", "Coorong saltmarsh roost", "map", { id: "b-seed-14a", kind: "polygon", points: [[-35.74, 139.25], [-35.74, 139.36], [-35.84, 139.36], [-35.84, 139.25]] }),
+          area("area-seed-14b", "Coorong National Park", "list", { id: "b-seed-14b", kind: "circle", center: [-35.9, 139.4], radiusKm: 15, label: "Coorong National Park" }),
+          {
+            ...area("area-seed-14c", "Release aviary site", "coordinates", { id: "b-seed-14c", kind: "circle", center: [-35.79, 139.3], radiusKm: 2 }),
+            justification: "Captive-bred birds are released here. A public point would lead people to the aviary while birds are settling.",
+          },
+        ],
+      }),
+      attr(2, "date-observed", { dateFrom: "2026-04-01", dateTo: "2026-09-30" }),
+      attr(3, "animal-life-stage", { values: ["juvenile", "adult"] }),
+      attr(4, "sex", { value: "female" }),
+      attr(5, "activity", { value: "roosting" }),
+      attr(6, "micro-habitat", { value: "nest-mound" }),
+      attr(7, "observer", { values: ["phoenix-baker", "lana-steiner"], justification: "Observers are volunteers on private land who have asked not to be named." }),
+      attr(8, "determiners", { values: ["maya-dewitt"], justification: "Observers are volunteers on private land who have asked not to be named." }),
+      attr(9, "voucher-institution", { value: "sa-museum" }),
+      attr(10, "comments"),
+      attr(11, "resources"),
+      attr(12, "other", { attributeOther: "Leg band number", value: "Band numbers and colour combinations" }),
+    ],
+    justification:
+      "Fewer than a hundred birds return to the mainland each winter. Roost and feeding records draw birdwatchers and photographers onto the saltmarsh, which flushes the flock.",
+    nominator: lana,
+    status: "accepted",
+    createdAt: "2026-08-10",
+    updatedAt: "2026-09-02",
+    decisionNote: "Accepted. Roosts and the release site are withheld; the rest is generalised.",
+    ratings: {
+      "1": { risk: "high", access: "level-3" },
+      "2": { risk: "medium", access: "level-2" },
+      "3": { risk: "low", access: "level-2" },
+      "4": { risk: "low", access: "level-2" },
+      "5": { risk: "medium", access: "level-2" },
+      "6": { risk: "high", access: "level-3" },
+      "7": { risk: "medium", access: "level-3" },
+      "8": { risk: "medium", access: "level-3" },
+      "9": { risk: "low", access: "level-2" },
+      "10": { risk: "medium", access: "level-2" },
+      "11": { risk: "high", access: "level-3" },
+      "12": { risk: "extreme", access: "level-4" },
+    },
+    history: [
+      { status: "draft", at: "2026-08-10", by: lana.name },
+      { status: "submitted", at: "2026-08-12", by: lana.name },
+      { status: "under_review", at: "2026-08-18", by: PANEL },
+      { status: "accepted", at: "2026-09-02", by: PANEL, note: "Accepted. Roosts and the release site are withheld; the rest is generalised." },
+    ],
+  },
+);
+
+/** The seeds, their Location ratings by area (written by attribute above, as they were first seeded). */
+export const seedNominations: Nomination[] = SEEDS.map(ratingsPerArea);
 
 export const REVIEW_PANEL = PANEL;
 

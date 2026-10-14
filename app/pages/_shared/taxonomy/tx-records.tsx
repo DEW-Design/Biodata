@@ -30,7 +30,7 @@ import { cx } from "@/utils/cx";
 
 // An icon for each species tab (CONTRACTS 3.13), the one the app uses for the same thing; the tabs themselves come from
 // the Figma field definitions (tx-data.ts), unchanged.
-const TAB_ICON: Record<string, FC<{ className?: string }>> = {
+export const TAB_ICON: Record<string, FC<{ className?: string }>> = {
   main: File06,
   speciesStatus: Flag01,
   commonName: Type01,
@@ -59,14 +59,14 @@ const TAB_ICON: Record<string, FC<{ className?: string }>> = {
 export const actionHref = (type: ChangeType, from?: string) => `${TX_ROOT}/new?type=${type}${from ? `&from=${encodeURIComponent(from)}` : ""}`;
 export const speciesHref = (id: string) => `${TX_ROOT}/${encodeURIComponent(id)}`;
 
-const statusBadge = (t: Taxon) => (
+export const statusBadge = (t: { current: boolean }) => (
   <Badge size="sm" color={t.current ? "success" : "gray"}>
     {t.current ? "Current" : "Superseded"}
   </Badge>
 );
 
 /** A two or three way view switch, the project page's Tree / Table switch (segmented.ts). */
-function ViewSwitch<T extends string>({ label, value, onChange, items }: { label: string; value: T; onChange: (v: T) => void; items: { id: T; label: string; icon?: FC<{ className?: string }>; count?: number }[] }) {
+export function ViewSwitch<T extends string>({ label, value, onChange, items }: { label: string; value: T; onChange: (v: T) => void; items: { id: T; label: string; icon?: FC<{ className?: string }>; count?: number }[] }) {
   return (
     <ToggleButtonGroup
       aria-label={label}
@@ -90,8 +90,8 @@ function ViewSwitch<T extends string>({ label, value, onChange, items }: { label
   );
 }
 
-/** "Update taxonomy": a menu of the four changes, each opening its guided change at the first step it needs. */
-function NewChangeMenu() {
+/** "Update taxonomy": a menu of the four changes, each opening its guided change at the first step it needs. `hrefFor` sends a change elsewhere (version 2's Append). */
+export function NewChangeMenu({ hrefFor = (t: ChangeType) => actionHref(t), labelFor = (t: ChangeType) => CHANGE_META[t].title }: { hrefFor?: (type: ChangeType) => string; labelFor?: (type: ChangeType) => string }) {
   const router = useRouter();
   const roleHref = useRoleHref();
   const icons: Record<ChangeType, FC<{ className?: string }>> = { rename: PencilLine, combine: GitMerge, split: GitBranch01, append: Plus };
@@ -101,9 +101,9 @@ function NewChangeMenu() {
         Update taxonomy
       </Button>
       <Dropdown.Popover placement="bottom right">
-        <Dropdown.Menu aria-label="Update taxonomy" onAction={(key) => router.push(roleHref(actionHref(key as ChangeType)))}>
+        <Dropdown.Menu aria-label="Update taxonomy" onAction={(key) => router.push(roleHref(hrefFor(key as ChangeType)))}>
           {CHANGE_TYPES.map((t) => (
-            <Dropdown.Item key={t} id={t} icon={icons[t]} label={CHANGE_META[t].title} />
+            <Dropdown.Item key={t} id={t} icon={icons[t]} label={labelFor(t)} />
           ))}
         </Dropdown.Menu>
       </Dropdown.Popover>
@@ -275,7 +275,7 @@ function ReadTable({ label, columns, rows }: { label: string; columns: FieldDef[
 }
 
 /** A record card. Editing, it takes the one editing treatment (4.8): brand border, brand-50 halo, "Editing". */
-function Card({ title, editing, actions, children }: { title?: React.ReactNode; editing?: boolean; actions?: React.ReactNode; children: React.ReactNode }) {
+export function Card({ title, editing, actions, children }: { title?: React.ReactNode; editing?: boolean; actions?: React.ReactNode; children: React.ReactNode }) {
   return (
     <section className={editing ? "flex flex-col rounded-xl border border-[var(--color-brand-500)] bg-primary ring-4 ring-[var(--color-brand-50)]" : "flex flex-col rounded-xl border border-secondary bg-primary"}>
       {(title || editing || actions) && (
@@ -292,7 +292,7 @@ function Card({ title, editing, actions, children }: { title?: React.ReactNode; 
   );
 }
 
-function TabView({ tab, taxon, taxa }: { tab: TabDef; taxon: Taxon; taxa: Taxon[] }) {
+export function TabView({ tab, taxon, taxa }: { tab: TabDef; taxon: Taxon; taxa: Taxon[] }) {
   if (tab.kind === "grid")
     return (
       <Card title={tab.label}>
@@ -441,7 +441,8 @@ function SynonymsView({
   );
 }
 
-export function SpeciesRecord({ id }: { id: string }) {
+/** `back` sends the Back link elsewhere: version 2 opens a species from its list of every rank. */
+export function SpeciesRecord({ id, back = { href: TX_ROOT, label: "All species" } }: { id: string; back?: { href: string; label: string } }) {
   const taxon = useTaxon(id);
   const taxa = useTaxa();
   const hydrated = useTaxaHydrated();
@@ -496,7 +497,7 @@ export function SpeciesRecord({ id }: { id: string }) {
   return (
     <div className="flex min-h-0 flex-1 flex-col">
       <div className="min-h-0 flex-1 overflow-y-auto pb-6">
-        <RecordBackLink href={roleHref(TX_ROOT)}>All species</RecordBackLink>
+        <RecordBackLink href={roleHref(back.href)}>{back.label}</RecordBackLink>
         <RecordHero
           eyebrow={`${taxon.kingdom} species`}
           title={taxon.common || taxon.scientific}

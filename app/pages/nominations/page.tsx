@@ -5,7 +5,7 @@ import { NominationsPage } from "@/app/pages/_shared/nominations/nominations-pag
 // the list, record page and review steps follow the DLA pattern (context/decisions/2026-09-28-09-nominate-sensitive-species-built-per-direct-request-from.md, "Nominate Sensitive
 // Species"). A role with the All view switches between All and My nominations (`?scope=`; All is its
 // organisation's, or everyone's for the BioData Admin); a Registered User only ever sees their own. `?status=` seeds the status filter.
-// This is version 1; version 2 is at ./version-2 (nomination-version.tsx).
+// This is version 1; version 3 is at ./version-3 (nomination-version.tsx).
 export default function Page() {
   return <NominationsPage version={1} />;
 }

@@ -1,11 +1,11 @@
 import { staticNominationIds } from "@/app/pages/_shared/nominations/nomination-data";
-import NominationDetailPage from "../../[id]/nomination-detail-page";
+import EditNominationPage from "../../../[id]/edit/edit-nomination-page";
 
-// Version 2 of a nomination's record page (nomination-version.tsx). Same static ids as version 1.
+// Version 3's edit route, so editing a nomination stays in version 3. Same static ids as version 1.
 export function generateStaticParams() {
   return staticNominationIds().map((id) => ({ id }));
 }
 
 export default function Page() {
-  return <NominationDetailPage version={2} />;
+  return <EditNominationPage version={3} />;
 }

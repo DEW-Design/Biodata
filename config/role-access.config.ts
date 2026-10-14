@@ -23,7 +23,7 @@
 import { isBiodataAdmin, type UserRole } from "@/lib/user-role";
 
 /** One entry per gated product feature. Add a key as a feature is actually gated - don't pre-populate speculatively. */
-export type FeatureKey = "orgSwitcher" | "metricCardCustomization" | "dsaManagement" | "dlaAccess" | "dlaApproval" | "userManagement" | "restrictedData" | "nominationAccess" | "nominationReview" | "nominationAllView" | "datasetUpload" | "templateFinder" | "ctrlVocabManagement" | "taxonomyManagement" | "notificationManagement" | "voucherManagement" | "reports" | "projectAuditLog" | "specimenReports" | "dlaAllView" | "speciesSensitivity";
+export type FeatureKey = "orgSwitcher" | "metricCardCustomization" | "dsaManagement" | "dlaAccess" | "dlaApproval" | "userManagement" | "restrictedData" | "nominationAccess" | "nominationReview" | "nominationAllView" | "datasetUpload" | "templateFinder" | "ctrlVocabManagement" | "taxonomyManagement" | "notificationManagement" | "voucherManagement" | "reports" | "projectAuditLog" | "specimenReports" | "dlaAllView" | "nominationRating";
 
 /** Feature -> the roles (besides biodata-admin, which always passes) allowed to see it. */
 export const roleAccessMatrix: Record<FeatureKey, UserRole[]> = {
@@ -112,10 +112,10 @@ export const roleAccessMatrix: Record<FeatureKey, UserRole[]> = {
   // registered users", then "Privileged / Biodata User will be limited to their own DLA requests"). Every role but BioData Admin has
   // "My requests" alone. Empty array, not an omitted key, for the same reason as dsaManagement.
   dlaAllView: [],
-  // Species sensitivity (Nominations version 2, /pages/nominations/version-2/species-sensitivity): configure each species'
-  // data release risk and user access level, for the whole species or some attributes. BioData Super Admin only, per the
-  // designer (9 Oct 2026): listed in SUPER_ADMIN_ONLY below.
-  speciesSensitivity: [],
+  // Rating a nomination (Nominations version 2): the data release risk and user access level of what a nomination protects,
+  // set while reviewing, approving or editing it. BioData Admin and Super Admin (the designer, 12 Oct 2026: "A biodata super admin
+  // and admin must be able to set the data risk level and access level"; Super Admin only from 9 Oct). The admin bypass passes both.
+  nominationRating: [],
 };
 
 /**
@@ -136,7 +136,7 @@ export function showsProjectExplainer(role: UserRole): boolean {
  * checked against `roleAccessMatrix`.
  */
 /** Features for the BioData Super Admin alone: a BioData Admin, who otherwise passes every check, does not get these. */
-const SUPER_ADMIN_ONLY: FeatureKey[] = ["ctrlVocabManagement", "voucherManagement", "speciesSensitivity"];
+const SUPER_ADMIN_ONLY: FeatureKey[] = ["ctrlVocabManagement", "voucherManagement"];
 
 export function hasFeatureAccess(feature: FeatureKey, role: UserRole): boolean {
   if (role === "biodata-super-admin") return true;

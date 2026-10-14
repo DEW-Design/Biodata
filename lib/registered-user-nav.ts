@@ -12,7 +12,7 @@ import type { UserRole } from "@/lib/user-role";
 export const DSA_SECTION_LABEL = "Data Sharing Agreement (DSA)";
 export const DLA_SECTION_LABEL = "Data Licencing Agreement (DLA)";
 export const USER_MANAGEMENT_SECTION_LABEL = "User Management";
-export const NOMINATION_SECTION_LABEL = "Nominate Sensitive Species";
+export const NOMINATION_SECTION_LABEL = "Sensitive Nominations";
 export const TEMPLATE_FINDER_SECTION_LABEL = "Template Finder";
 export const CTRL_VOCAB_SECTION_LABEL = "Controlled Vocabulary";
 export const TAXONOMY_SECTION_LABEL = "Taxonomy Management";
@@ -100,7 +100,7 @@ export const registeredUserNav: NavNode[] = [
 // registeredUserNav above, because it isn't a subset of the same shape: Home and Projects are each
 // a single destination here (no My BioData/Datasets peer tab - a signed-out guest has no personal
 // contributions or private datasets to show a second tab for), Explore drops its Level 2/DLA
-// item entirely, and Data Licencing Agreement/Nominate Sensitive Species/Reports/Template Finder
+// item entirely, and Data Licencing Agreement/Sensitive Nominations/Reports/Template Finder
 // don't exist as sections at all (not just hidden leaves inside them). Reuses the `dashboard`/
 // `project-list` keys since the underlying pages are the same ones registered-user's tree points
 // at - each page reads the active role to decide whether to show its two-peer-tab treatment or
@@ -132,7 +132,7 @@ export const publicUserNav: NavNode[] = [
 // named in the IA cross-check below.
 //
 // NOT yet the full admin IA - see context/decisions/2026-09-22-06-biodata-admin-ia-cross-check.md, "BioData Admin IA cross-check":
-// Voucher/Notification management, Home's admin labels and Nominate Sensitive Species nesting under Observations
+// Voucher/Notification management, Home's admin labels and Sensitive Nominations (then "Nominate Sensitive Species") nesting under Observations
 // are all still to reconcile. Reports is reconciled: the admin IA's "Reports (All Users)" is "Reports",
 // the one name every role sees (designer, 1 Oct 2026).
 export const biodataAdminNav: NavNode[] = [
