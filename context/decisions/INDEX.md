@@ -387,3 +387,18 @@ Not imported into every session on purpose: read or grep it when a task needs hi
 - [2026-10-06] Reports: specimen reports hidden from Registered User, export on every report, start dates open as today - `2026-10-06-22-reports-specimen-reports-hidden-from-registered-user-export.md`
 - [2026-10-06] Page feedback: Reports empty sections, DLA My requests only, Taxonomy label, individual owner role - `2026-10-06-23-page-feedback-reports-empty-sections-dla-my-requests.md`
 - [2026-10-06] Project page option 2 removed; DLA My requests only for every role but BioData Admin - `2026-10-06-24-project-page-option-2-removed-dla-my-requests.md`
+- [2026-10-08] Newsletter template: /nltemplate, five layout options from the lo-fi - `2026-10-08-01-newsletter-template-nltemplate-five-layout-options-from-the.md`
+- [2026-10-08] Newsletter template: option 6, the gradient hero - `2026-10-08-02-newsletter-template-option-6-the-gradient-hero.md`
+- [2026-10-08] Newsletter option 6: the gradient hero runs full bleed - `2026-10-08-03-newsletter-option-6-the-gradient-hero-runs-full.md`
+- [2026-10-14] Newsletter: the picked template (option 7) with the vision, problems and opportunities as an infographic - `2026-10-14-01-newsletter-the-picked-template-option-7-with-the.md`
+- [2026-10-14] Newsletter infographic reviewed with the design foundations: one card, three bands, 35 percent shorter - `2026-10-14-02-newsletter-infographic-reviewed-with-the-design-foundations-.md`
+- [2026-10-14] Newsletter infographic: white logo, colour-coded bands, tiles with a top rule - `2026-10-14-03-newsletter-infographic-white-logo-colour-coded-bands-tiles.md`
+- [2026-10-14] Newsletter infographic answers to its width: stacked at email width, in rows from 768px, 1040px route - `2026-10-14-04-newsletter-infographic-answers-to-its-width-stacked-at.md`
+- [2026-10-14] Newsletter option 8: option 7 polished, with patterns from Mobbin newsletters - `2026-10-14-05-newsletter-option-8-option-7-polished-with-patterns.md`
+- [2026-10-14] Newsletter option 9: the picked template (option 7) at 960px wide - `2026-10-14-06-newsletter-option-9-the-picked-template-option-7.md`
+- [2026-10-14] Newsletter option 10: the wide picked template on a five-column grid - `2026-10-14-07-newsletter-option-10-the-wide-picked-template-on.md`
+- [2026-10-14] Newsletter option 10: opportunity areas three across, two rows - `2026-10-14-08-newsletter-option-10-opportunity-areas-three-across-two.md`
+- [2026-10-14] Newsletter: the 'some more info' content goes in (transition text, highlight samples, invite for testing,... - `2026-10-14-09-newsletter-the-some-more-info-content-goes-in.md`
+- [2026-10-14] Newsletter: How we're tracking carries the six phases and what happens in each stage - `2026-10-14-10-newsletter-how-we-re-tracking-carries-the-six.md`
+- [2026-10-14] Newsletter: handover rows removed, transition text typeset as a lead and body - `2026-10-14-11-newsletter-handover-rows-removed-transition-text-typeset-as.md`
+- [2026-10-15] Newsletter: option 10 chosen, the other nine layouts removed - `2026-10-15-01-newsletter-option-10-chosen-the-other-nine-layouts.md`
