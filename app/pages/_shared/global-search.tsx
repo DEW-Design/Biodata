@@ -64,7 +64,7 @@ const GROUP_LIMIT = 5;
 // with one line under it (organisation and project for a species; organisation for a project) and a
 // short label on the right, and each species carries the icon for its group (mammal, bird, reptile, amphibian, plant).
 
-interface SpeciesEntry {
+export interface SpeciesEntry {
   species: string;
   commonName: string;
   family: string;
@@ -78,7 +78,7 @@ interface SpeciesEntry {
 // One entry per species (scientific name), built from the occurrence data the role may see (a
 // public user sees Level 1 only, see map-search/record-access.ts). Non-Biotic and Community rows
 // (no family/group) are not species and are skipped.
-function buildSpeciesIndex(role: UserRole): SpeciesEntry[] {
+export function buildSpeciesIndex(role: UserRole): SpeciesEntry[] {
   const byName = new Map<string, SpeciesEntry>();
   for (const o of searchOccurrences) {
     if (!o.family || !o.group || recordAccess(o, role) === "hidden") continue;
@@ -95,7 +95,7 @@ function buildSpeciesIndex(role: UserRole): SpeciesEntry[] {
   return [...byName.values()];
 }
 
-const matchesSpecies = (s: SpeciesEntry, q: string) => [s.commonName, s.species, s.family, s.group].some((v) => v.toLowerCase().includes(q));
+export const matchesSpecies = (s: SpeciesEntry, q: string) => [s.commonName, s.species, s.family, s.group].some((v) => v.toLowerCase().includes(q));
 
 // Provenance leads: who published the record and in which project, before anything else. A species
 // recorded by several projects shows the first and counts the rest on the right.

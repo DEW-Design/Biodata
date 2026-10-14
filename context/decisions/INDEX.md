@@ -390,6 +390,13 @@ Not imported into every session on purpose: read or grep it when a task needs hi
 - [2026-10-08] Newsletter template: /nltemplate, five layout options from the lo-fi - `2026-10-08-01-newsletter-template-nltemplate-five-layout-options-from-the.md`
 - [2026-10-08] Newsletter template: option 6, the gradient hero - `2026-10-08-02-newsletter-template-option-6-the-gradient-hero.md`
 - [2026-10-08] Newsletter option 6: the gradient hero runs full bleed - `2026-10-08-03-newsletter-option-6-the-gradient-hero-runs-full.md`
+- [2026-10-12] Post 6 Oct lab: a Linear-style shell for the project page - `2026-10-12-01-post-6-oct-lab-a-linear-style-shell.md`
+- [2026-10-12] Post 6 Oct lab: the Linear-style shell at admin scale - `2026-10-12-02-post-6-oct-lab-the-linear-style-shell.md`
+- [2026-10-12] Post 6 Oct lab: a readable project page and full-page Search - `2026-10-12-03-post-6-oct-lab-a-readable-project-page.md`
+- [2026-10-12] Post 6 Oct lab: no DLA or DSA acronyms in labels - `2026-10-12-04-post-6-oct-lab-no-dla-or-dsa.md`
+- [2026-10-12] Post 6 Oct lab: legal links end the nav, and Home to project flow - `2026-10-12-05-post-6-oct-lab-legal-links-end-the.md`
+- [2026-10-12] Post 6 Oct lab: one tab at a time, search for anything, the records branch - `2026-10-12-06-post-6-oct-lab-one-tab-at-a.md`
+- [2026-10-12] Post 6 Oct lab: the process of subtraction, five steps toward Linear - `2026-10-12-07-post-6-oct-lab-the-process-of-subtraction.md`
 - [2026-10-14] Newsletter: the picked template (option 7) with the vision, problems and opportunities as an infographic - `2026-10-14-01-newsletter-the-picked-template-option-7-with-the.md`
 - [2026-10-14] Newsletter infographic reviewed with the design foundations: one card, three bands, 35 percent shorter - `2026-10-14-02-newsletter-infographic-reviewed-with-the-design-foundations-.md`
 - [2026-10-14] Newsletter infographic: white logo, colour-coded bands, tiles with a top rule - `2026-10-14-03-newsletter-infographic-white-logo-colour-coded-bands-tiles.md`
