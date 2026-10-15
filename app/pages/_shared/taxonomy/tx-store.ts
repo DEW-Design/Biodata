@@ -189,3 +189,74 @@ export function commitAppend(kingdom: Kingdom, parts: NameParts): TaxonChange | 
   useTxStore.setState((s) => ({ taxa: [...s.taxa, out], changes: [change, ...s.changes] }));
   return change;
 }
+
+/**
+ * Version 2's Append of a species or an infraspecies: the whole lineage is known (picked or added in the same append),
+ * and the NSX code is generated, not typed (tx-hierarchy.ts nextNsx). An infraspecies keeps its rank and name in the
+ * Main tab's infraspecific fields.
+ */
+export function commitAppendTaxon(input: { kingdom: Kingdom; group: Taxon["group"]; scientific: string; ranks: Taxon["ranks"]; nsx: string; infra: { rank: string; name: string }[] }): TaxonChange | null {
+  const { taxa } = useTxStore.getState();
+  const [id] = nextIds(taxa, 1);
+  if (!id) return null;
+  const { kingdom, ranks, scientific } = input;
+  const infraValues: Record<string, string> =
+    kingdom === "Flora"
+      ? Object.fromEntries(input.infra.flatMap((x, i) => [[`infraRank${i + 1}`, x.rank], [`infraName${i + 1}`, x.name]]))
+      : input.infra[0]
+        ? { subspecific: input.infra[0].name }
+        : {};
+  const out: Taxon = {
+    id,
+    nsx: input.nsx,
+    kingdom,
+    group: input.group,
+    common: "",
+    scientific,
+    ranks,
+    author: "",
+    current: true,
+    values: {
+      higherTaxaLevel: kingdom === "Flora" ? "Class" : "Order",
+      higherTaxaName: kingdom === "Flora" ? ranks.cls : ranks.order,
+      ...(kingdom === "Flora" ? { order: ranks.order } : {}),
+      family: ranks.family,
+      genus: ranks.genus,
+      species: epithetOf(scientific).split(" ")[0],
+      ...infraValues,
+      current: "Yes",
+      createdOn: today(),
+      createdBy: CURRENT_USER_NAME,
+    },
+    tables: {},
+    synonyms: [],
+    parents: [],
+    children: [],
+  };
+  const change = log("append", [], [out]);
+  useTxStore.setState((s) => ({ taxa: [...s.taxa, out], changes: [change, ...s.changes] }));
+  return change;
+}
+
+/**
+ * A species record moved by a split above it (version 2): its place in the hierarchy changes and, when its genus or species
+ * changed, its name too ("Macropus rufus" becomes "Osphranter rufus"); the old name is kept as a synonym, as a Rename does.
+ */
+export function retargetTaxa(changes: { id: string; scientific: string; ranks: Taxon["ranks"] }[]) {
+  if (!changes.length) return;
+  useTxStore.setState((s) => ({
+    taxa: s.taxa.map((t) => {
+      const c = changes.find((x) => x.id === t.id);
+      if (!c) return t;
+      const renamed = c.scientific !== t.scientific;
+      const words = c.scientific.split(" ");
+      return {
+        ...t,
+        scientific: c.scientific,
+        ranks: c.ranks,
+        values: { ...t.values, family: c.ranks.family, genus: c.ranks.genus, ...(t.values.order !== undefined ? { order: c.ranks.order } : {}), species: words[1] ?? t.values.species },
+        synonyms: renamed ? [asSynonym(t, t.scientific), ...t.synonyms] : t.synonyms,
+      };
+    }),
+  }));
+}

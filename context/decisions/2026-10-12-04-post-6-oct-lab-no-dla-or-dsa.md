@@ -1,0 +1,7 @@
+# 2026-10-12 - Post 6 Oct lab: no DLA or DSA acronyms in labels
+
+- **Oct 12 2026: Post 6 Oct lab: no DLA or DSA acronyms in labels.** The designer, from a screenshot of the Add menu: "remove DLA, DSA from brackets, and from everywhere within the post-6-oct scope." In `/proto/post-6-oct` the rail, the tabs, the breadcrumb, the Add menu and the bell now read "Data Licencing Agreement", "Data Sharing Agreement", "Data licence request", "Data sharing agreement" and "1 data licence request waiting for a decision". Done in the lab only, through one helper (`plain` in `panel-controls.tsx`) that strips the bracketed acronym at the point of display; the shared labels in `lib/registered-user-nav.ts` and `lib/create-menu.ts` keep theirs, so the real pages and the icon lookups by label are unchanged.
+
+  **Left as they are, outside what the lab writes:** record identifiers in the lists (DLA-2026-00510, DSA-2026-01415), which are the records' own IDs, and the sample notification names "DLA request decided" and "DLA request status changed" in the Notification Management list, which are shared data. If those should change too, the IDs are a product decision and the notification names are an edit to `nt-data.ts`.
+
+  Verified: `npx tsc --noEmit`, `npx eslint app/proto` and `npm run check:contracts`. A live scan as Super Admin of every section, the Add menu, the bell, the rail and the tabs found no bracketed acronym and no stand-alone DLA or DSA in lab text; only the identifiers and the notification names above remain. Not committed.

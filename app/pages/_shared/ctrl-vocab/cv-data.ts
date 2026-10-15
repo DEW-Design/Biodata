@@ -798,6 +798,48 @@ export const seedCvs: Cv[] = [
     mapping: { code: ["nsx"], name: ["common"], title: ["scientific"] },
     entries: rowsOf(NSX_SPECIES.filter((sp) => sp.kingdom === "Flora").map((sp) => sp.nsx)),
   }),
+  // The methodologies a Systematic project adds, one at a time, in Add Project option 2's version 2, kept here so the admins
+  // maintain the list (the designer: "put it on the vocabulary", 9 Oct 2026). Its own vocabulary, not entries in Survey method
+  // (BIODATA-102), which version 1 reads and which lists field techniques, not methodologies. The entries and their order are
+  // the designer's second list (9 Oct 2026), spelling tidied. IDs are never reused: the first list's ten keep theirs ("Others"
+  // became "Other" and keeps 10), and the new ones take 11 onwards, so the ID column is not the order. Incidental observations,
+  // Systematic and Not recorded, the list's top level, are the form's own choices (COLLECTION_METHOD_OPTIONS_V2), because the
+  // form branches on them.
+  base({
+    id: "BIODATA-117",
+    name: "Survey methodology",
+    category: "Survey methods",
+    type: "reference",
+    idKind: "number",
+    state: "published",
+    startDate: "2026-10-09",
+    createdAt: "2026-10-09",
+    description: "The methodologies a systematic survey follows.",
+    entries: (
+      [
+        ["1", "Biological Survey of South Australia"],
+        ["2", "Bush Assessment Method (BAM)"],
+        ["3", "Rangeland Assessment Method (RAM)"],
+        ["4", "Ramble"],
+        ["5", "Macro Invertebrate BioBlitz"],
+        ["7", "Pastoral Assessment"],
+        ["6", "Scattered Trees"],
+        ["11", "BCM"],
+        ["12", "Bird survey, 500 metre area search"],
+        ["13", "Bird survey, 20 minutes, 2 hectare"],
+        ["14", "EMSA modules"],
+        ["15", "Standard thermal transects"],
+        ["16", "Aerial kangaroo"],
+        ["17", "Herbivore Impact Assessment Method (SAAL)"],
+        ["18", "Aerial survey, vegetation mapping"],
+        ["9", "RLS"],
+        ["8", "BRUV"],
+        ["19", "NMDB"],
+        ["20", "Jessop transects"],
+        ["10", "Other"],
+      ] as const
+    ).map(([code, name]) => entry(code, name)),
+  }),
 ];
 
 /** The first seeds (the Figma's vocabulary names, BIODATA-001 to 011), retired by the store's migration. */

@@ -1,0 +1,17 @@
+# 2026-10-15 - Merge origin/mohan-wips (nominations 3, taxonomy 2, home 2, Add Project 2) into the post-6-oct lab branch
+
+- **Oct 15 2026: Merge origin/mohan-wips into the post-6-oct lab branch.** The designer: diff `mohan-wips`, merge it into this branch with no conflicts, nothing affected across both branches. Done under CONTRACTS 5.6: this branch receives, `origin/mohan-wips` was read and not changed. The merge base was 5e4744b (the 5 Oct feedback round), so everything on both sides since then met here for the first time. Pushed `sai-wips` first (fast-forward, no co-author trailers), as asked.
+
+  **Came in (2 commits, ffac702 and 1e34739):** Add Project option 2 version 2 (`registration-flow.tsx`, `option-2/version-2`), the version switcher (`app/pages/_shared/version-switcher.tsx`), Sensitive Nominations versions 2 and 3 (rating, protection, record v3; `app/pages/nominations/version-3/**`), Taxonomy version 2 (append, combine, rename, split, record, hierarchy; `app/pages/taxonomy/version-2/**`), Home page version 2 (`biodata-home/version-2`, the original home moved there, with its images in `public/pages/biodata-home/v2`), the Survey methodology vocabulary, a `multi-select.tsx` change, `nominationRating` opened to both admin roles in `config/role-access.config.ts`, the "Nominate Sensitive Species" to "Sensitive Nominations" rename, and 15 decision files.
+
+  **Conflicts: one, generated.** Git found a single conflict, `context/decisions/INDEX.md`, rebuilt from the files (`npm run context:index`, 430 decisions) rather than merged by hand. No source file was touched by both sides: the lab's shared edits (`project-tab.tsx` `lead` and `sheet`, `global-search.tsx` exports) are additive and in files the other branch did not change. `CONTRACTS.md`, `.claude/rules/contracts-*` and the clause numbers did not change on either side. The other side's `contracts/baseline.json` (the home page's ratchet entry moved to `version-2/page.tsx`, counts unchanged, none raised), `scripts/check-contracts.mjs` (one more file allowed for the table rule) and `ref-roles.md` (two sentences) came in as they were.
+
+  **Renumbered (5.6 item 4), ours keeps its numbers, content unchanged, nothing referred to the old names:**
+  - `2026-10-12-01` to `-04` (mohan) are now `2026-10-12-08` to `-11` (this branch's lab had used 01 to 07 that day).
+  - `2026-10-14-01` to `-07` (mohan) are now `2026-10-14-13` to `-19` (this branch's rail inset is 01 and the newsletter merge brought 02 to 12).
+
+  **Effect on the lab, checked live.** The lab picks up the rename by itself: its rail now reads Sensitive Nominations. Nothing else in `app/proto/post-6-oct` needed a change. Sweep in headless Chrome against this worktree's server for four roles (BioData Super Admin, BioData Admin, BioData User, Public user): the lab, `/pages/project-detail`, Nominations and version 3, Taxonomy version 2, Home version 2, Add Project option 2 version 2 and `/nltemplate`, zero console errors and every route 200; the lab's rail opened row by row for each role, zero errors.
+
+  **Seen, not changed:** the Home dashboard and nominations lists the lab reuses are now the other branch's versions, so the lab shows them as they stand there. Both Home and Nominations have more than one version on that branch; the lab uses the page the product route uses.
+
+  Verified: `npx tsc --noEmit`, `npx eslint` on the lab and the two shared files, `npm run check:contracts` clean. Not pushed.
