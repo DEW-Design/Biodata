@@ -394,3 +394,12 @@ Not imported into every session on purpose: read or grep it when a task needs hi
 - [2026-10-12] Post 6 Oct lab: legal links end the nav, and Home to project flow - `2026-10-12-05-post-6-oct-lab-legal-links-end-the.md`
 - [2026-10-12] Post 6 Oct lab: one tab at a time, search for anything, the records branch - `2026-10-12-06-post-6-oct-lab-one-tab-at-a.md`
 - [2026-10-12] Post 6 Oct lab: the process of subtraction, five steps toward Linear - `2026-10-12-07-post-6-oct-lab-the-process-of-subtraction.md`
+- [2026-10-13] Post 6 Oct lab: the nested rail, from Notion - `2026-10-13-01-post-6-oct-lab-the-nested-rail-from.md`
+- [2026-10-13] Post 6 Oct lab: the nested rail holds scopes, not content - `2026-10-13-02-post-6-oct-lab-the-nested-rail-holds.md`
+- [2026-10-13] Post 6 Oct lab: the notifications popover, from Vercel - `2026-10-13-03-post-6-oct-lab-the-notifications-popover-from.md`
+- [2026-10-13] Post 6 Oct lab: views are tabs you can see, not a dropdown - `2026-10-13-04-post-6-oct-lab-views-are-tabs-you.md`
+- [2026-10-13] Post 6 Oct lab: layout locked at subtraction step 1 - `2026-10-13-05-post-6-oct-lab-layout-locked-at-subtraction.md`
+- [2026-10-13] Post 6 Oct lab: view tabs rebuilt to the design system's tab contract - `2026-10-13-06-post-6-oct-lab-view-tabs-rebuilt-to.md`
+- [2026-10-13] Post 6 Oct lab: the project page is the production page, content 1:1 - `2026-10-13-07-post-6-oct-lab-the-project-page-is.md`
+- [2026-10-13] Post 6 Oct lab: the project's sections as one sheet, Upload dataset as an icon - `2026-10-13-08-post-6-oct-lab-the-project-s-sections.md`
+- [2026-10-14] Post 6 Oct lab: the nested rail row's left inset matches its top and bottom - `2026-10-14-01-post-6-oct-lab-the-nested-rail-row.md`

@@ -1,41 +1,31 @@
 "use client";
 
-// The shell for /proto/post-6-oct: a Linear-style layout drawn from the Figma frame "Frame 2"
-// (HI-FI Dashboard Explorations, node 435:62). The brief: the current layouts are top heavy, so something you want to look
-// at is a scroll or a click away. Here nothing stacks above the content:
-//   - the account, search and Add controls sit at the top of the left rail, not in a full-width header;
-//   - open pages are tabs in a strip above the content, with the notification bell at its right;
-//   - the page is an inset panel with one 40px bar (breadcrumb, favourite, view menu, actions), then the content itself;
-//   - the rail's lower end holds the logo, Help and the legal links.
+// The shell for /proto/post-6-oct: a Linear-style layout drawn from the Figma frame "Frame 2" (HI-FI Dashboard Explorations, node
+// 435:62), then refined. The layout is LOCKED at step 1 of the subtraction we explored (designer, 13 Oct 2026: "we can't
+// fundamentally violate the design system by changing how a component looks, so let's go as far as subtraction step 1, lock that layout,
+// and refine from there"). Nothing here hides or restyles a design system component: each is used as it is. What it is:
+//   - no full-width header: the account, search and Add controls sit at the top of the left rail; the bell is at the right of the
+//     tab strip (a Vercel-style popover, notifications-popover.tsx);
+//   - open pages are tabs in a strip above the content; everything happens in one tab unless another is opened ("+" opens Home,
+//     the search button opens a Search tab, Cmd or Ctrl click opens a link in a new tab);
+//   - the page is an inset panel with one 40px bar (the breadcrumb, a favourite star, the records tree for a project, the "..."
+//     actions), then the content: the real lists without their shells, and the production project page (its tabs, sections and cards);
+//   - there is no column 2: a page's views (a project's Project, Project records, Species, Artefacts and attachments; a list's All and My, a section's
+//     areas) are tabs at the top of the page, one click each (the DEW tab list, panel-controls.tsx);
+//   - the rail is quiet and nested: three groups (Workspace, Work, Admin, which starts folded) under small headings, no divider
+//     lines, the legal links in the account menu; Notion's pattern, a row's icon turns into a chevron when pointed at and opens the
+//     row's children, which are one level above the records (All projects and My projects, never the projects), nested-rail.tsx;
+//   - the lab opens as the Super Admin (the largest scope), to be worked down to the smaller roles with the Prototype tools bar.
+// Steps 2 to 5 of the subtraction (the tab strip hidden, list headers hidden, grouped rows, a Linear-style project page) are removed:
+// they hid or restyled components, or replaced them. context/decisions/2026-10-12-07-* keeps the record of what they were.
 //
-// Second pass (12 Oct 2026): the largest scope, the BioData Super Admin (13 rail sections, 8 Add items, review queues), then
-// worked down to the smaller roles with the Prototype tools bar. The lab opens as the Super Admin when the address has no
-// role. What that added:
-//   - every rail section opens as a tab (a section's list, or a project), and a row that opens a project opens a tab too;
-//   - there is no column 2, so a section's column 2 becomes the bar's view menu (scope, areas) and "..." menu (Export CSV),
-//     described in sections.tsx;
-//   - the bell holds what the role acts on: a reviewer's queues, a Registered User's tasks (attention.tsx). The rail card the lo-fi
-//     draws under the sections is left out for now (designer, 12 Oct 2026: it is for public users, later).
-//
-// Fifth pass (12 Oct 2026): everything happens in one tab unless another is opened. A rail click, a link, a row, a task or a
-// search result moves the current tab to that page; "+" opens a new tab on Home, the search button opens a Search tab (found
-// again if it is open), and a Cmd or Ctrl click on a link opens a new tab. The breadcrumb is the way back. The branch button in a
-// project's bar opens the project's records tree (branch-drawer.tsx). Search covers every page, project, species and record kind
-// the role can open (search-page.tsx).
-//
-// Fourth pass (12 Oct 2026): the legal links end the nav and the foot of the rail is the logo and Help; the lab opens on Home
-// (the real dashboard content) and the way in reads Home, then Projects, then a project, each step staying in the lab.
-//
-// Third pass (12 Oct 2026): the project page for a reader (project-overview.tsx, the default view; the page as it was is
-// "Edit details"), and Search as a tab of its own with a full-page view (search-page.tsx) in place of the popover.
-//
-// Re-fitted from the lo-fi (CONTRACTS 2.5: it fixes content and flow, not styling): real tokens and Barlow, the real nav
-// tree for the role in the groups the lo-fi draws (3, 3 and 1 for a Registered User), the real Add menu and search, real
-// projects as the tabs. Where the lo-fi is unlabelled this lab made a reading, named here so it can be corrected:
-//   - the database pill with a caret is the view menu (a project's views, a list's scope or areas);
-//   - the branch icon is drawn but not defined: it is a disabled placeholder;
-//   - the round control beside the logo is Help, which has no page yet (inert, as in the rail today);
-//   - the "Alert" card is not built (see above); the bell lists what needs the role's attention;
+// Re-fitted from the lo-fi (CONTRACTS 2.5: it fixes content and flow, not styling): real tokens and Barlow, the real nav tree for the
+// role, the real Add menu, real projects. Where the lo-fi is unlabelled this lab made a reading, named here so it can be corrected:
+//   - the database pill with a caret was a view menu; it is now the page's view tabs (13 Oct 2026);
+//   - the branch icon opens the project's records tree (branch-drawer.tsx);
+//   - the round control beside the logo is Help, which has no page yet (inert);
+//   - the "Alert" card is not built (the designer, 12 Oct 2026: it is for public users, later); the bell lists what needs the role's
+//     attention;
 //   - "Contents" is the project page's own "On this page", level with the title.
 // The Prototype tools bar is mounted by page.tsx as on every lab. The person's name is the placeholder Olivia Wyatt (0.3),
 // not the name in the Figma frame.
@@ -56,12 +46,9 @@ import {
   Feather,
   FileCheck02,
   FileLock01,
-  Edit05,
   Folder,
   GitBranch01,
-  Grid01,
   HelpCircle,
-  Paperclip,
   Plus,
   SearchLg,
   Star01,
@@ -70,17 +57,17 @@ import {
   XClose,
 } from "@untitledui/icons";
 import { Avatar } from "@/components/base/avatar/avatar";
-import { Badge } from "@/components/base/badges/badges";
 import { Dropdown } from "@/components/base/dropdown/dropdown";
 import { Popover } from "@/components/base/select/popover";
-import { Tooltip } from "@/components/base/tooltip/tooltip";
+import { Tooltip, TooltipTrigger } from "@/components/base/tooltip/tooltip";
 import { toast } from "@/components/application/toast/toast";
 import { downloadCsv } from "@/app/pages/_shared/agreement-actions";
 import { BreadcrumbSwitcher } from "@/app/pages/_shared/breadcrumb-switcher";
 import { ChooseProjectModal } from "@/app/pages/_shared/dataset-upload/choose-project-modal";
 import { GuestAuthActions } from "@/app/pages/_shared/guest-auth-actions";
+import { ProjectIngestionChip } from "@/app/pages/_shared/dataset-upload/project-ingestion";
 import { SignUpPromptModal } from "@/app/pages/_shared/guest-action-gate";
-import { legalIcons, sectionIcons } from "@/app/pages/_shared/nav-icons";
+import { sectionIcons } from "@/app/pages/_shared/nav-icons";
 import { useAllProjects } from "@/app/pages/_shared/created-projects-store";
 import type { Project } from "@/app/pages/_shared/project-list-data";
 import { ADELAIDE_HILLS_ID } from "@/app/pages/project-detail/project-seed";
@@ -107,53 +94,52 @@ import { useUserRole } from "@/lib/use-user-role";
 import { cx } from "@/utils/cx";
 import { BASE_PATH } from "@/lib/base-path";
 import { useAttention, type AttentionTask } from "./attention";
-import { plain, roundBtn, ViewMenu, type Icon } from "./panel-controls";
+import { NotificationsBell, useInboxState } from "./notifications-popover";
+import { plain, roundBtn, type Icon } from "./panel-controls";
+import { projectPage, searchPage, sectionPage, pageKey, type LabTab, type Page } from "./pages";
+import { RailItem, type RailContext } from "./nested-rail";
 import { ProjectWorkspace, seedFor, type ProjectView } from "./project-workspace";
 import { SearchPage } from "./search-page";
-import { SECTION_LABELS, SectionActions, SectionContent, SectionViewMenu, sectionIcon, type SectionKey } from "./sections";
+import { SECTION_LABELS, SectionActions, SectionContent, sectionIcon, type SectionKey } from "./sections";
 
-/** What a tab shows: a rail section's list, one project, or Search. A tab keeps its own page; moving replaces it (everything happens in one tab unless a tab is opened). */
-type Page = { kind: "section"; section: SectionKey; statuses?: string[] } | { kind: "project"; projectId: string } | { kind: "search" };
-interface LabTab {
-  id: string;
-  page: Page;
-}
-const sectionPage = (section: SectionKey, statuses?: string[]): Page => ({ kind: "section", section, statuses });
-const projectPage = (projectId: string): Page => ({ kind: "project", projectId });
-const searchPage: Page = { kind: "search" };
-/** Which page it is, for keeping a view (the pill's choice) per tab and page. */
-const pageKey = (page: Page) => (page.kind === "section" ? `section:${page.section}` : page.kind === "project" ? `project:${page.projectId}` : "search");
 
 // ── The rail ──
 
-// The lo-fi groups the Registered User's seven sections 3, 3 and 1: where you look, what you ask for, then reports. The
-// admin sections follow as a fourth group. A group with no sections for the role is not drawn.
-const NAV_GROUPS: string[][] = [
-  ["Home", "Projects", "Explore"],
-  [DLA_SECTION_LABEL, DSA_SECTION_LABEL, NOMINATION_SECTION_LABEL, TEMPLATE_FINDER_SECTION_LABEL],
-  [REPORTS_SECTION_LABEL],
-  [USER_MANAGEMENT_SECTION_LABEL, TAXONOMY_SECTION_LABEL, NOTIFICATION_SECTION_LABEL, CTRL_VOCAB_SECTION_LABEL, VOUCHER_SECTION_LABEL],
-];
-
-function groupNav(nav: NavNode[]): NavNode[][] {
-  return NAV_GROUPS.map((labels) => nav.filter((n) => labels.includes(n.label))).filter((g) => g.length > 0);
-}
-
-// The quiet rail (step 1): three groups under small headings instead of divider lines, the admin group folded away.
+// The rail (the layout locked at step 1 of the subtraction, designer, 13 Oct 2026): three groups under small headings instead of divider
+// lines, the admin group folded away, and the legal links in the account menu rather than the rail.
 const QUIET_GROUPS: { name: string; labels: string[] }[] = [
   { name: "Workspace", labels: ["Home", "Projects", "Explore"] },
   { name: "Work", labels: [DLA_SECTION_LABEL, DSA_SECTION_LABEL, NOMINATION_SECTION_LABEL, TEMPLATE_FINDER_SECTION_LABEL, REPORTS_SECTION_LABEL] },
   { name: "Admin", labels: [USER_MANAGEMENT_SECTION_LABEL, TAXONOMY_SECTION_LABEL, NOTIFICATION_SECTION_LABEL, CTRL_VOCAB_SECTION_LABEL, VOUCHER_SECTION_LABEL] },
 ];
 
-function NavRail({ activeKey, onOpen, quiet }: { activeKey: SectionKey | null; onOpen: (key: SectionKey) => void; quiet: boolean }) {
+function NavRail({
+  activeKey,
+  onOpen,
+  page,
+  activeView,
+  go,
+  openTab,
+  nested,
+}: {
+  activeKey: SectionKey | null;
+  onOpen: (key: SectionKey) => void;
+  page: Page;
+  activeView?: string;
+  go: (page: Page, view?: string) => void;
+  openTab: (page: Page, view?: string) => void;
+  nested: boolean;
+}) {
   const role = useUserRole();
   const roleHref = useRoleHref();
   const nav = navForRole(role);
-  const groups = useMemo(() => groupNav(navForRole(role)), [role]);
   const [folded, setFolded] = useState<string[]>(["Admin"]);
+  // Which rows are open (nested rail): only what the person opened.
+  const [expanded, setExpanded] = useState<string[]>([]);
+  const ctx: RailContext = { page, activeView, expanded, toggle: (id) => setExpanded((e) => (e.includes(id) ? e.filter((x) => x !== id) : [...e, id])), go, openTab, nested };
 
-  const item = (node: NavNode) => {
+  const item = (node: NavNode) => <RailItem key={node.label} node={node} ctx={ctx} flat={flatItem(node)} />;
+  const flatItem = (node: NavNode) => {
     const Icon = sectionIcons[node.label];
     const active = !!node.key && node.key === activeKey;
     return (
@@ -177,53 +163,29 @@ function NavRail({ activeKey, onOpen, quiet }: { activeKey: SectionKey | null; o
     );
   };
 
-  if (quiet) {
-    const quietGroups = QUIET_GROUPS.map((g) => ({ name: g.name, nodes: nav.filter((n) => g.labels.includes(n.label)) })).filter((g) => g.nodes.length > 0);
-    return (
-      <nav aria-label="Primary" className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto pt-3">
-        {quietGroups.map((g) => {
-          // A group folds only under a heading, and never while the page in use is in it.
-          const open = quietGroups.length < 2 || !folded.includes(g.name) || g.nodes.some((n) => n.key === activeKey);
-          return (
-            <div key={g.name} className="flex flex-col gap-0.5">
-              {quietGroups.length > 1 && (
-                <button
-                  type="button"
-                  aria-expanded={open}
-                  onClick={() => setFolded((f) => (f.includes(g.name) ? f.filter((x) => x !== g.name) : [...f, g.name]))}
-                  className="flex items-center gap-1 rounded-md px-2 py-1 text-left text-xs font-medium text-quaternary outline-focus-ring hover:text-primary focus-visible:outline-2"
-                >
-                  {g.name}
-                  <ChevronDown className={cx("size-3 transition-transform duration-100 ease-out", !open && "-rotate-90")} aria-hidden />
-                </button>
-              )}
-              {open && g.nodes.map(item)}
-            </div>
-          );
-        })}
-      </nav>
-    );
-  }
-
+  const quietGroups = QUIET_GROUPS.map((g) => ({ name: g.name, nodes: nav.filter((n) => g.labels.includes(n.label)) })).filter((g) => g.nodes.length > 0);
   return (
-    <nav aria-label="Primary" className="flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto pt-3">
-      {groups.map((group, i) => (
-        <div key={i} className={cx("flex flex-col gap-0.5", i > 0 && "border-t border-secondary pt-2")}>
-          {group.map(item)}
-        </div>
-      ))}
-      {/* The legal links end the nav, as quiet rows of the same shape, so the foot of the rail is only the logo and Help. */}
-      <div className="flex flex-col gap-0.5 border-t border-secondary pt-2">
-        {LEGAL_LINKS.map((name) => {
-          const LegalIcon = legalIcons[name];
-          return (
-            <Inert key={name} label={name} className="flex h-8 items-center gap-2.5 rounded-lg px-2 text-sm text-tertiary transition duration-100 ease-linear hover:bg-tertiary hover:text-primary">
-              {LegalIcon && <LegalIcon className="size-5 shrink-0 text-quaternary" />}
-              <span className="truncate">{name}</span>
-            </Inert>
-          );
-        })}
-      </div>
+    <nav aria-label="Primary" className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto pt-3">
+      {quietGroups.map((g) => {
+        // A group folds only under a heading, and never while the page in use is in it.
+        const open = quietGroups.length < 2 || !folded.includes(g.name) || g.nodes.some((n) => n.key === activeKey);
+        return (
+          <div key={g.name} className="flex flex-col gap-0.5">
+            {quietGroups.length > 1 && (
+              <button
+                type="button"
+                aria-expanded={open}
+                onClick={() => setFolded((f) => (f.includes(g.name) ? f.filter((x) => x !== g.name) : [...f, g.name]))}
+                className="flex items-center gap-1 rounded-md px-2 py-1 text-left text-xs font-medium text-quaternary outline-focus-ring hover:text-primary focus-visible:outline-2"
+              >
+                {g.name}
+                <ChevronDown className={cx("size-3 transition-transform duration-100 ease-out", !open && "-rotate-90")} aria-hidden />
+              </button>
+            )}
+            {open && g.nodes.map(item)}
+          </div>
+        );
+      })}
     </nav>
   );
 }
@@ -274,7 +236,7 @@ const CREATE_ICONS: Record<CreateItemId, Icon> = {
   notification: Bell01,
 };
 
-function AddMenu({ currentProjectId, compact }: { currentProjectId: string; compact?: boolean }) {
+function AddMenu({ currentProjectId }: { currentProjectId: string }) {
   const role = useUserRole();
   const router = useRouter();
   const roleHref = useRoleHref();
@@ -284,7 +246,7 @@ function AddMenu({ currentProjectId, compact }: { currentProjectId: string; comp
   return (
     <>
       <Dropdown.Root>
-        <AriaButton aria-label="Add" className={cx(ghostBtn, "bg-tertiary", compact && "size-7")}>
+        <AriaButton aria-label="Add" className={cx(ghostBtn, "bg-tertiary")}>
           <Plus className="size-4" />
         </AriaButton>
         <Dropdown.Popover placement="bottom left">
@@ -308,10 +270,10 @@ function AddMenu({ currentProjectId, compact }: { currentProjectId: string; comp
   );
 }
 
-function AccountRow({ currentProjectId, onSearch, quiet, trailing }: { currentProjectId: string; onSearch: () => void; quiet: boolean; trailing?: React.ReactNode }) {
+function AccountRow({ currentProjectId, onSearch }: { currentProjectId: string; onSearch: () => void }) {
   const role = useUserRole();
   return (
-    <div className={cx("flex items-center px-4", trailing ? "gap-0.5" : "gap-1")}>
+    <div className="flex items-center gap-1 px-4">
       {role === "public-user" ? (
         <div className="min-w-0 flex-1">
           <GuestAuthActions />
@@ -331,23 +293,21 @@ function AccountRow({ currentProjectId, onSearch, quiet, trailing }: { currentPr
                   {item}
                 </p>
               ))}
-              {/* Step 1 takes the legal rows out of the rail; they are here instead. */}
-              {quiet &&
-                LEGAL_LINKS.map((item) => (
-                  <p key={item} className="m-0 cursor-pointer rounded-md px-3 py-2 text-sm text-secondary hover:bg-secondary">
-                    {item}
-                  </p>
-                ))}
+              {/* The legal links are here, not in the rail. */}
+              {LEGAL_LINKS.map((item) => (
+                <p key={item} className="m-0 cursor-pointer rounded-md px-3 py-2 text-sm text-secondary hover:bg-secondary">
+                  {item}
+                </p>
+              ))}
             </Dialog>
           </Popover>
         </DialogTrigger>
       )}
       {/* Search is a page of its own, opened as a tab (search-page.tsx), not a popover. */}
-      <AriaButton aria-label="Search" onPress={onSearch} className={cx(ghostBtn, trailing && "size-7")}>
+      <AriaButton aria-label="Search" onPress={onSearch} className={ghostBtn}>
         <SearchLg className="size-4" />
       </AriaButton>
-      <AddMenu currentProjectId={currentProjectId} compact={!!trailing} />
-      {trailing}
+      <AddMenu currentProjectId={currentProjectId} />
     </div>
   );
 }
@@ -360,16 +320,14 @@ function TabStrip({
   onSelect,
   onClose,
   onNew,
-  tasks,
-  onRun,
+  bell,
 }: {
   tabs: { id: string; label: string; icon: Icon; short?: string }[];
   activeId: string;
   onSelect: (id: string) => void;
   onClose: (id: string) => void;
   onNew: () => void;
-  tasks: AttentionTask[];
-  onRun: (task: AttentionTask) => void;
+  bell: React.ReactNode;
 }) {
   const strip = useRef<HTMLDivElement>(null);
   // Past six tabs the labels no longer fit: the ones not in use shrink to their icon (the name is the tooltip and the label
@@ -440,65 +398,13 @@ function TabStrip({
         <Plus className="size-4" />
       </AriaButton>
       <div className="ml-auto pl-4">
-        <Bell tasks={tasks} onRun={onRun} />
+        {bell}
       </div>
     </div>
   );
 }
 
-/** The bell lists what needs the role's attention, the same list the rail card shows the first of. */
-function Bell({ tasks, onRun, compact }: { tasks: AttentionTask[]; onRun: (task: AttentionTask) => void; compact?: boolean }) {
-  return (
-    <DialogTrigger>
-      <AriaButton aria-label={tasks.length ? `Notifications, ${tasks.length} need your attention` : "Notifications"} className={cx(ghostBtn, "relative", compact && "size-7")}>
-        <Bell01 className="size-4" />
-        {tasks.length > 0 && <span aria-hidden className="absolute top-1.5 right-1.5 size-2 rounded-full bg-error-solid ring-2 ring-bg-primary" />}
-      </AriaButton>
-      <Popover size="auto" placement="bottom right" className="w-80 p-1">
-        <Dialog aria-label="Notifications" className="outline-hidden">
-          {({ close }) => (
-            <>
-            <p className="m-0 px-3 py-2 text-xs font-semibold tracking-wide text-quaternary uppercase">Needs your attention</p>
-            {tasks.length === 0 && <p className="m-0 px-3 pb-3 text-sm text-tertiary">Nothing needs your attention.</p>}
-            {tasks.map((t) => (
-              <button
-                key={t.id}
-                type="button"
-                onClick={() => {
-                  close();
-                  onRun(t);
-                }}
-                className="flex w-full flex-col items-start gap-1 rounded-md px-3 py-2 text-left outline-focus-ring hover:bg-secondary focus-visible:outline-2"
-              >
-                <span className="text-sm font-medium text-primary">{t.title}</span>
-                {t.status && t.statusColor ? (
-                  <Badge size="sm" color={t.statusColor}>
-                    {t.status}
-                  </Badge>
-                ) : (
-                  <span className="text-sm text-tertiary">{t.detail}</span>
-                )}
-              </button>
-            ))}
-            </>
-          )}
-        </Dialog>
-      </Popover>
-    </DialogTrigger>
-  );
-}
-
 // ── The panel's bar: where you are, and what you can do here ──
-
-// Overview is the page for reading; Edit details is the page as it was, a card per group of fields with Edit on each, for
-// the people who can change a project (not a public user). Species and Artefacts keep the project page's own icons (3.13).
-const VIEWS: { id: ProjectView; label: string; icon: Icon }[] = [
-  { id: "overview", label: "Overview", icon: Grid01 },
-  { id: "records", label: "Project records", icon: Database01 },
-  { id: "species", label: "Species", icon: Feather },
-  { id: "artefacts", label: "Artefacts and attachments", icon: Paperclip },
-  { id: "edit", label: "Edit details", icon: Edit05 },
-];
 
 const GATES = {
   upload: { icon: Upload01, title: "Sign up to upload a dataset", description: "Create a free BioData SA account to start contributing datasets to South Australia's biodiversity record." },
@@ -520,15 +426,25 @@ function ProjectActions({ project }: { project: Project }) {
     else toast.brand("Reports aren't wired up yet", { description: "Reports can't be generated in this preview yet." });
   };
   const g = gate ? GATES[gate] : null;
+  // The production page's actions, in its order (project-card-actions.tsx): the ingestion chip (signed-in roles), Upload dataset as a
+  // button, then the "..." menu with Export CSV and Create report.
   return (
     <>
+      {!isGuest && <ProjectIngestionChip projectId={project.id} />}
+      {/* Upload dataset is a round icon button like the records tree and the "..." beside it (designer, 13 Oct 2026); its name is its tooltip and label. */}
+      <Tooltip title="Upload dataset" placement="bottom">
+        <TooltipTrigger aria-label="Upload dataset" onPress={() => run("upload")} className={roundBtn}>
+          <Upload01 className="size-4" />
+        </TooltipTrigger>
+      </Tooltip>
       <Dropdown.Root>
-        <AriaButton aria-label="More project actions" className={roundBtn}>
-          <DotsHorizontal className="size-4" />
-        </AriaButton>
+        <Tooltip title="More project actions" placement="bottom">
+          <AriaButton aria-label="More project actions" className={roundBtn}>
+            <DotsHorizontal className="size-4" />
+          </AriaButton>
+        </Tooltip>
         <Dropdown.Popover placement="bottom right">
           <Dropdown.Menu aria-label="More project actions" onAction={(key) => run(key as keyof typeof GATES)}>
-            <Dropdown.Item id="upload" label="Upload dataset" icon={Upload01} />
             <Dropdown.Item id="export" label="Export CSV" icon={Download01} />
             <Dropdown.Item id="report" label="Create report" icon={BarChart01} />
           </Dropdown.Menu>
@@ -539,30 +455,17 @@ function ProjectActions({ project }: { project: Project }) {
   );
 }
 
-function ProjectBarControls({
-  project,
-  view,
-  setView,
-  branchOpen,
-  onToggleBranch,
-  showViews,
-}: {
-  project: Project;
-  view: ProjectView;
-  setView: (v: ProjectView) => void;
-  branchOpen: boolean;
-  onToggleBranch: () => void;
-  /** False from step 5, where the page's own pill tabs are the views. */
-  showViews: boolean;
-}) {
-  const canEdit = useUserRole() !== "public-user";
+// The project's views (Project, Project records, Species, Artefacts and attachments) are tabs on the page itself (project-workspace.tsx), not
+// a control in this bar: only the records tree and the actions are here.
+function ProjectBarControls({ project, branchOpen, onToggleBranch }: { project: Project; branchOpen: boolean; onToggleBranch: () => void }) {
   return (
     <>
-      {showViews && <ViewMenu views={VIEWS.filter((v) => v.id !== "edit" || canEdit)} current={view} onChange={(id) => setView(id as ProjectView)} ariaLabel="View" />}
       {/* The branch: the project's records as a tree (Site, Visit, Transect ...), opened beside the page and closed again. */}
-      <AriaButton aria-label="Records tree" aria-pressed={branchOpen} onPress={onToggleBranch} className={cx(roundBtn, branchOpen && "bg-tertiary text-primary")}>
-        <GitBranch01 className="size-4" />
-      </AriaButton>
+      <Tooltip title="Records tree" placement="bottom">
+        <AriaButton aria-label="Records tree" aria-pressed={branchOpen} onPress={onToggleBranch} className={cx(roundBtn, branchOpen && "bg-tertiary text-primary")}>
+          <GitBranch01 className="size-4" />
+        </AriaButton>
+      </Tooltip>
       <ProjectActions project={project} />
     </>
   );
@@ -603,7 +506,7 @@ function pageForPath(path: string): Page | null {
   return section ? sectionPage(section, url.searchParams.get("status")?.split(",").filter(Boolean)) : null;
 }
 
-export function PostSixOctShell({ step }: { step: number }) {
+export function PostSixOctShell({ nestedRail }: { nestedRail: boolean }) {
   const role = useUserRole();
   const router = useRouter();
   const roleHref = useRoleHref();
@@ -618,6 +521,7 @@ export function PostSixOctShell({ step }: { step: number }) {
   // The tab whose project has its records tree (the branch) open.
   const [branchFor, setBranchFor] = useState<string | null>(null);
   const attention = useAttention();
+  const inbox = useInboxState(attention);
 
   const byId = useMemo(() => new Map(all.map((p) => [p.id, p])), [all]);
   const labelled = tabs.map((t): { tab: LabTab; label: string; icon: Icon; short?: string } => {
@@ -629,12 +533,15 @@ export function PostSixOctShell({ step }: { step: number }) {
   });
   const active = tabs.find((t) => t.id === activeId) ?? tabs[0];
 
-  const go = (page: Page) => {
+  // A view (the pill's choice) set along with the page: the rail's children open a section or a project straight at one.
+  const go = (page: Page, view?: string) => {
     setTabs((ts) => ts.map((t) => (t.id === active.id ? { ...t, page } : t)));
+    if (view) setViews((v) => ({ ...v, [`${active.id}:${pageKey(page)}`]: view }));
     setBranchFor(null);
   };
-  const openTab = (page: Page = sectionPage("dashboard"), beside = false) => {
+  const openTab = (page: Page = sectionPage("dashboard"), beside = false, view?: string) => {
     const id = `t${nextId.current++}`;
+    if (view) setViews((v) => ({ ...v, [`${id}:${pageKey(page)}`]: view }));
     setTabs((ts) => {
       const at = beside ? ts.findIndex((t) => t.id === active.id) + 1 : ts.length;
       return [...ts.slice(0, at), { id, page }, ...ts.slice(at)];
@@ -682,11 +589,6 @@ export function PostSixOctShell({ step }: { step: number }) {
 
   if (!active) return null;
   const page = active.page;
-  // Step 2: the tab strip is there only when there is more than one tab, and the 40px above the panel goes with it; the bell moves
-  // into the account row. Step 1 quiets the rail; step 4 and 5 turn the panel white where the page is a list or the project.
-  const stripVisible = step < 2 || tabs.length > 1;
-  const quietCrumbs = step >= 2;
-  const whitePanel = (page.kind === "section" && step >= 4) || (page.kind === "project" && step >= 5);
   const activeKey: SectionKey | null = page.kind === "section" ? page.section : page.kind === "project" ? "project-list" : null;
   const project = page.kind === "project" ? byId.get(page.projectId) : undefined;
   const viewKey = `${active.id}:${pageKey(page)}`;
@@ -698,42 +600,41 @@ export function PostSixOctShell({ step }: { step: number }) {
   return (
     <RouterProvider navigate={navigate} useHref={(href) => (href.startsWith("/") ? `${BASE_PATH}${href}` : href)}>
       <div className="font-barlow grid h-screen grid-cols-[270px_minmax(0,1fr)] grid-rows-[56px_minmax(0,1fr)] overflow-hidden bg-primary text-primary">
-        <AccountRow currentProjectId={currentProjectId} onSearch={openSearch} quiet={step >= 1} trailing={stripVisible ? undefined : <Bell tasks={attention} onRun={runTask} compact />} />
-        {stripVisible && (
-          <TabStrip
-            tabs={labelled.map((l) => ({ id: l.tab.id, label: l.label, icon: l.icon, short: l.short }))}
-            activeId={active.id}
-            onSelect={(id) => {
-              setActiveId(id);
-              setBranchFor(null);
-            }}
-            onClose={close}
-            onNew={() => openTab()}
-            tasks={attention}
-            onRun={runTask}
-          />
-        )}
+        <AccountRow currentProjectId={currentProjectId} onSearch={openSearch} />
+        <TabStrip
+          tabs={labelled.map((l) => ({ id: l.tab.id, label: l.label, icon: l.icon, short: l.short }))}
+          activeId={active.id}
+          onSelect={(id) => {
+            setActiveId(id);
+            setBranchFor(null);
+          }}
+          onClose={close}
+          onNew={() => openTab()}
+          bell={<NotificationsBell state={inbox} onRun={runTask} buttonClass={ghostBtn} />}
+        />
         <div className="col-start-1 row-start-2 flex min-h-0 flex-col px-4 pb-4">
-          <NavRail activeKey={activeKey} onOpen={(key) => go(sectionPage(key))} quiet={step >= 1} />
+          <NavRail
+            activeKey={activeKey}
+            onOpen={(key) => go(sectionPage(key))}
+            page={page}
+            activeView={view}
+            go={go}
+            openTab={(p, v) => openTab(p, true, v)}
+            nested={nestedRail}
+          />
           <RailFoot />
         </div>
-        <section onClickCapture={holdLinks} aria-label={labelled.find((l) => l.tab === active)?.label} className={cx("relative col-start-2 mr-4 mb-4 flex min-h-0 flex-col overflow-hidden rounded-2xl border border-secondary", stripVisible ? "row-start-2" : "row-span-2 row-start-1 mt-4", whitePanel ? "bg-primary" : "bg-secondary")}>
+        <section onClickCapture={holdLinks} aria-label={labelled.find((l) => l.tab === active)?.label} className="relative col-start-2 row-start-2 mr-4 mb-4 flex min-h-0 flex-col overflow-hidden rounded-2xl border border-secondary bg-secondary">
           {project ? (
             <>
               <PanelBar
                 crumbs={
                   <>
-                    {!quietCrumbs && (
-                      <>
-                        <Crumb onPress={() => go(sectionPage("dashboard"))}>Home</Crumb>
-                        <ChevronRight className="size-3.5 shrink-0 text-quaternary" aria-hidden />
-                      </>
-                    )}
+                    <Crumb onPress={() => go(sectionPage("dashboard"))}>Home</Crumb>
+                    <ChevronRight className="size-3.5 shrink-0 text-quaternary" aria-hidden />
                     <ProjectCrumb project={project} onOpen={(id) => go(projectPage(id))} onViewAll={() => go(sectionPage("project-list"))} />
                     <ChevronRight className="size-3.5 shrink-0 text-quaternary" aria-hidden />
-                    <span className="truncate font-medium text-primary">
-                      [{project.code}] {project.name}
-                    </span>
+                    <span className="truncate font-medium text-primary">{project.name}</span>
                     <AriaButton
                       aria-label={favourites.includes(project.id) ? "Remove from favourites" : "Add to favourites"}
                       aria-pressed={favourites.includes(project.id)}
@@ -745,14 +646,7 @@ export function PostSixOctShell({ step }: { step: number }) {
                   </>
                 }
                 controls={
-                  <ProjectBarControls
-                    project={project}
-                    view={(view as ProjectView) ?? "overview"}
-                    setView={setView}
-                    branchOpen={branchOpen}
-                    onToggleBranch={() => setBranchFor(branchOpen ? null : active.id)}
-                    showViews={step < 5}
-                  />
+                  <ProjectBarControls project={project} branchOpen={branchOpen} onToggleBranch={() => setBranchFor(branchOpen ? null : active.id)} />
                 }
               />
               {/* A <main> because the project page's "On this page" follows the scroll of the nearest <main>. */}
@@ -763,11 +657,10 @@ export function PostSixOctShell({ step }: { step: number }) {
                   <ProjectWorkspace
                     key={`${active.id}:${project.id}`}
                     projectId={project.id}
-                    view={(view as ProjectView) ?? "overview"}
+                    view={(view as ProjectView) ?? "project"}
                     setView={setView}
                     branchOpen={branchOpen}
                     onBranchClose={() => setBranchFor(null)}
-                    step={step}
                   />
                 </div>
               </main>
@@ -777,12 +670,8 @@ export function PostSixOctShell({ step }: { step: number }) {
               <PanelBar
                 crumbs={
                   <>
-                    {!quietCrumbs && (
-                      <>
-                        <Crumb onPress={() => go(sectionPage("dashboard"))}>Home</Crumb>
-                        <ChevronRight className="size-3.5 shrink-0 text-quaternary" aria-hidden />
-                      </>
-                    )}
+                    <Crumb onPress={() => go(sectionPage("dashboard"))}>Home</Crumb>
+                    <ChevronRight className="size-3.5 shrink-0 text-quaternary" aria-hidden />
                     <span className="truncate font-medium text-primary">Search</span>
                   </>
                 }
@@ -798,7 +687,7 @@ export function PostSixOctShell({ step }: { step: number }) {
                 crumbs={
                   <>
                     {/* Home is the top of the trail: it is not "Home, Home". */}
-                    {page.section !== "dashboard" && !quietCrumbs && (
+                    {page.section !== "dashboard" && (
                       <>
                         <Crumb onPress={() => go(sectionPage("dashboard"))}>Home</Crumb>
                         <ChevronRight className="size-3.5 shrink-0 text-quaternary" aria-hidden />
@@ -809,14 +698,13 @@ export function PostSixOctShell({ step }: { step: number }) {
                 }
                 controls={
                   <>
-                    <SectionViewMenu key={viewKey} section={page.section} view={view} onChange={setView} />
                     <SectionActions key={`${viewKey}:actions`} section={page.section} />
                   </>
                 }
               />
               {/* A list fits the panel and scrolls its own rows (CONTRACTS 4.2), so <main> does not scroll. */}
               <main className="flex min-h-0 flex-1 flex-col overflow-y-auto">
-                <SectionContent key={`${viewKey}:${role}:${page.statuses?.join(",") ?? ""}`} section={page.section} view={view} statuses={page.statuses} step={step} />
+                <SectionContent key={`${viewKey}:${role}:${page.statuses?.join(",") ?? ""}`} section={page.section} view={view} statuses={page.statuses} onViewChange={setView} />
               </main>
             </>
           ) : null}

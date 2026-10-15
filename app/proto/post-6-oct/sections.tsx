@@ -70,11 +70,9 @@ import {
   type NavNode,
 } from "@/lib/registered-user-nav";
 import { useFeatureAccess } from "@/lib/use-feature-access";
-import { cx } from "@/utils/cx";
 import { useRoleHref } from "@/lib/use-role-href";
 import { useUserRole } from "@/lib/use-user-role";
-import { ExportMenu, ViewMenu, type PanelView } from "./panel-controls";
-import { DlaGrouped, DsaGrouped, NominationsGrouped, ProjectsGrouped } from "./grouped-sections";
+import { ExportMenu, ViewTabs, type PanelView } from "./panel-controls";
 
 export type SectionKey = NonNullable<NavNode["key"]>;
 
@@ -86,7 +84,7 @@ interface ViewState {
 interface SectionDef {
   /** The views for the role, and the one in use (`requested` when it is one of them). */
   useView: (requested?: string) => ViewState;
-  Content: FC<{ view: string; statuses?: string[]; step: number }>;
+  Content: FC<{ view: string; statuses?: string[] }>;
   /** The "..." menu, when the section has actions. */
   Actions?: FC;
 }
@@ -113,7 +111,7 @@ const Projects: SectionDef = {
     const views: PanelView[] = [{ id: "all", label: "All projects", icon: Folder }, ...(guest ? [] : [{ id: "mine", label: "My projects", icon: User01 }])];
     return pick(views, requested, "all");
   },
-  Content: ({ view, step }) => (step >= 4 ? <ProjectsGrouped scope={view === "mine" ? "mine" : "all"} /> : <ProjectListContent scope={view === "mine" ? "mine" : "all"} />),
+  Content: ({ view }) => <ProjectListContent scope={view === "mine" ? "mine" : "all"} />,
 };
 
 const Dla: SectionDef = {
@@ -122,12 +120,9 @@ const Dla: SectionDef = {
     const canReview = useFeatureAccess("dlaApproval");
     return scopeView(canAll, canReview ? "all" : "mine", requested, { all: "All requests", mine: "My requests" }, sectionIcons[DLA_SECTION_LABEL]);
   },
-  Content: ({ view, statuses, step }) =>
-    step >= 4 ? (
-      <DlaGrouped scope={view === "mine" ? "mine" : "all"} statuses={statuses} />
-    ) : (
-      <DlaAllList key={`${view}:${statuses?.join(",")}`} scope={view === "mine" ? "mine" : "all"} initialStatuses={asStatuses<DlaStatus>(dlaStatusOrder, statuses)} banner={<DlaBanner />} />
-    ),
+  Content: ({ view, statuses }) => (
+    <DlaAllList key={`${view}:${statuses?.join(",")}`} scope={view === "mine" ? "mine" : "all"} initialStatuses={asStatuses<DlaStatus>(dlaStatusOrder, statuses)} banner={<DlaBanner />} />
+  ),
   Actions: function DlaActions() {
     const dlas = useDlas();
     return (
@@ -142,7 +137,7 @@ const Dla: SectionDef = {
 
 const Dsa: SectionDef = {
   useView: (requested) => scopeView(true, "all", requested, { all: "All agreements", mine: "My agreements" }, sectionIcons[DSA_SECTION_LABEL]),
-  Content: ({ view, step }) => (step >= 4 ? <DsaGrouped scope={view === "mine" ? "mine" : "all"} /> : <DsaAllList key={view} scope={view === "mine" ? "mine" : "all"} banner={<DsaBanner />} />),
+  Content: ({ view }) => <DsaAllList key={view} scope={view === "mine" ? "mine" : "all"} banner={<DsaBanner />} />,
   Actions: function DsaActions() {
     const dsas = useDsas();
     return <ExportMenu onExport={() => downloadCsv("data-sharing-agreements.csv", ["ID", "Data partner", "Status", "Valid to"], dsas.map((d) => [d.id, d.partner, dsaStatusMeta[d.status].label, d.validTo]))} />;
@@ -154,10 +149,9 @@ const Nominations: SectionDef = {
     const { canAll } = useNominationScope();
     return scopeView(canAll, "all", requested, { all: "All nominations", mine: "My nominations" }, sectionIcons[NOMINATION_SECTION_LABEL]);
   },
-  Content: function NominationsContent({ view, statuses, step }) {
+  Content: function NominationsContent({ view, statuses }) {
     const { organisation } = useNominationScope();
     const canReview = useFeatureAccess("nominationReview");
-    if (step >= 4) return <NominationsGrouped scope={view === "mine" ? "mine" : "all"} statuses={statuses} />;
     return (
       <NominationList
         key={`${view}:${statuses?.join(",")}`}
@@ -303,33 +297,23 @@ export const SECTION_LABELS: Record<SectionKey, string> = {
   reports: REPORTS_SECTION_LABEL,
 };
 
-/** A section's view menu, as a component so each section's hooks run under its own tab (keyed by the tab). */
-export function SectionViewMenu({ section, view, onChange }: { section: SectionKey; view?: string; onChange: (id: string) => void }) {
-  const { views, current } = SECTIONS[section].useView(view);
-  return <ViewMenu views={views} current={current} onChange={onChange} ariaLabel="View" />;
-}
-
 export function SectionActions({ section }: { section: SectionKey }) {
   const Actions = SECTIONS[section].Actions;
   return Actions ? <Actions /> : null;
 }
 
-// Step 3 takes the headers off the real lists without touching them: a list's title block (its title, count and subtitle), its
-// rule and its padding, and Home's gradient banner, are hidden by their structure here, and the primary action that shared the row
-// stays, at the right. Every list's section header has this shape (SectionHeader: a root, a group, the title block first).
-const QUIET_HEADERS = [
-  "[&_div.relative.items-start>div.flex-1]:hidden",
-  "[&_div.relative.items-start]:justify-end",
-  "[&_div.border-b:has(>div.relative.items-start)]:border-b-0 [&_div.border-b:has(>div.relative.items-start)]:p-3",
-  "[&_div.p-6:has(>div.bg-gradient-to-b)]:hidden",
-].join(" ");
-
-export function SectionContent({ section, view, statuses, step }: { section: SectionKey; view?: string; statuses?: string[]; step: number }): ReactNode {
+export function SectionContent({ section, view, statuses, onViewChange }: { section: SectionKey; view?: string; statuses?: string[]; onViewChange: (id: string) => void }): ReactNode {
   const def = SECTIONS[section];
-  const { current } = def.useView(view);
+  const { views, current } = def.useView(view);
   return (
-    <div className={cx("flex min-h-0 flex-1 flex-col", step >= 3 && QUIET_HEADERS, step >= 3 && section === "dashboard" && "pt-4")}>
-      <def.Content view={current} statuses={statuses} step={step} />
+    <div className="flex min-h-0 flex-1 flex-col">
+      {/* The section's views are tabs at the top of the page (what column 2 listed, and what the bar's menu used to hide). */}
+      {views.length > 1 && (
+        <div className="shrink-0 px-6 pt-4">
+          <ViewTabs views={views} current={current} onChange={onViewChange} ariaLabel="Views" />
+        </div>
+      )}
+      <def.Content view={current} statuses={statuses} />
     </div>
   );
 }

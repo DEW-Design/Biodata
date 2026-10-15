@@ -156,6 +156,8 @@ function Person({ name, role, team, email, phone, primary }: { name: string; rol
 // "v3" (version 3 only): icon-only card actions that appear on hover or focus, and a content column
 // that fills the width. "default" is the current version, unchanged.
 const LayoutContext = createContext<"default" | "v3">("default");
+/** True when the sections are drawn as one sheet (`sheet` prop): each is divided from the one above by a line and padded, not spaced apart. */
+const SheetContext = createContext(false);
 // Version 3 edits a card inline: which card is open, and how to open or close one.
 const InlineEditContext = createContext<{
   editing: ProjectCardId | null;
@@ -247,8 +249,9 @@ function Card({ card, description, onEdit, onRemove, children }: { card: Project
 }
 
 function Section({ id, title, description, action, children }: { id: string; title: string; description?: string; action?: ReactNode; children: ReactNode }) {
+  const sheet = useContext(SheetContext);
   return (
-    <section id={id} className="flex scroll-mt-4 flex-col gap-4">
+    <section id={id} className={cx("flex scroll-mt-4 flex-col gap-4", sheet && "border-t border-secondary p-6 first:border-t-0")}>
       <div className="flex items-end justify-between gap-3">
         <div className="flex flex-col gap-1">
           <h2 className="text-lg font-semibold text-primary">{title}</h2>
@@ -531,6 +534,7 @@ export function ProjectTab({
   onGoToSpecies,
   layout = "default",
   lead,
+  sheet = false,
 }: {
   onGoToRecords: (kind: RecordKind | "all") => void;
   onGoToArtefacts: () => void;
@@ -550,6 +554,8 @@ export function ProjectTab({
   layout?: "default" | "v3";
   /** Content above the first section, inside the content column, so "On this page" starts level with it. */
   lead?: ReactNode;
+  /** Draw the four sections as one white sheet, divided by lines, instead of stacked with gaps. Nothing in them changes. */
+  sheet?: boolean;
 }) {
   const { project, saveProject, records, artefacts, canEdit } = useEditStore();
   // Only roles that can upload see the Datasets card.
@@ -608,6 +614,8 @@ export function ProjectTab({
       <InlineEditContext.Provider value={{ editing, setEditing, open: openCard, focusLabel, footer }}>
       <div className={cx("flex min-w-0 flex-1 flex-col gap-10", layout === "default" && "max-w-4xl")}>
         {lead}
+        <SheetContext.Provider value={sheet}>
+        <div className={sheet ? "flex flex-col overflow-hidden rounded-xl border border-secondary bg-primary" : "contents"}>
         <Section
           id="at-a-glance"
           title="Project at a glance"
@@ -818,6 +826,8 @@ export function ProjectTab({
             </Card>
           ))}
         </Section>
+        </div>
+        </SheetContext.Provider>
       </div>
       </InlineEditContext.Provider>
       </LayoutContext.Provider>

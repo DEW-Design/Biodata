@@ -1,10 +1,12 @@
 "use client";
 
-// The project page's content for /proto/post-6-oct: the same Project, Project records, Species and Artefacts views as
+// The project page's content for /proto/post-6-oct: the same Project, Project records, Species and Artefacts tabs as
 // /pages/project-detail, taken from the real components (`ProjectTab`, `RecordsExplorer`, `SpeciesView`, `ArtefactsView`)
-// and the same edit store, so nothing here is a lookalike. What changes is only what sits around them: no Back link, no
-// gradient hero and no tab row above the content (the shell's breadcrumb bar and view menu take those jobs), so the first
-// screen is the project itself.
+// and the same edit store, so nothing here is a lookalike and every section, card and label is the production screen's (the designer,
+// 13 Oct 2026: the sections on the production screens are correct, so none is made up here: "we're exploring a new layout, not
+// changing all the good work that has gone into the production screens"). What changes is only the layout around them: the Back link is
+// the breadcrumb, the gradient hero's content (Project, the title and its five facts) sits on the page, and the page's actions are in
+// the shell's bar.
 //
 // The artefact mapping below is the same as `ProjectDetail` in project-detail-template.tsx. It is copied, not shared, so the
 // lab leaves the product page alone; fold it into a shared hook if this layout is chosen.
@@ -20,8 +22,7 @@ import { useEditStore, EditStoreProvider } from "@/app/pages/project-detail/edit
 import { allFiles, recordFieldKeys, useFieldNotes } from "@/app/pages/project-detail/field-notes-store";
 import { ProjectTab, formatDay } from "@/app/pages/project-detail/project-tab";
 import { BranchDrawer } from "./branch-drawer";
-import { ProjectLinear } from "./project-linear";
-import { ProjectOverview } from "./project-overview";
+import { ProjectViewTabs } from "./project-tabs";
 import { ADELAIDE_HILLS_ID, adelaideHillsSeed, exploreProject, seedFromExplore, type ProjectSeed } from "@/app/pages/project-detail/project-seed";
 import { RecordsExplorer, filterForKind, type KindFilter, type RecordsView } from "@/app/pages/project-detail/records-explorer";
 import { SpeciesView } from "@/app/pages/project-detail/species-view";
@@ -30,7 +31,7 @@ import { useRoleHref } from "@/lib/use-role-href";
 import { useUserRole } from "@/lib/use-user-role";
 import type { UserRole } from "@/lib/user-role";
 
-export type ProjectView = "overview" | "edit" | "records" | "species" | "artefacts";
+export type ProjectView = "project" | "records" | "species" | "artefacts";
 
 /** The project's data, or null for a project the page cannot build (a created one has its own route). */
 export function seedFor(projectId: string, role: UserRole): ProjectSeed | null {
@@ -41,29 +42,45 @@ export function seedFor(projectId: string, role: UserRole): ProjectSeed | null {
 
 const withQuery = (path: string, query: string) => `${path}${path.includes("?") ? "&" : "?"}${query}`;
 
-/** Eyebrow, the project's code and name, and one quiet line of facts: what the gradient hero held, in a fraction of the height. */
-function ProjectTitle() {
+/**
+ * The production hero's content, in the same words (`ProjectHero`, project-detail-template.tsx): the eyebrow "Project", the title, and the
+ * facts Project ID, Start Date, End Date, Status and Published by, with the same values and the same status colours. Only where it is
+ * drawn differs: on the page under the bar instead of on a gradient card. The page's actions are in the bar.
+ */
+function ProjectHeader() {
   const { project, meta } = useEditStore();
   const d = project.details;
   const status = project.status;
   const statusColor = status === "Active" ? "success" : status === "Under review" ? "warning" : "gray";
-  const owner =
-    d.dataOwnerType === "organisation" ? d.dataOwnerOrgName : `${d.dataOwnerContacts[0]?.firstName ?? ""} ${d.dataOwnerContacts[0]?.lastName ?? ""}`.trim();
-  return (
-    <div className="flex flex-col gap-1">
-      <p className="m-0 text-xs font-semibold tracking-wide text-quaternary uppercase">Project</p>
-      <h1 className="m-0 text-2xl font-semibold text-balance text-primary">
-        <span className="text-quaternary">[{meta.code}]</span> {d.shortTitle}
-      </h1>
-      <p className="m-0 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-tertiary">
-        <BadgeWithDot size="sm" color={statusColor}>
+  const owner = d.dataOwnerType === "organisation" ? d.dataOwnerOrgName : `${d.dataOwnerContacts[0]?.firstName ?? ""} ${d.dataOwnerContacts[0]?.lastName ?? ""}`.trim();
+  const facts: { label: string; value: ReactNode }[] = [
+    { label: "Project ID", value: meta.code },
+    { label: "Start Date", value: formatDay(d.startDate) || "Not provided" },
+    { label: "End Date", value: d.endDate ? formatDay(d.endDate) : "Ongoing" },
+    {
+      label: "Status",
+      value: (
+        <BadgeWithDot size="sm" color={statusColor} className="inline-flex align-baseline">
           {status}
         </BadgeWithDot>
-        <span>
-          {formatDay(d.startDate) || "Start not provided"} to {d.endDate ? formatDay(d.endDate) : "ongoing"}
-        </span>
-        {owner && <span>Published by {owner}</span>}
-      </p>
+      ),
+    },
+    { label: "Published by", value: owner },
+  ];
+  return (
+    <div className="flex flex-col gap-4">
+      <div className="flex flex-col gap-1">
+        <p className="m-0 text-xs font-semibold tracking-wide text-quaternary uppercase">Project</p>
+        <h1 className="m-0 text-2xl font-semibold text-balance text-primary">{d.shortTitle}</h1>
+      </div>
+      <div className="flex flex-wrap items-start gap-x-8 gap-y-4">
+        {facts.map((f) => (
+          <div key={f.label} className="flex flex-col gap-1">
+            <p className="m-0 text-xs font-semibold tracking-wide text-quaternary uppercase">{f.label}</p>
+            <div className="text-sm text-primary">{f.value}</div>
+          </div>
+        ))}
+      </div>
     </div>
   );
 }
@@ -105,10 +122,9 @@ function useArtefacts() {
   );
 }
 
-function Views({ view, setView, branchOpen, onBranchClose, step }: { view: ProjectView; setView: (v: ProjectView) => void; branchOpen: boolean; onBranchClose: () => void; step: number }) {
+function Views({ view, setView, branchOpen, onBranchClose }: { view: ProjectView; setView: (v: ProjectView) => void; branchOpen: boolean; onBranchClose: () => void }) {
   const router = useRouter();
   const roleHref = useRoleHref();
-  const role = useUserRole();
   const { meta } = useEditStore();
   const artefacts = useArtefacts();
   const [selectedId, setSelectedId] = useState<string | null>(meta.id === ADELAIDE_HILLS_ID ? "su1" : null);
@@ -144,15 +160,21 @@ function Views({ view, setView, branchOpen, onBranchClose, step }: { view: Proje
     onBranchClose();
   };
 
-  const title = <ProjectTitle />;
   const toFlagged = () => router.push(roleHref(withQuery(pagePath, "view=review&from=project")));
   const artefactKinds = artefacts.map((a) => a.type);
   const artefactRecordCount = new Set(artefacts.map((a) => a.recordId)).size;
-  // The body of every view but the Overview; the title above it is the step's own header from step 5.
-  const other = (lead?: ReactNode): ReactNode =>
-    view === "edit" ? (
+  // The header and the tabs, then the view: the production page's order (hero, tabs, panel), the hero's content in the page.
+  const lead = (
+    <div className="flex flex-col gap-5">
+      <ProjectHeader />
+      <ProjectViewTabs view={view} setView={setView} artefactCount={artefacts.length} />
+    </div>
+  );
+  const body: ReactNode =
+    view === "project" ? (
       <ProjectTab
         layout="v3"
+        sheet
         lead={lead}
         onGoToRecords={goToRecords}
         onGoToArtefacts={() => setView("artefacts")}
@@ -173,30 +195,6 @@ function Views({ view, setView, branchOpen, onBranchClose, step }: { view: Proje
         {view === "artefacts" && <ArtefactsView artefacts={artefacts} onOpen={setLightboxIndex} onOpenRecord={(id) => openRecord(id)} />}
       </div>
     );
-
-  let body: ReactNode;
-  if (step >= 5) {
-    body = (
-      <ProjectLinear view={view} setView={setView} canEdit={role !== "public-user"} artefactKinds={artefactKinds} onGoToRecords={goToRecords}>
-        {other()}
-      </ProjectLinear>
-    );
-  } else if (view === "overview") {
-    body = (
-      <ProjectOverview
-        title={title}
-        artefactKinds={artefactKinds}
-        artefactRecordCount={artefactRecordCount}
-        onGoToRecords={goToRecords}
-        onGoToSpecies={() => setView("species")}
-        onGoToArtefacts={() => setView("artefacts")}
-        onGoToDatasets={() => router.push(datasetsHref)}
-        onGoToFlagged={toFlagged}
-      />
-    );
-  } else {
-    body = other(title);
-  }
   return (
     <>
       {body}
@@ -207,13 +205,13 @@ function Views({ view, setView, branchOpen, onBranchClose, step }: { view: Proje
 }
 
 /** One project's content, in a store of its own. Keyed by project and role so switching either starts from that project's seed. */
-export function ProjectWorkspace({ projectId, view, setView, branchOpen, onBranchClose, step }: { projectId: string; view: ProjectView; setView: (v: ProjectView) => void; branchOpen: boolean; onBranchClose: () => void; step: number }) {
+export function ProjectWorkspace({ projectId, view, setView, branchOpen, onBranchClose }: { projectId: string; view: ProjectView; setView: (v: ProjectView) => void; branchOpen: boolean; onBranchClose: () => void }) {
   const role = useUserRole();
   const seed = useMemo(() => seedFor(projectId, role), [projectId, role]);
   if (!seed) return <p className="m-0 text-sm text-tertiary">This project has no page in the preview yet.</p>;
   return (
     <EditStoreProvider key={`${projectId}:${role}`} canEdit={role !== "public-user"} role={role} seed={seed}>
-      <Views view={view} setView={setView} branchOpen={branchOpen} onBranchClose={onBranchClose} step={step} />
+      <Views view={view} setView={setView} branchOpen={branchOpen} onBranchClose={onBranchClose} />
     </EditStoreProvider>
   );
 }

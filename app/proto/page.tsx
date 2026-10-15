@@ -62,7 +62,7 @@ const PROTO_LABS: ProtoEntry[] = [
   },
   {
     route: "post-6-oct",
-    description: "A Linear-style shell with no header and no column 2: account, search and Add in the rail, open pages as tabs, one slim bar over an inset panel. Opens as the Super Admin (the largest scope); a Subtraction control on the tools bar steps from today's lab to a Linear-simple one, one removal at a time.",
+    description: "The layout locked at subtraction step 1: no header and no column 2, a quiet nested rail (account, search and Add at the top), open pages as tabs, one slim bar over an inset panel, views as tabs. Opens as the Super Admin, the largest scope.",
   },
   {
     route: "project-detail",

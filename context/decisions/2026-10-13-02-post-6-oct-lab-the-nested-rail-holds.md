@@ -1,0 +1,11 @@
+# 2026-10-13 - Post 6 Oct lab: the nested rail holds scopes, not content
+
+- **Oct 13 2026: Post 6 Oct lab: the nested rail holds scopes, not content.** The designer, from a screenshot of Projects opened to the four projects: "It should be one level above though. All projects, My projects. All X, My X. Not all content on the sidebar, please." Corrects `2026-10-13-01-post-6-oct-lab-the-nested-rail-from.md`, which put the projects, and under each project its views, in the rail.
+
+  **Now:** a rail row opens to the choices one level above the records, never the records. Projects opens to All projects and My projects; Data Licencing Agreement to All requests and My requests; Data Sharing Agreement to All agreements and My agreements; Nominate Sensitive Species to All nominations and My nominations; User Management to Users, Roles and Permissions; Taxonomy to All species, Flora and Fauna; Notification Management to All notifications and each category; Home to My BioData and Flora and Fauna Dashboard. A project, a request or an agreement is the page, so it is not in the rail; on a project page the rail lights Projects. Removed: the project rows and the per-project views under them, and the rule that reaching a project opened them (rows are open only when the person opens them).
+
+  **Unchanged:** the pattern (the icon turns into a chevron when pointed at and the "..." appears), the "..." with its one real action (Open in new tab), one-level children only, a section with one view having no chevron (a Registered User's DLA and Nominations, a public user's Projects), and the independent Rail control (Nested or Flat) on the Prototype tools bar.
+
+  **Open for the designer (CONTRACTS 0.4):** the view pill in the bar now repeats these children, so one of the two could go; Explore, Template Finder, Controlled Vocabulary, Reports and Voucher Management have no children.
+
+  Verified: `npx tsc --noEmit`, `npx eslint app/proto` and `npm run check:contracts`. Live pass at 1440 by 1024: as BioData Super Admin, Projects, DLA, DSA, Nominations and Home each open to their scope rows; My projects set the pill to My projects; on a project page the lit row is Projects alone. As Registered User only Home and Projects have chevrons (their DLA and Nominations are My alone); as Public user none. Zero console errors. Not committed.
