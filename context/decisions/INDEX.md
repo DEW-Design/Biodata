@@ -387,6 +387,9 @@ Not imported into every session on purpose: read or grep it when a task needs hi
 - [2026-10-06] Reports: specimen reports hidden from Registered User, export on every report, start dates open as today - `2026-10-06-22-reports-specimen-reports-hidden-from-registered-user-export.md`
 - [2026-10-06] Page feedback: Reports empty sections, DLA My requests only, Taxonomy label, individual owner role - `2026-10-06-23-page-feedback-reports-empty-sections-dla-my-requests.md`
 - [2026-10-06] Project page option 2 removed; DLA My requests only for every role but BioData Admin - `2026-10-06-24-project-page-option-2-removed-dla-my-requests.md`
+- [2026-10-08] Newsletter template: /nltemplate, five layout options from the lo-fi - `2026-10-08-01-newsletter-template-nltemplate-five-layout-options-from-the.md`
+- [2026-10-08] Newsletter template: option 6, the gradient hero - `2026-10-08-02-newsletter-template-option-6-the-gradient-hero.md`
+- [2026-10-08] Newsletter option 6: the gradient hero runs full bleed - `2026-10-08-03-newsletter-option-6-the-gradient-hero-runs-full.md`
 - [2026-10-12] Post 6 Oct lab: a Linear-style shell for the project page - `2026-10-12-01-post-6-oct-lab-a-linear-style-shell.md`
 - [2026-10-12] Post 6 Oct lab: the Linear-style shell at admin scale - `2026-10-12-02-post-6-oct-lab-the-linear-style-shell.md`
 - [2026-10-12] Post 6 Oct lab: a readable project page and full-page Search - `2026-10-12-03-post-6-oct-lab-a-readable-project-page.md`
@@ -403,3 +406,16 @@ Not imported into every session on purpose: read or grep it when a task needs hi
 - [2026-10-13] Post 6 Oct lab: the project page is the production page, content 1:1 - `2026-10-13-07-post-6-oct-lab-the-project-page-is.md`
 - [2026-10-13] Post 6 Oct lab: the project's sections as one sheet, Upload dataset as an icon - `2026-10-13-08-post-6-oct-lab-the-project-s-sections.md`
 - [2026-10-14] Post 6 Oct lab: the nested rail row's left inset matches its top and bottom - `2026-10-14-01-post-6-oct-lab-the-nested-rail-row.md`
+- [2026-10-14] Newsletter infographic reviewed with the design foundations: one card, three bands, 35 percent shorter - `2026-10-14-02-newsletter-infographic-reviewed-with-the-design-foundations-.md`
+- [2026-10-14] Newsletter infographic: white logo, colour-coded bands, tiles with a top rule - `2026-10-14-03-newsletter-infographic-white-logo-colour-coded-bands-tiles.md`
+- [2026-10-14] Newsletter infographic answers to its width: stacked at email width, in rows from 768px, 1040px route - `2026-10-14-04-newsletter-infographic-answers-to-its-width-stacked-at.md`
+- [2026-10-14] Newsletter option 8: option 7 polished, with patterns from Mobbin newsletters - `2026-10-14-05-newsletter-option-8-option-7-polished-with-patterns.md`
+- [2026-10-14] Newsletter option 9: the picked template (option 7) at 960px wide - `2026-10-14-06-newsletter-option-9-the-picked-template-option-7.md`
+- [2026-10-14] Newsletter option 10: the wide picked template on a five-column grid - `2026-10-14-07-newsletter-option-10-the-wide-picked-template-on.md`
+- [2026-10-14] Newsletter option 10: opportunity areas three across, two rows - `2026-10-14-08-newsletter-option-10-opportunity-areas-three-across-two.md`
+- [2026-10-14] Newsletter: the 'some more info' content goes in (transition text, highlight samples, invite for testing,... - `2026-10-14-09-newsletter-the-some-more-info-content-goes-in.md`
+- [2026-10-14] Newsletter: How we're tracking carries the six phases and what happens in each stage - `2026-10-14-10-newsletter-how-we-re-tracking-carries-the-six.md`
+- [2026-10-14] Newsletter: handover rows removed, transition text typeset as a lead and body - `2026-10-14-11-newsletter-handover-rows-removed-transition-text-typeset-as.md`
+- [2026-10-14] Newsletter: the picked template (option 7) with the vision, problems and opportunities as an infographic - `2026-10-14-12-newsletter-the-picked-template-option-7-with-the.md`
+- [2026-10-15] Newsletter: option 10 chosen, the other nine layouts removed - `2026-10-15-01-newsletter-option-10-chosen-the-other-nine-layouts.md`
+- [2026-10-15] Merge origin/sai-wips (newsletter template) into the post-6-oct lab branch - `2026-10-15-02-merge-origin-sai-wips-newsletter-template-into-the.md`
