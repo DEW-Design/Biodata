@@ -12,7 +12,7 @@ export function NewsletterFrame({ children }: { children: ReactNode }) {
         <PrototypeTools />
       </Suspense>
       <article aria-label="DEW newsletter" className="w-full max-w-[960px] overflow-hidden rounded-xl border border-secondary bg-primary shadow-xs">
-        {children}
+        <Suspense fallback={null}>{children}</Suspense>
       </article>
     </div>
   );

@@ -435,3 +435,4 @@ Not imported into every session on purpose: read or grep it when a task needs hi
 - [2026-10-15] Newsletter: option 10 chosen, the other nine layouts removed - `2026-10-15-01-newsletter-option-10-chosen-the-other-nine-layouts.md`
 - [2026-10-15] Merge origin/sai-wips (newsletter template) into the post-6-oct lab branch - `2026-10-15-02-merge-origin-sai-wips-newsletter-template-into-the.md`
 - [2026-10-15] Merge origin/mohan-wips (nominations 3, taxonomy 2, home 2, Add Project 2) into the post-6-oct lab branch - `2026-10-15-03-merge-origin-mohan-wips-nominations-3-taxonomy-2.md`
+- [2026-10-15] Newsletter template: Suspense around the content so the Pages static export builds - `2026-10-15-04-newsletter-template-suspense-around-the-content-so-the.md`
