@@ -390,6 +390,10 @@ Not imported into every session on purpose: read or grep it when a task needs hi
 - [2026-10-08] Newsletter template: /nltemplate, five layout options from the lo-fi - `2026-10-08-01-newsletter-template-nltemplate-five-layout-options-from-the.md`
 - [2026-10-08] Newsletter template: option 6, the gradient hero - `2026-10-08-02-newsletter-template-option-6-the-gradient-hero.md`
 - [2026-10-08] Newsletter option 6: the gradient hero runs full bleed - `2026-10-08-03-newsletter-option-6-the-gradient-hero-runs-full.md`
+- [2026-10-09] Add Project option 2 version 2 and a Version tool - `2026-10-09-01-add-project-option-2-version-2-and-a.md`
+- [2026-10-09] Nominations version 2: species register for the BioData Super Admin - `2026-10-09-02-nominations-version-2-species-register-for-the-biodata.md`
+- [2026-10-09] Species sensitivity: attribute ratings, bulk change, access never below the risk - `2026-10-09-03-species-sensitivity-attribute-ratings-bulk-change-access-nev.md`
+- [2026-10-09] Species sensitivity: attribute values, location areas, labelled ratings, bulk change page - `2026-10-09-04-species-sensitivity-attribute-values-location-areas-labelled.md`
 - [2026-10-12] Post 6 Oct lab: a Linear-style shell for the project page - `2026-10-12-01-post-6-oct-lab-a-linear-style-shell.md`
 - [2026-10-12] Post 6 Oct lab: the Linear-style shell at admin scale - `2026-10-12-02-post-6-oct-lab-the-linear-style-shell.md`
 - [2026-10-12] Post 6 Oct lab: a readable project page and full-page Search - `2026-10-12-03-post-6-oct-lab-a-readable-project-page.md`
@@ -397,6 +401,10 @@ Not imported into every session on purpose: read or grep it when a task needs hi
 - [2026-10-12] Post 6 Oct lab: legal links end the nav, and Home to project flow - `2026-10-12-05-post-6-oct-lab-legal-links-end-the.md`
 - [2026-10-12] Post 6 Oct lab: one tab at a time, search for anything, the records branch - `2026-10-12-06-post-6-oct-lab-one-tab-at-a.md`
 - [2026-10-12] Post 6 Oct lab: the process of subtraction, five steps toward Linear - `2026-10-12-07-post-6-oct-lab-the-process-of-subtraction.md`
+- [2026-10-12] Nominations version 2: the Super Admin rates what to protect while reviewing - `2026-10-12-08-nominations-version-2-the-super-admin-rates-what.md`
+- [2026-10-12] Sensitive Nominations: species sensitivity removed, admins edit, more locations - `2026-10-12-09-sensitive-nominations-species-sensitivity-removed-admins-edi.md`
+- [2026-10-12] Nominations version 3: a nomination's page arranged around the task - `2026-10-12-10-nominations-version-3-a-nomination-s-page-arranged.md`
+- [2026-10-12] Sensitive Nominations: rate on What to protect, admin edit opens there - `2026-10-12-11-sensitive-nominations-rate-on-what-to-protect-admin.md`
 - [2026-10-13] Post 6 Oct lab: the nested rail, from Notion - `2026-10-13-01-post-6-oct-lab-the-nested-rail-from.md`
 - [2026-10-13] Post 6 Oct lab: the nested rail holds scopes, not content - `2026-10-13-02-post-6-oct-lab-the-nested-rail-holds.md`
 - [2026-10-13] Post 6 Oct lab: the notifications popover, from Vercel - `2026-10-13-03-post-6-oct-lab-the-notifications-popover-from.md`
@@ -417,5 +425,13 @@ Not imported into every session on purpose: read or grep it when a task needs hi
 - [2026-10-14] Newsletter: How we're tracking carries the six phases and what happens in each stage - `2026-10-14-10-newsletter-how-we-re-tracking-carries-the-six.md`
 - [2026-10-14] Newsletter: handover rows removed, transition text typeset as a lead and body - `2026-10-14-11-newsletter-handover-rows-removed-transition-text-typeset-as.md`
 - [2026-10-14] Newsletter: the picked template (option 7) with the vision, problems and opportunities as an infographic - `2026-10-14-12-newsletter-the-picked-template-option-7-with-the.md`
+- [2026-10-14] Sensitive Nominations: justification per attribute and area, protection view grouped by reason - `2026-10-14-13-sensitive-nominations-justification-per-attribute-and-area-p.md`
+- [2026-10-14] Taxonomy Management version 2: every rank, Append on one page - `2026-10-14-14-taxonomy-management-version-2-every-rank-append-on.md`
+- [2026-10-14] Taxonomy version 2: one taxon per append, a page for every rank - `2026-10-14-15-taxonomy-version-2-one-taxon-per-append-a.md`
+- [2026-10-14] Home page version 2 in the approved DEW template - `2026-10-14-16-home-page-version-2-in-the-approved-dew.md`
+- [2026-10-14] Taxonomy version 2: Split Taxon, and the hierarchy view opens every rank - `2026-10-14-17-taxonomy-version-2-split-taxon-and-the-hierarchy.md`
+- [2026-10-14] Taxonomy version 2: Combine Taxon - `2026-10-14-18-taxonomy-version-2-combine-taxon.md`
+- [2026-10-14] Taxonomy version 2: Rename Taxon - `2026-10-14-19-taxonomy-version-2-rename-taxon.md`
 - [2026-10-15] Newsletter: option 10 chosen, the other nine layouts removed - `2026-10-15-01-newsletter-option-10-chosen-the-other-nine-layouts.md`
 - [2026-10-15] Merge origin/sai-wips (newsletter template) into the post-6-oct lab branch - `2026-10-15-02-merge-origin-sai-wips-newsletter-template-into-the.md`
+- [2026-10-15] Merge origin/mohan-wips (nominations 3, taxonomy 2, home 2, Add Project 2) into the post-6-oct lab branch - `2026-10-15-03-merge-origin-mohan-wips-nominations-3-taxonomy-2.md`

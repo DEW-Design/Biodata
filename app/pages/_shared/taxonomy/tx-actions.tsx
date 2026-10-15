@@ -90,10 +90,11 @@ export function changePreview(type: ChangeType, d: ChangeDraft, taxa: Taxon[]) {
 
 // ── Fields ──
 
-export function SpeciesTypeField({ value, onChange, isDisabled, showError }: { value: Kingdom | null; onChange: (k: Kingdom) => void; isDisabled?: boolean; showError?: boolean }) {
+/** `label` names the field for assistive tech: version 2 calls it "Taxa Type" (the designer, 15 Oct 2026). */
+export function SpeciesTypeField({ value, onChange, isDisabled, showError, label = "Species Type" }: { value: Kingdom | null; onChange: (k: Kingdom) => void; isDisabled?: boolean; showError?: boolean; label?: string }) {
   return (
     <>
-      <RadioGroup aria-label="Species Type" orientation="horizontal" value={value ?? ""} onChange={(v) => onChange(v as Kingdom)} isDisabled={isDisabled} isInvalid={showError && !value} className="gap-8">
+      <RadioGroup aria-label={label} orientation="horizontal" value={value ?? ""} onChange={(v) => onChange(v as Kingdom)} isDisabled={isDisabled} isInvalid={showError && !value} className="gap-8">
         <RadioButton value="Flora" label="Flora" />
         <RadioButton value="Fauna" label="Fauna" />
       </RadioGroup>

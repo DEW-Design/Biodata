@@ -15,6 +15,18 @@ import { SURVEY_TYPE_OPTIONS } from "./data";
 import type { SurveyType } from "./types";
 
 const SURVEY_METHOD_CV_ID = "BIODATA-102";
+const SURVEY_METHODOLOGY_CV_ID = "BIODATA-117";
+
+/** The entry that asks what the methodology is, when none in the list fits. */
+export const OTHER_METHODOLOGY = "Other";
+
+/** Version 2 of option 2's methodologies: the active entries of the Survey methodology vocabulary (BIODATA-117), in its
+ *  order, plus any already chosen that has since been retired, so a saved choice never disappears from the list. */
+export function useMethodologyOptions(chosen: string[]): string[] {
+    const cvs = useCvs();
+    const names = (cvs.find((cv) => cv.id === SURVEY_METHODOLOGY_CV_ID)?.entries ?? []).filter((e) => e.status === "active").map((e) => e.name);
+    return [...names, ...chosen.filter((name) => !names.includes(name))];
+}
 
 export function SurveyTypeRadios({ value, onChange }: { value: SurveyType | null; onChange: (value: SurveyType) => void }) {
     return (

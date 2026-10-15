@@ -58,6 +58,18 @@ export function emptyProjectManager(id: number): ProjectManager {
     return { id, firstName: "", lastName: "", email: "", phone: "", organisation: "", role: null, roleOther: "", isPrimary: false };
 }
 
+/** One person in version 2 of option 2's Project contacts (the designer, 9 Oct 2026): the separate Primary contact and
+ *  Project managers blocks became one list, where each person has a role in the project and can be marked the primary
+ *  contact (exactly one) and, or, a project manager (any number). On create, the list is also written out as
+ *  `dataOwnerContacts` (the primary first) and `projectManagers`, so the project page reads it as it reads version 1. */
+export interface ProjectContact extends ProjectManager {
+    isManager: boolean;
+}
+
+export function emptyProjectContact(id: number): ProjectContact {
+    return { ...emptyProjectManager(id), isManager: false };
+}
+
 /** Optional org/institution logo picked on Step 1's data-ownership card - a local object URL
  *  only (no backend exists in this build), see logo-upload.tsx. */
 export interface OrgLogo {
@@ -83,6 +95,8 @@ export interface ProjectDetailsState {
     dataOwnerOrgLogo: OrgLogo | null;
     dataOwnerContacts: ContactPerson[];
     projectManagers: ProjectManager[];
+    /** Version 2 of option 2 only (see `ProjectContact`). Optional, so a project saved before it existed still reads. */
+    projectContacts?: ProjectContact[];
 }
 
 export function initialProjectDetails(): ProjectDetailsState {
@@ -106,6 +120,8 @@ export function initialProjectDetails(): ProjectDetailsState {
         // sensible answer. Flagged directly by the user off the first pass, which left every
         // manager unset by default.
         projectManagers: [{ ...emptyProjectManager(1), isPrimary: true }],
+        // Version 2: the first person starts as the primary contact and a project manager, the common case of one person.
+        projectContacts: [{ ...emptyProjectContact(1), isPrimary: true, isManager: true }],
     };
 }
 
@@ -152,6 +168,17 @@ export function emptyPermitRow(id: number): PermitRow {
     return { id, type: null, number: "" };
 }
 
+/** One methodology added in version 2 of option 2, with its own note on any variation, limitation or bias. */
+export interface MethodologyChoice {
+    /** Tells two "Other" methodologies apart; the rest are added once each. */
+    rid: number;
+    /** The entry's name in the Survey methodology vocabulary (BIODATA-117), as version 1 keeps the Survey method's name. */
+    id: string;
+    /** What an "Other" methodology is. */
+    other?: string;
+    note: string;
+}
+
 export interface DataCollectionState {
     geographicExtent: GeoExtentValue;
     focusAreas: string[];
@@ -167,6 +194,9 @@ export interface DataCollectionState {
     permits: PermitRow[];
     uriDoi: string;
     limitationsAndBiases: string;
+    /** Version 2 of option 2 only: the methodologies added (a Systematic project), in the order added, each with its note.
+     *  On create they are also written out as `methodDetails` and `limitationsAndBiases`, which the project page reads. */
+    methodologies?: MethodologyChoice[];
 }
 
 export function initialDataCollection(): DataCollectionState {
@@ -183,6 +213,7 @@ export function initialDataCollection(): DataCollectionState {
         permits: [emptyPermitRow(1)],
         uriDoi: "",
         limitationsAndBiases: "",
+        methodologies: [],
     };
 }
 

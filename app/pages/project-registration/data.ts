@@ -58,6 +58,9 @@ export const COLLECTION_METHOD_OPTIONS: { id: "incidental" | "systematic" | "unk
     { id: "other", label: "Other", description: "Data will be collected using a method not listed here (e.g. media/images)." },
 ];
 
+// Version 2 of option 2 offers every method but Unknown (the designer, 9 Oct 2026: "Remove this option").
+export const COLLECTION_METHOD_OPTIONS_V2 = COLLECTION_METHOD_OPTIONS.filter((o) => o.id !== "unknown");
+
 // `maxMonths` is this build's own system-provided ceiling per embargo type, not a fabricated real
 // BDBSA policy figure - a project completion or cultural/Indigenous embargo genuinely warrants a
 // longer maximum than a plain publication embargo, so the numbers differ by type rather than

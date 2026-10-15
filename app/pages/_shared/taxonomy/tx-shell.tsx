@@ -66,21 +66,31 @@ function NavList({ heading, items, current }: { heading: string; items: { id: st
 }
 
 /** Where you are among the species, by kingdom. Column 2's label names what the items group by (Categories on Notifications and Controlled Vocabulary, Sources on Voucher Management), never the thing listed: the page heading already says "Species". */
-function KingdomNav({ current }: { current: string }) {
-  const base = TX_ROOT;
+function KingdomNav({ current, base, counts, noun }: { current: string; base: string; counts?: KingdomCounts; noun: string }) {
   const taxa = useTaxa().filter((t) => t.current);
+  const count = counts ?? { all: taxa.length, Flora: taxa.filter((t) => t.kingdom === "Flora").length, Fauna: taxa.filter((t) => t.kingdom === "Fauna").length };
   const items = [
-    { id: "all", label: "All species", href: base, badge: taxa.length, icon: Dataflow03 },
-    { id: "Flora", label: "Flora", href: `${base}?kingdom=Flora`, badge: taxa.filter((t) => t.kingdom === "Flora").length, icon: SPECIES_GROUP_ICON.Plant },
-    { id: "Fauna", label: "Fauna", href: `${base}?kingdom=Fauna`, badge: taxa.filter((t) => t.kingdom === "Fauna").length, icon: SPECIES_GROUP_ICON.Mammal },
+    { id: "all", label: `All ${noun.toLowerCase()}`, href: base, badge: count.all, icon: Dataflow03 },
+    { id: "Flora", label: "Flora", href: `${base}?kingdom=Flora`, badge: count.Flora, icon: SPECIES_GROUP_ICON.Plant },
+    { id: "Fauna", label: "Fauna", href: `${base}?kingdom=Fauna`, badge: count.Fauna, icon: SPECIES_GROUP_ICON.Mammal },
   ];
-  return <NavList heading="Species" items={items} current={current} />;
+  return <NavList heading={noun} items={items} current={current} />;
+}
+
+export interface KingdomCounts {
+  all: number;
+  Flora: number;
+  Fauna: number;
 }
 
 export function TxShell({
   current,
   breadcrumbCurrent,
   formSidebar = false,
+  formOnePage = false,
+  base = TX_ROOT,
+  noun = "Species",
+  counts,
   children,
 }: {
   /** The column 2 item that is selected: "all", "Flora" or "Fauna". */
@@ -89,6 +99,14 @@ export function TxShell({
   breadcrumbCurrent?: string;
   /** A form with steps is open: column 2 becomes its section list (the form portals into it). */
   formSidebar?: boolean;
+  /** A form on one page, with no sections to list (version 2's Append): column 2 stays where you are among the species. */
+  formOnePage?: boolean;
+  /** The list column 2 and the breadcrumb lead to: version 2 passes its own (tx-hierarchy.ts). */
+  base?: string;
+  /** What column 2 lists: "Species" in version 1, "Taxa" in version 2, which manages every rank. */
+  noun?: string;
+  /** Column 2's counts, when the list counts something other than current species (version 2 counts every rank). */
+  counts?: KingdomCounts;
   children: ReactNode;
 }) {
   const router = useRouter();
@@ -110,7 +128,7 @@ export function TxShell({
     else setLocalSection(section.label);
   };
 
-  const column2 = <KingdomNav current={current} />;
+  const column2 = <KingdomNav current={current} base={base} counts={counts} noun={noun} />;
 
   let main: ReactNode = children;
   if (otherSection) main = <SectionPlaceholder node={otherSection} />;
@@ -127,7 +145,7 @@ export function TxShell({
 
   // A record's page (a user, a request, a report ...) has no column 2: the whole width is the record (CONTRACTS 3.7). Its
   // navigation is the breadcrumb switcher, and its actions are in the record's own card.
-  const recordPage = showNav && !!breadcrumbCurrent && !formSidebar;
+  const recordPage = showNav && !!breadcrumbCurrent && !formSidebar && !formOnePage;
 
   return (
     <div className="font-barlow flex h-screen flex-col overflow-hidden">
@@ -148,7 +166,7 @@ export function TxShell({
         }
         section={
           breadcrumbCurrent && !otherSection && canManage ? (
-            <Link href={roleHref(TX_ROOT)} className="hover:text-primary">
+            <Link href={roleHref(base)} className="hover:text-primary">
               {activeSection}
             </Link>
           ) : (

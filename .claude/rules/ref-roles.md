@@ -26,7 +26,7 @@ Seven roles, highest to lowest privilege. The order of `USER_ROLES` in `lib/user
 | Role | Who | Org pill | Nav (`navForRole`) |
 | --- | --- | --- | --- |
 | `biodata-super-admin` | BioData Super Admin (DEW). Everything a BioData Admin has, plus Controlled Vocabulary and Voucher Management. Passes every feature check. | DEW | `biodataSuperAdminNav`: the admin tree plus Controlled Vocabulary and Voucher Management after DSA |
-| `biodata-admin` | DEW admin, admins the platform. Passes every feature check except the super admin's own (`SUPER_ADMIN_ONLY` in `config/role-access.config.ts`: today, `ctrlVocabManagement` and `voucherManagement`). | DEW | `biodataAdminNav`: the registered tree plus User Management and DSA |
+| `biodata-admin` | DEW admin, admins the platform. Passes every feature check except the super admin's own (`SUPER_ADMIN_ONLY` in `config/role-access.config.ts`: today, `ctrlVocabManagement` and `voucherManagement`; `nominationRating`, rating a nomination in Nominations version 2, was Super Admin only until 12 Oct 2026 and now passes both admin roles). | DEW | `biodataAdminNav`: the registered tree plus User Management and DSA |
 | `biodata-user` | DEW staff | DEW | `registeredUserNav` |
 | `privileged-admin` | Admin of a partner organisation | ORG | `registeredUserNav` |
 | `privileged-user` | Member of a partner organisation (Birds SA and the like) | ORG | `registeredUserNav` |
@@ -37,7 +37,7 @@ Seven roles, highest to lowest privilege. The order of `USER_ROLES` in `lib/user
   it says "DEW" (`orgLabelForRole`); the `privileged-*` roles have no single known org in this build, so
   theirs says "ORG". The pill is shown by `AppHeader` where `orgSwitcher` allows it.
 - **public-user** has no account: the header shows Log in and Sign up instead of the profile menu, and there is
-  no DLA, Nominate Sensitive Species, Reports or Template Finder section, not even as a hidden leaf. Home is
+  no DLA, Sensitive Nominations, Reports or Template Finder section, not even as a hidden leaf. Home is
   the Flora and Fauna dashboard with the sign-up card. Column 2 is the one place that explains
   (`GuestAboutAside`, the §3.10 exception). Features reduce for this role; screens are never redesigned for it.
 - **Controlled Vocabulary is a BioData Super Admin feature only** (the designer, 30 Sept 2026; BRD REQ-18.1:

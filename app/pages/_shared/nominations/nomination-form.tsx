@@ -2,10 +2,11 @@
 
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, Edit05, Trash01 } from "@untitledui/icons";
+import { ArrowLeft, CheckCircle, Edit05, Trash01 } from "@untitledui/icons";
 import { Button } from "@/components/base/buttons/button";
 import { RadioButton, RadioGroup } from "@/components/base/radio-buttons/radio-buttons";
 import { TextArea } from "@/components/base/textarea/textarea";
+import { Input } from "@/components/base/input/input";
 import { AlertFullWidth } from "@/components/application/alerts/alerts";
 import { DestructiveModal } from "@/components/application/modals/modal";
 import { FormPage } from "@/app/pages/_shared/form-page";
@@ -14,18 +15,24 @@ import { FormSectionList, FormSidebar, deriveSectionStatus } from "@/app/pages/_
 import { SpeciesPhoto } from "@/app/pages/_shared/map-search/species-photo";
 import { SPECIES_GROUP_ICON } from "@/app/pages/_shared/map-search/species-group-icons";
 import { SpeciesField } from "@/app/pages/_shared/species-picker";
-import { AreaList, AreasEditor } from "@/app/pages/_shared/nominations/nomination-areas";
+import { AreasEditor } from "@/app/pages/_shared/nominations/nomination-areas";
+import { ProtectionView } from "@/app/pages/_shared/nominations/nomination-protection";
+import { GeoExtentPicker } from "@/app/pages/project-registration/geo-extent-picker";
+import { emptyGeoExtent, type GeoExtentValue } from "@/app/pages/project-registration/types";
+import { AccessSelect, RiskSelect } from "@/app/pages/_shared/nominations/nomination-rating-fields";
+import { STANDARD_ACCESS, areaRatingKey, nominationRatingKeys, ratingKeyLabel, type Rating } from "@/app/pages/_shared/nominations/nomination-rating";
 import {
   NOMINATION_ATTRIBUTES,
-  NOMINATION_SECTION_ORDER,
-  attributeLabel,
-  attributeValueLabel,
+  kindOf,
+  sectionOrderFor,
+  type NominationKind,
   fromEditorRows,
   isOpenNomination,
   missingForNomination,
   nominationSections,
   nominationStatusMeta,
   protectionMeta,
+  protectedItems,
   speciesFor,
   toEditorRows,
   type Nomination,
@@ -42,10 +49,35 @@ import { useRoleHref } from "@/lib/use-role-href";
 
 // The nomination form, fitted from the lo-fi (Figma YMproGZfrFB5jUqPHPxMhk node 1401:10936) into the
 // shared form pattern (FormPage, sections in column 2, CONTRACTS 4.1). The lo-fi's one long screen
-// becomes four sections: Species (its left-hand picker, moved into main), What to protect (Data
-// Protection Rules and the attribute rows), Justification, and Review. The attribute editor is the
+// becomes sections: Species (its left-hand picker, moved into main), What to protect (Data
+// Protection Rules, the attribute rows and why), and Review. The attribute editor is the
 // project flow's own ConceptRows, labelled "attribute" here as the lo-fi says, with Location as a
 // set of areas. Mandatory details block Continue for the section being left, never ahead of it.
+// Version 2 (the designer, 12 Oct 2026):
+// - A location nomination uses the same form and steps: Location (a name, then the area chosen as Add Project chooses its
+//   geographic extent, GeoExtentPicker, its map opening in the Expand dialog), Review.
+// - A BioData Admin or Super Admin approves their own nomination at once: the last step's action is "Approve nomination"
+//   instead of "Submit nomination". The Super Admin sets the data release risk and user access level on the Review step first,
+//   one pair per thing protected (the whole species, each attribute, or the location), as when reviewing someone else's.
+// - Both admin roles edit any nomination past its draft (`onSaveChanges`): Save changes keeps its status, no draft. The Super
+//   Admin's rating fields show on Review, required once the nomination is accepted.
+// - Version 3: on Review, each rating sits beside the item it rates (under the location, the whole species, or each attribute)
+//   instead of in a "Data release" block at the end.
+// - Both versions (the designer, 12 Oct 2026: "must be able to set the data risk level and access level in the same screen"):
+//   the rating is set where the thing it rates is chosen, not on Review. Each attribute's card on What to protect has its data
+//   release risk and user access level under its value; "All data" has one pair under the choice; a location has its pair on the
+//   Location step. Review shows each rating as read, beside its item. Both admin roles rate (`nominationRating`).
+// - Justification is not a step (the designer, 14 Oct 2026: "for all users when selecting attributes, they have to provide
+//   justification for each attribute. Also for each location ... we cannot annoy the users by asking justification for every
+//   field when its the same justification for all"). Each attribute, and each area of a Location attribute, is justified where it
+//   is chosen. Since 14 Oct 2026 (the designer chose it from three patterns): one "Main reason", asked before the attributes,
+//   covers every attribute and area; each item shows "Uses the main reason · Write a different one", and the link opens that
+//   item's own field, with "Use the main one instead" to close it (the inherited-value pattern). The word is "reason" everywhere
+//   on screen, never "justification" (the designer: "don't juggle between justification and reason"); the code keeps the
+//   `justification` field name. "All data" and a location
+//   nomination have one justification, on their step.
+// - An admin's edit opens on What to protect (a location's on Location), not on Review, and "Save changes" is in the footer of
+//   every step, so a change is saved where it is made.
 
 // Species is the shared SpeciesField (app/pages/_shared/species-picker.tsx): a combo box grouped
 // by species group, then a summary card with Change. The notes under the card are this form's own.
@@ -122,43 +154,101 @@ function SummaryRow({ title, onEdit, children }: { title: string; onEdit: () => 
 
 export function NominationForm({
   initial,
+  kind: newKind = "species",
+  canApprove = false,
+  canRate = false,
   onBack,
   onSaveDraft,
   onSubmit,
+  onApprove,
+  onSaveChanges,
 }: {
   initial?: Nomination;
+  /** What a new nomination is for. An existing one keeps its own. */
+  kind?: NominationKind;
+  /** Version 2, BioData Admin and Super Admin: the last step approves instead of submitting (`onApprove`). */
+  canApprove?: boolean;
+  /** Version 2, both admin roles: approving needs a risk and level for each thing protected, set beside it (What to protect, or Location). */
+  canRate?: boolean;
   onBack: () => void;
   onSaveDraft: (draft: NominationDraft) => void;
   onSubmit: (draft: NominationDraft) => void;
+  onApprove?: (draft: NominationDraft, ratings: Record<string, Rating>) => void;
+  /** Version 2, BioData Admin and Super Admin editing a nomination past its draft: Save changes keeps its status, with the
+   *  ratings the Super Admin set (required once it is accepted). */
+  onSaveChanges?: (draft: NominationDraft, ratings: Record<string, Rating>) => void;
 }) {
+  const kind = initial ? kindOf(initial) : newKind;
+  const order = sectionOrderFor(kind);
+  const approves = canApprove && !!onApprove;
+  const adminEdit = !!onSaveChanges;
+  const [ratings, setRatings] = useState<Record<string, Rating>>(initial?.ratings ?? {});
   const [speciesId, setSpeciesId] = useState(initial?.speciesId ?? "");
+  const [locationName, setLocationName] = useState(initial?.location?.name ?? "");
+  const [extent, setExtent] = useState<GeoExtentValue>(initial?.location?.extent ?? emptyGeoExtent());
   const [scope, setScope] = useState<ProtectionScope>(initial?.scope ?? "selected");
   const [editor] = useState(() => toEditorRows(initial?.attributes ?? []));
   const [rows, setRows] = useState<ConceptValueRow[]>(editor.rows);
   const [areas, setAreas] = useState<Record<number, NominationArea[]>>(editor.areas);
   const [justification, setJustification] = useState(initial?.justification ?? "");
-  const [section, setSection] = useState<NominationSection>(initial ? "review" : "species");
-  const [visited, setVisited] = useState<Set<NominationSection>>(() => new Set(initial ? NOMINATION_SECTION_ORDER : []));
+  // The items that have their own justification, by `ProtectedItem.key`. An item absent here uses the shared one.
+  const [own, setOwn] = useState<Record<string, string>>(() =>
+    Object.fromEntries(protectedItems(initial?.attributes ?? []).flatMap((item) => (item.own !== undefined ? [[item.key, item.own]] : []))),
+  );
+  // The step the rating fields sit on: where the thing rated is chosen.
+  const ratingSection: NominationSection = kind === "location" ? "location" : "protection";
+  // An admin's edit opens where the protection is set; any other edit of an existing nomination opens on Review.
+  const [section, setSection] = useState<NominationSection>(initial ? (onSaveChanges ? ratingSection : "review") : order[0]);
+  const [visited, setVisited] = useState<Set<NominationSection>>(() => new Set(initial ? order : []));
   const [blocked, setBlocked] = useState<Set<NominationSection>>(new Set());
   const [submitPressed, setSubmitPressed] = useState(false);
   const [dirty, setDirty] = useState(false);
   const [confirmBack, setConfirmBack] = useState(false);
 
   const touch = () => setDirty(true);
-  const draft: NominationDraft = { speciesId, scope, attributes: scope === "selected" ? fromEditorRows(rows, areas) : [], justification };
+  // The chosen items in order; any of them may have its own justification instead of the main one.
+  const items = scope === "selected" ? protectedItems(fromEditorRows(rows, areas)) : [];
+  const ownFor = (key: string) => own[key];
+  const withOwn = <T extends { justification?: string }>(item: T, key: string): T => {
+    const { justification: _drop, ...rest } = item;
+    void _drop;
+    const text = ownFor(key);
+    return (text !== undefined ? { ...rest, justification: text } : rest) as T;
+  };
+  const draft: NominationDraft =
+    kind === "location"
+      ? { kind, speciesId: "", scope: "all", attributes: [], justification, location: { name: locationName, extent } }
+      : {
+          speciesId,
+          scope,
+          attributes:
+            scope === "selected"
+              ? fromEditorRows(rows, areas).map((a) =>
+                  a.attribute === "location" ? { ...a, areas: a.areas.map((ar) => withOwn(ar, areaRatingKey(a.id, ar.id))) } : withOwn(a, `attr:${a.id}`),
+                )
+              : [],
+          justification,
+        };
   const nominations = useNominations();
   // A species with an open nomination (other than this one) can't be nominated again: the species
   // section counts it as unresolved, so Continue, jumping ahead, Save draft and Submit all refuse.
-  const duplicateOf = speciesId ? nominations.find((n) => n.id !== initial?.id && n.speciesId === speciesId && isOpenNomination(n)) : undefined;
+  const duplicateOf = kind === "species" && speciesId ? nominations.find((n) => n.id !== initial?.id && n.speciesId === speciesId && isOpenNomination(n)) : undefined;
   const baseMissing = missingForNomination(draft);
-  const missing = duplicateOf ? { ...baseMissing, species: [...baseMissing.species, "Choose a species without an open nomination"] } : baseMissing;
-  const index = NOMINATION_SECTION_ORDER.indexOf(section);
+  const withDuplicate = duplicateOf ? { ...baseMissing, species: [...baseMissing.species, "Choose a species without an open nomination"] } : baseMissing;
+  // An admin's approval needs a risk for each thing protected; it is asked beside the thing it rates. Editing, the same fields
+  // show, required once the nomination is accepted.
+  const ratingKeys = canRate && (approves || adminEdit) ? nominationRatingKeys(draft) : [];
+  const ratingsRequired = approves || initial?.status === "accepted";
+  const ratingName = (key: string) => ratingKeyLabel(draft, key);
+  const unrated = (ratingsRequired ? ratingKeys : []).filter((k) => !ratings[k]).map((k) => `Set a data release risk for ${ratingName(k)}`);
+  const missing = { ...withDuplicate, [ratingSection]: [...withDuplicate[ratingSection], ...unrated] };
+  const index = order.indexOf(section);
   const isLast = section === "review";
-  const allMissing = NOMINATION_SECTION_ORDER.flatMap((id) => missing[id]);
+  const allMissing = order.flatMap((id) => missing[id]);
   const showErrors = (id: NominationSection) => submitPressed || blocked.has(id);
   const status = initial?.status;
-  const isEditingLive = status === "submitted";
-  const isResubmit = status === "returned";
+  const isEditingLive = status === "submitted" || adminEdit;
+  const isResubmit = status === "returned" && !adminEdit;
   const canDraft = !isEditingLive && !isResubmit;
 
   const goTo = (next: NominationSection) => {
@@ -167,7 +257,7 @@ export function NominationForm({
   };
   // Continue, and jumping ahead in column 2, refuse to leave a section with mandatory details missing.
   const proceed = (next: NominationSection) => {
-    if (NOMINATION_SECTION_ORDER.indexOf(next) > index && missing[section].length > 0) {
+    if (order.indexOf(next) > index && missing[section].length > 0) {
       setBlocked((b) => new Set(b).add(section));
       return;
     }
@@ -176,16 +266,24 @@ export function NominationForm({
 
   const submit = () => {
     setSubmitPressed(true);
-    const first = NOMINATION_SECTION_ORDER.find((id) => missing[id].length > 0);
+    const first = order.find((id) => missing[id].length > 0);
     if (first) {
       setSection(first);
       return;
     }
-    onSubmit(draft);
+    const rated = Object.fromEntries(ratingKeys.filter((k) => ratings[k]).map((k) => [k, ratings[k]]));
+    if (approves) onApprove!(draft, rated);
+    else if (adminEdit) onSaveChanges!(draft, rated);
+    else onSubmit(draft);
   };
 
   const saveDraft = () => {
-    if (!speciesId || duplicateOf) {
+    if (kind === "location" && !locationName.trim()) {
+      setBlocked((b) => new Set(b).add("location"));
+      setSection("location");
+      return;
+    }
+    if (kind === "species" && (!speciesId || duplicateOf)) {
       setBlocked((b) => new Set(b).add("species"));
       setSection("species");
       return;
@@ -193,11 +291,18 @@ export function NominationForm({
     onSaveDraft(draft);
   };
 
-  const sectionItems = NOMINATION_SECTION_ORDER.map((id) => {
+  const sectionMeta = (id: NominationSection) => {
+    // An admin approves their own nomination: it does not go to the panel.
+    if (approves && id === "review") return { title: "Review and approve", description: "Check the nomination, then approve it." };
+    // An admin's edit saves the nomination where it stands: it does not go to the panel again.
+    if (adminEdit && id === "review") return { title: "Review and save", description: "Check the nomination, then save your changes." };
+    return nominationSections[id];
+  };
+  const sectionItems = order.map((id) => {
     const count = id === "review" ? allMissing.length : missing[id].length;
     return {
       id,
-      title: nominationSections[id].title,
+      title: sectionMeta(id).title,
       status: deriveSectionStatus({ isCurrent: id === section, isValid: count === 0, visited: visited.has(id), attempted: showErrors(id) }),
       detail: showErrors(id) && count > 0 && id !== section ? `${count} to fix` : undefined,
     };
@@ -207,31 +312,124 @@ export function NominationForm({
   // doesn't repeat it (CONTRACTS 4.1: one message per fact).
   const sectionProblems = section === "species" ? baseMissing.species : missing[section];
   const problems = section === "review" ? (submitPressed ? allMissing : []) : showErrors(section) ? sectionProblems : [];
-  const title = initial ? (isResubmit ? `Update ${initial.id}` : isEditingLive ? `Edit ${initial.id}` : `Edit draft ${initial.id}`) : "New nomination";
+  const title = initial ? (isResubmit ? `Update ${initial.id}` : isEditingLive ? `Edit ${initial.id}` : `Edit draft ${initial.id}`) : kind === "location" ? "New location nomination" : "New nomination";
   const species = speciesFor(speciesId);
 
+  // Why: the shared justification, or an item's own. Shown where the item is chosen (an attribute's card, an area's row).
+  const justificationError = (text: string) => showErrors("protection") && !text.trim();
+  const sharedJustification = (rows: number, hint?: string, inRow = false) => (
+    <TextArea
+      label={inRow ? undefined : "Reason"}
+      aria-label={inRow ? "Reason" : undefined}
+      isRequired
+      rows={rows}
+      placeholder="What puts these records at risk if they stay public, and what protecting them would prevent."
+      value={justification}
+      isInvalid={showErrors(kind === "location" ? "location" : "protection") && !justification.trim()}
+      hint={showErrors(kind === "location" ? "location" : "protection") && !justification.trim() ? "Enter a reason" : hint}
+      onChange={(v) => {
+        setJustification(v);
+        touch();
+      }}
+    />
+  );
+  const setOwnFor = (key: string, text: string | undefined) => {
+    setOwn((o) => {
+      const next = { ...o };
+      if (text === undefined) delete next[key];
+      else next[key] = text;
+      return next;
+    });
+    touch();
+  };
+  // An item's reason: a quiet line saying it uses the main justification, or its own field once "Write a different one" is pressed.
+  const justificationFor = (key: string) => {
+    const label = items.find((i) => i.key === key)?.label ?? "this attribute";
+    const text = own[key];
+    if (text === undefined)
+      return (
+        <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm">
+          <span className="text-tertiary">Uses the main reason</span>
+          <span aria-hidden className="text-quaternary">
+            ·
+          </span>
+          <Button color="link-color" size="sm" onPress={() => setOwnFor(key, "")}>
+            Write a different one
+          </Button>
+        </div>
+      );
+    return (
+      <div className="flex flex-col gap-1.5">
+        <TextArea
+          label={`Different reason for ${label}`}
+          isRequired
+          rows={3}
+          value={text}
+          isInvalid={justificationError(text)}
+          hint={justificationError(text) ? "Enter a reason" : undefined}
+          onChange={(v) => setOwnFor(key, v)}
+        />
+        <div>
+          <Button color="link-gray" size="sm" onPress={() => setOwnFor(key, undefined)}>
+            Use the main one instead
+          </Button>
+        </div>
+      </div>
+    );
+  };
+
+  // The pair of rating fields, set beside the thing it rates.
+  const ratingFields = (key: string) => {
+    const value = ratings[key];
+    return (
+      <div className="grid gap-4 sm:grid-cols-2">
+        <RiskSelect
+          label="Data release risk"
+          value={value?.risk ?? null}
+          isInvalid={showErrors(ratingSection) && ratingsRequired && !value}
+          onChange={(risk) => {
+            setRatings((r) => ({ ...r, [key]: { risk, access: STANDARD_ACCESS[risk] } }));
+            touch();
+          }}
+        />
+        <AccessSelect
+          label="User access level"
+          risk={value?.risk ?? null}
+          value={value?.access ?? null}
+          onChange={(access) => {
+            if (!value) return;
+            setRatings((r) => ({ ...r, [key]: { ...value, access } }));
+            touch();
+          }}
+        />
+      </div>
+    );
+  };
+  const rates = ratingKeys.length > 0;
   return (
     <div className="flex min-h-0 flex-1 flex-col">
       <FormSidebar>
         <FormSectionList
-          heading="Sensitive species nomination"
+          heading={kind === "location" ? "Sensitive location nomination" : "Sensitive species nomination"}
           groups={[{ sections: sectionItems }]}
-          progress={{ done: sectionItems.filter((i) => i.status === "complete").length, total: NOMINATION_SECTION_ORDER.length }}
+          progress={{ done: sectionItems.filter((i) => i.status === "complete").length, total: order.length }}
           onSelect={(id) => proceed(id as NominationSection)}
         />
       </FormSidebar>
 
       <FormPage
-        eyebrow={`${title} - Step ${index + 1} of ${NOMINATION_SECTION_ORDER.length}`}
-        title={nominationSections[section].title}
-        subtitle={`${nominationSections[section].description}${section === "review" ? "" : " A draft only needs the species."}`}
+        eyebrow={`${title} - Step ${index + 1} of ${order.length}`}
+        title={sectionMeta(section).title}
+        subtitle={`${sectionMeta(section).description}${section === "review" ? "" : kind === "location" ? " A draft only needs the location's name." : " A draft only needs the species."}`}
         onCancel={() => (dirty ? setConfirmBack(true) : onBack())}
-        onSaveDraft={canDraft ? saveDraft : undefined}
-        onBack={index > 0 ? () => goTo(NOMINATION_SECTION_ORDER[index - 1]) : undefined}
+        onSaveDraft={canDraft ? saveDraft : adminEdit && !isLast ? submit : undefined}
+        saveLabel={canDraft ? undefined : "Save changes"}
+        onBack={index > 0 ? () => goTo(order[index - 1]) : undefined}
         problems={problems.length ? { items: problems } : undefined}
-        primaryLabel={isLast ? (isEditingLive ? "Save changes" : isResubmit ? "Resubmit nomination" : "Submit nomination") : "Continue"}
+        primaryLabel={isLast ? (approves ? "Approve nomination" : isEditingLive ? "Save changes" : isResubmit ? "Resubmit nomination" : "Submit nomination") : "Continue"}
+        primaryIcon={approves ? CheckCircle : undefined}
         primaryIsContinue={!isLast}
-        onPrimary={isLast ? submit : () => proceed(NOMINATION_SECTION_ORDER[index + 1])}
+        onPrimary={isLast ? submit : () => proceed(order[index + 1])}
       >
         {section === "species" && (
           <FormRow title="Species" required description="Search by common name, scientific name or family.">
@@ -245,6 +443,48 @@ export function NominationForm({
               }}
             />
           </FormRow>
+        )}
+
+        {section === "location" && (
+          <>
+            <FormRow title="Location name" required description="A short name the panel will know it by.">
+              <Input
+                aria-label="Location name"
+                isRequired
+                placeholder="E.g., Pygmy Bluetongue Lizard nesting site"
+                value={locationName}
+                isInvalid={showErrors("location") && !locationName.trim()}
+                hint={showErrors("location") && !locationName.trim() ? "Name the location" : undefined}
+                onChange={(v) => {
+                  setLocationName(v);
+                  touch();
+                }}
+              />
+            </FormRow>
+            <FormRow
+              title="Area"
+              required
+              description="Upload a shapefile, draw it on the map, choose a national park or enter coordinates."
+              error={showErrors("location") && missing.location.includes("Define the location's area") ? "Define the location's area" : undefined}
+            >
+              <GeoExtentPicker
+                value={extent}
+                expand="modal"
+                onChange={(next) => {
+                  setExtent(next);
+                  touch();
+                }}
+              />
+            </FormRow>
+            <FormRow title="Reason" required description="What puts this place at risk if its records stay public, and what protecting them would prevent.">
+              {sharedJustification(5, undefined, true)}
+            </FormRow>
+            {rates && (
+              <FormRow title="Data release" required={ratingsRequired} description="How records in this area are released, and who sees them as held.">
+                {ratingFields("location")}
+              </FormRow>
+            )}
+          </>
         )}
 
         {section === "protection" && (
@@ -262,8 +502,33 @@ export function NominationForm({
                 <RadioButton value="selected" label={protectionMeta.selected.label} hint={protectionMeta.selected.description} />
               </RadioGroup>
             </FormRow>
+            {scope === "all" && (
+              <FormRow title="Reason" required description="What puts this species at risk if its records stay public, and what protecting them would prevent.">
+                {sharedJustification(5, undefined, true)}
+              </FormRow>
+            )}
+            {scope === "all" && rates && (
+              <FormRow title="Data release" required={ratingsRequired} description="How records of this species are released, and who sees them as held.">
+                {ratingFields("species")}
+              </FormRow>
+            )}
+            {/* The reason is asked before the attributes (the designer, 14 Oct 2026): it applies to every attribute and area added
+                below, each of which can be given a different one. */}
             {scope === "selected" && (
-              <FormRow title="Attributes" required description="Choose each attribute and its value. For Location, add the places whose records should be obscured.">
+              <FormRow
+                title="Main reason"
+                required={items.length === 0 || items.some((i) => own[i.key] === undefined)}
+                description="Why these records should be protected. It applies to every attribute and area you add below, unless you write a different one for it."
+              >
+                {sharedJustification(5, undefined, true)}
+              </FormRow>
+            )}
+            {scope === "selected" && (
+              <FormRow
+                title="Attributes"
+                required
+                description="Choose each attribute and its value. For Location, add the places whose records should be obscured."
+              >
                 <ConceptRows
                   noun="attribute"
                   rows={rows}
@@ -272,76 +537,65 @@ export function NominationForm({
                     setRows(next);
                     touch();
                   }}
-                  renderBelow={(row, option, update) =>
-                    option?.valueType === "areas" ? (
-                      <AreasEditor
-                        areas={areas[row.id] ?? []}
-                        invalid={showErrors("protection") && (areas[row.id] ?? []).length === 0}
-                        onChange={(next) => {
-                          setAreas((prev) => ({ ...prev, [row.id]: next }));
-                          update({ values: next.map((a) => a.id) });
-                          touch();
-                        }}
-                      />
-                    ) : null
-                  }
+                  renderBelow={(row, option, update) => (
+                    <>
+                      {option?.valueType === "areas" && (
+                        <AreasEditor
+                          areas={areas[row.id] ?? []}
+                          invalid={showErrors("protection") && (areas[row.id] ?? []).length === 0}
+                          renderArea={(area) => (
+                            <>
+                              {justificationFor(areaRatingKey(row.id, area.id))}
+                              {rates && ratingFields(areaRatingKey(row.id, area.id))}
+                            </>
+                          )}
+                          onChange={(next) => {
+                            setAreas((prev) => ({ ...prev, [row.id]: next }));
+                            update({ values: next.map((a) => a.id) });
+                            touch();
+                          }}
+                        />
+                      )}
+                      {/* Why, then this attribute's rating, once the attribute is chosen. A Location's areas carry their own why. */}
+                      {row.concept && row.concept !== "location" && justificationFor(`attr:${row.id}`)}
+                      {rates && row.concept && row.concept !== "location" && ratingFields(String(row.id))}
+                    </>
+                  )}
                 />
               </FormRow>
             )}
           </>
         )}
 
-        {section === "justification" && (
-          <FormRow title="Justification" required description="What puts this species at risk if its records stay public, and what protecting them would prevent.">
-            <TextArea
-              aria-label="Justification"
-              rows={6}
-              placeholder="Enter a justification…"
-              value={justification}
-              isInvalid={showErrors("justification") && !justification.trim()}
-              hint={showErrors("justification") && !justification.trim() ? "Enter a justification" : undefined}
-              onChange={(v) => {
-                setJustification(v);
-                touch();
-              }}
-            />
-          </FormRow>
-        )}
-
         {section === "review" && (
           <div className="flex flex-col rounded-lg border border-secondary p-6">
-            <SummaryRow title="Species" onEdit={() => setSection("species")}>
-              {species ? (
-                <div className="flex items-center gap-3">
-                  <SpeciesPhoto scientificName={species.species} alt={species.commonName} fallbackIcon={SPECIES_GROUP_ICON[species.group]} className="size-10" />
-                  <span className="flex flex-col">
-                    <span className="text-sm font-medium text-primary">{species.commonName}</span>
-                    <span className="text-xs text-tertiary italic">{species.species}</span>
-                  </span>
-                </div>
-              ) : (
-                <p className="text-sm text-quaternary">Not provided</p>
-              )}
-            </SummaryRow>
-            <SummaryRow title="What to protect" onEdit={() => setSection("protection")}>
-              <p className="text-sm text-secondary">{protectionMeta[scope].label}</p>
-              {scope === "selected" && (
-                <dl className="m-0 flex flex-col gap-3">
-                  {draft.attributes.map((a) => (
-                    <div key={a.id} className="flex flex-col gap-2">
-                      <div className="grid grid-cols-[minmax(0,12rem)_1fr] gap-4 text-sm">
-                        <dt className="text-tertiary">{attributeLabel(a)}</dt>
-                        <dd className="m-0 text-primary">{attributeValueLabel(a) || <span className="text-quaternary">Not provided</span>}</dd>
-                      </div>
-                      {a.attribute === "location" && a.areas.length > 0 && <AreaList areas={a.areas} />}
+            {/* What is protected reads as on the record page (ProtectionView): each reason written out once, over the items it
+                covers, each with its rating. The species is its own row above, so the view leaves it out. */}
+            {kind === "location" && (
+              <SummaryRow title="Location" onEdit={() => setSection("location")}>
+                <ProtectionView nomination={{ ...draft, ratings }} showRatings={rates} />
+              </SummaryRow>
+            )}
+            {kind === "species" && (
+              <>
+                <SummaryRow title="Species" onEdit={() => setSection("species")}>
+                  {species ? (
+                    <div className="flex items-center gap-3">
+                      <SpeciesPhoto scientificName={species.species} alt={species.commonName} fallbackIcon={SPECIES_GROUP_ICON[species.group]} className="size-10" />
+                      <span className="flex flex-col">
+                        <span className="text-sm font-medium text-primary">{species.commonName}</span>
+                        <span className="text-xs text-tertiary italic">{species.species}</span>
+                      </span>
                     </div>
-                  ))}
-                </dl>
-              )}
-            </SummaryRow>
-            <SummaryRow title="Justification" onEdit={() => setSection("justification")}>
-              <p className={justification.trim() ? "text-sm whitespace-pre-line text-secondary" : "text-sm text-quaternary"}>{justification.trim() || "Not provided"}</p>
-            </SummaryRow>
+                  ) : (
+                    <p className="text-sm text-quaternary">Not provided</p>
+                  )}
+                </SummaryRow>
+                <SummaryRow title="What to protect" onEdit={() => setSection("protection")}>
+                  <ProtectionView nomination={{ ...draft, ratings }} showRatings={rates} />
+                </SummaryRow>
+              </>
+            )}
           </div>
         )}
       </FormPage>

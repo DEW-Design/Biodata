@@ -1,6 +1,6 @@
 "use client";
 
-import type { ReactNode } from "react";
+import type { FC, ReactNode } from "react";
 import { ArrowNarrowLeft, ArrowNarrowRight, Save01 } from "@untitledui/icons";
 import { Button } from "@/components/base/buttons/button";
 import { AlertFullWidth } from "@/components/application/alerts/alerts";
@@ -31,6 +31,7 @@ export function FormPage({
   subtitle,
   onCancel,
   onSaveDraft,
+  saveLabel = "Save draft",
   children,
   onBack,
   message,
@@ -39,6 +40,7 @@ export function FormPage({
   onPrimary,
   primaryIsContinue = false,
   primaryIsDisabled = false,
+  primaryIcon,
 }: {
   eyebrow?: string;
   title: string;
@@ -49,6 +51,8 @@ export function FormPage({
   onCancel?: () => void;
   /** Shows "Save draft" in the footer, beside the primary action. Omit where a draft makes no sense (editing a live record). */
   onSaveDraft?: () => void;
+  /** The label of that secondary save. An edit of a live record that can be saved from any step says "Save changes". */
+  saveLabel?: string;
   children: ReactNode;
   /** "Back a step": shown when there is a previous section. Omit on the first. */
   onBack?: () => void;
@@ -62,6 +66,8 @@ export function FormPage({
   primaryIsContinue?: boolean;
   /** Disables the primary action, e.g. "Save changes" on a live record before anything has changed. */
   primaryIsDisabled?: boolean;
+  /** The final action's own icon (Approve takes `CheckCircle`, 3.12). Opt-in: without it the final action is drawn as before. */
+  primaryIcon?: FC<{ className?: string }>;
 }) {
   return (
     <div className="flex min-h-0 flex-1 flex-col">
@@ -111,10 +117,10 @@ export function FormPage({
           {message && <p className="text-sm text-error-primary">{message}</p>}
           {onSaveDraft && (
             <Button iconLeading={Save01} color="secondary" onClick={onSaveDraft}>
-              Save draft
+              {saveLabel}
             </Button>
           )}
-          <Button color="primary" iconTrailing={primaryIsContinue ? ArrowNarrowRight : undefined} isDisabled={primaryIsDisabled} onClick={onPrimary}>
+          <Button color="primary" iconLeading={primaryIsContinue ? undefined : primaryIcon} iconTrailing={primaryIsContinue ? ArrowNarrowRight : undefined} isDisabled={primaryIsDisabled} onClick={onPrimary}>
             {primaryLabel}
           </Button>
         </div>
