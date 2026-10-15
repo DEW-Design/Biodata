@@ -1,7 +1,10 @@
 import type { FC } from "react";
-import { AlertTriangle, ClockRewind, Database01, FileCheck02, Folder, Lock01, Microscope, RefreshCw01, Rows01, Share07, Tag01, UploadCloud02 } from "@untitledui/icons";
+import { AlertTriangle, Bell01, ClockRewind, Database01, FileCheck02, Folder, Key01, Key02, Lock01, Microscope, RefreshCw01, Rows01, Share07, Tag01, UploadCloud02, UserCheck01, Users01, UsersCheck } from "@untitledui/icons";
+import { sectionIcons } from "@/app/pages/_shared/nav-icons";
+import { TAXONOMY_SECTION_LABEL } from "@/lib/registered-user-nav";
 import { hasFeatureAccess, type FeatureKey } from "@/config/role-access.config";
 import type { UserRole } from "@/lib/user-role";
+import { FAUNA_TAXONOMY_REPORT_TITLE, TAXONOMY_REPORT_TITLE } from "@/app/pages/_shared/reports/taxonomy-report-title";
 
 // The reports the Reports landing page (/pages/reports) offers, one card each. A report is added here
 // once, when the designer supplies it: its card, its route under /pages/reports/<id> and its page. Only
@@ -9,13 +12,16 @@ import type { UserRole } from "@/lib/user-role";
 // "Audit Log Reports" are one so far, the Project Audit Log Report.
 
 /** How the landing groups the reports (designer, 1 Oct 2026: "Grouped into categories, yep"). The names are the build's. */
-export type ReportCategoryId = "uploads" | "specimens" | "project-data" | "agreements" | "audit-log";
+export type ReportCategoryId = "uploads" | "specimens" | "project-data" | "taxonomy" | "agreements" | "users-access" | "system" | "audit-log";
 
 export const REPORT_CATEGORIES: { id: ReportCategoryId; label: string }[] = [
   { id: "uploads", label: "Uploads" },
   { id: "specimens", label: "Specimens and restrictions" },
   { id: "project-data", label: "Project data" },
+  { id: "taxonomy", label: "Taxonomy" },
   { id: "agreements", label: "Agreements" },
+  { id: "users-access", label: "Users and access" },
+  { id: "system", label: "Application and system" },
   { id: "audit-log", label: "Audit log" },
 ];
 
@@ -117,6 +123,24 @@ export const REPORTS: ReportEntry[] = [
     scoped: true,
   },
   {
+    id: "taxonomy",
+    category: "taxonomy",
+    title: TAXONOMY_REPORT_TITLE,
+    description: "The taxa BioData holds, one report for each view: the taxonomy list in detail, its regions and areas, herbarium data, attributes, audit log, and its renames, splits, appends and synonyms.",
+    icon: sectionIcons[TAXONOMY_SECTION_LABEL],
+    path: "/pages/reports/taxonomy",
+    feature: "taxonomyManagement",
+  },
+  {
+    id: "fauna-taxonomy",
+    category: "taxonomy",
+    title: FAUNA_TAXONOMY_REPORT_TITLE,
+    description: "The fauna BioData holds, one report for each view: the taxonomy list in detail, species status, Australian distribution, regional data, species reference, species attributes and audit log.",
+    icon: sectionIcons[TAXONOMY_SECTION_LABEL],
+    path: "/pages/reports/fauna-taxonomy",
+    feature: "taxonomyManagement",
+  },
+  {
     id: "dla-agreement",
     category: "agreements",
     title: "Data Licence Agreement Report",
@@ -133,6 +157,69 @@ export const REPORTS: ReportEntry[] = [
     icon: Share07,
     path: "/pages/reports/dsa-agreement",
     feature: "dsaManagement",
+  },
+  {
+    id: "user-detail",
+    category: "users-access",
+    title: "User Detail Report",
+    description: "Every user account: who they are, how to reach them, their organisation, type and status.",
+    icon: Users01,
+    path: "/pages/reports/user-detail",
+    feature: "userManagement",
+  },
+  {
+    id: "role-detail",
+    category: "users-access",
+    title: "Role Detail Report",
+    description: "Every role: what it is for, the department it belongs to, its type and when it is valid.",
+    icon: UserCheck01,
+    path: "/pages/reports/role-detail",
+    feature: "userManagement",
+  },
+  {
+    id: "user-role-detail",
+    category: "users-access",
+    title: "User - Role Detail Report",
+    description: "The roles each user holds, one row for each user and role, beside the status of both.",
+    icon: UsersCheck,
+    path: "/pages/reports/user-role-detail",
+    feature: "userManagement",
+  },
+  {
+    id: "permission-detail",
+    category: "users-access",
+    title: "Permission Detail Report",
+    description: "Every permission: what it allows, its type, its status and when it is valid.",
+    icon: Key01,
+    path: "/pages/reports/permission-detail",
+    feature: "userManagement",
+  },
+  {
+    id: "role-permission-detail",
+    category: "users-access",
+    title: "Role - Permission Detail Report",
+    description: "The permissions each role holds, one row for each role and permission, beside the status of the role.",
+    icon: Key02,
+    path: "/pages/reports/role-permission-detail",
+    feature: "userManagement",
+  },
+  {
+    id: "notification-config-detail",
+    category: "system",
+    title: "Notification Config Detail Report",
+    description: "Every automated email BioData SA sends: what triggers it, who receives it, what it says and when it runs.",
+    icon: Bell01,
+    path: "/pages/reports/notification-config-detail",
+    feature: "notificationManagement",
+  },
+  {
+    id: "ctrl-vocab-detail",
+    category: "system",
+    title: "Control Vocab Detail Report",
+    description: "Every controlled vocabulary entry beside its vocabulary: the category, type and status, its title, name and order.",
+    icon: Database01,
+    path: "/pages/reports/ctrl-vocab-detail",
+    feature: "ctrlVocabManagement",
   },
   {
     id: "project-audit-log",

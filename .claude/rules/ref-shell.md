@@ -115,7 +115,8 @@ single list with no record page).
 5. **The record page is its own route** (`/pages/<name>/<id>`) and follows the project page (§4.6):
    `RecordBackLink`, `RecordHero` with `RecordActionBar onDark`, at most one notice, then underline `Tabs`
    of `RecordRow` cards. A record that no longer exists shows an honest "not found" state. A report is a record
-   whose content is a table (`DataReport`: counts as `MetricTile`s, search, the filter menu and its chips, the table). On every
+   whose content is a table (`DataReport`: counts as `MetricTile`s, one toolbar row of search, Parameters, filter menu and Columns, the filter's chips, the
+   table; what the report is run on is the Parameters popover and what you narrow by is the Filter, `/patterns/report-toolbar`, 4.6). On every
    record page the breadcrumb's section crumb is a `BreadcrumbSwitcher` over the collection's other records (§4.6
    item 5; documented at `/patterns/navigation`); the collection's wrapper is `ProjectSwitcher`, `ReportSwitcher`
    and so on.

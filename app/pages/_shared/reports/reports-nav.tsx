@@ -2,13 +2,13 @@
 
 import type { FC } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { BarChart01, ClockRewind, FileCheck02, Folder, Microscope, UploadCloud02 } from "@untitledui/icons";
+import { BarChart01, ClockRewind, FileCheck02, Folder, Microscope, Settings01, UploadCloud02 } from "@untitledui/icons";
 import { sectionIcons } from "@/app/pages/_shared/nav-icons";
 import { ActionRow } from "@/app/pages/_shared/agreement-actions";
 import { AgreementScopeNav } from "@/app/pages/_shared/agreement-scope";
 import { useCreateReportDialog } from "@/app/pages/_shared/reports/create-report-modal";
 import { REPORT_CATEGORIES, type ReportCategoryId } from "@/app/pages/_shared/reports/reports-data";
-import { REPORTS_SECTION_LABEL } from "@/lib/registered-user-nav";
+import { REPORTS_SECTION_LABEL, TAXONOMY_SECTION_LABEL, USER_MANAGEMENT_SECTION_LABEL } from "@/lib/registered-user-nav";
 import { useRoleHref } from "@/lib/use-role-href";
 
 // Column 2 of the Reports landing, fixed (the designer, 6 Oct 2026: "Fixed nav: All reports, My reports. User actions: Create a
@@ -24,7 +24,10 @@ export const CATEGORY_ICONS: Record<ReportCategoryId, FC<{ className?: string }>
   uploads: UploadCloud02,
   specimens: Microscope,
   "project-data": Folder,
+  taxonomy: sectionIcons[TAXONOMY_SECTION_LABEL],
   agreements: FileCheck02,
+  "users-access": sectionIcons[USER_MANAGEMENT_SECTION_LABEL],
+  system: Settings01,
   "audit-log": ClockRewind,
 };
 

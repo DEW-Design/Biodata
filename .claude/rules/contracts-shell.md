@@ -282,6 +282,11 @@ the designer names one), and nothing matches (an action that undoes the narrowin
 "Show all uploads").
 
 - MUST NOT leave a bare line of grey text where the table would be.
+- **Exception (designer, 16 Oct 2026: "in the empty states, can we just add one record ... just mock data"):** a report whose table has
+  no row of its own shows one mock record, marked "Example record" on the toolbar, in place of the empty state (`DataReport`'s `example`;
+  the Flora Taxonomy Report's Species attributes, Rename, Split, Append and Species synonym tabs and the Project Audit Log Report). It
+  goes when a real row exists, is never stored, is made only of placeholder people (0.3) and made-up values, and the search and filters
+  act on it like any row (so "nothing matches" still shows the empty state). Other collections keep the empty state.
 - MUST NOT name the action "Clear search" (it collides with the search box's own clear button); name what the
   person gets back.
 - **Origin:** the Data Ingestion Report showed "No uploads match your search and filters." as a lone sentence
@@ -355,7 +360,21 @@ record) is laid out like the project page (`/pages/project-detail`):
    pages, with no white button. Every report has both exports (designer, 6 Oct 2026: "Three dot menu to export as CSV, XLSX"),
    for the rows in view and every column: `DataReport` builds them from the report's columns (`exportName`, `report-export.tsx`),
    so a report MUST NOT write its own export or leave it out (`tsc` fails a `DataReport` without `exportName`).
-   A project scope is a Select right after the search, before the Filter button, not a row of its own.
+   **The report's controls are one toolbar row (designer, 15 Oct 2026; documented at `/patterns/report-toolbar`):** the search, a
+   **Parameters** button, the Filter button and, at the right, the Columns button. What the report is **run on** (a project, a
+   dataset: what neither the search nor the Filter can say) is its Parameters: one button between the search and Filter
+   that opens a popover of the report's own fields (`ParametersPopover`, `report-parameters.tsx`, given to `DataReport` as
+   `parameters`), with a count on the button and a chip beside it for each parameter that is set, so closing the popover loses
+   nothing. A code or a name is the **search**, which matches it already; what you **narrow the rows by** (a status, a family, a region, a
+   person, a date range) is a Filter attribute (4.2d). A control is never in two of the three, and a report MUST NOT ask for the same thing
+   twice. A sheet's metadata (the Flora Taxonomy Report) is therefore the table's own search and Filter, and the export writes it above the
+   columns.
+   A report with no parameters has no Parameters button (2.12). The fields are the design system's, labelled above, applied as
+   chosen with no Apply button (1.9 item 2), a date being the date field with a calendar (2.11); a report that is always on one
+   thing (one dataset) shows it as chips and has no Reset. MUST NOT draw parameters as a grid of fields, a row of selects or a
+   panel between the card and the toolbar, or add a second filter control (`tsc` fails the old `scopeControl`, which no longer
+   exists). The table keeps at least 24rem, about 7 rows (`DataReport`), so where the card and controls take more the page
+   scrolls and the table does not shrink.
    A "Columns" button at the right of the toolbar (`column-chooser.tsx`) opens one popover where columns are shown,
    hidden and reordered (by their handle or the keyboard), the first column pinned and always shown, applying as
    each is chosen with no Apply button (1.9 item 2), and a Reset; its label says how many are hidden.
@@ -399,7 +418,13 @@ record) is laid out like the project page (`/pages/project-detail`):
   page" (1 Oct 2026). The Audit Log tab was a date column beside a badge and a bare name, on three record pages; the
   designer asked for audit-log patterns from Mobbin and chose Vercel's activity feed (2 Oct 2026). The user record had
   "Roles and permissions" and "Details" tabs; the designer: "shouldn't it be overview, role, permission?" (6 Oct 2026).
-- **Enforcement:** `REVIEW`. First occurrence of the switcher gap, so no `AUTO` check yet (§0.8); one is due if a record
+  The Flora Taxonomy Report drew each sheet's parameters as a labelled grid above the toolbar: the table started 601px down a
+  1024px window and showed 6 rows (2 at 800px); the designer: "controls occupy almost 50% of the screen leaving only 50 for the
+  content. Content might be more important than controls", chose the Parameters popover from four options built in
+  `/proto/report-controls` (Mobbin: Whop, Mercury, Docusign, Navattic, Google Ads, Mixpanel), and asked for it on every report
+  (15 Oct 2026). The sheets of that report then showed their typed fields beside the table's search, and their lists and dates beside the
+  Filter; the designer: "doesn't make sense to have two different search bars ... I feel like parameters are doubling up" (15 Oct 2026).
+- **Enforcement:** `REVIEW`; `tsc` for the removed `scopeControl`. First occurrence of the switcher gap, so no `AUTO` check yet (§0.8); one is due if a record
   page ships with a plain section crumb again.
 
 ### §4.7 Roles belong to the data owner's contacts; show only what is approved

@@ -4,6 +4,7 @@ import { cloneElement, isValidElement, useCallback, useMemo, useState, type FC, 
 import type { SortDescriptor } from "react-aria-components";
 import { SearchLg } from "@untitledui/icons";
 import { HeroMeta, RecordHero } from "@/app/pages/_shared/record-hero";
+import { Badge } from "@/components/base/badges/badges";
 import { SectionHeader } from "@/components/application/section-headers/section-headers";
 import { Table, TableCard } from "@/components/application/table/table";
 import { sortRows, type SortValue } from "@/app/pages/_shared/agreement-scope";
@@ -13,6 +14,7 @@ import { ListEmptyState } from "@/app/pages/_shared/list-empty-state";
 import { RecordActionBar, type RecordAction } from "@/app/pages/_shared/record-action-bar";
 import { ColumnChooser, useColumnChoice } from "@/app/pages/_shared/reports/column-chooser";
 import { reportExportActions } from "@/app/pages/_shared/reports/report-export";
+import { ParametersPopover, type ReportParameters } from "@/app/pages/_shared/reports/report-parameters";
 import { ToolbarSearch } from "@/app/pages/_shared/toolbar-search";
 import { MetricTile } from "@/app/pages/_shared/map-search/metric-tile";
 import { cx } from "@/utils/cx";
@@ -23,9 +25,11 @@ import { cx } from "@/utils/cx";
 //   - CONTRACTS 4.6: a report is a deep dive, so it opens like the project page: the gradient identity card
 //     (`RecordHero`) with the report's name, what it answers, a row of facts and its actions at the top right (one
 //     white button, the rest in the "..." menu), under a Back link (`ReportPage`);
-//   - CONTRACTS 4.2: then ToolbarSearch and the attribute filter (4.2d: a report has many facets), then the table in
-//     a TableCard with a sticky header and the numbered pagination, fitted to the viewport so the page never scrolls
-//     because of the table;
+//   - CONTRACTS 4.2: then one toolbar row: ToolbarSearch, the report's Parameters if it has any (a button and a popover of its fields, with what is
+//     set beside it: report-parameters.tsx, /patterns/report-toolbar), the attribute filter (4.2d: a report has many facets) and, at the right, the Columns
+//     chooser; then the table in
+//     a TableCard with a sticky header and the numbered pagination, fitted to the viewport, and never smaller than about 7 rows (24rem): where the
+//     controls take more than that the page scrolls and the table does not shrink;
 //   - every column of the wireframe's "Columns" list is in the table, which scrolls sideways inside its card; the
 //     first column is pinned while it does, and a Columns button at the right of the toolbar (`column-chooser.tsx`, the
 //     wireframe's column panel) hides, shows and reorders the others;
@@ -167,6 +171,10 @@ export interface DataReportProps<R> {
   icon: FC<{ className?: string }>;
   /** Already limited to what the signed-in role may see. */
   rows: R[];
+  /** One mock record the table shows while the report has no rows of its own (designer, 16 Oct 2026: "in the empty states, can we just add one record ... just mock
+   *  data"), marked "Example record" on the toolbar, in place of the empty state. It goes as soon as there is a real row; the search and the filters act on it like
+   *  any row. Left out, an empty report shows its empty state (4.2e). */
+  example?: R;
   rowId: (row: R) => string;
   columns: ReportColumn<R>[];
   /** Memoised by the caller: the attribute filter keeps its own state against this list. */
@@ -186,12 +194,16 @@ export interface DataReportProps<R> {
   latest?: (row: R) => string | number | null | undefined;
   /** More facts in the hero, after Latest record (a label and its value): the report's own totals. A function gets the rows in view. */
   facts?: ReportFact[] | ((rowsInView: R[]) => ReportFact[]);
-  /** Right after the search, before Add filter: a scope such as a project. */
-  scopeControl?: ReactNode;
+  /** What the report is run on (a project, a dataset, a species code, a date range): one Parameters button right after the search and before Filter,
+   *  with a popover of the report's fields and a chip beside it for each one that is set. Leave out where the report has none (report-parameters.tsx). */
+  parameters?: ReportParameters;
   /** Between the hero and the toolbar: tiles, a project scope, tabs. A function gets the rows in view, so tiles can count them. */
   belowHeader?: RowsSlot<R>;
   /** The file name, without its extension, of the report's Export CSV and Export XLSX: the rows in view, every column. */
   exportName: string;
+  /** The rows the sheet carries above its column headings (title, metadata): written above the columns in Export CSV and Export XLSX.
+   *  A function gets the search and the filters in view, for a sheet whose metadata is the table's own search and Filter. */
+  exportPreamble?: string[][] | ((state: { search: string; filter: AttributeFilterApi<R> }) => string[][]);
   /** What the hero holds besides export: the white next-step button, and more items for the "..." menu (after the exports). */
   extraActions?: { primary?: RecordAction; menu?: RecordAction[] };
   /** The card ("card", the record page's gradient identity card) or a slim header ("line": the list screens' title and subheading, the facts on one line, the actions in a plain bar). Compared in /proto/layouts. */
@@ -211,7 +223,8 @@ export function DataReport<R>({
   title,
   subtitle,
   icon,
-  rows: allRows,
+  rows: realRows,
+  example,
   rowId,
   columns,
   attributes,
@@ -225,15 +238,18 @@ export function DataReport<R>({
   initialQuery = "",
   latest,
   facts = [],
-  scopeControl,
+  parameters,
   header = "card",
   filterPanel,
   belowHeader,
   exportName,
+  exportPreamble,
   extraActions,
   resetKey,
   wrapBody,
 }: DataReportProps<R>) {
+  const showingExample = realRows.length === 0 && example !== undefined;
+  const allRows = useMemo(() => (showingExample ? [example] : realRows), [showingExample, example, realRows]);
   const [search, setSearch] = useState(initialQuery);
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE);
@@ -275,7 +291,7 @@ export function DataReport<R>({
   };
 
   const resolve = (slot: ReactNode | ((rowsInView: R[]) => ReactNode)) => (typeof slot === "function" ? slot(rows) : slot);
-  const heroActions = <RecordActionBar onDark primary={extraActions?.primary} menu={[...reportExportActions(rows, columns, exportName), ...(extraActions?.menu ?? [])]} />;
+  const heroActions = <RecordActionBar onDark primary={extraActions?.primary} menu={[...reportExportActions(rows, columns, exportName, typeof exportPreamble === "function" ? exportPreamble({ search, filter }) : exportPreamble), ...(extraActions?.menu ?? [])]} />;
   const latestDay = latest ? newestDay(allRows, latest) : null;
   const heroFacts = typeof facts === "function" ? facts(rows) : facts;
 
@@ -295,9 +311,10 @@ export function DataReport<R>({
             setPage(1);
           }}
         />
-        {scopeControl}
+        {parameters ? <ParametersPopover parameters={parameters} /> : null}
         {!filterPanel && <FilterMenu filter={filter} />}
-        <div className="ml-auto">
+        <div className="ml-auto flex items-center gap-3">
+          {showingExample ? <Badge color="gray" size="md">Example record</Badge> : null}
           <ColumnChooser chooser={chooser} />
         </div>
       </div>
@@ -315,7 +332,7 @@ export function DataReport<R>({
           />
         )
       ) : (
-        <TableCard.Root size="xs" className="flex min-h-48 flex-1 flex-col">
+        <TableCard.Root size="xs" className="flex min-h-96 flex-1 flex-col">
           <Table
             bodyScrollable
             layout="fixed"

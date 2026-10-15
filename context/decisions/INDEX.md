@@ -436,3 +436,15 @@ Not imported into every session on purpose: read or grep it when a task needs hi
 - [2026-10-15] Merge origin/sai-wips (newsletter template) into the post-6-oct lab branch - `2026-10-15-02-merge-origin-sai-wips-newsletter-template-into-the.md`
 - [2026-10-15] Merge origin/mohan-wips (nominations 3, taxonomy 2, home 2, Add Project 2) into the post-6-oct lab branch - `2026-10-15-03-merge-origin-mohan-wips-nominations-3-taxonomy-2.md`
 - [2026-10-15] Newsletter template: Suspense around the content so the Pages static export builds - `2026-10-15-04-newsletter-template-suspense-around-the-content-so-the.md`
+- [2026-10-15] Taxonomy Report: the Reports landing's new report, with the Taxonomy list detail report as its first tab - `2026-10-15-05-taxonomy-report-the-reports-landing-s-new-report.md`
+- [2026-10-15] Taxonomy Report: the SA Regions tab, and the report is BioData Admin and Super Admin only - `2026-10-15-06-taxonomy-report-the-sa-regions-tab-and-the.md`
+- [2026-10-15] Taxonomy Report: the Aus / World tab, one row builder and one column set for the two area sheets - `2026-10-15-07-taxonomy-report-the-aus-world-tab-one-row.md`
+- [2026-10-15] Flora Taxonomy Report: seven more sheets (Reg Herb Data to Species Synonym), the new name, and the tab strip... - `2026-10-15-08-flora-taxonomy-report-seven-more-sheets-reg-herb.md`
+- [2026-10-15] Report controls lab: the Flora Taxonomy Report with its parameters as the Filter menu, a popover, or today's... - `2026-10-15-09-report-controls-lab-the-flora-taxonomy-report-with.md`
+- [2026-10-15] Report toolbar: Parameters popover and Filter on one row, rolled across every report, documented as a pattern - `2026-10-15-10-report-toolbar-parameters-popover-and-filter-on-one.md`
+- [2026-10-15] Flora Taxonomy Report: no Fauna records on any tab - `2026-10-15-11-flora-taxonomy-report-no-fauna-records-on-any.md`
+- [2026-10-15] Flora Taxonomy Report: the sheets' metadata is the table search and Filter, no Parameters - `2026-10-15-12-flora-taxonomy-report-the-sheets-metadata-is-the.md`
+- [2026-10-16] Reports: one mock Example record in the empty states - `2026-10-16-01-reports-one-mock-example-record-in-the-empty.md`
+- [2026-10-16] Reports: seven administration reports (user, role, user-role, permission, role-permission, notification... - `2026-10-16-02-reports-seven-administration-reports-user-role-user-role.md`
+- [2026-10-16] Fauna Taxonomy Report: list detail and species status, and mock data for the access reports - `2026-10-16-03-fauna-taxonomy-report-list-detail-and-species-status.md`
+- [2026-10-16] Fauna Taxonomy Report: five more tabs (Australian distribution, regional data, species reference, species... - `2026-10-16-04-fauna-taxonomy-report-five-more-tabs-australian-distribution.md`

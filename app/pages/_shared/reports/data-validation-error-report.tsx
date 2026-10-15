@@ -6,7 +6,6 @@ import { AlertCircle, AlertTriangle, CheckCircle, Download01, Map01, MarkerPin01
 import { Badge } from "@/components/base/badges/badges";
 import { Select } from "@/components/base/select/select";
 import { RecordHero } from "@/app/pages/_shared/record-hero";
-import { LayoutOptionSwitcher } from "@/app/pages/_shared/layout-option-switcher";
 import { downloadCsv } from "@/app/pages/_shared/agreement-actions";
 import type { Attribute } from "@/app/pages/_shared/attribute-filter";
 import { ListEmptyState } from "@/app/pages/_shared/list-empty-state";
@@ -75,16 +74,9 @@ const columns: ReportColumn<ErrorRow>[] = [
 // One icon per tile, in the order `errorTilesFor` lists them: total, clean, with errors, business rule, coordinate, metadata.
 const TILE_ICONS = [Rows01, CheckCircle, AlertTriangle, AlertCircle, MarkerPin01, Tag01];
 
-// Two ways to choose the dataset, compared while the screen is explored (CONTRACTS 4.4):
-//   option-1: the Project and Dataset selects in a row between the card and the counts;
-//   option-2: the same two selects in the toolbar, right after the search and before Filter, which is where a report's
-//     project scope already lives (Species Detail, Events), so the card keeps only the title and the facts.
-export type ValidationErrorLayout = "option-1" | "option-2";
-
-const LAYOUT_OPTIONS = [
-  { id: "option-1", label: "Option 1", description: "Selects between the card and the counts", href: "/pages/reports/data-validation-error" },
-  { id: "option-2", label: "Option 2", description: "Selects in the toolbar", href: "/pages/reports/data-validation-error/option-2" },
-];
+// The project and the dataset the report is on are its Parameters (report-parameters.tsx): a popover on the toolbar's row, with the chosen project and dataset
+// shown beside the button. Two ways of drawing them were compared while the screen was explored (the selects in a row between the card and the counts,
+// and in the toolbar); the designer chose the Parameters popover for every report on 15 Oct 2026 and both were removed (CONTRACTS 4.4).
 
 /** What the layout lab (/proto/layouts) changes around the table; the product screens pass nothing. */
 export interface ReportChrome {
@@ -92,7 +84,7 @@ export interface ReportChrome {
   filterPanel?: ComponentProps<typeof DataReport<ErrorRow>>["filterPanel"];
 }
 
-export function DataValidationErrorReport({ layout = "option-1", chrome }: { layout?: ValidationErrorLayout; chrome?: ReportChrome }) {
+export function DataValidationErrorReport({ chrome }: { chrome?: ReportChrome }) {
   const { runs } = useIngestionRuns();
   const requested = useSearchParams().get("dataset");
   const [picked, setPicked] = useState<string | null>(requested);
@@ -138,18 +130,15 @@ export function DataValidationErrorReport({ layout = "option-1", chrome }: { lay
     );
   }
 
-  // Option 1: fields with a label above, in a row under the card. Option 2: the toolbar's own small selects (as the project
-  // scope on Species Detail), named by aria-label.
-  const inToolbar = layout === "option-2";
   const projectSelect = (
     <Select
-      size={inToolbar ? "sm" : "md"}
-      label={inToolbar ? undefined : "Select project"}
-      aria-label="Project"
+      size="sm"
+      label="Project"
       placeholder="Select project"
-      popoverClassName={inToolbar ? "min-w-[24rem]" : undefined}
+      popoverClassName="min-w-[24rem]"
       items={projectOptions}
       selectedKey={run.projectId}
+      className="w-full"
       onSelectionChange={(key) => {
         const next = errored.find((r) => r.projectId === key);
         if (next && next.id !== run.id) setPicked(next.id);
@@ -158,29 +147,25 @@ export function DataValidationErrorReport({ layout = "option-1", chrome }: { lay
       {(item) => <Select.Item id={item.id} label={item.label} />}
     </Select>
   );
-  // In the toolbar the dataset field shows its ID alone (the file name would push the ID out of a narrow field); the list
-  // still shows each file name beside its ID.
-  const fileNames = new Map(datasetOptions.map((d) => [d.id, d.supportingText]));
   const datasetSelect = (
     <Select
-      size={inToolbar ? "sm" : "md"}
-      label={inToolbar ? undefined : "Select dataset"}
-      aria-label="Dataset"
+      size="sm"
+      label="Dataset"
       placeholder="Select dataset"
-      popoverClassName={inToolbar ? "min-w-[24rem]" : undefined}
-      items={inToolbar ? datasetOptions.map(({ id, label }) => ({ id, label })) : datasetOptions}
+      popoverClassName="min-w-[24rem]"
+      items={datasetOptions}
       selectedKey={run.id}
+      className="w-full"
       onSelectionChange={(key) => {
         if (key && key !== run.id) setPicked(String(key));
       }}
     >
-      {(item) => <Select.Item id={item.id} label={item.label} supportingText={inToolbar ? fileNames.get(String(item.id)) : item.supportingText} />}
+      {(item) => <Select.Item id={item.id} label={item.label} supportingText={item.supportingText} />}
     </Select>
   );
 
   return (
     <>
-      {!chrome && <LayoutOptionSwitcher ariaLabel="Data Validation Error Report layout to show" options={LAYOUT_OPTIONS} current={layout} />}
       <DataReport<ErrorRow>
       header={chrome?.header}
       filterPanel={chrome?.filterPanel}
@@ -204,25 +189,20 @@ export function DataValidationErrorReport({ layout = "option-1", chrome }: { lay
       noun="errors"
       emptyDescription="Errors found in this dataset appear here."
       initialSort={{ column: "record", direction: "ascending" }}
-      scopeControl={
-        inToolbar ? (
-          <>
-            <div className="w-56 max-w-full shrink-0">{projectSelect}</div>
-            <div className="w-40 max-w-full shrink-0">{datasetSelect}</div>
-          </>
-        ) : undefined
-      }
-      belowHeader={
-        <>
-          {!inToolbar && (
-            <div className="flex shrink-0 flex-wrap items-start gap-4 px-6 pb-4">
-              <div className="w-full max-w-sm">{projectSelect}</div>
-              <div className="w-full max-w-lg">{datasetSelect}</div>
-            </div>
-          )}
-          <ReportTiles compact={chrome?.header === "line"} tiles={tiles.slice(3).map((t, i) => ({ ...t, icon: TILE_ICONS[i + 3] }))} label={`Errors in ${run.id} by kind`} />
-        </>
-      }
+      parameters={{
+        fields: (
+          <div className="flex flex-col gap-4">
+            {projectSelect}
+            {datasetSelect}
+          </div>
+        ),
+        // The report is always on one dataset, so both are always set and there is nothing to reset.
+        summary: [
+          ["Project", run.projectCode],
+          ["Dataset", run.id],
+        ],
+          }}
+      belowHeader={<ReportTiles compact={chrome?.header === "line"} tiles={tiles.slice(3).map((t, i) => ({ ...t, icon: TILE_ICONS[i + 3] }))} label={`Errors in ${run.id} by kind`} />}
       exportName={`${run.id}-errors`}
       // Map visualise is the card's one next step, the white button where the project page has Upload dataset; the downloads
       // are in the menu after the exports. The source dataset and the map have nothing to show in the preview (uploaded files are
