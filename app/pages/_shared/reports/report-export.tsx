@@ -28,11 +28,14 @@ export function columnText<R>(column: ReportColumn<R>, row: R): string {
   return column.text ? column.text(row) : shownText(column.cell(row)).join(" ").replace(/\s+/g, " ").trim();
 }
 
-/** Export CSV and Export XLSX for the rows given, every column in the table's order. `baseName` is the file name without its extension. */
-export function reportExportActions<R>(rows: R[], columns: ReportColumn<R>[], baseName: string): RecordAction[] {
+/**
+ * Export CSV and Export XLSX for the rows given, every column in the table's order. `baseName` is the file name without its extension.
+ * `preamble` (opt-in) is the rows a report's sheet carries above its column headings: its title and the parameters it was run with.
+ */
+export function reportExportActions<R>(rows: R[], columns: ReportColumn<R>[], baseName: string, preamble?: string[][]): RecordAction[] {
   const table = () => ({ header: columns.map((c) => c.label), body: rows.map((r) => columns.map((c) => columnText(c, r))) });
   return [
-    { id: "export-csv", label: "Export CSV", icon: Download01, onPress: () => downloadCsv(`${baseName}.csv`, table().header, table().body) },
-    { id: "export-xlsx", label: "Export XLSX", icon: Download01, onPress: () => void downloadXlsx(`${baseName}.xlsx`, table().header, table().body) },
+    { id: "export-csv", label: "Export CSV", icon: Download01, onPress: () => downloadCsv(`${baseName}.csv`, table().header, table().body, preamble) },
+    { id: "export-xlsx", label: "Export XLSX", icon: Download01, onPress: () => void downloadXlsx(`${baseName}.xlsx`, table().header, table().body, preamble) },
   ];
 }

@@ -4,7 +4,7 @@ import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
 import { CURRENT_USER_NAME } from "@/app/pages/_shared/agreement-scope";
 import { browserStorage, useHydrated, useRehydrate } from "@/app/pages/_shared/zustand-persist";
-import { NEW_TAXON_IDS, epithetOf, nameFromParts, seedTaxa, type Kingdom, type NameParts, type Synonym, type Taxon, type TaxonChange } from "@/app/pages/_shared/taxonomy/tx-data";
+import { NEW_TAXON_IDS, epithetOf, nameFromParts, sampleFaunaStatus, seedTaxa, type Kingdom, type NameParts, type Synonym, type Taxon, type TaxonChange } from "@/app/pages/_shared/taxonomy/tx-data";
 
 // Every taxon and every committed taxon change, in a zustand store persisted to localStorage (the
 // same plumbing as the Controlled Vocabulary store), so the finder, a species record and the change
@@ -26,7 +26,24 @@ interface TxState {
 const useTxStore = create<TxState>()(
   persist(() => ({ taxa: seedTaxa, changes: [] as TaxonChange[] }), {
     name: "biodata-taxonomy",
-    version: 1,
+    version: 5,
+    // Version 2 added sample SA Regions rows to the seed Flora taxa, version 3 sample Australian and Overseas Distribution rows, version 4 sample
+    // Reference Herb Data rows and version 5 sample Species Status values and Australian Distribution and Regional Data rows to the seed Fauna taxa. A
+    // browser that already holds taxa keeps every edit and gains a table's rows, or a status value, only where the taxon has none of its own yet.
+    migrate: (persisted, version) => {
+      const state = persisted as TxState;
+      if (version >= 5) return state;
+      return {
+        ...state,
+        taxa: state.taxa.map((t) => {
+          const seed = seedTaxa.find((x) => x.id === t.id);
+          if (!seed) return t;
+          const tables = Object.fromEntries(["saRegions", "ausDistribution", "refHerb", "regionalData"].filter((k) => seed.tables[k] && t.tables[k] === undefined).map((k) => [k, seed.tables[k]]));
+          const statuses = Object.fromEntries(Object.entries(sampleFaunaStatus(t.id)).filter(([k]) => t.kingdom === "Fauna" && t.values[k] === undefined));
+          return Object.keys(tables).length + Object.keys(statuses).length > 0 ? { ...t, values: { ...t.values, ...statuses }, tables: { ...t.tables, ...tables } } : t;
+        }),
+      };
+    },
     storage: createJSONStorage(browserStorage),
     skipHydration: true,
   }),

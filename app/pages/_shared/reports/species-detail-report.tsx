@@ -8,7 +8,7 @@ import type { SpeciesGroup } from "@/app/pages/_shared/map-search/search-data";
 import type { Attribute } from "@/app/pages/_shared/attribute-filter";
 import { optionsFromValues } from "@/app/pages/_shared/list-filter";
 import { countKinds, reportBundlesFor, sumCounts } from "@/app/pages/_shared/reports/report-records";
-import { ALL_PROJECTS, activeScope, ReportScopeSelect } from "@/app/pages/_shared/reports/report-scope-select";
+import { ALL_PROJECTS, activeScope, scopeParameters } from "@/app/pages/_shared/reports/report-scope-select";
 import { speciesRowsFor, type SpeciesRow } from "@/app/pages/_shared/reports/species-detail-report-data";
 import { DataReport, ReportTiles, SpeciesCell } from "@/app/pages/_shared/reports/report-table";
 import { REPORT_WIDTH as W, emptyColumn, idColumn, numberColumn, textColumn, type ViewColumn } from "@/app/pages/_shared/reports/report-columns";
@@ -17,7 +17,7 @@ import { useUserRole } from "@/lib/use-user-role";
 // The Species Detail Report (Figma YMproGZfrFB5jUqPHPxMhk frame 1583:31367, columns list 1594:65311): one row per
 // species record, all 45 of the wireframe's columns, in its order, in a table that scrolls sideways. Fitted into the
 // shared report pattern (report-table.tsx) with these departures from the wireframe, on purpose:
-//   - the project scope is a Select above the tiles ("All Projects"); it limits the rows and the tile counts, so
+//   - the project scope is the report's Parameters (a popover on the toolbar's row, "All Projects" to start); it limits the rows and the tile counts, so
 //     the attribute filter does not offer a Project attribute;
 //   - the wireframe's nine species-group tiles are the five groups the app has records for (Plants, Mammals, Birds,
 //     Reptiles, Amphibians). Algae, Fungi, Invertebrates and Fish have no record anywhere, and search-data.ts keeps
@@ -127,7 +127,7 @@ export function SpeciesDetailReport() {
     <DataReport
       title="Species Detail Report"
       subtitle="Every species record, with the observation made for it."
-      scopeControl={<ReportScopeSelect projects={projects} value={scope} onChange={setScope} />}
+      parameters={scopeParameters(projects, scope, setScope)}
       facts={[
         { label: "Events", value: counts.events.toLocaleString("en-AU") },
         { label: "Occurrences", value: counts.occurrences.toLocaleString("en-AU") },

@@ -225,7 +225,7 @@ function Lab() {
     <LabShell columnTwo={!folded} onToggleColumnTwo={() => setFolded((f) => !f)} foldable={option === "fold"}>
       <div className="flex min-h-0 flex-1 flex-col overflow-y-auto">
         <RecordBackLink href={roleHref("/pages/reports")}>Back to reports</RecordBackLink>
-        <DataValidationErrorReport chrome={chrome} layout={option === "today" ? "option-1" : "option-2"} />
+        <DataValidationErrorReport chrome={chrome} />
       </div>
     </LabShell>
   );

@@ -103,6 +103,72 @@ const RANKS: Record<string, { ranks: TaxonRank; author: string; synonyms: string
 
 export const epithetOf = (scientific: string) => scientific.split(" ").slice(1).join(" ");
 
+/**
+ * Placeholder SA Regions, Australian and Overseas Distribution and Reference Herb Data rows for a Flora taxon (CONTRACTS 0.3: placeholder people and dates, no
+ * invented identifiers), so those three tabs, and the Taxonomy Report's SA Regions, Aus / World and Reg Herb Data tabs, have rows to show. Regions are from the
+ * State Herbarium's list above and the areas from the states list. The Herbarium and voucher fields, the census, BS and conservation codes and
+ * the free text stay empty, because their lists have not arrived. Which areas a species is in is a placeholder, not botany.
+ */
+const SAMPLE_REGIONS: Record<string, string[]> = {
+  P01937: ["SL - Southern Lofty", "KI - Kangaroo Island", "MU - Murray"],
+  P04411: ["SL - Southern Lofty", "KI - Kangaroo Island"],
+};
+const SAMPLE_STATES: Record<string, string[]> = {
+  P01937: ["SA", "Vic", "NSW"],
+  P04411: ["SA", "Vic"],
+};
+/** Reference Herb Data rows hold only the area: the initial, surname, collection number and AD number are identifiers and are not invented. */
+const SAMPLE_HERB_AREAS: Record<string, string[]> = {
+  P01937: ["SL - Southern Lofty", "KI - Kangaroo Island"],
+  P04411: ["SL - Southern Lofty"],
+};
+
+function sampleAreas(areas: string[], field: string, index: number): Row[] {
+  return areas.map((area) => ({
+    [field]: area,
+    nativeInReg: "Yes",
+    estabInReg: "Yes",
+    idCertain: "Yes",
+    dsnCertain: "Yes",
+    regCreatedBy: index % 2 ? "Phoenix Baker" : "Olivia Wyatt",
+    regCreationDate: "12 Mar 2019",
+    regEditBy: "Lana Steiner",
+    regEditDate: "4 Aug 2026",
+  }));
+}
+
+/** The seed distribution tables of a Flora taxon, and the store migration's source for a browser that holds taxa from before they existed. */
+function sampleDistribution(nsx: string, index: number): Record<string, Row[]> {
+  return {
+    saRegions: sampleAreas(SAMPLE_REGIONS[nsx] ?? [], "region", index),
+    ausDistribution: sampleAreas(SAMPLE_STATES[nsx] ?? [], "stateOs", index),
+    refHerb: (SAMPLE_HERB_AREAS[nsx] ?? []).map((area) => ({ area })),
+  };
+}
+
+/**
+ * Placeholder Species Status values and Australian Distribution and Regional Data rows for the Fauna taxa (CONTRACTS 0.3: no invented identifiers; the designer,
+ * 16 Oct 2026, for the Fauna Taxonomy Report: "this is a clickable prototype"), so that report's Species Status sheet and the distribution columns have something to
+ * show. They are not assessments: which taxon has which status, and where each is found, is a placeholder, not zoology. The codes are the single letters the
+ * wireframe's code fields take; the NPW Act and EPBC Act values are categories from the lists above, whose own text is the code.
+ */
+const SAMPLE_FAUNA_STATUS: Record<string, Record<string, string>> = {
+  M01170: { saStatusCode: "E", saStatusCode__text: "Endangered", australianStatus: "E", australianStatus__text: "Endangered", npwActStatusCode: "Endangered", epbcAct: "Endangered" },
+  M01130: { saStatusCode: "V", saStatusCode__text: "Vulnerable", npwActStatusCode: "Vulnerable" },
+  M03050: { australianStatus: "LC", australianStatus__text: "Least Concern" },
+};
+const SAMPLE_FAUNA_STATES = ["SA", "Vic", "NSW"];
+const SAMPLE_FAUNA_REGIONS = ["Southern Lofty", "Kangaroo Island"];
+
+/** The seed distribution tables of a Fauna taxon, and the store migration's source for a browser that holds taxa from before they existed. */
+export function sampleFaunaTables(): Record<string, Row[]> {
+  return {
+    ausDistribution: SAMPLE_FAUNA_STATES.map((region) => ({ region, comment: "" })),
+    regionalData: SAMPLE_FAUNA_REGIONS.map((region) => ({ region, comment: "" })),
+  };
+}
+export const sampleFaunaStatus = (nsx: string): Record<string, string> => SAMPLE_FAUNA_STATUS[nsx] ?? {};
+
 function seedTaxon(s: (typeof NSX_SPECIES)[number], index: number): Taxon {
   const meta = RANKS[s.nsx];
   const kingdom = s.kingdom as Kingdom;
@@ -129,12 +195,12 @@ function seedTaxon(s: (typeof NSX_SPECIES)[number], index: number): Taxon {
       // Occurs in SA? / Native in SA?".
       ...(kingdom === "Flora"
         ? { order: meta.ranks.order, synonym: "No", currentConcept: "Yes", occursInSa: "Yes", nativeInSa: "Yes", editedOn: "4 Aug 2026", editedBy: "Lana Steiner" }
-        : { indigenous: "Yes", current: "Yes", inSa: "Yes", nonSynonym: "Yes", modifiedOn: "4 Aug 2026", modifiedBy: "Lana Steiner" }),
+        : { indigenous: "Yes", current: "Yes", inSa: "Yes", nonSynonym: "Yes", modifiedOn: "4 Aug 2026", modifiedBy: "Lana Steiner", ...sampleFaunaStatus(s.nsx) }),
       // Placeholder people and dates (CONTRACTS 0.3).
       createdOn: "12 Mar 2019",
       createdBy: index % 2 ? "Phoenix Baker" : "Olivia Wyatt",
     },
-    tables: { commonName: [{ name: s.common, seq: "1", type: "" }] },
+    tables: { commonName: [{ name: s.common, seq: "1", type: "" }], ...(kingdom === "Flora" ? sampleDistribution(s.nsx, index) : sampleFaunaTables()) },
     synonyms: meta.synonyms.map((name, i) => ({ id: `${s.nsx}-syn-${i + 1}`, name, values: { genus: name.split(" ")[0], species: epithetOf(name) } })),
     parents: [],
     children: [],

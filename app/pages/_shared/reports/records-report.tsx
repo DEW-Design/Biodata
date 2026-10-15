@@ -18,7 +18,7 @@ import {
   type RecordTab,
 } from "@/app/pages/_shared/reports/records-report-data";
 import { datasetCountsByProject, reportBundlesFor } from "@/app/pages/_shared/reports/report-records";
-import { ALL_PROJECTS, activeScope, ReportScopeSelect } from "@/app/pages/_shared/reports/report-scope-select";
+import { ALL_PROJECTS, activeScope, scopeParameters } from "@/app/pages/_shared/reports/report-scope-select";
 import { DataReport, IdCell, TextCell } from "@/app/pages/_shared/reports/report-table";
 import { REPORT_WIDTH as W, emptyColumn, numberColumn, textColumn, type ViewColumn } from "@/app/pages/_shared/reports/report-columns";
 import { useUserRole } from "@/lib/use-user-role";
@@ -27,7 +27,7 @@ import { useUserRole } from "@/lib/use-user-role";
 // 1583:31626, 1583:31821, 1583:32016) differ only in the table under a tab row, so they are one report with three
 // tabs, each with its own columns, filters, search and sort (`?tab=events|occurrences|observations`). Fitted into the
 // shared report pattern (report-table.tsx) with these departures from the wireframe, on purpose:
-//   - one project scope (a Select above the tabs) limits the rows of every tab, so the attribute filters do not offer
+//   - one project scope (the report's Parameters, on the toolbar's row) limits the rows of every tab, so the attribute filters do not offer
 //     a Project attribute; the four tiles (Datasets, Events, Occurrences, Observations) are the counts in that scope,
 //     as the wireframe draws them, so the tabs carry no count badge of their own (a number is shown once);
 //   - labels are sentence case and spelled out ("Occurences" is "Occurrences");
@@ -251,7 +251,7 @@ export function RecordsReport() {
   const common = {
     title: "Events, Occurrences and Observations Report",
     subtitle: "Every event, occurrence and observation, one tab for each.",
-    scopeControl: <ReportScopeSelect projects={projects} value={scope} onChange={setScope} />,
+    parameters: scopeParameters(projects, scope, setScope),
     facts: [
       { label: "Datasets", value: datasetTotal.toLocaleString("en-AU") },
       { label: "Events", value: counts.events.toLocaleString("en-AU") },

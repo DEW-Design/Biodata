@@ -21,7 +21,7 @@ import { useUserRole } from "@/lib/use-user-role";
 //   - Comments is empty for every row: neither Add Project nor the project's edit asks for a comment, so there is none to show;
 //   - the log is only what has been done in this browser since the log began (project-audit-log-store.ts): a CREATE when a project
 //     is registered, an UPDATE per field when an edit is saved. A project nobody has registered or edited since has no rows, and
-//     none are made up;
+//     none are made up; the one exception is the "Example record" the table shows while the log is empty (the designer, 16 Oct 2026), marked as such;
 //   - Previous details is empty for a CREATE and for a field that had no value before; Current details likewise;
 //   - BioData Admin only (role-access `projectAuditLog`): no other role has rows, and the report is not offered to them.
 
@@ -56,6 +56,23 @@ function auditAttributes(rows: AuditReportRow[]): Attribute<AuditReportRow>[] {
   return all.filter((a) => a.kind === "date" || a.options.length > 1);
 }
 
+/** The one mock record shown while the log has none (designer, 16 Oct 2026): a project created by a placeholder person. Not stored. */
+const EXAMPLE: AuditReportRow = {
+  id: "example",
+  seq: 1,
+  at: Date.parse("2026-08-04T03:30:00Z"),
+  projectCode: "BD-5039",
+  projectTitle: "Adelaide Hills Bushland Survey",
+  entityType: "Record",
+  modifiedEntity: "Record",
+  previous: "",
+  current: "",
+  action: "CREATE",
+  sourceType: "Web Portal",
+  source: "Registered User",
+  user: "Olivia Wyatt",
+};
+
 const count = (rows: AuditReportRow[], action: string) => rows.filter((r) => r.action === action).length.toLocaleString("en-AU");
 
 export function ProjectAuditLogReport() {
@@ -75,6 +92,7 @@ export function ProjectAuditLogReport() {
       subtitle="Every change to a project, one row per field: what it was, what it is now, who changed it and where from."
       icon={ClockRewind}
       rows={rows}
+      example={EXAMPLE}
       rowId={(r) => r.id}
       columns={columns}
       attributes={attributes}

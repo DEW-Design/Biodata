@@ -11,8 +11,9 @@ import { toast } from "@/components/application/toast/toast";
 // "Create report" action are identical either way; each shell still supplies its own CSV export
 // (the columns genuinely differ between an agreement and a request).
 
-export function downloadCsv(filename: string, header: string[], rows: string[][]) {
-  const csv = [header, ...rows].map((line) => line.map((v) => `"${v.replace(/"/g, '""')}"`).join(",")).join("\n");
+/** `preamble` is any rows that sit above the column headings (a report's title and parameters), then one blank row; none by default. */
+export function downloadCsv(filename: string, header: string[], rows: string[][], preamble: string[][] = []) {
+  const csv = [...(preamble.length > 0 ? [...preamble, []] : []), header, ...rows].map((line) => line.map((v) => `"${v.replace(/"/g, '""')}"`).join(",")).join("\n");
   const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
   const url = URL.createObjectURL(blob);
   const link = document.createElement("a");
@@ -23,10 +24,10 @@ export function downloadCsv(filename: string, header: string[], rows: string[][]
 }
 
 /** A real .xlsx workbook with one sheet, the header row then the rows. The spreadsheet library is loaded when it is first needed. */
-export async function downloadXlsx(filename: string, header: string[], rows: string[][]) {
+export async function downloadXlsx(filename: string, header: string[], rows: string[][], preamble: string[][] = []) {
   const { utils, writeFile } = await import("xlsx");
   const book = utils.book_new();
-  utils.book_append_sheet(book, utils.aoa_to_sheet([header, ...rows]), "Report");
+  utils.book_append_sheet(book, utils.aoa_to_sheet([...(preamble.length > 0 ? [...preamble, []] : []), header, ...rows]), "Report");
   writeFile(book, filename);
 }
 
