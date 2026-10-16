@@ -2,27 +2,19 @@
 
 import { useMemo } from "react";
 import { REPORT_WIDTH as W, numberColumn, textColumn, type ViewColumn } from "@/app/pages/_shared/reports/report-columns";
-import { SpeciesCell } from "@/app/pages/_shared/reports/report-table";
-import { EXAMPLE_APPEND, EXAMPLE_RENAME, EXAMPLE_SPLIT, EXAMPLE_SYNONYM } from "@/app/pages/_shared/reports/taxonomy-example-rows";
-import { useFloraChanges, useFloraTaxa } from "@/app/pages/_shared/reports/taxonomy-flora";
-import { appendRowsFor, renameRowsFor, splitRowsFor, synonymRowsFor, type ManagementRow, type SplitRow, type SynonymRow } from "@/app/pages/_shared/reports/taxonomy-management-data";
+import { EXAMPLE_SYNONYM } from "@/app/pages/_shared/reports/taxonomy-example-rows";
+import { useFloraTaxa } from "@/app/pages/_shared/reports/taxonomy-flora";
+import { synonymRowsFor, type ManagementRow, type SynonymRow } from "@/app/pages/_shared/reports/taxonomy-management-data";
 import { distinct } from "@/app/pages/_shared/reports/taxonomy-sa-regions-data";
 import { useSheetTab, type FilterSpec } from "@/app/pages/_shared/reports/taxonomy-sheet-tab";
 
-// The four "Taxonomy list Management Report" sheets of the Taxonomy Report (the designer, 15 Oct 2026): Rename Species, Split Species, Append
-// Species and Species Synonym, each built by `useSheetTab`. They share their metadata, in the sheet's order: NSX Code, Species Name, Common
-// Name, Created On (a start and an end date) and Created By; it is the table's own search and Filter (taxonomy-sheet-tab.tsx): the typed lines are the
-// search, Created By and the date are attributes of the Filter menu, and the export writes them above the columns. Where the rows come from is in taxonomy-management-data.ts: the change log for
-// the first three, which is empty until a Rename, Split or Append is committed in Taxonomy Management, and each taxon's synonyms for the
-// fourth. Departures from the sheets, on purpose, as in the other tabs:
-//   - the sheets leave three blank columns after Created By (Rename, Split) and three between Infraspecific 3 Rank and Infraspecific 3
-//     (Append, Synonym), and one after As MS ? (Synonym): none is drawn;
-//   - Split Species ends its infraspecific columns with "Infraspecific 3 Rank" where the pattern (Rank 1, Infraspecific 1, Rank 2,
-//     Infraspecific 2, Rank 3) makes it the Infraspecific 3 name: it is read as "Infraspecific 3";
-//   - Rename Species shows the species as it was before the rename under NSX Desc, and the new name in New Genus, New Species and the
-//     infraspecific columns; Split Species shows the species that was split under "Species to Split" and the species it made in the rest;
-//   - the app records no editor of a change, so Modified By and Modified On are empty, and a synonym has no creator, so Created By is
-//     empty on Species Synonym;
+// The "Taxonomy list Management Report" sheet that is still a tab of the Flora Taxonomy Report, Species Synonym (the designer, 15 Oct 2026), built by `useSheetTab`. Its
+// metadata, in the sheet's order, is NSX Code, Species Name, Common Name, Created On (a start and an end date) and Created By; it is the table's own search and Filter
+// (taxonomy-sheet-tab.tsx): the typed lines are the search, Created By and the date are attributes of the Filter menu, and the export writes them above the columns. Its rows
+// are each taxon's synonyms (taxonomy-management-data.ts). The Rename Species, Split Species and Append Species sheets are not tabs any more (the designer, 16 Oct 2026):
+// a Rename, Combine, Split or Append committed in Taxonomy Management is a row of the audit log. Departures from the sheet, on purpose, as in the other tabs:
+//   - the sheet leaves three blank columns between Infraspecific 3 Rank and Infraspecific 3 and one after As MS ?: none is drawn;
+//   - a synonym has no creator, so Created By is empty;
 //   - a synonym carries no NSX code of its own here: the NSX Code, Family and Order shown are the taxon it is a synonym of.
 
 const SPEC: FilterSpec<ManagementRow> = {
@@ -47,14 +39,6 @@ const classification = <R extends ManagementRow>(): ViewColumn<R>[] => [
   textColumn("genus", "Genus", W.md, (r) => r.genus),
   textColumn("species", "Species", W.md, (r) => r.species),
 ];
-const history = <R extends ManagementRow>(): ViewColumn<R>[] => [
-  textColumn("createdBy", "Created by", W.md, (r) => r.createdBy),
-  textColumn("createdOn", "Created on", W.lg, (r) => r.createdOn),
-  textColumn("comments", "Comments", W.xl, (r) => r.comments, { clamp: true }),
-  textColumn("modifiedBy", "Modified by", W.md, (r) => r.modifiedBy),
-  textColumn("modifiedOn", "Modified on", W.md, (r) => r.modifiedOn),
-];
-
 const common = {
   spec: SPEC,
   rowId: (r: ManagementRow) => r.id,
@@ -63,106 +47,6 @@ const common = {
   facts: (inView: ManagementRow[]) => [{ label: "Taxa", value: distinct(inView.map((r) => r.nsx)).toLocaleString("en-AU") }],
   attributes: [],
 };
-
-// ── Rename Species ──
-const renameColumns: ViewColumn<ManagementRow>[] = [
-  seq(),
-  textColumn("nsx", "NSX code", W.sm, (r) => r.nsx),
-  {
-    id: "nsxDescription",
-    label: "NSX description",
-    width: W.lg,
-    sort: (r) => r.speciesName,
-    cell: (r) => <SpeciesCell scientific={r.speciesName} />,
-    text: (r) => r.speciesName,
-  },
-  textColumn("genus", "New genus", W.md, (r) => r.genus),
-  textColumn("species", "New species", W.md, (r) => r.species),
-  ...infra<ManagementRow>(),
-  ...history<ManagementRow>(),
-];
-
-export function useRenameTab() {
-  const taxa = useFloraTaxa();
-  const changes = useFloraChanges();
-  const rows = useMemo(() => renameRowsFor(taxa, changes), [taxa, changes]);
-  return useSheetTab<ManagementRow>({
-    ...common,
-    sheetTitle: "BioData - Rename Species | Taxonomy list Management Report",
-    rows,
-    example: EXAMPLE_RENAME,
-    columns: renameColumns,
-    searchPlaceholder: "Search by code, species or person",
-    tableLabel: "Renamed species, one row each",
-    noun: "renames",
-    emptyDescription: "A species renamed in Taxonomy Management appears here.",
-    initialSort: { column: "seq", direction: "ascending" },
-    exportName: "taxonomy-rename-species-report",
-  });
-}
-
-// ── Split Species ──
-const splitColumns: ViewColumn<SplitRow>[] = [
-  seq<SplitRow>(),
-  textColumn("splitFrom", "Species to split", W.lg, (r) => r.splitFrom, { strong: true }),
-  textColumn("nsx", "NSX code", W.sm, (r) => r.nsx),
-  textColumn("genus", "Genus", W.md, (r) => r.genus),
-  textColumn("species", "Species", W.md, (r) => r.species),
-  textColumn("rank1", "Rank 1", W.sm, (r) => r.rank1),
-  textColumn("infra1", "Infraspecific 1", W.md, (r) => r.infra1),
-  textColumn("rank2", "Rank 2", W.sm, (r) => r.rank2),
-  textColumn("infra2", "Infraspecific 2", W.md, (r) => r.infra2),
-  textColumn("rank3", "Rank 3", W.sm, (r) => r.rank3),
-  textColumn("infra3", "Infraspecific 3", W.md, (r) => r.infra3),
-  ...history<SplitRow>(),
-];
-
-export function useSplitTab() {
-  const taxa = useFloraTaxa();
-  const changes = useFloraChanges();
-  const rows = useMemo(() => splitRowsFor(taxa, changes), [taxa, changes]);
-  return useSheetTab<SplitRow>({
-    ...common,
-    sheetTitle: "BioData - Split Species | Taxonomy list Management Report",
-    rows,
-    example: EXAMPLE_SPLIT,
-    columns: splitColumns,
-    searchPlaceholder: "Search by code, species or person",
-    tableLabel: "Split species, one row for each species made",
-    noun: "split species",
-    emptyDescription: "A species split in Taxonomy Management appears here, one row for each species it made.",
-    initialSort: { column: "seq", direction: "ascending" },
-    exportName: "taxonomy-split-species-report",
-  });
-}
-
-// ── Append Species ──
-const appendColumns: ViewColumn<ManagementRow>[] = [
-  seq(),
-  textColumn("nsx", "NSX code", W.sm, (r) => r.nsx),
-  ...classification<ManagementRow>(),
-  ...infra<ManagementRow>(),
-  ...history<ManagementRow>(),
-];
-
-export function useAppendTab() {
-  const taxa = useFloraTaxa();
-  const changes = useFloraChanges();
-  const rows = useMemo(() => appendRowsFor(taxa, changes), [taxa, changes]);
-  return useSheetTab<ManagementRow>({
-    ...common,
-    sheetTitle: "BioData - Append Species | Taxonomy list Management Report",
-    rows,
-    example: EXAMPLE_APPEND,
-    columns: appendColumns,
-    searchPlaceholder: "Search by code, species or person",
-    tableLabel: "Appended species, one row each",
-    noun: "appended species",
-    emptyDescription: "A species appended in Taxonomy Management appears here.",
-    initialSort: { column: "seq", direction: "ascending" },
-    exportName: "taxonomy-append-species-report",
-  });
-}
 
 // ── Species Synonym ──
 const synonymColumns: ViewColumn<SynonymRow>[] = [

@@ -1,15 +1,10 @@
-// The rows of the four "Taxonomy list Management Report" sheets of the Taxonomy Report (the designer, 15 Oct 2026): Rename Species, Split
-// Species, Append Species and Species Synonym, and the parameters that sit above their columns (NSX Code, Species Name, Common Name,
-// Created On as a start and an end date, Created By).
-//
-// Rename, Split and Append are read from the change log Taxonomy Management keeps (`useChanges`, tx-store.ts): each change a person commits there is
-// a row, newest last, numbered from 1 (Seq#). The name a change produced is read from the change itself and not from the taxon, so a
-// later rename of the same taxon does not rewrite an earlier row. The log is empty until a Rename, Split or Append is committed: nothing
-// is made up. Species Synonym is read from each taxon's synonyms (the names it was known by). The app does not record who edited a
-// change or when, so Modified By and Modified On are empty.
+// The rows of the Flora Taxonomy Report's "Taxonomy list Management Report" sheet that is still a tab, Species Synonym (the designer, 15 Oct 2026), and the parameters
+// that sit above its columns (NSX Code, Species Name, Common Name, Created On as a start and an end date, Created By). A row is read from each taxon's synonyms (the
+// names it was known by). The Rename, Split and Append sheets are no longer tabs: what a person commits in Taxonomy Management is rolled up in the audit log
+// (taxonomy-audit-data.ts), the designer's decision of 16 Oct 2026. The app does not record who edited a synonym or when, so Modified By and Modified On are empty.
 
 import { dayText, isoDay, joined } from "@/app/pages/_shared/reports/taxonomy-report-data";
-import type { ChangeType, Synonym, Taxon, TaxonChange } from "@/app/pages/_shared/taxonomy/tx-data";
+import type { Synonym, Taxon } from "@/app/pages/_shared/taxonomy/tx-data";
 
 export interface Infra {
   rank: string;
@@ -66,8 +61,6 @@ export function adelaide(instant: string): { day: string; text: string; ms: numb
   return { day: adelaideDay.format(ms), text: adelaideText.format(ms).replace(/\s?([ap])m$/i, " $1m"), ms };
 }
 
-const byId = (taxa: Taxon[]) => new Map(taxa.map((t) => [t.id, t]));
-
 /** The columns a row takes from a taxon and the name a change produced. */
 function base(taxon: Taxon | undefined, produced: string, nsxOf: string | null | undefined): Omit<ManagementRow, "id" | "seq" | "createdBy" | "createdOn" | "days" | "createdMs" | "speciesName"> {
   const p = parseScientific(produced);
@@ -92,40 +85,6 @@ function base(taxon: Taxon | undefined, produced: string, nsxOf: string | null |
     modifiedOn: "",
   };
 }
-
-export interface SplitRow extends ManagementRow {
-  /** The species that was split. */
-  splitFrom: string;
-}
-
-/** Each committed change of a type, oldest first; one row for each name it produced (a rename has one, a split as many as it made). */
-function changeRows(taxa: Taxon[], changes: TaxonChange[], type: ChangeType): SplitRow[] {
-  const taxon = byId(taxa);
-  const rows: Omit<SplitRow, "seq">[] = [];
-  for (const change of [...changes].filter((c) => c.type === type).sort((a, b) => Date.parse(a.at) - Date.parse(b.at))) {
-    const when = adelaide(change.at);
-    const before = joined(change.inputs.map((i) => i.name), " + ");
-    change.outputs.forEach((out, i) => {
-      const t = taxon.get(out.id);
-      rows.push({
-        ...base(t, out.name, t?.nsx),
-        id: `${change.id}:${i}`,
-        // A rename is read as the species it was: its name before the change. Split, Append and Combine name the new species.
-        speciesName: type === "rename" ? before || out.name : out.name,
-        splitFrom: before,
-        createdBy: change.by,
-        createdOn: when.text,
-        days: [when.day],
-        createdMs: when.ms,
-      });
-    });
-  }
-  return rows.map((r, i) => ({ ...r, seq: i + 1 }));
-}
-
-export const renameRowsFor = (taxa: Taxon[], changes: TaxonChange[]) => changeRows(taxa, changes, "rename");
-export const splitRowsFor = (taxa: Taxon[], changes: TaxonChange[]) => changeRows(taxa, changes, "split");
-export const appendRowsFor = (taxa: Taxon[], changes: TaxonChange[]) => changeRows(taxa, changes, "append");
 
 // ── Species Synonym ──
 

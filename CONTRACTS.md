@@ -775,7 +775,7 @@ the designer names one), and nothing matches (an action that undoes the narrowin
 - MUST NOT leave a bare line of grey text where the table would be.
 - **Exception (designer, 16 Oct 2026: "in the empty states, can we just add one record ... just mock data"):** a report whose table has
   no row of its own shows one mock record, marked "Example record" on the toolbar, in place of the empty state (`DataReport`'s `example`;
-  the Flora Taxonomy Report's Species attributes, Rename, Split, Append and Species synonym tabs and the Project Audit Log Report). It
+  the Flora Taxonomy Report's Species attributes and Species synonym tabs, the Fauna Taxonomy Report's Species status, Species reference and Species attributes tabs, and the Project Audit Log Report). It
   goes when a real row exists, is never stored, is made only of placeholder people (0.3) and made-up values, and the search and filters
   act on it like any row (so "nothing matches" still shows the empty state). Other collections keep the empty state.
 - MUST NOT name the action "Clear search" (it collides with the search box's own clear button); name what the
