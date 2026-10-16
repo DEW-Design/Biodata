@@ -448,3 +448,5 @@ Not imported into every session on purpose: read or grep it when a task needs hi
 - [2026-10-16] Reports: seven administration reports (user, role, user-role, permission, role-permission, notification... - `2026-10-16-02-reports-seven-administration-reports-user-role-user-role.md`
 - [2026-10-16] Fauna Taxonomy Report: list detail and species status, and mock data for the access reports - `2026-10-16-03-fauna-taxonomy-report-list-detail-and-species-status.md`
 - [2026-10-16] Fauna Taxonomy Report: five more tabs (Australian distribution, regional data, species reference, species... - `2026-10-16-04-fauna-taxonomy-report-five-more-tabs-australian-distribution.md`
+- [2026-10-16] Taxonomy reports: audit log rolls up rename, combine, split and append, and a search carries across tabs - `2026-10-16-05-taxonomy-reports-audit-log-rolls-up-rename-combine.md`
+- [2026-10-16] Taxonomy audit logs: the Action filter always offers rename, combine, split and append, and mock entries - `2026-10-16-06-taxonomy-audit-logs-the-action-filter-always-offers.md`

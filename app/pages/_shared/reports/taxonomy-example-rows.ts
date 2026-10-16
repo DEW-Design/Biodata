@@ -4,7 +4,7 @@
 // here is stored, and nothing in Taxonomy Management shows it.
 
 import type { AttributeRow } from "@/app/pages/_shared/reports/taxonomy-herb-attributes-data";
-import type { ManagementRow, SplitRow, SynonymRow } from "@/app/pages/_shared/reports/taxonomy-management-data";
+import type { ManagementRow, SynonymRow } from "@/app/pages/_shared/reports/taxonomy-management-data";
 
 const DAY = Date.parse("2026-08-04T12:00:00Z");
 const CREATED = Date.parse("2026-10-14T04:10:00Z");
@@ -52,54 +52,6 @@ const management: Omit<ManagementRow, "id" | "seq" | "speciesName" | "genus" | "
   modifiedOn: "",
   days: ["2026-10-14"],
   createdMs: CREATED,
-};
-
-/** Eucalyptus leucoxylon renamed to its subspecies. The name before is the species it was. */
-export const EXAMPLE_RENAME: ManagementRow = {
-  ...management,
-  id: "example",
-  seq: 1,
-  speciesName: "Eucalyptus leucoxylon",
-  genus: "Eucalyptus",
-  species: "leucoxylon",
-  rank1: "subsp.",
-  infra1: "pruinosa",
-  createdBy: "Lana Steiner",
-};
-
-/** Xanthorrhoea semiplana split: one of the species it made. */
-export const EXAMPLE_SPLIT: SplitRow = {
-  ...management,
-  id: "example",
-  seq: 1,
-  nsx: "P04412",
-  common: "Yacca",
-  commonNames: "Yacca",
-  family: "Asphodelaceae",
-  order: "Asparagales",
-  speciesName: "Xanthorrhoea semiplana subsp. semiplana",
-  splitFrom: "Xanthorrhoea semiplana",
-  genus: "Xanthorrhoea",
-  species: "semiplana",
-  rank1: "subsp.",
-  infra1: "semiplana",
-  createdBy: "Phoenix Baker",
-};
-
-/** A species appended. */
-export const EXAMPLE_APPEND: ManagementRow = {
-  ...management,
-  id: "example",
-  seq: 1,
-  nsx: "P09999",
-  common: "Golden Wattle",
-  commonNames: "Golden Wattle",
-  family: "Fabaceae",
-  order: "Fabales",
-  speciesName: "Acacia pycnantha",
-  genus: "Acacia",
-  species: "pycnantha",
-  createdBy: "Olivia Wyatt",
 };
 
 /** A name the Blue Gum was known by. */

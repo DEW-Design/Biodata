@@ -126,7 +126,7 @@ export const REPORTS: ReportEntry[] = [
     id: "taxonomy",
     category: "taxonomy",
     title: TAXONOMY_REPORT_TITLE,
-    description: "The taxa BioData holds, one report for each view: the taxonomy list in detail, its regions and areas, herbarium data, attributes, audit log, and its renames, splits, appends and synonyms.",
+    description: "The taxa BioData holds, one report for each view: the taxonomy list in detail, its regions and areas, herbarium data, attributes, audit log (with every rename, combine, split and append) and synonyms.",
     icon: sectionIcons[TAXONOMY_SECTION_LABEL],
     path: "/pages/reports/taxonomy",
     feature: "taxonomyManagement",

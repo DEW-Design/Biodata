@@ -6,7 +6,8 @@ import { optionsFromValues } from "@/app/pages/_shared/list-filter";
 import { REPORT_WIDTH as W, numberColumn, textColumn, type ViewColumn } from "@/app/pages/_shared/reports/report-columns";
 import { faunaAttributeRowsFor, type FaunaAttributeRow } from "@/app/pages/_shared/reports/fauna-taxonomy-place-data";
 import { SpeciesCell } from "@/app/pages/_shared/reports/report-table";
-import { auditRowsFor, type AuditRow } from "@/app/pages/_shared/reports/taxonomy-audit-data";
+import { AUDIT_ACTIONS, auditRowsFor, type AuditRow } from "@/app/pages/_shared/reports/taxonomy-audit-data";
+import { MOCK_FAUNA_AUDIT } from "@/app/pages/_shared/reports/taxonomy-audit-mock";
 import { EXAMPLE_ATTRIBUTE } from "@/app/pages/_shared/reports/taxonomy-example-rows";
 import { useFaunaChanges, useFaunaTaxa } from "@/app/pages/_shared/reports/taxonomy-fauna";
 import { FAUNA_TAXONOMY_REPORT_TITLE } from "@/app/pages/_shared/reports/taxonomy-report-title";
@@ -24,8 +25,8 @@ import { nsxColumns, useSheetTab, type FilterSpec } from "@/app/pages/_shared/re
 //     (fauna-taxonomy-place-data.ts). No Fauna taxon has an attribute yet, so the tab shows one mock Example record;
 //   - Audit Log: the same events as the Flora report's (what a person committed in Taxonomy Management, and the days and people a taxon records), for the Fauna
 //     taxa. The sheet's Species is the scientific name, and its NSX Code comes before it, so the table has no "Species number" column. The sheet's last columns are
-//     User and Comments after three blank columns, which are not drawn; the app records one person for each event and no comment, so Comments, Source type and
-//     Source are drawn and left empty. Audit log duration and Modified date are one question, as in the Flora report, and the Filter's date answers it.
+//     User and Comments after three blank columns, which are not drawn; the app records one person for each event and no comment, so Comments
+//     is drawn and left empty. Source type is "Portal" and Source the role that made the change (taxonomy-audit-data.ts). Audit log duration and Modified date are one question, as in the Flora report, and the Filter's date answers it.
 
 const REPORT = { reportTitle: FAUNA_TAXONOMY_REPORT_TITLE, reportSubtitle: "The fauna BioData holds, one report for each view." } as const;
 
@@ -141,8 +142,8 @@ const auditColumns: ViewColumn<AuditRow>[] = [
   textColumn("previous", "Previous details", W.xl, (r) => r.previous, { clamp: true }),
   textColumn("current", "Current details", W.xl, (r) => r.current, { clamp: true }),
   textColumn("action", "Action", W.md, (r) => r.action),
-  textColumn("sourceType", "Source type", W.md, () => ""),
-  textColumn("source", "Source", W.md, () => ""),
+  textColumn("sourceType", "Source type", W.md, (r) => r.sourceType),
+  textColumn("source", "Source", W.md, (r) => r.source),
   textColumn("user", "User", W.md, (r) => r.user),
   textColumn("comments", "Comments", W.lg, () => ""),
 ];
@@ -156,9 +157,9 @@ const AUDIT_SPEC: FilterSpec<AuditRow> = {
 export function useFaunaAuditTab() {
   const taxa = useFaunaTaxa();
   const changes = useFaunaChanges();
-  const rows = useMemo(() => auditRowsFor(taxa, changes), [taxa, changes]);
+  const rows = useMemo(() => auditRowsFor(taxa, changes, MOCK_FAUNA_AUDIT), [taxa, changes]);
   const attributes = useMemo(() => {
-    const action = optionsFromValues(rows.map((r) => r.action));
+    const action = optionsFromValues([...AUDIT_ACTIONS, ...rows.map((r) => r.action)]);
     const entity = optionsFromValues(rows.map((r) => r.entityType));
     return [
       ...(action.length > 0 ? [{ id: "action", kind: "options" as const, label: "Action", options: action, get: (r: AuditRow) => r.action }] : []),

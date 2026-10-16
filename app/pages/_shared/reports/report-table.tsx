@@ -213,6 +213,9 @@ export interface DataReportProps<R> {
   /** When this changes the search, filters, sort and page go back to how they start, without remounting (a tab list
    *  in `belowHeader` keeps its keyboard focus). */
   resetKey?: string;
+  /** With `resetKey`: the search is kept when the key changes (the designer, 16 Oct 2026: a search for an NSX code on one tab of a taxonomy report carries over to the
+   *  others), while the filters, sort and page still start again, because each tab has its own facets and columns. */
+  keepSearch?: boolean;
   /** Wraps everything under `belowHeader` (toolbar, chips, table), so that block can be a tab panel. */
   wrapBody?: (body: ReactNode) => ReactNode;
 }
@@ -246,6 +249,7 @@ export function DataReport<R>({
   exportPreamble,
   extraActions,
   resetKey,
+  keepSearch,
   wrapBody,
 }: DataReportProps<R>) {
   const showingExample = realRows.length === 0 && example !== undefined;
@@ -265,7 +269,7 @@ export function DataReport<R>({
   const [seenKey, setSeenKey] = useState(resetKey);
   if (seenKey !== resetKey) {
     setSeenKey(resetKey);
-    setSearch("");
+    if (!keepSearch) setSearch("");
     setPage(1);
     setSort(initialSort);
     filter.clear();
