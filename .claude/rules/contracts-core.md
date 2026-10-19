@@ -58,6 +58,7 @@ first when starting a new file in that area (a scoped rule triggers on reading, 
 - §2.10 No affordance for a shortcut that isn't real (contracts-build.md)
 - §2.11 A date field has a calendar (contracts-build.md)
 - §2.12 Nothing on screen without a purpose (contracts-build.md)
+- §2.13 Nested corners are concentric: inner radius = outer radius - padding (contracts-build.md)
 - §3.1 One header (contracts-shell.md)
 - §3.2 One rail, one icon map, legal links in the rail (contracts-shell.md)
 - §3.3 Account controls live in the header (contracts-shell.md)
