@@ -648,7 +648,7 @@ scans by shape as well as by word and the same section has the same icon on ever
 
 ### §4.1 The form pattern
 
-Every create or edit form (Add Project option 2, DSA, DLA, and any new one) MUST render `<FormPage>`
+Every create or edit form (Add Project, DSA, DLA, and any new one) MUST render `<FormPage>`
 (`app/pages/_shared/form-page.tsx`) with fields laid out in `<FormRow>`. Documented at `/patterns/forms`.
 
 1. **Header:** an optional eyebrow, the title (with a status badge for an existing record), a one-line
@@ -682,7 +682,7 @@ Every create or edit form (Add Project option 2, DSA, DLA, and any new one) MUST
    `Checkbox`, `Accordion`). No bespoke choice tiles.
 8. **Draft:** a draft needs only what identifies the record; submit validates the rest.
 
-- **Exempt:** Add Project option 1 (a stakeholder option, one question per card), and editing in place on a
+- **Exempt:** Add Project option 2 (a stakeholder option, one question per card; option 1 until 16 Oct 2026), and editing in place on a
   detail page's own cards, which follows §4.7 instead.
 - **Enforcement:** `AUTO §4.1` (a file that uses `FormRow` must import `FormPage`), `AUTO §4.1b` (a `FormPage` screen must not use tabs).
 

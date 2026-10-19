@@ -114,7 +114,7 @@ export function cardMissing(id: ProjectCardId, s: ProjectState): string[] {
     case "collection":
       if (c.focusAreas.length === 0) out.push("Focus areas");
       if (c.focusAreas.includes("other") && blank(c.focusAreaOther)) out.push("Focus area (please specify)");
-      if (!c.surveyType) out.push("Survey type");
+      // Survey type is optional (16 Oct 2026): Add Project stopped asking it, so a project created there is complete without it.
       if (!c.collectionMethod) out.push("Method of data collection");
       if (blank(c.methodDetails)) out.push("Methodology");
       return out;
@@ -295,7 +295,7 @@ function CollectionForm({ draft, update, showErrors }: FormProps) {
           {(item) => <MultiSelect.Item {...item} selectionIndicator="checkbox" selectionIndicatorAlign="left" />}
         </MultiSelect>
       </FormRow>
-      <FormRow title="Survey type" required description="The kind of survey this project runs." error={showErrors && !c.surveyType ? "Choose a survey type" : undefined}>
+      <FormRow title="Survey type" description="The kind of survey this project runs.">
         <SurveyTypeRadios value={c.surveyType} onChange={(surveyType) => patch({ surveyType })} />
       </FormRow>
       <FormRow title="Method of data collection" required description="Pick the closest match." error={showErrors && !c.collectionMethod ? "Choose a method" : undefined}>

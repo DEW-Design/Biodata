@@ -402,3 +402,5 @@ Not imported into every session on purpose: read or grep it when a task needs hi
 - [2026-10-14] Taxonomy version 2: Split Taxon, and the hierarchy view opens every rank - `2026-10-14-05-taxonomy-version-2-split-taxon-and-the-hierarchy.md`
 - [2026-10-14] Taxonomy version 2: Combine Taxon - `2026-10-14-06-taxonomy-version-2-combine-taxon.md`
 - [2026-10-14] Taxonomy version 2: Rename Taxon - `2026-10-14-07-taxonomy-version-2-rename-taxon.md`
+- [2026-10-16] Add Project form becomes option 1, version 1 retired, Pre-fill sample content tool - `2026-10-16-01-add-project-form-becomes-option-1-version-1.md`
+- [2026-10-16] A new project opens on an empty Project records tab - `2026-10-16-02-a-new-project-opens-on-an-empty-project.md`

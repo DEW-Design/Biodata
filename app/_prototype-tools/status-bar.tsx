@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useRef, useState, useSyncExternalStore, type CSSProperties } from "react";
 import { ArrowUpRight, ChevronUp, DotsGrid, Sliders01, XClose } from "@untitledui/icons";
 import Link from "next/link";
-import { Button as AriaButton, Toolbar } from "react-aria-components";
+import { Button as AriaButton, ToggleButton, Toolbar } from "react-aria-components";
 import { animate, AnimatePresence, motion, useMotionValue, useReducedMotion, type Transition } from "motion/react";
 import { cx } from "@/utils/cx";
 import { PagesTool } from "./pages-tool";
@@ -288,6 +288,40 @@ function ToolChip({
 }) {
   const Icon = tool.icon;
   const value = barValue(tool);
+  if (tool.kind === "toggle") {
+    const on = tool.value === "on";
+    return (
+      <ToggleButton
+        aria-label={tool.label}
+        isSelected={on}
+        // A drag that ends on the switch is not a press on it.
+        onChange={(next) => {
+          if (!wasDrag()) tool.onChange(next ? "on" : "off");
+        }}
+        className={cx(
+          "flex h-9 items-center gap-2 rounded-lg px-2.5 text-sm whitespace-nowrap transition-[background-color,scale] duration-150 ease-out hover:bg-[var(--tool-hover)] active:scale-[0.96]",
+          focusRing,
+        )}
+      >
+        <Icon className="size-4 shrink-0 text-[var(--tool-muted)]" aria-hidden="true" />
+        <span className="text-[var(--tool-label)]">{tool.barLabel}</span>
+        <span
+          aria-hidden="true"
+          className={cx(
+            "relative h-4 w-7 shrink-0 rounded-full ring-1 transition-colors duration-150 ease-out",
+            on ? "bg-[var(--tool-fg)] ring-[var(--tool-fg)]" : "bg-[var(--tool-hover)] ring-[var(--tool-ring)]",
+          )}
+        >
+          <span
+            className={cx(
+              "absolute top-0.5 size-3 rounded-full transition-[left,background-color] duration-150 ease-out motion-reduce:transition-none",
+              on ? "left-3.5 bg-[var(--tool-bg)]" : "left-0.5 bg-[var(--tool-muted)]",
+            )}
+          />
+        </span>
+      </ToggleButton>
+    );
+  }
   return (
     <ToolMenu
       tool={tool}
