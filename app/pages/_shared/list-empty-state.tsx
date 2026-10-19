@@ -9,17 +9,22 @@ import { RefreshCcw01 } from "@untitledui/icons";
 // lists' empty states (a gray modern FeaturedIcon, a heading, one balanced line saying why and what to do,
 // then the action), filling the space the table would have had. The heading carries `!` overrides so the
 // doc-site prose globals never leak into it (CONTRACTS 2.7). The action is optional: a list that is empty
-// because nothing exists yet has no honest "next step" to offer until the designer names one.
+// because nothing exists yet has no honest "next step" to offer until the designer names one. `children` replaces the single
+// action with the caller's own buttons, for an empty state with more than one way forward (a new project's records: upload a
+// dataset, or add a record).
 export function ListEmptyState({
   icon,
   title,
   description,
   action,
+  children,
 }: {
   icon: FC<{ className?: string }>;
   title: string;
   description: ReactNode;
   action?: { label: string; onPress: () => void };
+  /** The actions, in place of `action`, when there is more than one. */
+  children?: ReactNode;
 }) {
   return (
     <div className="flex min-h-48 flex-1 flex-col items-center justify-center gap-6 p-12 text-center">
@@ -30,7 +35,8 @@ export function ListEmptyState({
           <p className="text-sm text-balance text-tertiary">{description}</p>
         </div>
       </div>
-      {action && (
+      {children ? <div className="flex flex-wrap items-center justify-center gap-3">{children}</div> : null}
+      {!children && action && (
         <Button iconLeading={RefreshCcw01} color="secondary" onPress={action.onPress}>
           {action.label}
         </Button>

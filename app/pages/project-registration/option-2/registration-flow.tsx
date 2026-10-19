@@ -1,6 +1,7 @@
 "use client";
 
-// Add Project, second layout: the three-column structure every other screen here uses. Column 1 is
+// Add Project, option 1 (at /pages/project-registration since 16 Oct 2026; it was the second layout): the three-column
+// structure every other screen here uses. Column 1 is
 // the primary icon rail, column 2 is the section list (progress + where you are + what needs
 // attention), column 3 is the form for the current section. Compared against the first layout (one
 // question per card, no rail or sidebar) with the floating options control - see context/decisions/2026-09-25-02-add-project-gets-a-second-layout-at-pages.md.
@@ -18,11 +19,14 @@
 // - Every control is a real DEW component (RadioGroup, Checkbox, Select, TextArea, Accordion); the
 //   bespoke choice tiles are gone.
 //
-// Version 2 (the designer, 9 Oct 2026, at ./version-2) is the same flow with `version={2}`: a short project name with a
-// character limit, one Project contacts list with a role per person, focus areas in Method and details, no survey type,
-// one Methodology question (Incidental observations, Systematic or Not recorded; Systematic adds each methodology used,
-// one at a time, with its note), and the map's Expand dialog. The two versions
-// are compared with the Version tool on the Prototype tools bar (VersionSwitcher). See sections.ts's `FormVersion`.
+// It is version 2 of that layout (the designer, 9 Oct 2026): a short project name with a character limit, one Project
+// contacts list with a role per person, focus areas in Method and details, no survey type, one Methodology question
+// (Incidental observations, Systematic or Not recorded; Systematic adds each methodology used, one at a time, with its
+// note), and the map's Expand dialog. Version 1 was retired on 16 Oct 2026 (the designer: "keep only version 2"), so there
+// is no Version tool; its rules stay in sections.ts for the project page's edit form. See sections.ts's `FormVersion`.
+//
+// The Pre-fill sample content switch on the Prototype tools bar fills every section with sample-content.ts, for showing the
+// form to stakeholders, and switching it off puts back what was there.
 //
 // Same form state, validation rules, restriction editors and success screen as the first layout.
 // No backend: "Create project" keeps the project in this browser's localStorage (created-projects-store.ts),
@@ -38,8 +42,9 @@ import { useRoleHref } from "@/lib/use-role-href";
 import { useUserRole } from "@/lib/use-user-role";
 import { FormPage } from "@/app/pages/_shared/form-page";
 import { createdProjectHref, saveCreatedProject, type CreatedProject } from "@/app/pages/_shared/created-projects-store";
-import { VersionSwitcher, type VersionOption } from "@/app/pages/_shared/version-switcher";
+import { useSampleContent } from "@/app/_prototype-tools/sample-content";
 import { RegistrationLayoutSwitcher } from "../layout-switcher";
+import { sampleProjectForm } from "../sample-content";
 import { SuccessScreen } from "../success-screen";
 import { initialDataCollection, initialProjectDetails, initialRestrictions } from "../types";
 import { SectionFields } from "./form-sections";
@@ -48,12 +53,8 @@ import { RegistrationShell } from "./registration-shell";
 import { ReviewSection } from "./review-section";
 import { isFormValid, isSectionValid, missingFields, sectionMeta, STEP_TITLES, toSavedForm, visibleSections, type FormState, type FormVersion, type SectionId } from "./sections";
 
-const BASE_PATHS: Record<FormVersion, string> = { 1: "/pages/project-registration/option-2", 2: "/pages/project-registration/option-2/version-2" };
-
-const VERSIONS: VersionOption[] = [
-  { id: "1", label: "Version 1", description: "Primary contact and managers apart, survey type, one methodology", href: BASE_PATHS[1] },
-  { id: "2", label: "Version 2", description: "One contacts list with roles; one Methodology question, methodologies added one at a time", href: BASE_PATHS[2] },
-];
+const BASE_PATH = "/pages/project-registration";
+const version: FormVersion = 2;
 
 function GuestPrompt() {
   const roleHref = useRoleHref();
@@ -76,8 +77,7 @@ function GuestPrompt() {
   );
 }
 
-export function RegistrationFlow({ version }: { version: FormVersion }) {
-  const BASE_PATH = BASE_PATHS[version];
+export function RegistrationFlow() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const roleHref = useRoleHref();
@@ -142,6 +142,18 @@ export function RegistrationFlow({ version }: { version: FormVersion }) {
   const role = useUserRole();
   const isGuest = role === "public-user";
 
+  // A fresh key each time the sample goes in or comes out, so fields that keep their own state (the full title's tick,
+  // the extent picker's tab) show the new content.
+  const sampleKey = useSampleContent({
+    value: state,
+    onChange: (next) => {
+      setState(next);
+      setDirty(true);
+    },
+    sample: sampleProjectForm,
+    enabled: !isGuest && !created,
+  });
+
   const sidebar = isGuest ? (
     <div className="flex flex-col gap-1">
       <p className="mb-3 text-xs font-semibold tracking-wide text-quaternary uppercase">Add project</p>
@@ -192,7 +204,7 @@ export function RegistrationFlow({ version }: { version: FormVersion }) {
         primaryIsContinue={current !== "review"}
         onPrimary={current === "review" ? handleCreate : handleContinue}
       >
-        {current === "review" ? <ReviewSection state={state} onEdit={goTo} version={version} /> : <SectionFields id={current} state={state} onChange={update} showErrors={showErrors} version={version} />}
+        {current === "review" ? <ReviewSection state={state} onEdit={goTo} version={version} /> : <SectionFields key={sampleKey} id={current} state={state} onChange={update} showErrors={showErrors} version={version} />}
       </FormPage>
     );
   }
@@ -200,8 +212,7 @@ export function RegistrationFlow({ version }: { version: FormVersion }) {
   return (
     <>
       <RegistrationShell sidebar={sidebar}>{main}</RegistrationShell>
-      <RegistrationLayoutSwitcher current="option-2" />
-      <VersionSwitcher label="Add Project option 2 version to show" options={VERSIONS} current={String(version)} />
+      <RegistrationLayoutSwitcher current="option-1" />
       <DestructiveModal confirmIcon={Trash01} cancelIcon={ArrowLeft}
         isOpen={confirmCancel}
         onOpenChange={setConfirmCancel}

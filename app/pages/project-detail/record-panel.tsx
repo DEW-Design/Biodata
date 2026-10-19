@@ -12,7 +12,7 @@
 // - Fields carry notes (flags, comments, files), read here; on hover an edit icon opens that field in
 //   the full view's edit mode, where notes are added (field-notes.tsx).
 
-import { useEffect, useRef, useState, type Key as ReactKey } from "react";
+import { useEffect, useRef, useState, type Key as ReactKey, type ReactNode } from "react";
 import { SubmenuTrigger, type Key } from "react-aria-components";
 import { Activity, ChevronDownDouble, ChevronRight, ChevronUpDouble, DotsVertical, Edit02, Eye, Flag01, Folder, InfoCircle, Maximize02, MessageSquare01, Minimize02, Paperclip, Target05, Trash01 } from "@untitledui/icons";
 import { Accordion } from "@/components/base/accordion/accordion";
@@ -485,11 +485,17 @@ export function ActionsMenu({
   onEdit,
   onAdd,
   onDelete,
+  trigger,
+  addHeading = "Add inside",
 }: {
   options: ChildOption[];
   onEdit?: () => void;
   onAdd: (o: ChildOption) => void;
   onDelete?: () => void;
+  /** A button to open the menu in place of the "..." icon (the empty Project records' "Add record"). */
+  trigger?: ReactNode;
+  /** The heading over the record types. */
+  addHeading?: string;
 }) {
   const pick = (key: Key) => {
     const o = options.find((x) => `${x.kind}:${x.type}` === key);
@@ -498,14 +504,16 @@ export function ActionsMenu({
   const kinds = KIND_MENU.filter((k) => options.some((o) => o.kind === k.kind));
   return (
     <Dropdown.Root>
-      <Tooltip title="Actions">
-        <TooltipTrigger aria-label="Record actions" className={iconButton}>
-          <DotsVertical className="size-5" />
-        </TooltipTrigger>
-      </Tooltip>
-      <Dropdown.Popover placement="bottom end" className="w-60">
+      {trigger ?? (
+        <Tooltip title="Actions">
+          <TooltipTrigger aria-label="Record actions" className={iconButton}>
+            <DotsVertical className="size-5" />
+          </TooltipTrigger>
+        </Tooltip>
+      )}
+      <Dropdown.Popover placement={trigger ? "bottom" : "bottom end"} className="w-60">
         <Dropdown.Menu
-          aria-label="Record actions"
+          aria-label={trigger ? addHeading : "Record actions"}
           onAction={(key) => {
             if (key === "edit") onEdit?.();
             else if (key === "delete") onDelete?.();
@@ -520,7 +528,7 @@ export function ActionsMenu({
           {kinds.length > 0 ? (
             <Dropdown.Section>
               <Dropdown.SectionHeader className="px-2.5 pt-1.5 pb-1 text-xs font-semibold text-quaternary">
-                Add inside
+                {addHeading}
               </Dropdown.SectionHeader>
               {kinds.map((k) => (
                 <SubmenuTrigger key={k.kind}>

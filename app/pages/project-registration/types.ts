@@ -58,11 +58,13 @@ export function emptyProjectManager(id: number): ProjectManager {
     return { id, firstName: "", lastName: "", email: "", phone: "", organisation: "", role: null, roleOther: "", isPrimary: false };
 }
 
-/** One person in version 2 of option 2's Project contacts (the designer, 9 Oct 2026): the separate Primary contact and
- *  Project managers blocks became one list, where each person has a role in the project and can be marked the primary
- *  contact (exactly one) and, or, a project manager (any number). On create, the list is also written out as
- *  `dataOwnerContacts` (the primary first) and `projectManagers`, so the project page reads it as it reads version 1. */
+/** One person in Add Project's Project contacts (the designer, 9 Oct 2026): the separate Primary contact and Project
+ *  managers blocks became one list, where each person has a role in the project and one is the primary contact. A project
+ *  manager is a person whose role is Project Manager (16 Oct 2026; it was the `isManager` tick). On create, the list is also
+ *  written out as `dataOwnerContacts` (the primary first) and `projectManagers`, so the project page reads it as it reads
+ *  version 1. */
 export interface ProjectContact extends ProjectManager {
+    /** No longer asked or read: a manager is the Project Manager role (`isManager` in option-2/sections.ts). */
     isManager: boolean;
 }
 
@@ -120,8 +122,8 @@ export function initialProjectDetails(): ProjectDetailsState {
         // sensible answer. Flagged directly by the user off the first pass, which left every
         // manager unset by default.
         projectManagers: [{ ...emptyProjectManager(1), isPrimary: true }],
-        // Version 2: the first person starts as the primary contact and a project manager, the common case of one person.
-        projectContacts: [{ ...emptyProjectContact(1), isPrimary: true, isManager: true }],
+        // Version 2: the first person starts as the primary contact, the common case of one person.
+        projectContacts: [{ ...emptyProjectContact(1), isPrimary: true }],
     };
 }
 

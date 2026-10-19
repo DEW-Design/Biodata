@@ -450,3 +450,7 @@ Not imported into every session on purpose: read or grep it when a task needs hi
 - [2026-10-16] Fauna Taxonomy Report: five more tabs (Australian distribution, regional data, species reference, species... - `2026-10-16-04-fauna-taxonomy-report-five-more-tabs-australian-distribution.md`
 - [2026-10-16] Taxonomy reports: audit log rolls up rename, combine, split and append, and a search carries across tabs - `2026-10-16-05-taxonomy-reports-audit-log-rolls-up-rename-combine.md`
 - [2026-10-16] Taxonomy audit logs: the Action filter always offers rename, combine, split and append, and mock entries - `2026-10-16-06-taxonomy-audit-logs-the-action-filter-always-offers.md`
+- [2026-10-16] Add Project form becomes option 1, version 1 retired, Pre-fill sample content tool - `2026-10-16-07-add-project-form-becomes-option-1-version-1.md`
+- [2026-10-16] A new project opens on an empty Project records tab - `2026-10-16-08-a-new-project-opens-on-an-empty-project.md`
+- [2026-10-19] Post 6 Oct lab: Overview tab, properties panel, notices under the tabs, no at-a-glance - `2026-10-19-01-post-6-oct-lab-overview-tab-properties-panel.md`
+- [2026-10-19] Merge mohan-wips 5d303ad: Add Project option 1, Pre-fill sample content, empty project records - `2026-10-19-02-merge-mohan-wips-5d303ad-add-project-option-1.md`

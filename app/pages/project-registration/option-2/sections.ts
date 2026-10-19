@@ -1,3 +1,4 @@
+import { PROJECT_MANAGER_ROLE } from "../data";
 import { OTHER_METHODOLOGY } from "../methodology-fields";
 import { isGeoExtentComplete, type DataCollectionState, type MethodologyChoice, type ProjectContact, type ProjectDetailsState, type RestrictionsState, type RestrictionTypeKey } from "../types";
 import { isTypeValid, OFFERED_RESTRICTION_TYPES } from "../step-3-privacy-restrictions";
@@ -11,11 +12,11 @@ import { isTypeValid, OFFERED_RESTRICTION_TYPES } from "../step-3-privacy-restri
 // (node 2298:179004): Project Identification / Data Collection and Storage / Privacy and
 // Restrictions. The designer renamed the second step "Data Collection and Methodology" (2 Oct 2026).
 
-/** Option 2 has two versions, compared on the Prototype tools bar (the designer, 9 Oct 2026). Version 2: one Project
+/** Version 2 is the Add Project form (option 1 since 16 Oct 2026, when version 1 was retired from it): one Project
  *  contacts list with a role per person, focus areas in Method and details, no survey type, and one Methodology question:
  *  Incidental observations, Systematic or Not recorded, a Systematic project adding each methodology it used, one at a
- *  time, with its own variation, limitation or bias. Every function here takes the
- *  version and defaults to 1, so the project page's edit form, which reuses these, is unchanged. */
+ *  time, with its own variation, limitation or bias. Version 1's rules stay because the project page's edit form still
+ *  reads them: every function here takes the version and defaults to 1, so that form is unchanged. */
 export type FormVersion = 1 | 2;
 
 /** The longest project name version 2 accepts: short enough for a card, a breadcrumb and a table column. */
@@ -95,6 +96,8 @@ function roleValid(d: ProjectDetailsState): boolean {
 // ── Version 2 ──
 
 export const contactsOf = (d: ProjectDetailsState): ProjectContact[] => d.projectContacts ?? [];
+/** A Project contact is a project manager when that is their role in the project. */
+export const isManager = (p: ProjectContact) => p.role === PROJECT_MANAGER_ROLE;
 const contactRoleValid = (p: ProjectContact) => !!p.role && (p.role !== "other" || p.roleOther.trim().length > 0);
 
 /** Every mandatory detail of the Project contacts list, named the way the form labels it. */
@@ -110,8 +113,9 @@ function missingContactFields(d: ProjectDetailsState): string[] {
     else if (!contactRoleValid(p)) out.push(`${who}role in project (please specify)`.trim());
   });
   if (!people.some((p) => p.isPrimary)) out.push("A primary contact");
-  // An organisation names who manages the project, as version 1 asked; an individual owner is the person.
-  if (d.dataOwnerType === "organisation" && !people.some((p) => p.isManager)) out.push("A project manager");
+  // An organisation names who manages the project, as version 1 asked; an individual owner is the person. A manager is a
+  // contact whose role in the project is Project Manager (the designer, 16 Oct 2026: it was a tick of its own).
+  if (d.dataOwnerType === "organisation" && !people.some(isManager)) out.push("A project manager");
   return out.map((m) => m.charAt(0).toUpperCase() + m.slice(1));
 }
 
@@ -170,7 +174,7 @@ export function toSavedForm(s: FormState, version: FormVersion): FormState {
       roleOfWork: primary?.role ?? null,
       roleOfWorkOther: primary?.roleOther ?? "",
       dataOwnerContacts: ordered.map(({ id, firstName, lastName, email, phone, role, roleOther }) => ({ id, firstName, lastName, email, phone, role, roleOther })),
-      projectManagers: people.filter((p) => p.isManager).map(({ id, firstName, lastName, email, phone, organisation, role, roleOther, isPrimary }) => ({ id, firstName, lastName, email, phone, organisation, role, roleOther, isPrimary })),
+      projectManagers: people.filter(isManager).map(({ id, firstName, lastName, email, phone, organisation, role, roleOther, isPrimary }) => ({ id, firstName, lastName, email, phone, organisation, role, roleOther, isPrimary })),
     },
     collection: { ...s.collection, surveyType: null, methodDetails: names, limitationsAndBiases: notes },
   };
