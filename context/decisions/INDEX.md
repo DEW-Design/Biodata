@@ -496,3 +496,7 @@ Not imported into every session on purpose: read or grep it when a task needs hi
 - [2026-10-20] Post-6-oct lab: the map takes the design system's colours - `2026-10-20-03-post-6-oct-lab-the-map-takes-the.md`
 - [2026-10-20] Business rule: audio and video attachments go to an admin for review - `2026-10-20-04-business-rule-audio-and-video-attachments-go-to.md`
 - [2026-10-20] Post-6-oct lab: lists are padded 24px, as Home and the project page - `2026-10-20-05-post-6-oct-lab-lists-are-padded-24px.md`
+- [2026-10-20] Data model stress test reads every tab of a workbook, classifies each tab and links tabs by key column - `2026-10-20-06-data-model-stress-test-reads-every-tab-of.md`
+- [2026-10-20] Data model stress test ingests the user-sent Ramble form, builds the 3-tier rows, loads lazily, Site id is... - `2026-10-20-07-data-model-stress-test-ingests-the-user-sent.md`
+- [2026-10-20] Stress test tree stays Site, Visit, Occurrence, Observation: vegetation answers sit on the Visit - `2026-10-20-08-stress-test-tree-stays-site-visit-occurrence-observation.md`
+- [2026-10-20] Stress test top level is called Project - `2026-10-20-09-stress-test-top-level-is-called-project.md`
