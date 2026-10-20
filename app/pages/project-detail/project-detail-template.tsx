@@ -177,8 +177,10 @@ function ProjectDetail({ basePath, notice }: ProjectDetailTemplateProps) {
   const nav = navForRole(role);
   const roleHref = useRoleHref();
   const [activeSection, setActiveSection] = useState("Projects");
-  const [detailTab, setDetailTab] = useState<DetailTab>("project");
   const { project, records, recordById, meta } = useEditStore();
+  // A project with no records yet (one just created through Add Project) opens on Project records, whose empty state offers
+  // the two ways to start: upload a dataset or add a record (the designer, 16 Oct 2026). Every other project opens on Project.
+  const [detailTab, setDetailTab] = useState<DetailTab>(() => (records.length === 0 ? "records" : "project"));
   // Adelaide Hills opens on its first site; another project opens on the project's own summary.
   const [selectedId, setSelectedId] = useState<string | null>(meta.id === ADELAIDE_HILLS_ID ? "su1" : null);
   const [recordFilter, setRecordFilter] = useState<FilterSelection>({});
@@ -229,7 +231,8 @@ function ProjectDetail({ basePath, notice }: ProjectDetailTemplateProps) {
           created: file.date,
           creator: file.addedBy,
           objectId: `${meta.objectPrefix}:${rec.code}:${file.id.toUpperCase()}`,
-          description: `Attached to "${field}" on ${rec.type} ${rec.code}, ${rec.name}.`,
+          description: `Attached to "${field}" on ${rec.type} ${rec.code}, ${rec.name}.${file.review?.status === "rejected" ? ` Rejected by ${file.review.by}: ${file.review.reason}` : ""}`,
+          review: file.review,
           format: {
             image: "image/jpeg",
             pdf: "application/pdf",

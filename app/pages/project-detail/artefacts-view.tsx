@@ -14,18 +14,28 @@ import {
 } from "react-aria-components";
 import {
   ArrowNarrowRight,
+  CheckCircle,
   LayoutGrid01,
   Table as TableIcon,
   Tag01,
+  XCircle,
 } from "@untitledui/icons";
 import { Badge } from "@/components/base/badges/badges";
 import { Button } from "@/components/base/buttons/button";
+import { ButtonUtility } from "@/components/base/buttons/button-utility";
+import { toast } from "@/components/application/toast/toast";
 import { Table, TableCard } from "@/components/application/table/table";
 import {
   ArtefactTile,
+  ReviewTag,
   artefactTypeMeta,
   type Artefact,
 } from "@/app/pages/_shared/artefact-lightbox";
+import { RejectModal } from "@/app/pages/_shared/agreement-modals";
+import { isBiodataAdmin } from "@/lib/user-role";
+import { useUserRole } from "@/lib/use-user-role";
+import { useCurrentUserName } from "./field-notes";
+import { fieldNotesActions } from "./field-notes-store";
 import { type FilterSection, useListFilter } from "@/app/pages/_shared/list-filter";
 import { AttributeFilterChips } from "@/app/pages/_shared/attribute-filter";
 import { FilterMenu } from "@/app/pages/_shared/filter-menu";
@@ -45,6 +55,21 @@ export function ArtefactsView({
   onOpenRecord: (recordId: string, fieldKey: string) => void;
 }) {
   const [view, setView] = useState<"cards" | "table">("cards");
+  // Audio and video from a Registered User or above wait for an admin (the designer, 20 Oct 2026): a BioData Admin or Super Admin approves or rejects them here, a rejection needing a reason.
+  const canReview = isBiodataAdmin(useUserRole());
+  const me = useCurrentUserName();
+  const [rejecting, setRejecting] = useState<FieldArtefact | null>(null);
+  const approve = (a: FieldArtefact) => {
+    fieldNotesActions.approveFile(a.id);
+    toast.success("Attachment approved", { description: `${a.title} is now an ordinary attachment on ${a.recordLabel}.` });
+  };
+  const reviewButtons = (a: FieldArtefact) =>
+    canReview && a.review?.status === "pending" ? (
+      <>
+        <ButtonUtility size="xs" color="tertiary" icon={CheckCircle} tooltip="Approve" aria-label={`Approve ${a.title}`} onPress={() => approve(a)} />
+        <ButtonUtility size="xs" color="tertiary" icon={XCircle} tooltip="Reject" aria-label={`Reject ${a.title}`} onPress={() => setRejecting(a)} />
+      </>
+    ) : null;
   const [query, setQuery] = useState("");
   const [sort, setSort] = useState<SortDescriptor>({
     column: "title",
@@ -144,15 +169,18 @@ export function ArtefactsView({
           {rows.map((a) => (
             <div key={a.id} className="flex flex-col gap-1.5">
               <ArtefactTile artefact={a} onOpen={() => onOpen(indexOf(a))} />
-              <Button
-                color="link-color"
-                size="sm"
-                className="w-max"
-                onClick={() => onOpenRecord(a.recordId, a.fieldKey)}
-                iconTrailing={ArrowNarrowRight}
-              >
-                Go to record
-              </Button>
+              <div className="flex h-7 items-center gap-1">
+                <Button
+                  color="link-color"
+                  size="sm"
+                  className="w-max"
+                  onClick={() => onOpenRecord(a.recordId, a.fieldKey)}
+                  iconTrailing={ArrowNarrowRight}
+                >
+                  Go to record
+                </Button>
+                <span className="ml-auto flex items-center">{reviewButtons(a)}</span>
+              </div>
             </div>
           ))}
         </div>
@@ -168,13 +196,13 @@ export function ArtefactsView({
             }}
           >
             <Table.Header sticky>
-              <Table.Head id="title" label="File" isRowHeader allowsSorting className="w-[26%]" />
-              <Table.Head id="type" label="Type" allowsSorting className="w-[11%]" />
-              <Table.Head id="size" label="Size" className="w-[8%]" />
-              <Table.Head id="recordLabel" label="Attached to" allowsSorting className="w-[20%]" />
-              <Table.Head id="creator" label="Added by" allowsSorting className="w-[13%]" />
-              <Table.Head id="created" label="Date" className="w-[11%]" />
-              <Table.Head id="open" label="" className="w-[11%]" />
+              <Table.Head id="title" label="File" isRowHeader allowsSorting className="w-[21%]" />
+              <Table.Head id="type" label="Type" allowsSorting className="w-[13%]" />
+              <Table.Head id="size" label="Size" className="w-[7%]" />
+              <Table.Head id="recordLabel" label="Attached to" allowsSorting className="w-[16%]" />
+              <Table.Head id="creator" label="Added by" allowsSorting className="w-[11%]" />
+              <Table.Head id="created" label="Date" className="w-[9%]" />
+              <Table.Head id="open" label="" className="w-[23%]" />
             </Table.Header>
             <Table.Body items={paged}>
               {(a) => {
@@ -187,7 +215,7 @@ export function ArtefactsView({
                     className="cursor-pointer"
                   >
                     <Table.Cell>
-                      <span className="flex min-w-0 items-center gap-2 text-sm font-medium text-primary">
+                      <span className={cx("flex min-w-0 items-center gap-2 text-sm font-medium text-primary", a.review && "opacity-50")}>
                         {createElement(meta.icon, {
                           className: "size-4 shrink-0 text-fg-quaternary",
                         })}
@@ -195,9 +223,12 @@ export function ArtefactsView({
                       </span>
                     </Table.Cell>
                     <Table.Cell>
-                      <Badge size="sm" color={meta.badgeColor}>
-                        {typeLabel(a.type)}
-                      </Badge>
+                      <span className="flex flex-col items-start gap-1">
+                        <Badge size="sm" color={meta.badgeColor} className={cx(a.review && "opacity-50")}>
+                          {typeLabel(a.type)}
+                        </Badge>
+                        {a.review && <ReviewTag review={a.review} />}
+                      </span>
                     </Table.Cell>
                     <Table.Cell>
                       <span className="text-sm whitespace-nowrap text-tertiary">
@@ -220,14 +251,17 @@ export function ArtefactsView({
                       </span>
                     </Table.Cell>
                     <Table.Cell>
-                      <Button
-                        color="link-color"
-                        size="sm"
-                        onClick={() => onOpenRecord(a.recordId, a.fieldKey)}
-                        iconTrailing={ArrowNarrowRight}
-                      >
-                        Go to record
-                      </Button>
+                      <span className="flex items-center gap-1">
+                        <Button
+                          color="link-color"
+                          size="sm"
+                          onClick={() => onOpenRecord(a.recordId, a.fieldKey)}
+                          iconTrailing={ArrowNarrowRight}
+                        >
+                          Go to record
+                        </Button>
+                        <span className="ml-auto flex items-center">{reviewButtons(a)}</span>
+                      </span>
                     </Table.Cell>
                   </Table.Row>
                 );
@@ -248,6 +282,23 @@ export function ArtefactsView({
           />
         </TableCard.Root>
       )}
+      <RejectModal
+        id={rejecting?.title ?? ""}
+        isOpen={!!rejecting}
+        onOpenChange={(open) => {
+          if (!open) setRejecting(null);
+        }}
+        title="Reject attachment"
+        description={rejecting ? `Say why ${rejecting.title} on ${rejecting.recordLabel} is not accepted. ${rejecting.creator} sees the reason.` : undefined}
+        submitLabel="Reject"
+        fieldLabel="Reason"
+        onReject={(reason) => {
+          if (!rejecting) return;
+          fieldNotesActions.rejectFile(rejecting.id, reason, me);
+          toast.success("Attachment rejected", { description: `${rejecting.title} stays on the record, marked rejected, with your reason.` });
+          setRejecting(null);
+        }}
+      />
     </div>
   );
 }

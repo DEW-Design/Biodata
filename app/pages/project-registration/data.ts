@@ -9,8 +9,18 @@ export const ROLE_OF_WORK_OPTIONS = [
     { id: "student", label: "Student" },
     { id: "management", label: "Management" },
     { id: "support", label: "Support" },
+    { id: "project-manager", label: "Project Manager" },
     { id: "other", label: "Other" },
 ];
+
+// Role in project, asked of each Project contact in Add Project (the designer, 16 Oct 2026): Project Manager became a role
+// here instead of its own tick, and Management and Student are not offered for now. They stay in ROLE_OF_WORK_OPTIONS, the
+// one vocabulary every label is read from, so a contact that already holds one still shows it.
+const ROLE_IN_PROJECT_IDS = ["project-manager", "field-survey", "research", "support", "other"];
+export const ROLE_IN_PROJECT_OPTIONS = ROLE_IN_PROJECT_IDS.map((id) => ROLE_OF_WORK_OPTIONS.find((o) => o.id === id)!);
+
+/** The role that makes a Project contact one of the project's managers. */
+export const PROJECT_MANAGER_ROLE = "project-manager";
 
 // The same placeholder persona set this build already uses everywhere a "who's involved" list
 // needs real, recognisable-as-fake names - never invented fresh ones (see context/decisions/2026-09-00-avatar-build-known-gaps.md,

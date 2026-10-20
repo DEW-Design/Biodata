@@ -56,6 +56,17 @@ export interface Artefact {
   dcType: string;
   /** Figma's "BioDataID" row. */
   bioDataId: string;
+  /** Audio and video wait for an admin's review (the designer, 20 Oct 2026): "pending" until approved, "rejected" with the admin's reason. Absent when approved or never needed. */
+  review?: { status: "pending" | "rejected"; reason?: string; by?: string };
+}
+
+/** The tag a file under review carries, with the opacity its tile or row drops to. */
+export function ReviewTag({ review }: { review: NonNullable<Artefact["review"]> }) {
+  return (
+    <Badge size="sm" color={review.status === "pending" ? "warning" : "error"}>
+      {review.status === "pending" ? "Pending review" : "Rejected"}
+    </Badge>
+  );
 }
 
 export const artefactTypeMeta: Record<ArtefactType, { icon: FC<{ className?: string }>; badgeColor: "error" | "blue" | "success" | "gray" }> = {
@@ -95,10 +106,15 @@ export function ArtefactTile({ artefact, onOpen }: { artefact: Artefact; onOpen:
       onClick={onOpen}
       className="group flex w-44 shrink-0 flex-col gap-2 rounded-lg border border-secondary bg-primary p-2 text-left outline-brand transition-colors duration-100 ease-linear hover:border-primary focus-visible:outline-2 focus-visible:outline-offset-2"
     >
-      <div className="flex h-28 items-center justify-center rounded-md bg-secondary">
-        <meta.icon className="size-8 text-quaternary" />
+      <div className="relative flex h-28 items-center justify-center rounded-md bg-secondary">
+        <meta.icon className={cx("size-8 text-quaternary", artefact.review && "opacity-50")} />
+        {artefact.review && (
+          <span className="absolute top-1.5 left-1.5">
+            <ReviewTag review={artefact.review} />
+          </span>
+        )}
       </div>
-      <div className="flex flex-col gap-1 px-0.5 pb-0.5">
+      <div className={cx("flex flex-col gap-1 px-0.5 pb-0.5", artefact.review && "opacity-50")}>
         <p className="truncate text-xs font-medium text-primary">{artefact.title}</p>
         <p className="truncate text-xs text-tertiary">{artefact.recordLabel}</p>
         <div className="flex items-center gap-1.5">

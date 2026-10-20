@@ -36,8 +36,11 @@ import {
   type SortDescriptor,
 } from "react-aria-components";
 import {
+  ChevronDown,
+  Database01,
   Dataflow03,
   Flag01,
+  Plus,
   Table as TableIcon,
   Folder,
   Tag01,
@@ -54,7 +57,10 @@ import {
   KIND_PLURAL,
   recordIcon,
 } from "./record-inspector";
-import { ExpandAllToggle, RecordPanel } from "./record-panel";
+import { ActionsMenu, ExpandAllToggle, RecordPanel } from "./record-panel";
+import { Button } from "@/components/base/buttons/button";
+import { ListEmptyState } from "@/app/pages/_shared/list-empty-state";
+import { UploadDatasetButton } from "@/app/pages/_shared/upload-dataset-button";
 import { hasDateField } from "./field-schema";
 import { RecordFullView, type EditTarget } from "./record-full-view";
 import { RecordFullscreenV3 } from "./record-fullscreen";
@@ -64,7 +70,7 @@ import { useFlagCounts } from "./review-view";
 import { type FilterSection, type FilterSelection, useSelectionFilter } from "@/app/pages/_shared/list-filter";
 import { AttributeFilterChips } from "@/app/pages/_shared/attribute-filter";
 import { FilterMenu } from "@/app/pages/_shared/filter-menu";
-import { SAMPLING_TYPES, createRecord, type ChildOption } from "./record-rules";
+import { SAMPLING_TYPES, childOptions, createRecord, type ChildOption } from "./record-rules";
 
 export type KindFilter = "all" | RecordKind;
 
@@ -149,7 +155,7 @@ export function RecordsExplorer({
   focusField?: { recordId: string; key: string; nonce: number } | null;
 }) {
   // Records come from the session store, so added, edited and deleted records show here at once.
-  const { records, recordById, ancestorsOf, project, meta } = useEditStore();
+  const { records, recordById, ancestorsOf, project, meta, canEdit } = useEditStore();
   const projectTitle = project.details.shortTitle;
   const ALL_PARENT_IDS = records
     .filter((r) => records.some((c) => c.parentId === r.id))
@@ -387,6 +393,96 @@ export function RecordsExplorer({
   };
 
   const roots = records.filter((r) => r.parentId === null && treeIds.has(r.id));
+
+  // The full screen record view: viewing a record wide, or a new record being added (also from the empty state).
+  const fullscreenView = (
+  <RecordFullscreenV3
+    isOpen={fullscreen !== null}
+    isEditing={fullscreen === "edit" || cardEditing}
+    onClose={closeFullscreen}
+    label={`${creating ? "New record" : (selected?.name ?? projectTitle)}, full screen`}
+  >
+    {fullscreen === "edit" && creating ? (
+      <RecordFullView
+        key={creating.id}
+        record={creating}
+        isNew
+        onSelect={() => {}}
+        onAdd={() => {}}
+        onExit={closeFullscreen}
+        onEditingChange={setCardEditing}
+        onCreated={(r) => {
+          setCreating(null);
+          onSelect(r.id);
+          setEditTarget(undefined);
+          if (fromPanel.current) closeFullscreen();
+          else setFullscreen("view");
+        }}
+        onDiscardNew={() => {
+          setCreating(null);
+          if (fromPanel.current) closeFullscreen();
+          else setFullscreen("view");
+        }}
+      />
+    ) : selected ? (
+      <RecordFullView
+        key={`${selected.id}-${editTarget ? `${editTarget.sectionId}-${editTarget.fieldKey ?? ""}` : "view"}`}
+        record={selected}
+        onSelect={(id) => {
+          setEditTarget(undefined);
+          onSelect(id);
+        }}
+        onAdd={(parent, o) => startAdd(parent, o, "full")}
+        onExit={closeFullscreen}
+        initialEdit={editTarget}
+        onEditingChange={onCardEditingChange}
+      />
+    ) : (
+      <div className="mx-auto w-full max-w-3xl py-8">
+        <RecordPanel
+          record={undefined}
+          onSelect={onSelect}
+          onEdit={openEdit}
+          onAdd={startAdd}
+          onFullscreen={closeFullscreen}
+        />
+      </div>
+    )}
+  </RecordFullscreenV3>
+  );
+
+  // A project with no records yet (a project just created): one empty state in place of the toolbar, the tree and the
+  // panel, with the two ways to start: upload a dataset, or add a record (the project's own "Add inside" menu, grouped as
+  // Events, Occurrences and Observations).
+  if (records.length === 0)
+    return (
+      <div className="flex min-h-[560px] flex-col rounded-xl border border-secondary bg-primary">
+        <ListEmptyState
+          icon={Database01}
+          title="No records yet"
+          description={
+            canEdit
+              ? "Upload a dataset to bring in this project's records, or start by adding an event, occurrence or observation."
+              : "Records appear here once a dataset is uploaded to this project."
+          }
+        >
+          <UploadDatasetButton projectId={meta.id} color={canEdit ? "secondary" : "primary"} size="md" />
+          {canEdit && (
+            <ActionsMenu
+              options={childOptions(null, [])}
+              onAdd={(o) => startAdd(null, o)}
+              addHeading="Add to this project"
+              trigger={
+                <Button color="primary" size="md" iconLeading={Plus} iconTrailing={ChevronDown}>
+                  Add record
+                </Button>
+              }
+            />
+          )}
+        </ListEmptyState>
+        {fullscreenView}
+      </div>
+    );
 
   return (
     <div className="flex flex-col gap-3">
@@ -662,59 +758,7 @@ export function RecordsExplorer({
             }}
           />
         </aside>
-        <RecordFullscreenV3
-          isOpen={fullscreen !== null}
-          isEditing={fullscreen === "edit" || cardEditing}
-          onClose={closeFullscreen}
-          label={`${creating ? "New record" : (selected?.name ?? projectTitle)}, full screen`}
-        >
-          {fullscreen === "edit" && creating ? (
-            <RecordFullView
-              key={creating.id}
-              record={creating}
-              isNew
-              onSelect={() => {}}
-              onAdd={() => {}}
-              onExit={closeFullscreen}
-              onEditingChange={setCardEditing}
-              onCreated={(r) => {
-                setCreating(null);
-                onSelect(r.id);
-                setEditTarget(undefined);
-                if (fromPanel.current) closeFullscreen();
-                else setFullscreen("view");
-              }}
-              onDiscardNew={() => {
-                setCreating(null);
-                if (fromPanel.current) closeFullscreen();
-                else setFullscreen("view");
-              }}
-            />
-          ) : selected ? (
-            <RecordFullView
-              key={`${selected.id}-${editTarget ? `${editTarget.sectionId}-${editTarget.fieldKey ?? ""}` : "view"}`}
-              record={selected}
-              onSelect={(id) => {
-                setEditTarget(undefined);
-                onSelect(id);
-              }}
-              onAdd={(parent, o) => startAdd(parent, o, "full")}
-              onExit={closeFullscreen}
-              initialEdit={editTarget}
-              onEditingChange={onCardEditingChange}
-            />
-          ) : (
-            <div className="mx-auto w-full max-w-3xl py-8">
-              <RecordPanel
-                record={undefined}
-                onSelect={onSelect}
-                onEdit={openEdit}
-                onAdd={startAdd}
-                onFullscreen={closeFullscreen}
-              />
-            </div>
-          )}
-        </RecordFullscreenV3>
+        {fullscreenView}
       </div>
     </div>
   );

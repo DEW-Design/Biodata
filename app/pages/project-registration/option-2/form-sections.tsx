@@ -13,14 +13,14 @@ import { TextArea } from "@/components/base/textarea/textarea";
 import { InputDatePicker } from "@/components/custom/date-picker/input-date-picker";
 import { FormRow } from "@/app/pages/_shared/form-row";
 import { BentoCard } from "@/app/pages/_shared/bento-card";
-import { COLLECTION_METHOD_OPTIONS, COLLECTION_METHOD_OPTIONS_V2, FOCUS_AREA_OPTIONS, PERMIT_TYPE_OPTIONS, REGISTRATION_SPECIES, ROLE_OF_WORK_OPTIONS } from "../data";
+import { COLLECTION_METHOD_OPTIONS, COLLECTION_METHOD_OPTIONS_V2, FOCUS_AREA_OPTIONS, PERMIT_TYPE_OPTIONS, REGISTRATION_SPECIES, ROLE_IN_PROJECT_OPTIONS, ROLE_OF_WORK_OPTIONS } from "../data";
 import { GeoExtentPicker } from "../geo-extent-picker";
 import { LogoUpload } from "../logo-upload";
 import { MethodologySelect, OTHER_METHODOLOGY, SurveyTypeRadios, useMethodologyOptions } from "../methodology-fields";
 import { ManagerCard } from "../step-1-project-details";
 import { OFFERED_RESTRICTION_TYPES, RESTRICTION_TYPE_META, RestrictionTypeFields } from "../step-3-privacy-restrictions";
 import { emptyContact, emptyPermitRow, emptyProjectContact, emptyProjectManager, type CollectionMethod, type DataCollectionState, type MethodologyChoice, type ProjectContact, type ProjectDetailsState, type ProjectManager, type RestrictionsState } from "../types";
-import { contactsOf, PROJECT_NAME_MAX, type FormState, type FormVersion, type SectionId } from "./sections";
+import { contactsOf, isManager, PROJECT_NAME_MAX, type FormState, type FormVersion, type SectionId } from "./sections";
 
 // One component per section of the second Add Project layout. Every field is a real DEW component
 // (`Input`, `TextArea`, `Select`, `MultiSelect`, `RadioGroup`, `Checkbox`, `Accordion`); the two
@@ -272,9 +272,11 @@ function OwnerRows(props: SectionProps) {
 }
 
 // Version 2's Project contacts (the designer, 9 Oct 2026): one list instead of a Primary contact block and a Project managers
-// block. Each person is a card like the managers' (ManagerCard), with a role in the project, and two ticks: Primary contact
-// (exactly one person; ticking it moves it) and Project manager (anyone). It replaces "Your role" as well: the person
-// registering adds themselves here with their role (CONTRACTS 4.7: the role belongs to the contact).
+// block. Each person is a card like the managers' (ManagerCard), with a role in the project, and a Primary contact tick
+// (exactly one person; ticking it moves it). A project manager is a person whose role is Project Manager (16 Oct 2026: the
+// Project manager tick went into the role list). The Primary contact tick only works with two or more people: one person is
+// the primary contact, so their tick is on and cannot be changed. It replaces "Your role" as well: the person registering adds
+// themselves here with their role (CONTRACTS 4.7: the role belongs to the contact).
 function ContactsRow({ state, onChange, showErrors }: SectionProps) {
   const { patchDetails } = useSectionPatches(state, onChange);
   const d = state.details;
@@ -284,13 +286,20 @@ function ContactsRow({ state, onChange, showErrors }: SectionProps) {
   const remove = (id: number) => {
     const removingPrimary = people.find((m) => m.id === id)?.isPrimary;
     const rest = people.filter((m) => m.id !== id);
-    set(removingPrimary && rest.length ? rest.map((m, i) => (i === 0 ? { ...m, isPrimary: true } : m)) : rest);
+    // The one person left is the primary contact, whatever was ticked before.
+    set(removingPrimary || rest.length === 1 ? rest.map((m, i) => (i === 0 ? { ...m, isPrimary: true } : m)) : rest);
   };
   const add = () => set([...people, emptyProjectContact(Math.max(0, ...people.map((m) => m.id)) + 1)]);
   const noPrimary = showErrors && !people.some((p) => p.isPrimary);
-  const noManager = showErrors && d.dataOwnerType === "organisation" && !people.some((p) => p.isManager);
+  const noManager = showErrors && d.dataOwnerType === "organisation" && !people.some(isManager);
   const rowError =
-    noPrimary && noManager ? "Mark one person as the primary contact and at least one as a project manager." : noPrimary ? "Mark one person as the primary contact." : noManager ? "Mark at least one person as a project manager." : undefined;
+    noPrimary && noManager
+      ? "Mark one person as the primary contact, and give at least one the role Project Manager."
+      : noPrimary
+        ? "Mark one person as the primary contact."
+        : noManager
+          ? "Give at least one person the role Project Manager."
+          : undefined;
 
   return (
     <FormRow
@@ -298,8 +307,8 @@ function ContactsRow({ state, onChange, showErrors }: SectionProps) {
       required
       description={
         d.dataOwnerType === "organisation"
-          ? "The people to contact about this project. Mark one as the primary contact, and who manages the project."
-          : "The people to contact about this project. Mark one as the primary contact."
+          ? "The people to contact about this project, and their role in it. Mark one as the primary contact; at least one is the Project Manager."
+          : "The people to contact about this project, and their role in it. Mark one as the primary contact."
       }
       error={rowError}
     >
@@ -310,6 +319,7 @@ function ContactsRow({ state, onChange, showErrors }: SectionProps) {
           index={i}
           showErrors={showErrors}
           canRemove={people.length > 1}
+          canChoosePrimary={people.length > 1}
           onChange={(p) => update(person.id, p)}
           onRemove={() => remove(person.id)}
           onSetPrimary={() => set(people.map((m) => ({ ...m, isPrimary: m.id === person.id })))}
@@ -327,6 +337,7 @@ function ContactCard({
   index,
   showErrors,
   canRemove,
+  canChoosePrimary,
   onChange,
   onRemove,
   onSetPrimary,
@@ -335,6 +346,8 @@ function ContactCard({
   index: number;
   showErrors: boolean;
   canRemove: boolean;
+  /** False with only one person, who is the primary contact. */
+  canChoosePrimary: boolean;
   onChange: (p: Partial<ProjectContact>) => void;
   onRemove: () => void;
   onSetPrimary: () => void;
@@ -359,7 +372,7 @@ function ContactCard({
         label="Role in project"
         isRequired
         placeholder="Select a role"
-        items={ROLE_OF_WORK_OPTIONS}
+        items={ROLE_IN_PROJECT_OPTIONS}
         selectedKey={person.role}
         onSelectionChange={(key) => onChange({ role: key as string, roleOther: key === "other" ? person.roleOther : "" })}
         isInvalid={roleMissing}
@@ -370,10 +383,7 @@ function ContactCard({
       {person.role === "other" && (
         <Input label="Please specify" isRequired placeholder="Describe their role in the project" value={person.roleOther} onChange={(v) => onChange({ roleOther: v })} isInvalid={otherMissing} hint={otherMissing ? REQUIRED : undefined} />
       )}
-      <div className="flex flex-wrap gap-x-8 gap-y-3">
-        <Checkbox size="sm" label="Primary contact" isSelected={person.isPrimary} onChange={(on) => (on ? onSetPrimary() : onChange({ isPrimary: false }))} />
-        <Checkbox size="sm" label="Project manager" isSelected={person.isManager} onChange={(on) => onChange({ isManager: on })} />
-      </div>
+      <Checkbox size="sm" label="Primary contact" isSelected={person.isPrimary} isDisabled={!canChoosePrimary} onChange={(on) => (on ? onSetPrimary() : onChange({ isPrimary: false }))} />
     </BentoCard>
   );
 }

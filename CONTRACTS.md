@@ -432,6 +432,37 @@ adds noise is a defect, the same as a bug, however correct the behaviour behind 
   sure you do visually aesthetic" (30 Sept 2026).
 - **Enforcement:** `REVIEW` (a live screenshot and `/emil-design-foundations`, §0.6 item 4).
 
+### §2.13 Nested corners are concentric: inner radius = outer radius - padding
+
+Where a rounded element sits inside another rounded element and their corners meet (the inner one's corner is inside the outer one's corner),
+the two curves share a centre. The inner radius is the outer radius minus the gap between the two edges at that corner:
+
+> **inner radius = outer radius - padding**
+
+- **The gap** is the padding of the outer element plus its border width (the distance from the outer element's outer edge to the inner element's
+  edge). Measure it; do not read it off a class name.
+- **Never below 0.** Where the gap is the same as or more than the outer radius, the result is 0: the inner corners are square. A rounded inner
+  element does not stay rounded by being given the same radius as the outer one, or "a radius from the scale" that looks about right. Two curves
+  that are the same size at different offsets are not concentric, and read as a mistake.
+- **Choose the numbers so the result is on the radius scale** (`--radius-*`: lg 8, xl 12, 2xl 16, 3xl 20, 4xl 24), not an arbitrary pixel value
+  (§2.1). Pairs that land on it: 2xl with 4px of padding gives xl; 2xl with 8px gives lg; xl with 4px gives lg; 3xl with 8px gives xl; 4xl with
+  12px gives xl. Where the gap is a padding step that does not land on the scale, derive it from the outer's token so the two stay in step
+  (`calc(var(--radius-2xl) - 0.5rem)`), never retype the number.
+- **A design system component keeps its radius** (§1.5, §1.9; a card is `rounded-xl`, a field `rounded-lg`). When the inner element is one, change
+  the outer element instead: outer radius = the component's radius + the gap, or reduce the gap until it fits the scale. Never patch the component
+  to suit its container.
+- **Applies at every level.** A panel, the sheet inside it and a card inside the sheet are each checked against the one around them. It applies
+  only where corners meet: a card in the middle of a large container, with no corner of the container near it, has nothing to be concentric with.
+  An element with a square outer (no radius) has no constraint on what is inside it.
+- **Checked live, with numbers.** The §0.6 item 4 pass reads `getComputedStyle(el).borderRadius` of each rounded box and its container and the
+  gap between them (`getBoundingClientRect`), and shows that inner = outer - gap, for every nested pair on the screen. `/emil-surfaces` (nested
+  border radii) is the judgement tool for the cases the rule leaves open.
+- **Origin:** the post-6-oct lab's panel (`rounded-2xl`, 16px), the white sheet inside it (`rounded-xl`, 12px) and the restrictions card inside
+  the sheet (also 12px) sat 25px apart at their corners: three similar curves, none concentric. The designer: "inner radius = outer radius -
+  padding. Please burn this into context, contracts." (19 Oct 2026).
+- **Enforcement:** `REVIEW` (the live measurement above). A first occurrence, so no `AUTO` check yet (§0.8); one is due if it comes back. It cannot
+  be found from class names alone, because the gap depends on the layout, so a check would have to measure a rendered page.
+
 ---
 
 ## PART IV - THE SHELL (persona-consistent)
@@ -648,7 +679,7 @@ scans by shape as well as by word and the same section has the same icon on ever
 
 ### §4.1 The form pattern
 
-Every create or edit form (Add Project option 2, DSA, DLA, and any new one) MUST render `<FormPage>`
+Every create or edit form (Add Project, DSA, DLA, and any new one) MUST render `<FormPage>`
 (`app/pages/_shared/form-page.tsx`) with fields laid out in `<FormRow>`. Documented at `/patterns/forms`.
 
 1. **Header:** an optional eyebrow, the title (with a status badge for an existing record), a one-line
@@ -682,7 +713,7 @@ Every create or edit form (Add Project option 2, DSA, DLA, and any new one) MUST
    `Checkbox`, `Accordion`). No bespoke choice tiles.
 8. **Draft:** a draft needs only what identifies the record; submit validates the rest.
 
-- **Exempt:** Add Project option 1 (a stakeholder option, one question per card), and editing in place on a
+- **Exempt:** Add Project option 2 (a stakeholder option, one question per card; option 1 until 16 Oct 2026), and editing in place on a
   detail page's own cards, which follows §4.7 instead.
 - **Enforcement:** `AUTO §4.1` (a file that uses `FormRow` must import `FormPage`), `AUTO §4.1b` (a `FormPage` screen must not use tabs).
 

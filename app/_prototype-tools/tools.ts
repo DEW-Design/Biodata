@@ -37,6 +37,9 @@ export interface Tool {
   onChange: (id: string) => void;
   /** Set when the tool is forcing something the real product wouldn't do (a failing run). */
   override?: string;
+  /** "toggle": a switch on the bar instead of a menu, for a tool that is only on or off (Pre-fill sample content). Its
+   *  options are `on` and `off`, and pressing it calls `onChange` with the other one. */
+  kind?: "menu" | "toggle";
 }
 
 export const barValue = (tool: Tool) => {
@@ -47,7 +50,7 @@ export const barValue = (tool: Tool) => {
 
 // Left to right. The role sits last, next to the bar's fixed right edge, so it never moves when
 // a screen adds or removes a tool.
-const ORDER = ["layout", "version", "ingestion"];
+const ORDER = ["layout", "version", "sample", "ingestion"];
 
 let tools = new Map<string, Tool>();
 let snapshot: Tool[] = [];

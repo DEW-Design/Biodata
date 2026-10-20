@@ -297,6 +297,9 @@ export const SECTION_LABELS: Record<SectionKey, string> = {
   reports: REPORTS_SECTION_LABEL,
 };
 
+/** Whether a section puts anything in the panel's bar (an export, a create): the lab draws the bar only for those that do. */
+export const hasSectionActions = (section: SectionKey) => !!SECTIONS[section].Actions;
+
 export function SectionActions({ section }: { section: SectionKey }) {
   const Actions = SECTIONS[section].Actions;
   return Actions ? <Actions /> : null;

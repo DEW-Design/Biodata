@@ -450,6 +450,52 @@ Not imported into every session on purpose: read or grep it when a task needs hi
 - [2026-10-16] Fauna Taxonomy Report: five more tabs (Australian distribution, regional data, species reference, species... - `2026-10-16-04-fauna-taxonomy-report-five-more-tabs-australian-distribution.md`
 - [2026-10-16] Taxonomy reports: audit log rolls up rename, combine, split and append, and a search carries across tabs - `2026-10-16-05-taxonomy-reports-audit-log-rolls-up-rename-combine.md`
 - [2026-10-16] Taxonomy audit logs: the Action filter always offers rename, combine, split and append, and mock entries - `2026-10-16-06-taxonomy-audit-logs-the-action-filter-always-offers.md`
+- [2026-10-16] Add Project form becomes option 1, version 1 retired, Pre-fill sample content tool - `2026-10-16-07-add-project-form-becomes-option-1-version-1.md`
+- [2026-10-16] A new project opens on an empty Project records tab - `2026-10-16-08-a-new-project-opens-on-an-empty-project.md`
+- [2026-10-19] Post 6 Oct lab: Overview tab, properties panel, notices under the tabs, no at-a-glance - `2026-10-19-01-post-6-oct-lab-overview-tab-properties-panel.md`
+- [2026-10-19] Merge mohan-wips 5d303ad: Add Project option 1, Pre-fill sample content, empty project records - `2026-10-19-02-merge-mohan-wips-5d303ad-add-project-option-1.md`
+- [2026-10-19] Post 6 Oct lab: matched to the designer's Figma frame 484:3929 - `2026-10-19-03-post-6-oct-lab-matched-to-the-designer.md`
+- [2026-10-19] Post-6-oct lab: flagged concepts a chip beside the title, system notices a summary row that opens into a list - `2026-10-19-04-post-6-oct-lab-flagged-concepts-a-chip.md`
+- [2026-10-19] Post-6-oct lab: the project bar's plus opens an Add menu, and the notice summary names what is inside - `2026-10-19-05-post-6-oct-lab-the-project-bar-s.md`
+- [2026-10-19] Post-6-oct lab: a switch in the tab strip collapses the left panel - `2026-10-19-06-post-6-oct-lab-a-switch-in-the.md`
+- [2026-10-19] Post-6-oct lab: the upload pill becomes a temporary icon, uploads join the bell, and the bell gets a Filter - `2026-10-19-07-post-6-oct-lab-the-upload-pill-becomes.md`
+- [2026-10-19] Post-6-oct lab: the collapsed left panel is an icon-only column - `2026-10-19-08-post-6-oct-lab-the-collapsed-left-panel.md`
+- [2026-10-19] Post-6-oct lab: the project bar's plus gets Add an artefact and attachment, assigned to an event, occurrence... - `2026-10-19-09-post-6-oct-lab-the-project-bar-s.md`
+- [2026-10-19] Post-6-oct lab: the attachment is labelled Add an attachment, and the bar's icon buttons take the tweaked... - `2026-10-19-10-post-6-oct-lab-the-attachment-is-labelled.md`
+- [2026-10-19] Post-6-oct lab: hairline dividers between the project bar's button groups - `2026-10-19-11-post-6-oct-lab-hairline-dividers-between-the.md`
+- [2026-10-19] Post-6-oct lab: the project header's facts lose their white card - `2026-10-19-12-post-6-oct-lab-the-project-header-s.md`
+- [2026-10-19] Post-6-oct lab: the upload button's ring sits centred on its circle - `2026-10-19-13-post-6-oct-lab-the-upload-button-s.md`
+- [2026-10-19] Post-6-oct lab: the notifications split into Inbox, Activity and Archive, with two-line rows, day headings... - `2026-10-19-14-post-6-oct-lab-the-notifications-split-into.md`
+- [2026-10-19] Post-6-oct lab: the project star is a filled favourite on press - `2026-10-19-15-post-6-oct-lab-the-project-star-is.md`
+- [2026-10-19] Contracts: 2.13 nested corners are concentric, inner radius equals outer radius minus padding - `2026-10-19-16-contracts-2-13-nested-corners-are-concentric-inner.md`
+- [2026-10-19] Post-6-oct lab: the notifications popover's spacing is even and its corners concentric - `2026-10-19-17-post-6-oct-lab-the-notifications-popover-s.md`
+- [2026-10-19] Post-6-oct lab: the Add button is primary, and the notifications popover opens under the bell with an open... - `2026-10-19-18-post-6-oct-lab-the-add-button-is.md`
+- [2026-10-19] Post-6-oct lab: the notification kind tabs stay on one line and scroll with a fade - `2026-10-19-19-post-6-oct-lab-the-notification-kind-tabs.md`
+- [2026-10-19] Post-6-oct lab: the kind tabs get a white wash that actually shows - `2026-10-19-20-post-6-oct-lab-the-kind-tabs-get.md`
+- [2026-10-19] Post-6-oct lab: the kind tabs scroll sideways only - `2026-10-19-21-post-6-oct-lab-the-kind-tabs-scroll.md`
+- [2026-10-19] Post-6-oct lab: option 2 of the frame puts Search, Add and the notifications at the top right - `2026-10-19-22-post-6-oct-lab-option-2-of-the.md`
+- [2026-10-19] Post-6-oct lab: tabs aligned to common behaviour, and option 2 stops naming the page twice - `2026-10-19-23-post-6-oct-lab-tabs-aligned-to-common.md`
+- [2026-10-19] Post-6-oct lab: option 2 has no tabs, the top row carries the page's trail, and a page's controls stay in the... - `2026-10-19-24-post-6-oct-lab-option-2-has-no.md`
+- [2026-10-19] Post-6-oct lab: the Add an attachment form holds a list, with each attachment removable - `2026-10-19-25-post-6-oct-lab-the-add-an-attachment.md`
+- [2026-10-19] Post-6-oct lab: option 2's top right is Add with a menu, a divider, Search and notifications, and an alt with... - `2026-10-19-26-post-6-oct-lab-option-2-s-top.md`
+- [2026-10-19] Post-6-oct lab: in option 2 alt the logo is at the top left and the top row starts with the page panel - `2026-10-19-27-post-6-oct-lab-in-option-2-alt.md`
+- [2026-10-19] Post-6-oct lab: Help goes bottom left in option 2 alt, and Mobbin on the top right cluster - `2026-10-19-28-post-6-oct-lab-help-goes-bottom-left.md`
+- [2026-10-19] Post-6-oct lab: five versions of option 2's top right, switchable - `2026-10-19-29-post-6-oct-lab-five-versions-of-option.md`
+- [2026-10-19] Post-6-oct lab: the production header's right end as a sixth version of option 2's top right - `2026-10-19-30-post-6-oct-lab-the-production-header-s.md`
+- [2026-10-19] Post-6-oct lab: option 2's empty panel bar holds the user alert, and the two kinds of message are named - `2026-10-19-31-post-6-oct-lab-option-2-s-empty.md`
+- [2026-10-19] Post-6-oct lab: the lab opens as option 2 with the production top right, the bell at the top left, and the... - `2026-10-19-32-post-6-oct-lab-the-lab-opens-as.md`
+- [2026-10-19] Post-6-oct lab: the base for further explorations, and its code moved out of production files - `2026-10-19-33-post-6-oct-lab-the-base-for-further.md`
+- [2026-10-19] Post-6-oct lab: the project pill's order is tree, properties, copy link - `2026-10-19-34-post-6-oct-lab-the-project-pill-s.md`
+- [2026-10-19] Post-6-oct lab: the user alert's hover has even padding and a visible fill - `2026-10-19-35-post-6-oct-lab-the-user-alert-s.md`
+- [2026-10-19] Post-6-oct lab: the other layouts, the flat rail and the other top rights are retired - `2026-10-19-36-post-6-oct-lab-the-other-layouts-the.md`
+- [2026-10-19] Post-6-oct lab: the panel bar's insets are equal all round - `2026-10-19-37-post-6-oct-lab-the-panel-bar-s.md`
+- [2026-10-19] Post-6-oct lab: the bell's unread badge is production's count badge - `2026-10-19-38-post-6-oct-lab-the-bell-s-unread.md`
+- [2026-10-19] Post-6-oct lab: the account button's hover is a pill that wraps its content - `2026-10-19-39-post-6-oct-lab-the-account-button-s.md`
+- [2026-10-20] Post-6-oct lab: list sheets are concentric with the panel - `2026-10-20-01-post-6-oct-lab-list-sheets-are-concentric.md`
+- [2026-10-20] Post-6-oct lab: read-only maps are Mapbox GL - `2026-10-20-02-post-6-oct-lab-read-only-maps-are.md`
+- [2026-10-20] Post-6-oct lab: the map takes the design system's colours - `2026-10-20-03-post-6-oct-lab-the-map-takes-the.md`
+- [2026-10-20] Business rule: audio and video attachments go to an admin for review - `2026-10-20-04-business-rule-audio-and-video-attachments-go-to.md`
+- [2026-10-20] Post-6-oct lab: lists are padded 24px, as Home and the project page - `2026-10-20-05-post-6-oct-lab-lists-are-padded-24px.md`
 - [2026-10-20] Data model stress test reads every tab of a workbook, classifies each tab and links tabs by key column - `2026-10-20-06-data-model-stress-test-reads-every-tab-of.md`
 - [2026-10-20] Data model stress test ingests the user-sent Ramble form, builds the 3-tier rows, loads lazily, Site id is... - `2026-10-20-07-data-model-stress-test-ingests-the-user-sent.md`
 - [2026-10-20] Stress test tree stays Site, Visit, Occurrence, Observation: vegetation answers sit on the Visit - `2026-10-20-08-stress-test-tree-stays-site-visit-occurrence-observation.md`

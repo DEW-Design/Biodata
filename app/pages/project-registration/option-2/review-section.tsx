@@ -80,7 +80,7 @@ export function ReviewSection({ state, onEdit, version = 1 }: { state: FormState
   );
 }
 
-// Version 2: one Project contacts row (each person with their role, and which is the primary contact and who manages),
+// Version 2: one Project contacts row (each person with their role, and which is the primary contact),
 // focus areas under Method and details, no survey type or your role, and one Methodology row (the method, then the
 // methodologies added) with their notes.
 function ReviewSectionV2({ state, onEdit }: { state: FormState; onEdit: (id: SectionId) => void }) {
@@ -92,8 +92,8 @@ function ReviewSectionV2({ state, onEdit }: { state: FormState; onEdit: (id: Sec
   const contacts = people
     .filter((p) => person(p))
     .map((p) => {
-      const marks = [p.isPrimary && "primary contact", p.isManager && "project manager"].filter(Boolean).join(", ");
-      return [person(p), roleOf(p)].filter(Boolean).join(" · ") + (marks ? ` (${marks})` : "");
+      // A project manager says so in their role (Project Manager), so only the primary contact is marked.
+      return [person(p), roleOf(p)].filter(Boolean).join(" · ") + (p.isPrimary ? " (primary contact)" : "");
     })
     .join("; ");
   const focus = c.focusAreas.map((id) => (id === "other" && c.focusAreaOther ? c.focusAreaOther : (FOCUS_AREA_OPTIONS.find((o) => o.id === id)?.label ?? id))).join(", ");

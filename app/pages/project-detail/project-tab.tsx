@@ -248,17 +248,21 @@ function Card({ card, description, onEdit, onRemove, children }: { card: Project
   );
 }
 
-function Section({ id, title, description, action, children }: { id: string; title: string; description?: string; action?: ReactNode; children: ReactNode }) {
+function Section({ id, title, description, action, bare = false, children }: { id: string; title: string; description?: string; action?: ReactNode; /** No heading: the section is already named by where it sits (the Overview tab's first section). The `id` stays, for "On this page". */ bare?: boolean; children: ReactNode }) {
   const sheet = useContext(SheetContext);
   return (
-    <section id={id} className={cx("flex scroll-mt-4 flex-col gap-4", sheet && "border-t border-secondary p-6 first:border-t-0")}>
-      <div className="flex items-end justify-between gap-3">
-        <div className="flex flex-col gap-1">
-          <h2 className="text-lg font-semibold text-primary">{title}</h2>
-          {description && <p className="text-sm text-balance text-tertiary">{description}</p>}
+    <section id={id} aria-label={bare ? title : undefined} className={cx("flex scroll-mt-4 flex-col gap-4", sheet && "border-t border-secondary p-6 first:border-t-0")}>
+      {(!bare || action) && (
+        <div className="flex items-end justify-between gap-3">
+          {!bare && (
+            <div className="flex flex-col gap-1">
+              <h2 className="text-lg font-semibold text-primary">{title}</h2>
+              {description && <p className="text-sm text-balance text-tertiary">{description}</p>}
+            </div>
+          )}
+          {action}
         </div>
-        {action}
-      </div>
+      )}
       {children}
     </section>
   );
@@ -535,6 +539,10 @@ export function ProjectTab({
   layout = "default",
   lead,
   sheet = false,
+  showGlance = true,
+  repeatHeaderFacts = true,
+  overviewHeading = true,
+  sheetTop,
 }: {
   onGoToRecords: (kind: RecordKind | "all") => void;
   onGoToArtefacts: () => void;
@@ -556,6 +564,16 @@ export function ProjectTab({
   lead?: ReactNode;
   /** Draw the four sections as one white sheet, divided by lines, instead of stacked with gaps. Nothing in them changes. */
   sheet?: boolean;
+  /** Draw "Project at a glance" (the Datasets card and the records card), and list it in "On this page". The product page does; a layout whose header, tabs and notices
+   *  already say what it holds (the post-6-oct lab, 19 Oct 2026) turns it off. @default true */
+  showGlance?: boolean;
+  /** Repeat the status and the start and end dates in the Project details card. A layout whose header already shows them turns this off (CONTRACTS 4.3: never restate a
+   *  fact in two treatments on one screen). @default true */
+  repeatHeaderFacts?: boolean;
+  /** Give the Overview section its own heading. The tab that holds it may already be called Overview, so a layout can turn it off. @default true */
+  overviewHeading?: boolean;
+  /** With `sheet`: rows across the top of the sheet, above its first section, flush with its edges (the designer's frame, Figma 484:4583: a banner is the sheet's first row). */
+  sheetTop?: ReactNode;
 }) {
   const { project, saveProject, records, artefacts, canEdit } = useEditStore();
   // Only roles that can upload see the Datasets card.
@@ -594,7 +612,7 @@ export function ProjectTab({
   const card = (id: ProjectCardId): TocItem => ({ id: `card-${id}`, label: CARD_TITLES[id] });
 
   const toc: TocItem[] = [
-    { id: "at-a-glance", label: "Project at a glance" },
+    ...(showGlance ? [{ id: "at-a-glance", label: "Project at a glance" }] : []),
     { id: "overview", label: "Overview", children: [card("details"), card("owner"), card("managers")] },
     { id: "data-collection", label: "Data collection and methodology", children: [card("extent"), card("collection"), card("permits")] },
     { id: "privacy", label: "Privacy and restrictions", children: enabled.map((m) => card(m.key)) },
@@ -612,42 +630,49 @@ export function ProjectTab({
     <div className="flex gap-10">
       <LayoutContext.Provider value={layout}>
       <InlineEditContext.Provider value={{ editing, setEditing, open: openCard, focusLabel, footer }}>
-      <div className={cx("flex min-w-0 flex-1 flex-col gap-10", layout === "default" && "max-w-4xl")}>
+      <div className={cx("flex min-w-0 flex-1 flex-col", sheet ? "gap-8" : "gap-10", layout === "default" && "max-w-4xl")}>
         {lead}
         <SheetContext.Provider value={sheet}>
         <div className={sheet ? "flex flex-col overflow-hidden rounded-xl border border-secondary bg-primary" : "contents"}>
-        <Section
-          id="at-a-glance"
-          title="Project at a glance"
-          description="What this project holds so far."
-        >
-          <div className="flex flex-col gap-3">
-            {canUpload && <DatasetsCard onOpenDataset={onGoToDataset} onOpenDatasets={onGoToDatasets} />}
-            <RecordsCard
-              species={recordedSpecies}
-              onGoToSpecies={onGoToSpecies}
-              showFlagged={canReview}
-              counts={glanceCounts}
-              flagged={glanceFlagged}
-              artefactKinds={kinds}
-              artefactRecordCount={artefactRecordCount ?? new Set(artefacts.map((x) => x.recordId)).size}
-              onGoToRecords={onGoToRecords}
-              onGoToFlagged={onGoToFlagged}
-              onGoToArtefacts={onGoToArtefacts}
-            />
-          </div>
-        </Section>
+        {sheet && sheetTop}
+        {showGlance && (
+          <Section
+            id="at-a-glance"
+            title="Project at a glance"
+            description="What this project holds so far."
+          >
+            <div className="flex flex-col gap-3">
+              {canUpload && <DatasetsCard onOpenDataset={onGoToDataset} onOpenDatasets={onGoToDatasets} />}
+              <RecordsCard
+                species={recordedSpecies}
+                onGoToSpecies={onGoToSpecies}
+                showFlagged={canReview}
+                counts={glanceCounts}
+                flagged={glanceFlagged}
+                artefactKinds={kinds}
+                artefactRecordCount={artefactRecordCount ?? new Set(artefacts.map((x) => x.recordId)).size}
+                onGoToRecords={onGoToRecords}
+                onGoToFlagged={onGoToFlagged}
+                onGoToArtefacts={onGoToArtefacts}
+              />
+            </div>
+          </Section>
+        )}
 
-        <Section id="overview" title="Overview" description="What the project is and who runs it.">
+        <Section id="overview" title="Overview" description="What the project is and who runs it." bare={!overviewHeading}>
           <Card card="details" onEdit={setEditing}>
             <Rows
               rows={[
-                { label: "Status", value: project.status },
+                ...(repeatHeaderFacts ? [{ label: "Status", value: project.status }] : []),
                 { label: "Short title", value: d.shortTitle },
                 { label: "Full title", value: d.sameAsShortTitle ? d.shortTitle : d.fullTitle },
                 { label: "Abstract", value: d.abstract },
-                { label: "Start date", value: formatDay(d.startDate) },
-                { label: "End date", value: d.endDate ? formatDay(d.endDate) : "Ongoing" },
+                ...(repeatHeaderFacts
+                  ? [
+                      { label: "Start date", value: formatDay(d.startDate) },
+                      { label: "End date", value: d.endDate ? formatDay(d.endDate) : "Ongoing" },
+                    ]
+                  : []),
               ]}
             />
           </Card>
