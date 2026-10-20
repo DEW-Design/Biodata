@@ -121,6 +121,13 @@ data-model` is the canonical place to read the up-to-date gap list, not this fil
   species-observation schema, not 4 distinct data schemas: fields scoped Community/Population-only
   here (Crown Extent, DBH, Number Observed, Cover/Abundance) actually appear on every real species
   row regardless of type.
+- **The form a user sends is ingested too (the DEW Ramble survey form), not only what BDBSA's automation hands back.**
+  `template-ingest.ts` in `/proto/data-model-stress-test` reads the form (RAMBLE, FAUNA, OTHER COMMENTS tabs) into the same
+  SITE / VISIT / SPECIES rows a real BDBSA tab carries, checked row for row against BDBSA's own tabs in a real submission
+  (Heathfield Council Depot Ramble, Oct 2019). Survey # is assigned by BDBSA and is not on the form. BDBSA's output carries
+  codes (datum, vegetation condition, method) where the form carries words; the words are kept. A hidden tab is a lookup
+  (species list, observers) and is never read. A Site id is "ABC-NN-NN": the patch/quad is two digits, so ALT-12-1 is
+  ALT-12-01 (designer, 20 Oct 2026). See `context/decisions/2026-10-20-07-*`.
 - **Sample/demo data must never self-describe its own bugs.** A deliberately-broken sample record's
   Label (or any other UI-visible field) has to look exactly like a real record would - flagged
   directly by the user off a screenshot: "the records ingested will not have these comments like
