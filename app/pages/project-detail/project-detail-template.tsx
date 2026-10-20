@@ -231,7 +231,8 @@ function ProjectDetail({ basePath, notice }: ProjectDetailTemplateProps) {
           created: file.date,
           creator: file.addedBy,
           objectId: `${meta.objectPrefix}:${rec.code}:${file.id.toUpperCase()}`,
-          description: `Attached to "${field}" on ${rec.type} ${rec.code}, ${rec.name}.`,
+          description: `Attached to "${field}" on ${rec.type} ${rec.code}, ${rec.name}.${file.review?.status === "rejected" ? ` Rejected by ${file.review.by}: ${file.review.reason}` : ""}`,
+          review: file.review,
           format: {
             image: "image/jpeg",
             pdf: "application/pdf",

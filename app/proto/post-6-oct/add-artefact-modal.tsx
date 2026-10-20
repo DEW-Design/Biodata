@@ -24,7 +24,8 @@ import { Select } from "@/components/base/select/select";
 import { artefactTypeMeta } from "@/app/pages/_shared/artefact-lightbox";
 import { useEditStore } from "@/app/pages/project-detail/edit-store";
 import { takesNotes, useCurrentUserName } from "@/app/pages/project-detail/field-notes";
-import { EMPTY_NOTES_VALUE, fieldNotesActions, kindForFile, noteDate, noteId, recordFieldKeys, useFieldNotes, type FieldFileKind } from "@/app/pages/project-detail/field-notes-store";
+import { useUserRole } from "@/lib/use-user-role";
+import { EMPTY_NOTES_VALUE, fieldNotesActions, kindForFile, noteDate, noteId, recordFieldKeys, reviewForNewFile, useFieldNotes, type FieldFileKind } from "@/app/pages/project-detail/field-notes-store";
 import type { SurveyRecord } from "@/app/pages/project-detail/survey-data";
 
 const ACCEPT = "image/*,.pdf,.xls,.xlsx,.csv,audio/*,video/*";
@@ -61,6 +62,7 @@ export function AddArtefactModal({ isOpen, onOpenChange, onAdded }: { isOpen: bo
   const { records } = useEditStore();
   const notes = useFieldNotes();
   const me = useCurrentUserName();
+  const role = useUserRole();
   const fileInput = useRef<HTMLInputElement>(null);
   const [recordId, setRecordId] = useState<string | null>(null);
   const [fieldKey, setFieldKey] = useState<string | null>(null);
@@ -75,6 +77,8 @@ export function AddArtefactModal({ isOpen, onOpenChange, onAdded }: { isOpen: bo
   const record = records.find((r) => r.id === recordId);
   const fields = useMemo(() => (record ? fieldItems(record) : []), [record]);
 
+  // Audio and video from anyone but a BioData Admin or Super Admin wait for review (the designer, 20 Oct 2026).
+  const reviewCount = items.filter((i) => i.file && reviewForNewFile(i.kind, role)).length;
   const linkOk = /^https?:\/\/\S+\.\S+/.test(url.trim());
   const problem = {
     record: !recordId ? "Choose an event, occurrence or observation" : undefined,
@@ -133,11 +137,11 @@ export function AddArtefactModal({ isOpen, onOpenChange, onAdded }: { isOpen: bo
       });
     }
     for (const i of items) {
-      if (i.file) fieldNotesActions.attach(recordId, fieldKey, { name: i.file.name, sizeBytes: i.file.size, kind: i.kind }, me);
+      if (i.file) fieldNotesActions.attach(recordId, fieldKey, { name: i.file.name, sizeBytes: i.file.size, kind: i.kind }, me, reviewForNewFile(i.kind, role));
     }
     const count = items.length;
     toast.success(count === 1 ? "Attachment added" : `${count} attachments added`, {
-      description: `${count === 1 ? "It is" : "They are"} attached to ${fields.find((f) => f.id === fieldKey)?.label} on ${record?.name}.`,
+      description: `${count === 1 ? "It is" : "They are"} attached to ${fields.find((f) => f.id === fieldKey)?.label} on ${record?.name}.${reviewCount > 0 ? ` ${reviewCount === 1 ? "The audio or video file shows" : `${reviewCount} audio or video files show`} as pending review until a BioData Admin approves.` : ""}`,
     });
     onOpenChange(false);
     reset();
@@ -295,6 +299,11 @@ export function AddArtefactModal({ isOpen, onOpenChange, onAdded }: { isOpen: bo
           </TableCard.Root>
         ) : (
           <p className="m-0 rounded-lg border border-dashed border-secondary px-4 py-6 text-center text-sm text-balance text-tertiary">Files and links you add are listed here, and can be removed before you add them.</p>
+        )}
+        {reviewCount > 0 && (
+          <p className="m-0 text-sm text-balance text-tertiary">
+            {reviewCount === 1 ? "Audio and video files are" : `${reviewCount} of these are audio or video, which are`} reviewed by a BioData Admin before they are approved. {reviewCount === 1 ? "It shows" : "They show"} on the record as pending review until then.
+          </p>
         )}
         {attempted && problem.items && <p className="m-0 text-sm text-error-primary">{problem.items}</p>}
       </div>

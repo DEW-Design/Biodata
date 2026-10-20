@@ -1,9 +1,14 @@
 "use client";
 
 import { Suspense, useEffect } from "react";
+import dynamic from "next/dynamic";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { PrototypeTools } from "@/app/_prototype-tools/prototype-tools";
+import { MapEngineProvider } from "@/app/pages/_shared/map-search/map-engine";
 import { PostSixOctShell } from "./shell";
+
+// Mapbox GL touches `window` on import, so it is loaded in the browser only, as the Leaflet map is.
+const MapboxMap = dynamic(() => import("./mapbox-map"), { ssr: false, loading: () => <div className="size-full animate-pulse bg-secondary" /> });
 
 // PROTOTYPE LAB (12 Oct 2026, strictly proto: not for production, so no line in production-routes.ts), and the base for further explorations on this layout (the designer, 19 Oct 2026:
 // "we've chosen a direction. No need to roll into production just yet"). Nothing of it is in a production file but four opt-in switches of `ProjectTab` (see context/decisions/
@@ -39,7 +44,10 @@ function Lab() {
   return (
     <>
       <PrototypeTools />
-      <PostSixOctShell />
+      {/* Every read-only map on this page is Mapbox (the designer, 20 Oct 2026); every other page keeps Leaflet. */}
+      <MapEngineProvider render={(props) => <MapboxMap {...props} />}>
+        <PostSixOctShell />
+      </MapEngineProvider>
     </>
   );
 }

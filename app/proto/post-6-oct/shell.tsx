@@ -185,7 +185,7 @@ function NavRail({
         // A group folds only under a heading, and never while the page in use is in it.
         const open = quietGroups.length < 2 || !folded.includes(g.name) || g.nodes.some((n) => n.key === activeKey);
         return (
-          <div key={g.name} className="flex flex-col gap-0.5">
+          <div key={g.name} className="flex flex-col gap-1">
             {quietGroups.length > 1 && (
               <button
                 type="button"
@@ -338,7 +338,7 @@ function CompactColumn({ activeKey, onOpen, bell }: { activeKey: SectionKey | nu
         {groups.map((nodes, i) => (
           <Fragment key={i}>
             {i > 0 && <Divider />}
-            <div className="flex flex-col items-center gap-0.5">
+            <div className="flex flex-col items-center gap-1">
               {nodes.map((node) => {
                 const Icon = sectionIcons[node.label];
                 const active = !!node.key && node.key === activeKey;
@@ -818,6 +818,9 @@ export function PostSixOctShell() {
               {/* The trail is in the top row, so the bar is drawn only when the section has actions to put in it, at its right. */}
               {hasSectionActions(page.section) && <PanelBar controls={<SectionActions key={`${viewKey}:actions`} section={page.section} />} />}
               {/* A list fits the panel and scrolls its own rows (CONTRACTS 4.2), so <main> does not scroll. */}
+              {/* The list's body pads its toolbar and its sheet 24px, as Home and the project page pad theirs (the designer, 20 Oct 2026: "make the padding consistent with home and project detail"). The
+                  sheet was pulled out to 4px from the panel's edge so its 12px corner was concentric with the panel's 16px (CONTRACTS 2.13); at 24px the gap (25px with the border) is more than the
+                  panel's radius, so the corners do not meet and the sheet keeps its own radius, as the cards on Home and the project page do. */}
               <main className="flex min-h-0 flex-1 flex-col overflow-y-auto">
                 <SectionContent
                   key={`${viewKey}:${role}:${page.statuses?.join(",") ?? ""}`}

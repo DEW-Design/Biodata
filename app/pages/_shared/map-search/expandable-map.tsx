@@ -25,6 +25,7 @@ import { Button } from "@/components/base/buttons/button";
 import { CloseButton } from "@/components/base/buttons/close-button";
 import { Dialog, Modal, ModalOverlay } from "@/components/application/modals/modal";
 import type { SAMapProps } from "@/app/pages/_shared/map-search/sa-map";
+import { useMapEngine } from "@/app/pages/_shared/map-search/map-engine";
 import { MODAL_Z_INDEX } from "@/lib/layers";
 import { cx } from "@/utils/cx";
 
@@ -53,6 +54,9 @@ export function ExpandableMap({
   className?: string;
 }) {
   const [open, setOpen] = useState(false);
+  // The screen's own map when it has asked for one (map-engine.tsx), else the default Leaflet map.
+  const renderEngine = useMapEngine();
+  const drawMap = () => (renderEngine ? renderEngine({ ...map, className: "size-full" }) : <SAMap {...map} className="size-full" />);
   const layer = overModal ? MODAL_Z_INDEX : "z-[9999]";
 
   const bar = (
@@ -68,8 +72,15 @@ export function ExpandableMap({
   return (
     <>
       <div className={cx("relative isolate overflow-hidden rounded-lg border border-secondary", className)}>
-        <SAMap {...map} className="size-full" />
-        <Button color="secondary" size="sm" iconLeading={Maximize02} aria-label={`Expand map: ${title}`} className="absolute top-3 left-3 z-[1001] shadow-md" onClick={() => setOpen(true)}>
+        {drawMap()}
+        <Button
+          color="secondary"
+          size="sm"
+          iconLeading={Maximize02}
+          aria-label={`Expand map: ${title}`}
+          className="absolute top-3 left-3 z-[1001] shadow-md"
+          onClick={() => setOpen(true)}
+        >
           Expand
         </Button>
       </div>
@@ -80,9 +91,7 @@ export function ExpandableMap({
             <Dialog aria-label={title} className="flex h-full max-h-full flex-col overflow-hidden">
               {bar}
               {close}
-              <div className="min-h-0 flex-1">
-                <SAMap {...map} className="size-full" />
-              </div>
+              <div className="min-h-0 flex-1">{drawMap()}</div>
             </Dialog>
           </Modal>
         </ModalOverlay>
@@ -92,9 +101,7 @@ export function ExpandableMap({
             <AriaDialog aria-label={title} className="font-barlow relative flex h-full flex-col outline-hidden">
               {bar}
               {close}
-              <div className="min-h-0 flex-1">
-                <SAMap {...map} className="size-full" />
-              </div>
+              <div className="min-h-0 flex-1">{drawMap()}</div>
             </AriaDialog>
           </AriaModal>
         </AriaModalOverlay>

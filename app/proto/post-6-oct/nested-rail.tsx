@@ -139,7 +139,7 @@ export function RailItem({ node, ctx, flat }: { node: NavNode; ctx: RailContext;
   const Icon = sectionIcons[node.label];
   const label = plain(node.label);
   return (
-    <div className="flex flex-col gap-0.5">
+    <div className="flex flex-col gap-1">
       <RailRow
         icon={Icon}
         label={label}

@@ -83,3 +83,7 @@
     icon opens its page, zero console errors. **Not verified:** other roles (public user, registered user), keyboard order, narrow
     windows, reduced motion. Typography QA (0.6 item 8): no new text beyond the tooltip labels, which use the existing Tooltip. Not
     committed. `prettier --print-width 160` was run on `shell.tsx`, which re-wrapped a few lines beyond the change.
+  - **Selected and hovered rows are no longer close (designer, 20 Oct 2026, with a screenshot: "See how close selected and hover bits look"):**
+    with the whole row filled for the page in use, a hovered row directly under it sat 2px away and the two fills read as one block. The gap between
+    rows is now 4px (`gap-1`) in the expanded rail, between a section and its views, and in the icon column (it was 2px, `gap-0.5`). Colours unchanged:
+    the production values. Measured live: 4px between the lit row and the hovered row. The rail is 2px per row taller as a result (36px pitch).

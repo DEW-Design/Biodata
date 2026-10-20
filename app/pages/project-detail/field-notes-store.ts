@@ -25,6 +25,7 @@ import {
 import { trapLabels } from "./field-schema";
 import type { SurveyRecord } from "./survey-data";
 import { FACTOR_TITLES } from "./landscape";
+import { isBiodataAdmin, type UserRole } from "@/lib/user-role";
 
 export type FieldFileKind = "image" | "pdf" | "spreadsheet" | "video" | "link";
 
@@ -39,6 +40,17 @@ export interface FieldComment {
   date: string;
   text: string;
 }
+/**
+ * Business rule (the designer, 20 Oct 2026): an audio or video file attached by a Registered User or above waits for a BioData Admin or
+ * BioData Super Admin to review it. Audio files are kind "video" here (`kindForFile`). A file with no `review` is approved.
+ */
+export interface FileReview {
+  status: "pending" | "rejected";
+  /** Why it was rejected (required to reject). */
+  reason?: string;
+  /** Who rejected it. */
+  by?: string;
+}
 export interface FieldFile {
   id: string;
   name: string;
@@ -48,6 +60,8 @@ export interface FieldFile {
   date: string;
   /** A reference link's address (kind "link"). */
   url?: string;
+  /** Set while the file waits for review, and when it was rejected; absent once approved (or when it never needed review). */
+  review?: FileReview;
 }
 /** The last time a questionable value was resolved: why, by whom, and what had been questioned. */
 export interface FieldResolution {
@@ -440,6 +454,30 @@ const today = () =>
 const newId = (prefix: string) =>
   `${prefix}-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 6)}`;
 
+/** Sets or clears the review of one file, wherever it is attached. */
+function reviewFile(fileId: string, next: () => FileReview | undefined) {
+  useNotesStore.setState((s) => ({
+    notes: Object.fromEntries(
+      Object.entries(s.notes).map(([recordId, fields]) => [
+        recordId,
+        Object.fromEntries(
+          Object.entries(fields).map(([key, n]) => [
+            key,
+            n.files.some((f) => f.id === fileId)
+              ? { ...n, files: n.files.map((f) => (f.id === fileId ? withReview(f, next()) : f)) }
+              : n,
+          ]),
+        ),
+      ]),
+    ),
+  }));
+}
+function withReview(file: FieldFile, review: FileReview | undefined): FieldFile {
+  const next = { ...file, review };
+  if (!review) delete next.review;
+  return next;
+}
+
 export const fieldNotesActions = {
   flag(recordId: string, key: string, reason: string, by: string) {
     update(recordId, key, (n) => ({
@@ -479,6 +517,7 @@ export const fieldNotesActions = {
     key: string,
     file: { name: string; sizeBytes: number; kind: FieldFileKind },
     by: string,
+    review?: FileReview,
   ) {
     const size =
       file.sizeBytes >= 1_000_000
@@ -495,9 +534,18 @@ export const fieldNotesActions = {
           kind: file.kind,
           addedBy: by,
           date: today(),
+          ...(review ? { review } : {}),
         },
       ],
     }));
+  },
+  /** An admin approves a file waiting for review: it becomes an ordinary attachment. */
+  approveFile(fileId: string) {
+    reviewFile(fileId, () => undefined);
+  },
+  /** An admin rejects a file waiting for review; the reason is required and is kept with it. */
+  rejectFile(fileId: string, reason: string, by: string) {
+    reviewFile(fileId, () => ({ status: "rejected", reason, by }));
   },
   removeFile(recordId: string, key: string, id: string) {
     update(recordId, key, (n) => ({
@@ -584,6 +632,14 @@ export function allFiles(
       n.files.map((file) => ({ recordId, key, file })),
     ),
   );
+}
+
+/**
+ * What a new file's review is, for a person attaching it: audio and video (kind "video") from a Registered User or any role below the
+ * admins waits for review; a BioData Admin or Super Admin's own is approved as it is attached, and so is every other kind.
+ */
+export function reviewForNewFile(kind: FieldFileKind, role: UserRole): FileReview | undefined {
+  return kind === "video" && !isBiodataAdmin(role) ? { status: "pending" } : undefined;
 }
 
 export function kindForFile(name: string): FieldFileKind | null {

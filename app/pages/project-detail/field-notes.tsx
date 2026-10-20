@@ -28,11 +28,13 @@ import { Tooltip, TooltipTrigger } from "@/components/base/tooltip/tooltip";
 import { toast } from "@/components/application/toast/toast";
 import { useUserRole } from "@/lib/use-user-role";
 import { isBiodataAdmin } from "@/lib/user-role";
+import { ReviewTag } from "@/app/pages/_shared/artefact-lightbox";
 import { cx } from "@/utils/cx";
 import {
   fieldNotesActions,
   hasNotes,
   kindForFile,
+  reviewForNewFile,
   noteDate,
   noteId,
   type FieldFileKind,
@@ -138,6 +140,7 @@ function FileChip({
   });
   return (
     <span className="inline-flex max-w-full items-center gap-1.5 rounded-md border border-secondary bg-primary px-2 py-1 text-xs text-secondary">
+      <span className={cx("inline-flex min-w-0 items-center gap-1.5", file.review && "opacity-50")}>
       {icon}
       {file.kind === "link" && file.url ? (
         <a
@@ -155,6 +158,8 @@ function FileChip({
       {file.kind !== "link" && (
         <span className="shrink-0 text-quaternary">{file.size}</span>
       )}
+      </span>
+      {file.review && <ReviewTag review={file.review} />}
       {onRemove && (
         <button
           type="button"
@@ -738,6 +743,7 @@ export function FieldNoteMenu({
   className?: string;
 }) {
   const me = useCurrentUserName();
+  const role = useUserRole();
   const canReview = useCanReview();
   const fileInput = useRef<HTMLInputElement>(null);
   const items: { id: string; label: string; icon: typeof Flag01 }[] = [
@@ -813,6 +819,7 @@ export function FieldNoteMenu({
             file.size >= 1_000_000
               ? `${(file.size / 1_000_000).toFixed(1)} MB`
               : `${Math.max(1, Math.round(file.size / 1000))} KB`;
+          const review = reviewForNewFile(kind, role);
           onFile({
             id: noteId("f"),
             name: file.name,
@@ -820,6 +827,7 @@ export function FieldNoteMenu({
             kind,
             addedBy: me,
             date: noteDate(),
+            ...(review ? { review } : {}),
           });
         }}
       />
@@ -959,8 +967,10 @@ export function FieldRow({
               onFile={(file) => {
                 save({ ...current, files: [...current.files, file] });
                 setOpen(true);
-                toast.success("File attached", {
-                  description: `${file.name} is attached to ${label.toLowerCase()}.`,
+                toast.success(file.review ? "File sent for review" : "File attached", {
+                  description: file.review
+                    ? `${file.name} shows on ${label.toLowerCase()} as pending review until a BioData Admin approves it.`
+                    : `${file.name} is attached to ${label.toLowerCase()}.`,
                 });
               }}
             />
