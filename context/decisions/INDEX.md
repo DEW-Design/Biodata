@@ -450,3 +450,7 @@ Not imported into every session on purpose: read or grep it when a task needs hi
 - [2026-10-16] Fauna Taxonomy Report: five more tabs (Australian distribution, regional data, species reference, species... - `2026-10-16-04-fauna-taxonomy-report-five-more-tabs-australian-distribution.md`
 - [2026-10-16] Taxonomy reports: audit log rolls up rename, combine, split and append, and a search carries across tabs - `2026-10-16-05-taxonomy-reports-audit-log-rolls-up-rename-combine.md`
 - [2026-10-16] Taxonomy audit logs: the Action filter always offers rename, combine, split and append, and mock entries - `2026-10-16-06-taxonomy-audit-logs-the-action-filter-always-offers.md`
+- [2026-10-20] Data model stress test reads every tab of a workbook, classifies each tab and links tabs by key column - `2026-10-20-06-data-model-stress-test-reads-every-tab-of.md`
+- [2026-10-20] Data model stress test ingests the user-sent Ramble form, builds the 3-tier rows, loads lazily, Site id is... - `2026-10-20-07-data-model-stress-test-ingests-the-user-sent.md`
+- [2026-10-20] Stress test tree stays Site, Visit, Occurrence, Observation: vegetation answers sit on the Visit - `2026-10-20-08-stress-test-tree-stays-site-visit-occurrence-observation.md`
+- [2026-10-20] Stress test top level is called Project - `2026-10-20-09-stress-test-top-level-is-called-project.md`

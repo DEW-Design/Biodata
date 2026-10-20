@@ -22,6 +22,12 @@
 // this ingestion sandbox for now - the live product trees (project-detail, observation-
 // detail) still show Occurrence as a leaf and haven't been revisited against it yet.
 //
+// **Ingests what a user sends, not only what BDBSA hands back** (`template-ingest.ts`): the DEW
+// Ramble survey form is turned into the 3-tier SITE / VISIT / SPECIES rows and read like any other
+// tab. Large uploads load lazily (the Structure tree builds children only while expanded and pages
+// 50 at a time; the JSON is built on request past 500 records). A Site id is ABC-NN-NN
+// (`padSiteSequence`). See `context/decisions/2026-10-20-07-*`.
+//
 // Scope decisions, made explicit rather than silently assumed:
 // - **CSV and JSON parse with zero new dependencies** (a small hand-rolled RFC4180-ish CSV parser
 //   below, `JSON.parse` for JSON). **XLS/XLSX needs a real parsing library** - there's no way to
@@ -30,9 +36,10 @@
 //   (`https://cdn.sheetjs.com/xlsx-0.20.3/xlsx-0.20.3.tgz`), not the npm registry package - the
 //   registry version (0.18.5) carries two unpatched high-severity advisories (prototype pollution,
 //   ReDoS) with no fix published there; SheetJS's own docs say the npm registry copy is stale and
-//   point at their CDN for the current, patched build instead. Only the first sheet of a workbook
-//   is read - a real multi-sheet ingestion (e.g. one sheet per record type) is a bigger, separate
-//   task, logged rather than built speculatively.
+//   point at their CDN for the current, patched build instead. Every non-empty sheet of a workbook
+//   is read (`workbook-ingest.ts`): a workbook with the structure split across tabs - one per
+//   record type, e.g. Sites, Visits, Species - is classified tab by tab, linked by its key columns
+//   and assembled into the one tree, the same as separate files uploaded together.
 // - **Every format - CSV, JSON, XLS, XLSX - parses entirely in the browser, never on a server.**
 //   This file has no `fetch`, no API route, no `"use server"` anywhere - `handleFileChange` reads
 //   the chosen file with the browser's own `FileReader` (`readAsText` for CSV/JSON,
@@ -97,8 +104,8 @@
 //   the real BDBSA model directly (see this file's own model comment above / .claude/rules/ref-domain.md, "BDBSA
 //   domain research": "all data entered into the BDBSA must be assigned to a project number" -
 //   Project is the mandatory top-level container, not a peer of the Events it holds). The Structure
-//   tree gained the same single Project root (`PROJECT_NODE_ID`, label `PROJECT_LABEL` - the real
-//   "Adelaide Hills Bushland Survey" project name already used elsewhere in this codebase) so the
+//   tree gained the same single Project root (`PROJECT_NODE_ID`, label `PROJECT_LABEL`, just
+//   "Project" - an upload carries no project name, only the Survey Number) so the
 //   visible tree and the exported JSON can never disagree about what the actual root is - the same
 //   principle this file already applies to the Structure tree vs. the record cards. Selecting the
 //   Project node shows a small summary card (its own direct Events/Occurrences/Observations count),
@@ -115,11 +122,11 @@
 //   distinct level (this was a live scoping question, answered directly: not a proposal to flatten
 //   Visits straight onto Project).
 
-import { useRef, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import type { ChangeEvent, ReactNode } from "react";
 import type { Key, Selection } from "react-aria-components";
-import { read as readWorkbook, utils as sheetUtils } from "xlsx";
-import { UploadCloud02, AlertCircle, AlertTriangle, CheckCircle, XCircle, Database02, FileCode01, Copy01, Check, Save01, Lock01 } from "@untitledui/icons";
+import { utils as sheetUtils, write as writeWorkbook } from "xlsx";
+import { UploadCloud02, AlertCircle, AlertTriangle, CheckCircle, XCircle, Database02, FileCode01, Copy01, Check, Save01, Lock01, Download01, Table as TableIcon } from "@untitledui/icons";
 import { Button } from "@/components/base/buttons/button";
 import { Badge, CountBadge } from "@/components/base/badges/badges";
 import { Table, TableHeader, Column, TableBody, Row, Cell } from "@/components/base/table/table";
@@ -140,12 +147,22 @@ import {
   classifySpeciesRow,
   type TaxonomicType,
 } from "@/config/data-model-schema";
+import {
+  classifySource,
+  findColumn,
+  findOwnIdColumn,
+  findReferenceColumns,
+  normalizeHeader,
+  readWorkbookSheets,
+  type RawRow,
+  type SourceClassification,
+  type SourceRole,
+} from "./workbook-ingest";
+import { convertRambleTemplate, type TemplateConversion } from "./template-ingest";
 
 // ── Parsing - CSV (a small, real RFC4180-ish parser: handles quoted fields, embedded commas,
 // escaped quotes) and JSON (a plain array of row objects). No third-party dependency for either -
 // see the header comment on why XLSX is out of scope for this pass. ──
-type RawRow = Record<string, string>;
-
 function parseCsvRows(text: string): string[][] {
   const rows: string[][] = [];
   let row: string[] = [];
@@ -213,25 +230,6 @@ function parseJson(text: string): RawRow[] {
   });
 }
 
-// XLS/XLSX - read entirely from the file's own bytes (an `ArrayBuffer`, handed up from
-// `UploadPanel`'s `FileReader.readAsArrayBuffer`) via SheetJS, still 100% client-side - no
-// different from `parseCsv`/`parseJson` in that respect, just needs a real binary parser instead of
-// a hand-rolled one. Only the first sheet is read - see this file's header comment.
-function parseXlsx(buffer: ArrayBuffer): RawRow[] {
-  const workbook = readWorkbook(buffer, { type: "array" });
-  const sheetName = workbook.SheetNames[0];
-  if (!sheetName) throw new Error("This workbook has no sheets");
-  const sheet = workbook.Sheets[sheetName];
-  const rows = sheetUtils.sheet_to_json<Record<string, unknown>>(sheet, { defval: "", raw: false });
-  return rows.map((row) => {
-    const out: RawRow = {};
-    for (const [key, value] of Object.entries(row)) {
-      out[key] = value === null || value === undefined ? "" : String(value);
-    }
-    return out;
-  });
-}
-
 // "Load sample data could take more than one XLSX, CSV or JSON files to smartly map everything
 // together" - per the user directly. Each file is parsed independently (it may have its own
 // header/column shape - a Site export and a Species export never share a schema), then every
@@ -257,59 +255,162 @@ function parseXlsx(buffer: ArrayBuffer): RawRow[] {
 // real BDBSA SPECIES_FAUNA_*/SPECIES_FLORA_* convention - it still gets Kind=Observation, just no
 // taxonomic-type hint, so `expandSpeciesOccurrences` below falls back to the row's own Taxonomic
 // Type/SPECIESTYPE column instead (see that function's own comment).
-const FILENAME_KIND_TYPE_RULES: { prefix: string; kind: string; type?: string; taxonomicType?: TaxonomicType }[] = [
-  { prefix: "site", kind: "Event", type: "Site" },
-  { prefix: "visit", kind: "Event", type: "Visit" },
-  { prefix: "species_fauna", kind: "Observation", taxonomicType: "Fauna" },
-  { prefix: "species_flora", kind: "Observation", taxonomicType: "Flora" },
-  { prefix: "species", kind: "Observation" },
-];
+//
+// **Superseded in mechanism, not in rule, for tabs (workbook-ingest.ts).** The filename convention
+// above is now one of four signals `classifySource` weighs, applied to a tab name as well as a file
+// name, and only to a source that is the whole file (a CSV, JSON, or a one-tab workbook) - in a
+// multi-tab workbook the file name says nothing about any one tab.
 
-function applyFilenameKindType(rows: RawRow[], fileName: string): RawRow[] {
-  const base = fileName.toLowerCase();
-  const rule = FILENAME_KIND_TYPE_RULES.find((r) => base.startsWith(r.prefix));
-  if (!rule) return rows;
+// One thing to ingest: a CSV or JSON file, or one tab of a workbook. `sheet` is empty for a file
+// that is not a workbook.
+interface IngestSource {
+  file: string;
+  sheet: string;
+  rows: RawRow[];
+  // True when the source is the whole file, so the file name is a fair signal for what it holds.
+  fileNameApplies: boolean;
+  // The tab as cells, for a tab that is a form rather than a table (see `template-ingest.ts`).
+  grid: string[][];
+  hidden: boolean;
+  // Rows in the tab, for a hidden tab whose rows were never read.
+  rowCount: number;
+}
 
+// What the tab report shows for one source, built once from the classification.
+interface SourceReport {
+  label: string;
+  rowCount: number;
+  roleLabel: string;
+  via: SourceClassification["via"] | "template" | "hidden";
+  reason: string;
+  read: boolean;
+}
+
+// What a recognised form was turned into, kept so the 3-tier rows can be shown and downloaded.
+interface TemplateResult {
+  file: string;
+  conversion: TemplateConversion;
+}
+
+function sourceLabel(source: { file: string; sheet: string }): string {
+  return source.sheet ? `${source.file} / ${source.sheet}` : source.file;
+}
+
+// Stamps the role's Kind (and Type) on every row that does not already state its own - a row that
+// states its own Kind/Type is never overridden. `__source` is a hidden marker naming where the row
+// came from, read by `toRecords` and never shown as a field.
+function stampRole(rows: RawRow[], role: SourceRole | null, source: string): RawRow[] {
   return rows.map((row) => {
+    const next: RawRow = { ...row, __source: source };
+    if (!role) return next;
     const kindCol = findColumn(row, ["kind"]);
     const typeCol = findColumn(row, ["type"]);
     const hasKind = kindCol ? Boolean(row[kindCol]) : false;
     const hasType = typeCol ? Boolean(row[typeCol]) : false;
 
-    const next = { ...row };
-    if (!hasKind) next[kindCol ?? "Kind"] = rule.kind;
-    if (!hasType && rule.type) next[typeCol ?? "Type"] = rule.type;
+    if (!hasKind) next[kindCol ?? "Kind"] = role.kind;
+    if (!hasType && role.type) next[typeCol ?? "Type"] = role.type;
     // A hidden, structural-only marker - stripped by `expandSpeciesOccurrences` before any record
     // ever reaches `toRecords`, never shown as a real field.
-    if (rule.taxonomicType) next.__taxonomicTypeHint = rule.taxonomicType;
+    if (role.taxonomicType) next.__taxonomicTypeHint = role.taxonomicType;
     return next;
   });
 }
 
-function parseFileToRows(file: File): Promise<RawRow[]> {
+async function parseFileToSources(file: File): Promise<IngestSource[]> {
   if (/\.xlsx?$/i.test(file.name)) {
-    return file.arrayBuffer().then(parseXlsx).then((rows) => applyFilenameKindType(rows, file.name));
+    const sheets = readWorkbookSheets(await file.arrayBuffer());
+    const visibleCount = sheets.filter((s) => !s.hidden).length;
+    return sheets.map((s) => ({
+      file: file.name,
+      sheet: s.sheetName,
+      rows: s.rows,
+      fileNameApplies: visibleCount === 1,
+      grid: s.grid,
+      hidden: s.hidden,
+      rowCount: s.rowCount,
+    }));
   }
-  return file.text().then((text) => {
-    const isJson = file.name.toLowerCase().endsWith(".json") || text.trim().startsWith("[");
-    const rows = isJson ? parseJson(text) : parseCsv(text);
-    return applyFilenameKindType(rows, file.name);
-  });
+  const text = await file.text();
+  const isJson = file.name.toLowerCase().endsWith(".json") || text.trim().startsWith("[");
+  const rows = isJson ? parseJson(text) : parseCsv(text);
+  return [{ file: file.name, sheet: "", rows, fileNameApplies: true, grid: [], hidden: false, rowCount: rows.length }];
 }
 
-// Case/spacing-insensitive header matching, so "Parent ID", "parent_id", and "ParentId" all
-// resolve to the same structural (or schema) field - real-world spreadsheets are never perfectly
-// consistent.
-function normalizeHeader(s: string): string {
-  return s.toLowerCase().replace(/[\s_-]/g, "");
-}
+// Classifies every source, stamps the rows of the ones it can read, and reports the lot. A tab with
+// no signal at all is left out when there is more than one source (a README or lookup tab would
+// otherwise land a hundred "Missing Kind" rows in Unresolved); it is reported as not read, never
+// dropped silently. A lone unclassified file is still ingested as it always was, so the tool keeps
+// showing what a raw, unnormalised export looks like.
+//
+// A hidden tab is a lookup (a species list, an observer list): reported, never read.
+//
+// A workbook holding a form someone fills in and sends (`convertRambleTemplate`) is read as that
+// form first: its form tabs become the 3-tier rows BDBSA's automation would produce, and those
+// rows go through the same pipeline as any SITE / VISIT / SPECIES tab. A file sent back by BDBSA
+// already carries those tabs next to the form; they describe the same records, so they are left
+// out rather than counted twice - and say so.
+function prepareSources(sources: IngestSource[]): { rows: RawRow[]; reports: SourceReport[]; templates: TemplateResult[] } {
+  const rows: RawRow[] = [];
+  const reports: SourceReport[] = [];
+  const templates: TemplateResult[] = [];
 
-function findColumn(row: RawRow, candidates: string[]): string | null {
-  const normalizedCandidates = candidates.map(normalizeHeader);
-  for (const key of Object.keys(row)) {
-    if (normalizedCandidates.includes(normalizeHeader(key))) return key;
+  const classify = (source: IngestSource) =>
+    classifySource({ sheetName: source.sheet || undefined, fileName: source.fileNameApplies ? source.file : undefined, rows: source.rows });
+
+  const files = [...new Set(sources.map((s) => s.file))];
+  for (const file of files) {
+    const fileSources = sources.filter((s) => s.file === file);
+    const conversion = convertRambleTemplate(fileSources.filter((s) => !s.hidden).map((s) => ({ sheetName: s.sheet, grid: s.grid })));
+    if (conversion) templates.push({ file, conversion });
+
+    for (const source of fileSources) {
+      const label = sourceLabel(source);
+      if (source.hidden) {
+        reports.push({ label, rowCount: source.rowCount, roleLabel: "Hidden", via: "hidden", reason: "Hidden tab, taken to be a lookup list", read: false });
+        continue;
+      }
+      const formTab = conversion?.formTabs.find((t) => t.sheetName === source.sheet);
+      if (formTab) {
+        reports.push({ label, rowCount: source.grid.length, roleLabel: formTab.role, via: "template", reason: `Part of the ${conversion?.formName}`, read: true });
+        continue;
+      }
+      const verdict = classify(source);
+      if (conversion) {
+        const alreadyConverted = verdict.via !== "none";
+        reports.push({
+          label,
+          rowCount: source.rows.length,
+          roleLabel: verdict.role?.label ?? "Not recognised",
+          via: verdict.via,
+          reason: alreadyConverted ? "Already produced from the form tabs in this file" : verdict.reason,
+          read: false,
+        });
+        continue;
+      }
+      const read = verdict.via !== "none" || sources.length === 1;
+      reports.push({
+        label,
+        rowCount: source.rows.length,
+        roleLabel: verdict.role?.label ?? (verdict.via === "kind-column" ? "As stated" : "Not recognised"),
+        via: verdict.via,
+        reason: verdict.reason,
+        read,
+      });
+      if (read) rows.push(...stampRole(source.rows, verdict.role, label));
+    }
+
+    if (conversion) {
+      for (const tier of conversion.tiers) {
+        const tierSource: IngestSource = { file, sheet: tier.name, rows: tier.rows, fileNameApplies: false, grid: [], hidden: false, rowCount: tier.rows.length };
+        const verdict = classify(tierSource);
+        const label = `${file} / ${tier.name} (from the form)`;
+        reports.push({ label, rowCount: tier.rows.length, roleLabel: verdict.role?.label ?? "As stated", via: "template", reason: `Built from the ${conversion.formName}`, read: true });
+        rows.push(...stampRole(tier.rows, verdict.role, label));
+      }
+    }
   }
-  return null;
+  return { rows, reports, templates };
 }
 
 function isKnownSchemaFieldName(key: string): boolean {
@@ -344,6 +445,13 @@ function isKnownSchemaFieldName(key: string): boolean {
 // else as Fauna. A row with no Number Observed value and no way to tell Flora from Fauna at all is
 // left as a single, unclassified Observation - the same honest "Missing Type" outcome this tool
 // already produced before this feature existed, never a guess with no real signal behind it.
+const IDENTITY_COLUMNS: string[][] = [
+  ["species", "scientific name"],
+  ["common name"],
+  ["source id", "sourceid"],
+  ["voucher #", "voucher no", "voucher number"],
+];
+
 function expandSpeciesOccurrences(rows: RawRow[]): RawRow[] {
   return rows.flatMap((row, i) => {
     const { __taxonomicTypeHint, ...rest } = row;
@@ -365,7 +473,8 @@ function expandSpeciesOccurrences(rows: RawRow[]): RawRow[] {
     } else {
       const taxonomicTypeCol = findColumn(rest, ["taxonomic type", "speciestype"]);
       const rawTaxonomicType = taxonomicTypeCol ? rest[taxonomicTypeCol] : "";
-      if (rawTaxonomicType) taxonomicType = rawTaxonomicType.toLowerCase().includes("plant") ? "Flora" : "Fauna";
+      // BDBSA's own species tabs write the plant code "P"; the form says Plant.
+      if (rawTaxonomicType) taxonomicType = /^p$|plant|flora/i.test(rawTaxonomicType.trim()) ? "Flora" : "Fauna";
     }
 
     if (!numberObserved || !taxonomicType) return [rest];
@@ -383,6 +492,14 @@ function expandSpeciesOccurrences(rows: RawRow[]): RawRow[] {
     const northingCol = findColumn(rest, ["northing", "old northing", "oldnorthing"]);
     const zoneCol = findColumn(rest, ["zone", "old zone", "oldzone"]);
     const visitDateCol = findColumn(rest, ["edited visit", "visit date", "visitdate"]);
+    // A species tab that points at its Visit by a key column ("Visit ID") or names its Site carries
+    // that pointer onto the Occurrence too, since the Occurrence is what sits under the Visit.
+    const referenceColumns = findReferenceColumns(rest, "Occurrence", "");
+    // What identifies the organism recorded (its name, source id, voucher) belongs to the Occurrence;
+    // the Observation underneath keeps only the ecological detail. Moved, not copied.
+    const identityColumns = IDENTITY_COLUMNS.map((names) => findColumn(rest, names)).filter((c): c is string => c !== null);
+    const speciesNameCol = findColumn(rest, ["species", "scientific name"]);
+    const speciesName = speciesNameCol ? rest[speciesNameCol] : "";
 
     // The Occurrence only carries what actually identifies "this real-world occurrence" - the
     // structural coordinate/date columns `resolveNaturalKeyRelationships` needs to trace it back to
@@ -397,16 +514,29 @@ function expandSpeciesOccurrences(rows: RawRow[]): RawRow[] {
       ...(northingCol ? { Northing: rest[northingCol] } : {}),
       ...(zoneCol ? { Zone: rest[zoneCol] } : {}),
       ...(visitDateCol ? { "Visit date": rest[visitDateCol] } : {}),
+      ...Object.fromEntries(referenceColumns.map((c) => [c.column, rest[c.column]])),
+      ...Object.fromEntries(identityColumns.map((c) => [c, rest[c]])),
+      ...(speciesName ? { Label: speciesName } : {}),
+      ...(rest.__source ? { __source: rest.__source } : {}),
       ...(nsxCode ? { "NSX code": nsxCode } : {}),
       "Number Observed": numberObserved,
       "Taxonomic Type": taxonomicType,
     };
 
+    // The count lives on the Occurrence. The Observation keeps a "Number Observed" only where its own
+    // template has the field (Population); on an Individual or a Community it would be reported as
+    // another type's field on every row.
+    const observationFields = FIELD_SCHEMA[`Observation:${classification.observationType}`] ?? [];
+    const keepNumberObserved = observationFields.some((f) => normalizeHeader(f) === "numberobserved");
     const observationRow: RawRow = {
-      ...rest,
+      ...Object.fromEntries(
+        Object.entries(rest).filter(([key]) => !identityColumns.includes(key) && (keepNumberObserved || key !== numberObservedCol)),
+      ),
       [typeCol ?? "Type"]: classification.observationType,
       [idCol ?? "ID"]: observationId,
       "Parent ID": occurrenceId,
+      __parentVia: "its own species row",
+      ...(speciesName ? { Label: `${speciesName} - ${classification.observationType}` } : {}),
     };
 
     return [occurrenceRow, observationRow];
@@ -464,13 +594,51 @@ interface ParsedRecord {
   // A real Site row has no single ID column - CAMPMAP-QUADSITE-PATCHQUAD is its own natural
   // identity instead. Blank when any of the three is missing (never a partial, misleading key).
   siteNaturalKey: string;
+  // The tab or file this record came from ("Survey.xlsx / Visits"), for the tab report. Blank for a
+  // record that was edited back in through the JSON panel.
+  source: string;
+  // What placed this record under its parent: "Parent ID", a key column ("Site ID"), the species
+  // row it was split from, or "coordinates and date". Blank when it has no parent. Also names the
+  // column in the error when the pointer doesn't resolve.
+  parentVia: string;
+  // True when `id` came from a type-specific key column ("Site ID") rather than a generic "ID"
+  // column - such an id is only unique within its own tab, so `linkByReference` keeps it apart from
+  // an identical id on another tab's records.
+  idIsScoped: boolean;
+  // Every key column on the row that points at another record, deepest type first - see
+  // `findReferenceColumns`. Consumed by `linkByReference`.
+  references: { type: string; column: string; value: string }[];
+}
+
+// Where an Event is. The Site and Visit templates have no field for them, yet every real Site and
+// Visit row carries them and the traceback needs them: they are kept, flagged for review as a column
+// the template does not have yet, rather than reported as another record type's field.
+const LOCATION_COLUMNS = new Set(["zone", "easting", "northing", "latitude", "longitude"]);
+
+// A Site's id is "ABC-NN-NN": the camp map, the quad/site and a two-digit patch/quad. A one-digit
+// patch/quad is padded with a leading zero, so ALT-12-1 reads ALT-12-01 (designer, 20 Oct 2026).
+function padSiteSequence(sequence: string): string {
+  return /^\d$/.test(sequence.trim()) ? `0${sequence.trim()}` : sequence;
+}
+
+const SITE_ID_ONE_DIGIT = /^([A-Za-z]{3}-\d{2}-)(\d)$/;
+
+// The same rule for a Site id that arrived as written ("ALT-12-1" in an ID column).
+function normalizeSiteId(id: string): string {
+  const match = SITE_ID_ONE_DIGIT.exec(id.trim());
+  return match ? `${match[1]}0${match[2]}` : id;
 }
 
 function toRecords(rows: RawRow[]): ParsedRecord[] {
   return rows.map((row, i) => {
     const kindCol = findColumn(row, ["kind"]);
     const typeCol = findColumn(row, ["type"]);
-    const idCol = findColumn(row, ["id", "recordid"]);
+    const kind = kindCol ? row[kindCol] : "";
+    const type = typeCol ? row[typeCol] : "";
+    const genericIdCol = findColumn(row, ["id", "recordid"]);
+    // A tab with no generic "ID" column often keys its rows by "Site ID" / "Visit ID" instead.
+    const idCol = genericIdCol ?? findOwnIdColumn(row, kind, type);
+    const referenceColumns = findReferenceColumns(row, kind, type);
     const parentIdCol = findColumn(row, ["parentid", "parent"]);
     const labelCol = findColumn(row, ["label", "name"]);
     const surveyCol = findColumn(row, ["survey number", "survey #", "surveynr", "survey"]);
@@ -485,11 +653,13 @@ function toRecords(rows: RawRow[]): ParsedRecord[] {
     const errors: string[] = [];
     if (!kindCol) errors.push("No \"Kind\" column found");
     if (!typeCol) errors.push("No \"Type\" column found");
-    if (!idCol) errors.push("No \"ID\" column found");
+    // No "ID column found" error here: a Site, Visit or species row legitimately has none (its id is
+    // derived from its key columns or coordinates later), and a record that ends with no id at all is
+    // reported once, as "Missing ID", by `validateRecords`.
 
-    const kind = kindCol ? row[kindCol] : "";
-    const type = typeCol ? row[typeCol] : "";
-    const structuralCols = new Set([kindCol, typeCol, idCol, parentIdCol, labelCol, surveyCol].filter((c): c is string => c !== null));
+    const structuralCols = new Set(
+      [kindCol, typeCol, idCol, parentIdCol, labelCol, surveyCol, ...referenceColumns.map((c) => c.column)].filter((c): c is string => c !== null),
+    );
     const schemaFieldNames = FIELD_SCHEMA[`${kind}:${type}`];
 
     // A record whose kind:type has a real schema gets exactly that schema's own fields, always
@@ -518,7 +688,7 @@ function toRecords(rows: RawRow[]): ParsedRecord[] {
       }
     }
     for (const [key, value] of Object.entries(row)) {
-      if (structuralCols.has(key) || matchedCols.has(key)) continue;
+      if (key.startsWith("__") || structuralCols.has(key) || matchedCols.has(key)) continue;
       if (!schemaFieldNames) {
         // No known schema for this record's kind:type at all (often because Kind/Type are missing
         // entirely, e.g. a raw legacy export with no normalization) - every field here is equally
@@ -527,7 +697,7 @@ function toRecords(rows: RawRow[]): ParsedRecord[] {
         // Caught directly by the user uploading a real, unnormalized BDBSA XLSX: with no Kind/Type
         // column, nothing was flagged at all and the JSON looked deceptively clean.
         fields.push({ field: key, value, flagged: true });
-      } else if (value && isKnownSchemaFieldName(key)) {
+      } else if (value && isKnownSchemaFieldName(key) && !(kind === "Event" && LOCATION_COLUMNS.has(normalizeHeader(key)))) {
         errors.push(`"${key}" isn't part of the ${kind || "Unknown"}:${type || "Unknown"} ingestion template - it belongs to a different record type`);
       } else if (value) {
         // Genuinely novel on a schema'd type - a real custom property, or a real BDBSA column this
@@ -541,7 +711,8 @@ function toRecords(rows: RawRow[]): ParsedRecord[] {
     // record fell back to a bare ID (or, missing that too, an opaque "Row 50") - this is the fix at
     // the source, not just a display-time patch, so the auto-generated name flows into the exported
     // JSON's own `label` too. An explicit Label column, when present, always wins.
-    const id = idCol ? row[idCol] : "";
+    const writtenId = idCol ? row[idCol] : "";
+    const id = kind === "Event" && type === "Site" ? normalizeSiteId(writtenId) : writtenId;
     const explicitLabel = labelCol ? row[labelCol] : "";
     const label = explicitLabel || (type && id ? `${type} ${id}` : id);
 
@@ -549,10 +720,12 @@ function toRecords(rows: RawRow[]): ParsedRecord[] {
     const quadsite = quadsiteCol ? row[quadsiteCol] : "";
     const patchquad = patchquadCol ? row[patchquadCol] : "";
 
+    const parentId = parentIdCol ? row[parentIdCol] : "";
+
     return {
       rowNumber: i + 2, // +1 for 0-index, +1 for the header row
       id,
-      parentId: parentIdCol ? row[parentIdCol] : "",
+      parentId,
       label,
       kind,
       type,
@@ -564,7 +737,11 @@ function toRecords(rows: RawRow[]): ParsedRecord[] {
       northing: northingCol ? row[northingCol] : "",
       zone: zoneCol ? row[zoneCol] : "",
       visitDateKey: visitDateCol ? row[visitDateCol] : "",
-      siteNaturalKey: campmap && quadsite && patchquad ? `${campmap}-${quadsite}-${patchquad}` : "",
+      siteNaturalKey: campmap && quadsite && patchquad ? `${campmap}-${quadsite}-${padSiteSequence(patchquad)}` : "",
+      source: row.__source ?? "",
+      parentVia: parentId ? (row.__parentVia ?? "Parent ID") : "",
+      idIsScoped: Boolean(idCol) && idCol !== genericIdCol,
+      references: referenceColumns.map((c) => ({ type: c.type, column: c.column, value: row[c.column] })).filter((c) => c.value !== ""),
     };
   });
 }
@@ -597,6 +774,94 @@ function toRecords(rows: RawRow[]): ParsedRecord[] {
 function findFieldValue(record: ParsedRecord, candidates: string[]): string {
   const normalized = candidates.map(normalizeHeader);
   return record.fields.find((f) => normalized.includes(normalizeHeader(f.field)))?.value ?? "";
+}
+
+// "If I insert an excel file that has the structure present but split in different tabs... link and
+// create the tree structure accordingly" - per the user directly. A workbook split by record type
+// links its tabs the way a database does, by key columns: a Visit tab carries "Site ID", a species
+// tab carries "Visit ID" (or just "Visit", or a name like "Site Name"). This resolves each such
+// pointer to the record it names, on the tab it names, and sets that record's Parent ID. It runs
+// before `resolveNaturalKeyRelationships` so a pointer the file states outranks a coordinate guess,
+// and never overrides an explicit Parent ID.
+//
+// Two honest edge cases:
+// - **A pointer that matches nothing** keeps its raw value as the Parent ID, so `validateRecords`
+//   reports it as a dangling reference and the record lands in Unresolved. Dropping it, or quietly
+//   falling back to a shallower pointer, would hide a real data-entry mistake.
+// - **Per-tab keys collide.** Each tab numbering its own rows (Site 1, Site 2 on one tab; Visit 1,
+//   Visit 2 on another) is normal in a workbook and is not a duplicate. An id that came from a
+//   type-specific key column and repeats on another type's record is kept apart by prefixing its
+//   type ("Visit-1"); the pointer lookup is by type, so "Visit ID = 1" still finds the right one.
+//   An id from a generic "ID" column is never renamed - a repeat there is a real duplicate.
+function normalizeKey(value: string): string {
+  return value.trim().toLowerCase();
+}
+
+function linkByReference(input: ParsedRecord[]): { records: ParsedRecord[]; keptApart: number } {
+  // A Site with no ID column takes the id its key columns spell (Camp/Map, Quad/Site, Patch/Quad),
+  // which is what `resolveNaturalKeyRelationships` would give it later; giving it here lets a Visit
+  // that names it by that id be found. A Site or Visit with neither is still pointable-at by its name
+  // ("Ridge A"). The name is used only when the coordinate keys `resolveNaturalKeyRelationships`
+  // builds an id from are absent - a real BDBSA Site has CAMPNAME too, and its key must keep winning.
+  const named = input.map((r) => {
+    if (r.id || r.kind !== "Event" || (r.type !== "Site" && r.type !== "Visit")) return r;
+    if (r.type === "Site" && r.siteNaturalKey) return { ...r, id: r.siteNaturalKey, label: r.label || `Site ${r.siteNaturalKey}` };
+    if (r.siteNaturalKey || (r.easting && r.northing)) return r;
+    const name = findFieldValue(r, [`${r.type} Name`]);
+    return name ? { ...r, id: name, label: r.label || `${r.type} ${name}`, idIsScoped: true } : r;
+  });
+
+  // A Visit that points at "ALT-12-1" finds the Site now written "ALT-12-01" (see `normalizeSiteId`).
+  const siteIds = new Set(named.filter((r) => r.type === "Site" && r.id).map((r) => r.id));
+  const matchSiteId = (value: string) => (siteIds.has(value) ? value : siteIds.has(normalizeSiteId(value)) ? normalizeSiteId(value) : value);
+
+  const records = named.map((r) => ({
+    ...r,
+    parentId: matchSiteId(r.parentId),
+    references: r.references.map((ref) => (ref.type === "Site" ? { ...ref, value: matchSiteId(ref.value) } : ref)),
+  }));
+
+  const typesById = new Map<string, Set<string>>();
+  for (const r of records) {
+    if (!r.id) continue;
+    const key = normalizeKey(r.id);
+    if (!typesById.has(key)) typesById.set(key, new Set());
+    typesById.get(key)!.add(r.type || r.kind);
+  }
+  const renamed = new Map<number, string>();
+  for (const r of records) {
+    if (r.idIsScoped && r.id && (typesById.get(normalizeKey(r.id))?.size ?? 0) > 1) {
+      renamed.set(r.rowNumber, `${r.type || r.kind}-${r.id}`);
+    }
+  }
+
+  // Looked up by the id as the file wrote it (before any renaming), per type: the record's id, and
+  // its own "<Type> Name" / "Legacy <Type> ID" when it has one, so a pointer written as a name finds it.
+  const index = new Map<string, Map<string, ParsedRecord>>();
+  const addKey = (type: string, value: string, record: ParsedRecord) => {
+    const key = normalizeKey(value);
+    if (!type || !key) return;
+    if (!index.has(type)) index.set(type, new Map());
+    if (!index.get(type)!.has(key)) index.get(type)!.set(key, record);
+  };
+  for (const r of records) {
+    addKey(r.type, r.id, r);
+    addKey(r.type, findFieldValue(r, [`${r.type} Name`]), r);
+    addKey(r.type, findFieldValue(r, [`Legacy ${r.type} ID`]), r);
+  }
+
+  const linked = records.map((r) => {
+    const id = renamed.get(r.rowNumber) ?? r.id;
+    const next = id === r.id ? r : { ...r, id };
+    if (next.parentId || next.references.length === 0) return next;
+
+    const [pointer] = next.references; // deepest type the row names
+    const target = index.get(pointer.type)?.get(normalizeKey(pointer.value));
+    if (!target) return { ...next, parentId: pointer.value, parentVia: pointer.column };
+    if (target.rowNumber === r.rowNumber || !target.id) return next;
+    return { ...next, parentId: renamed.get(target.rowNumber) ?? target.id, parentVia: pointer.column };
+  });
+  return { records: linked, keptApart: renamed.size };
 }
 
 function resolveNaturalKeyRelationships(records: ParsedRecord[]): ParsedRecord[] {
@@ -640,12 +905,12 @@ function resolveNaturalKeyRelationships(records: ParsedRecord[]): ParsedRecord[]
 
     if (r.kind === "Event" && r.type === "Visit" && r.easting && r.northing) {
       const site = siteByCoord.get(`${r.surveyNumber}|${r.easting}|${r.northing}`);
-      if (site) return { ...r, parentId: site.id };
+      if (site) return { ...r, parentId: site.id, parentVia: "coordinates" };
     }
 
     if (r.kind === "Occurrence" && r.easting && r.northing && r.visitDateKey) {
       const visit = visitByCoordAndDate.get(`${r.surveyNumber}|${r.easting}|${r.northing}|${r.visitDateKey}`);
-      if (visit) return { ...r, parentId: visit.id };
+      if (visit) return { ...r, parentId: visit.id, parentVia: "coordinates and date" };
     }
 
     return r;
@@ -661,7 +926,7 @@ function validateRecords(records: ParsedRecord[]): ParsedRecord[] {
   }
   const byId = new Map(records.filter((r) => r.id).map((r) => [r.id, r] as const));
 
-  return records.map((r) => {
+  const validated = records.map((r) => {
     const errors = [...r.errors];
     // True the moment this record's own Kind/Type is invalid, or its Parent ID can't be trusted
     // (dangling, self-referencing, or the wrong shape) - i.e. its place in the hierarchy is
@@ -695,7 +960,7 @@ function validateRecords(records: ParsedRecord[]): ParsedRecord[] {
     if (r.parentId) {
       const parent = byId.get(r.parentId);
       if (!parent) {
-        errors.push(`Parent ID "${r.parentId}" doesn't match any record in this file`);
+        errors.push(`${r.parentVia || "Parent ID"} "${r.parentId}" doesn't match any record in this file`);
         unresolved = true;
       } else if (parent.rowNumber === r.rowNumber) {
         errors.push(`Parent ID "${r.parentId}" is this record's own ID - a record can't be its own parent`);
@@ -728,6 +993,23 @@ function validateRecords(records: ParsedRecord[]): ParsedRecord[] {
 
     return { ...r, errors, unresolved };
   });
+
+  // A record under a parent that could not be placed cannot be placed either: the Resolved tree is
+  // built from placed records only, so it would otherwise float to the top level as if it were a root.
+  const checked = new Map(validated.map((r) => [r.rowNumber, r] as const));
+  let changed = true;
+  while (changed) {
+    changed = false;
+    for (const r of checked.values()) {
+      const parent = r.parentId ? byId.get(r.parentId) : undefined;
+      if (r.unresolved || !parent || parent.rowNumber === r.rowNumber) continue;
+      if (checked.get(parent.rowNumber)?.unresolved) {
+        checked.set(r.rowNumber, { ...r, unresolved: true, errors: [...r.errors, `Parent "${r.parentId}" couldn't be placed in the structure`] });
+        changed = true;
+      }
+    }
+  }
+  return validated.map((r) => checked.get(r.rowNumber) ?? r);
 }
 
 // ── Structure - not just "is each row individually valid," but "does the file actually assemble
@@ -825,11 +1107,11 @@ function toIngestedJson(nodes: TreeNode[]): IngestedNode[] {
   }));
 }
 
-// The single Project root every ingested file's records nest under - real BDBSA name already used
-// elsewhere in this codebase (`/proto/project-detail`'s `PROJECT_NAME`), not a new placeholder.
-// `PROJECT_NODE_ID` is a synthetic id (no CSV/JSON row ever produces it) so it can't collide with a
+// The single Project root every ingested file's records nest under. Named "Project", not after any
+// real project (designer, 20 Oct 2026): an upload does not carry a project name, only a Survey
+// Number, which is the Project's id. `PROJECT_NODE_ID` is a synthetic id (no CSV/JSON row ever produces it) so it can't collide with a
 // real record's `row-${rowNumber}` tree key.
-const PROJECT_LABEL = "Adelaide Hills Bushland Survey";
+const PROJECT_LABEL = "Project";
 const PROJECT_NODE_ID = "project-root";
 
 // How many Unresolved records show before "Load more" - see `StructureTree`'s own comment.
@@ -1039,6 +1321,10 @@ function flattenIngestedNodes(nodes: IngestedNode[], parentId: string, counter: 
       zone: "",
       visitDateKey: "",
       siteNaturalKey: "", // an edited/saved JSON already has real Parent IDs - natural-key matching doesn't re-run on it
+      source: "",
+      parentVia: parentId ? "Parent ID" : "",
+      idIsScoped: false,
+      references: [],
     });
     out = out.concat(flattenIngestedNodes(node.children, node.id, counter));
   }
@@ -1058,18 +1344,52 @@ function flattenIngestedNodes(nodes: IngestedNode[], parentId: string, counter: 
 // etc. This is already understood internally. It's too much info. The actual name should be
 // visible." Kind/Type are still fully available - `RecordCard` shows them as a real `Badge` once a
 // record is selected - this was strictly about the tree not needing to repeat it a second time.
-function renderTreeNode(node: TreeNode, ancestorRows: ReadonlySet<number>): ReactNode {
+//
+// Lazy, per the user directly: "conscious there's 1000's of records - can we use lazy load to make
+// sure the performance of the page doesn't drop?" Two rules keep the page the same size however
+// large the upload: a record's children are built only while it is expanded (a collapsed record
+// says it has children, `hasChildItems`, without the page building them), and no parent shows more
+// than `CHILD_PAGE_SIZE` children at once, the rest behind a "Load more" row - the same page size and
+// pattern the Unresolved list already used. Selecting a record outside what is loaded is not
+// possible by clicking, so nothing is hidden from the person that they could have reached.
+const CHILD_PAGE_SIZE = 50;
+const LOAD_MORE_PREFIX = "more:";
+
+interface LazyTreeState {
+  expanded: ReadonlySet<Key>;
+  visibleChildren: ReadonlyMap<string, number>;
+}
+
+function renderChildren(parentKey: string, children: TreeNode[], ancestorRows: ReadonlySet<number>, lazy: LazyTreeState): ReactNode[] {
+  if (!lazy.expanded.has(parentKey)) return [];
+  const limit = lazy.visibleChildren.get(parentKey) ?? CHILD_PAGE_SIZE;
+  const rendered: ReactNode[] = children.slice(0, limit).map((child) => renderTreeNode(child, ancestorRows, lazy));
+  const remaining = children.length - limit;
+  if (remaining > 0) {
+    rendered.push(
+      <TreeView.Item key={`${LOAD_MORE_PREFIX}${parentKey}`} id={`${LOAD_MORE_PREFIX}${parentKey}`} textValue={`Load more under ${parentKey}`}>
+        <TreeView.ItemContent weight="normal">
+          <span className="truncate text-tertiary">Load {Math.min(remaining, CHILD_PAGE_SIZE)} more ({remaining} not shown)</span>
+        </TreeView.ItemContent>
+      </TreeView.Item>,
+    );
+  }
+  return rendered;
+}
+
+function renderTreeNode(node: TreeNode, ancestorRows: ReadonlySet<number>, lazy: LazyTreeState): ReactNode {
   const { record } = node;
   if (ancestorRows.has(record.rowNumber)) return null; // a real parent/child cycle - stop, don't hang
+  const key = `row-${record.rowNumber}`;
   const label = record.label || record.id || `Row ${record.rowNumber}`;
   const nextAncestors = new Set(ancestorRows).add(record.rowNumber);
 
   return (
-    <TreeView.Item key={record.rowNumber} id={`row-${record.rowNumber}`} textValue={label}>
+    <TreeView.Item key={record.rowNumber} id={key} textValue={label} hasChildItems={node.children.length > 0}>
       <TreeView.ItemContent>
         <span className="truncate">{label}</span>
       </TreeView.ItemContent>
-      {node.children.map((child) => renderTreeNode(child, nextAncestors))}
+      {renderChildren(key, node.children, nextAncestors, lazy)}
     </TreeView.Item>
   );
 }
@@ -1210,6 +1530,55 @@ function csvField(value: string): string {
 
 const SAMPLE_CSV = [SAMPLE_COLUMNS.join(","), ...SAMPLE_ROWS.map((row) => SAMPLE_COLUMNS.map((col) => csvField(row[col] ?? "")).join(","))].join("\n");
 
+// The same project, split the way a person splits it in Excel: one tab per record type, no Kind,
+// Type or Parent ID column anywhere. Tabs link by key column ("Site ID" on Visits, "Visit ID" on
+// Species) and each tab numbers its own rows from 1, so Site 1 and Visit 1 coexist. A title line
+// sits above the Visits header and a notes tab holds nothing the model reads. Built as a real .xlsx
+// and handed to the same path an upload takes, so loading it exercises the whole pipeline.
+const SAMPLE_WORKBOOK_TABS: { name: string; rows: string[][] }[] = [
+  { name: "Read me", rows: [["Notes"], ["Field season 2024"], ["Three tabs: Sites, Visits, Species"]] },
+  {
+    name: "Sites",
+    rows: [
+      ["Site ID", "Site Name", "Altitude", "Paddock", "Observer 1", "Datum"],
+      ["1", "Mount Bold roadside verge", "420m", "North", "P. Ngoc", "GDA2020"],
+      ["2", "Scott Creek ridge", "380m", "East", "J. Combe", "GDA2020"],
+      ["3", "Kyeema bushland", "445m", "South", "P. Ngoc", "GDA2020"],
+    ],
+  },
+  {
+    name: "Visits",
+    rows: [
+      ["Visit register 2024"],
+      [],
+      ["Visit ID", "Site ID", "Start Date", "End Date", "Visit Seq No.", "Observer 1"],
+      ["1", "1", "2024-09-12", "2024-09-12", "1 of 2", "P. Ngoc"],
+      ["2", "1", "2024-11-03", "2024-11-03", "2 of 2", "J. Combe"],
+      ["3", "2", "2024-09-14", "2024-09-14", "1 of 1", "J. Combe"],
+      ["4", "3", "2024-09-15", "2024-09-15", "1 of 1", "P. Ngoc"],
+    ],
+  },
+  {
+    name: "Species",
+    rows: [
+      ["Visit ID", "Species", "Taxonomic Type", "Number Observed", "Activity"],
+      ["1", "Yellow-footed Antechinus", "Mammal", "1", "Foraging"],
+      ["1", "Acacia pycnantha", "Plant", "Present but not counted", ""],
+      ["2", "Superb Fairy-wren", "Bird", "3", ""],
+      ["3", "Southern Brown Bandicoot", "Mammal", "1", "Foraging"],
+      ["4", "Eucalyptus leucoxylon", "Plant", "Present but not counted", ""],
+      ["9", "Common Brushtail Possum", "Mammal", "1", "Resting"],
+    ],
+  },
+];
+
+function buildSampleWorkbookFile(): File {
+  const workbook = sheetUtils.book_new();
+  for (const tab of SAMPLE_WORKBOOK_TABS) sheetUtils.book_append_sheet(workbook, sheetUtils.aoa_to_sheet(tab.rows), tab.name);
+  const bytes: ArrayBuffer = writeWorkbook(workbook, { type: "array", bookType: "xlsx" });
+  return new File([bytes], "sample-survey.xlsx", { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
+}
+
 // ── UI ──
 
 // A plain button + a hidden native file input, not `InputFile` - `InputFile`'s readonly-field-plus-
@@ -1231,7 +1600,17 @@ const SAMPLE_CSV = [SAMPLE_COLUMNS.join(","), ...SAMPLE_ROWS.map((row) => SAMPLE
 // parsing" split this file has used since the XLS/XLSX pass. No upload, no network request, per the
 // sandbox callout below - `multiple` doesn't change that, it's still `<input type="file">` reading
 // local bytes.
-function UploadPanel({ onFiles, onSampleData, error }: { onFiles: (files: File[]) => void; onSampleData: () => void; error: string | null }) {
+function UploadPanel({
+  onFiles,
+  onSampleData,
+  onSampleWorkbook,
+  error,
+}: {
+  onFiles: (files: File[]) => void;
+  onSampleData: () => void;
+  onSampleWorkbook: () => void;
+  error: string | null;
+}) {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleFileChange = (event: ChangeEvent<HTMLInputElement>) => {
@@ -1246,8 +1625,8 @@ function UploadPanel({ onFiles, onSampleData, error }: { onFiles: (files: File[]
       <div className="flex flex-col gap-1">
         <p className="text-2xl font-medium text-white">Upload one or more CSV, JSON, XLS, or XLSX files</p>
         <p className="text-md text-white/80">
-          Structured or unstructured data - real DEW project records, straight from a spreadsheet export. Select several files at once (e.g. Site, Visit,
-          and Species exports) to map them into one structure together.
+          Structured or unstructured data - real DEW project records, straight from a spreadsheet export. Select several files at once, or one workbook
+          with a tab per record type (Sites, Visits, Species), to map them into one structure together.
         </p>
       </div>
       <div className="flex flex-wrap items-center gap-3">
@@ -1264,6 +1643,9 @@ function UploadPanel({ onFiles, onSampleData, error }: { onFiles: (files: File[]
         </Button>
         <Button color="secondary" iconLeading={FileCode01} onClick={onSampleData}>
           Load sample data
+        </Button>
+        <Button color="secondary" iconLeading={TableIcon} onClick={onSampleWorkbook}>
+          Load sample workbook
         </Button>
       </div>
       <div className="flex items-start gap-2 rounded-lg bg-white/10 p-3 text-sm text-white/80">
@@ -1338,9 +1720,9 @@ function StructureTree({
   // never duplicated here) makes that distinction real: Resolved only ever contains records whose
   // structural placement is trustworthy; Unresolved is a flat list (deliberately not nested - their
   // placement is exactly what's in question) of everything else, one row per problem record.
-  const resolvedRecords = records.filter((r) => !r.unresolved);
-  const unresolvedRecords = records.filter((r) => r.unresolved);
-  const roots = buildTree(resolvedRecords);
+  const resolvedRecords = useMemo(() => records.filter((r) => !r.unresolved), [records]);
+  const unresolvedRecords = useMemo(() => records.filter((r) => r.unresolved), [records]);
+  const roots = useMemo(() => buildTree(resolvedRecords), [resolvedRecords]);
 
   // "From a performance perspective, maybe load until Row 50, then say Load more." Per the user
   // directly - a real, unnormalized multi-file upload (no Kind/Type/ID/Label at all) can dump every
@@ -1352,14 +1734,23 @@ function StructureTree({
   const [visibleUnresolvedCount, setVisibleUnresolvedCount] = useState(UNRESOLVED_PAGE_SIZE);
   const visibleUnresolvedRecords = unresolvedRecords.slice(0, visibleUnresolvedCount);
   const remainingUnresolvedCount = unresolvedRecords.length - visibleUnresolvedRecords.length;
-  // Every Event-kind record can have children (Occurrences/Observations never can) - expanded by
-  // default, same "always fully visible" behaviour this tool had before the Project root made any
-  // node collapsible at all.
-  const expandedKeys = [PROJECT_NODE_ID, ...resolvedRecords.filter((r) => r.kind === "Event").map((r) => `row-${r.rowNumber}`)];
+  // Open to the Sites and no further: with a few thousand records, opening every Visit as well puts
+  // thousands of rows on the page at once. Everything below is one click away and built when opened.
+  const [expanded, setExpanded] = useState<ReadonlySet<Key>>(
+    () => new Set<Key>([PROJECT_NODE_ID, ...roots.map((node) => `row-${node.record.rowNumber}`)]),
+  );
+  const [visibleChildren, setVisibleChildren] = useState<ReadonlyMap<string, number>>(new Map());
+  const lazy: LazyTreeState = { expanded, visibleChildren };
 
   const handleSelectionChange = (keys: Selection) => {
     if (keys === "all") return;
     const [key] = Array.from(keys);
+    // A "Load more" row is a control, not a record: it widens its parent's page and selects nothing.
+    if (typeof key === "string" && key.startsWith(LOAD_MORE_PREFIX)) {
+      const parentKey = key.slice(LOAD_MORE_PREFIX.length);
+      setVisibleChildren((prev) => new Map(prev).set(parentKey, (prev.get(parentKey) ?? CHILD_PAGE_SIZE) + CHILD_PAGE_SIZE));
+      return;
+    }
     onSelectionChange(key ?? null);
   };
 
@@ -1374,14 +1765,15 @@ function StructureTree({
         selectionMode="single"
         selectedKeys={selectedKey ? [selectedKey] : []}
         onSelectionChange={handleSelectionChange}
-        defaultExpandedKeys={expandedKeys}
+        expandedKeys={expanded}
+        onExpandedChange={(keys) => setExpanded(new Set(keys))}
         className="w-full"
       >
-        <TreeView.Item id={PROJECT_NODE_ID} textValue={PROJECT_LABEL}>
+        <TreeView.Item id={PROJECT_NODE_ID} textValue={PROJECT_LABEL} hasChildItems={roots.length > 0}>
           <TreeView.ItemContent>
             <span className="truncate font-medium">{PROJECT_LABEL}</span>
           </TreeView.ItemContent>
-          {roots.map((node) => renderTreeNode(node, new Set()))}
+          {renderChildren(PROJECT_NODE_ID, roots, new Set(), lazy)}
         </TreeView.Item>
       </TreeView>
 
@@ -1442,7 +1834,10 @@ function IngestedJsonPanel({ records, onApply }: { records: ParsedRecord[]; onAp
   const [saveError, setSaveError] = useState<string | null>(null);
 
   const isTemplateView = view === "template";
-  const templateText = serializeIngestedProject(toTemplateProject(toIngestedProject(records)));
+  const templateText = useMemo(
+    () => (isTemplateView ? serializeIngestedProject(toTemplateProject(toIngestedProject(records))) : ""),
+    [isTemplateView, records],
+  );
   const displayedText = isTemplateView ? templateText : text;
 
   const handleCopy = async () => {
@@ -1518,6 +1913,135 @@ function IngestedJsonPanel({ records, onApply }: { records: ParsedRecord[]; onAp
   );
 }
 
+// Past this many records the JSON is built only when asked for: serialising a few thousand records
+// into one editable text box is the slowest single step of an upload and most people never open it.
+const JSON_AUTO_OPEN_LIMIT = 500;
+
+function IngestedJsonGate({ records, onApply }: { records: ParsedRecord[]; onApply: (records: ParsedRecord[]) => void }) {
+  const [open, setOpen] = useState(records.length <= JSON_AUTO_OPEN_LIMIT);
+  if (open) return <IngestedJsonPanel records={records} onApply={onApply} />;
+  return (
+    <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-secondary bg-secondary p-4">
+      <div className="flex flex-col gap-0.5">
+        <p className="text-sm font-semibold text-primary">Ingested JSON</p>
+        <p className="text-xs text-tertiary">{records.length.toLocaleString()} records. The JSON is built when you open it.</p>
+      </div>
+      <Button size="sm" color="secondary" iconLeading={FileCode01} onClick={() => setOpen(true)}>
+        Show ingested JSON
+      </Button>
+    </div>
+  );
+}
+
+// How a source's records were placed: resolved ones grouped by what linked them, the ones with no
+// parent (a Site at the top), and the ones that could not be placed. Counted from the same
+// `ParsedRecord`s the tree is built from, so it can never disagree with the tree.
+function placementSummaries(records: ParsedRecord[]): Map<string, string> {
+  const tallies = new Map<string, { byVia: Map<string, number>; top: number; unplaced: number }>();
+  for (const r of records) {
+    if (!r.source) continue;
+    let tally = tallies.get(r.source);
+    if (!tally) {
+      tally = { byVia: new Map(), top: 0, unplaced: 0 };
+      tallies.set(r.source, tally);
+    }
+    if (r.unresolved) tally.unplaced++;
+    else if (!r.parentId) tally.top++;
+    else tally.byVia.set(r.parentVia, (tally.byVia.get(r.parentVia) ?? 0) + 1);
+  }
+  return new Map(
+    [...tallies].map(([source, t]) => {
+      const parts = [...t.byVia].map(([via, n]) => `${n} by ${via}`);
+      if (t.top > 0) parts.push(`${t.top} at the top`);
+      if (t.unplaced > 0) parts.push(`${t.unplaced} not placed`);
+      return [source, parts.join(", ")] as const;
+    }),
+  );
+}
+
+// The converted form as a workbook: one tab per 3-tier sheet, a header row of column names and the
+// rows beneath. Re-uploading it ingests to the same tree, since it is made of the tabs this page reads.
+function downloadThreeTierWorkbook(result: TemplateResult) {
+  const workbook = sheetUtils.book_new();
+  for (const tier of result.conversion.tiers) {
+    const columns = [...new Set(tier.rows.flatMap((row) => Object.keys(row)))];
+    const grid = [columns, ...tier.rows.map((row) => columns.map((c) => row[c] ?? ""))];
+    sheetUtils.book_append_sheet(workbook, sheetUtils.aoa_to_sheet(grid), tier.name);
+  }
+  const bytes: ArrayBuffer = writeWorkbook(workbook, { type: "array", bookType: "xlsx" });
+  const url = URL.createObjectURL(new Blob([bytes], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" }));
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = `${result.file.replace(/\.xlsx?$/i, "")} - 3-tier.xlsx`;
+  link.click();
+  URL.revokeObjectURL(url);
+}
+
+function SourceReportCard({
+  reports,
+  records,
+  keptApart,
+  templates,
+}: {
+  reports: SourceReport[];
+  records: ParsedRecord[];
+  keptApart: number;
+  templates: TemplateResult[];
+}) {
+  const placements = useMemo(() => placementSummaries(records), [records]);
+  return (
+    <div className="flex flex-col gap-3 rounded-xl border border-secondary bg-primary p-4">
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div className="flex flex-col gap-1">
+          <h2 className="text-sm font-semibold text-primary">How the tabs were read</h2>
+          <p className="text-sm text-tertiary">What each tab or file was taken to hold, on what basis, and how its records were placed in the tree.</p>
+        </div>
+        {templates.map((t) => (
+          <Button key={t.file} size="sm" color="secondary" iconLeading={Download01} onClick={() => downloadThreeTierWorkbook(t)}>
+            Download 3-tier workbook
+          </Button>
+        ))}
+      </div>
+      <Table aria-label="How each tab or file was read">
+        <TableHeader>
+          <Column id="source" isRowHeader>
+            Tab
+          </Column>
+          <Column id="rows">Rows</Column>
+          <Column id="role">Read as</Column>
+          <Column id="basis">Because</Column>
+          <Column id="placed">Placed</Column>
+        </TableHeader>
+        <TableBody items={reports}>
+          {(r) => (
+            <Row id={r.label}>
+              <Cell>{r.label}</Cell>
+              <Cell>{r.rowCount}</Cell>
+              <Cell>
+                <Badge size="sm" color={r.read ? "gray" : "warning"}>
+                  {r.roleLabel}
+                </Badge>
+              </Cell>
+              <Cell>{r.reason}</Cell>
+              <Cell>{r.read ? (r.via === "template" && !placements.has(r.label) ? "Read as the form" : placements.get(r.label)) || <span className="text-quaternary">-</span> : "Left out"}</Cell>
+            </Row>
+          )}
+        </TableBody>
+      </Table>
+      {templates.flatMap((t) => t.conversion.notes).length > 0 && (
+        <ul className="flex flex-col gap-1 rounded-lg bg-secondary p-3 text-xs text-tertiary">
+          {templates.flatMap((t) => t.conversion.notes.map((note) => <li key={`${t.file}-${note}`}>{note}</li>))}
+        </ul>
+      )}
+      {keptApart > 0 && (
+        <p className="text-sm text-tertiary">
+          {keptApart} IDs repeat across tabs (each tab numbers its own rows) and were kept apart by record type, e.g. Site-1 and Visit-1.
+        </p>
+      )}
+    </div>
+  );
+}
+
 function RecordCard({ record, nestedCounts }: { record: ParsedRecord; nestedCounts?: NestedCounts }) {
   const isValid = record.errors.length === 0;
   const kindLabel = isRecordKind(record.kind) ? record.kind : record.kind || "Unknown kind";
@@ -1532,7 +2056,13 @@ function RecordCard({ record, nestedCounts }: { record: ParsedRecord; nestedCoun
           </Badge>
           <span className="text-sm font-semibold text-primary">{record.label || record.id || `Row ${record.rowNumber}`}</span>
           {record.id && <span className="text-xs text-quaternary">ID: {record.id}</span>}
-          {record.parentId && <span className="text-xs text-quaternary">Parent: {record.parentId}</span>}
+          {record.parentId && (
+            <span className="text-xs text-quaternary">
+              Parent: {record.parentId}
+              {record.parentVia && record.parentVia !== "Parent ID" ? ` (by ${record.parentVia})` : ""}
+            </span>
+          )}
+          {record.source && <span className="text-xs text-quaternary">From: {record.source}</span>}
         </div>
         {isValid ? (
           <span className="flex items-center gap-1 text-xs font-medium text-fg-success-primary">
@@ -1591,14 +2121,14 @@ function RecordCard({ record, nestedCounts }: { record: ParsedRecord; nestedCoun
 
 // Selecting the Project node in the Structure tree - the same "Nested records" concept every
 // Event-kind `RecordCard` already gets, one level up: Project's own direct children by kind.
-function ProjectSummaryCard({ counts }: { counts: NestedCounts }) {
+function ProjectSummaryCard({ counts, surveyNumber }: { counts: NestedCounts; surveyNumber: string }) {
   return (
     <div className="flex flex-col gap-3 rounded-xl border border-secondary bg-primary p-4">
       <div className="flex flex-wrap items-center gap-2">
         <Badge size="sm" color="brand">
           Project
         </Badge>
-        <span className="text-sm font-semibold text-primary">{PROJECT_LABEL}</span>
+        {surveyNumber && <span className="text-sm font-semibold text-primary">Survey {surveyNumber}</span>}
       </div>
       <div className="flex flex-wrap items-center gap-4 rounded-lg bg-secondary p-3 text-xs text-tertiary">
         <span className="font-medium text-primary">Nested records</span>
@@ -1615,13 +2145,20 @@ export default function DataModelStressTestProto() {
   const [records, setRecords] = useState<ParsedRecord[]>([]);
   const [parseError, setParseError] = useState<string | null>(null);
   const [selectedKey, setSelectedKey] = useState<Key | null>(null);
+  const [sourceReports, setSourceReports] = useState<SourceReport[]>([]);
+  const [keptApart, setKeptApart] = useState(0);
+  const [templates, setTemplates] = useState<TemplateResult[]>([]);
 
-  const applyRows = (rows: RawRow[], name: string) => {
+  const applyRows = (rows: RawRow[], name: string, reports: SourceReport[] = [], converted: TemplateResult[] = []) => {
     if (rows.length === 0) throw new Error("No rows found in this file");
     // `expandSpeciesOccurrences` runs on the whole combined upload, once, before any row becomes a
     // `ParsedRecord` - see that function's own comment for why (synthetic Occurrence/Observation IDs
     // only need to be unique within this one call).
-    setRecords(validateRecords(resolveNaturalKeyRelationships(toRecords(expandSpeciesOccurrences(rows)))));
+    const linked = linkByReference(toRecords(expandSpeciesOccurrences(rows)));
+    setRecords(validateRecords(resolveNaturalKeyRelationships(linked.records)));
+    setSourceReports(reports);
+    setTemplates(converted);
+    setKeptApart(linked.keptApart);
     setFileName(name);
     setParseError(null);
     setSelectedKey(null);
@@ -1630,18 +2167,28 @@ export default function DataModelStressTestProto() {
   const handleParseError = (e: unknown) => {
     setParseError(e instanceof Error ? e.message : "Couldn't parse this file");
     setRecords([]);
+    setSourceReports([]);
+    setTemplates([]);
+    setKeptApart(0);
     setFileName(null);
     setSelectedKey(null);
   };
 
   const handleFiles = async (files: File[]) => {
     try {
-      const rowsPerFile = await Promise.all(files.map(parseFileToRows));
-      applyRows(rowsPerFile.flat(), files.map((f) => f.name).join(", "));
+      const sources = (await Promise.all(files.map(parseFileToSources))).flat();
+      if (sources.length === 0) throw new Error("No rows found in these files");
+      const { rows, reports, templates: converted } = prepareSources(sources);
+      if (rows.length === 0) {
+        throw new Error("None of these tabs could be read as Site, Visit or species records. Name each tab for what it holds (Sites, Visits, Species) or add a Kind column.");
+      }
+      applyRows(rows, files.map((f) => f.name).join(", "), reports, converted);
     } catch (e) {
       handleParseError(e);
     }
   };
+
+  const handleSampleWorkbook = () => handleFiles([buildSampleWorkbookFile()]);
 
   const handleSampleData = () => {
     try {
@@ -1653,16 +2200,19 @@ export default function DataModelStressTestProto() {
 
   const handleApplyEditedJson = (nextRecords: ParsedRecord[]) => {
     setRecords(nextRecords);
+    setSourceReports([]); // an edited tree no longer matches the tabs it was read from
+    setTemplates([]);
+    setKeptApart(0);
     setSelectedKey(null);
   };
 
   // Nested-record counts (Project summary, each Event's own "Nested records" row) are computed
   // from the same resolved-only tree `StructureTree` renders, so a count never claims a record is
   // nested somewhere the Unresolved split has since pulled it out of.
-  const treeRoots = buildTree(records.filter((r) => !r.unresolved));
+  const treeRoots = useMemo(() => buildTree(records.filter((r) => !r.unresolved)), [records]);
   const isProjectSelected = String(selectedKey) === PROJECT_NODE_ID;
   const selectedRecord = selectedKey != null && !isProjectSelected ? records.find((r) => `row-${r.rowNumber}` === String(selectedKey)) : undefined;
-  const nestedCountsByRow = buildNestedCountsByRow(treeRoots);
+  const nestedCountsByRow = useMemo(() => buildNestedCountsByRow(treeRoots), [treeRoots]);
 
   return (
     <div className="font-barlow min-h-screen bg-primary p-8">
@@ -1675,7 +2225,9 @@ export default function DataModelStressTestProto() {
           </p>
         </div>
 
-        <UploadPanel onFiles={handleFiles} onSampleData={handleSampleData} error={parseError} />
+        <UploadPanel onFiles={handleFiles} onSampleData={handleSampleData} onSampleWorkbook={handleSampleWorkbook} error={parseError} />
+
+        {sourceReports.length > 1 && records.length > 0 && <SourceReportCard reports={sourceReports} records={records} keptApart={keptApart} templates={templates} />}
 
         {records.length === 0 ? (
           <div className="flex flex-1 flex-col items-center justify-center gap-2 rounded-xl border border-dashed border-secondary p-12 text-center">
@@ -1689,7 +2241,7 @@ export default function DataModelStressTestProto() {
             <div className="flex flex-1 flex-col gap-4">
               <SummaryBar fileName={fileName ?? ""} records={records} />
               {isProjectSelected ? (
-                <ProjectSummaryCard counts={countChildrenByKind(treeRoots)} />
+                <ProjectSummaryCard counts={countChildrenByKind(treeRoots)} surveyNumber={findSurveyNumber(records)} />
               ) : selectedRecord ? (
                 <RecordCard key={`${selectedRecord.id || "row"}-${selectedRecord.rowNumber}`} record={selectedRecord} nestedCounts={nestedCountsByRow.get(selectedRecord.rowNumber)} />
               ) : (
@@ -1702,7 +2254,7 @@ export default function DataModelStressTestProto() {
           </div>
         )}
 
-        {records.length > 0 && <IngestedJsonPanel key={fileName} records={records} onApply={handleApplyEditedJson} />}
+        {records.length > 0 && <IngestedJsonGate key={fileName} records={records} onApply={handleApplyEditedJson} />}
       </div>
     </div>
   );
