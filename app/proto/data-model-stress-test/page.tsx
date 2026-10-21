@@ -126,12 +126,12 @@ import { useMemo, useRef, useState } from "react";
 import type { ChangeEvent, ReactNode } from "react";
 import type { Key, Selection } from "react-aria-components";
 import { utils as sheetUtils, write as writeWorkbook } from "xlsx";
-import { UploadCloud02, AlertCircle, AlertTriangle, CheckCircle, XCircle, Database02, FileCode01, Copy01, Check, Save01, Lock01, Download01, Table as TableIcon } from "@untitledui/icons";
+import { UploadCloud02, AlertCircle, AlertTriangle, CheckCircle, XCircle, Database02, FileCode01, Copy01, Check, Save01, Lock01, Download01, ChevronDown, ClipboardCheck, Dataflow01, Grid01, Table as TableIcon } from "@untitledui/icons";
 import { Button } from "@/components/base/buttons/button";
 import { Badge, CountBadge } from "@/components/base/badges/badges";
 import { Table, TableHeader, Column, TableBody, Row, Cell } from "@/components/base/table/table";
 import { TreeView } from "@/components/application/tree-view/tree-view";
-import { Tabs, TabList, Tab } from "@/components/application/tabs/tabs";
+import { Tabs, TabList, Tab, TabPanel } from "@/components/application/tabs/tabs";
 import { cx } from "@/utils/cx";
 // The corrected record model and the real per-type field schema (`FIELD_SCHEMA`) live in
 // `config/data-model-schema.ts`, shared with the `/config/data-model` reference page, rather than
@@ -142,7 +142,11 @@ import {
   VALID_TYPES_BY_KIND,
   FIELD_SCHEMA,
   ALL_SCHEMA_FIELD_NAMES,
+  ALL_SCHEMA_FIELD_NAMES_WITH_ALIASES,
+  FIELD_ALIASES,
   BDBSA_KEY_CROSSWALK,
+  reportedCodesFor,
+  reportedCodesText,
   FIELD_UNITS,
   classifySpeciesRow,
   type TaxonomicType,
@@ -152,6 +156,7 @@ import {
   findColumn,
   findOwnIdColumn,
   findReferenceColumns,
+  isWorkbookFileName,
   normalizeHeader,
   readWorkbookSheets,
   type RawRow,
@@ -159,6 +164,7 @@ import {
   type SourceRole,
 } from "./workbook-ingest";
 import { convertRambleTemplate, type TemplateConversion } from "./template-ingest";
+import { convertFlatReturns, convertSampleMatrix, isFlatReturn } from "./methodology-ingest";
 
 // ── Parsing - CSV (a small, real RFC4180-ish parser: handles quoted fields, embedded commas,
 // escaped quotes) and JSON (a plain array of row objects). No third-party dependency for either -
@@ -274,6 +280,9 @@ interface IngestSource {
   hidden: boolean;
   // Rows in the tab, for a hidden tab whose rows were never read.
   rowCount: number;
+  // Protected, and the share of its filled cells that are formulas (see `readWorkbookSheets`).
+  locked: boolean;
+  formulaShare: number;
 }
 
 // What the tab report shows for one source, built once from the classification.
@@ -281,7 +290,7 @@ interface SourceReport {
   label: string;
   rowCount: number;
   roleLabel: string;
-  via: SourceClassification["via"] | "template" | "hidden";
+  via: SourceClassification["via"] | "template" | "hidden" | "locked" | "derived";
   reason: string;
   read: boolean;
 }
@@ -318,7 +327,7 @@ function stampRole(rows: RawRow[], role: SourceRole | null, source: string): Raw
 }
 
 async function parseFileToSources(file: File): Promise<IngestSource[]> {
-  if (/\.xlsx?$/i.test(file.name)) {
+  if (isWorkbookFileName(file.name)) {
     const sheets = readWorkbookSheets(await file.arrayBuffer());
     const visibleCount = sheets.filter((s) => !s.hidden).length;
     return sheets.map((s) => ({
@@ -329,12 +338,31 @@ async function parseFileToSources(file: File): Promise<IngestSource[]> {
       grid: s.grid,
       hidden: s.hidden,
       rowCount: s.rowCount,
+      locked: s.locked,
+      formulaShare: s.formulaShare,
     }));
   }
   const text = await file.text();
   const isJson = file.name.toLowerCase().endsWith(".json") || text.trim().startsWith("[");
   const rows = isJson ? parseJson(text) : parseCsv(text);
-  return [{ file: file.name, sheet: "", rows, fileNameApplies: true, grid: [], hidden: false, rowCount: rows.length }];
+  return [{ file: file.name, sheet: "", rows, fileNameApplies: true, grid: [], hidden: false, rowCount: rows.length, locked: false, formulaShare: 0 }];
+}
+
+// A tab that is nearly all formulas is calculated by the template from other tabs, not entered.
+const DERIVED_FORMULA_SHARE = 0.8;
+
+// The survey number BDBSA wrote into its own tabs of the same file, when they all agree. A form or a
+// matrix the user sent has none: BDBSA assigns it on receipt.
+function surveyNumberFrom(sources: IngestSource[]): string {
+  const found = new Set<string>();
+  for (const source of sources) {
+    for (const row of source.rows) {
+      const col = findColumn(row, ["survey number", "survey #", "surveynr", "survey/project number"]);
+      const value = col ? row[col].trim() : "";
+      if (value && value !== "0") found.add(value);
+    }
+  }
+  return found.size === 1 ? [...found][0] : "";
 }
 
 // Classifies every source, stamps the rows of the ones it can read, and reports the lot. A tab with
@@ -345,11 +373,20 @@ async function parseFileToSources(file: File): Promise<IngestSource[]> {
 //
 // A hidden tab is a lookup (a species list, an observer list): reported, never read.
 //
-// A workbook holding a form someone fills in and sends (`convertRambleTemplate`) is read as that
-// form first: its form tabs become the 3-tier rows BDBSA's automation would produce, and those
-// rows go through the same pipeline as any SITE / VISIT / SPECIES tab. A file sent back by BDBSA
-// already carries those tabs next to the form; they describe the same records, so they are left
-// out rather than counted twice - and say so.
+// Three kinds of file are recognised by what they are, and turned into the 3-tier rows BDBSA's own
+// automation would make, which then go through the same pipeline as any SITE / VISIT / SPECIES tab:
+// - a form someone fills in and sends (`convertRambleTemplate`),
+// - a sample matrix (`convertSampleMatrix`),
+// - a flat BDBSA return, with no Site or Visit in it (`convertFlatReturns`).
+// The first two are what a person enters; BDBSA's own tabs for the same records can sit in the same
+// file, describe the same records, and are left out rather than counted twice - and say so. A flat
+// return is the finished thing, so it is only read when no form or matrix is there to be read instead.
+//
+// A protected ("locked") sheet is left out when the file has other sheets to read. In these templates
+// the protection is on the entry sheets too, but their records are in the return tabs; what the lock
+// really marks is the layout and the roll-ups (scores, offsets, utilisation), which are calculated
+// and have no place in the 3-tier model. A return tab that is nearly all formulas is calculated from
+// those sheets, and is left out when a finished return of the same kind is in the file.
 function prepareSources(sources: IngestSource[]): { rows: RawRow[]; reports: SourceReport[]; templates: TemplateResult[] } {
   const rows: RawRow[] = [];
   const reports: SourceReport[] = [];
@@ -361,29 +398,62 @@ function prepareSources(sources: IngestSource[]): { rows: RawRow[]; reports: Sou
   const files = [...new Set(sources.map((s) => s.file))];
   for (const file of files) {
     const fileSources = sources.filter((s) => s.file === file);
-    const conversion = convertRambleTemplate(fileSources.filter((s) => !s.hidden).map((s) => ({ sheetName: s.sheet, grid: s.grid })));
-    if (conversion) templates.push({ file, conversion });
+    const visible = fileSources.filter((s) => !s.hidden);
+    const asSheet = (s: IngestSource) => ({ sheetName: s.sheet, grid: s.grid });
 
+    const conversions: { conversion: TemplateConversion; origin: string }[] = [];
+    const consumed = new Map<string, { role: string; formName: string }>();
+    const take = (conversion: TemplateConversion | null, origin: string) => {
+      if (!conversion) return;
+      conversions.push({ conversion, origin });
+      for (const tab of conversion.formTabs) consumed.set(tab.sheetName, { role: tab.role, formName: conversion.formName });
+    };
+    take(convertRambleTemplate(visible.map(asSheet)), "the form");
+    take(convertSampleMatrix(visible.filter((s) => !consumed.has(s.sheet)).map(asSheet)), "the matrix");
+    if (conversions.length === 0) {
+      const returns = visible.filter((s) => isFlatReturn(s.grid));
+      const finished = returns.filter((s) => s.formulaShare < DERIVED_FORMULA_SHARE);
+      take(convertFlatReturns((finished.length > 0 ? finished : returns).map(asSheet)), "the return");
+    }
+
+    const leftOutTwins: IngestSource[] = [];
     for (const source of fileSources) {
       const label = sourceLabel(source);
       if (source.hidden) {
         reports.push({ label, rowCount: source.rowCount, roleLabel: "Hidden", via: "hidden", reason: "Hidden tab, taken to be a lookup list", read: false });
         continue;
       }
-      const formTab = conversion?.formTabs.find((t) => t.sheetName === source.sheet);
+      const formTab = consumed.get(source.sheet);
       if (formTab) {
-        reports.push({ label, rowCount: source.grid.length, roleLabel: formTab.role, via: "template", reason: `Part of the ${conversion?.formName}`, read: true });
+        reports.push({ label, rowCount: source.rows.length || source.grid.length, roleLabel: formTab.role, via: "template", reason: `Part of the ${formTab.formName}`, read: true });
+        continue;
+      }
+      if (source.locked && visible.length > 1) {
+        reports.push({
+          label,
+          rowCount: source.rows.length,
+          roleLabel: "Locked",
+          via: "locked",
+          reason: "Locked sheet: the template's layout and roll-ups, not entered records",
+          read: false,
+        });
         continue;
       }
       const verdict = classify(source);
-      if (conversion) {
+      if (conversions.length > 0) {
         const alreadyConverted = verdict.via !== "none";
+        if (alreadyConverted) leftOutTwins.push(source);
+        const calculated = isFlatReturn(source.grid) && source.formulaShare >= DERIVED_FORMULA_SHARE;
         reports.push({
           label,
           rowCount: source.rows.length,
           roleLabel: verdict.role?.label ?? "Not recognised",
-          via: verdict.via,
-          reason: alreadyConverted ? "Already produced from the form tabs in this file" : verdict.reason,
+          via: calculated ? "derived" : verdict.via,
+          reason: calculated
+            ? "Calculated by the template (formulas); the finished return in this file is read instead"
+            : alreadyConverted
+              ? `Already produced from ${conversions.map((c) => c.origin).join(" and ")} in this file`
+              : verdict.reason,
           read: false,
         });
         continue;
@@ -400,11 +470,21 @@ function prepareSources(sources: IngestSource[]): { rows: RawRow[]; reports: Sou
       if (read) rows.push(...stampRole(source.rows, verdict.role, label));
     }
 
-    if (conversion) {
+    // The survey number the user's form or matrix lacks, from BDBSA's own tab of the same file.
+    const survey = surveyNumberFrom(leftOutTwins);
+
+    for (const { conversion, origin } of conversions) {
+      const adopted = survey && conversion.tiers.some((t) => t.rows.some((r) => "Survey #" in r && !r["Survey #"]));
+      if (adopted) {
+        for (const tier of conversion.tiers) for (const row of tier.rows) if ("Survey #" in row && !row["Survey #"]) row["Survey #"] = survey;
+        conversion.notes = conversion.notes.filter((n) => !n.startsWith("Survey # is assigned by BDBSA"));
+        conversion.notes.unshift(`Survey # ${survey} was taken from BDBSA's own tab in this file. It is not on what the user sent.`);
+      }
+      templates.push({ file, conversion });
       for (const tier of conversion.tiers) {
-        const tierSource: IngestSource = { file, sheet: tier.name, rows: tier.rows, fileNameApplies: false, grid: [], hidden: false, rowCount: tier.rows.length };
+        const tierSource: IngestSource = { file, sheet: tier.name, rows: tier.rows, fileNameApplies: false, grid: [], hidden: false, rowCount: tier.rows.length, locked: false, formulaShare: 0 };
         const verdict = classify(tierSource);
-        const label = `${file} / ${tier.name} (from the form)`;
+        const label = `${file} / ${tier.name} (from ${origin})`;
         reports.push({ label, rowCount: tier.rows.length, roleLabel: verdict.role?.label ?? "As stated", via: "template", reason: `Built from the ${conversion.formName}`, read: true });
         rows.push(...stampRole(tier.rows, verdict.role, label));
       }
@@ -415,7 +495,7 @@ function prepareSources(sources: IngestSource[]): { rows: RawRow[]; reports: Sou
 
 function isKnownSchemaFieldName(key: string): boolean {
   const normalized = normalizeHeader(key);
-  return ALL_SCHEMA_FIELD_NAMES.some((f) => normalizeHeader(f) === normalized);
+  return ALL_SCHEMA_FIELD_NAMES_WITH_ALIASES.some((f) => normalizeHeader(f) === normalized);
 }
 
 // "Each row on the species CSVs are occurrences... this is a nuance that sits between visits and
@@ -449,8 +529,23 @@ const IDENTITY_COLUMNS: string[][] = [
   ["species", "scientific name"],
   ["common name"],
   ["source id", "sourceid"],
-  ["voucher #", "voucher no", "voucher number"],
+  ["voucher number", "voucher #", "voucher no"],
+  // The organism's own facts that the template has no field for (a macroinvertebrate's family, life
+  // stage and the habitat it was sampled in): kept on the Occurrence, where they are not mistaken for
+  // another observation type's field.
+  ["order"],
+  ["family"],
+  ["epa taxa code"],
+  ["life stage"],
+  ["habitat"],
+  ["transect number"],
+  ["institution rego #", "specimen registration #"],
 ];
+
+// What an Occurrence carries that is not one of its own schema fields: the organism's name, where it
+// was sampled, the date to trace it to its Visit. Kept and flagged for review, never reported as another
+// record type's field (they are known names of the Observation templates, so they would be).
+const OCCURRENCE_CARRIED = new Set(IDENTITY_COLUMNS.flat().map(normalizeHeader));
 
 function expandSpeciesOccurrences(rows: RawRow[]): RawRow[] {
   return rows.flatMap((row, i) => {
@@ -500,11 +595,22 @@ function expandSpeciesOccurrences(rows: RawRow[]): RawRow[] {
     const identityColumns = IDENTITY_COLUMNS.map((names) => findColumn(rest, names)).filter((c): c is string => c !== null);
     const speciesNameCol = findColumn(rest, ["species", "scientific name"]);
     const speciesName = speciesNameCol ? rest[speciesNameCol] : "";
+    const taxonomicTypeColumn = findColumn(rest, ["taxonomic type", "speciestype"]);
+    // The Occurrence frame has one field for the species' identity: "NSX Code & Species".
+    const nsxAndSpecies = [nsxCode, speciesName].filter(Boolean).join(" - ");
 
     // The Occurrence only carries what actually identifies "this real-world occurrence" - the
     // structural coordinate/date columns `resolveNaturalKeyRelationships` needs to trace it back to
     // its Visit, plus species identity and the raw count. The ecological detail columns (Weight,
     // Strata, Life Form, ...) belong to the Observation underneath it, not duplicated here.
+    const observationFields = FIELD_SCHEMA[`Observation:${classification.observationType}`] ?? [];
+
+    // A comment on the species record. An Individual or Population Observation has "Observation Comment"; the
+    // Community frame has none, so there it is the Occurrence's ("Occurrence Comment"): said about this
+    // species at this place, not about the vegetation.
+    const commentCol = findColumn(rest, ["observation comment", "species comment", "spcomm"]);
+    const commentMovesUp = Boolean(commentCol) && !observationFields.some((f) => normalizeHeader(f) === "observationcomment");
+
     const occurrenceRow: RawRow = {
       Kind: "Occurrence",
       Type: classification.occurrenceType,
@@ -515,22 +621,30 @@ function expandSpeciesOccurrences(rows: RawRow[]): RawRow[] {
       ...(zoneCol ? { Zone: rest[zoneCol] } : {}),
       ...(visitDateCol ? { "Visit date": rest[visitDateCol] } : {}),
       ...Object.fromEntries(referenceColumns.map((c) => [c.column, rest[c.column]])),
-      ...Object.fromEntries(identityColumns.map((c) => [c, rest[c]])),
+      // The species name is inside "NSX Code & Species"; the rest of the identity columns ride along.
+      ...Object.fromEntries(identityColumns.filter((c) => c !== speciesNameCol).map((c) => [c, rest[c]])),
       ...(speciesName ? { Label: speciesName } : {}),
       ...(rest.__source ? { __source: rest.__source } : {}),
-      ...(nsxCode ? { "NSX code": nsxCode } : {}),
-      "Number Observed": numberObserved,
+      ...(nsxAndSpecies ? { "NSX Code & Species": nsxAndSpecies } : {}),
+      ...(commentMovesUp && commentCol && rest[commentCol] ? { "Occurrence Comment": rest[commentCol] } : {}),
+      // No "Number Observed" here: the Occurrence frames have no count. A Population Observation keeps it
+      // (below); an Individual or Community is implied by its type (one animal, present but not counted).
       "Taxonomic Type": taxonomicType,
     };
 
-    // The count lives on the Occurrence. The Observation keeps a "Number Observed" only where its own
-    // template has the field (Population); on an Individual or a Community it would be reported as
-    // another type's field on every row.
-    const observationFields = FIELD_SCHEMA[`Observation:${classification.observationType}`] ?? [];
+    // The Observation keeps a "Number Observed" only where its own template has the field (Population);
+    // on an Individual or a Community it would be reported as another type's field on every row.
     const keepNumberObserved = observationFields.some((f) => normalizeHeader(f) === "numberobserved");
     const observationRow: RawRow = {
       ...Object.fromEntries(
-        Object.entries(rest).filter(([key]) => !identityColumns.includes(key) && (keepNumberObserved || key !== numberObservedCol)),
+        Object.entries(rest).filter(
+          ([key]) =>
+            !identityColumns.includes(key) &&
+            key !== taxonomicTypeColumn &&
+            key !== nsxCodeCol &&
+            !(commentMovesUp && key === commentCol) &&
+            (keepNumberObserved || key !== numberObservedCol),
+        ),
       ),
       [typeCol ?? "Type"]: classification.observationType,
       [idCol ?? "ID"]: observationId,
@@ -657,10 +771,31 @@ function toRecords(rows: RawRow[]): ParsedRecord[] {
     // derived from its key columns or coordinates later), and a record that ends with no id at all is
     // reported once, as "Missing ID", by `validateRecords`.
 
-    const structuralCols = new Set(
-      [kindCol, typeCol, idCol, parentIdCol, labelCol, surveyCol, ...referenceColumns.map((c) => c.column)].filter((c): c is string => c !== null),
-    );
+    // How a record is traced back to its Visit (coordinates, visit date) is not always a field of the record. An
+    // Occurrence has none; an Individual or Population Observation has none either (their frames have no
+    // coordinate table). Where the record's own template lacks the field the column is consumed, not shown: the
+    // place is the Site's, and the date the Visit's. A Community or Non-biotic Observation has the coordinate
+    // fields, so they stay fields.
     const schemaFieldNames = FIELD_SCHEMA[`${kind}:${type}`];
+    const lacksField = (name: string) => !schemaFieldNames || !schemaFieldNames.some((f) => normalizeHeader(f) === normalizeHeader(name));
+    const latitudeCol = findColumn(row, ["latitude"]);
+    const longitudeCol = findColumn(row, ["longitude"]);
+    const occurrenceTrace =
+      kind === "Occurrence"
+        ? [eastingCol, northingCol, zoneCol, visitDateCol, latitudeCol, longitudeCol]
+        : kind === "Observation"
+          ? [
+              visitDateCol,
+              ...(lacksField("Easting") ? [eastingCol] : []),
+              ...(lacksField("Northing") ? [northingCol] : []),
+              ...(lacksField("Zone") ? [zoneCol] : []),
+              ...(lacksField("Latitude") ? [latitudeCol] : []),
+              ...(lacksField("Longitude") ? [longitudeCol] : []),
+            ]
+          : [];
+    const structuralCols = new Set(
+      [kindCol, typeCol, idCol, parentIdCol, labelCol, surveyCol, ...occurrenceTrace, ...referenceColumns.map((c) => c.column)].filter((c): c is string => c !== null),
+    );
 
     // A record whose kind:type has a real schema gets exactly that schema's own fields, always
     // shown even when blank (matching how the real templates render every field, dash if empty).
@@ -682,7 +817,7 @@ function toRecords(rows: RawRow[]): ParsedRecord[] {
       // instead silently broke both annotations for any real file whose header didn't happen to
       // already match our schema's own wording (i.e. every real file's schema'd fields).
       for (const field of schemaFieldNames) {
-        const col = findColumn(row, [field]);
+        const col = findColumn(row, [field, ...(FIELD_ALIASES[field] ?? [])]);
         if (col) matchedCols.add(col);
         fields.push({ field, value: col ? row[col] : "" });
       }
@@ -697,7 +832,12 @@ function toRecords(rows: RawRow[]): ParsedRecord[] {
         // Caught directly by the user uploading a real, unnormalized BDBSA XLSX: with no Kind/Type
         // column, nothing was flagged at all and the JSON looked deceptively clean.
         fields.push({ field: key, value, flagged: true });
-      } else if (value && isKnownSchemaFieldName(key) && !(kind === "Event" && LOCATION_COLUMNS.has(normalizeHeader(key)))) {
+      } else if (
+        value &&
+        isKnownSchemaFieldName(key) &&
+        !(kind === "Event" && LOCATION_COLUMNS.has(normalizeHeader(key))) &&
+        !(kind === "Occurrence" && OCCURRENCE_CARRIED.has(normalizeHeader(key)))
+      ) {
         errors.push(`"${key}" isn't part of the ${kind || "Unknown"}:${type || "Unknown"} ingestion template - it belongs to a different record type`);
       } else if (value) {
         // Genuinely novel on a schema'd type - a real custom property, or a real BDBSA column this
@@ -1187,6 +1327,9 @@ function serializeIngestedFields(fields: Record<string, string>, flaggedFields: 
     const notes: string[] = [];
     if (flaggedFields.includes(key)) notes.push("double check this");
     if (crosswalk && key in crosswalk) notes.push(crosswalk[key] ? `BDBSA: ${crosswalk[key]}` : "BDBSA: no equivalent found");
+    // The 20/10 check, beside the confirmed code and marked as reported where no file we hold shows it.
+    const reported = reportedCodesFor(`${kind}:${type}`, key);
+    if (reported) notes.push(`BDBSA 20/10 check: ${reportedCodesText(reported)}${reported.codes.some((c) => c.seenIn.length > 0) ? "" : " (reported, not seen in a file we hold)"}`);
     if (units && key in units) notes.push(`Unit: ${units[key]}`);
     const comment = notes.length > 0 ? ` // ${notes.join(" - ")}` : "";
     return `${indent}  ${JSON.stringify(key)}: ${JSON.stringify(value)}${comma}${comment}`;
@@ -1432,7 +1575,7 @@ const SAMPLE_ROWS: SampleRow[] = [
     ID: "OBS094",
     "Parent ID": "SU00501",
     Label: "Observation OBS094 - Individual",
-    "Life Form": "Mammal",
+    "Life Form & Desc": "Mammal",
     Sex: "Female",
     "Weight": "410",
     "Animal Life Stage": "Adult",
@@ -1455,7 +1598,7 @@ const SAMPLE_ROWS: SampleRow[] = [
     ID: "OBS095",
     "Parent ID": "VU00501",
     Label: "Observation OBS095 - Individual",
-    "Life Form": "Amphibian",
+    "Life Form & Desc": "Amphibian",
     "Weight": "35",
   },
   {
@@ -1466,8 +1609,8 @@ const SAMPLE_ROWS: SampleRow[] = [
     Label: "Observation OBS096 - Community",
     "Vegetation Conditions": "Good",
     "SA Structural Formation": "Low Woodland",
-    "Crown Extent": "45",
-    "DBH": "220",
+    "Canopy Type": "Open",
+    "Projected Foliage Cover": "45",
   },
   {
     Kind: "Event",
@@ -1494,7 +1637,7 @@ const SAMPLE_ROWS: SampleRow[] = [
     ID: "INC0231",
     "Parent ID": "SU00777",
     Label: "Observation INC-0231 - Individual",
-    "Life Form": "Bird",
+    "Life Form & Desc": "Bird",
     Activity: "Foraging",
   },
   {
@@ -1505,8 +1648,8 @@ const SAMPLE_ROWS: SampleRow[] = [
     Label: "Observation OBS097 - Population",
     "Number Observed": "14",
     "Is Annual Herb?": "No",
-    "Life Form": "Herb",
-    "Cover/Abundance": "Moderate",
+    "Life Form & Desc": "Herb",
+    "Cover/Abundance & Desc": "Moderate",
   },
   // Every row below is deliberately broken - one per validation rule this tool checks (see this
   // file's header comment) - but per the user directly: "the records ingested will not have these
@@ -1634,7 +1777,7 @@ function UploadPanel({
           ref={fileInputRef}
           type="file"
           multiple
-          accept=".csv,.json,.xls,.xlsx,text/csv,application/json,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+          accept=".csv,.json,.xls,.xlsx,.xlsm,.xlsb,text/csv,application/json,application/vnd.ms-excel,application/vnd.ms-excel.sheet.macroEnabled.12,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
           className="hidden"
           onChange={handleFileChange}
         />
@@ -1997,7 +2140,7 @@ function SourceReportCard({
           <p className="text-sm text-tertiary">What each tab or file was taken to hold, on what basis, and how its records were placed in the tree.</p>
         </div>
         {templates.map((t) => (
-          <Button key={t.file} size="sm" color="secondary" iconLeading={Download01} onClick={() => downloadThreeTierWorkbook(t)}>
+          <Button key={`${t.file}-${t.conversion.formName}`} size="sm" color="secondary" iconLeading={Download01} onClick={() => downloadThreeTierWorkbook(t)}>
             Download 3-tier workbook
           </Button>
         ))}
@@ -2023,7 +2166,7 @@ function SourceReportCard({
                 </Badge>
               </Cell>
               <Cell>{r.reason}</Cell>
-              <Cell>{r.read ? (r.via === "template" && !placements.has(r.label) ? "Read as the form" : placements.get(r.label)) || <span className="text-quaternary">-</span> : "Left out"}</Cell>
+              <Cell>{r.read ? (r.via === "template" && !placements.has(r.label) ? "Read into the rows below" : placements.get(r.label)) || <span className="text-quaternary">-</span> : "Left out"}</Cell>
             </Row>
           )}
         </TableBody>
@@ -2037,6 +2180,105 @@ function SourceReportCard({
         <p className="text-sm text-tertiary">
           {keptApart} IDs repeat across tabs (each tab numbers its own rows) and were kept apart by record type, e.g. Site-1 and Visit-1.
         </p>
+      )}
+    </div>
+  );
+}
+
+// Every record with its status, so which are valid and which are not reads at a glance - the
+// Structure tree stays pure structure (no error styling, per the designer) and this is where the
+// checks show. Same underline-tab home as the project page's Validation tab (`datasets-view.tsx`),
+// same status colours as `RecordCard`. Filtered to "With errors" when there are any, since that is
+// what a person opens it for; paged at `RECORDS_PAGE_SIZE` so a few thousand records stay as light
+// as a few dozen. Choosing a row opens the record in the Structure tab.
+type RecordsFilter = "errors" | "valid" | "all";
+const RECORDS_PAGE_SIZE = 100;
+const ISSUES_SHOWN = 2;
+
+function RecordsList({ records, onOpen }: { records: ParsedRecord[]; onOpen: (record: ParsedRecord) => void }) {
+  const counts = useMemo(() => {
+    const withErrors = records.filter((r) => r.errors.length > 0).length;
+    return { all: records.length, errors: withErrors, valid: records.length - withErrors };
+  }, [records]);
+  const [filter, setFilter] = useState<RecordsFilter>(counts.errors > 0 ? "errors" : "all");
+  const [visible, setVisible] = useState(RECORDS_PAGE_SIZE);
+
+  const matching = useMemo(
+    () => records.filter((r) => (filter === "errors" ? r.errors.length > 0 : filter === "valid" ? r.errors.length === 0 : true)),
+    [records, filter],
+  );
+  const shown = matching.slice(0, visible);
+  // A column of dashes says nothing: "From" appears only when the upload had more than one place to come from.
+  const showSource = useMemo(() => records.some((r) => r.source), [records]);
+  // One file: the tab name is enough. Several: keep the file name too, since two files can have a tab of the same name.
+  const oneFile = useMemo(() => new Set(records.map((r) => r.source.split(" / ")[0])).size <= 1, [records]);
+  const sourceLabelOf = (source: string) => (oneFile && source.includes(" / ") ? source.split(" / ").slice(1).join(" / ") : source);
+
+  const handleFilter = (key: Key) => {
+    setFilter(key === "valid" ? "valid" : key === "all" ? "all" : "errors");
+    setVisible(RECORDS_PAGE_SIZE);
+  };
+
+  return (
+    <div className="flex flex-col gap-4">
+      <Tabs selectedKey={filter} onSelectionChange={handleFilter}>
+        <TabList aria-label="Filter records by status" type="button-border" size="sm" className="self-start">
+          <Tab id="errors" label={`With errors (${counts.errors})`} />
+          <Tab id="valid" label={`Valid (${counts.valid})`} />
+          <Tab id="all" label={`All (${counts.all})`} />
+        </TabList>
+      </Tabs>
+
+      {matching.length === 0 ? (
+        <div className="flex flex-col items-center justify-center gap-2 rounded-xl border border-dashed border-secondary p-12 text-center">
+          <p className="text-sm font-medium text-primary">{filter === "errors" ? "No records with errors" : "No records"}</p>
+          <p className="text-sm text-tertiary">{filter === "errors" ? "Every record passed the checks." : "Nothing matches this filter."}</p>
+        </div>
+      ) : (
+        <>
+          <Table aria-label="Records and their status" onRowAction={(key) => onOpen(records.find((r) => r.rowNumber === Number(key)) ?? records[0])}>
+            <TableHeader>
+              <Column id="status" isRowHeader>
+                Status
+              </Column>
+              <Column id="record">Record</Column>
+              <Column id="kind">Kind</Column>
+              {showSource ? <Column id="source">From</Column> : null}
+              <Column id="issues">Issues</Column>
+            </TableHeader>
+            <TableBody items={shown}>
+              {(r) => (
+                <Row id={r.rowNumber}>
+                  <Cell>
+                    <Badge size="sm" color={r.errors.length === 0 ? "success" : "error"}>
+                      {r.errors.length === 0 ? "Valid" : `${r.errors.length} error${r.errors.length === 1 ? "" : "s"}`}
+                    </Badge>
+                  </Cell>
+                  <Cell>{r.label || r.id || `Row ${r.rowNumber}`}</Cell>
+                  <Cell>{[r.kind, r.type].filter(Boolean).join(" · ") || <span className="text-quaternary">Not provided</span>}</Cell>
+                  {showSource ? <Cell>{r.source ? sourceLabelOf(r.source) : <span className="text-quaternary">Not provided</span>}</Cell> : null}
+                  <Cell>
+                    {r.errors.length > 0 && (
+                      <ul className="flex flex-col gap-0.5">
+                        {r.errors.slice(0, ISSUES_SHOWN).map((err) => (
+                          <li key={err} className="text-xs text-error-primary">
+                            {err}
+                          </li>
+                        ))}
+                        {r.errors.length > ISSUES_SHOWN && <li className="text-xs text-tertiary">+{r.errors.length - ISSUES_SHOWN} more</li>}
+                      </ul>
+                    )}
+                  </Cell>
+                </Row>
+              )}
+            </TableBody>
+          </Table>
+          {matching.length > shown.length && (
+            <Button size="sm" color="secondary" className="self-start" iconLeading={ChevronDown} onClick={() => setVisible((n) => n + RECORDS_PAGE_SIZE)}>
+              Load {Math.min(RECORDS_PAGE_SIZE, matching.length - shown.length)} more ({matching.length - shown.length} not shown)
+            </Button>
+          )}
+        </>
       )}
     </div>
   );
@@ -2148,6 +2390,7 @@ export default function DataModelStressTestProto() {
   const [sourceReports, setSourceReports] = useState<SourceReport[]>([]);
   const [keptApart, setKeptApart] = useState(0);
   const [templates, setTemplates] = useState<TemplateResult[]>([]);
+  const [view, setView] = useState<string | number>("structure");
 
   const applyRows = (rows: RawRow[], name: string, reports: SourceReport[] = [], converted: TemplateResult[] = []) => {
     if (rows.length === 0) throw new Error("No rows found in this file");
@@ -2162,6 +2405,7 @@ export default function DataModelStressTestProto() {
     setFileName(name);
     setParseError(null);
     setSelectedKey(null);
+    setView("structure");
   };
 
   const handleParseError = (e: unknown) => {
@@ -2227,30 +2471,60 @@ export default function DataModelStressTestProto() {
 
         <UploadPanel onFiles={handleFiles} onSampleData={handleSampleData} onSampleWorkbook={handleSampleWorkbook} error={parseError} />
 
-        {sourceReports.length > 1 && records.length > 0 && <SourceReportCard reports={sourceReports} records={records} keptApart={keptApart} templates={templates} />}
-
         {records.length === 0 ? (
           <div className="flex flex-1 flex-col items-center justify-center gap-2 rounded-xl border border-dashed border-secondary p-12 text-center">
             <p className="text-sm font-medium text-primary">No file loaded yet</p>
             <p className="text-sm text-tertiary">Upload a file or load the sample data to see records parsed and validated here.</p>
           </div>
         ) : (
-          <div className="flex flex-col gap-8 lg:flex-row lg:items-start">
-            <StructureTree key={fileName} records={records} selectedKey={selectedKey} onSelectionChange={setSelectedKey} />
+          <div className="flex flex-col gap-4">
+            <SummaryBar fileName={fileName ?? ""} records={records} />
 
-            <div className="flex flex-1 flex-col gap-4">
-              <SummaryBar fileName={fileName ?? ""} records={records} />
-              {isProjectSelected ? (
-                <ProjectSummaryCard counts={countChildrenByKind(treeRoots)} surveyNumber={findSurveyNumber(records)} />
-              ) : selectedRecord ? (
-                <RecordCard key={`${selectedRecord.id || "row"}-${selectedRecord.rowNumber}`} record={selectedRecord} nestedCounts={nestedCountsByRow.get(selectedRecord.rowNumber)} />
-              ) : (
-                <div className="flex flex-1 flex-col items-center justify-center gap-2 rounded-xl border border-dashed border-secondary p-12 text-center">
-                  <p className="text-sm font-medium text-primary">No record selected</p>
-                  <p className="text-sm text-tertiary">Select a record in the Structure tree on the left to see its details here.</p>
+            <Tabs selectedKey={view} onSelectionChange={setView}>
+              <TabList aria-label="Ingestion views" type="underline" size="md">
+                <Tab id="structure" label="Structure" icon={Dataflow01} />
+                <Tab id="records" label="Records" icon={ClipboardCheck} />
+                {sourceReports.length > 1 && <Tab id="summary" label="Summary" icon={Grid01} />}
+              </TabList>
+
+              {/* Kept mounted while another tab is open, so the tree keeps what was expanded and loaded.
+                  It builds only what is open, so staying mounted costs almost nothing. */}
+              <TabPanel id="structure" shouldForceMount className="pt-6 data-[inert]:hidden">
+                <div className="flex flex-col gap-8 lg:flex-row lg:items-start">
+                  <StructureTree key={fileName} records={records} selectedKey={selectedKey} onSelectionChange={setSelectedKey} />
+
+                  <div className="flex flex-1 flex-col gap-4">
+                    {isProjectSelected ? (
+                      <ProjectSummaryCard counts={countChildrenByKind(treeRoots)} surveyNumber={findSurveyNumber(records)} />
+                    ) : selectedRecord ? (
+                      <RecordCard key={`${selectedRecord.id || "row"}-${selectedRecord.rowNumber}`} record={selectedRecord} nestedCounts={nestedCountsByRow.get(selectedRecord.rowNumber)} />
+                    ) : (
+                      <div className="flex flex-1 flex-col items-center justify-center gap-2 rounded-xl border border-dashed border-secondary p-12 text-center">
+                        <p className="text-sm font-medium text-primary">No record selected</p>
+                        <p className="text-sm text-tertiary">Select a record in the Structure tree on the left to see its details here.</p>
+                      </div>
+                    )}
+                  </div>
                 </div>
+              </TabPanel>
+
+              <TabPanel id="records" className="pt-6">
+                <RecordsList
+                  key={fileName}
+                  records={records}
+                  onOpen={(record) => {
+                    setSelectedKey(`row-${record.rowNumber}`);
+                    setView("structure");
+                  }}
+                />
+              </TabPanel>
+
+              {sourceReports.length > 1 && (
+                <TabPanel id="summary" className="pt-6">
+                  <SourceReportCard reports={sourceReports} records={records} keptApart={keptApart} templates={templates} />
+                </TabPanel>
               )}
-            </div>
+            </Tabs>
           </div>
         )}
 

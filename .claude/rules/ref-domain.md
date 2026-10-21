@@ -128,6 +128,18 @@ data-model` is the canonical place to read the up-to-date gap list, not this fil
   codes (datum, vegetation condition, method) where the form carries words; the words are kept. A hidden tab is a lookup
   (species list, observers) and is never read. A Site id is "ABC-NN-NN": the patch/quad is two digits, so ALT-12-1 is
   ALT-12-01 (designer, 20 Oct 2026). See `context/decisions/2026-10-20-07-*`.
+- **Where the BDBSA column names can be checked (real material, not our own mapping).** The Heathfield 2019 submission's
+  SITE / VISIT / SPECIES / SPECIES FAUNA tabs (a second header row of raw keys), and the BDBSA Data Returns Template's Codes tab
+  (the lookups: location method, datum, location reliability, collection method, species type, date reliability) and OBSERVERS tab
+  (OBSERVERNR, OBSERVERNAME). The "20/10 check" codes in `config/data-model-schema.ts` (`BDBSA_REPORTED_CODES`) say which of those
+  show each code as a whole column header; a code none of them shows is reported, not confirmed. Our own "Wireframe vs BDBSA
+  Concept Mapping" workbook is not evidence for itself. Its Non-biotic, Community and Population tabs also carry a team's Action,
+  Event Type, BDBSA Oracle Forms and Comments columns, not yet read into the app.
+- **Four collection methodologies are read by the sandbox** (`2026-10-21-01-*`): the Ramble form, the Bioblitz macroinvertebrate
+  matrix, and the BAM (Bushland) and RAM (Rangeland) scoresheets, which end in a flat BDBSA return with no Site or Visit. A return's Site
+  is a survey and a place and its Visit is a Site on a date; both are inferred. Locked sheets in the scoresheets are the layout and the
+  roll-ups (scores, offsets, utilisation) and are not read; their species are in the return. A BDBSA tab that is nearly all formulas is
+  calculated by the template, not entered.
 - **Sample/demo data must never self-describe its own bugs.** A deliberately-broken sample record's
   Label (or any other UI-visible field) has to look exactly like a real record would - flagged
   directly by the user off a screenshot: "the records ingested will not have these comments like
