@@ -95,7 +95,7 @@ const hardRules = [
     id: "4.1",
     name: "form pattern",
     test: (s) => /<FormRow[\s>]/.test(s) && !/from "@\/app\/pages\/_shared\/form-page"/.test(s),
-    allow: ["_shared/form-row.tsx", "_shared/form-page.tsx", "project-registration/option-2/form-sections.tsx"], // form-sections holds the field rows that option-2 renders inside FormPage
+    allow: ["_shared/form-row.tsx", "_shared/form-page.tsx", "project-registration/option-2/form-sections.tsx"], // form-sections holds the field rows that the Add Project form renders inside FormPage
     message: "Uses <FormRow> without <FormPage>. Every form renders FormPage (see /patterns/forms).",
   },
   {

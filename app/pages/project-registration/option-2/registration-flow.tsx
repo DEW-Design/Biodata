@@ -43,7 +43,6 @@ import { useUserRole } from "@/lib/use-user-role";
 import { FormPage } from "@/app/pages/_shared/form-page";
 import { createdProjectHref, saveCreatedProject, type CreatedProject } from "@/app/pages/_shared/created-projects-store";
 import { useSampleContent } from "@/app/_prototype-tools/sample-content";
-import { RegistrationLayoutSwitcher } from "../layout-switcher";
 import { sampleProjectForm } from "../sample-content";
 import { SuccessScreen } from "../success-screen";
 import { initialDataCollection, initialProjectDetails, initialRestrictions } from "../types";
@@ -212,7 +211,6 @@ export function RegistrationFlow() {
   return (
     <>
       <RegistrationShell sidebar={sidebar}>{main}</RegistrationShell>
-      <RegistrationLayoutSwitcher current="option-1" />
       <DestructiveModal confirmIcon={Trash01} cancelIcon={ArrowLeft}
         isOpen={confirmCancel}
         onOpenChange={setConfirmCancel}

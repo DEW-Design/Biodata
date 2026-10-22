@@ -512,3 +512,4 @@ Not imported into every session on purpose: read or grep it when a task needs hi
 - [2026-10-22] post-6-oct: the project header's facts are disclosed on request - `2026-10-22-03-post-6-oct-the-project-header-s-facts.md`
 - [2026-10-22] post-6-oct: the project header's toggle no longer moves, the facts sit in the title's row - `2026-10-22-04-post-6-oct-the-project-header-s-toggle.md`
 - [2026-10-22] On this page: constant weight and an inset focus ring - `2026-10-22-05-on-this-page-constant-weight-and-an-inset.md`
+- [2026-10-23] Add Project option 2 (one question per card) sunset - `2026-10-23-01-add-project-option-2-one-question-per-card.md`
