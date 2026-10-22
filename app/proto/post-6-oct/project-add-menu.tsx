@@ -1,6 +1,6 @@
 "use client";
 
-// The project bar's "+" menu on the post-6-oct lab (the designer, 19 Oct 2026): Upload a dataset, a divider, Add an event, Add an occurrence, Add an observation (each opening its types, as the
+// The project's add menu on the post-6-oct lab, first the bar's "+" and, from 22 Oct 2026, the top-right Add on a project's page (`ProjectAddButton` in shell.tsx) (the designer, 19 Oct 2026): Upload a dataset, a divider, Add an event, Add an occurrence, Add an observation (each opening its types, as the
 // project's own "Add inside" menu does), a divider, then Add an attachment. The lab's own copy of the part of the product's `ActionsMenu` it needs (its submenu of types, drawn from the same
 // `childOptions` and the same record icons), so that nothing of this lab sits in production code (the designer, 19 Oct 2026: "post-6-oct stuff should sit only on the /proto route without being
 // rolled into production"); `ActionsMenu` is as it was. A copy of product code by the designer's instruction: CONTRACTS 1.6 and 0.9 are overridden for this lab only (logged in
@@ -31,7 +31,7 @@ export function ProjectAddMenu({ trigger, onUpload, onAdd, onAttach }: { trigger
   return (
     <Dropdown.Root>
       {trigger}
-      <Dropdown.Popover placement="bottom" className="w-60">
+      <Dropdown.Popover placement="bottom right" className="w-60">
         <Dropdown.Menu
           aria-label="Add"
           onAction={(key) => {

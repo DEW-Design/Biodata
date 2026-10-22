@@ -8,14 +8,19 @@
 // the breadcrumb, the gradient hero's content (Project, the title and its five facts) sits on the page, and the page's actions are in
 // the shell's bar. The designer's tweaks of 19 Oct 2026: the first tab is Overview; "Project at a glance" is gone (its flagged concepts are a chip beside the title and its system notices a summary row that opens into a list, project-notices.tsx,
 // and the counts are the tabs' own); the Overview does not repeat the status and the dates the header shows, nor head itself "Overview" under a tab of that name; and an "i" in
-// the bar opens the project's properties (project-properties.tsx). Each is an opt-in of `ProjectTab`, so the product page is unchanged.
+// the bar opens the project's properties (project-properties.tsx). Each is an opt-in of `ProjectTab`, so the product page is unchanged. Progressive disclosure (22 Oct 2026, the designer: "too much info ... implement progressive
+// disclosure"): the Overview stays open, as the first thing read, and "Data collection and methodology" and "Privacy and restrictions" start closed under their headings (`disclosure`, the real compact Accordion); a section
+// holds its cards 1:1 and opens in place, and "On this page" or editing a card opens the section it is in.
 //
 // The artefact mapping below is the same as `ProjectDetail` in project-detail-template.tsx. It is copied, not shared, so the
 // lab leaves the product page alone; fold it into a shared hook if this layout is chosen.
 // Lab only (CONTRACTS 5.4): nothing outside app/proto imports this file.
 
-import { useMemo, useState, type ReactNode } from "react";
+import { useId, useMemo, useState, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
+import { ChevronDown } from "@untitledui/icons";
+import { Tooltip, TooltipTrigger } from "@/components/base/tooltip/tooltip";
+import { cx } from "@/utils/cx";
 import { BadgeWithDot } from "@/components/base/badges/badges";
 import { ArtefactLightbox, type Artefact } from "@/app/pages/_shared/artefact-lightbox";
 import type { FilterSelection } from "@/app/pages/_shared/list-filter";
@@ -55,40 +60,60 @@ const withQuery = (path: string, query: string) => `${path}${path.includes("?") 
  * facts Project ID, Start Date, End Date, Status and Published by, with the same values and the same status colours. Only where it is
  * drawn differs: on the page under the bar instead of on a gradient card. The page's actions are in the bar.
  */
-function ProjectHeader() {
+function ProjectHeader({ open, onToggle }: { open: boolean; onToggle: () => void }) {
   const { project, meta } = useEditStore();
+  const factsId = useId();
   const d = project.details;
   const status = project.status;
   const statusColor = status === "Active" ? "success" : status === "Under review" ? "warning" : "gray";
   const owner = d.dataOwnerType === "organisation" ? d.dataOwnerOrgName : `${d.dataOwnerContacts[0]?.firstName ?? ""} ${d.dataOwnerContacts[0]?.lastName ?? ""}`.trim();
+  const statusBadge = (
+    <BadgeWithDot size="sm" color={statusColor} className="inline-flex align-baseline">
+      {status}
+    </BadgeWithDot>
+  );
   const facts: { label: string; value: ReactNode }[] = [
     { label: "Project ID", value: meta.code },
     { label: "Start Date", value: formatDay(d.startDate) || "Not provided" },
     { label: "End Date", value: d.endDate ? formatDay(d.endDate) : "Ongoing" },
-    {
-      label: "Status",
-      value: (
-        <BadgeWithDot size="sm" color={statusColor} className="inline-flex align-baseline">
-          {status}
-        </BadgeWithDot>
-      ),
-    },
+    { label: "Status", value: statusBadge },
     { label: "Published by", value: owner },
   ];
+  const label = open ? "Hide project details" : "Show project details";
+  // Nothing at the left of the toggle, or above it, appears or disappears when it is pressed (layout shift: the toggle moved 79px sideways and 20px down under the pointer, because the status badge came before it only
+  // while closed and the eyebrow was drawn only while open). The eyebrow is always there, the badge follows the toggle, and the title's line is as tall as the facts (40px: a 16px label, a 4px gap, a 20px value), so the
+  // title and the tabs do not move either. The facts sit in the same row at the right (the designer, 22 Oct 2026: "have metadata sitting horizontally than stacked"), label over value as the production
+  // hero draws them, and drop under the title only when the row has no room, where the page breaks rather than at a set width.
   return (
-    <div className="flex flex-col gap-4">
-      <div className="flex flex-col gap-1">
-        <p className="m-0 text-xs font-semibold tracking-wide text-quaternary uppercase">Project</p>
-        <h1 className="m-0 text-2xl font-semibold text-balance text-primary">{d.shortTitle}</h1>
-      </div>
-      {/* The facts sit straight on the page, 32px apart: the white card the frame draws (Figma 484:4104, 8px of padding and corners) is gone (the designer, 19 Oct 2026). */}
-      <div className="flex flex-wrap items-start gap-x-8 gap-y-4 self-start">
-        {facts.map((f) => (
-          <div key={f.label} className="flex flex-col gap-1">
-            <p className="m-0 text-xs font-semibold tracking-wide text-quaternary uppercase">{f.label}</p>
-            <div className="text-sm text-primary">{f.value}</div>
+    <div className="flex flex-col gap-1">
+      <p className="m-0 text-xs font-semibold tracking-wide text-quaternary uppercase">Project</p>
+      <div className="flex flex-wrap items-center justify-between gap-x-8 gap-y-4">
+        <div className="flex min-h-10 min-w-0 items-center gap-2">
+          <h1 className="m-0 text-2xl font-semibold text-balance text-primary">{d.shortTitle}</h1>
+          <Tooltip title={label} placement="bottom">
+            <TooltipTrigger
+              aria-label={label}
+              aria-expanded={open}
+              aria-controls={open ? factsId : undefined}
+              onPress={onToggle}
+              className="flex size-8 shrink-0 cursor-pointer items-center justify-center rounded-md text-fg-quaternary outline-focus-ring hover:bg-primary_hover hover:text-fg-quaternary_hover focus-visible:outline-2"
+            >
+              <ChevronDown aria-hidden className={cx("size-4 transition-transform duration-150 ease-out motion-reduce:transition-none", open && "rotate-180")} />
+            </TooltipTrigger>
+          </Tooltip>
+          {/* Closed, the status is the one fact kept (it is the one people check first); open, it is among the facts, so it is never said twice. */}
+          {!open && statusBadge}
+        </div>
+        {open && (
+          <div id={factsId} className="flex flex-wrap items-start gap-x-8 gap-y-4">
+            {facts.map((f) => (
+              <div key={f.label} className="flex flex-col gap-1">
+                <p className="m-0 text-xs font-semibold tracking-wide text-quaternary uppercase">{f.label}</p>
+                <div className="text-sm text-primary">{f.value}</div>
+              </div>
+            ))}
           </div>
-        ))}
+        )}
       </div>
     </div>
   );
@@ -157,6 +182,12 @@ function Views({ view, setView, branchOpen, onBranchClose, propertiesOpen, onPro
   const [recordsView, setRecordsView] = useState<RecordsView>("tree");
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
   const [noticesOpen, setNoticesOpen] = useState(false);
+  // Progressive disclosure of the header's facts (the designer, 22 Oct 2026: the top "takes so much space, leaving the user to scroll through the important stuff at the bottom"). It is kept here, per tab,
+  // like the notices, so a person's choice on a tab is not undone by moving to another tab and back. The facts sit in the title's row (project-workspace's `ProjectHeader`), which costs no height where they fit
+  // (1280px and wider on the tabs that have no "On this page"), so they start open on every tab; where they would drop under the title (the Overview beside its "On this page", a narrow window) the toggle gives
+  // the 56px back. First built closed on every tab but the Overview, when they stood under the title and cost 76px.
+  const [headerOpen, setHeaderOpen] = useState<Partial<Record<ProjectView, boolean>>>({});
+  const detailsOpen = headerOpen[view] ?? true;
 
   // The Datasets and flagged-concepts screens are their own pages; the lab opens them on the real project page.
   const pagePath = projectDetailsPath(meta.id);
@@ -193,7 +224,7 @@ function Views({ view, setView, branchOpen, onBranchClose, propertiesOpen, onPro
   // first rows of the Overview's sheet, and a box of their own above the other tabs' content (project-notices.tsx); the flagged-concepts chip is beside the title.
   const lead = (
     <div className="flex flex-col gap-8">
-      <ProjectHeader />
+      <ProjectHeader open={detailsOpen} onToggle={() => setHeaderOpen((h) => ({ ...h, [view]: !detailsOpen }))} />
       <ProjectViewTabs view={view} setView={setView} artefactCount={artefacts.length} />
     </div>
   );
@@ -206,6 +237,7 @@ function Views({ view, setView, branchOpen, onBranchClose, propertiesOpen, onPro
         showGlance={false}
         repeatHeaderFacts={false}
         overviewHeading={false}
+        disclosure
         lead={lead}
         sheetTop={notices(false)}
         onGoToRecords={goToRecords}

@@ -13,11 +13,12 @@
 // CONTRACTS 4.6: each data owner contact carries its own role, shown with that contact. There is no
 // "Project team" card, and no separate role field for whoever registered the project.
 
-import { createContext, createElement, useContext, useEffect, useRef, useState, type ReactNode } from "react";
+import { createContext, createElement, useContext, useEffect, useRef, useState, type Key, type ReactNode } from "react";
 import { getLocalTimeZone } from "@internationalized/date";
 import type { DateValue } from "react-aria-components";
 import { Activity, ArrowLeft, ChevronRight, Edit02, Eye, Flag01, Mail01, Paperclip, Phone01, Plus, Target05, Trash01 } from "@untitledui/icons";
-import { Badge } from "@/components/base/badges/badges";
+import { Accordion } from "@/components/base/accordion/accordion";
+import { Badge, CountBadge } from "@/components/base/badges/badges";
 import { Button } from "@/components/base/buttons/button";
 import { Tooltip, TooltipTrigger } from "@/components/base/tooltip/tooltip";
 import { DestructiveModal } from "@/components/application/modals/modal";
@@ -169,6 +170,8 @@ const InlineEditContext = createContext<{
   footer: HTMLElement | null;
 }>({ editing: null, setEditing: () => {}, open: () => {}, footer: null });
 const CardIdContext = createContext<ProjectCardId | null>(null);
+/** With the `disclosure` prop: the sections after the first are collapsed under their headings (progressive disclosure). `mounted` holds the ones opened at least once: a section's cards are not drawn until then. */
+const DisclosureContext = createContext<{ openKeys: Set<Key>; mounted: Set<Key>; onOpenKeysChange: (keys: Set<Key>) => void } | null>(null);
 
 function CardIcon({ label, icon, onPress, always }: { label: string; icon: typeof Edit02; onPress: () => void; always?: boolean }) {
   return (
@@ -248,8 +251,45 @@ function Card({ card, description, onEdit, onRemove, children }: { card: Project
   );
 }
 
-function Section({ id, title, description, action, bare = false, children }: { id: string; title: string; description?: string; action?: ReactNode; /** No heading: the section is already named by where it sits (the Overview tab's first section). The `id` stays, for "On this page". */ bare?: boolean; children: ReactNode }) {
+function Section({ id, title, description, action, bare = false, count, collapsedNote, children }: { id: string; title: string; description?: string; action?: ReactNode; /** No heading: the section is already named by where it sits (the Overview tab's first section). The `id` stays, for "On this page". */ bare?: boolean; /** With `disclosure`: a count beside the title, shown open or closed. */ count?: number; /** With `disclosure`: a note beside the title while the section is closed, for what its cards would otherwise show (a card that needs details). */ collapsedNote?: ReactNode; children: ReactNode }) {
   const sheet = useContext(SheetContext);
+  const disclosure = useContext(DisclosureContext);
+  if (disclosure && !bare) {
+    const isOpen = disclosure.openKeys.has(id);
+    // The heading is the real Accordion's toggle (the compact variant, as the user record's permissions use it). The section's cards are drawn the first time it opens and kept after, with `inert` while it is
+    // closed so Tab and a screen reader skip them; the map in a closed section is not built until it is wanted (lazy loading).
+    return (
+      <section id={id} className={cx("scroll-mt-4", sheet && "border-t border-secondary px-6 py-3 first:border-t-0")}>
+        <Accordion
+          variant="compact"
+          actionPlacement="beforeChevron"
+          openKeys={disclosure.openKeys}
+          onOpenKeysChange={disclosure.onOpenKeysChange}
+          items={[
+            {
+              id,
+              title: (
+                <span className="flex flex-col gap-0.5">
+                  <span className="flex items-center gap-2 text-sm font-semibold text-primary">
+                    {title}
+                    {count !== undefined && count > 0 && <CountBadge count={count} color="gray" />}
+                    {!isOpen && collapsedNote}
+                  </span>
+                  {description && <span className="text-sm font-normal text-balance text-tertiary">{description}</span>}
+                </span>
+              ),
+              action,
+              content: disclosure.mounted.has(id) ? (
+                <div inert={!isOpen} className="flex flex-col gap-4 pt-2 pb-3">
+                  {children}
+                </div>
+              ) : null,
+            },
+          ]}
+        />
+      </section>
+    );
+  }
   return (
     <section id={id} aria-label={bare ? title : undefined} className={cx("flex scroll-mt-4 flex-col gap-4", sheet && "border-t border-secondary p-6 first:border-t-0")}>
       {(!bare || action) && (
@@ -284,7 +324,7 @@ function useActiveItem(ids: string[]) {
   const key = ids.join("|");
   useEffect(() => {
     const list = key.split("|");
-    const find = (id: string) => Array.from(document.querySelectorAll<HTMLElement>(`#${id}`)).find((el) => el.getBoundingClientRect().height > 0);
+    const find = (id: string) => Array.from(document.querySelectorAll<HTMLElement>(`#${id}`)).find((el) => el.getBoundingClientRect().height > 0 && !el.closest("[inert]"));
     const update = () => {
       if (Date.now() < pinnedUntil.current) return;
       const scroller = find(list[0])?.closest("main");
@@ -308,14 +348,18 @@ function useActiveItem(ids: string[]) {
   return { active, pin };
 }
 
-export function OnThisPage({ items }: { items: TocItem[] }) {
+export function OnThisPage({ items, onBeforeGo }: { items: TocItem[]; /** Called before a link scrolls; returns true when it opened something (a closed section), so the scroll waits for it to finish opening. */ onBeforeGo?: (id: string) => boolean }) {
   const flat = items.flatMap((i) => [i.id, ...(i.children ?? []).map((c) => c.id)]);
   const { active, pin } = useActiveItem(flat);
   const go = (id: string) => {
+    const opened = onBeforeGo?.(id) ?? false;
     pin(id);
-    Array.from(document.querySelectorAll<HTMLElement>(`#${id}`))
-      .find((el) => el.getBoundingClientRect().height > 0)
-      ?.scrollIntoView({ behavior: "smooth", block: "start" });
+    const scroll = () =>
+      Array.from(document.querySelectorAll<HTMLElement>(`#${id}`))
+        .find((el) => el.getBoundingClientRect().height > 0 && !el.closest("[inert]"))
+        ?.scrollIntoView({ behavior: "smooth", block: "start" });
+    if (opened) window.setTimeout(scroll, 350);
+    else scroll();
   };
   const link = (item: TocItem, child: boolean) => {
     const isActive = active === item.id;
@@ -328,10 +372,12 @@ export function OnThisPage({ items }: { items: TocItem[] }) {
           go(item.id);
         }}
         aria-current={isActive ? "location" : undefined}
+        // The weight never changes with the state (a heavier face is wider, so the label would reflow as the active link moved down the page): the state is the colour and the 2px bar. The focus ring is
+        // drawn inside the link, because the column scrolls (`overflow-y-auto`) and clips an outline that sits outside it, and the links run flush to its edges.
         className={cx(
-          "-ml-px block border-l-2 py-1.5 transition-colors",
+          "-ml-px block border-l-2 py-1.5 outline-focus-ring transition-colors focus-visible:-outline-offset-2 focus-visible:outline-2",
           child ? "pl-6 text-xs" : "pl-3 text-sm",
-          isActive ? "border-[var(--color-brand-500)] font-medium text-brand-secondary" : inSection ? "border-transparent font-medium text-primary" : "border-transparent text-tertiary hover:text-primary",
+          isActive ? "border-[var(--color-brand-500)] text-brand-secondary" : inSection ? "border-transparent text-primary" : "border-transparent text-tertiary hover:text-primary",
         )}
       >
         {item.label}
@@ -543,6 +589,7 @@ export function ProjectTab({
   repeatHeaderFacts = true,
   overviewHeading = true,
   sheetTop,
+  disclosure = false,
 }: {
   onGoToRecords: (kind: RecordKind | "all") => void;
   onGoToArtefacts: () => void;
@@ -574,6 +621,9 @@ export function ProjectTab({
   overviewHeading?: boolean;
   /** With `sheet`: rows across the top of the sheet, above its first section, flush with its edges (the designer's frame, Figma 484:4583: a banner is the sheet's first row). */
   sheetTop?: ReactNode;
+  /** Progressive disclosure (the post-6-oct lab, 22 Oct 2026): the first section stays open and the sections after it start closed under their headings, each opening in place; "On this page" and editing a
+   *  card open the section that holds it. Needs `sheet`. The product page leaves it off and is unchanged. @default false */
+  disclosure?: boolean;
 }) {
   const { project, saveProject, records, artefacts, canEdit } = useEditStore();
   // Only roles that can upload see the Datasets card.
@@ -595,13 +645,21 @@ export function ProjectTab({
   const setEditing = (next: ProjectCardId | null) => {
     setFocusLabel(undefined);
     setEditingState(next);
+    if (next) revealSection(`card-${next}`);
   };
   const openCard = (card: ProjectCardId, label?: string) => {
     setEditingState(card);
     setFocusLabel(label);
+    revealSection(`card-${card}`);
   };
   const [removing, setRemoving] = useState<RestrictionTypeKey | null>(null);
   const { details: d, collection: c, restrictions: r } = project;
+  const [openSections, setOpenSections] = useState<Set<Key>>(new Set());
+  const [mountedSections, setMountedSections] = useState<Set<Key>>(new Set());
+  const changeOpenSections = (keys: Set<Key>) => {
+    setOpenSections(keys);
+    setMountedSections((prev) => new Set([...prev, ...keys]));
+  };
 
   const boundary = c.geographicExtent.boundary;
   const circle = boundary?.kind === "circle" ? boundary : null;
@@ -610,6 +668,25 @@ export function ProjectTab({
   const species = c.targetedSpeciesIds.map((id) => REGISTRATION_SPECIES.find((s) => s.id === id)?.commonName ?? id);
   const enabled = r.hasRestrictions ? RESTRICTION_TYPE_META.filter((m) => r.enabledTypes.has(m.key)) : [];
   const card = (id: ProjectCardId): TocItem => ({ id: `card-${id}`, label: CARD_TITLES[id] });
+
+  // Progressive disclosure: which closed section holds an element ("On this page" id), and opening it. A card that is being edited, or that "On this page" points at, is never left inside a closed section.
+  const sectionOf = (id: string): "data-collection" | "privacy" | null => {
+    if (id === "data-collection" || id === "card-extent" || id === "card-collection" || id === "card-permits") return "data-collection";
+    if (id === "privacy" || id === "card-add-restriction" || enabled.some((m) => id === `card-${m.key}`)) return "privacy";
+    return null;
+  };
+  const revealSection = (id: string): boolean => {
+    const key = disclosure ? sectionOf(id) : null;
+    if (!key || openSections.has(key)) return false;
+    changeOpenSections(new Set([...openSections, key]));
+    return true;
+  };
+  const needsDetails = (ids: ProjectCardId[]) => ids.some((x) => cardMissing(x, project).length > 0);
+  const detailsNeeded = (
+    <Badge size="sm" color="warning">
+      Details needed
+    </Badge>
+  );
 
   const toc: TocItem[] = [
     ...(showGlance ? [{ id: "at-a-glance", label: "Project at a glance" }] : []),
@@ -633,6 +710,7 @@ export function ProjectTab({
       <div className={cx("flex min-w-0 flex-1 flex-col", sheet ? "gap-8" : "gap-10", layout === "default" && "max-w-4xl")}>
         {lead}
         <SheetContext.Provider value={sheet}>
+        <DisclosureContext.Provider value={disclosure ? { openKeys: openSections, mounted: mountedSections, onOpenKeysChange: changeOpenSections } : null}>
         <div className={sheet ? "flex flex-col overflow-hidden rounded-xl border border-secondary bg-primary" : "contents"}>
         {sheet && sheetTop}
         {showGlance && (
@@ -713,7 +791,7 @@ export function ProjectTab({
           </div>
         </Section>
 
-        <Section id="data-collection" title="Data collection and methodology" description="Where, how and under what permits the data was collected.">
+        <Section id="data-collection" title="Data collection and methodology" description="Where, how and under what permits the data was collected." collapsedNote={needsDetails(["extent", "collection", "permits"]) ? detailsNeeded : undefined}>
           <Card card="extent" onEdit={setEditing}>
             {/* The details on the left, the map on the right; stacked (details first) below the lg breakpoint. */}
             <div className={cx(circle && "grid gap-6 lg:grid-cols-2 lg:items-stretch")}>
@@ -774,6 +852,8 @@ export function ProjectTab({
           id="privacy"
           title="Privacy and restrictions"
           description="What is held back from public release, and why."
+          count={enabled.length}
+          collapsedNote={needsDetails(enabled.map((m) => m.key)) ? detailsNeeded : undefined}
           action={
             canEdit && OFFERED_RESTRICTION_TYPES.some((m) => !enabled.some((e) => e.key === m.key)) && !(layout === "v3" && editing !== null) ? (
               <Button color="secondary" size="sm" iconLeading={Plus} onClick={() => setEditing("add-restriction")}>
@@ -852,12 +932,13 @@ export function ProjectTab({
           ))}
         </Section>
         </div>
+        </DisclosureContext.Provider>
         </SheetContext.Provider>
       </div>
       </InlineEditContext.Provider>
       </LayoutContext.Provider>
 
-      <OnThisPage items={toc} />
+      <OnThisPage items={toc} onBeforeGo={revealSection} />
 
       {layout === "default" && <ProjectCardDrawer card={editing} onChange={setEditing} />}
       <DestructiveModal confirmIcon={Trash01} cancelIcon={ArrowLeft}
