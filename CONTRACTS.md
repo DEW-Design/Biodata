@@ -713,8 +713,8 @@ Every create or edit form (Add Project, DSA, DLA, and any new one) MUST render `
    `Checkbox`, `Accordion`). No bespoke choice tiles.
 8. **Draft:** a draft needs only what identifies the record; submit validates the rest.
 
-- **Exempt:** Add Project option 2 (a stakeholder option, one question per card; option 1 until 16 Oct 2026), and editing in place on a
-  detail page's own cards, which follows §4.7 instead.
+- **Exempt:** editing in place on a detail page's own cards, which follows §4.7 instead. (Add Project's one-question-per-card option was
+  exempt until it was retired on 23 Oct 2026; Add Project is the form pattern, sections in column 2.)
 - **Enforcement:** `AUTO §4.1` (a file that uses `FormRow` must import `FormPage`), `AUTO §4.1b` (a `FormPage` screen must not use tabs).
 
 ### §4.2 Lists and tables

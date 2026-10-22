@@ -9,7 +9,16 @@ import { Badge } from "@/components/base/badges/badges";
 import { Checkbox } from "@/components/base/checkbox/checkbox";
 import { Table, TableHeader, Column, TableBody, Row, Cell } from "@/components/base/table/table";
 import { Accordion } from "@/components/base/accordion/accordion";
-import { VALID_TYPES_BY_KIND, FIELD_SCHEMA, KNOWN_GAPS, BDBSA_KEY_CROSSWALK, type RecordKind } from "@/config/data-model-schema";
+import {
+  VALID_TYPES_BY_KIND,
+  FIELD_SCHEMA,
+  KNOWN_GAPS,
+  BDBSA_KEY_CROSSWALK,
+  BDBSA_REPORTED_CODES,
+  reportedCodesText,
+  type RecordKind,
+  type ReportedCodes,
+} from "@/config/data-model-schema";
 import { labHref } from "@/lib/lab-href";
 
 // "This begs to be more visual... let's have another route /config/data-model - so everything is
@@ -85,6 +94,17 @@ function bdbsaDisplayText(crosswalk: Record<string, string | null> | undefined, 
   return bdbsaKey ? bdbsaKey : "No equivalent found";
 }
 
+// Where a reported code was found, in one line: every place any of its codes was seen as a header, or the
+// plain statement that none was. One code or several, partly seen or not, the same sentence in the table
+// and in the Excel.
+function reportedSeenText(entry: ReportedCodes): string {
+  const seenCodes = entry.codes.filter((c) => c.seenIn.length > 0);
+  if (seenCodes.length === 0) return "Not in any file we hold";
+  const places = [...new Set(seenCodes.flatMap((c) => c.seenIn))].join("; ");
+  if (seenCodes.length === entry.codes.length) return places;
+  return `${seenCodes.map((c) => c.code).join(", ")}: ${places}. The rest are not in any file we hold`;
+}
+
 // "Can I get an excel download - split into different tabs e.g., (site, visit, observations) on
 // the data model view?" - per the user directly. One sheet per Event type that has a real schema
 // (Site, Visit), plus one sheet per Observation type (Individual/Population/Community/Non-biotic) -
@@ -99,20 +119,30 @@ function bdbsaDisplayText(crosswalk: Record<string, string | null> | undefined, 
 function downloadDataModelWorkbook() {
   const workbook = sheetUtils.book_new();
 
+  // The 20/10 check (see `BDBSA_REPORTED_CODES`): two more columns, only on a sheet that has any, so a type
+  // BDBSA has not been asked about yet is not given a column of blanks. "Seen in" says where the code was
+  // found as a real column header, or that no file we hold shows it - a reported code is not a confirmed one.
   const addSheet = (name: string, key: string, fields: string[]) => {
     const crosswalk = BDBSA_KEY_CROSSWALK[key];
+    const reported = BDBSA_REPORTED_CODES[key];
     const rows = [
-      ["Concept name (UI)", "Concept name (BDBSA)"],
-      ...fields.map((field) => [field, bdbsaDisplayText(crosswalk, field)]),
+      reported ? ["Concept name (UI)", "Concept name (BDBSA)", "BDBSA code (20/10 check)", "Seen in"] : ["Concept name (UI)", "Concept name (BDBSA)"],
+      ...fields.map((field) => {
+        const base = [field, bdbsaDisplayText(crosswalk, field)];
+        const entry = reported?.[field];
+        return reported ? [...base, entry ? reportedCodesText(entry) : "", entry ? reportedSeenText(entry) : ""] : base;
+      }),
     ];
     sheetUtils.book_append_sheet(workbook, sheetUtils.aoa_to_sheet(rows), name);
   };
 
-  addSheet("Site", "Event:Site", FIELD_SCHEMA["Event:Site"] ?? []);
-  addSheet("Visit", "Event:Visit", FIELD_SCHEMA["Event:Visit"] ?? []);
-  for (const type of VALID_TYPES_BY_KIND.Observation) {
-    const key = `Observation:${type}`;
-    addSheet(`Observation - ${type}`, key, FIELD_SCHEMA[key] ?? []);
+  // One sheet per type that has a field list, in the order the page shows them. An Event type is a sheet of
+  // its own name (Site, Visit ...); an Occurrence or Observation type is "Occurrence - Individual".
+  for (const kind of KIND_ORDER) {
+    for (const type of VALID_TYPES_BY_KIND[kind]) {
+      const key = `${kind}:${type}`;
+      if (FIELD_SCHEMA[key]) addSheet(kind === "Event" ? type : `${kind} - ${type}`, key, FIELD_SCHEMA[key]);
+    }
   }
 
   writeWorkbookFile(workbook, "biodata-sa-ingestion-template.xlsx");
@@ -126,6 +156,28 @@ function GapCard({ title, description }: { title: string; description: string })
         <p className="text-sm font-semibold text-primary">{title}</p>
         <p className="text-sm text-tertiary text-balance">{description}</p>
       </div>
+    </div>
+  );
+}
+
+// What BDBSA reported for a field, with the evidence beside it: each code on a line, a code seen as a real column
+// header in the normal text colour, one no file we hold shows in the quiet one, then one line on where.
+function ReportedCodesCell({ entry }: { entry: ReportedCodes }) {
+  return (
+    <div className="flex flex-col gap-1">
+      {entry.display ? (
+        <span className="text-tertiary">{entry.display}</span>
+      ) : (
+        <ul className="flex flex-col gap-0.5">
+          {entry.codes.map((c) => (
+            <li key={c.code} className={c.seenIn.length > 0 ? "text-tertiary" : "text-quaternary"}>
+              {c.code}
+            </li>
+          ))}
+        </ul>
+      )}
+      <span className="text-xs text-quaternary text-balance">{reportedSeenText(entry)}</span>
+      {entry.note && <span className="text-xs text-quaternary text-balance">{entry.note}</span>}
     </div>
   );
 }
@@ -144,6 +196,7 @@ function FieldSchemaTable({
   onToggle: (key: string) => void;
 }) {
   const crosswalk = BDBSA_KEY_CROSSWALK[`${kind}:${type}`];
+  const reported = BDBSA_REPORTED_CODES[`${kind}:${type}`];
 
   return (
     <Table aria-label={`${kind}:${type} field schema`}>
@@ -152,6 +205,7 @@ function FieldSchemaTable({
           Concept name (UI)
         </Column>
         <Column id="bdbsa">Concept name (BDBSA)</Column>
+        {reported ? <Column id="reported">BDBSA code (20/10 check)</Column> : null}
         <Column id="verified">Verified</Column>
       </TableHeader>
       <TableBody items={fields.map((field) => ({ field }))}>
@@ -165,6 +219,7 @@ function FieldSchemaTable({
               <Cell>
                 <span className={bdbsaKey ? "text-tertiary" : "text-quaternary"}>{bdbsaText}</span>
               </Cell>
+              {reported ? <Cell>{reported[item.field] ? <ReportedCodesCell entry={reported[item.field]} /> : null}</Cell> : null}
               <Cell>
                 <Checkbox aria-label={`Mark "${item.field}" verified`} isSelected={verified.has(verifyKey)} onChange={() => onToggle(verifyKey)} />
               </Cell>
@@ -244,10 +299,11 @@ export default function DataModelConfigPage() {
 
       <h2 className="mb-1 text-lg font-semibold text-primary">Field schema, by record type</h2>
       <p className="mb-4 text-sm text-tertiary text-balance">
-        Every field name here is real, pulled directly from that type&apos;s own Figma ingestion-template frame - never invented, never a wireframe&apos;s own
-        example value. All 6 record types below have now been hand-checked field-by-field against a real BDBSA export, so every row here reads either a real
-        BDBSA column or an honest &ldquo;No equivalent found&rdquo; - &ldquo;Not yet checked&rdquo; should no longer appear at all. Tick a row off once
-        you&apos;ve personally confirmed it - that stays saved in this browser.
+        Every field name here is real, pulled directly from that type&apos;s own Figma frame - never invented, never a wireframe&apos;s own example value.
+        Site, Visit and the four Observation types were also hand-checked field-by-field against real BDBSA exports, so each of their rows reads either a
+        real BDBSA column or an honest &ldquo;No equivalent found&rdquo;. Block, Transect, Ramble, Quadrat and the two Occurrence types come from the
+        record-page frames and have no BDBSA mapping yet, so they read &ldquo;Not yet checked&rdquo;. Where BDBSA has since reported a code (the 20/10
+        check), it sits in a third column with where it was seen as a real column header; a code no file we hold shows is reported, not confirmed. Tick a row off once you&apos;ve personally confirmed it - that stays saved in this browser.
       </p>
       <Accordion items={schemaAccordionItems} className="mb-10" />
     </div>

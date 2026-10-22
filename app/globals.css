@@ -583,6 +583,11 @@ body {
   font-family: var(--font-sans);
   font-size: 14px;
   line-height: 1.5;
+  /* Every number in the product is set in tabular figures (designer, 21 Oct 2026: "tabular-nums for numbers ...
+     in general across all number usages. No dancing layouts"): each digit has the same width, so a count,
+     a price, a date or a table column does not change width as its value changes. It inherits, so a new
+     component or screen is covered without a class. Form fields reset `font` to inherit, which carries it in. */
+  font-variant-numeric: tabular-nums;
 }
 
 /* ─────────────────────────────────────────────────────────────────────

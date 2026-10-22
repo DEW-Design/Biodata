@@ -61,14 +61,40 @@ export interface SheetRows {
   hidden: boolean;
   // Data rows in the tab's used range, so a hidden tab that is not read can still show a size.
   rowCount: number;
+  // Sheet protection is on ("locked"). In these templates it covers the entry sheets too (the input
+  // cells are unlocked), so it is not "admin only" by itself; the page decides what to do with it.
+  locked: boolean;
+  // The share of the tab's filled cells that are formulas, 0 to 1. A tab that is nearly all formulas
+  // is calculated by the template from other tabs, not entered.
+  formulaShare: number;
+}
+
+// Is this a workbook the reader can open? Macro-enabled (.xlsm) and template (.xltx, .xltm) files are
+// workbooks too; only the extension used to say .xlsx or .xls.
+export function isWorkbookFileName(name: string): boolean {
+  return /\.(xlsx|xlsm|xlsb|xls|xltx|xltm)$/i.test(name);
 }
 
 // How far down to look for the header row. A title line, a "Generated on ..." line and a blank row
 // is typical; ten is generous without ever mistaking a data row for a header.
 const HEADER_SEARCH_ROWS = 10;
 
+// A formula that failed leaves "#N/A", "#DIV/0!" and the like in the cell. That is the template
+// reporting a gap, not a value somebody entered.
+const SPREADSHEET_ERROR = /^#(N\/A|DIV\/0!|VALUE!|REF!|NAME\?|NUM!|NULL!)$/;
+
 function cellText(value: unknown): string {
-  return value === null || value === undefined ? "" : String(value).trim();
+  const text = value === null || value === undefined ? "" : String(value).trim();
+  return SPREADSHEET_ERROR.test(text) ? "" : text;
+}
+
+// The row under a header that explains each column ("Zone - either 52, 53 or 54 for SA") rather than
+// holding a record: its cells are sentences under a header of short names.
+function isHelpRow(row: string[], headerCells: string[]): boolean {
+  const lengths = (cells: string[]) => cells.filter((c) => c !== "").map((c) => c.length);
+  const mean = (xs: number[]) => (xs.length === 0 ? 0 : xs.reduce((a, b) => a + b, 0) / xs.length);
+  const cells = lengths(row);
+  return cells.length >= 3 && mean(cells) > 30 && mean(cells) > 2 * mean(lengths(headerCells));
 }
 
 // The header is the first row, within the first few, that is nearly as wide as the widest of them
@@ -100,9 +126,11 @@ function gridToRows(grid: string[][]): RawRow[] {
     return cells.length >= 2 && cells.every((c) => /^[A-Z][A-Z0-9_]*$/.test(c));
   };
   const hasKeyRow = headerIndex + 1 < grid.length && isKeyRow(grid[headerIndex + 1]) && !isKeyRow(headerCells);
+  const afterHeader = headerIndex + (hasKeyRow ? 2 : 1);
+  const hasHelpRow = afterHeader < grid.length && isHelpRow(grid[afterHeader], headerCells);
 
   return grid
-    .slice(headerIndex + (hasKeyRow ? 2 : 1))
+    .slice(afterHeader + (hasHelpRow ? 1 : 0))
     .filter((row) => nonEmpty(row) > 0)
     .map((row) => {
       const out: RawRow = {};
@@ -113,21 +141,59 @@ function gridToRows(grid: string[][]): RawRow[] {
     });
 }
 
+// Which tabs are protected, read from the workbook's own XML: SheetJS does not surface it. An old
+// binary .xls has no such XML, and none of its tabs are reported as locked.
+function sheetXmlFacts(workbook: ReturnType<typeof readWorkbook>): { locked: Set<string>; formulaShare: Map<string, number> } {
+  const locked = new Set<string>();
+  const formulaShare = new Map<string, number>();
+  const files = (workbook as unknown as { files?: Record<string, { content?: Uint8Array | string }> }).files;
+  const text = (entry?: { content?: Uint8Array | string }) => (entry?.content === undefined ? "" : typeof entry.content === "string" ? entry.content : new TextDecoder().decode(entry.content));
+  const rels = text(files?.["xl/_rels/workbook.xml.rels"]);
+  if (!files || !rels) return { locked, formulaShare };
+  const target = new Map<string, string>();
+  for (const m of rels.matchAll(/<Relationship\b([^>]*)\/?>/g)) {
+    const id = /\bId="([^"]+)"/.exec(m[1])?.[1];
+    const to = /\bTarget="([^"]+)"/.exec(m[1])?.[1];
+    if (id && to) target.set(id, to);
+  }
+  workbook.Workbook?.Sheets?.forEach((sheetMeta, index) => {
+    const meta = sheetMeta as typeof sheetMeta & { id?: string };
+    const to = meta.id ? target.get(meta.id) : undefined;
+    if (!to || (meta.Hidden ?? 0) !== 0) return;
+    const xml = text(files[to.startsWith("/") ? to.slice(1) : `xl/${to}`]);
+    if (/<sheetProtection\b[^>]*\bsheet="(1|true)"/.test(xml)) locked.add(workbook.SheetNames[index]);
+    // Counted in the XML, not from SheetJS: it keeps a formula only on the first cell of a shared one, so a
+    // tab filled by a dragged-down formula reads as mostly typed values.
+    const formulas = (xml.match(/<f[\s>/]/g) ?? []).length;
+    const values = (xml.match(/<v>|<is>/g) ?? []).length;
+    formulaShare.set(workbook.SheetNames[index], values === 0 ? 0 : Math.min(1, formulas / values));
+  });
+  return { locked, formulaShare };
+}
+
 // Every sheet with at least one data row. An empty sheet is not an error - a workbook often has a
 // blank scratch tab - and is simply absent from the result.
+//
+// Dates come out as ISO (2024-12-04), never as the US-ordered text SheetJS would write for a date
+// cell (12/4/24), which reads as a different day to anyone who writes day first.
 export function readWorkbookSheets(buffer: ArrayBuffer): SheetRows[] {
-  const workbook = readWorkbook(buffer, { type: "array" });
+  const workbook = readWorkbook(buffer, { type: "array", cellDates: true, bookFiles: true });
   if (workbook.SheetNames.length === 0) throw new Error("This workbook has no sheets");
+  const { locked: lockedNames, formulaShare: formulaShares } = sheetXmlFacts(workbook);
   return workbook.SheetNames.flatMap((sheetName, index): SheetRows[] => {
     const sheet = workbook.Sheets[sheetName];
     const hidden = (workbook.Workbook?.Sheets?.[index]?.Hidden ?? 0) !== 0;
     if (hidden) {
       const range = sheet?.["!ref"] ? sheetUtils.decode_range(sheet["!ref"]) : null;
-      return [{ sheetName, rows: [], grid: [], hidden: true, rowCount: range ? Math.max(0, range.e.r - range.s.r) : 0 }];
+      return [{ sheetName, rows: [], grid: [], hidden: true, rowCount: range ? Math.max(0, range.e.r - range.s.r) : 0, locked: false, formulaShare: 0 }];
     }
-    const grid = sheetUtils.sheet_to_json<unknown[]>(sheet, { header: 1, defval: "", raw: false, blankrows: false }).map((row) => row.map(cellText));
+    const grid = sheetUtils
+      .sheet_to_json<unknown[]>(sheet, { header: 1, defval: "", raw: false, blankrows: false, dateNF: "yyyy-mm-dd" })
+      .map((row) => row.map(cellText));
     const rows = gridToRows(grid);
-    return rows.length > 0 || grid.length > 0 ? [{ sheetName, rows, grid, hidden: false, rowCount: rows.length }] : [];
+    return rows.length > 0 || grid.length > 0
+      ? [{ sheetName, rows, grid, hidden: false, rowCount: rows.length, locked: lockedNames.has(sheetName), formulaShare: formulaShares.get(sheetName) ?? 0 }]
+      : [];
   });
 }
 
@@ -285,8 +351,10 @@ export function classifySource({ sheetName, fileName, rows }: { sheetName?: stri
   const fromName = (name: string): SourceRole | null => {
     const roles = rolesInName(name);
     if (roles.length <= 1) return roles[0] ?? null;
-    // Two families named at once ("Site visits"): the columns settle it if they point at one of them.
-    return roles.find((r) => r.id === columns.role?.id) ?? roles[0];
+    // Two families named at once ("Site visits", "Site - Flora Sp."): the columns settle it if they point at
+    // one of them. The species roles are one family, so Flora or Fauna agrees with a column signature of "species".
+    const sameFamily = (a: SourceRole, b: SourceRole | null) => b !== null && (a.id === b.id || (a.kind === "Observation" && b.kind === "Observation"));
+    return roles.find((r) => sameFamily(r, columns.role)) ?? roles[0];
   };
 
   if (sheetName) {

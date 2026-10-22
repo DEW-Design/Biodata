@@ -160,17 +160,13 @@ import { FormRow } from "@/app/pages/_shared/form-row";
       <h2 className="text-balance">Where it is used</h2>
       <ul>
         <li>
-          <strong>Add Project, option 1:</strong> <code>/pages/project-registration</code>, sections listed in column 2.
+          <strong>Add Project:</strong> <code>/pages/project-registration</code>, sections listed in column 2.
         </li>
         <li>
           <strong>Data Sharing Agreement:</strong> <code>/pages/dsa/new</code> and <code>/pages/dsa/&lt;id&gt;/edit</code>, sections listed in column 2.
         </li>
         <li>
           <strong>Data Licence request:</strong> <code>/pages/dla/new</code> and <code>/pages/dla/&lt;id&gt;/edit</code>, sections listed in column 2.
-        </li>
-        <li>
-          <strong>Exempt:</strong> Add Project option 2 (<code>/pages/project-registration/option-2</code>), a one-question-per-card option
-          kept for comparison.
         </li>
       </ul>
     </div>

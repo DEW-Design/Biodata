@@ -5,10 +5,10 @@
 // 435:62), then refined, and locked at step 1 of the subtraction (designer, 13 Oct 2026: "we can't fundamentally violate the design system by changing how a component looks, so let's go as far
 // as subtraction step 1, lock that layout, and refine from there"). Nothing here hides or restyles a design system component: each is used as it is. What it is:
 //   - the top row: at the left the account (the placeholder Olivia Wyatt, 0.3) with the notifications to its right (a Vercel-style popover, notifications-popover.tsx); in the page's column, the
-//     left panel's switch, a divider and the trail that says where you are; at the far right the production header's own search field and Add button (`GlobalSearch`, `CreateMenu`);
+//     left panel's switch, a divider and the trail that says where you are; at the far right the production header's own search field and Add button (`GlobalSearch`, `CreateMenu`; on a project's page the same button opens the project's own menu, `ProjectAddButton`);
 //   - there are no tabs: one page at a time, and a rail click, a link, a row or a result replaces it (a Cmd or Ctrl click is the browser's own and opens the production page in a new browser tab);
 //   - the page is an inset panel with one 40px bar that holds only the page's own things: at its left a user alert (the flagged concepts, for the roles that review them), at its right a project's
-//     buttons (the "+" menu, the upload status, a pill of the records tree, properties and copy link, and "...") or a section's actions; the bar is not drawn when there is nothing to put in it;
+//     buttons (the upload status, a pill of the records tree, properties and copy link, and "...") or a section's actions; the bar is not drawn when there is nothing to put in it;
 //     then the content: the real lists without their shells, and the production project page (its tabs, sections and cards);
 //   - there is no column 2: a page's views (a project's Project, Project records, Species, Artefacts and attachments; a list's All and My, a section's areas) are tabs at the top of the page, one
 //     click each (the DEW tab list, panel-controls.tsx);
@@ -61,6 +61,7 @@ import { BreadcrumbSwitcher } from "@/app/pages/_shared/breadcrumb-switcher";
 import { CreateMenu } from "@/app/pages/_shared/create-menu";
 import { GlobalSearch } from "@/app/pages/_shared/global-search";
 import { GuestAuthActions } from "@/app/pages/_shared/guest-auth-actions";
+import { Button } from "@/components/base/buttons/button";
 import { SignUpPromptModal } from "@/app/pages/_shared/guest-action-gate";
 import { sectionIcons } from "@/app/pages/_shared/nav-icons";
 import { useAllProjects } from "@/app/pages/_shared/created-projects-store";
@@ -455,7 +456,36 @@ const GATES = {
 };
 
 /**
- * The project's controls, in the order of the designer's frame (Figma 484:4034, 16 Oct 2026): the "+" (the designer, 19 Oct 2026: Upload a dataset, a divider, then Add an event, Add an
+ * The top-right Add on a project's page (the designer, 22 Oct 2026: "multiple add buttons ... what if the add button becomes contextual to the screen it's on"). The panel bar's small "+" and the
+ * header's Add were two controls for one job, so the "+" is gone and this is its menu (Upload a dataset, Add an event, an occurrence, an observation, Add an attachment: `ProjectAddMenu`)
+ * behind the header's own Add button, the same primary button in the same place as on every other screen. Which menu opens is derived from the page (a project, or not), not set by hand: on a
+ * project it is this, everywhere else it is the production `CreateMenu` with its full list. A guest still gets the sign-up prompt for each, as the "+" gave them.
+ */
+function ProjectAddButton({ project, onAddRecord, onAddArtefact }: { project: Project; onAddRecord: (option: ChildOption) => void; onAddArtefact: () => void }) {
+  const router = useRouter();
+  const roleHref = useRoleHref();
+  const isGuest = useUserRole() === "public-user";
+  const [gate, setGate] = useState<keyof typeof GATES | null>(null);
+  const g = gate ? GATES[gate] : null;
+  return (
+    <>
+      <ProjectAddMenu
+        onUpload={() => (isGuest ? setGate("upload") : router.push(roleHref(`/pages/project-list/${project.id}/upload`)))}
+        onAdd={(o) => (isGuest ? setGate("add") : onAddRecord(o))}
+        onAttach={() => (isGuest ? setGate("attach") : onAddArtefact())}
+        trigger={
+          <Button color="primary" iconLeading={Plus} iconTrailing={ChevronDown} aria-label="Add to this project">
+            Add
+          </Button>
+        }
+      />
+      {g && <SignUpPromptModal isOpen onOpenChange={(open) => !open && setGate(null)} icon={g.icon} title={g.title} description={g.description} />}
+    </>
+  );
+}
+
+/**
+ * The project's controls, in the order of the designer's frame (Figma 484:4034, 16 Oct 2026): the "+" (moved to the top-right Add on 22 Oct 2026, `ProjectAddButton`; the designer, 19 Oct 2026: Upload a dataset, a divider, then Add an event, Add an
  * occurrence and Add an observation, each opening its types as the project's own "Add inside" menu does; a record opens in the Project records tab to be filled in; then a divider and "Add an attachment", a form that
  * asks which event, occurrence or observation and which of its fields, add-artefact-modal.tsx), the ingestion chip while a dataset is being added,
  * the records tree, Properties, Copy link, then the "..." menu with Export CSV and Create report (project-card-actions.tsx has the same actions on the product page).
@@ -466,16 +496,12 @@ function ProjectBarControls({
   onToggleBranch,
   propertiesOpen,
   onToggleProperties,
-  onAddRecord,
-  onAddArtefact,
 }: {
   project: Project;
   branchOpen: boolean;
   onToggleBranch: () => void;
   propertiesOpen: boolean;
   onToggleProperties: () => void;
-  onAddRecord: (option: ChildOption) => void;
-  onAddArtefact: () => void;
 }) {
   const router = useRouter();
   const roleHref = useRoleHref();
@@ -507,21 +533,11 @@ function ProjectBarControls({
   // that stood between the groups (`2026-10-19-11-*`) are gone. Each group is named for a screen reader.
   return (
     <>
-      <div role="group" aria-label="Add" className="flex items-center gap-2">
-        <ProjectAddMenu
-          onUpload={() => run("upload")}
-          onAdd={(o) => (isGuest ? setGate("add") : onAddRecord(o))}
-          onAttach={() => (isGuest ? setGate("attach") : onAddArtefact())}
-          trigger={
-            <Tooltip title="Add to this project" placement="bottom">
-              <AriaButton aria-label="Add to this project" className={barBtn}>
-                <Plus className="size-3" />
-              </AriaButton>
-            </Tooltip>
-          }
-        />
-        {!isGuest && <ProjectUploadStatus projectId={project.id} />}
-      </div>
+      {!isGuest && (
+        <div role="group" aria-label="Uploads" className="flex items-center gap-2">
+          <ProjectUploadStatus projectId={project.id} />
+        </div>
+      )}
       <div
         role="group"
         aria-label="Project"
@@ -743,7 +759,18 @@ export function PostSixOctShell() {
               <div className="w-64 lg:w-[395px]">
                 <GlobalSearch />
               </div>
-              <CreateMenu />
+              {project ? (
+                <ProjectAddButton
+                  project={project}
+                  onAddArtefact={() => setAttachOpen(true)}
+                  onAddRecord={(o) => {
+                    setView("records");
+                    setAddRequest({ option: o, id: Date.now() });
+                  }}
+                />
+              ) : (
+                <CreateMenu />
+              )}
             </div>
           }
         />
@@ -781,11 +808,6 @@ export function PostSixOctShell() {
                     onToggleProperties={() => {
                       setBranchOn(false);
                       setPropertiesOn(!propertiesOpen);
-                    }}
-                    onAddArtefact={() => setAttachOpen(true)}
-                    onAddRecord={(o) => {
-                      setView("records");
-                      setAddRequest({ option: o, id: Date.now() });
                     }}
                   />
                 }

@@ -500,3 +500,16 @@ Not imported into every session on purpose: read or grep it when a task needs hi
 - [2026-10-20] Data model stress test ingests the user-sent Ramble form, builds the 3-tier rows, loads lazily, Site id is... - `2026-10-20-07-data-model-stress-test-ingests-the-user-sent.md`
 - [2026-10-20] Stress test tree stays Site, Visit, Occurrence, Observation: vegetation answers sit on the Visit - `2026-10-20-08-stress-test-tree-stays-site-visit-occurrence-observation.md`
 - [2026-10-20] Stress test top level is called Project - `2026-10-20-09-stress-test-top-level-is-called-project.md`
+- [2026-10-20] Stress test results are tabs: Structure, Records with status, Summary - `2026-10-20-10-stress-test-results-are-tabs-structure-records-with.md`
+- [2026-10-20] Data model config: the 20/10 BDBSA code check, with where each code was seen - `2026-10-20-11-data-model-config-the-20-10-bdbsa-code.md`
+- [2026-10-21] Stress test reads the BAM, RAM, Bioblitz and Ramble templates: returns, matrices, locked and derived sheets - `2026-10-21-01-stress-test-reads-the-bam-ram-bioblitz-and.md`
+- [2026-10-21] Data model: Block, Transect, Ramble, Quadrat and Occurrence get field lists from the record-page frames - `2026-10-21-02-data-model-block-transect-ramble-quadrat-and-occurrence.md`
+- [2026-10-21] Data model: the four Observation types follow the 21 Oct record-page frames - `2026-10-21-03-data-model-the-four-observation-types-follow-the.md`
+- [2026-10-21] Stress test and data model pages use tabular figures - `2026-10-21-04-stress-test-and-data-model-pages-use-tabular.md`
+- [2026-10-21] Every number in the product is set in tabular figures - `2026-10-21-05-every-number-in-the-product-is-set-in.md`
+- [2026-10-22] post-6-oct project page: progressive disclosure on the Overview sheet - `2026-10-22-01-post-6-oct-project-page-progressive-disclosure-on.md`
+- [2026-10-22] post-6-oct: one contextual Add at the top right, the project's + folded into it - `2026-10-22-02-post-6-oct-one-contextual-add-at-the.md`
+- [2026-10-22] post-6-oct: the project header's facts are disclosed on request - `2026-10-22-03-post-6-oct-the-project-header-s-facts.md`
+- [2026-10-22] post-6-oct: the project header's toggle no longer moves, the facts sit in the title's row - `2026-10-22-04-post-6-oct-the-project-header-s-toggle.md`
+- [2026-10-22] On this page: constant weight and an inset focus ring - `2026-10-22-05-on-this-page-constant-weight-and-an-inset.md`
+- [2026-10-23] Add Project option 2 (one question per card) sunset - `2026-10-23-01-add-project-option-2-one-question-per-card.md`

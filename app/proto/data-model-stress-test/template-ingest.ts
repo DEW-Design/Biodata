@@ -283,7 +283,7 @@ export function convertRambleTemplate(sheets: TemplateSheet[]): TemplateConversi
         "Plant Life Stage": textValue(r.lifeStage),
         Regeneration: textValue(r.regenMode),
         "Planted/Released": textValue(r.released),
-        "Voucher #": textValue(r.voucher),
+        "Voucher Number": textValue(r.voucher),
         "Observation Comment": textValue(r.comment),
         "Source ID": sourceId(i + 1),
       })),
