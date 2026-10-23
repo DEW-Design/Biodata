@@ -280,10 +280,10 @@ function CustomPropertySection() {
       {[0, 1, 2].map((i) => (
         <Field
           key={i}
-          label="[Custom field name]"
+          label="[Custom concept name]"
           value={
             <div className="flex flex-col gap-0.5">
-              <span>[Custom field value]</span>
+              <span>[Custom concept value]</span>
               <span className="text-xs text-tertiary">Description</span>
             </div>
           }

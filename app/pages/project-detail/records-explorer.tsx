@@ -7,7 +7,7 @@
 // - the details panel is the cleaner v3 panel (record-panel.tsx) with every action in one toolbar;
 // - full screen shows the record wide (record-full-view.tsx). Edit, a section's edit icon or a
 //   field's opens it there with that one card in edit mode; Add inside opens a new record full
-//   screen with every card in edit mode and the Fields shown panel, as editing does.
+//   screen with every card in edit mode and the Concepts shown panel, as editing does.
 // - the tree has one Expand all / Collapse all toggle in its own header, beside the record count
 //   (the VS Code explorer and GitHub file tree pattern), instead of two links in the toolbar.
 // - the search is the shared ToolbarSearch, the same 384px as every list (CONTRACTS 4.2c).

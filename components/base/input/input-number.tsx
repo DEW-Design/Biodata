@@ -60,6 +60,7 @@ export const InputNumberBase = ({
     inputClassName,
     orientation = "vertical",
     // Omit this prop to avoid invalid HTML attribute warning
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     isRequired: _isRequired,
     ...inputProps
 }: Omit<InputNumberBaseProps, "label" | "hint">) => {
@@ -96,7 +97,7 @@ export const InputNumberBase = ({
             }
         >
             {orientation === "horizontal" && (
-                <Button size={size} iconLeading={Minus} slot="decrement" color="tertiary" className="static h-full rounded-r-none" />
+                <Button size={size} iconLeading={Minus} slot="decrement" color="tertiary" className="static h-full rounded-r-none after:content-none" />
             )}
 
             {/* Input field */}
@@ -113,7 +114,7 @@ export const InputNumberBase = ({
             />
 
             {orientation === "horizontal" && (
-                <Button size={size} iconLeading={Plus} slot="increment" color="tertiary" className="static h-full rounded-l-none" />
+                <Button size={size} iconLeading={Plus} slot="increment" color="tertiary" className="static h-full rounded-l-none after:content-none" />
             )}
 
             {orientation === "vertical" && (

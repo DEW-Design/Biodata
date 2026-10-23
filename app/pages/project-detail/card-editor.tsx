@@ -112,7 +112,7 @@ function EditRow({
   const open = !!notesKey && (composer !== null || hasNotes(current));
   // Notes belong to the whole row: the "..." menu sits at the row's right edge and shows when any part
   // of the row is hovered, and the notes span the row under both the label and the field.
-  // A hidden field (unticked in "Fields shown", or empty and not yet added) is left out of edit mode.
+  // A hidden field (unticked in "Concepts shown", or empty and not yet added) is left out of edit mode.
   if (hidden && !required) return null;
   return (
     <div

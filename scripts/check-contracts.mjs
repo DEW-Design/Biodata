@@ -75,7 +75,7 @@ const hardRules = [
     id: "3.13",
     name: "underline tabs have icons",
     test: (s) => [...s.matchAll(/<TabList\b[^>]*type="underline"[^>]*>[\s\S]*?<\/TabList>/g)].some((list) => !/\bicon=/.test(list[0])),
-    // Explore's results card is too narrow for icons; the record sections' titles come from the data.
+    // Explore's results card is too narrow for icons (and is drawn without them); the record sections' titles come from the data.
     allow: ["observations/observations-search.tsx", "project-list/[id]/project-details/project-details-view.tsx"],
     message: "An underline tab list whose tabs have no icon. Every tab carries the icon of what it holds: Tab icon={...} (CONTRACTS.md 3.13).",
   },
@@ -144,7 +144,7 @@ const hardRules = [
     // A collection toolbar is where the Filter menu lives. Its search box is ToolbarSearch (384px),
     // never a hand-rolled Input that grows to fill the row or picks its own width.
     test: (s) => /<FilterMenu\b/.test(s) && /<Input\b[^>]*icon=\{Search(?:Md|Lg|Sm)\}/.test(s),
-    allow: ["_shared/map-search/species-results.tsx", "observations/observations-search.tsx"], // Explore's full-width results search: the designer's call, open (CONTRACTS 4.2c)
+    allow: ["_shared/map-search/species-results.tsx"], // The species results' full-width search (now only the dataset ingestion lab): the designer's call, open (CONTRACTS 4.2c)
     message: "A toolbar with a Filter button whose search is a hand-rolled <Input>. Use <ToolbarSearch> (app/pages/_shared/toolbar-search.tsx): one 384px search width on every collection toolbar (CONTRACTS.md 4.2c).",
   },
   {
@@ -175,9 +175,18 @@ const hardRules = [
       }
       return false;
     },
-    // The Explore results table lets the person choose its columns; the ingestion report view is lab-only.
+    // The results table lets the person choose its columns (the dataset ingestion lab's species results); the ingestion report view is lab-only.
     allow: ["_shared/map-search/results-table.tsx", "_shared/reports/ingestion-report.tsx"],
     message: 'A collection table (Table bodyScrollable) without layout="fixed". Its columns must keep their width whatever rows show: fixed layout, a width on every Table.Head, a min-w on the table (CONTRACTS.md 4.2f).',
+  },
+  {
+    id: "2.16b",
+    name: "a hit area is the component's",
+    // A target is enlarged by the component (`hit-area`, app/globals.css), never by a `before:` or `after:` written where it is used: that one has no mouse and touch sizes, is not tested, and was the reason
+    // every other screen still had 28px icon buttons (CONTRACTS.md 2.16).
+    test: (s) => /\b(?:before|after):-(?:inset|top|bottom|left|right)(?:-[xy])?-/.test(s),
+    allow: [],
+    message: "A negative-inset before: or after: that enlarges a target. Use a component that carries the hit area (Button, ButtonUtility, CloseButton, Tab...), or add `hit-area` to the control (CONTRACTS.md 2.16).",
   },
   {
     id: "4.2f",
@@ -419,6 +428,56 @@ export function runChecks() {
     if (o.status !== "active") continue;
     if (!o.reviewBy) violations.push({ clause: "1.4b", file: o.component, message: `Override ${o.id} has no reviewBy date. Every override needs one (CONTRACTS.md 1.4, 9.2).` });
     else if (o.reviewBy < today) violations.push({ clause: "1.4b", file: o.component, message: `Override ${o.id}'s reviewBy (${o.reviewBy}) has passed. Renew it with a new reviewBy, or retire it - it MUST NOT just sit there overdue (CONTRACTS.md 9.2).` });
+  }
+
+  // 2.16a: the components that render a control smaller than 40px carry the hit area on their own root, so no screen has to ask for it.
+  const HIT_AREA_FILES = [
+    "components/base/buttons/button.tsx",
+    "components/base/buttons/button-utility.tsx",
+    "components/base/buttons/close-button.tsx",
+    "components/application/tabs/tabs.tsx",
+    "components/base/checkbox/checkbox.tsx",
+    "components/base/radio-buttons/radio-buttons.tsx",
+    "components/base/toggle/toggle.tsx",
+    "components/base/input/input.tsx",
+    "components/application/table/table.tsx",
+    "components/base/dropdown/dropdown.tsx",
+    "components/base/tooltip/tooltip.tsx",
+    "components/custom/date-picker/input-date-picker.tsx",
+  ];
+  for (const f of HIT_AREA_FILES) {
+    if (!existsSync(join(ROOT, f))) continue;
+    if (!/\bhit-area\b/.test(readFileSync(join(ROOT, f), "utf8"))) violations.push({ clause: "2.16a", file: f, message: "A component that renders a control smaller than 40px has lost its hit-area class. Every press target is 40px with a mouse and 44px on touch, built into the component (CONTRACTS.md 2.16)." });
+  }
+
+  // 2.16c: a ghost control's drawn box comes from one utility and its target from the hit area; the files that draw one keep both.
+  const GHOST_FILES = [
+    "components/base/buttons/button.tsx",
+    "app/pages/_shared/record-hero.tsx",
+    "app/pages/_shared/breadcrumb-switcher.tsx",
+    "app/pages/_shared/app-header.tsx",
+  ];
+  for (const f of GHOST_FILES) {
+    if (!existsSync(join(ROOT, f))) continue;
+    // Comments are stripped first: a comment that names `ghost-fill` is not the class.
+    const code = readFileSync(join(ROOT, f), "utf8").replace(/\/\*[\s\S]*?\*\/|^\s*\/\/.*$/gm, "");
+    if (!/\bghost-fill\b/.test(code) || !/\bhit-area\b/.test(code)) violations.push({ clause: "2.16c", file: f, message: "A ghost control has lost `ghost-fill` or its `hit-area`: it draws a 32px box (padding and negative margin from one utility, never set by hand) and keeps a 40px target (CONTRACTS.md 2.16)." });
+  }
+
+  // 2.17 one scrollbar: the browser's bar is off in one global rule and one component draws the thumb for every scroller. Neither may go, and no scroller makes its own (comments stripped).
+  const css217 = readFileSync(join(ROOT, "app/globals.css"), "utf8").replace(/\/\*[\s\S]*?\*\//g, "");
+  if (!/\*\s*\{\s*scrollbar-width:\s*none/.test(css217) || !/\*::-webkit-scrollbar\s*\{\s*display:\s*none/.test(css217)) {
+    violations.push({ clause: "2.17", file: "app/globals.css", message: "The global rule that turns the browser's scrollbar off (`* { scrollbar-width: none }` and `*::-webkit-scrollbar { display: none }`) is gone: every scroller draws the one thumb instead (CONTRACTS.md 2.17)." });
+  }
+  if (!/<DrawnScrollbars\b/.test(readFileSync(join(ROOT, "app/layout.tsx"), "utf8")) || !existsSync(join(ROOT, "app/_scrollbars/drawn-scrollbars.tsx"))) {
+    violations.push({ clause: "2.17", file: "app/layout.tsx", message: "`<DrawnScrollbars />` is not mounted in the root layout (or `app/_scrollbars/drawn-scrollbars.tsx` is gone): with the browser's bar off, no scroller would show one (CONTRACTS.md 2.17)." });
+  }
+  const own217 = [...componentFiles(), ...[...walk(PAGES)].filter((f) => /\.tsx?$/.test(f)).map(rel)];
+  for (const f of own217) {
+    const code = readFileSync(join(ROOT, f), "utf8").replace(/\/\*[\s\S]*?\*\/|^\s*\/\/.*$/gm, "");
+    if (/scrollbar-width|::-webkit-scrollbar|\[&::-webkit-scrollbar\]|scrollbar-color|scrollbarWidth|overflow:\s*overlay/.test(code)) {
+      violations.push({ clause: "2.17", file: f, message: "A scrollbar drawn or switched at one scroller (`scrollbar-width`, `::-webkit-scrollbar`, `scrollbar-color`, `overflow: overlay`). Every scroller has the one drawn thumb; a box with its own cue opts out with `data-no-drawn-scrollbar` (CONTRACTS.md 2.17)." });
+    }
   }
 
   // 1.9a behaviour patterns: a multiple-selection listbox in a component must switch off react-aria's

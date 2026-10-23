@@ -134,7 +134,7 @@ function HigherRecord({ node, nodes }: { node: TaxonNode; nodes: TaxonNode[] }) 
         </div>
       )}
       <Tabs selectedKey={tab} onSelectionChange={(k) => setTab(String(k))} className="px-6 pt-6">
-        <div className="overflow-x-auto">
+        <div className="-mb-1.5 overflow-x-auto pb-1.5">
           <TabList aria-label={`${node.rank} details`} type="underline" items={tabs.map((t) => ({ id: t.id, label: t.label, icon: TAB_ICON[t.id] ?? File06 }))} className="w-max min-w-full">
             {(item) => <Tab id={item.id} label={item.label} icon={item.icon} />}
           </TabList>

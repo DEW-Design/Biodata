@@ -279,7 +279,7 @@ export const AlertFullWidth = ({
                 {(onConfirm || onClose) && (
                     <div className="flex gap-2">
                         {actions}
-                        {onClose && <CloseButton onClick={onClose} size="sm" label={dismissLabel} className="absolute top-2 right-2 shrink-0 md:static" />}
+                        {onClose && <CloseButton onClick={onClose} size="sm" label={dismissLabel} className="absolute top-2 right-2 shrink-0 md:relative md:top-auto md:right-auto" />}
                     </div>
                 )}
             </div>

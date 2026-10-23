@@ -121,7 +121,7 @@ export function ArtefactsView({
   return (
     <div className="flex flex-col gap-4">
       <p className="text-sm text-balance text-tertiary">
-        Files, photos, recordings and links attached to the fields of this
+        Files, photos, recordings and links attached to the concepts of this
         project&apos;s records, in Project records. Each one opens in the viewer;
         &ldquo;Go to record&rdquo; shows the record it belongs to.
       </p>

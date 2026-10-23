@@ -37,6 +37,7 @@ first when starting a new file in that area (a scoped rule triggers on reading, 
 - §0.7 Proactive, not reactive (below)
 - §0.8 Promote a repeated fix (below)
 - §0.9 Borrow and reuse patterns from existing pages (below)
+- §0.10 Explore design-first (below)
 - §1.1 One source of components (contracts-build.md)
 - §1.2 No match, no substitute: mark it `?` (contracts-build.md)
 - §1.3 Flow-through (contracts-build.md)
@@ -59,6 +60,10 @@ first when starting a new file in that area (a scoped rule triggers on reading, 
 - §2.11 A date field has a calendar (contracts-build.md)
 - §2.12 Nothing on screen without a purpose (contracts-build.md)
 - §2.13 Nested corners are concentric: inner radius = outer radius - padding (contracts-build.md)
+- §2.14 A key's entries line up in one column (contracts-build.md)
+- §2.15 A derived view shows the source's fields as the source does (contracts-build.md)
+- §2.16 A control's hit area is built into its component (contracts-build.md)
+- §2.17 One scrollbar, drawn once, for every scroller (contracts-build.md)
 - §3.1 One header (contracts-shell.md)
 - §3.2 One rail, one icon map, legal links in the rail (contracts-shell.md)
 - §3.3 Account controls live in the header (contracts-shell.md)
@@ -226,6 +231,23 @@ product is one system; a new screen is the existing patterns put to a new use, n
   pages already put a record's own facts on an Overview tab and the things it relates to on a tab each. The designer: "Borrow
   and reuse patterns from existing pages" (6 Oct 2026).
 - **Enforcement:** `REVIEW` (the end-of-task check names the page borrowed from; §0.7 item 3).
+
+### §0.10 Explore design-first
+
+An exploration (a new screen, a layout option, a lab, a restyle) starts from the design principles, not from a layout. The principles are `.claude/rules/ref-principles.md`, in full with the designer's words at
+`/principles`; they decide what no clause covers, and never override one (§0.1). Before anything is built the agent MUST:
+
+1. **Name the job and the principles.** Who is doing what, on which screen, with which role, in one sentence; and the two or three principles that bear on it, and where they pull apart. Where they do and the
+   repo cannot settle it, ask one precise question (§0.4) before building.
+2. **Stand on the ground:** walk the states and the roles (§0.7, `ref-shell.md`), find the closest existing page (§0.9), and use the components (§1.1) and the content (§0.3, §2.15) that really exist.
+3. **Make options, not one guess,** where the direction is open: real components, in a lab behind `LayoutOptionSwitcher` (§4.4), each saying which principle it favours.
+4. **Judge it against the principles before showing it,** with the designer's standing tests: where I came from, what to do here and how to get back; every word from its source; every state; and a measured pass in a
+   browser (§0.6 item 4). Say what was measured and what was not (§0.5).
+5. **Record why,** in the principle's terms, when the designer chooses (§5.1); and when the same fix is made twice, make it a check (§0.8). The details that come out of it are added to `/principles/craft`.
+
+- **Origin:** the designer, after the principles had been scattered across the cognitive-load list in `ref-shell.md`, the contracts (which say what to do and not why) and one audit, none revisited since the end of
+  September: "let's start to approach explorations with design-first principles" (23 Oct 2026).
+- **Enforcement:** `REVIEW` (the report names the principles an exploration was built from and the option each favours; §0.7 item 3). The principles are a draft for the designer to confirm.
 
 ### §5.1 Log everything, append-only
 

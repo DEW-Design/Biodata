@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
-import { ArrowNarrowRight, Lock01, XClose } from "@untitledui/icons";
+import { ArrowNarrowRight, Lock01 } from "@untitledui/icons";
 import { Badge } from "@/components/base/badges/badges";
 import { Button } from "@/components/base/buttons/button";
 import { cx } from "@/utils/cx";
@@ -13,6 +13,8 @@ import { useRoleHref } from "@/lib/use-role-href";
 import { useUserRole } from "@/lib/use-user-role";
 import type { UserRole } from "@/lib/user-role";
 import { recordAccess } from "@/app/pages/_shared/map-search/record-access";
+import { MAP_SURFACE_EDGE } from "@/app/pages/_shared/map-search/map-surface";
+import { SummaryCloseButton, SummaryFacts } from "@/app/pages/_shared/map-search/summary-card-parts";
 
 /**
  * A record on the map, at a glance: what it is, where it came from and the three facts you decide
@@ -36,20 +38,8 @@ export function RecordPeekCard({ record, onClose, className }: { record: DetailR
   const Icon = view.icon;
 
   return (
-    <section aria-label={`${view.title}, summary`} className={cx("font-barlow relative flex w-[320px] max-w-[calc(100%-2rem)] flex-col overflow-hidden rounded-xl border border-secondary bg-primary shadow-lg", className)}>
-      {/* Always the card's top-right corner, over the photo when there is one (on a solid chip, so
-          it reads on any image) and over the plain header when there is not. */}
-      <button
-        type="button"
-        aria-label="Close summary"
-        onClick={onClose}
-        className={cx(
-          "absolute top-2 right-2 z-10 flex size-8 items-center justify-center rounded-full text-fg-quaternary outline-focus-ring transition duration-100 ease-linear before:absolute before:-inset-1.5 hover:text-fg-quaternary_hover focus-visible:outline-2 focus-visible:outline-offset-2",
-          view.photo ? "bg-primary shadow-sm hover:bg-secondary" : "hover:bg-secondary",
-        )}
-      >
-        <XClose className="size-4" />
-      </button>
+    <section aria-label={`${view.title}, summary`} className={cx("font-barlow relative flex w-[320px] max-w-[calc(100%-2rem)] flex-col overflow-hidden rounded-xl bg-primary shadow-lg", MAP_SURFACE_EDGE, className)}>
+      <SummaryCloseButton onClick={onClose} onPhoto={!!view.photo} />
       {/* The card never scrolls. The photo is the part that gives way: square when there is room,
           shorter (cropped, never squashed, never under 120px) when the card is height-bounded by the
           map's right-hand column, so the name, facts and "Show in project" show in full. Only in a
@@ -77,14 +67,7 @@ export function RecordPeekCard({ record, onClose, className }: { record: DetailR
 
       {view.provenance && <p className="text-sm text-secondary text-balance">{view.provenance}</p>}
 
-      <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-1.5 text-sm">
-        {view.facts.map((fact) => (
-          <div key={fact.label} className="contents">
-            <dt className="text-tertiary">{fact.label}</dt>
-            <dd className="m-0 text-primary">{fact.value}</dd>
-          </div>
-        ))}
-      </dl>
+      <SummaryFacts facts={view.facts} />
 
       {view.restricted && (
         <p className="flex items-center gap-1.5 text-sm text-tertiary">
@@ -139,7 +122,8 @@ function describe(record: DetailRecord, role: UserRole): PeekView {
   const project = rootProjectForParentEventId(r.parentEventId);
   const image = speciesImage(r.species);
   return {
-    eyebrow: `${isOcc ? "Occurrence" : "Observation"} · ${r.type}`,
+    // The card opens from the Species tab, so an occurrence reads as what the list called it: a species ("Species · Individual"), not by the data model's word (designer, 23 Oct 2026).
+    eyebrow: `${isOcc ? "Species" : "Observation"} · ${r.type}`,
     title: r.commonName,
     subtitle: hasScientificName(r.species) ? r.species : undefined,
     provenance: project ? `${project.org} · ${project.name}` : undefined,

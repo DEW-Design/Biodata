@@ -506,7 +506,7 @@ const TableCardPaginationNumbered = ({ page, pageCount, onPageChange, pageSize, 
                             onClick={() => onPageChange(item)}
                             aria-current={item === page ? "page" : undefined}
                             className={cx(
-                                "flex size-10 shrink-0 items-center justify-center rounded-md text-sm font-medium tabular-nums outline-focus-ring",
+                                "hit-area flex size-10 shrink-0 items-center justify-center rounded-md text-sm font-medium tabular-nums outline-focus-ring",
                                 item === page ? "bg-primary_hover text-secondary" : "text-quaternary hover:bg-primary_hover",
                             )}
                         >

@@ -53,7 +53,7 @@ export function Breadcrumb({
       {isHomeCurrent ? (
         <span className="text-primary">Home</span>
       ) : (
-        <Link href={roleHref(HOME_HREF)} className="hover:text-primary">
+        <Link href={roleHref(HOME_HREF)} className="hit-area hover:text-primary">
           Home
         </Link>
       )}

@@ -86,11 +86,11 @@ always exists and always says something about where you are, except on a record 
   project's own actions are in the hero's "..." menu, the records tree is on the Survey records tab, and a
   breadcrumb project switcher replaces going back to the list. Logged in
   `context/decisions/2026-09-30-07-*`; it is scoped to those screens and is not a precedent (§0.1).
-- **Override (designer, 1 Oct 2026):** Explore's first layout (`/pages/observations`) has no column 2, for every
+- **Override (designer, 1 Oct 2026):** Explore (`/pages/observations`) has no column 2, for every
   persona, so the map takes the full width. Its search areas are a section of the floating search card and
   the data-access notice some roles see is the warning banner across the top of the map. Explore's second
-  layout (`/pages/observations/option-2`) is unchanged. Logged in `context/decisions/2026-10-01-*`; it is
-  scoped to that screen and is not a precedent (§0.1).
+  layout (`/pages/observations/option-2`) was retired on 23 Oct 2026 (§4.4), so this now covers the whole of
+  Explore. Logged in `context/decisions/2026-10-01-*`; it is scoped to that screen and is not a precedent (§0.1).
 
 ### §3.10 Column 2 is navigation and actions only
 
@@ -147,9 +147,10 @@ scans by shape as well as by word and the same section has the same icon on ever
   `UploadCloud02`; Flora and Fauna take the species group icons, and the record kinds the records tree's icons
   (`record-icons.ts`). A new tab takes an icon not already another concept's, and is added here.
 - **Counts** (`badge`) stay after the label; the icon does not replace them.
-- **Exempt (open, see the backlog in `ref-shell.md`):** Explore's results tabs (the 440px card; with icons they need
-  about 780px and scroll further), a record's dynamic section tabs (`project-details-view.tsx`, whose titles come from
-  the data), and Home's task status filters (`Tabs.List`, filters, not sections).
+- **Exempt (open, see the backlog in `ref-shell.md`):** Explore's results tabs (Species and Projects, since the other
+  four were removed on 23 Oct 2026; the designer's redesign of the card draws them without icons, and with two tabs the
+  width that was the first reason no longer applies), a record's dynamic section tabs (`project-details-view.tsx`,
+  whose titles come from the data), and Home's task status filters (`Tabs.List`, filters, not sections).
 - **Origin:** column 2 and the method tabs had icons while the underline tabs did not (designer, 1 Oct 2026: "these to
   also have icons"); the lab at `/proto/tab-icons` measured the options (A text, B every tab, C selected only) and B
   was chosen.
@@ -227,10 +228,11 @@ then any view or tree controls, above a list, table or tree) is the same everywh
 - MUST render `<ToolbarSearch>` (`app/pages/_shared/toolbar-search.tsx`): 384px wide (`max-w-sm`), shrinking
   only on a narrow screen, small size, the `SearchMd` icon. Filter sits directly after it.
 - MUST NOT let the toolbar search grow to fill the row (`flex-1`), or give it its own width.
-- **Open, not decided:** Explore's results search (`/pages/observations`) was made full width on the
-  designer's instruction before this rule existed, and project-detail option 2's records search is
-  `max-w-md`. Both now have the Filter menu beside them, so the check names them as exceptions (`species-results.tsx`,
-  `observations-search.tsx`); bringing them in line is for the designer to decide.
+- **Open, not decided:** the species results search (`species-results.tsx`) was made full width on the
+  designer's instruction before this rule existed (it was Explore's results page, retired on 23 Oct 2026, and the
+  dataset ingestion lab is now the only screen that shows it), and project-detail option 2's records search is
+  `max-w-md`. Both now have the Filter menu beside them, so the check names the first as an exception
+  (`species-results.tsx`); bringing them in line is for the designer to decide.
 - **Origin:** the Survey records toolbar on project detail Option 3 grew its search to the full row while the
   Projects, DSA, DLA and User Management lists all used 384px.
 - **Enforcement:** `AUTO §4.2c` (a file with a `FilterMenu` whose search is a hand-rolled `Input` with a
@@ -300,23 +302,23 @@ that is filtered, searched, sorted or paged is `<Table layout="fixed">` and give
 table so a narrow window scrolls it sideways instead of crushing a column. A value longer than its column wraps or is
 cut with an ellipsis and its full text as the tooltip; it never widens the column.
 
-The same holds for a scrollbar. Where a person sees a classic scrollbar (Windows, or a Mac with a mouse), a scroll area
-that overflows in one state and not in another (All beside My, one tab beside another) takes about 15px from the
-content when its scrollbar appears. A scrolling `main` reserves that space (`overflow-y-auto [scrollbar-gutter:stable]`)
-and a scrolling table does it itself (`bodyScrollable`), so nothing moves when rows or content come and go.
+The same holds for a scrollbar. A classic one (Windows, or a Mac with a mouse) takes about 15px from the content when
+it appears, in a scroll area that overflows in one state and not in another (All beside My, one tab beside another). The product's
+scrollbar is drawn over the content and takes no width (2.17), so nothing moves; a scrolling `main` still reserves the gutter
+(`overflow-y-auto [scrollbar-gutter:stable]`) and a scrolling table does it itself (`bodyScrollable`), at no cost, so the content stays steady if the drawn thumb is ever turned off.
 
 - MUST NOT leave a collection table on the automatic layout: it sizes each column to its widest cell, so switching
   All to My, a search, a sort or the next page moves every column.
 - MUST NOT leave a column without a width in a fixed table (the browser leaves the space unused).
 - MUST NOT make a page's scrolling `<main>` `overflow-y-auto` without `[scrollbar-gutter:stable]`.
-- **Exception:** Explore's results table (`map-search/results-table.tsx`), whose columns are chosen by the person, and
-  the lab-only `ingestion-report.tsx`; both are listed in the check and are open, see the backlog in `ref-shell.md`.
+- **Exception:** the results table (`map-search/results-table.tsx`), whose columns are chosen by the person (Explore's
+  second layout showed it until 23 Oct 2026; the dataset ingestion lab's species results now do), and the lab-only
+  `ingestion-report.tsx`; both are listed in the check and are open, see the backlog in `ref-shell.md`.
 - **Origin:** the nominations list moved every column when the designer switched from All to My, because one row
   had a second line (an organisation) and another a long status; every other list had the same flaw (designer,
   1 Oct 2026: "no dance-y layouts").
 - **Enforcement:** `AUTO §4.2f` (a `Table` with `bodyScrollable` and no `layout="fixed"`, or a `<main>` with `overflow-y-auto`
-  and no `scrollbar-gutter`, under `app/pages`). The scrollbar half cannot be seen in the headless browser used for
-  checks, which hides scrollbars: it is `REVIEW` to look at in a real browser with scrollbars always shown.
+  and no `scrollbar-gutter`, under `app/pages`). A headless browser hides scrollbars and the lane goes unseen: the live pass runs with them drawn (2.17).
 
 **One gap under the header (§4.2g).** Under a `SectionHeader`, the collection body (any notice, the toolbar,
 the table) sits in one wrapper with `p-6`: the same 24px between the header's divider and the search on every
@@ -373,7 +375,15 @@ record) is laid out like the project page (`/pages/project-detail`):
    chosen with no Apply button (1.9 item 2), a date being the date field with a calendar (2.11); a report that is always on one
    thing (one dataset) shows it as chips and has no Reset. MUST NOT draw parameters as a grid of fields, a row of selects or a
    panel between the card and the toolbar, or add a second filter control (`tsc` fails the old `scopeControl`, which no longer
-   exists). The table keeps at least 24rem, about 7 rows (`DataReport`), so where the card and controls take more the page
+   exists). **Exception (designer, 23 Oct 2026: "I feel having parameters is weird. What if they sat as drop downs instead ... move it to the
+   right of the filters button"), for the Data Validation Error Report only:** its project and its dataset, two linked choices (a dataset
+   belongs to a project) that the whole report is about and that are changed often, are two dropdowns on the toolbar, to the right of
+   Filter (`parameters.inline`, `report-parameters.tsx`): the design system's `Select`, small, 256px each at the least and growing into spare room up to 384px, each with the design system's own label above it ("Project", "Dataset": the `Select`'s `label`, as
+   every other labelled field; a dropdown named only by an `aria-label` tells a sighted person nothing, and a label drawn inside the trigger is a pattern the design system does not have, 23 Oct 2026), the row aligned by its foot,
+   each showing its code or id first and the name or file after it, and cut by what it is when it is too long for the dropdown: the code is never cut, a project's title is cut at a word (`truncateAtWords`),
+   a dataset's file name in the middle so its version and extension stay (`labelEnd`, `splitFileName`: "DS-2026-01003 · flinders_bush...01.xlsx"), the full text is the tooltip, and the open list is as wide as its longest row (up to 40rem), with no Parameters button and no
+   chips, because what each is set to is what it shows. The row is search, Filter, the dropdowns, then Columns. Any other report that wants
+   the same takes `inline` with the designer's say-so (0.4); it is not the default. The table keeps at least 24rem, about 7 rows (`DataReport`), so where the card and controls take more the page
    scrolls and the table does not shrink.
    A "Columns" button at the right of the toolbar (`column-chooser.tsx`) opens one popover where columns are shown,
    hidden and reordered (by their handle or the keyboard), the first column pinned and always shown, applying as
@@ -465,7 +475,7 @@ behaves the same way, on every card and every page.
    MUST NOT put them inside a card or repeat them per card.
 5. **Leaving:** Cancel or Exit with unsaved changes asks first. Save and Cancel return to the view the edit was
    started from (a side panel stays a side panel, a full view stays a full view).
-6. **Visibility:** where a record's fields can be hidden, the right-hand column becomes the "Fields shown"
+6. **Visibility:** where a record's concepts can be hidden, the right-hand column becomes the "Concepts shown"
    checklist while a card is in edit mode, and for a new record.
 
 - **Origin:** Project details kept Cancel and Save inside the card while record editing had them in a page

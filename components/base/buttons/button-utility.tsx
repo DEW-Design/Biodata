@@ -61,7 +61,7 @@ export const ButtonUtility: {
         "aria-label": props["aria-label"] ?? tooltip,
         isDisabled,
         className: cx(
-            "group relative inline-flex h-max cursor-pointer items-center justify-center rounded-md p-1.5 outline-focus-ring transition duration-100 ease-linear focus-visible:outline-2 focus-visible:outline-offset-2 disabled:cursor-not-allowed disabled:opacity-50",
+            "hit-area group relative inline-flex h-max cursor-pointer items-center justify-center rounded-md p-1.5 outline-focus-ring transition duration-100 ease-linear focus-visible:outline-2 focus-visible:outline-offset-2 disabled:cursor-not-allowed disabled:opacity-50",
             styles[color],
 
             // Icon styles

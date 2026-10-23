@@ -12,7 +12,7 @@
 //
 // Editing happens here, one card at a time: only the card being edited turns into fields
 // (card-editor.tsx), the rest stay as they are. Its notes are added under each field. While a card is
-// in edit mode the right column becomes "Fields shown" (visibility-panel.tsx), a checklist of every
+// in edit mode the right column becomes "Concepts shown" (visibility-panel.tsx), a checklist of every
 // category and field of the record, and Cancel and Save changes sit in a footer across the bottom.
 // Save commits the record, its notes and the fields shown together; Cancel discards all three.
 //
@@ -178,7 +178,7 @@ export function RecordFullView({
     focusField: target.fieldKey,
     draft: toDraft(record, store.artefactsFor(record.id)),
     notes: { ...(notes[record.id] ?? {}) },
-    // Empty fields start hidden: they are added by ticking them in "Fields shown".
+    // Empty fields start hidden: they are added by ticking them in "Concepts shown".
     hidden: new Set([
       ...savedHidden,
       ...[...emptyFieldKeys(record)].filter(
@@ -622,7 +622,7 @@ export function RecordFullView({
                 {noted.length === 0 ? (
                   <p className="text-sm text-tertiary">
                     No flags, comments or files yet.
-                    {store.canEdit ? " Edit a field to add one." : ""}
+                    {store.canEdit ? " Edit a concept to add one." : ""}
                   </p>
                 ) : (
                   <ul className="-mx-2 flex flex-col">

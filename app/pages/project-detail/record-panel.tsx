@@ -73,7 +73,7 @@ const iconButton =
 
 /**
  * A section's fields (and its map, for location), each with its notes. Hidden fields (the edit view's
- * "Fields shown" checklist) are left out. `onEditField` gives every field an edit icon on hover.
+ * "Concepts shown" checklist) are left out. `onEditField` gives every field an edit icon on hover.
  */
 export function SectionFields({
   record,
@@ -351,7 +351,7 @@ export function SectionTitle({
       {s.flags > 0 && (
         <span
           className={cx(NOTE_MARK, NOTE_TONE.flag)}
-          title={`${s.flags} flagged field${s.flags === 1 ? "" : "s"}`}
+          title={`${s.flags} flagged concept${s.flags === 1 ? "" : "s"}`}
         >
           <Flag01 className="size-3" />
           {s.flags}

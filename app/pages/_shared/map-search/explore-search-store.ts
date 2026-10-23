@@ -8,10 +8,9 @@ import type { Boundary } from "./geo";
 import type { ShapefileLayer } from "./shapefile";
 
 // Explore's search (the areas, the keyword and which tab is open), saved to localStorage so a
-// reload, "Back to results" from a record page, and switching between option 1 and option 2 all
-// land on the same search. One search shared by both options (designer's choice). The page keeps
-// its own React state and writes it here whenever it changes; this store is only read once, when
-// the page opens (see observations-search.tsx). A header search (`?q=`) always starts a new search:
+// reload and "Back to results" from a record page land on the same search. The page keeps its own
+// React state and writes it here whenever it changes; this store is only read once, when the page
+// opens (see observations-search.tsx). A header search (`?q=`) always starts a new search:
 // what is saved is only restored when the page opens with no term, or with the term it was saved
 // under (`query`). "Clear all" empties the areas; the keyword and tab stay until changed.
 //
@@ -28,14 +27,9 @@ export interface ExploreSearch {
   shapefileLayers: ShapefileLayer[];
   shapefileRadius: number;
   keyword: string;
-  hiddenLayerIds: Set<string>;
   layerNames: Record<string, string>;
-  radiusOverrides: Record<string, number>;
   layerCounters: Record<string, number>;
-  viewMode: "records" | "species";
   entityTab: string;
-  /** Option 1's screen: the search panel, or its results page. */
-  mode: "search" | "results";
 }
 
 interface ExploreSearchState {

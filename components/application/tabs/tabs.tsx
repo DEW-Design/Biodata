@@ -48,7 +48,7 @@ const getTabStyles = ({ isFocusVisible, isSelected, isHovered }: AriaTabRenderPr
         (isSelected || isHovered) && "bg-primary_alt text-secondary shadow-xs ring-1 ring-primary ring-inset *:data-icon:text-fg-quaternary_hover",
     ),
     underline: cx(
-        "rounded-none border-b-2 border-transparent outline-focus-ring *:data-icon:text-fg-quaternary",
+        "rounded-none border-b-2 border-transparent outline-focus-ring [--hit-dy:1px] *:data-icon:text-fg-quaternary",
         isFocusVisible && "outline-2 -outline-offset-2",
         (isSelected || isHovered) && "border-fg-brand-secondary_alt text-brand-secondary *:data-icon:text-fg-brand-secondary_hover",
     ),
@@ -188,8 +188,9 @@ export const Tab = ({ label, children, badge, icon: Icon, className, ...otherPro
             {...otherProps}
             className={(prop) =>
                 cx(
-                    "z-10 flex h-max cursor-pointer items-center justify-center gap-2 rounded-md whitespace-nowrap text-quaternary transition duration-100 ease-linear",
-                    "group-data-[orientation=vertical]:justify-start",
+                    "hit-area relative z-10 flex h-max cursor-pointer items-center justify-center gap-2 rounded-md whitespace-nowrap text-quaternary transition duration-100 ease-linear",
+                    // Tabs stacked in column 2 are close together: their hit area is as drawn (`hit-area`, globals.css).
+                    "group-data-[orientation=vertical]:justify-start group-data-[orientation=vertical]:after:content-none",
                     fullWidth && "w-full flex-1",
                     sizes[size].base,
                     sizes[size][type],

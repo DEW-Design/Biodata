@@ -1,6 +1,6 @@
 "use client";
 
-// VERSION 3: "Fields shown", the right-hand column while a card is in edit mode. A checklist of every
+// VERSION 3: "Concepts shown", the right-hand column while a card is in edit mode. A checklist of every
 // category (section) of the record and its fields: tick a field to add it (empty fields start
 // unticked), untick one to take it off the record, in edit mode and when viewed; untick a category to
 // hide all of it. A category shows its own tick as checked, partly
@@ -57,7 +57,7 @@ export function VisibilityPanel({
 
   return (
     <section
-      aria-label="Fields shown"
+      aria-label="Concepts shown"
       className="flex flex-col overflow-hidden rounded-xl border border-secondary bg-primary"
     >
       <div className="flex flex-col gap-3 border-b border-secondary p-4">
@@ -65,10 +65,10 @@ export function VisibilityPanel({
           <div className="flex flex-col gap-0.5">
             <h3 className="flex items-center gap-1.5 text-sm font-semibold text-primary">
               <Eye className="size-4 text-fg-quaternary" />
-              Fields shown
+              Concepts shown
             </h3>
             <p className="text-xs text-balance text-tertiary">
-              Tick a field to add it to the record, untick it to take it away. Empty fields start unticked.
+              Tick a concept to add it to the record, untick it to take it away. Empty concepts start unticked.
             </p>
           </div>
           <span className="shrink-0 rounded-md bg-secondary px-2 py-0.5 text-xs font-medium text-secondary tabular-nums">
@@ -76,10 +76,10 @@ export function VisibilityPanel({
           </span>
         </div>
         <Input
-          aria-label="Find a field"
+          aria-label="Find a concept"
           size="sm"
           icon={SearchMd}
-          placeholder="Find a field"
+          placeholder="Find a concept"
           value={query}
           onChange={setQuery}
         />

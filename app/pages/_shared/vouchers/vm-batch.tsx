@@ -24,7 +24,7 @@ import { useRoleHref } from "@/lib/use-role-href";
 // the batch's records. From the Figma's batch screen (nodes 1584:10220 and 1584:10572):
 //
 //   - Every record is shown the same way, in one table (vm-compare.tsx): its fields beside the
-//     source's, and Your update, whatever its state. "Show matching fields" (off at first) adds the
+//     source's, and Your update, whatever its state. "Show matching concepts" (off at first) adds the
 //     lines that match. Where a record stands (Needs review, Matched,
 //     Updated, Ignored) is a Status filter, with the Figma's "View only" fields and Key match beside
 //     it; there are no tabs (the designer, 1 Oct 2026: "put the tab options under filters"). The batch
@@ -126,7 +126,7 @@ export function VmBatchPage({ batch }: { batch: VmBatch }) {
   const exportCsv = () =>
     downloadCsv(
       `voucher-batch-${batch.id}.csv`,
-      ["Record", "Key match", "Field", `${source} value`, "BioData value", "Status", "Decided by", "Decided on"],
+      ["Record", "Key match", "Concept", `${source} value`, "BioData value", "Status", "Decided by", "Decided on"],
       batch.records.flatMap((r) =>
         FIELDS.filter((f) => fieldStatus(batch, r, f.key, decisions, edits).differs).map((f) => {
           const s = fieldStatus(batch, r, f.key, decisions, edits);
@@ -153,7 +153,7 @@ export function VmBatchPage({ batch }: { batch: VmBatch }) {
   };
   const filterSections: FilterSection[] = [
     { id: "status", label: "Status", icon: Flag01, options: STATUS_ORDER.map((s) => ({ id: s, label: RESULT_META[s].label })) },
-    { id: "field", label: "Field that differs", icon: Columns03, options: FIELDS.map((f) => ({ id: f.key, label: f.label })) },
+    { id: "field", label: "Concept that differs", icon: Columns03, options: FIELDS.map((f) => ({ id: f.key, label: f.label })) },
     { id: "key", label: "Key match", icon: Hash01, options: (Object.keys(MATCH_LABEL) as MatchKey[]).map((k) => ({ id: k, label: MATCH_LABEL[k] })) },
   ];
   const filter = useSelectionFilter(filterSections, filterGetters, filters, (next) => {
@@ -171,7 +171,7 @@ export function VmBatchPage({ batch }: { batch: VmBatch }) {
         <HeroMeta label="Records checked">
           <span className="tabular-nums">{batch.checked.toLocaleString("en-AU")}</span>
         </HeroMeta>
-        <HeroMeta label="Fields that differ">
+        <HeroMeta label="Concepts that differ">
           <span className="tabular-nums">{summary.different}</span>
           {summary.missing > 0 && <span className="text-white/70"> · {summary.missing} missing in BioData</span>}
         </HeroMeta>
@@ -193,7 +193,7 @@ export function VmBatchPage({ batch }: { batch: VmBatch }) {
           />
           <FilterMenu filter={filter} />
           <div className="ml-auto">
-            <Toggle size="sm" label="Show matching fields" isSelected={showMatching} onChange={setShowMatching} />
+            <Toggle size="sm" label="Show matching concepts" isSelected={showMatching} onChange={setShowMatching} />
           </div>
         </div>
         <AttributeFilterChips filter={filter} />

@@ -558,7 +558,7 @@ export function SpeciesRecord({ id, back = { href: TX_ROOT, label: "All species"
 
         {view === "details" ? (
           <Tabs selectedKey={tab} onSelectionChange={(k) => setTab(String(k))} className="px-6 pt-4">
-            <div className="overflow-x-auto">
+            <div className="-mb-1.5 overflow-x-auto pb-1.5">
               <TabList aria-label="Species details" type="underline" items={tabs.map((t) => ({ id: t.id, label: t.label, icon: TAB_ICON[t.id] ?? File06 }))} className="w-max min-w-full">
                 {(item) => <Tab id={item.id} label={item.label} icon={item.icon} />}
               </TabList>

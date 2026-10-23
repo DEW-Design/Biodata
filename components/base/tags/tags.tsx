@@ -1,6 +1,6 @@
 "use client";
 
-import { type ImgHTMLAttributes, type PropsWithChildren, type RefAttributes, createContext, useContext, useState } from "react";
+import { type FC, type ImgHTMLAttributes, type PropsWithChildren, type RefAttributes, createContext, useContext, useState } from "react";
 import { User01 } from "@untitledui/icons";
 import {
     Tag as AriaTag,
@@ -49,6 +49,9 @@ export interface TagItem {
 const TagGroupContext = createContext<{
     selectionMode: "none" | "single" | "multiple";
     size: "sm" | "md" | "lg";
+    textSize?: "xs";
+    /** The group has an `onAction`: pressing a tag does something, so it says so (pointer, a fill when pointed at, a press). */
+    actionable?: boolean;
 }>({
     selectionMode: "none",
     size: "sm",
@@ -57,11 +60,13 @@ const TagGroupContext = createContext<{
 interface TagGroupProps extends AriaTagGroupProps, RefAttributes<HTMLDivElement> {
     label: string;
     size?: "sm" | "md" | "lg";
+    /** Sets the label at 12px (`text-xs`) whatever the size, so a large tag's box can sit beside 12px type, as a heading in the eyebrow layer. Opt-in; without it the size's own type (12px small, 14px medium and large). */
+    textSize?: "xs";
 }
 
-export const TagGroup = ({ label, selectionMode = "none", size = "sm", children, ...otherProps }: TagGroupProps) => {
+export const TagGroup = ({ label, selectionMode = "none", size = "sm", textSize, children, ...otherProps }: TagGroupProps) => {
     return (
-        <TagGroupContext.Provider value={{ selectionMode, size }}>
+        <TagGroupContext.Provider value={{ selectionMode, size, textSize, actionable: !!otherProps.onAction }}>
             <AriaTagGroup aria-label={label} selectionMode={selectionMode} disallowEmptySelection={selectionMode === "single"} {...otherProps}>
                 {children}
             </AriaTagGroup>
@@ -110,7 +115,14 @@ const styles = {
     },
 };
 
-interface TagProps extends AriaTagProps, RefAttributes<object>, Omit<TagItem, "label" | "id"> {}
+interface TagProps extends AriaTagProps, RefAttributes<object>, Omit<TagItem, "label" | "id"> {
+    /** An icon before the label, for a tag that names a kind of thing (an area: circle, polygon, point). Opt-in; none by default. */
+    icon?: FC<{ className?: string }>;
+    /** Told when the pointer is over the tag, so what it stands for can be shown elsewhere (the map outlines the area). Opt-in. */
+    onHoverChange?: (hovered: boolean) => void;
+    /** Drawn as pointed at while what it stands for is (the area's shape under the pointer on the map): the same fill as the tag's own hover. Opt-in. */
+    highlighted?: boolean;
+}
 
 export const Tag = ({
     id,
@@ -123,6 +135,9 @@ export const Tag = ({
     className,
     children,
     onClose,
+    icon: Icon,
+    onHoverChange,
+    highlighted,
 }: PropsWithChildren<TagProps>) => {
     const context = useContext(TagGroupContext);
 
@@ -130,6 +145,8 @@ export const Tag = ({
         <TagAvatar src={avatarSrc} alt="Avatar" contrastBorder={avatarContrastBorder} />
     ) : dot ? (
         <Dot className={cx("text-fg-success-secondary", dotClassName)} size="sm" />
+    ) : Icon ? (
+        <Icon className={cx("shrink-0 text-fg-quaternary", context.size === "sm" ? "size-3" : context.textSize === "xs" || context.size === "md" ? "size-3.5" : "size-4")} />
     ) : null;
 
     return (
@@ -141,17 +158,21 @@ export const Tag = ({
                 cx(
                     "font-barlow flex cursor-default items-center gap-0.75 rounded-md bg-primary text-secondary ring-1 ring-primary outline-focus-ring transition duration-50 ease-linear ring-inset focus-visible:outline-2 focus-visible:outline-offset-2",
                     styles[context.size].root.base,
+                    context.textSize === "xs" && "text-xs",
 
                     // With avatar
                     avatarSrc && styles[context.size].root.withAvatar,
                     // With X button
                     (onClose || state.allowsRemoving) && styles[context.size].root.withClose,
-                    // With dot
-                    dot && styles[context.size].root.withDot,
+                    // With dot, or an icon (the same room)
+                    (dot || Icon) && styles[context.size].root.withDot,
                     // With count
                     typeof count === "number" && styles[context.size].root.withCount,
                     // With checkbox
                     context.selectionMode !== "none" && styles[context.size].root.withCheckbox,
+                    // Pressing it does something (the group has an `onAction`): the pointer says so, the fill confirms it, and a press is felt
+                    context.actionable && "cursor-pointer hover:bg-primary_hover data-pressed:scale-[0.96]",
+                    highlighted && "bg-primary_hover",
                     // Disabled
                     isDisabled && "cursor-not-allowed",
 
@@ -160,7 +181,8 @@ export const Tag = ({
             }
         >
             {({ isSelected, isDisabled, allowsRemoving }) => (
-                <>
+                // `contents` adds no box: the wrapper is only there to hear the pointer over the whole tag (react-aria's own hover is off for a tag that is not selectable).
+                <div className="contents" onPointerEnter={onHoverChange ? () => onHoverChange(true) : undefined} onPointerLeave={onHoverChange ? () => onHoverChange(false) : undefined}>
                     <div className={cx("flex items-center gap-1", styles[context.size].content)}>
                         {context.selectionMode !== "none" && <TagCheckbox size={context.size} isSelected={isSelected} isDisabled={isDisabled} />}
 
@@ -178,7 +200,7 @@ export const Tag = ({
                     {(onClose || allowsRemoving) && (
                         <TagCloseX size={context.size} excludeFromTabOrder={allowsRemoving} onPress={() => id && onClose?.(id.toString())} />
                     )}
-                </>
+                </div>
             )}
         </AriaTag>
     );

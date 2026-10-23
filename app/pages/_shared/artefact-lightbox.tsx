@@ -130,7 +130,7 @@ export function ArtefactTile({ artefact, onOpen }: { artefact: Artefact; onOpen:
 
 export function ArtefactCarousel({ artefacts, onOpen }: { artefacts: Artefact[]; onOpen: (index: number) => void }) {
   return (
-    <div className="flex gap-3 overflow-x-auto pb-1" style={{ scrollbarWidth: "none" }}>
+    <div data-no-drawn-scrollbar className="flex gap-3 overflow-x-auto pb-1">
       {artefacts.map((artefact, i) => (
         <ArtefactTile key={artefact.id} artefact={artefact} onOpen={() => onOpen(i)} />
       ))}

@@ -82,7 +82,7 @@ export function AddArtefactModal({ isOpen, onOpenChange, onAdded }: { isOpen: bo
   const linkOk = /^https?:\/\/\S+\.\S+/.test(url.trim());
   const problem = {
     record: !recordId ? "Choose an event, occurrence or observation" : undefined,
-    field: recordId && !fieldKey ? "Choose the field this documents" : undefined,
+    field: recordId && !fieldKey ? "Choose the concept this documents" : undefined,
     items: items.length === 0 ? "Add at least one file or link" : undefined,
   };
 
@@ -157,7 +157,7 @@ export function AddArtefactModal({ isOpen, onOpenChange, onAdded }: { isOpen: bo
       }}
       icon={Paperclip}
       title="Add an attachment"
-      description="An attachment belongs to one field of an event, occurrence or observation."
+      description="An attachment belongs to one concept of an event, occurrence or observation."
       submitLabel={items.length > 1 ? `Add ${items.length} attachments` : "Add"}
       submitIcon={Plus}
       onSubmit={submit}
@@ -179,10 +179,10 @@ export function AddArtefactModal({ isOpen, onOpenChange, onAdded }: { isOpen: bo
         {(item) => <Select.Item {...item}>{item.label}</Select.Item>}
       </Select.ComboBox>
       <Select.ComboBox
-        label="Field"
+        label="Concept"
         isRequired
         validationBehavior="aria"
-        placeholder={record ? "Search fields" : "Choose what to attach to first"}
+        placeholder={record ? "Search concepts" : "Choose what to attach to first"}
         isDisabled={!record}
         items={fields}
         selectedKey={fieldKey}

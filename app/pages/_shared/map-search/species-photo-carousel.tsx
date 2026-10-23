@@ -50,7 +50,7 @@ export function SpeciesPhotoCarousel({ scientificName, alt, className }: { scien
     }
   };
 
-  const chip = "absolute top-1/2 z-10 flex size-8 -translate-y-1/2 items-center justify-center rounded-full bg-primary text-fg-quaternary shadow-sm outline-focus-ring transition duration-100 ease-linear before:absolute before:-inset-1.5 hover:bg-secondary hover:text-fg-quaternary_hover focus-visible:outline-2 focus-visible:outline-offset-2 disabled:pointer-events-none disabled:opacity-0";
+  const chip = "absolute top-1/2 z-10 flex size-8 -translate-y-1/2 items-center justify-center rounded-full bg-primary text-fg-quaternary shadow-sm outline-focus-ring transition duration-100 ease-linear hit-area hover:bg-secondary hover:text-fg-quaternary_hover focus-visible:outline-2 focus-visible:outline-offset-2 disabled:pointer-events-none disabled:opacity-0";
 
   return (
     <figure className={cx("m-0 flex flex-col", className)}>
@@ -62,7 +62,7 @@ export function SpeciesPhotoCarousel({ scientificName, alt, className }: { scien
         onKeyDown={onKeyDown}
         className="relative aspect-square min-h-[120px] w-full shrink overflow-hidden bg-secondary outline-focus-ring focus-visible:outline-2 focus-visible:-outline-offset-2"
       >
-        <div ref={trackRef} className="flex size-full snap-x snap-mandatory overflow-x-auto overflow-y-hidden [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+        <div ref={trackRef} data-no-drawn-scrollbar className="flex size-full snap-x snap-mandatory overflow-x-auto overflow-y-hidden">
           {images.map((image, i) => (
             <div key={image.src} role={count > 1 ? "group" : undefined} aria-roledescription={count > 1 ? "slide" : undefined} aria-label={count > 1 ? `${i + 1} of ${count}` : undefined} className="size-full shrink-0 snap-center">
               {/* eslint-disable-next-line @next/next/no-img-element -- static export with local files */}

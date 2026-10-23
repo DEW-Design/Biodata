@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, type FC } from "react";
-import { ArrowRight, Check, ChevronSelectorVertical } from "@untitledui/icons";
+import { useState } from "react";
+import { ArrowRight, ChevronSelectorVertical } from "@untitledui/icons";
 import { Button as AriaButton, Dialog as AriaDialog, DialogTrigger as AriaDialogTrigger } from "react-aria-components";
 import { Button } from "@/components/base/buttons/button";
 import { Popover } from "@/components/base/select/popover";
@@ -25,9 +25,9 @@ export interface BreadcrumbSwitcherItem {
   addon?: string;
 }
 
-// Keeps every row's label in one column: the current row shows a tick where the others show nothing.
-// Select.Item sizes any icon carrying `data-icon`, so the spacer takes the tick's width.
-const NoIcon: FC<Record<string, unknown>> = (props) => <span {...props} />;
+// The current record is the list's selected item (`selectedKey`), so it is drawn as the design system draws a selected item everywhere: its row tinted and a brand-coloured tick at the right. It was a small
+// grey tick at the left of an otherwise plain row, so a row the pointer was resting on (tinted by hover) looked like the chosen one and the chosen one did not look chosen (the designer, 23 Oct 2026: "the
+// selection isn't clear ... what have I chosen?").
 
 export function BreadcrumbSwitcher({
   label,
@@ -48,6 +48,7 @@ export function BreadcrumbSwitcher({
   items: BreadcrumbSwitcherItem[];
   currentId?: string;
   onSelect: (id: string) => void;
+  /** The bar fixed at the foot of the popup, e.g. "View all projects". */
   viewAllLabel: string;
   onViewAll: () => void;
 }) {
@@ -68,13 +69,13 @@ export function BreadcrumbSwitcher({
         aria-label={ariaLabel}
         className={({ isFocusVisible }) =>
           cx(
-            "flex cursor-pointer items-center gap-0.5 rounded-md text-tertiary outline-focus-ring transition duration-100 ease-linear hover:text-primary",
+            "hit-area ghost-fill flex cursor-pointer items-center gap-0.5 rounded-md text-tertiary outline-focus-ring transition duration-100 ease-linear hover:bg-primary_hover hover:text-primary",
             isFocusVisible && "outline-2 outline-offset-2",
           )
         }
       >
         {label}
-        <ChevronSelectorVertical className="size-4 text-fg-quaternary" aria-hidden />
+        <ChevronSelectorVertical className="size-4 shrink-0 text-fg-quaternary" aria-hidden />
       </AriaButton>
       <Popover size="auto" placement="bottom start" offset={12} className="w-96 py-0">
         <AriaDialog aria-label={ariaLabel} className="flex flex-col outline-hidden">
@@ -104,7 +105,8 @@ export function BreadcrumbSwitcher({
                   </Button>
                 </div>
               }
-              items={items.map((item) => ({ id: item.id, label: item.label, supportingText: item.addon, icon: item.id === currentId ? Check : NoIcon }))}
+              items={items.map((item) => ({ id: item.id, label: item.label, supportingText: item.addon }))}
+              selectedKey={currentId}
               inputValue={query}
               onInputChange={setQuery}
               // Only a real choice counts: the ComboBox also reports an empty selection when it opens or is
@@ -115,7 +117,8 @@ export function BreadcrumbSwitcher({
                 close();
               }}
             >
-              {(item) => <Select.Item {...item} selectionIndicator="none" aria-label={item.id === currentId ? `${item.label}, current` : undefined} />}
+              {/* Choosing the row that is already the selection reports no change, so it closes the popup itself. */}
+              {(item) => <Select.Item {...item} onAction={item.id === currentId ? close : undefined} aria-label={item.id === currentId ? `${item.label}, current` : undefined} />}
             </Select.ComboBox>
           </div>
         </AriaDialog>

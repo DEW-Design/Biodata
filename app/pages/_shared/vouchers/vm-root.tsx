@@ -45,8 +45,8 @@ export function VmOptionSwitcher() {
       ariaLabel="Voucher Management layout"
       current={root === VM_OPTION_2 ? "2" : "1"}
       options={[
-        { id: "1", label: "Option 1", description: "A row per record, its fields as lines inside it", href: `${VM_ROOT}${rest}` },
-        { id: "2", label: "Option 2", description: "A row per field, coloured by where it stands, as in the Figma", href: `${VM_OPTION_2}${rest}` },
+        { id: "1", label: "Option 1", description: "A row per record, its concepts as lines inside it", href: `${VM_ROOT}${rest}` },
+        { id: "2", label: "Option 2", description: "A row per concept, coloured by where it stands, as in the Figma", href: `${VM_OPTION_2}${rest}` },
       ]}
     />
   );

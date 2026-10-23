@@ -1,7 +1,7 @@
 "use client";
 
 import type { FC, ReactNode, Ref, RefAttributes } from "react";
-import { isValidElement } from "react";
+import { isValidElement, useContext } from "react";
 import { ChevronDown } from "@untitledui/icons";
 import type { SelectProps as AriaSelectProps } from "react-aria-components";
 import { Button as AriaButton, ListBox as AriaListBox, Select as AriaSelect, SelectValue as AriaSelectValue } from "react-aria-components";
@@ -13,7 +13,7 @@ import { isReactComponent } from "@/utils/is-react-component";
 import { ComboBox } from "./combobox";
 import { Popover } from "./popover";
 import { SelectItem } from "./select-item";
-import { type CommonProps, SelectContext, type SelectItemType, sizes } from "./select-shared";
+import { type CommonProps, SelectContext, type SelectItemType, sizes, TruncatedLabel } from "./select-shared";
 
 export { SelectContext, sizes, type CommonProps, type SelectItemType } from "./select-shared";
 
@@ -21,6 +21,8 @@ export interface SelectProps extends Omit<AriaSelectProps<SelectItemType>, "chil
     items?: SelectItemType[];
     popoverClassName?: string;
     icon?: FC | ReactNode;
+    /** Cut a label that is too long for its line between words, not in the middle of one (trigger and list). An item with a `labelEnd` is cut in the middle by character instead, so the ellipsis sits against the end that stays. Default `false`: a label is cut at the character the line runs out on. */
+    truncateAtWords?: boolean;
     children: ReactNode | ((item: SelectItemType) => ReactNode);
 }
 
@@ -35,6 +37,7 @@ interface SelectValueProps {
 }
 
 const SelectValue = ({ isOpen, isFocused, isDisabled, size, placeholder, icon, ref }: SelectValueProps) => {
+    const { truncateAtWords } = useContext(SelectContext);
     return (
         <AriaButton
             ref={ref}
@@ -75,7 +78,13 @@ const SelectValue = ({ isOpen, isFocused, isDisabled, size, placeholder, icon, r
 
                             {selectedItem ? (
                                 <section className={cx("flex w-full truncate", sizes[size].textContainer)}>
-                                    <p className={cx("truncate font-medium text-primary", sizes[size].text)}>{selectedItem?.label}</p>
+                                    {selectedItem.label && (truncateAtWords || selectedItem.labelEnd) ? (
+                                        <p className={cx("min-w-0 font-medium text-primary", sizes[size].text)}>
+                                            <TruncatedLabel label={selectedItem.label} labelEnd={selectedItem.labelEnd} atWords={truncateAtWords} />
+                                        </p>
+                                    ) : (
+                                        <p className={cx("truncate font-medium text-primary", sizes[size].text)}>{selectedItem?.label}</p>
+                                    )}
                                     {selectedItem?.supportingText && <p className={cx("text-tertiary", sizes[size].text)}>{selectedItem?.supportingText}</p>}
                                 </section>
                             ) : (
@@ -94,9 +103,9 @@ const SelectValue = ({ isOpen, isFocused, isDisabled, size, placeholder, icon, r
     );
 };
 
-const Select = ({ placeholder = "Select", icon, size = "md", children, items, label, hint, tooltip, hideRequiredIndicator, className, ...rest }: SelectProps) => {
+const Select = ({ placeholder = "Select", icon, size = "md", truncateAtWords, children, items, label, hint, tooltip, hideRequiredIndicator, className, ...rest }: SelectProps) => {
     return (
-        <SelectContext.Provider value={{ size }}>
+        <SelectContext.Provider value={{ size, truncateAtWords }}>
             <AriaSelect {...rest} className={(state) => cx("font-barlow flex flex-col gap-1.5", typeof className === "function" ? className(state) : className)}>
                 {(state) => (
                     <>

@@ -324,6 +324,10 @@ function DrawBridge({
         handlerRef.current?.disable();
         handlerRef.current = null;
 
+        // The container's own classes belong to Leaflet (a React className on the container is applied once), so the mark goes on by hand.
+        const container = map.getContainer();
+        container.classList.toggle("is-drawing", activeDrawTool !== null);
+
         const shapeOptions = { color: BOUNDARY_COLOR, weight: 2, fillOpacity: 0.15 };
         if (activeDrawTool === "circle") {
             handlerRef.current = new L.Draw.Circle(map as unknown as L.DrawMap, { shapeOptions });
@@ -335,6 +339,7 @@ function DrawBridge({
 
         return () => {
             handlerRef.current?.disable();
+            container.classList.remove("is-drawing");
         };
     }, [activeDrawTool, map]);
 
@@ -405,6 +410,10 @@ export interface SAMapProps {
     highlightedBoundaryIds?: Set<string>;
     /** Fly to these boundaries whenever `key` changes ("zoom to this area"). */
     fitRequest?: { key: number; boundaries: Boundary[] };
+    /** Told which boundary the pointer is over, or none. A shape is pointed at, so it answers: its list entry is drawn as pointed at. Not while a shape is being drawn. */
+    onBoundaryHover?: (boundaryId: string | null) => void;
+    /** Told which boundary was pressed. Not while a shape is being drawn (the press is a point of the drawing). */
+    onBoundaryClick?: (boundaryId: string) => void;
     /** Centre this point whenever `key` changes ("a record was selected") - pans only, never
      *  changes zoom, so the same click that opens a record's summary card also brings its dot
      *  into the visible area instead of leaving it wherever it happened to already be. */
@@ -450,10 +459,18 @@ export default function SAMap({
     highlightedMarkerId,
     highlightedBoundaryIds,
     fitRequest,
+    onBoundaryHover,
+    onBoundaryClick,
     panRequest,
     outlines = [],
     className,
 }: SAMapProps) {
+    // A shape is something to point at and press (a pointer, a heavier outline, its list entry lit), except while one is being drawn: then every press is a point of the new shape and the cursor is the crosshair
+    // all over the map, over the shapes already there too.
+    const shapeEvents = (id: string) =>
+        activeDrawTool
+            ? undefined
+            : { mouseover: () => onBoundaryHover?.(id), mouseout: () => onBoundaryHover?.(null), click: () => onBoundaryClick?.(id) };
     return (
         <div className={className}>
             <MapContainer
@@ -466,7 +483,7 @@ export default function SAMap({
                 zoomControl={false}
                 className="size-full"
                 // leaflet-draw needs its own cursor styling to apply while a tool is active -
-                // real, working cursor feedback, not decorative.
+                // real, working cursor feedback, not decorative. (`DrawBridge` marks the container `is-drawing`, and globals.css carries the crosshair over the shapes already on the map.)
                 style={{ cursor: activeDrawTool ? "crosshair" : undefined }}
             >
                 {/* Real OpenStreetMap tiles, with the attribution its usage policy requires - not
@@ -493,12 +510,12 @@ export default function SAMap({
                 {showBoundaries && boundaries.map((boundary) =>
                     boundary.kind === "circle" ? (
                         <Fragment key={boundary.id}>
-                            <Circle center={boundary.center} radius={boundary.radiusKm * 1000} pathOptions={boundaryStyle(boundary.id, highlightedBoundaryIds)} />
+                            <Circle center={boundary.center} radius={boundary.radiusKm * 1000} pathOptions={boundaryStyle(boundary.id, highlightedBoundaryIds)} eventHandlers={shapeEvents(boundary.id)} />
                             <Marker position={boundary.center} />
                         </Fragment>
                     ) : (
                         <Fragment key={boundary.id}>
-                            <Polygon positions={boundary.points} pathOptions={boundaryStyle(boundary.id, highlightedBoundaryIds)} />
+                            <Polygon positions={boundary.points} pathOptions={boundaryStyle(boundary.id, highlightedBoundaryIds)} eventHandlers={shapeEvents(boundary.id)} />
                             {/* Uploaded-shapefile polygons also get a marker (at their vertex average) so
                                 every location a shapefile added is pinned, not just its point features. */}
                             {boundary.source?.startsWith("shapefile:") && (

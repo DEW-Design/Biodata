@@ -28,7 +28,14 @@ This project uses [`next/font`](https://nextjs.org/docs/app/building-your-applic
 
 ## Design system
 
-The docs site (`app/(docs)`) is organized into three sections: **primitives** (design tokens), **components** (UI building blocks), and **patterns** (composed page-level recipes). The list below is generated from `lib/nav.ts`, the single source of truth for site navigation - update that file when adding, removing, or renaming a page and this list will stay accurate.
+The docs site (`app/(docs)`) is organized into four sections: **principles** (why the interface is the way it is), **primitives** (design tokens), **components** (UI building blocks), and **patterns** (composed page-level recipes). The list below is generated from `lib/nav.ts`, the single source of truth for site navigation - update that file when adding, removing, or renaming a page and this list will stay accurate.
+
+### Principles
+
+| Page | Description |
+| --- | --- |
+| [Design principles](/principles) | The nine design principles, read from the decision log and the designer's own words, with the question to ask of a screen and the clauses that hold each; and how an exploration starts from them. A draft for the designer to confirm. |
+| [Craft details](/principles/craft) | The details that make the interface feel finished, with their values and where each lives: edges, concentric corners, the type ladder, space, scroll and fade, quiet motion, hit areas and the source's words. |
 
 ### Primitives
 
@@ -81,6 +88,7 @@ The docs site (`app/(docs)`) is organized into three sections: **primitives** (d
 | [Filters](/patterns/filters) | The one filter for every table that can be filtered: a Filter button that opens a contextual menu of the attributes, each opening its values beside it (searchable when the list grows with the data), with the filters that are on shown as chips under the toolbar. |
 | [Report toolbar](/patterns/report-toolbar) | One row above a report's table: the search, a Parameters button (a popover of what the report is run on, with what is set shown beside it), the Filter and the Columns chooser, so the table gets the screen. Every report uses it. |
 | [Audit log](/patterns/audit-log) | The Audit Log tab of a record page - one sentence per status move, newest first, with the person, the status badge and the date, a Current chip on the newest move, and same-person runs under one header. |
+| [Map list card](/patterns/map-list-card) | A card that floats over the map and lists what is on it (Explore's results, Map visualise's errors): tabs, a list of result cards that fades out at its foot with one pinned Show N more, no scrollbar, a summary card whose facts are rows, and the key. |
 | [Empty states](/patterns/empty-states) | 🚧 Documentation coming soon. |
 | [Loading states](/patterns/loading-states) | 🚧 Documentation coming soon. |
 | [Feedback](/patterns/feedback) | 🚧 Documentation coming soon. |

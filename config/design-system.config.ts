@@ -154,6 +154,7 @@ export const designSystemConfig: DesignSystemConfig = {
       { key: "tertiary",             label: "Tertiary",  enabled: true, group: "standard" },
       { key: "link-color",           label: "Link colour", enabled: true, group: "standard" },
       { key: "link-gray",            label: "Link grey",   enabled: true, group: "standard" },
+      { key: "ghost-color",          label: "Ghost colour", enabled: true, group: "standard" },
       { key: "primary-destructive",   label: "Primary",   enabled: true, group: "destructive" },
       { key: "secondary-destructive", label: "Secondary", enabled: true, group: "destructive" },
       { key: "tertiary-destructive",  label: "Tertiary",  enabled: true, group: "destructive" },

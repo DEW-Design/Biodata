@@ -24,7 +24,7 @@ import { cx } from "@/utils/cx";
 // as the Figma draws it (node 1584:10572): a row per record, and inside it one line per field. Columns:
 // ID, Key match, Field, the source, BioData now, Your update.
 //
-//   - Matching lines are hidden until "Show matching fields" is on (the first version's switch, brought
+//   - Matching lines are hidden until "Show matching concepts" is on (the first version's switch, brought
 //     back by the designer: "That was good bring it back"); a record whose fields all match says so in
 //     one line.
 //   - Your update is the value BioData gets, as the Figma has it; a line that differs starts with the
@@ -137,7 +137,7 @@ export function CompareTable({
   const columns = [
     { id: "id", label: "ID" },
     { id: "key", label: "Key match" },
-    { id: "field", label: "Field" },
+    { id: "field", label: "Concept" },
     { id: "source", label: source },
     { id: "bio", label: "BioData now" },
     { id: "update", label: "Your update" },
@@ -148,7 +148,7 @@ export function CompareTable({
   );
 
   /**
-   * The lines a record shows: every field with "Show matching fields" on; otherwise the ones that don't
+   * The lines a record shows: every concept with "Show matching concepts" on; otherwise the ones that don't
    * simply match; and when the batch is narrowed to Needs review, only the ones still to review (the
    * designer, 2 Oct 2026: "we dont have to show already updated records in needs review?"). Decided lines
    * stay under All, Updated and Ignored.
@@ -388,7 +388,7 @@ export function CompareTable({
               const allMatch = (
                 <td colSpan={4} className={cx(td, edge)}>
                   <Line>
-                    <span className="text-sm text-quaternary">All four fields match BioData</span>
+                    <span className="text-sm text-quaternary">All four concepts match BioData</span>
                   </Line>
                 </td>
               );

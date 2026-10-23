@@ -527,7 +527,7 @@ export default function BiodataHomePage() {
 
           <nav aria-label="Primary" className="hidden items-center gap-6 lg:flex">
             {NAV_LINKS.map((link) => (
-              <Link key={link.label} href={link.href} className="text-sm font-medium text-secondary hover:text-primary">
+              <Link key={link.label} href={link.href} className="hit-area text-sm font-medium text-secondary hover:text-primary">
                 {link.label}
               </Link>
             ))}

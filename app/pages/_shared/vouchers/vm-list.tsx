@@ -146,7 +146,7 @@ export function VmList({ source }: { source: VmSource | "" }) {
                 <Table.Head id="ranOn" label="Ran on" allowsSorting className="w-[14%]" />
                 {!source ? <Table.Head id="source" label="Source" className="w-[16%]" /> : null}
                 <Table.Head id="checked" label="Records checked" allowsSorting className="w-[14%]" />
-                <Table.Head id="different" label="Differences" tooltip="Fields whose values differ between the source and BioData" allowsSorting className="w-[14%]" />
+                <Table.Head id="different" label="Differences" tooltip="Concepts whose values differ between the source and BioData" allowsSorting className="w-[14%]" />
                 <Table.Head id="decided" label="Decided" allowsSorting className="w-[12%]" />
                 <Table.Head id="status" label="Status" allowsSorting className="w-[14%]" />
               </Table.Header>

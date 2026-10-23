@@ -70,7 +70,7 @@ export function sectionFieldEntries(section: MetaSection): FieldEntry[] {
 
 /**
  * The fields of a record that have no value. They are left out of the view, and out of edit mode too
- * until they are ticked in "Fields shown" (which is how an empty field is added).
+ * until they are ticked in "Concepts shown" (which is how an empty field is added).
  */
 export function emptyFieldKeys(record: SurveyRecord): Set<string> {
   const out = new Set<string>();

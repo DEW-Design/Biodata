@@ -57,7 +57,8 @@ export function AppHeader({
         <div className="h-6 w-px bg-[var(--ui-border-primary)]" />
         {/* Wordmark and breadcrumb share one text baseline (17px semibold beside 14px text sat on
             different baselines when both were centred in the row). */}
-        <div className="flex min-w-0 flex-wrap items-baseline gap-x-4 gap-y-1">
+        {/* The crumbs are links each shell draws for itself, so the header gives all of them their hit area (`hit-area`, globals.css) and their gray fill on hover (the ghost button's) once. */}
+        <div className="flex min-w-0 flex-wrap items-baseline gap-x-4 gap-y-1 [&_a]:relative [&_a]:hit-area [&_a]:ghost-fill [&_a]:rounded-md [&_a]:transition-colors [&_a]:duration-100 [&_a]:hover:bg-primary_hover">
           <p className="text-[17px] font-semibold tracking-tight text-primary">BioData SA</p>
           {renderBreadcrumb ? renderBreadcrumb(orgLabel) : <Breadcrumb section={section} current={current} orgLabel={orgLabel} />}
         </div>

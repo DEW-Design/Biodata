@@ -9,7 +9,7 @@ import { CheckboxBase } from "@/components/base/checkbox/checkbox";
 import { cx } from "@/utils/cx";
 import { isReactComponent } from "@/utils/is-react-component";
 import type { SelectItemType } from "./select-shared";
-import { SelectContext } from "./select-shared";
+import { SelectContext, TruncatedLabel } from "./select-shared";
 
 const sizes = {
     sm: {
@@ -70,6 +70,7 @@ const highlightLabel = (label: string, highlight?: string): ReactNode => {
 
 export const SelectItem = ({
     label,
+    labelEnd,
     id,
     value,
     avatarUrl,
@@ -86,10 +87,13 @@ export const SelectItem = ({
     highlight,
     ...props
 }: SelectItemProps) => {
-    const { size } = useContext(SelectContext);
+    const { size, truncateAtWords } = useContext(SelectContext);
 
     const labelOrChildren = label || (typeof children === "string" ? children : "");
-    const textValue = supportingText ? labelOrChildren + " " + supportingText : labelOrChildren;
+    const fullLabel = labelOrChildren + (labelEnd ?? "");
+    const textValue = supportingText ? fullLabel + " " + supportingText : fullLabel;
+    // A label with a strategy for its cut (`labelEnd`, or the Select's `truncateAtWords`); any other label is cut at its end as before.
+    const cutByStrategy = !!labelOrChildren && (!!labelEnd || !!truncateAtWords);
 
     const isLeft = selectionIndicatorAlign === "left";
 
@@ -100,6 +104,7 @@ export const SelectItem = ({
                 value ?? {
                     id,
                     label: labelOrChildren,
+                    labelEnd,
                     avatarUrl,
                     supportingText,
                     isDisabled,
@@ -156,8 +161,12 @@ export const SelectItem = ({
                         </div>
                     ) : (
                     <div className={cx("flex w-full min-w-0 flex-1 flex-wrap", sizes[size].textContainer)}>
-                        <AriaText slot="label" className={cx("truncate font-medium whitespace-nowrap text-primary", sizes[size].text)}>
-                            {label || (typeof children === "function" ? children(state) : children)}
+                        <AriaText slot="label" className={cx("font-medium whitespace-nowrap text-primary", cutByStrategy ? "min-w-0" : "truncate", sizes[size].text)}>
+                            {cutByStrategy ? (
+                                <TruncatedLabel label={labelOrChildren} labelEnd={labelEnd} atWords={truncateAtWords} />
+                            ) : (
+                                label || (typeof children === "function" ? children(state) : children)
+                            )}
                         </AriaText>
 
                         {supportingText && (

@@ -151,6 +151,23 @@ product is one system; a new screen is the existing patterns put to a new use, n
   and reuse patterns from existing pages" (6 Oct 2026).
 - **Enforcement:** `REVIEW` (the end-of-task check names the page borrowed from; §0.7 item 3).
 
+### §0.10 Explore design-first
+
+An exploration (a new screen, a layout option, a lab, a restyle) starts from the design principles, not from a layout. The principles are `.claude/rules/ref-principles.md`, in full with the designer's words at
+`/principles`; they decide what no clause covers, and never override one (§0.1). Before anything is built the agent MUST:
+
+1. **Name the job and the principles.** Who is doing what, on which screen, with which role, in one sentence; and the two or three principles that bear on it, and where they pull apart. Where they do and the
+   repo cannot settle it, ask one precise question (§0.4) before building.
+2. **Stand on the ground:** walk the states and the roles (§0.7, `ref-shell.md`), find the closest existing page (§0.9), and use the components (§1.1) and the content (§0.3, §2.15) that really exist.
+3. **Make options, not one guess,** where the direction is open: real components, in a lab behind `LayoutOptionSwitcher` (§4.4), each saying which principle it favours.
+4. **Judge it against the principles before showing it,** with the designer's standing tests: where I came from, what to do here and how to get back; every word from its source; every state; and a measured pass in a
+   browser (§0.6 item 4). Say what was measured and what was not (§0.5).
+5. **Record why,** in the principle's terms, when the designer chooses (§5.1); and when the same fix is made twice, make it a check (§0.8). The details that come out of it are added to `/principles/craft`.
+
+- **Origin:** the designer, after the principles had been scattered across the cognitive-load list in `ref-shell.md`, the contracts (which say what to do and not why) and one audit, none revisited since the end of
+  September: "let's start to approach explorations with design-first principles" (23 Oct 2026).
+- **Enforcement:** `REVIEW` (the report names the principles an exploration was built from and the option each favours; §0.7 item 3). The principles are a draft for the designer to confirm.
+
 ---
 
 ## PART II - COMPONENTS
@@ -220,6 +237,9 @@ thing operating or wrapping the demonstration is Scaffold.
 A component that needs a second behaviour gets an additive, opt-in prop whose default leaves every
 existing caller unchanged (`Accordion variant`, `AlertFullWidth contained`, `Table size="xs"`). MUST NOT
 copy a component to change it.
+
+- **Exception (designer, 23 Oct 2026):** the hit area (§2.16) is on by default in every component that carries it. It changes what a press hits and nothing about how a control looks or sits,
+  and the instruction was that every screen has it.
 
 ### §1.7 No duplicates
 
@@ -463,6 +483,96 @@ the two curves share a centre. The inner radius is the outer radius minus the ga
 - **Enforcement:** `REVIEW` (the live measurement above). A first occurrence, so no `AUTO` check yet (§0.8); one is due if it comes back. It cannot
   be found from class names alone, because the gap depends on the layout, so a check would have to measure a rendered page.
 
+### §2.14 A key's entries line up in one column
+
+A key (a map legend, or any group that is a title followed by entries which can wrap) is two columns: the title, and the entries. Where the entries wrap, the next row starts under the **first entry**,
+never under the title and never at the container's edge.
+
+- **MUST** put the title in a column of its own (a flex item that does not shrink) and the entries in a wrapping container beside it. MUST NOT put the title and the entries in one wrapping row, where the
+  second row restarts under the title.
+- **The title takes the entries' row height** (the legend: 20px), so its text sits on the first row's centre line, not above it.
+- **Where there is no room for the title beside the entries** the key stacks: the title above, the entries in a grid of columns (the map's key under 680px of map), which already has its entries in columns.
+- **Applies to** `MapLegend` (Map visualise's "Category", Explore's "Species group") and any key or lead-in-label-plus-entries group to come. Not to a row of chips or facts with no lead-in label (the filter chips,
+  a report's facts).
+- **Checked live, with numbers.** The §0.6 item 4 pass reads, for every row of entries of a key, the left edge of its first entry (`getBoundingClientRect`) and shows that it is the same x on every row, at each
+  width the key is used at.
+- **Origin:** Map visualise's key wrapped to two rows and the second, "Metadata", started under the title "CATEGORY" instead of under "Business rule", the first entry; the designer, with a screenshot (23 Oct
+  2026): "align metadata to business rule. this should be a contract."
+- **Enforcement:** `REVIEW` (the live measurement above). A first occurrence, so no `AUTO` check yet (§0.8); one is due if it comes back. A check on class names would be brittle (what makes the title its own
+  column is the markup, not one class).
+
+### §2.15 A derived view shows the source's fields as the source does
+
+Where a screen shows records that another screen already shows in a table (a map or list opened from a report, a summary of one of its rows, a card for a record that has a page), each field it repeats is
+written **as the source writes it**: the same field leads, a name is the same name, a field the source sets in italic is in italic. The source is the table the data is read from, or the screen the view was opened
+from.
+
+- **MUST** lead with the field the source leads with. A species is the **scientific name first, in italic, then the common name under it** (the report's `SpeciesCell`), wherever a derived view names a species: a
+  list row, a summary heading, a marker's tooltip. MUST NOT put the common name first, or give the scientific name the common name's place.
+- **MUST NOT** re-word, re-label, abbreviate, re-case or compute a field the source has (0.3), and MUST NOT show a field the source does not have.
+- **What the view keeps as its own** is the type layer of its component (a card's title weight and size, 2.9): size, weight and colour follow the component the view is built from. Order, case, italics and
+  wording follow the source.
+- **Applies to** Map visualise (the card's rows, its record summary and its map tooltips, read from the Data Validation Error Report) and any view that is opened from a table or shows a table's row. It does not
+  apply to a screen that is the source of its own list (Explore's species rows, the species picker, the nominations form), which have no table behind them.
+- **Checked live, with numbers.** The §0.6 item 4 pass compares the first rows of the view with the same records in the source, field by field: the order of the lines, the text, the italics
+  (`getComputedStyle(...).fontStyle`).
+- **Origin:** Map visualise's rows and summary led with the common name ("Grass Tree") and set the scientific name under it, while the report's Species column leads with "Xanthorrhoea semiplana" and puts
+  "Grass Tree" under it; the designer, with a screenshot of that column (23 Oct 2026), after the card had already been brought back to the table's data once (`2026-10-23-33-*`): "if it shows scientific
+  name first, then it's what should show up - that's a non-negotiable contract."
+- **Enforcement:** `REVIEW` (the live comparison above). A second occurrence of the card departing from its table (0.8), but not one that a check can find: which name leads is a choice of props and markup in
+  a view, not a class or a string, so a pattern check would pass or fail by accident. It is named here as a recurring pattern, and the first thing to check in any view derived from a table.
+
+### §2.16 A control's hit area is built into its component
+
+Every control a person presses has a target of at least **40px with a mouse and 44px on a touch screen**, whatever it draws as. The component gives it, once, with the `hit-area` utility
+(`app/globals.css`): an invisible box of that size, centred on the control, an `::after` of the control itself (so a press on it is a press on the control). It changes nothing about how the control
+looks or where it sits. `--hit-min` is 40px, and 44px where the pointer is coarse (`@media (pointer: coarse)`); a control already that big is untouched.
+
+- **MUST** put `hit-area` on the root of a component that renders a control smaller than 40px, and on a new component of that kind: `Button` (every size and colour), `ButtonUtility`, `CloseButton`, `Tab`, the
+  input's clear and show-password buttons, the table's page numbers, `Checkbox`, `RadioButton`, `Toggle`, the dropdown's "..." button, `TooltipTrigger`, the date picker's buttons. The header gives every
+  breadcrumb link its target once (`[&_a]:ghost-fill` and `[&_a]:hit-area`, below), because each shell draws its own crumbs. A control with a design of its own that is not one of these (a chip on a photo, a lightbox arrow) takes `hit-area` itself.
+- **MUST NOT** write a `before:` or `after:` that enlarges a target at a call site (`before:-inset-y-1`, `after:-top-2`), and MUST NOT draw a small button, icon button, back link or close icon by hand where
+  `Button`, `ButtonUtility`, `CloseButton` or `RecordBackLink` does the job (1.1, 0.9): the hand-drawn one has no hit area, and the component's has been tested.
+- **A ghost control draws a 32px box and keeps a 40px target (designer, 23 Oct 2026).** A ghost control (Link grey, Ghost colour, `RecordBackLink`, a breadcrumb, a switcher's trigger) draws nothing until it is pointed at,
+  then a gray fill and, from the keyboard, a focus ring, both on its padding box. The box is given by `ghost-fill` (`app/globals.css`): 6px of padding all round for a 20px line (`--ghost-min` is 32px; never under 6px)
+  and an equal negative margin, so the text sits where it sat; its radius is 6px. The target stays 40px with a mouse and 44px on touch, by the `hit-area` the control also carries (the extension is invisible, 4px
+  and 6px beyond the box). The first try made the box the target (40px, 10px of padding; "make the padding of ghost buttons consistent with the touch target sizes"): it took a quarter of a card's header, ran 6px
+  from the card's edge and over its neighbours, and the designer asked for it to be fixed (2026-10-23-47, -59). MUST NOT set a ghost control's padding and negative margin by hand.
+- **Two targets never overlap, and an extension never covers another control.** Where controls touch or sit closer than twice the extension, their group caps it (`[--hit-min:32px]`) or turns it off
+  (`after:content-none` on each, or `data-no-hit-area` on the group): the edge-to-edge tabs of column 2, a button joined to an input, a star beside a menu. It is not for a full-width field (`Input`, `Select`),
+  a row of a list or a menu stacked edge to edge, or a chip's own remove icon: an extension there would take over what is beside it.
+- **A container that scrolls or clips around a control gives it room.** `ScrollFade` has 6px of padding above and below, taken back by an equal margin; any other strip that scrolls sideways around tabs does the
+  same (`pb-1.5 -mb-1.5`). An extension that makes a container scroll is a defect. **Recurring (0.8):** the tab strips, then Explore's areas list (the "..." button's target reached 1px past its row and the list scrolled sideways and drew a scrollbar under the last area, 23 Oct 2026); the areas list now has 8px of room, taken back by an equal margin, and is a `ScrollFade`. It cannot be found from class names (which container holds which control is the markup), so it stays `REVIEW`, and the first thing to check, in every state a list or strip can be in (one row, many rows, a menu open), is `scrollWidth` against `clientWidth` of every scroller around a control. A control with a border centres on its padding box and sets `--hit-dx` or `--hit-dy` to half the difference (an underline
+  tab's 2px bottom border is `[--hit-dy:1px]`). A control with no position of its own is made `relative` by the utility's base rule, so MUST NOT be given `static`.
+- **Exception to 1.6:** it is on by default (see 1.6).
+- **Checked live, with numbers.** The 0.6 item 4 pass presses just inside and just outside the box of a control it changed, with a mouse and with touch emulated (`hasTouch`, where `pointer: coarse` is true), and
+  lists any scroller whose `scrollHeight` grew because of it. `/emil-ui-polish` (hit areas) is the judgement tool.
+- **Origin:** Map visualise's touch targets were written one control at a time, a `::before` at each call site (`2026-10-23-25-*`), so every other screen still had 28px icon buttons, 20px crumbs and 32px tabs;
+  the designer: "make sure the touch target bits are applied on a component level, then applied all across the webapp", and "Yes, please. Make sure these are documented in contracts" (23 Oct 2026). Of 2,315
+  controls over 80 screens, 1,340 reached 40px before and 1,854 after (`2026-10-23-41-*`).
+- **Enforcement:** `AUTO §2.16a` (a component that carries the hit area loses it), `AUTO §2.16b` (a negative-inset `before:` or `after:` written to enlarge a target under `app/pages`), `AUTO §2.16c` (a ghost control loses `ghost-fill` or its `hit-area`), `REVIEW` for the rest.
+
+### §2.17 One scrollbar, drawn once, for every scroller
+
+Every element that scrolls shows the same scrollbar: a thin thumb, 6px wide, no track, 2px in from the scroller's own edge and 8px short of each end (so it clears a card's rounded corner), drawn over the content. It shows while the
+scroller scrolls and for 0.9s after, while the pointer is over the scroller or the thumb, and while the thumb is dragged (the scroller follows by the ratio of the lengths); it darkens when held. On a touch screen it is an
+indicator only and takes no pointer events. Wheel, touch and keyboard scrolling are the browser's. It takes no width from the content on any system, so nothing moves when it comes and goes.
+
+The browser's own bar is off everywhere (`* { scrollbar-width: none }`, `app/globals.css`) and one component, `<DrawnScrollbars />` (`app/_scrollbars`, mounted once in `app/layout.tsx`), finds any element that scrolls and
+draws its thumb, in one layer above everything (`SCROLLBAR_Z_INDEX`, `lib/layers.ts`). A new scroller needs nothing: `overflow-y-auto` and a height.
+
+- **MUST NOT** draw a scrollbar at a scroller: no `scrollbar-width`, `::-webkit-scrollbar`, `scrollbar-color` or `overflow: overlay`, no thumb built into a list or a component. MUST NOT turn the browser's bar back on for one scroller.
+- **A box under 64px either way gets no thumb** (a tab strip, a row of chips: there is no room for one, and its fade, `ScrollFade`, is its cue). An element that has its own cue opts out with `data-no-drawn-scrollbar` (the photo carousel
+  and the lightbox's thumbnails, which have arrows and selection).
+- **A thumb is drawn only where its scroller is what is under it:** a modal, a menu or the Prototype tools bar over part of the thumb hides it.
+- **The fade stays where it was** (`ScrollFade`): the fade says there is more, the thumb says where and how much. They are not the same thing and a list may have both.
+- **A page's scrolling `main` and a scrolling table keep `[scrollbar-gutter:stable]` (4.2f):** it reserves nothing now (the lane is 0) and costs nothing, and it keeps the content steady if the thumb is ever turned off.
+- **Checked live, with numbers.** The 0.6 item 4 pass runs with the browser's scrollbars drawn (`ignoreDefaultArgs: ["--hide-scrollbars"]`: a headless browser hides them and the fault is missed), lists every scroller on the screens
+  it changed and reads `offsetWidth - clientWidth` (0), and shows that the thumb is there while pointing at the scroller and gone about 1.3s after the pointer leaves.
+- **Origin:** Explore's lists drew a classic bar that took 15px from the rows and showed a stray scrollbar under an area chip; the designer chose a drawn thumb from a lab of four (option D, 23 Oct 2026, `2026-10-23-53`), and then:
+  "the scroll bar logic we added on the explore screens, let's make that consistent across the webapp." It had been built into `ScrollFade` for three lists; about 120 scrollers (page columns, tables, menus, modals) still showed the browser's.
+- **Enforcement:** `AUTO §2.17` (the global rule or the mount is gone, or a hand-made scrollbar rule appears in `app/pages` or `components`), `REVIEW` for the rest.
+
 ---
 
 ## PART IV - THE SHELL (persona-consistent)
@@ -527,11 +637,11 @@ always exists and always says something about where you are, except on a record 
   project's own actions are in the hero's "..." menu, the records tree is on the Survey records tab, and a
   breadcrumb project switcher replaces going back to the list. Logged in
   `context/decisions/2026-09-30-07-*`; it is scoped to those screens and is not a precedent (§0.1).
-- **Override (designer, 1 Oct 2026):** Explore's first layout (`/pages/observations`) has no column 2, for every
+- **Override (designer, 1 Oct 2026):** Explore (`/pages/observations`) has no column 2, for every
   persona, so the map takes the full width. Its search areas are a section of the floating search card and
   the data-access notice some roles see is the warning banner across the top of the map. Explore's second
-  layout (`/pages/observations/option-2`) is unchanged. Logged in `context/decisions/2026-10-01-*`; it is
-  scoped to that screen and is not a precedent (§0.1).
+  layout (`/pages/observations/option-2`) was retired on 23 Oct 2026 (§4.4), so this now covers the whole of
+  Explore. Logged in `context/decisions/2026-10-01-*`; it is scoped to that screen and is not a precedent (§0.1).
 
 ### §3.8 Floating dev tools
 
@@ -551,7 +661,7 @@ everything, the dev tools included.
 
 `lib/nav.ts` `Components` and `config/design-system.config.ts` keys are strictly A-Z. A new entry is
 slotted, never appended. If either list is found out of order, the whole list is fixed. (`Primitives` and
-`Patterns` follow a foundations-first order and are exempt.)
+`Patterns` follow a foundations-first order, and `Principles` comes before them, so they are exempt.)
 
 ### §3.10 Column 2 is navigation and actions only
 
@@ -633,6 +743,7 @@ forward arrow on the right (`iconTrailing`) for a button that moves on. An actio
   | Search | `SearchLg` |
   | Reset, re-generate, show everything again | `RefreshCcw01` |
   | Select all | `CheckDone01` |
+  | Show more (reveal the next rows of a list) | `ChevronDown` |
   | Log in, sign in | `LogIn01` |
   | Sign up | `UserPlus01` |
   | Request access, reset a password | `Key01` |
@@ -669,9 +780,10 @@ scans by shape as well as by word and the same section has the same icon on ever
   `UploadCloud02`; Flora and Fauna take the species group icons, and the record kinds the records tree's icons
   (`record-icons.ts`). A new tab takes an icon not already another concept's, and is added here.
 - **Counts** (`badge`) stay after the label; the icon does not replace them.
-- **Exempt (open, see the backlog in `ref-shell.md`):** Explore's results tabs (the 440px card; with icons they need
-  about 780px and scroll further), a record's dynamic section tabs (`project-details-view.tsx`, whose titles come from
-  the data), and Home's task status filters (`Tabs.List`, filters, not sections).
+- **Exempt (open, see the backlog in `ref-shell.md`):** Explore's results tabs (Species and Projects, since the other
+  four were removed on 23 Oct 2026; the designer's redesign of the card draws them without icons, and with two tabs the
+  width that was the first reason no longer applies), a record's dynamic section tabs (`project-details-view.tsx`,
+  whose titles come from the data), and Home's task status filters (`Tabs.List`, filters, not sections).
 - **Origin:** column 2 and the method tabs had icons while the underline tabs did not (designer, 1 Oct 2026: "these to
   also have icons"); the lab at `/proto/tab-icons` measured the options (A text, B every tab, C selected only) and B
   was chosen.
@@ -749,10 +861,11 @@ then any view or tree controls, above a list, table or tree) is the same everywh
 - MUST render `<ToolbarSearch>` (`app/pages/_shared/toolbar-search.tsx`): 384px wide (`max-w-sm`), shrinking
   only on a narrow screen, small size, the `SearchMd` icon. Filter sits directly after it.
 - MUST NOT let the toolbar search grow to fill the row (`flex-1`), or give it its own width.
-- **Open, not decided:** Explore's results search (`/pages/observations`) was made full width on the
-  designer's instruction before this rule existed, and project-detail option 2's records search is
-  `max-w-md`. Both now have the Filter menu beside them, so the check names them as exceptions (`species-results.tsx`,
-  `observations-search.tsx`); bringing them in line is for the designer to decide.
+- **Open, not decided:** the species results search (`species-results.tsx`) was made full width on the
+  designer's instruction before this rule existed (it was Explore's results page, retired on 23 Oct 2026, and the
+  dataset ingestion lab is now the only screen that shows it), and project-detail option 2's records search is
+  `max-w-md`. Both now have the Filter menu beside them, so the check names the first as an exception
+  (`species-results.tsx`); bringing them in line is for the designer to decide.
 - **Origin:** the Survey records toolbar on project detail Option 3 grew its search to the full row while the
   Projects, DSA, DLA and User Management lists all used 384px.
 - **Enforcement:** `AUTO §4.2c` (a file with a `FilterMenu` whose search is a hand-rolled `Input` with a
@@ -822,23 +935,23 @@ that is filtered, searched, sorted or paged is `<Table layout="fixed">` and give
 table so a narrow window scrolls it sideways instead of crushing a column. A value longer than its column wraps or is
 cut with an ellipsis and its full text as the tooltip; it never widens the column.
 
-The same holds for a scrollbar. Where a person sees a classic scrollbar (Windows, or a Mac with a mouse), a scroll area
-that overflows in one state and not in another (All beside My, one tab beside another) takes about 15px from the
-content when its scrollbar appears. A scrolling `main` reserves that space (`overflow-y-auto [scrollbar-gutter:stable]`)
-and a scrolling table does it itself (`bodyScrollable`), so nothing moves when rows or content come and go.
+The same holds for a scrollbar. A classic one (Windows, or a Mac with a mouse) takes about 15px from the content when
+it appears, in a scroll area that overflows in one state and not in another (All beside My, one tab beside another). The product's
+scrollbar is drawn over the content and takes no width (2.17), so nothing moves; a scrolling `main` still reserves the gutter
+(`overflow-y-auto [scrollbar-gutter:stable]`) and a scrolling table does it itself (`bodyScrollable`), at no cost, so the content stays steady if the drawn thumb is ever turned off.
 
 - MUST NOT leave a collection table on the automatic layout: it sizes each column to its widest cell, so switching
   All to My, a search, a sort or the next page moves every column.
 - MUST NOT leave a column without a width in a fixed table (the browser leaves the space unused).
 - MUST NOT make a page's scrolling `<main>` `overflow-y-auto` without `[scrollbar-gutter:stable]`.
-- **Exception:** Explore's results table (`map-search/results-table.tsx`), whose columns are chosen by the person, and
-  the lab-only `ingestion-report.tsx`; both are listed in the check and are open, see the backlog in `ref-shell.md`.
+- **Exception:** the results table (`map-search/results-table.tsx`), whose columns are chosen by the person (Explore's
+  second layout showed it until 23 Oct 2026; the dataset ingestion lab's species results now do), and the lab-only
+  `ingestion-report.tsx`; both are listed in the check and are open, see the backlog in `ref-shell.md`.
 - **Origin:** the nominations list moved every column when the designer switched from All to My, because one row
   had a second line (an organisation) and another a long status; every other list had the same flaw (designer,
   1 Oct 2026: "no dance-y layouts").
 - **Enforcement:** `AUTO §4.2f` (a `Table` with `bodyScrollable` and no `layout="fixed"`, or a `<main>` with `overflow-y-auto`
-  and no `scrollbar-gutter`, under `app/pages`). The scrollbar half cannot be seen in the headless browser used for
-  checks, which hides scrollbars: it is `REVIEW` to look at in a real browser with scrollbars always shown.
+  and no `scrollbar-gutter`, under `app/pages`). A headless browser hides scrollbars and the lane goes unseen: the live pass runs with them drawn (2.17).
 
 **One gap under the header (§4.2g).** Under a `SectionHeader`, the collection body (any notice, the toolbar,
 the table) sits in one wrapper with `p-6`: the same 24px between the header's divider and the search on every
@@ -918,7 +1031,15 @@ record) is laid out like the project page (`/pages/project-detail`):
    chosen with no Apply button (1.9 item 2), a date being the date field with a calendar (2.11); a report that is always on one
    thing (one dataset) shows it as chips and has no Reset. MUST NOT draw parameters as a grid of fields, a row of selects or a
    panel between the card and the toolbar, or add a second filter control (`tsc` fails the old `scopeControl`, which no longer
-   exists). The table keeps at least 24rem, about 7 rows (`DataReport`), so where the card and controls take more the page
+   exists). **Exception (designer, 23 Oct 2026: "I feel having parameters is weird. What if they sat as drop downs instead ... move it to the
+   right of the filters button"), for the Data Validation Error Report only:** its project and its dataset, two linked choices (a dataset
+   belongs to a project) that the whole report is about and that are changed often, are two dropdowns on the toolbar, to the right of
+   Filter (`parameters.inline`, `report-parameters.tsx`): the design system's `Select`, small, 256px each at the least and growing into spare room up to 384px, each with the design system's own label above it ("Project", "Dataset": the `Select`'s `label`, as
+   every other labelled field; a dropdown named only by an `aria-label` tells a sighted person nothing, and a label drawn inside the trigger is a pattern the design system does not have, 23 Oct 2026), the row aligned by its foot,
+   each showing its code or id first and the name or file after it, and cut by what it is when it is too long for the dropdown: the code is never cut, a project's title is cut at a word (`truncateAtWords`),
+   a dataset's file name in the middle so its version and extension stay (`labelEnd`, `splitFileName`: "DS-2026-01003 · flinders_bush...01.xlsx"), the full text is the tooltip, and the open list is as wide as its longest row (up to 40rem), with no Parameters button and no
+   chips, because what each is set to is what it shows. The row is search, Filter, the dropdowns, then Columns. Any other report that wants
+   the same takes `inline` with the designer's say-so (0.4); it is not the default. The table keeps at least 24rem, about 7 rows (`DataReport`), so where the card and controls take more the page
    scrolls and the table does not shrink.
    A "Columns" button at the right of the toolbar (`column-chooser.tsx`) opens one popover where columns are shown,
    hidden and reordered (by their handle or the keyboard), the first column pinned and always shown, applying as
@@ -1010,7 +1131,7 @@ behaves the same way, on every card and every page.
    MUST NOT put them inside a card or repeat them per card.
 5. **Leaving:** Cancel or Exit with unsaved changes asks first. Save and Cancel return to the view the edit was
    started from (a side panel stays a side panel, a full view stays a full view).
-6. **Visibility:** where a record's fields can be hidden, the right-hand column becomes the "Fields shown"
+6. **Visibility:** where a record's concepts can be hidden, the right-hand column becomes the "Concepts shown"
    checklist while a card is in edit mode, and for a new record.
 
 - **Origin:** Project details kept Cancel and Save inside the card while record editing had them in a page

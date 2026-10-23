@@ -338,7 +338,7 @@ export function ReviewScreen({
     const next = items[index + 1] ?? items[index - 1];
     select(next?.id);
     toast.success(`${entry.field} resolved`, {
-      description: `${entry.recordCode} · ${entry.recordName}, ${entry.projectName}. The reason is kept with the field.`,
+      description: `${entry.recordCode} · ${entry.recordName}, ${entry.projectName}. The reason is kept with the concept.`,
       actionLabel: "Undo",
       onAction: () => {
         undo();
@@ -694,8 +694,8 @@ export function ReviewScreen({
 
             {(selected.comment || selected.files.length > 0) && (
               <FormRow
-                title="Notes on this field"
-                description="The field's comment and attachments."
+                title="Notes on this concept"
+                description="The concept's comment and attachments."
               >
                 {selected.comment && (
                   <div className="flex gap-2 text-sm">
@@ -723,7 +723,7 @@ export function ReviewScreen({
               <FormRow
                 title="Why is it resolved?"
                 required
-                description="Kept with the field, so anyone can see why it stands or what changed."
+                description="Kept with the concept, so anyone can see why it stands or what changed."
               >
                 <TextArea
                   aria-label="Why is it resolved?"

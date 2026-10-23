@@ -484,7 +484,7 @@ function QuestionableCard({
           label="Why is it resolved?"
           placeholder="Why is it resolved?"
           action="Resolve" actionIcon={CheckCircle}
-          hint="The reason is kept with the field."
+          hint="The reason is kept with the concept."
           onCancel={() => setMode("view")}
           onSave={(reason) => {
             onChange({
@@ -643,7 +643,7 @@ export function FieldNotesArea({
             label="Add a comment"
             placeholder="What should people know about this value?"
             action="Add comment" actionIcon={Plus}
-            hint="A field has one comment. Once added, it can be edited."
+            hint="A concept has one comment. Once added, it can be edited."
             onCancel={done}
             onSave={(text) => {
               onChange({
@@ -988,7 +988,7 @@ export function FieldRow({
           onResolved={() =>
             toast.success(`${label} resolved`, {
               description:
-                "It is no longer marked questionable. The reason is kept with the field.",
+                "It is no longer marked questionable. The reason is kept with the concept.",
             })
           }
         />

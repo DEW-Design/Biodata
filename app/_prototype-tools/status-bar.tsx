@@ -312,10 +312,12 @@ function ToolChip({
             on ? "bg-[var(--tool-fg)] ring-[var(--tool-fg)]" : "bg-[var(--tool-hover)] ring-[var(--tool-ring)]",
           )}
         >
+          {/* The knob slides by `translate`, not `left`: left is a layout property, so animating it makes the
+              browser lay the page out on every frame (12 layouts per toggle measured); translate is composited. */}
           <span
             className={cx(
-              "absolute top-0.5 size-3 rounded-full transition-[left,background-color] duration-150 ease-out motion-reduce:transition-none",
-              on ? "left-3.5 bg-[var(--tool-bg)]" : "left-0.5 bg-[var(--tool-muted)]",
+              "absolute top-0.5 left-0.5 size-3 rounded-full transition-[translate,background-color] duration-150 ease-out motion-reduce:transition-none",
+              on ? "translate-x-3 bg-[var(--tool-bg)]" : "bg-[var(--tool-muted)]",
             )}
           />
         </span>

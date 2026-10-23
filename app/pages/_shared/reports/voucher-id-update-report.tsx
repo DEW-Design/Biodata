@@ -162,7 +162,7 @@ export function VoucherIdUpdateReport() {
     <DataReport
       exportName="voucher-id-update-report"
       title="Voucher ID Update Report"
-      subtitle="The voucher details each museum or herbarium holds beside what BioData holds for the same specimen, and the field that disagrees."
+      subtitle="The voucher details each museum or herbarium holds beside what BioData holds for the same specimen, and the concept that disagrees."
       latest={(r) => r.batchDate}
       icon={Tag01}
       rows={rows}

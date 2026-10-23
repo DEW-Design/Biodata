@@ -366,11 +366,11 @@ export default function BiodataHomeVersion2Page() {
 
           <div className="flex flex-col items-end justify-center py-3 sm:justify-between sm:pt-[23px] sm:pb-3">
             <div className="hidden items-center gap-6 pr-[14px] sm:flex">
-              <Link href={LOGIN_ROUTE} className="inline-flex items-center gap-2 text-base text-white hover:underline">
+              <Link href={LOGIN_ROUTE} className="hit-area inline-flex items-center gap-2 text-base text-white hover:underline">
                 Log in
                 <LogIn01 aria-hidden className="size-6" />
               </Link>
-              <Link href={SIGNUP_ROUTE} className="inline-flex items-center gap-2 text-base text-white hover:underline">
+              <Link href={SIGNUP_ROUTE} className="hit-area inline-flex items-center gap-2 text-base text-white hover:underline">
                 Sign up
                 <UserPlus01 aria-hidden className="size-6" />
               </Link>
@@ -379,7 +379,7 @@ export default function BiodataHomeVersion2Page() {
             <div className="flex items-center gap-6">
               <nav aria-label="Primary" className="hidden items-center gap-7 min-[1440px]:flex">
                 {NAV_LINKS.map((link) => (
-                  <Link key={link.label} href={link.href} className="text-lg leading-none font-bold whitespace-nowrap text-white hover:underline">
+                  <Link key={link.label} href={link.href} className="hit-area text-lg leading-none font-bold whitespace-nowrap text-white hover:underline">
                     {link.label}
                   </Link>
                 ))}
