@@ -25,7 +25,7 @@ export function PrimaryRail({
   activeSection: string | null;
   onSelectSection: (section: NavNode) => void;
 }) {
-  // Home's badge is the count of a registered user's own pending tasks ("Needs your attention"), so
+  // Home's badge is the count of a registered user's own pending tasks (the draft and the requests on Home), so
   // it shows for registered-user only - a guest has no personal tasks, and biodata-admin's Home
   // shows different, operational content that this count does not describe. Decided here once, so
   // every screen badges Home identically.

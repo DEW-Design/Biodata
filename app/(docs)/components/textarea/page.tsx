@@ -120,7 +120,7 @@ export default function TextareaPage() {
                   />
                 </div>
                 <code className="text-xs text-quaternary">
-                  {previewSize} · {previewInvalid ? "invalid" : "valid"} · {previewDisabled ? "disabled" : "enabled"}
+                  {previewSize}, {previewInvalid ? "invalid" : "valid"}, {previewDisabled ? "disabled" : "enabled"}
                 </code>
               </div>
 

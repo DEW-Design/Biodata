@@ -2,6 +2,7 @@
   "note": "Approved component files. A file not listed here needs an entry in contracts/overrides.json (CONTRACTS.md 1.4).",
   "files": [
     "components/application/alerts/alerts.tsx",
+    "components/application/carousel/carousel-base.tsx",
     "components/application/modals/modal.tsx",
     "components/application/progress-steps/progress-step-base.tsx",
     "components/application/progress-steps/progress-steps.tsx",

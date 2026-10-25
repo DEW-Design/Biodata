@@ -133,8 +133,8 @@ export default function BadgePage() {
                   )}
                 </div>
                 <code className="text-xs text-quaternary">
-                  {previewType} · {previewColor} · {previewSize}
-                  {previewStyle === "dot" && previewType === "pill-color" && ` · ${previewBackground ? "background" : "no background"}`}
+                  {previewType}, {previewColor}, {previewSize}
+                  {previewStyle === "dot" && previewType === "pill-color" && `, ${previewBackground ? "background" : "no background"}`}
                 </code>
               </div>
 

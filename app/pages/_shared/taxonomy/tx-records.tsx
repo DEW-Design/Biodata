@@ -606,7 +606,7 @@ export function SpeciesRecord({ id, back = { href: TX_ROOT, label: "All species"
           <p className="text-sm text-tertiary">
             Editing{" "}
             <span className="font-semibold text-primary">{editing === "species" ? taxon.common || taxon.scientific : synSaved ? synDraft?.name : "a new synonym"}</span>
-            {dirty ? " · Unsaved changes" : ""}
+            {dirty ? ", unsaved changes" : ""}
           </p>
           <div className="flex items-center gap-3">
             <Button iconLeading={XClose} color="secondary" onClick={() => (dirty ? setConfirm("cancel") : stopEditing())}>

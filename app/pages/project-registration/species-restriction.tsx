@@ -71,7 +71,7 @@ function RestrictForm({ species, initial, onCancel, onSave }: { species: Registr
                     <span className="text-base font-semibold text-primary">{species.commonName}</span>
                     <span className="text-sm text-tertiary italic">{species.species}</span>
                     <span className="text-xs text-quaternary">
-                        {species.family} · {species.group}
+                        {species.family}, {species.group}
                     </span>
                 </div>
             </div>
@@ -169,7 +169,7 @@ export function SpeciesRestrictionSection({ entries, onChange }: { entries: Spec
                                         {species.commonName} <span className="font-normal text-tertiary italic">{species.species}</span>
                                     </span>
                                     <span className="truncate text-sm text-tertiary">
-                                        {species.family} · {species.group}
+                                        {species.family}, {species.group}
                                     </span>
                                 </div>
                                 {species.alreadySensitive && (

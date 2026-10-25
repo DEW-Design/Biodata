@@ -304,7 +304,7 @@ export function Step3PrivacyRestrictions({
                 cardKey={key}
                 step={position + 1}
                 totalSteps={totalQuestions}
-                kicker={`${kicker} · ${meta.title}`}
+                kicker={`${kicker}, ${meta.title}`}
                 title={TYPE_CARD_TITLES[key].title}
                 description={TYPE_CARD_TITLES[key].description}
                 nextDisabled={!isTypeValid(key, value)}

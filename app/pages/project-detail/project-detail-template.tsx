@@ -226,7 +226,7 @@ function ProjectDetail({ basePath, notice }: ProjectDetailTemplateProps) {
           title: file.name,
           type: file.kind,
           size: file.size || "Link",
-          recordLabel: `${rec.name} · ${field}`,
+          recordLabel: `${rec.name}, ${field}`,
           metaTitle: file.name,
           created: file.date,
           creator: file.addedBy,

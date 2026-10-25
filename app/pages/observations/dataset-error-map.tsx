@@ -324,7 +324,7 @@ export function DatasetErrorMap({ datasetId, onSearchExplore }: { datasetId: str
                     title={row.scientificName}
                     titleItalic
                     subtitle={row.commonName}
-                    meta={`${row.concept} · ${row.recordId}`}
+                    meta={`${row.concept}, ${row.recordId}`}
                     badgeAlign="end"
                     badge={
                       <Badge size="sm" color={severityColor[row.severity]}>

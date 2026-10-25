@@ -330,7 +330,7 @@ export function PushModal({ groups, skipped, onClose, onConfirm }: { groups: Pus
             {groups.map((g) => (
               <div key={g.record.id} className="rounded-lg border border-secondary">
                 <p className="m-0 border-b border-secondary px-4 py-2.5 text-sm font-medium text-primary">
-                  {g.record.id} <span className="font-normal text-tertiary">· {SOURCE_LABEL[g.record.source]}</span>
+                  {g.record.id}<span className="font-normal text-tertiary">, {SOURCE_LABEL[g.record.source]}</span>
                 </p>
                 {g.changes.map((c) => (
                   <div key={c.field} className="flex flex-col gap-1 border-b border-secondary px-4 py-3 last:border-b-0 sm:flex-row sm:items-center sm:gap-6">

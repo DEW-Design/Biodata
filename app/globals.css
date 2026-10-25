@@ -591,6 +591,17 @@
   padding: var(--ghost-pad) !important;
   margin: calc(var(--ghost-pad) * -1);
 }
+/* ── The fade at the end of a list or a strip eases in and out ──
+   `ScrollFade` draws its fade as a mask (a gradient), and a gradient cannot be transitioned; the two lengths in it can, once they are registered as lengths here. `--scroll-fade-length` is how long the fade is and
+   `--scroll-fade-clear` the stretch at the very end that is faded clear (under a pinned button). When the end of a list comes into view they go to 0 over 200ms, so the last rows come out of the fade instead of
+   snapping to full strength, and they come back the same way. The room kept under the last row for a pinned button (`padding-bottom`) eases too: a list scrolled into that room by a wheel gets its end back
+   over the same 200ms (the rows settle) instead of being cut back in one frame. Reduced motion: no transition. */
+@property --scroll-fade-length { syntax: "<length>"; inherits: false; initial-value: 0px; }
+@property --scroll-fade-clear { syntax: "<length>"; inherits: false; initial-value: 0px; }
+@utility scroll-fade-ease {
+  transition: --scroll-fade-length 200ms ease-out, --scroll-fade-clear 200ms ease-out, padding-bottom 200ms ease-out;
+  @media (prefers-reduced-motion: reduce) { transition: none; }
+}
 /* A control with a hit area is positioned, or its extension would hang off the nearest positioned ancestor: this is the default for one
    that has no position of its own. It is in the base layer, below the utilities, so `absolute`, `fixed` and the rest still win. */
 @layer base {

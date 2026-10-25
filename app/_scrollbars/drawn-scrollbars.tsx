@@ -14,7 +14,7 @@ import { cx } from "@/utils/cx";
 // has it without being asked. The thumbs are drawn in one fixed layer above everything (`SCROLLBAR_Z_INDEX`), not inside the scroller, so no parent has to be positioned, a mask on the scroller (`ScrollFade`'s fade)
 // does not fade it, and nothing clips it. A thumb is drawn only where its scroller is what is under it (a modal, a menu or the Prototype tools bar over the scroller hides it).
 //
-// What does not get one: a box under 64px across either way (a tab strip, a row of chips: the fade at its end says there is more), and anything marked `data-no-drawn-scrollbar` (a photo carousel, which has its own
+// What does not get one: a box under 64px across either way (a tab strip, a row of chips: the fade at its end says there is more), and anything marked `data-no-drawn-scrollbar` (the lightbox's thumbnails, which have their own
 // arrows). Where only the nearest scroller to the pointer is shown on hover, every scroller that is itself scrolling is shown, so a table inside a page, both scrolling, has two thumbs.
 
 const STRIP = 16; // the thumb's grab area across: 6px of thumb, 2px from the edge, and room to take hold of it

@@ -47,6 +47,7 @@ first when starting a new file in that area (a scoped rule triggers on reading, 
 - §1.7 No duplicates (contracts-components.md)
 - §1.8 Ingest hygiene (contracts-components.md)
 - §1.9 Behaviour patterns flow through every component (contracts-build.md)
+- §1.10 Behaviour is a component: it is built in `components/**` (contracts-build.md)
 - §2.1 Tokens only (contracts-build.md)
 - §2.2 Typefaces (contracts-build.md)
 - §2.3 Copy and punctuation (contracts-build.md)
@@ -165,6 +166,9 @@ A change to `components/**`, a page, a token, or a `/test-*` screen is done only
 8. Typography QA (§2.9), on any change that adds or changes visible text: `/emil-typography` and
    `/emil-design-foundations` ran, after the type was checked against the design system and the
    patterns already on the web app. The report names what was checked and what was measured.
+9. Behaviour in its home (§1.10): any behaviour another screen could want (a scrollbar, a dismiss, a cut, a drag) was
+   looked for in `components/**` first and, if it is new, built there with the designer's override, not in a
+   screen, in `app/pages/_shared` or in the layout. The report says where each behaviour lives.
 
 - **Enforcement:** `REVIEW` (item 3 is `AUTO`).
 

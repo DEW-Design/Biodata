@@ -38,7 +38,7 @@ being demonstrated is DEW (Barlow); what operates or wraps the demonstration is 
 
 ## New component workflow
 
-1. **Authorise it first.** A new component is a designer override (§1.4): an entry in
+1. **Authorise it first.** A new component is a designer override (§1.4), and **behaviour is a component** (§1.10): a scrollbar, a dismiss, a way of cutting text or a drag is built here, in `components/**`, not in a screen, in `app/pages/_shared` or in the layout. Look in `components/**` first (§0.9). An entry in
    `contracts/overrides.json` (`npm run contracts:override`), and it starts in `components/custom/**`. It
    must not duplicate an existing component (§1.7).
 2. **Bring in the source** from Untitled UI into `components/base/<name>/`. Per the designer's standing

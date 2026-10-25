@@ -1,11 +1,12 @@
 "use client";
 
-import { useCallback, useEffect, useImperativeHandle, useRef, useState, type ReactNode, type Ref } from "react";
+import { useCallback, useEffect, useImperativeHandle, useRef, useState, type CSSProperties, type ReactNode, type Ref, type TransitionEvent } from "react";
 import { cx } from "@/utils/cx";
 
 // A strip or list that scrolls and fades out at its end while there is more to scroll to, so a cut-off tab or row
 // reads as "there is more here" instead of as a clipped label. The fade is a mask (not an overlay), so it works on
-// any background, and it disappears once the strip is scrolled to its end or when everything fits.
+// any background, and it goes once the strip is scrolled to its end or when everything fits. It does not snap: its length and its clear zone are registered lengths (`--scroll-fade-length`, `--scroll-fade-clear`,
+// globals.css) that ease to 0 over 200ms, so the last rows come out of the fade rather than jumping to full strength, and the same on the way in. The mask is only on while there is a fade, or one is easing out.
 //
 // `axis="x"` (the default) is the tab strip: it fades at its right edge, over 64px. A strip that scrolls would scroll (or clip) the hit area of
 // its tabs (`hit-area`, globals.css), which reaches up to 6px beyond a tab, so it has 6px of padding above and below, taken back by an equal margin: it
@@ -38,16 +39,19 @@ export function ScrollFade({
   fade?: number;
 }) {
   const ref = useRef<HTMLDivElement>(null);
-  const [mask, setMask] = useState<string>();
+  // How long the fade is now (0 when there is none: the end is in view, or everything fits), and whether the mask is on. It stays on while a fade eases out to 0, then comes off.
+  const [length, setLength] = useState(0);
+  const [masked, setMasked] = useState(false);
   useImperativeHandle(scrollRef, () => ref.current as HTMLDivElement, []);
 
   const update = useCallback(() => {
     const el = ref.current;
     if (!el) return;
     const more = axis === "x" ? el.scrollLeft + el.clientWidth < el.scrollWidth - 2 : el.scrollTop + el.clientHeight < el.scrollHeight - 2;
-    const length = Math.round(Math.min(fade, (axis === "x" ? el.clientWidth : el.clientHeight) * 0.45));
-    setMask(more ? `linear-gradient(to ${axis === "x" ? "right" : "bottom"}, black calc(100% - ${length + clearEnd}px), transparent${clearEnd > 0 ? ` calc(100% - ${clearEnd}px)` : ""})` : undefined);
-  }, [axis, clearEnd, fade]);
+    const next = more ? Math.round(Math.min(fade, (axis === "x" ? el.clientWidth : el.clientHeight) * 0.45)) : 0;
+    setLength(next);
+    if (next > 0) setMasked(true);
+  }, [axis, fade]);
 
   useEffect(() => {
     const el = ref.current;
@@ -65,13 +69,25 @@ export function ScrollFade({
     };
   }, [axis, update]);
 
+  const clear = length > 0 ? clearEnd : 0;
+  const style = masked
+    ? ({
+        "--scroll-fade-length": `${length}px`,
+        "--scroll-fade-clear": `${clear}px`,
+        maskImage: `linear-gradient(to ${axis === "x" ? "right" : "bottom"}, black calc(100% - var(--scroll-fade-length) - var(--scroll-fade-clear)), transparent calc(100% - var(--scroll-fade-clear)))`,
+      } as CSSProperties)
+    : undefined;
+
   return (
     <div
       ref={ref}
       onScroll={update}
+      onTransitionEnd={(e: TransitionEvent<HTMLDivElement>) => {
+        if (e.target === e.currentTarget && length === 0) setMasked(false);
+      }}
       data-no-drawn-scrollbar={axis === "x" ? "" : undefined}
-      style={mask ? { maskImage: mask } : undefined}
-      className={cx(axis === "x" ? "-my-1.5 shrink-0 overflow-x-auto py-1.5" : "overflow-y-auto", className)}
+      style={style}
+      className={cx("scroll-fade-ease", axis === "x" ? "-my-1.5 shrink-0 overflow-x-auto py-1.5" : "overflow-y-auto", className)}
     >
       {children}
     </div>

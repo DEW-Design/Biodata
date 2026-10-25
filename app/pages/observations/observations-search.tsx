@@ -932,7 +932,7 @@ function ObservationsSearch() {
     r.group ? <SpeciesPhoto scientificName={r.species} alt={r.commonName} fallbackIcon={SPECIES_GROUP_ICON[r.group]} className="size-10" /> : undefined;
   const provenance = (parentEventId: string) => {
     const root = rootProjectForParentEventId(parentEventId);
-    return root ? `${root.org} \u00b7 ${root.name}` : undefined;
+    return root ? `${root.org}, ${root.name}` : undefined;
   };
   // "Restricted" only where the location is actually generalised for this role (record-access.ts).
   const restrictedBadge = (r: SearchOccurrence | SearchObservation) =>
@@ -963,7 +963,7 @@ function ObservationsSearch() {
           icon: Folder,
           title: e.name,
           subtitle: e.org,
-          meta: `${e.code}${e.updated ? ` \u00b7 Updated ${e.updated}` : ""}`,
+          meta: `${e.code}${e.updated ? `, updated ${e.updated}` : ""}`,
           badge: (
             <Badge size="sm" color={e.statusColor}>
               {e.status}

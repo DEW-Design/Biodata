@@ -222,7 +222,7 @@ export function LandscapeEditor({
             label={`${score.ibra.association} association`}
             value={
               score.ibra.associationPct != null
-                ? `${score.ibra.associationPct}% remaining · ${pts(assoc?.points ?? 0)} pts`
+                ? `${score.ibra.associationPct}% remaining, ${pts(assoc?.points ?? 0)} pts`
                 : NP
             }
           />
@@ -231,7 +231,7 @@ export function LandscapeEditor({
             label={`${score.ibra.subregion} subregion`}
             value={
               score.ibra.subregionPct != null
-                ? `${score.ibra.subregionPct}% remaining · ${pts(sub?.points ?? 0)} pts`
+                ? `${score.ibra.subregionPct}% remaining, ${pts(sub?.points ?? 0)} pts`
                 : NP
             }
           />

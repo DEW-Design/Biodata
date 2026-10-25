@@ -160,7 +160,7 @@ export function ProjectRecordView({ project, record }: { project: SearchEvent; r
             <TabPanel key={section.id} id={String(section.id)} className="flex flex-col gap-6 p-6 lg:flex-row lg:items-start">
               <div className="min-w-0 flex-1 rounded-lg border border-secondary p-5">{section.content}</div>
               {index === 0 && photo && data && (
-                <div className="w-full shrink-0 overflow-hidden rounded-lg border border-secondary pb-3 sm:max-w-80 lg:w-80">
+                <div className="w-full shrink-0 overflow-hidden rounded-lg border border-secondary sm:max-w-80 lg:w-80">
                   <SpeciesPhotoCarousel scientificName={data.species} alt={data.commonName} />
                 </div>
               )}

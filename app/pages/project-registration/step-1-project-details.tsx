@@ -272,8 +272,8 @@ export function Step1ProjectDetails({
                     { label: "Project name", value: value.shortTitle, goToIndex: 0 },
                     { label: "Abstract", value: value.abstract, goToIndex: 1 },
                     { label: "Start date", value: value.startDate?.toString(), goToIndex: 2 },
-                    { label: "Data owner", value: value.dataOwnerType === "organisation" ? `${value.dataOwnerOrgName}${value.dataOwnerOrgLogo ? " · logo added" : ""}` : `${contact.firstName} ${contact.lastName}`.trim(), goToIndex: 3 },
-                    { label: "Primary contact", value: `${contact.firstName} ${contact.lastName}`.trim() + (contact.email ? ` · ${contact.email}` : ""), goToIndex: 4 },
+                    { label: "Data owner", value: value.dataOwnerType === "organisation" ? `${value.dataOwnerOrgName}${value.dataOwnerOrgLogo ? ", logo added" : ""}` : `${contact.firstName} ${contact.lastName}`.trim(), goToIndex: 3 },
+                    { label: "Primary contact", value: `${contact.firstName} ${contact.lastName}`.trim() + (contact.email ? `, ${contact.email}` : ""), goToIndex: 4 },
                     { label: "Project manager/s", value: `${managerCount} added`, goToIndex: 5 },
                 ].map((row) => (
                     <div key={row.label} className="flex items-center justify-between gap-4 px-4 py-3">

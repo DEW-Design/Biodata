@@ -155,7 +155,7 @@ export default function IconsPage() {
         {featuredIconSizes.map((s) => (
           <div key={s.key} className="flex flex-col items-center gap-2">
             <FeaturedIcon theme="light" color="brand" size={s.key} icon={CheckCircle} />
-            <code className="text-xs text-quaternary">{s.label} · {s.px}px</code>
+            <code className="text-xs text-quaternary">{s.label}, {s.px}px</code>
           </div>
         ))}
       </div>
@@ -221,7 +221,7 @@ export default function IconsPage() {
             className="cursor-pointer rounded-lg border border-primary bg-primary px-4 py-2 text-sm font-medium text-secondary shadow-xs text-balance"
           >
             Load {Math.min(PAGE_SIZE, filtered.length - visibleCount).toLocaleString()} more
-            <span className="text-quaternary text-balance"> · {(filtered.length - visibleCount).toLocaleString()} remaining</span>
+            <span className="text-quaternary text-balance">, {(filtered.length - visibleCount).toLocaleString()} remaining</span>
           </button>
         </div>
       )}

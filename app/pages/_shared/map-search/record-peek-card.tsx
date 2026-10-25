@@ -108,7 +108,7 @@ function describe(record: DetailRecord, role: UserRole): PeekView {
       eyebrow: e.type,
       title: e.name,
       icon: eventTypeIcon[e.type],
-      provenance: e.type === "Project" ? e.org : `${project.org} · ${project.name}`,
+      provenance: e.type === "Project" ? e.org : `${project.org}, ${project.name}`,
       facts: [
         { label: "ID", value: e.code },
         { label: "Start date", value: e.startDate },
@@ -122,11 +122,11 @@ function describe(record: DetailRecord, role: UserRole): PeekView {
   const project = rootProjectForParentEventId(r.parentEventId);
   const image = speciesImage(r.species);
   return {
-    // The card opens from the Species tab, so an occurrence reads as what the list called it: a species ("Species · Individual"), not by the data model's word (designer, 23 Oct 2026).
-    eyebrow: `${isOcc ? "Species" : "Observation"} · ${r.type}`,
+    // The card opens from the Species tab, so an occurrence reads as what the list called it: a species ("Species, Individual"), not by the data model's word (designer, 23 Oct 2026).
+    eyebrow: `${isOcc ? "Species" : "Observation"}, ${r.type}`,
     title: r.commonName,
     subtitle: hasScientificName(r.species) ? r.species : undefined,
-    provenance: project ? `${project.org} · ${project.name}` : undefined,
+    provenance: project ? `${project.org}, ${project.name}` : undefined,
     facts: [
       { label: "Date", value: r.date },
       { label: "Region", value: r.region },

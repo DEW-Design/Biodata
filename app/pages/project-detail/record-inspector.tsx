@@ -124,7 +124,7 @@ function SectionBody({ record, section }: { record: SurveyRecord; section: MetaS
     <div className="flex flex-col gap-3">
       {section.withMap && (
         <>
-          <ExpandableMap title={`${record.name} · location`} {...recordMapShape(record, lat, lon)} onBoundaryAdd={() => {}} activeDrawTool={null} onDrawToolChange={() => {}} className="h-40" />
+          <ExpandableMap title={`${record.name}, location`} {...recordMapShape(record, lat, lon)} onBoundaryAdd={() => {}} activeDrawTool={null} onDrawToolChange={() => {}} className="h-40" />
           {!record.locationNote && <LocationDetailsTable lat={lat} lon={lon} />}
         </>
       )}
@@ -260,7 +260,7 @@ export function RecordInspector({
           <h2 className="text-lg font-semibold text-balance text-primary">{record.name}</h2>
           {record.scientificName && <p className="text-sm text-tertiary italic">{record.scientificName}</p>}
           <p className="text-xs text-tertiary">
-            {record.code} · {formatDate(record.date)}
+            {record.code}, {formatDate(record.date)}
           </p>
         </div>
       </div>
@@ -370,7 +370,7 @@ function ProjectSummary({ onSelect, onAdd, addDrawer, fullscreenButton }: { onSe
             Project
           </Badge>
           <h2 className="text-lg font-semibold text-primary">{project.details.shortTitle}</h2>
-          <p className="text-xs text-tertiary">{meta.code} · {records.length} records</p>
+          <p className="text-xs text-tertiary">{meta.code}, {records.length} records</p>
         </div>
         <div className="ml-auto">{fullscreenButton}</div>
       </div>

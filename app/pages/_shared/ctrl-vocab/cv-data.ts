@@ -268,7 +268,7 @@ export function columnLabel(tableId: string, columnId: string): string {
 
 /** The mapped value for one source row: the mapped columns' values joined, as REQ-18.4's "NSX Code + Common Name + Scientific Name". */
 export function mappedValue(row: Record<string, string>, columns: string[] | undefined): string {
-  return (columns ?? []).map((c) => row[c]).filter(Boolean).join(" · ");
+  return (columns ?? []).map((c) => row[c]).filter(Boolean).join(", ");
 }
 
 /** A Descriptive entry's source row, by its key. */
@@ -486,12 +486,12 @@ export function diffCv(before: CvDraft, after: CvDraft): CvChange[] {
     const prev = beforeById.get(entry.id);
     const label = `Entry ${after.idKind === "number" ? "ID " : ""}${show(entry.code)}`;
     if (!prev) {
-      changes.push({ field: label, from: "Not provided", to: [entry.name, entry.title, entry.value].filter((v) => v.trim()).join(" · ") || "Added" });
+      changes.push({ field: label, from: "Not provided", to: [entry.name, entry.title, entry.value].filter((v) => v.trim()).join(", ") || "Added" });
       continue;
     }
-    for (const f of STANDARD_FIELDS) if (f.id !== "order") scalar(`${label} · ${f.label}`, prev[f.id], entry[f.id]);
-    scalar(`${label} · Available to users`, entryStatusMeta[prev.status].label, entryStatusMeta[entry.status].label);
-    for (const c of after.customColumns) scalar(`${label} · ${c.label}`, prev.custom[c.id] ?? "", entry.custom[c.id] ?? "");
+    for (const f of STANDARD_FIELDS) if (f.id !== "order") scalar(`${label} - ${f.label}`, prev[f.id], entry[f.id]);
+    scalar(`${label} - Available to users`, entryStatusMeta[prev.status].label, entryStatusMeta[entry.status].label);
+    for (const c of after.customColumns) scalar(`${label} - ${c.label}`, prev.custom[c.id] ?? "", entry.custom[c.id] ?? "");
   }
   // Rows moved: the order of the entries that were already there, before and after.
   const kept = new Set(after.entries.map((e) => e.id));
@@ -768,7 +768,7 @@ export const seedCvs: Cv[] = [
     ]),
     history: [
       { at: "2026-09-01T09:30", by: CREATED_BY, action: "Created" },
-      { at: "2026-09-18T14:05", by: EDITED_BY, action: "Edited", changes: [{ field: "Entry ID 8 · Value", from: "15m to 25m", to: "15m to 20m" }] },
+      { at: "2026-09-18T14:05", by: EDITED_BY, action: "Edited", changes: [{ field: "Entry ID 8 - Value", from: "15m to 25m", to: "15m to 20m" }] },
     ],
   }),
   // Species from the Taxonomy table (REQ-18.4's example): NSX code, common name, scientific name.

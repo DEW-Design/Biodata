@@ -59,6 +59,7 @@ The docs site (`app/(docs)`) is organized into four sections: **principles** (wh
 | [Badge](/components/badge) | Status labels - pill and badge-colour styles, 5 documented colours, dot/icon/dismiss variants. |
 | [Button](/components/button) | Primary action trigger - 8 colour variants, 5 sizes, icon and loading states. |
 | [Button utility](/components/button-utility) | Icon-only button for toolbars and row actions - secondary and tertiary colours, two sizes, tooltip that doubles as the accessible name, optional link. |
+| [Carousel](/components/carousel) | Pages through slides of one kind - Embla-based and headless: arrows, dot indicators, swipe and arrow keys, horizontal or vertical, no autoplay. Replaces the hand-built species photo carousel. |
 | [Checkbox](/components/checkbox) | Binary selection control with an indeterminate state and two sizes. |
 | [Dropdown](/components/dropdown) | Menu built on React Aria - icon items, sections, and checkmark/checkbox/radio/toggle selection indicators. |
 | [Input](/components/input) | Text field plus specialised variants - password, date, number, payment, tags, file upload, PIN. |

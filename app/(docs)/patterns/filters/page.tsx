@@ -57,7 +57,7 @@ function FilterDemo() {
             <span className="flex flex-col">
               <span className="text-sm font-medium text-primary">{r.project}</span>
               <span className="text-xs text-tertiary">
-                {r.organisation} · {r.contributor}
+                {r.organisation}, {r.contributor}
               </span>
             </span>
             <Badge size="sm" color={r.status === "Active" ? "success" : r.status === "Draft" ? "gray" : "brand"}>

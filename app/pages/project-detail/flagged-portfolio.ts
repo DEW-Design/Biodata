@@ -119,7 +119,7 @@ const SEED: Seed[] = [
     recordType: "Individual",
     sectionTitle: "Location information",
     field: "Reliability",
-    value: "3 · Within 1 km",
+    value: "3 - Within 1 km",
     flag: {
       reason: "Seen from the road; the distance was estimated, not measured.",
       by: "Phoenix Baker",
@@ -135,7 +135,7 @@ const SEED: Seed[] = [
     recordType: "Site",
     sectionTitle: "Location information",
     field: "Datum",
-    value: "GDA94 · Geocentric Datum of Australia 1994",
+    value: "GDA94 - Geocentric Datum of Australia 1994",
     flag: {
       reason: "Records after 2020 should use GDA2020.",
       by: "Maya Dewitt",
@@ -270,7 +270,7 @@ const SEED: Seed[] = [
     recordType: "Individual",
     sectionTitle: "Location information",
     field: "Location method",
-    value: "GPS · Hand-held GPS",
+    value: "GPS - Hand-held GPS",
     flag: {
       reason: "The coordinates were copied from the ramble's start point.",
       by: "Phoenix Baker",

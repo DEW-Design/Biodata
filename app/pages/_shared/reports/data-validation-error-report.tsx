@@ -103,7 +103,7 @@ export function DataValidationErrorReport({ chrome }: { chrome?: ReportChrome })
   // at a word, the dataset's file name in the middle, so that its version and extension stay ("flinders_bush...01.xlsx"); `splitFileName` says which end stays. (As a label with supporting text the dropdown cut the label first.)
   const projectOptions = useMemo(() => {
     const seen = new Map<string, string>();
-    for (const r of errored) if (!seen.has(r.projectId)) seen.set(r.projectId, `${r.projectCode} \u00b7 ${r.projectTitle}`);
+    for (const r of errored) if (!seen.has(r.projectId)) seen.set(r.projectId, `${r.projectCode} - ${r.projectTitle}`);
     return [...seen].map(([id, label]) => ({ id, label })).sort((a, b) => a.label.localeCompare(b.label));
   }, [errored]);
   const datasetOptions = useMemo(
@@ -112,7 +112,7 @@ export function DataValidationErrorReport({ chrome }: { chrome?: ReportChrome })
         .filter((r) => r.projectId === run?.projectId)
         .map((r) => {
           const { head, tail } = splitFileName(r.fileName);
-          return { id: r.id, label: `${r.id} \u00b7 ${head}`, labelEnd: tail };
+          return { id: r.id, label: `${r.id} - ${head}`, labelEnd: tail };
         }),
     [errored, run?.projectId],
   );

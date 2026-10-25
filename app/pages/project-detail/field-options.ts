@@ -217,10 +217,10 @@ export function foliageCoverClass(pct: number): string {
 /** Crown extent and crown density scores from their percentages (0 to 5, tree condition style). */
 export function crownScore(pct: number): string {
   if (!Number.isFinite(pct)) return "Not provided";
-  if (pct === 0) return "0 · None";
-  if (pct <= 10) return "1 · 1 to 10%";
-  if (pct <= 25) return "2 · 11 to 25%";
-  if (pct <= 50) return "3 · 26 to 50%";
-  if (pct <= 75) return "4 · 51 to 75%";
-  return "5 · 76 to 100%";
+  if (pct === 0) return "0 - None";
+  if (pct <= 10) return "1 - 1 to 10%";
+  if (pct <= 25) return "2 - 11 to 25%";
+  if (pct <= 50) return "3 - 26 to 50%";
+  if (pct <= 75) return "4 - 51 to 75%";
+  return "5 - 76 to 100%";
 }

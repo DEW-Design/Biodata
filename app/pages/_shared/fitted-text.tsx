@@ -40,7 +40,7 @@ export function fit(text: string, strategy: FitStrategy, width: number, font: st
   if (strategy === "words") {
     const words = text.split(" ");
     for (let k = words.length - 1; k >= 1; k--) {
-      const head = words.slice(0, k).join(" ").replace(/[\s,;:·\-\u2013]+$/, "");
+      const head = words.slice(0, k).join(" ").replace(/[\s,;:\-\u2013]+$/, "");
       if (widthOf(font, head + ELLIPSIS) <= width) return head + ELLIPSIS;
     }
     return text;

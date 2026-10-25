@@ -13,6 +13,11 @@ import { cx } from "@/utils/cx";
 // The button is there whenever the list fades, so a fade is never left without a way on and a number to say how far: while there are rows that have not been drawn yet it says how many the press will draw (up to
 // 25); once every row is drawn it says how many are not yet fully in view, and the press scrolls to them. It goes when the end of the list is in view.
 //
+// The end lands quietly. The list keeps 56px more room under its last row while the button is up (68px, not 12px), so the last row can scroll clear of it; that room goes with the button. The end is "in view" when
+// the scroll has reached the point where the last row has its 12px, not when the extra 56px has been scrolled through as well, so taking the room away moves nothing (no layout shift: the scroll position is
+// already at or inside the new end), and a press never scrolls further than that point. The button (150ms, ease-in as it goes and ease-out as it returns) and the fade (200ms, ease-out) then ease away and come back if the list is scrolled up;
+// the button stays mounted, inert and invisible, while it fades, and keeps what it said ("Show 1 more", not "Show 0 more").
+//
 // It is the rows and nothing else, so every such card reads the same:
 //   - the list fades out at its foot while there is more below, as the tabs above it fade at their right edge (`ScrollFade`), over about a row and a half (a row is 76px), so the last record on view
 //     is half gone, a row going, and not a whole row with its last line faint;
@@ -25,6 +30,8 @@ import { cx } from "@/utils/cx";
 
 const MORE_ZONE = 52; // from the card's edge up: the 16px the button is up from the foot, and its 36px
 const FADE = 120;
+// The room under the last row when the button is not up: `pb-3`. While it is up the list keeps more (`pb-17`, 68px), which comes and goes with the button and eases (globals.css `scroll-fade-ease`).
+const REST_PAD = 12;
 
 export const LIST_STEP = 25;
 
@@ -56,14 +63,22 @@ export function MapResultList({
   const unrendered = total > shown;
   const more = unrendered || below > 0;
   const moreRef = useRef(more);
+  // What the button says while it is there; it keeps saying it while it fades out.
+  const count = unrendered ? Math.min(step, total - shown) : below;
+  const [said, setSaid] = useState(count);
+  if (more && said !== count) setSaid(count);
 
+  // Where the scroll rests: the last row with its 12px under it. Read from the rows' own end and the padding as it is this frame, not from a state, so it holds while the room under the last row is easing.
+  const restEnd = useCallback((el: HTMLElement) => el.scrollHeight - parseFloat(getComputedStyle(el).paddingBottom) + REST_PAD - el.clientHeight, []);
+  // The end is in view once the scroll has got there; the room kept for the button is not part of the list.
+  const atEnd = useCallback((el: HTMLElement) => el.scrollTop >= restEnd(el) - 2, [restEnd]);
   const hiddenRows = useCallback(() => {
     const el = list.current;
-    if (!el) return [];
+    if (!el || atEnd(el)) return [];
     // While the button is up the last stretch of the list is faded clear under it, so a row there is not in view.
     const limit = el.getBoundingClientRect().bottom - (moreRef.current ? MORE_ZONE : 0) + 1;
     return ([...el.children].filter((child) => child.tagName === "BUTTON") as HTMLElement[]).filter((row) => row.getBoundingClientRect().bottom > limit);
-  }, []);
+  }, [atEnd]);
   const measure = useCallback(() => setBelow(hiddenRows().length), [hiddenRows]);
 
   useLayoutEffect(() => {
@@ -90,13 +105,17 @@ export function MapResultList({
   }, [measure]);
 
   // Scroll a row to the top of the list; a heading that starts its group is scrolled to instead, so the group's name is not left above the fold.
-  const scrollToRow = (row: HTMLElement) => {
-    const el = list.current;
-    if (!el) return;
-    const start = row.previousElementSibling?.tagName === "H3" ? row.previousElementSibling : row;
-    const top = el.scrollTop + start.getBoundingClientRect().top - el.getBoundingClientRect().top;
-    el.scrollTo({ top, behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth" });
-  };
+  const scrollToRow = useCallback(
+    (row: HTMLElement) => {
+      const el = list.current;
+      if (!el) return;
+      const start = row.previousElementSibling?.tagName === "H3" ? row.previousElementSibling : row;
+      // Never past the point where the last row has its 12px: the extra room under it goes with the button, and a scroll that went on into it would be clamped back when it did.
+      const top = Math.min(Math.max(0, restEnd(el)), el.scrollTop + start.getBoundingClientRect().top - el.getBoundingClientRect().top);
+      el.scrollTo({ top, behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth" });
+    },
+    [restEnd],
+  );
 
   const press = (e: PressEvent) => {
     const focus = e.pointerType === "keyboard" || e.pointerType === "virtual";
@@ -121,22 +140,20 @@ export function MapResultList({
     if (!first) return;
     scrollToRow(first);
     if (pending.focus) first.focus({ preventScroll: true });
-  }, [shown]);
+  }, [shown, scrollToRow]);
 
   return (
     <div className="relative flex min-h-0 flex-1 flex-col">
-      <ScrollFade axis="y" scrollRef={list} clearEnd={more ? MORE_ZONE : 0} fade={FADE} className={cx("mt-0.5 min-h-0 flex-1 px-2", more ? "pb-17" : "pb-3", MAP_SURFACE_SCROLL, className)}>
+      <ScrollFade axis="y" scrollRef={list} clearEnd={more ? MORE_ZONE : 0} fade={more ? FADE : 0} className={cx("mt-0.5 min-h-0 flex-1 px-2", more ? "pb-17" : "pb-3", MAP_SURFACE_SCROLL, className)}>
         {children}
       </ScrollFade>
-      {more && (
-        <div className="pointer-events-none absolute inset-x-0 bottom-4 z-10 flex justify-center">
-          <div className="pointer-events-auto rounded-lg shadow-2xl">
-            <Button color="secondary" size="sm" iconLeading={ChevronDown} onPress={press}>
-              Show {unrendered ? Math.min(step, total - shown) : below} more
-            </Button>
-          </div>
+      <div inert={!more} className={cx("pointer-events-none absolute inset-x-0 bottom-4 z-10 flex justify-center transition-opacity duration-150 motion-reduce:transition-none", more ? "ease-out" : "opacity-0 ease-in")}>
+        <div className="pointer-events-auto rounded-lg shadow-2xl">
+          <Button color="secondary" size="sm" iconLeading={ChevronDown} onPress={press}>
+            Show {said} more
+          </Button>
         </div>
-      )}
+      </div>
     </div>
   );
 }

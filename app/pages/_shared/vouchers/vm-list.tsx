@@ -184,7 +184,7 @@ export function VmList({ source }: { source: VmSource | "" }) {
                       {r.s.updated + r.s.ignored === 0 ? (
                         <Count n={0} />
                       ) : (
-                        <span className="text-sm text-secondary tabular-nums">{[r.s.updated && `${r.s.updated} updated`, r.s.ignored && `${r.s.ignored} ignored`].filter(Boolean).join(" · ")}</span>
+                        <span className="text-sm text-secondary tabular-nums">{[r.s.updated && `${r.s.updated} updated`, r.s.ignored && `${r.s.ignored} ignored`].filter(Boolean).join(", ")}</span>
                       )}
                     </Table.Cell>
                     <Table.Cell>

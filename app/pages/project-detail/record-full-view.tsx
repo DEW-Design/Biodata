@@ -613,7 +613,7 @@ export function RecordFullView({
                   <p className="text-xs text-tertiary">
                     {record.locationNote
                       ? "Shown only as a block: this is a restricted record."
-                      : `${lat.toFixed(3)}, ${lon.toFixed(3)} · GDA2020`}
+                      : `${lat.toFixed(3)}, ${lon.toFixed(3)} (GDA2020)`}
                   </p>
                 </SideCard>
               )}
@@ -678,7 +678,7 @@ export function RecordFullView({
                   : editingTitle}
               </span>
               {session.dirty && (
-                <span className="text-quaternary"> · Unsaved changes</span>
+                <span className="text-quaternary">, unsaved changes</span>
               )}
             </p>
             <div className="flex items-center gap-3">

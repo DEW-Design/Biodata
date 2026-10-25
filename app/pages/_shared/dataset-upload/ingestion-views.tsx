@@ -209,7 +209,7 @@ export function IngestionChip({
     )
   ) : (
     <>
-      Uploading files ·{" "}
+      Uploading files,{" "}
       <span className="inline-block min-w-[4.5ch] text-left tabular-nums">{percent}%</span>
     </>
   );

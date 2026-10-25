@@ -291,7 +291,7 @@ export function RecordDrawer({
     <EditDrawer isOpen title={mode === "create" ? `Add ${kindLabel}` : `Edit ${record.name}`} context={`${kindLabel} ${record.code}`} isDirty={dirty} onClose={onClose}>
       {(requestClose) => (
         <FormPage
-          eyebrow={mode === "create" ? `Add · ${record.kind}` : `Edit · ${record.kind}`}
+          eyebrow={mode === "create" ? `Add ${record.kind}` : `Edit ${record.kind}`}
           title={mode === "create" ? `New ${kindLabel.toLowerCase()}` : record.name}
           subtitle={mode === "create" ? "Only the name and date are needed now. Everything else can be added later." : `${kindLabel} ${record.code}`}
           onCancel={requestClose}

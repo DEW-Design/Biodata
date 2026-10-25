@@ -233,7 +233,7 @@ export default function RadioGroupsPage() {
                   <RgPreview key={previewType} type={previewType} size={previewSize} disabled={previewDisabled} />
                 </div>
                 <code className="text-xs text-quaternary">
-                  {previewType} · {previewSize}
+                  {previewType}, {previewSize}
                 </code>
               </div>
 

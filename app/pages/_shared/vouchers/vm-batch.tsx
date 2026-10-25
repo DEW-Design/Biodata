@@ -173,7 +173,7 @@ export function VmBatchPage({ batch }: { batch: VmBatch }) {
         </HeroMeta>
         <HeroMeta label="Concepts that differ">
           <span className="tabular-nums">{summary.different}</span>
-          {summary.missing > 0 && <span className="text-white/70"> · {summary.missing} missing in BioData</span>}
+          {summary.missing > 0 && <span className="text-white/70">, {summary.missing} missing in BioData</span>}
         </HeroMeta>
         <HeroMeta label="Records to review">
           <span className="tabular-nums">{summary.toReview}</span>
@@ -258,8 +258,8 @@ export function VmBatchPage({ batch }: { batch: VmBatch }) {
                     {selectedRows.length} {selectedRows.length === 1 ? "record" : "records"} selected
                   </span>
                   <span className="text-quaternary">
-                    {" "}
-                    · {selectedPending} {selectedPending === 1 ? "update" : "updates"}
+                    
+                    , {selectedPending} {selectedPending === 1 ? "update" : "updates"}
                   </span>
                 </>
               )}

@@ -237,7 +237,7 @@ export function NominationDetail({
                   <span>{species.commonName}</span>
                   <span className="text-tertiary italic">{species.species}</span>
                   <span className="text-xs text-tertiary">
-                    {species.family} · {species.group}
+                    {species.family}, {species.group}
                   </span>
                 </span>
               ) : (
@@ -260,7 +260,7 @@ export function NominationDetail({
             <RecordRow label="Last updated">{formatShortDate(n.updatedAt)}</RecordRow>
           </div>
           {photo && species && (
-            <div className="w-full shrink-0 overflow-hidden rounded-lg border border-secondary pb-3 sm:max-w-80 lg:w-80">
+            <div className="w-full shrink-0 overflow-hidden rounded-lg border border-secondary sm:max-w-80 lg:w-80">
               <SpeciesPhotoCarousel scientificName={species.species} alt={species.commonName} />
             </div>
           )}

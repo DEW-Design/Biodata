@@ -10,8 +10,8 @@ import { cx } from "@/utils/cx";
 // (it truncates) and the badge never does. It is a button, so the whole card is the target. Hovering or
 // focusing it reports up so the matching dot on the map can be highlighted (the same record, seen
 // twice). The table stays the place for every column; a card is the short version.
-// Type: the title is the row's one focal point (14/500, primary), and both grey lines under it are the same supporting treatment (12/400, tertiary), as a list row's
-// description is on the Projects list and Home. The meta line was one grey darker than the subtitle above it (secondary), so the lines got darker going down; the
+// Type: the title is the row's one focal point (14/500, primary), and both grey lines under it are the same supporting treatment (14/400, tertiary: the size of Home's request detail and of a project's organisation;
+// they were 12/400, as a table cell's description is, and read too small to scan in a card; the designer, 25 Oct 2026). The weight and the colour, not a smaller size, are what make the title lead. The meta line was one grey darker than the subtitle above it (secondary), so the lines got darker going down; the
 // line that tells rows apart is the title's to carry, so the caller puts it there. A line too long for the row is cut after its last whole word that fits (`FittedText`), not mid-word.
 
 export function ResultCard({
@@ -63,8 +63,8 @@ export function ResultCard({
           <FittedText text={title} className={cx("text-sm font-medium text-primary", titleItalic && "italic")} />
           {badge && <span className={cx("shrink-0", badgeAlign === "end" && "ml-auto")}>{badge}</span>}
         </span>
-        {subtitle && <FittedText text={subtitle} className={cx("text-xs text-tertiary", subtitleItalic && "italic")} />}
-        {meta && <FittedText text={meta} className="text-xs text-tertiary" />}
+        {subtitle && <FittedText text={subtitle} className={cx("text-sm text-tertiary", subtitleItalic && "italic")} />}
+        {meta && <FittedText text={meta} className="text-sm text-tertiary" />}
       </div>
     </button>
   );

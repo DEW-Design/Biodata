@@ -92,7 +92,7 @@ export function VmRecordPage({ batch, record }: { batch: VmBatch; record: VmReco
     <div className="flex min-h-0 flex-1 flex-col">
       <div className="flex min-h-0 flex-1 flex-col overflow-y-auto">
         <RecordBackLink href={roleHref(`${root}/${batch.id}`)}>Batch {batch.id}</RecordBackLink>
-        <RecordHero eyebrow={`Voucher record · ${source}`} title={record.id} subtitle={
+        <RecordHero eyebrow={`Voucher record, ${source}`} title={record.id} subtitle={
             nameNow ? (
               <span>
                 <span className="italic">{nameNow.text}</span>
@@ -142,8 +142,8 @@ export function VmRecordPage({ batch, record }: { batch: VmBatch; record: VmReco
                     <div className="min-w-0 flex-1 text-sm text-primary">
                       {h.what}
                       <span className="text-tertiary">
-                        {" "}
-                        · {h.by}, batch {h.batchId}
+                        
+                        , {h.by}, batch {h.batchId}
                       </span>
                     </div>
                   </div>

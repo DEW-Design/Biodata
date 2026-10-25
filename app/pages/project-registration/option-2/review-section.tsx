@@ -93,7 +93,7 @@ function ReviewSectionV2({ state, onEdit }: { state: FormState; onEdit: (id: Sec
     .filter((p) => person(p))
     .map((p) => {
       // A project manager says so in their role (Project Manager), so only the primary contact is marked.
-      return [person(p), roleOf(p)].filter(Boolean).join(" · ") + (p.isPrimary ? " (primary contact)" : "");
+      return [person(p), roleOf(p)].filter(Boolean).join(", ") + (p.isPrimary ? " (primary contact)" : "");
     })
     .join("; ");
   const focus = c.focusAreas.map((id) => (id === "other" && c.focusAreaOther ? c.focusAreaOther : (FOCUS_AREA_OPTIONS.find((o) => o.id === id)?.label ?? id))).join(", ");

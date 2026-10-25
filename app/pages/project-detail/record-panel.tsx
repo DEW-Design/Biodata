@@ -437,7 +437,7 @@ export function Path({
                   <Dropdown.Item
                     key={a.id}
                     id={a.id}
-                    label={`${a.code} · ${a.name}`}
+                    label={`${a.code} - ${a.name}`}
                     icon={recordIcon(a)}
                   />
                 ))}
@@ -460,7 +460,7 @@ export function Path({
             title={current.name}
             className="truncate px-1 py-0.5 font-medium text-primary"
           >
-            {current.code} · {current.name}
+            {current.code} - {current.name}
           </span>
         </span>
       )}
@@ -760,7 +760,7 @@ export function RecordPanel({
             <span className="text-sm text-tertiary">Project</span>
           </div>
           <p className="text-sm text-tertiary">
-            {store.meta.code} · {store.records.length} records. Pick a record in the tree
+            {store.meta.code}, {store.records.length} records. Pick a record in the tree
             or the table to see its details.
           </p>
         </div>
@@ -824,7 +824,7 @@ export function RecordPanel({
             )}
             <p className="text-xs text-tertiary">
               {record.code}
-              {hasDateField(record) && ` · ${formatDate(record.date)}`}
+              {hasDateField(record) && `, ${formatDate(record.date)}`}
             </p>
           </div>
         </div>

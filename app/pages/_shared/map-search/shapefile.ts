@@ -119,5 +119,5 @@ export function shapefileLayerSummary(layer: ShapefileLayer): string {
     const parts: string[] = [];
     if (layer.points.length) parts.push(`${layer.points.length} point${layer.points.length === 1 ? "" : "s"}`);
     if (layer.polygons.length) parts.push(`${layer.polygons.length} polygon${layer.polygons.length === 1 ? "" : "s"}`);
-    return `${layer.name} · ${parts.join(", ")}`;
+    return `${layer.name}: ${parts.join(", ")}`;
 }

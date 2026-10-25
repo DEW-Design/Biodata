@@ -78,7 +78,7 @@ export function WalkthroughModal({
             <FeaturedIcon icon={Icon} theme="modern" color="brand" size="lg" />
             <div className="flex flex-col gap-2">
               <p className="m-0 text-xs font-semibold tracking-wide text-quaternary uppercase">
-                {title} · {index + 1} of {steps.length}
+                {title}, {index + 1} of {steps.length}
               </p>
               <Heading slot="title" className="m-0! text-lg! font-semibold! tracking-normal! text-balance text-primary!">
                 {step.title}

@@ -244,7 +244,7 @@ function DatasetsList({ rows, projectHref, datasetHref }: { rows: DatasetRow[]; 
               <div className="flex min-w-0 flex-col gap-0.5">
                 <h3 className="text-sm font-semibold text-primary">{current.view.done ? "Latest upload" : "Uploading now"}</h3>
                 <p className="truncate text-sm text-tertiary" title={current.view.subject.fileName}>
-                  {current.dataset.id} · {current.view.subject.fileName} · {current.view.subject.rows} rows
+                  {current.dataset.id} - {current.view.subject.fileName}, {current.view.subject.rows} rows
                 </p>
               </div>
               <div className="flex items-center gap-3">
@@ -384,7 +384,7 @@ function DatasetDetail({ row, datasetId, backHref }: { row: DatasetRow | null; d
               <ul className="m-0 flex list-none flex-col gap-1 p-0">
                 {d.files.map((f) => (
                   <li key={f.name}>
-                    {f.name} <span className="text-tertiary">· {formatFileSize(f.size)}</span>
+                    {f.name}<span className="text-tertiary">, {formatFileSize(f.size)}</span>
                   </li>
                 ))}
               </ul>
@@ -431,17 +431,17 @@ function snapshotOf({ view, status }: DatasetRow): Snapshot {
   if (!view.done) {
     const validating = view.stageIndex === 0;
     const pct = validating ? view.stagePercents[0] : Math.round(((view.stagePercents[1] + view.stagePercents[2]) / 200) * 100);
-    return { tone: "brand", state: `${validating ? "Pre-flight validation" : "Adding records"} · ${pct}%`, running: true };
+    return { tone: "brand", state: `${validating ? "Pre-flight validation" : "Adding records"}, ${pct}%`, running: true };
   }
   if (view.failed) {
-    if (isSystemFault(view)) return { tone: "error", state: "Not added · something went wrong on our side", running: false };
+    if (isSystemFault(view)) return { tone: "error", state: "Not added, something went wrong on our side", running: false };
     const problems = plural(view.reasons.length, "problem", "problems");
-    return { tone: "error", state: view.failedStage === 0 ? `Failed pre-flight validation · ${problems}` : `Not added · ${problems} with the rows`, running: false };
+    return { tone: "error", state: view.failedStage === 0 ? `Failed pre-flight validation, ${problems}` : `Not added, ${problems} with the rows`, running: false };
   }
   const added = placedRows(view);
-  if (view.partial) return { tone: "warning", state: `${added} records added · ${view.unmapped} rows not placed`, running: false };
+  if (view.partial) return { tone: "warning", state: `${added} records added, ${view.unmapped} rows not placed`, running: false };
   const approved = status === "approved" || status === "auto_approved";
-  return { tone: approved ? "success" : "brand", state: `${added} records added · ${approved ? "approved" : "in review"}`, running: false };
+  return { tone: approved ? "success" : "brand", state: `${added} records added, ${approved ? "approved" : "in review"}`, running: false };
 }
 
 export function DatasetsCard({ onOpenDataset, onOpenDatasets }: { onOpenDataset: (id: string) => void; onOpenDatasets: () => void }) {
@@ -476,7 +476,7 @@ export function DatasetsCard({ onOpenDataset, onOpenDatasets }: { onOpenDataset:
         >
           <FeaturedIcon icon={Database01} color={snap.tone} theme="modern" size="sm" />
           <span className="flex min-w-0 flex-1 flex-col">
-            <span className="text-tertiary">Last upload · {formatShortDate(last.dataset.uploadedAt)}</span>
+            <span className="text-tertiary">Last upload: {formatShortDate(last.dataset.uploadedAt)}</span>
             <span className="flex min-w-0 items-center gap-1.5">
               {snap.running && <RefreshCcw01 aria-hidden className="size-3.5 shrink-0 text-fg-brand-primary motion-safe:animate-spin" />}
               <span className="truncate font-semibold text-primary">{last.dataset.files[0]?.name ?? last.dataset.id}</span>

@@ -84,6 +84,9 @@ A change to `components/**`, a page, a token, or a `/test-*` screen is done only
 8. Typography QA (§2.9), on any change that adds or changes visible text: `/emil-typography` and
    `/emil-design-foundations` ran, after the type was checked against the design system and the
    patterns already on the web app. The report names what was checked and what was measured.
+9. Behaviour in its home (§1.10): any behaviour another screen could want (a scrollbar, a dismiss, a cut, a drag) was
+   looked for in `components/**` first and, if it is new, built there with the designer's override, not in a
+   screen, in `app/pages/_shared` or in the layout. The report says where each behaviour lives.
 
 - **Enforcement:** `REVIEW` (item 3 is `AUTO`).
 
@@ -280,6 +283,25 @@ fix goes into the component, once, so every consumer gets it (§1.3).
 
 ---
 
+### §1.10 Behaviour is a component: it is built in `components/**`
+
+A behaviour that more than one screen has, or could have, belongs to the control or element it governs, so it is a component (or a part of one) and is built like one: a scrollbar, a way of dismissing, a way of cutting text, a
+drag, a hit area, a focus ring, a way of opening. Where it is built decides whether the contracts can see it. The designer's override (1.4), the inventory, the duplicate check (1.7), the doc page (5.3) and the behaviour patterns
+(1.9) all start from `components/**`, so a behaviour written in a screen, in `app/pages/_shared`, in an `app/_*` folder or in the root layout is invisible to every one of them, and gets built twice.
+
+- **MUST** build it in `components/**` (tier `custom` until it is promoted, 1.4), with the designer's override and its doc page. **MUST NOT** build it in a screen, in `app/pages/_shared`, in an `app/_*` folder or in the layout, and
+  MUST NOT write it inline in a screen file (an effect that listens on the document, a hook that measures): a screen takes a component's behaviour by a prop or an attribute. What a screen does with its own data stays in the screen.
+- **Look first, in `components/**`** (0.9), before building a behaviour; where one is close, extend it with an opt-in prop (1.6) and do not write a second.
+- **The root layout renders components from `components/**` only.**
+- **Open (23 Oct 2026), found when this clause was written, each for the designer's decision (0.4):** `DrawnScrollbars` (`app/_scrollbars`, the one scrollbar of 2.17, mounted from the layout); `ScrollFade`, `useListToggle` and
+  `ChunkHeading` (`app/pages/_shared/map-search`); and the parks step's dismiss on an outside press, written inline in `observations-search.tsx`. **Two implementations of one behaviour (1.7):** `FittedText`
+  (`app/pages/_shared/fitted-text.tsx`, text cut at a word or in the middle of a file name, measured on a canvas) and `Select`'s `truncateAtWords` and `labelEnd` (the same two strategies, in CSS), both built on 23 Oct 2026. Each is
+  listed in the check as open until it is moved into `components/**` with an override, or merged into the one that stays.
+- **Origin:** the one scrollbar (2.17) was built in `app/_scrollbars` and mounted from the layout, so nothing in the contracts saw a component being made; and the same day text was cut by a strategy twice, in `FittedText` and
+  in `Select`, because the second was built without looking in `components/**` or `_shared`. The designer: "component behaviour falls under components. We need to make sure this is factored in. That's a gap" (23 Oct 2026).
+- **Enforcement:** `AUTO §1.10` (the root layout renders a component built under `app/`, other than the open one named in the check), `REVIEW` for the rest (0.6 item 9): which inline effect or `_shared` hook is a behaviour another
+  screen could want is a judgement, not a name a script can find, so it is named here as a recurring pattern and is the first thing to check in any new `useEffect` that listens on the document.
+
 ## PART III - STYLE
 
 ### §2.1 Tokens only
@@ -323,7 +345,22 @@ biodata-home hero wordmark (Fredoka) is the one page-scoped exception.
   props (`iconLeading`, `iconTrailing`) with a real icon.
 - Any copy that can wrap to two or more lines carries `text-balance`.
 - An empty value is omitted or written "Not provided", never a stray `-`.
-- **Enforcement:** `AUTO §2.3` (em-dashes and arrow characters, ratcheted).
+- **MUST NOT use a dot to separate pieces of text:** the middle dot (`·`, U+00B7, `&middot;`) never goes between a count and
+  its type ("1 record · Individual"), a family and a group, an organisation and a project, a name and a date, a code and a
+  name, or the parts of an eyebrow, a meta line, a label or a status. This is about text; a bullet that masks a password
+  or marks a list item is not a separator. **What goes there instead depends on the kind of text (designer, 25 Oct 2026):**
+  attributes of one thing take a comma ("1 record, Individual", "Phalangeridae, Mammal"), and a colon where the second part is
+  itself a list ("2 records: Population, Individual"); an identifier before its name, and a coded value before its meaning,
+  take a hyphen ("BD-5137 - Flinders Ranges Reptile Atlas", "3 - Within 1 km"); an eyebrow is words ("Add occurrence", "Edit
+  overview"); a status after its subject takes a comma ("Not added, something went wrong on our side"); a label before its
+  value takes a colon ("Last upload: 12 Oct 2026"); a qualifier takes parentheses ("-35.029, 138.719 (GDA2020)"); two things
+  side by side need no mark, the gap between them does it. Where two of these fit, the first named is used. Never the dot.
+- **Origin:** the species card read "1 record · Individual" and the project page, Explore, the reports, the
+  record trees and the forms were full of the same dot. The designer: "let's never add the dot to separate text. Let's
+  please tweak this across the webapp." (25 Oct 2026).
+- **Enforcement:** `AUTO §2.3` (em-dashes and arrow characters, ratcheted), `AUTO §2.3c` (a middle dot in code that is not a
+  comment, ratcheted: all 157 uses on 25 Oct 2026 were converted the same day, so its baseline in `contracts/baseline.json` is zero
+  and any dot fails). Labs under `app/proto` are outside the scan (5.4) and keep theirs until they are folded into a page.
 
 ### §2.4 Icons
 
@@ -562,8 +599,8 @@ The browser's own bar is off everywhere (`* { scrollbar-width: none }`, `app/glo
 draws its thumb, in one layer above everything (`SCROLLBAR_Z_INDEX`, `lib/layers.ts`). A new scroller needs nothing: `overflow-y-auto` and a height.
 
 - **MUST NOT** draw a scrollbar at a scroller: no `scrollbar-width`, `::-webkit-scrollbar`, `scrollbar-color` or `overflow: overlay`, no thumb built into a list or a component. MUST NOT turn the browser's bar back on for one scroller.
-- **A box under 64px either way gets no thumb** (a tab strip, a row of chips: there is no room for one, and its fade, `ScrollFade`, is its cue). An element that has its own cue opts out with `data-no-drawn-scrollbar` (the photo carousel
-  and the lightbox's thumbnails, which have arrows and selection).
+- **A box under 64px either way gets no thumb** (a tab strip, a row of chips: there is no room for one, and its fade, `ScrollFade`, is its cue). An element that has its own cue opts out with `data-no-drawn-scrollbar` (the lightbox's
+  thumbnails, which have arrows and selection; the species photo carousel is the design system's `Carousel`, which does not scroll, so it has nothing to opt out of).
 - **A thumb is drawn only where its scroller is what is under it:** a modal, a menu or the Prototype tools bar over part of the thumb hides it.
 - **The fade stays where it was** (`ScrollFade`): the fade says there is more, the thumb says where and how much. They are not the same thing and a list may have both.
 - **A page's scrolling `main` and a scrolling table keep `[scrollbar-gutter:stable]` (4.2f):** it reserves nothing now (the lane is 0) and costs nothing, and it keeps the content steady if the thumb is ever turned off.

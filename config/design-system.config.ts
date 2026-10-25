@@ -207,6 +207,20 @@ export const designSystemConfig: DesignSystemConfig = {
     },
   },
 
+  carousel: {
+    title: "Carousel",
+    enabled: true,
+    features: {
+      playground: true,
+      arrows: true,
+      indicators: true,
+      vertical: true,
+      onPhoto: true,
+      usage: true,
+      figma: true,
+    },
+  },
+
   checkbox: {
     title: "Checkbox",
     enabled: true,

@@ -166,7 +166,7 @@ interface AlertFullWidthProps {
     /**
      * With `contained`: one line instead of stacked. The title and description run on together and
      * the actions sit at the right, wrapping under the text only when the card is too narrow. Use for
-     * a short notice with one action ("7 flagged concepts need review across this project · Review").
+     * a short notice with one action ("7 flagged concepts need review across this project", with its Review action).
      * @default false
      */
     inline?: boolean;

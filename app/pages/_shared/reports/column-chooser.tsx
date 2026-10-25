@@ -119,7 +119,7 @@ export function ColumnChooser<C extends ChooserColumn>({ chooser }: { chooser: C
   return (
     <DialogTrigger onOpenChange={(open) => open && setQuery("")}>
       <Button color="secondary" size="sm" iconLeading={Columns03}>
-        {hiddenCount > 0 ? `Columns · ${hiddenCount} hidden` : "Columns"}
+        {hiddenCount > 0 ? `Columns, ${hiddenCount} hidden` : "Columns"}
       </Button>
       <Popover size="auto" placement="bottom end" offset={12} className="w-80 py-0">
         <Dialog aria-label="Choose columns" className="flex flex-col outline-hidden">

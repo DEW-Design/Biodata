@@ -97,7 +97,7 @@ function ReportToolbarDemo() {
             <span className="flex flex-col">
               <span className="text-sm font-medium text-primary italic">{r.species}</span>
               <span className="text-xs text-tertiary">
-                {r.project} · {r.day}
+                {r.project}, {r.day}
               </span>
             </span>
             <Badge size="sm" color={r.status === "Reviewed" ? "success" : "gray"}>

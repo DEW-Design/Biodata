@@ -872,13 +872,13 @@ const occurrences: SurveyRecord[] = [
   occurrence({ id: "oc5", code: "OC00505", type: "Population", parentId: "bk1", common: "Common Froglet", nsx: "A00215", taxonomicType: "Fauna", status: "Present", legacy: "Sighting - 88217", seq: "1", date: "2026-03-18", lat: -35.001, lon: 138.681, observers: ["Lana Steiner"], comment: "Calling from the flooded margins.", summary: "11 to 20 calling males" }),
   occurrence({ id: "oc6", code: "OC00506", type: "Individual", parentId: "rmb1", common: "Short-beaked Echidna", nsx: "M01002", taxonomicType: "Fauna", status: "Present", legacy: "Sighting - 88218", seq: "1", date: "2026-03-18", lat: -34.998, lon: 138.679, observers: ["Lana Steiner"], comment: "Digging at a termite mound on the creek bank.", summary: "Adult, digging" }),
   occurrence({ id: "oc7", code: "OC00507", type: "Individual", parentId: "cu1", common: "Common Brushtail Possum", nsx: "M01130", taxonomicType: "Fauna", status: "Present", legacy: "Sighting - 88219", seq: "1", date: "2026-03-18", lat: -35.002, lon: 138.683, observers: ["Olivia Wyatt"], comment: "Feeding in a blue gum canopy.", summary: "Male, 8 m up a blue gum" }),
-  occurrence({ id: "oc8", code: "OC00508", type: "Individual", parentId: "qr1", common: "South Australian Blue Gum", nsx: "P01937", taxonomicType: "Flora", status: "Present", legacy: "Sighting - 88220", seq: "3", date: "2025-10-14", lat: -35.031, lon: 138.721, observers: ["Olivia Wyatt"], comment: "Tagged tree 7 at the quadrat's north-east corner, monitored for fire recovery.", summary: "Tree 7 · 340 mm DBH" }),
+  occurrence({ id: "oc8", code: "OC00508", type: "Individual", parentId: "qr1", common: "South Australian Blue Gum", nsx: "P01937", taxonomicType: "Flora", status: "Present", legacy: "Sighting - 88220", seq: "3", date: "2025-10-14", lat: -35.031, lon: 138.721, observers: ["Olivia Wyatt"], comment: "Tagged tree 7 at the quadrat's north-east corner, monitored for fire recovery.", summary: "Tree 7, 340 mm DBH" }),
 ];
 
 const observations: SurveyRecord[] = [
-  observation({ id: "ob1", code: "OB00501", type: "Population", parentId: "oc1", name: "Fairywren group composition", scientific: "Malurus cyaneus", date: "2025-10-14", lat: -35.029, lon: 138.719, observers: ["Maya Dewitt"], comment: "One male in breeding plumage.", summary: "6 birds · 1 breeding male", species: { "Number observed": "6", Line: "1", "Is annual herb?": "No", "Collection method & desc": "OBS", "Strata & desc": "M", "Macro habitat & desc": "WD", "Micro habitat & desc": "LL", Activity: "Foraging", "Animal life stage": "Juvenile | Adult", "Planted/Released": "No" } }),
-  observation({ id: "ob2", code: "OB00502", type: "Population", parentId: "oc2", name: "Blue gum stand structure", scientific: "Eucalyptus leucoxylon", date: "2025-10-14", lat: -35.031, lon: 138.721, observers: ["Olivia Wyatt"], comment: "Epicormic resprouting on most stems.", summary: "14 stems · cover class 3", species: { "Number observed": "14", Line: "1", "Is annual herb?": "No", "Life form & desc": "T", "Collection method & desc": "OBS", "Strata & desc": "U", "Macro habitat & desc": "WD", "Cover/abundance & desc": "3", "Association dominance": "Co-dominant", "Plant life stage": "Mature | Flowering", "Planted/Released": "No" } }),
-  observation({ id: "ob3", code: "OB00503", type: "Population", parentId: "oc3", name: "Yacca cover and flowering", scientific: "Xanthorrhoea semiplana", date: "2025-10-14", lat: -35.031, lon: 138.721, observers: ["Maya Dewitt"], comment: "Nine flowering spikes in the quadrat.", summary: "Cover class 3 · flowering", species: { "Number observed": "32", Line: "1", "Is annual herb?": "No", "Life form & desc": "S", "Collection method & desc": "OBS", "Strata & desc": "G", "Macro habitat & desc": "WD", "Cover/abundance & desc": "3", "Association dominance": "Associated", "Plant life stage": "Flowering", "Planted/Released": "No" } }),
+  observation({ id: "ob1", code: "OB00501", type: "Population", parentId: "oc1", name: "Fairywren group composition", scientific: "Malurus cyaneus", date: "2025-10-14", lat: -35.029, lon: 138.719, observers: ["Maya Dewitt"], comment: "One male in breeding plumage.", summary: "6 birds, 1 breeding male", species: { "Number observed": "6", Line: "1", "Is annual herb?": "No", "Collection method & desc": "OBS", "Strata & desc": "M", "Macro habitat & desc": "WD", "Micro habitat & desc": "LL", Activity: "Foraging", "Animal life stage": "Juvenile | Adult", "Planted/Released": "No" } }),
+  observation({ id: "ob2", code: "OB00502", type: "Population", parentId: "oc2", name: "Blue gum stand structure", scientific: "Eucalyptus leucoxylon", date: "2025-10-14", lat: -35.031, lon: 138.721, observers: ["Olivia Wyatt"], comment: "Epicormic resprouting on most stems.", summary: "14 stems, cover class 3", species: { "Number observed": "14", Line: "1", "Is annual herb?": "No", "Life form & desc": "T", "Collection method & desc": "OBS", "Strata & desc": "U", "Macro habitat & desc": "WD", "Cover/abundance & desc": "3", "Association dominance": "Co-dominant", "Plant life stage": "Mature | Flowering", "Planted/Released": "No" } }),
+  observation({ id: "ob3", code: "OB00503", type: "Population", parentId: "oc3", name: "Yacca cover and flowering", scientific: "Xanthorrhoea semiplana", date: "2025-10-14", lat: -35.031, lon: 138.721, observers: ["Maya Dewitt"], comment: "Nine flowering spikes in the quadrat.", summary: "Cover class 3, flowering", species: { "Number observed": "32", Line: "1", "Is annual herb?": "No", "Life form & desc": "S", "Collection method & desc": "OBS", "Strata & desc": "G", "Macro habitat & desc": "WD", "Cover/abundance & desc": "3", "Association dominance": "Associated", "Plant life stage": "Flowering", "Planted/Released": "No" } }),
   observation({
     id: "ob4",
     code: "OB00504",
@@ -891,7 +891,7 @@ const observations: SurveyRecord[] = [
     lon: 138.721,
     observers: ["Olivia Wyatt", "Maya Dewitt"],
     comment: "Canopy recovering well; mid-storey still sparse after the burn.",
-    summary: "Open woodland · good condition",
+    summary: "Open woodland, good condition",
     details: {
       "Vegetation conditions": "Good",
       "SA structural formation": "Open woodland",
@@ -923,7 +923,7 @@ const observations: SurveyRecord[] = [
     lon: 138.721,
     observers: ["Maya Dewitt"],
     comment: "Point intercept, 100 points.",
-    summary: "Litter 64% · bare earth 9%",
+    summary: "Litter 64%, bare earth 9%",
     details: { "Fire scars": "Yes", "Bare earth estimate": "9", "Litter estimate": "64", "Climatic condition": "Average", "Disturbance impact": JSON.stringify([["SB", "i"]]) },
     land: {
       "Site slope": "8",
@@ -954,7 +954,7 @@ const observations: SurveyRecord[] = [
     lon: 138.723,
     observers: ["Phoenix Baker"],
     comment: "Handled for under five minutes, released at the trap.",
-    summary: "Female · 780 g · pouch young",
+    summary: "Female, 780 g, pouch young",
     locationNote: BANDICOOT_NOTE,
     species: { Line: "1", "Life form & desc": "V", "Collection method & desc": "CAP", "Strata & desc": "G", "Macro habitat & desc": "WD", "Micro habitat & desc": "LL", Activity: "Resting", Sex: "F", Regeneration: "No", "Gravid?": "No", Teats: "Lactating", Vagina: "Perforate", "Pouch status": "Pouch young", "No. in pouch": "2 young", "Animal life stage": "Adult", "Planted/Released": "No" },
     measurements: [
@@ -964,8 +964,8 @@ const observations: SurveyRecord[] = [
     ],
   }),
   observation({ id: "ob7", code: "OB00507", type: "Population", parentId: "oc5", name: "Froglet chorus count", scientific: "Crinia signifera", date: "2026-03-18", lat: -35.001, lon: 138.681, observers: ["Lana Steiner"], comment: "Five-minute call count; water 13.5 °C.", summary: "Chorus class 2 (11 to 20 males)", species: { "Number observed": "15", Line: "1", "Is annual herb?": "No", "Life form & desc": "V", "Collection method & desc": "HRD", "Strata & desc": "G", "Macro habitat & desc": "RP", Activity: "Calling", "Animal life stage": "Adult", "Planted/Released": "No" } }),
-  observation({ id: "ob8", code: "OB00508", type: "Individual", parentId: "oc6", name: "Echidna sighting", scientific: "Tachyglossus aculeatus", date: "2026-03-18", lat: -34.998, lon: 138.679, observers: ["Lana Steiner"], comment: "Not handled.", summary: "Adult · digging", species: { Line: "1", "Life form & desc": "V", "Collection method & desc": "OBS", "Strata & desc": "G", "Macro habitat & desc": "RP", "Micro habitat & desc": "LG", Activity: "Digging", Sex: "U", "Animal life stage": "Adult", "Planted/Released": "No" }, measurements: [{ type: "Distance from observer", value: "6", unit: "m" }] }),
-  observation({ id: "ob9", code: "OB00509", type: "Individual", parentId: "oc7", name: "Possum spotlight sighting", scientific: "Trichosurus vulpecula", date: "2026-03-18", lat: -35.002, lon: 138.683, observers: ["Olivia Wyatt"], comment: "Spotlighting from the track.", summary: "Male · 8 m up a blue gum", species: { Line: "1", "Life form & desc": "V", "Collection method & desc": "OBS", "Strata & desc": "U", "Macro habitat & desc": "RP", "Micro habitat & desc": "CA", Activity: "Foraging", Sex: "M", "Animal life stage": "Adult", "Planted/Released": "No" }, measurements: [
+  observation({ id: "ob8", code: "OB00508", type: "Individual", parentId: "oc6", name: "Echidna sighting", scientific: "Tachyglossus aculeatus", date: "2026-03-18", lat: -34.998, lon: 138.679, observers: ["Lana Steiner"], comment: "Not handled.", summary: "Adult, digging", species: { Line: "1", "Life form & desc": "V", "Collection method & desc": "OBS", "Strata & desc": "G", "Macro habitat & desc": "RP", "Micro habitat & desc": "LG", Activity: "Digging", Sex: "U", "Animal life stage": "Adult", "Planted/Released": "No" }, measurements: [{ type: "Distance from observer", value: "6", unit: "m" }] }),
+  observation({ id: "ob9", code: "OB00509", type: "Individual", parentId: "oc7", name: "Possum spotlight sighting", scientific: "Trichosurus vulpecula", date: "2026-03-18", lat: -35.002, lon: 138.683, observers: ["Olivia Wyatt"], comment: "Spotlighting from the track.", summary: "Male, 8 m up a blue gum", species: { Line: "1", "Life form & desc": "V", "Collection method & desc": "OBS", "Strata & desc": "U", "Macro habitat & desc": "RP", "Micro habitat & desc": "CA", Activity: "Foraging", Sex: "M", "Animal life stage": "Adult", "Planted/Released": "No" }, measurements: [
     { type: "Height in tree", value: "8", unit: "m" },
     { type: "Eyeshine distance", value: "25", unit: "m" },
   ] }),
@@ -981,7 +981,7 @@ const observations: SurveyRecord[] = [
     lon: 138.721,
     observers: ["Olivia Wyatt"],
     comment: "Canopy recovering after the 2024 burn; heavy epicormic regrowth on the trunk.",
-    summary: "Crown extent 62% · DBH 340 mm",
+    summary: "Crown extent 62%, DBH 340 mm",
     species: { Line: "1", "Life form & desc": "T", "Collection method & desc": "OBS", "Strata & desc": "U", "Macro habitat & desc": "WD", "Association dominance": "Co-dominant", Regeneration: "Yes", "Plant life stage": "Mature | Flowering", "Planted/Released": "No" },
     treeHealth: {
       "Crown extent": "62",

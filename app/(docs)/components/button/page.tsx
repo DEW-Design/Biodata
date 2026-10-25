@@ -129,7 +129,7 @@ export default function ButtonPage() {
                   </Button>
                 </div>
                 <code className="text-xs text-quaternary">
-                  {previewColor} · {previewSize}
+                  {previewColor}, {previewSize}
                 </code>
               </div>
 

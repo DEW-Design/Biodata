@@ -127,7 +127,7 @@ export default function TooltipPage() {
                   </Tooltip>
                 </div>
                 <code className="text-xs text-quaternary">
-                  {previewPlacement} · {previewArrow ? "arrow" : "no arrow"} · {previewDelay}ms{previewDisabled ? " · disabled" : ""}
+                  {previewPlacement}, {previewArrow ? "arrow" : "no arrow"}, {previewDelay}ms{previewDisabled ? ", disabled" : ""}
                 </code>
               </div>
 

@@ -113,7 +113,7 @@ export default function CraftDetailsPage() {
 
       <Detail
         title="One ladder, and each role has one treatment everywhere"
-        values="row title 14/500 primary; supporting lines 12/400 tertiary; eyebrow 12/600 uppercase wide tracking, quaternary; card title 16/600; counts tabular-nums"
+        values="row title 14/500 primary; supporting lines 14/400 tertiary; eyebrow 12/600 uppercase wide tracking, quaternary; card title 16/600; counts tabular-nums"
         held="CONTRACTS 2.9; 2026-09-29-01, 2026-10-23-26. Italic is for scientific names and nothing else; sentence case; text-balance on copy that can wrap; no em dashes."
       >
         A level is one step from the next, and hierarchy comes from what recedes. The same role is never medium in one place and semibold in another.
@@ -126,7 +126,7 @@ export default function CraftDetailsPage() {
               title="Southern Hairy-nosed Wombat"
               subtitle="Lasiorhinus latifrons"
               subtitleItalic
-              meta="Individual · 2026-05-14"
+              meta="Individual, 2026-05-14"
               badge={<Badge size="sm" color="warning">Restricted</Badge>}
               onSelect={() => {}}
             />
@@ -135,9 +135,9 @@ export default function CraftDetailsPage() {
             <dt className="text-tertiary">Title</dt>
             <dd className="m-0 text-primary">14px / 500, text-primary</dd>
             <dt className="text-tertiary">Scientific name</dt>
-            <dd className="m-0 text-primary">12px / 400, text-tertiary, italic</dd>
+            <dd className="m-0 text-primary">14px / 400, text-tertiary, italic</dd>
             <dt className="text-tertiary">Detail</dt>
-            <dd className="m-0 text-primary">12px / 400, text-tertiary</dd>
+            <dd className="m-0 text-primary">14px / 400, text-tertiary</dd>
             <dt className="text-tertiary">Badge</dt>
             <dd className="m-0 text-primary">the design system Badge, size sm</dd>
           </dl>
@@ -165,6 +165,27 @@ export default function CraftDetailsPage() {
         appears, shows while the scroller scrolls and while it is pointed at, and drags. A new scroller needs nothing. A scroll that reaches the end of a list in a floating card does not carry on into the map. The fade is a{" "}
         <code>mask-image</code>, so it works on any background, and it goes at the end of the list: the fade says there is more, the thumb says where and how much. A page&apos;s <code>main</code> still reserves the gutter
         (<code>scrollbar-gutter: stable</code>, CONTRACTS 4.2f), which now costs nothing. <Link href="/patterns/map-list-card">Map list card</Link> has the live list.
+      </Detail>
+
+      <Detail
+        title="The end of a list lands quietly"
+        values="the last row rests 12 above the foot; the room kept for the button 68 to 12 over 200ms; the button 150ms (ease-in as it goes, ease-out as it returns); the fade 200ms ease-out; nothing animates a layout property the person can see move"
+        held="app/pages/_shared/map-search/result-list.tsx (MapResultList), scroll-fade.tsx, globals.css (scroll-fade-ease); 2026-10-25-09. A press at the end, and a wheel that overshoots it, both threw the rows 40 to 56px in one frame."
+      >
+        Where a pinned button needs room under the last row, the room goes with the button and must not move the rows when it does: the end is where the last row has its 12px, not where the extra room has been scrolled
+        through as well, so a press never scrolls past it and a wheel that does glides back over 200ms instead of being cut back in a frame. The button and the fade ease away and come back if the list is scrolled up. Read
+        the end from the rows and the padding as it is this frame, never from a state that the easing is still catching up with, or the two flip each other every frame.
+      </Detail>
+
+      <h2 className="text-balance">Text over a photo</h2>
+
+      <Detail
+        title="A credit in a tooltip: two lines, one licence, inside the card"
+        values="creator 12/600 white, then licence and source 12/500 in the supporting colour; opens above the icon with its right edge on the icon's; about 200px wide in a card of 320"
+        held="Tooltip (components/base/tooltip), SpeciesPhotoCarousel; 2026-10-25-10, -11. A credit in one bold run broke 'CC BY-NC' at its hyphen and spilled off the card onto the map."
+      >
+        Use the tooltip&apos;s own two-line form (a bold title and the supporting line under it), not one sentence in one weight. Keep a licence name on one line (<code>whitespace-nowrap</code>), open the tooltip over the photo
+        and not beside it, and align its end with the icon&apos;s, so the longest credit still fits inside the card. Measure the tooltip&apos;s box against the card&apos;s for every species that has a photo, not for one.
       </Detail>
 
       <h2 className="text-balance">Feedback and motion</h2>

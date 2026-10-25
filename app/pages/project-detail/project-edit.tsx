@@ -421,10 +421,10 @@ function CardDrawer({ id, onClose, onOpenNext }: { id: ProjectCardId; onClose: (
   };
 
   return (
-    <EditDrawer isOpen title={`Edit ${title}`} context={`Project ${meta.code} · ${project.details.shortTitle}`} isDirty={dirty} onClose={onClose}>
+    <EditDrawer isOpen title={`Edit ${title}`} context={`Project ${meta.code} - ${project.details.shortTitle}`} isDirty={dirty} onClose={onClose}>
       {(requestClose): ReactNode => (
         <FormPage
-          eyebrow={`Edit · ${CARD_GROUP[id]}`}
+          eyebrow={`Edit ${CARD_GROUP[id].toLowerCase()}`}
           title={title}
           onCancel={requestClose}
           problems={attempted && missing.length > 0 ? { items: missing } : undefined}
@@ -523,7 +523,7 @@ export function InlineCardEditor({
       <div className="flex items-center justify-between gap-3 px-6 py-4">
         <p className="text-sm text-tertiary">
           Editing <span className="font-semibold text-primary">{title}</span>
-          {dirty && <span className="text-quaternary"> · Unsaved changes</span>}
+          {dirty && <span className="text-quaternary">, unsaved changes</span>}
         </p>
         <div className="flex items-center gap-3">
           <Button iconLeading={XClose} color="secondary" onClick={() => (dirty ? setConfirm(true) : onClose())}>

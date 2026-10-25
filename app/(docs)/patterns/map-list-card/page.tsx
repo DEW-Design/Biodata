@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useState, type ReactNode } from "react";
 import { Tabs } from "react-aria-components";
 import { PageHeader } from "@/components/PageHeader";
@@ -52,7 +53,7 @@ function ListDemo() {
         </ScrollFade>
         <MapResultList total={rows.length} shown={shown} onShowMore={() => setShown((n) => n + LIST_STEP)}>
           {rows.slice(0, shown).map((o) => (
-            <ResultCard key={o.key} icon={SPECIES_GROUP_ICON[o.group!]} title={o.commonName} subtitle={o.species} subtitleItalic meta={`${o.type} · ${o.date}`} onSelect={() => {}} />
+            <ResultCard key={o.key} icon={SPECIES_GROUP_ICON[o.group!]} title={o.commonName} subtitle={o.species} subtitleItalic meta={`${o.type}, ${o.date}`} onSelect={() => {}} />
           ))}
         </MapResultList>
       </section>
@@ -93,7 +94,7 @@ export default function MapListCardPatternPage() {
           <strong>The key</strong> (<code>MapLegend</code>) in its own box under the card, never inside it.
         </li>
         <li>
-          <strong>A summary card</strong> on the map&apos;s right when a row or a dot is chosen (<code>SummaryCloseButton</code>, <code>SummaryFacts</code>), with the zoom buttons above it.
+          <strong>A summary card</strong> on the map&apos;s right when a row or a dot is chosen (<code>SummaryCloseButton</code>, <code>SummaryFacts</code>), with the zoom buttons above it. A species&apos; photo at its head is the design system&apos;s <Link href="/components/carousel">Carousel</Link> when it has more than one photo (<code>SpeciesPhotoCarousel</code>), and its credit is an info icon in the photo&apos;s corner, not a caption under it.
         </li>
       </ul>
 
@@ -109,8 +110,8 @@ export default function MapListCardPatternPage() {
       <ul className="text-balance">
         <li>
           <strong>It fades out at its foot while there is more below,</strong> as the tabs fade at their right edge, over about a row and a half (120px; a row is 76px), so the last record on view is half gone: a row
-          going, not a whole row with its last line faint. The fade is a <code>mask-image</code>, so it works on any background, and it goes at the end of the list and when everything fits. On a short list the
-          fade is never more than 45 per cent of it.
+          going, not a whole row with its last line faint. The fade is a <code>mask-image</code>, so it works on any background, and it goes at the end of the list and when everything fits. It eases out over 200ms
+          rather than snapping, and in again if the list is scrolled back up. On a short list the fade is never more than 45 per cent of it.
         </li>
         <li>
           <strong>Show N more is a secondary Button pinned over the foot,</strong> 16px up from the card&apos;s edge, lifted on the largest shadow. It is outside the scroller (a mask fades its children too), the
@@ -119,8 +120,13 @@ export default function MapListCardPatternPage() {
         </li>
         <li>
           <strong>Wherever the list fades there is a Show N more, and N is true.</strong> While rows have not been drawn yet it says how many the press draws (up to 25); once every row is drawn it says how many are not yet
-          fully in view (a row cut by the fade, under the button or below it), and the press scrolls to the first of them. It goes when the end of the list is in view, so a fade is never left without a way on and a number
+          fully in view (a row cut by the fade, under the button or below it), and the press scrolls to the first of them. It goes when the end of the list is in view (the last row with 12px under it), so a fade is never left without a way on and a number
           to say how far, and a list that fits has neither. A keyboard press moves focus to the first row it brought into view.
+        </li>
+        <li>
+          <strong>The end lands quietly.</strong> While the button is up the list keeps 56px more room under its last row (68px, not 12px) so the last row can scroll clear of it. That room goes with the button, and it
+          moves nothing when it does: the end is where the last row has its 12px, so a press never scrolls further than that, and a wheel that does glides back over 200ms instead of being cut back in one frame. The
+          button (150ms) and the fade (200ms) ease away, and come back the same way if the list is scrolled up. It is the same in Explore and in Map visualise because it is the one component.
         </li>
         <li>
           <strong>The scrollbar is the product&apos;s one: a thin thumb, drawn</strong> (<code>DrawnScrollbars</code>, <code>app/_scrollbars</code>, chosen from four options on this list and then made the scrollbar of every scroller
@@ -143,7 +149,7 @@ export default function MapListCardPatternPage() {
           <SummaryCloseButton onClick={() => {}} />
           <div className="flex flex-col gap-3 p-4">
             <div className="pr-8">
-              <p className="m-0 text-xs font-semibold tracking-wide text-quaternary uppercase">Occurrence · Individual</p>
+              <p className="m-0 text-xs font-semibold tracking-wide text-quaternary uppercase">Occurrence, Individual</p>
               <h3 className="m-0! mt-0.5! text-base! font-semibold! tracking-normal! text-primary! normal-case!">Emu</h3>
               <p className="m-0 text-sm text-tertiary italic">Dromaius novaehollandiae</p>
             </div>

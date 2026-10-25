@@ -8,8 +8,8 @@
 //  - Specs (Elliott and eFishing only) start empty and are picked one at a time from "Add spec",
 //    which lists only that type's specs not added yet.
 //
-// Viewed, a trap type reads as two short lines: effort ("20 traps · 4 nights · 2 hours") and specs
-// ("Length 30 cm · Width 8 cm").
+// Viewed, a trap type reads as two short lines: effort ("20 traps, 4 nights, 2 hours") and specs
+// ("Length 30 cm, Width 8 cm").
 
 import { Plus, Trash01 } from "@untitledui/icons";
 import { Button } from "@/components/base/buttons/button";

@@ -1,0 +1,16 @@
+# 2026-10-25 - Open: the dashboard Home, parked to come back to
+
+- **Oct 25 2026: The dashboard Home (My BioData and the visitor's landing) is parked on purpose; this is the list to pick it up from.** The designer: "Add a point to come back to this at a later date. We'll deal with the dashboard homepage later." Nothing is to be started on it until the designer raises it; when a session opens, or the designer mentions Home, this entry is the one to read and to ask from.
+  - **Where it stands:**
+    1. **Live (`/pages/dashboard`, the Home section of every shell):** the registered user's Home carries the 5 Oct audit's cleaned version ("Your requests", no red count or tab row, Add-menu names on Quick actions, step labels over 4.5:1, sentence case; `2026-10-25-03`). The admin's Home and the visitor's Home are unchanged.
+    2. **In the lab (`/proto/home-cleanup?userRole=<role>`, the Prototype tools bar's "Home" picks the option):** Registered A Live, B Leaner, C Who is acting; BioData Admin A Live, B Cleaned, C Queue first, D Inbox; Public A Live, B Slim invitation, C Ask after the value (`-03` and `-06`). The patterns behind C and D are from Mobbin and are cited in `-05`.
+  - **The decisions waiting, in the order they are best taken:**
+    1. **Registered:** B (Quick actions gone, lower blocks tighter) or C (the groups by who is acting), or neither: and then is Quick actions kept (the Add menu has the same actions)?
+    2. **BioData Admin:** which of B, C or D; whether the 247 user access requests stay on the page while their queue is not built, and if so whether that closed section leads the page or sits last.
+    3. **Public:** A, B or C; if B, the dashboard's title becomes the page's `h1` (the strip is a paragraph).
+    4. **The words:** "Waiting on you", "Waiting on DEW", "Decided"; "Waiting for you" for the admin.
+    5. **Two things that touch more than Home:** the rail's red "3" on the Home icon (it counts the draft, the approved request and the nomination; only the draft is something to do, and the badge is on every screen's rail); and "Completed checklists" in the registered banner, a number with no feature behind it anywhere in the product (a real count, or it goes, 0.3).
+    6. **Not yet built, by design:** deciding on the row and in bulk for the admin (Reddit, AirOps in `-05`): it needs the user access queue, which does not exist, and the DLA and nomination decisions are modals on their own pages.
+  - **What folding a chosen option means (the order, 4.4):** the chosen option moves into `HomeDashboardContent` (or `GuestGradientCard`'s page) from the lab; the other options and their lab lines are deleted; the lab's `production-routes.ts` line stays until then; a decision records why, in the principles' terms; the rail badge and the banner number are settled in the same pass, since they are on the Home page.
+  - **Not part of this, and not parked here:** the behaviours built outside `components/**` (`2026-10-23-70`), the labs that still hold the dot separator (`2026-10-25-04`), and the 89 files not yet committed or pushed since `8af1242`.
+  - **How it is surfaced:** the project memory "Open items to raise next session" names this entry, so the next working session reads it first and asks, once, whether to take Home up or leave it parked.

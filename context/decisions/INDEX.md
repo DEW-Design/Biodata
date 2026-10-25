@@ -581,3 +581,15 @@ Not imported into every session on purpose: read or grep it when a task needs hi
 - [2026-10-23] Explore parks form: no Done, no title, it leaves like a popover - `2026-10-23-67-explore-parks-form-no-done-no-title-it.md`
 - [2026-10-23] One scrollbar for every scroller in the product: the drawn thumb, built once - `2026-10-23-68-one-scrollbar-for-every-scroller-in-the-product.md`
 - [2026-10-23] The report's dropdowns take the design system's label above them; Select inlineLabel removed - `2026-10-23-69-the-report-s-dropdowns-take-the-design-system.md`
+- [2026-10-23] Behaviour is a component: contract 1.10, and the behaviours built outside components today - `2026-10-23-70-behaviour-is-a-component-contract-1-10-and.md`
+- [2026-10-25] Species tab cards: a restricted species' card has the same rhythm as every other - `2026-10-25-01-species-tab-cards-a-restricted-species-card-has.md`
+- [2026-10-25] No dot between pieces of text: contract 2.3c, ratcheted, the conversion waits on the replacement - `2026-10-25-02-no-dot-between-pieces-of-text-contract-2.md`
+- [2026-10-25] My BioData landing: the 5 Oct audit folded into the live Home, and Home options for the three roles in the lab - `2026-10-25-03-my-biodata-landing-the-5-oct-audit-folded.md`
+- [2026-10-25] The dot separator is gone from the webapp: the approved mapping applied to 157 lines - `2026-10-25-04-the-dot-separator-is-gone-from-the-webapp.md`
+- [2026-10-25] Home patterns from Mobbin, by what each role is asking: proposed, nothing built - `2026-10-25-05-home-patterns-from-mobbin-by-what-each-role.md`
+- [2026-10-25] Home: the Mobbin patterns built as lab options for the three roles - `2026-10-25-06-home-the-mobbin-patterns-built-as-lab-options.md`
+- [2026-10-25] Open: the dashboard Home, parked to come back to - `2026-10-25-07-open-the-dashboard-home-parked-to-come-back.md`
+- [2026-10-25] Result card metadata: the two grey lines at 14px - `2026-10-25-08-result-card-metadata-the-two-grey-lines-at.md`
+- [2026-10-25] The end of a map-card list lands quietly: no jump, the button and the fade ease away - `2026-10-25-09-the-end-of-a-map-card-list-lands.md`
+- [2026-10-25] Carousel ingested into the design system; the species photo is a Carousel with its credit as an info icon - `2026-10-25-10-carousel-ingested-into-the-design-system-the-species.md`
+- [2026-10-25] The photo credit's tooltip stays inside the card and reads in two lines - `2026-10-25-11-the-photo-credit-s-tooltip-stays-inside-the.md`

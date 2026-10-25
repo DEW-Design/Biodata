@@ -41,6 +41,7 @@ export const rawNav: NavSection[] = [
       { title: "Badge", href: "/components/badge", description: "Status labels - pill and badge-colour styles, 5 documented colours, dot/icon/dismiss variants." },
       { title: "Button", href: "/components/button", description: "Primary action trigger - 8 colour variants, 5 sizes, icon and loading states." },
       { title: "Button utility", href: "/components/button-utility", description: "Icon-only button for toolbars and row actions - secondary and tertiary colours, two sizes, tooltip that doubles as the accessible name, optional link." },
+      { title: "Carousel", href: "/components/carousel", description: "Pages through slides of one kind - Embla-based and headless: arrows, dot indicators, swipe and arrow keys, horizontal or vertical, no autoplay. Replaces the hand-built species photo carousel." },
       { title: "Checkbox", href: "/components/checkbox", description: "Binary selection control with an indeterminate state and two sizes." },
       { title: "Dropdown", href: "/components/dropdown", description: "Menu built on React Aria - icon items, sections, and checkmark/checkbox/radio/toggle selection indicators." },
       { title: "Input", href: "/components/input", description: "Text field plus specialised variants - password, date, number, payment, tags, file upload, PIN." },

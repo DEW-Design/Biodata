@@ -401,7 +401,7 @@ function CommentCard({
         <>
           <p className="text-sm text-balance text-primary">{comment.text}</p>
           <Meta>
-            {comment.author} · {comment.date}
+            {comment.author}, {comment.date}
           </Meta>
         </>
       )}
@@ -475,7 +475,7 @@ function QuestionableCard({
         <>
           <p className="text-sm text-balance text-primary">{flag.reason}</p>
           <Meta>
-            {flag.by} · {flag.date}
+            {flag.by}, {flag.date}
           </Meta>
         </>
       )}
@@ -520,7 +520,7 @@ function ResolvedCard({ notes }: { notes: FieldNotes }) {
       <CardHeader icon={Check} title="Resolved" />
       <p className="text-sm text-balance text-secondary">{r.reason}</p>
       <Meta>
-        {r.by} · {r.date} · it had been questioned as: &ldquo;{r.flagReason}
+        {r.by}, {r.date}. It had been questioned as: &ldquo;{r.flagReason}
         &rdquo;
       </Meta>
     </CardShell>

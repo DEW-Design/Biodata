@@ -246,6 +246,8 @@ const ratchetRules = [
   },
   { id: "2.3a", name: "em-dash", test: (line) => /—/.test(line) },
   { id: "2.3b", name: "arrow character", test: (line) => /[←-↓⇒]/.test(line) },
+  // 2.3c: no dot between pieces of text. The middle dot, as the character, as its escape in a string, or as an entity; comments are not copy.
+  { id: "2.3c", name: "middle-dot separator", test: (line) => !isComment(line) && /\u00b7|\\u00b7|&middot;/i.test(line) },
 ];
 
 // 2.1c: app/globals.css's own --color-* primitives must match contracts/figma-colours.json exactly.
@@ -462,6 +464,13 @@ export function runChecks() {
     // Comments are stripped first: a comment that names `ghost-fill` is not the class.
     const code = readFileSync(join(ROOT, f), "utf8").replace(/\/\*[\s\S]*?\*\/|^\s*\/\/.*$/gm, "");
     if (!/\bghost-fill\b/.test(code) || !/\bhit-area\b/.test(code)) violations.push({ clause: "2.16c", file: f, message: "A ghost control has lost `ghost-fill` or its `hit-area`: it draws a 32px box (padding and negative margin from one utility, never set by hand) and keeps a 40px target (CONTRACTS.md 2.16)." });
+  }
+
+  // 1.10 behaviour is a component: the root layout renders components from components/** only. A behaviour built elsewhere and mounted from the layout is named here as open, not hidden; the designer decides its move (1.4).
+  const OPEN_1_10 = ["@/app/_scrollbars/drawn-scrollbars"];
+  const layout110 = readFileSync(join(ROOT, "app/layout.tsx"), "utf8").replace(/\/\*[\s\S]*?\*\/|^\s*\/\/.*$/gm, "");
+  for (const m of layout110.matchAll(/from\s+"(@\/app\/[^"]+)"/g)) {
+    if (!OPEN_1_10.includes(m[1])) violations.push({ clause: "1.10", file: "app/layout.tsx", message: `The root layout renders ${m[1]}, which is built under app/. A behaviour or element more than one screen has is a component and is built in components/** with the designer's override (CONTRACTS.md 1.10, 1.4).` });
   }
 
   // 2.17 one scrollbar: the browser's bar is off in one global rule and one component draws the thumb for every scroller. Neither may go, and no scroller makes its own (comments stripped).

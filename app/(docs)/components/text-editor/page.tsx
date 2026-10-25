@@ -153,7 +153,7 @@ export default function TextEditorPage() {
                   </TextEditor.Root>
                 </div>
                 <code className="text-xs text-quaternary">
-                  {previewType} toolbar · {previewInvalid ? "invalid" : "valid"} · {previewDisabled ? "disabled" : "enabled"}
+                  {previewType} toolbar, {previewInvalid ? "invalid" : "valid"}, {previewDisabled ? "disabled" : "enabled"}
                 </code>
               </div>
 

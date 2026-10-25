@@ -179,5 +179,5 @@ Supabase pattern catalog gathered earlier is in the archive.
 Per the designer, Home for a `registered-user` is a personal tracker, not a BI surface: their DLA requests,
 their sensitive species nominations, the datasets they uploaded, and the projects they created, with adding
 data to an existing project as the core recurring action. DLA requests and nominations already surface in
-"Needs your attention" (`app/pages/_shared/home-dashboard.tsx`); check that file for what else is built
+"Your requests" (`app/pages/_shared/home-dashboard.tsx`; called "Needs your attention" until 25 Oct 2026, when it was found to list nothing the person had to do); check that file for what else is built
 before extending it.

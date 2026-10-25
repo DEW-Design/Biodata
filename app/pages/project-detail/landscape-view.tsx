@@ -218,7 +218,7 @@ export function overstoreyStats(o: OverstoreyData) {
 export function foliageCoverText(v: string): string {
   const n = num(v);
   return Number.isFinite(n)
-    ? `${n}% · ${foliageCoverClass(n)}`
+    ? `${n}%, ${foliageCoverClass(n)}`
     : "Not provided";
 }
 

@@ -71,7 +71,7 @@ import { useRoleHref } from "@/lib/use-role-href";
 //   justification for each attribute. Also for each location ... we cannot annoy the users by asking justification for every
 //   field when its the same justification for all"). Each attribute, and each area of a Location attribute, is justified where it
 //   is chosen. Since 14 Oct 2026 (the designer chose it from three patterns): one "Main reason", asked before the attributes,
-//   covers every attribute and area; each item shows "Uses the main reason · Write a different one", and the link opens that
+//   covers every attribute and area; each item shows "Uses the main reason" and a "Write a different one" link, and the link opens that
 //   item's own field, with "Use the main one instead" to close it (the inherited-value pattern). The word is "reason" everywhere
 //   on screen, never "justification" (the designer: "don't juggle between justification and reason"); the code keeps the
 //   `justification` field name. "All data" and a location
@@ -350,9 +350,6 @@ export function NominationForm({
       return (
         <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm">
           <span className="text-tertiary">Uses the main reason</span>
-          <span aria-hidden className="text-quaternary">
-            ·
-          </span>
           <Button color="link-color" size="sm" onPress={() => setOwnFor(key, "")}>
             Write a different one
           </Button>

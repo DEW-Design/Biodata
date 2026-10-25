@@ -3,7 +3,7 @@
 // Reviewing flagged concepts: the admin's management screen for this project (29 Sept 2026).
 // A flagged concept is a value on a survey record that has been marked questionable. It is
 // management work, not a view of the records, so it is not a tab: Project records shows a banner
-// ("N flagged concepts need review across this project · Review") that opens this screen, and the
+// ("N flagged concepts need review across this project", with its Review action) that opens this screen, and the
 // admin's Home lists the oldest ones across projects.
 //
 // The screen follows the DSA and DLA forms (CONTRACTS 4.1): column 2 is the queue, the way a form's
@@ -338,7 +338,7 @@ export function ReviewScreen({
     const next = items[index + 1] ?? items[index - 1];
     select(next?.id);
     toast.success(`${entry.field} resolved`, {
-      description: `${entry.recordCode} · ${entry.recordName}, ${entry.projectName}. The reason is kept with the concept.`,
+      description: `${entry.recordCode} - ${entry.recordName}, ${entry.projectName}. The reason is kept with the concept.`,
       actionLabel: "Undo",
       onAction: () => {
         undo();
@@ -386,7 +386,7 @@ export function ReviewScreen({
             </span>
           </div>
           <span className="truncate pl-[22px] text-xs text-tertiary">
-            {item.recordCode} · {item.recordName}
+            {item.recordCode} - {item.recordName}
           </span>
         </>
       )}
@@ -419,7 +419,7 @@ export function ReviewScreen({
             <p className="text-xs text-balance text-tertiary">
               {open.length === 0
                 ? "All resolved"
-                : `${open.length} open across ${recordsAffected} record${recordsAffected === 1 ? "" : "s"}${showProjects ? ` in ${projectsAffected} project${projectsAffected === 1 ? "" : "s"}` : ""} · ${resolved.length} resolved`}
+                : `${open.length} open across ${recordsAffected} record${recordsAffected === 1 ? "" : "s"}${showProjects ? ` in ${projectsAffected} project${projectsAffected === 1 ? "" : "s"}` : ""}, ${resolved.length} resolved`}
             </p>
           </div>
           {showProjects && onProjectFilterChange && (
@@ -430,7 +430,7 @@ export function ReviewScreen({
               items={projectOptions.map((p) => ({
                 id: p.code,
                 label: p.name,
-                supportingText: `${p.code} · ${p.open} open`,
+                supportingText: `${p.code}, ${p.open} open`,
               }))}
               selectedKeys={new Set(projectFilter ?? [])}
               onSelectionChange={(keys) => {
@@ -573,8 +573,8 @@ export function ReviewScreen({
                 <p className="text-sm text-primary">
                   {selected.projectName}
                   <span className="text-tertiary">
-                    {" "}
-                    · {selected.projectCode}
+                    
+                    , {selected.projectCode}
                   </span>
                 </p>
               </FormRow>
@@ -590,7 +590,7 @@ export function ReviewScreen({
                     className="size-4 shrink-0 text-fg-quaternary"
                   />
                   <span className="truncate">
-                    {selected.recordCode} · {selected.recordName}
+                    {selected.recordCode} - {selected.recordName}
                   </span>
                   <span className="text-xs text-tertiary">
                     {selected.recordType}
@@ -682,7 +682,7 @@ export function ReviewScreen({
                   {selected.reason}
                 </p>
                 <p className="text-xs text-tertiary">
-                  {selected.by} · {selected.date}
+                  {selected.by}, {selected.date}
                 </p>
                 {status === "resolved" && selected.flagReason && (
                   <p className="text-xs text-tertiary">
@@ -705,7 +705,7 @@ export function ReviewScreen({
                         {selected.comment.text}
                       </p>
                       <p className="text-xs text-tertiary">
-                        {selected.comment.author} · {selected.comment.date}
+                        {selected.comment.author}, {selected.comment.date}
                       </p>
                     </div>
                   </div>

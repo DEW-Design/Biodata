@@ -134,7 +134,7 @@ export function NtDetail({
     <div className="flex min-h-0 flex-1 flex-col overflow-y-auto">
       <RecordBackLink href={roleHref(root)}>Back to notifications</RecordBackLink>
 
-      <RecordHero eyebrow={`Notification · ${n.category || "No category"}`} title={n.name || n.id} description={n.description || undefined} actions={<RecordActionBar onDark primary={edit} menu={menu} />}>
+      <RecordHero eyebrow={`Notification, ${n.category || "No category"}`} title={n.name || n.id} description={n.description || undefined} actions={<RecordActionBar onDark primary={edit} menu={menu} />}>
         <HeroMeta label="ID">
           <span className="tabular-nums">{n.id}</span>
         </HeroMeta>
@@ -250,7 +250,7 @@ export function NtDetail({
             </Card>
             <Card>
               <RecordRow label="Template">
-                {ntTemplate(n.template).name} <span className="text-tertiary">· {ntTemplate(n.template).brand}</span>
+                {ntTemplate(n.template).name}<span className="text-tertiary">, {ntTemplate(n.template).brand}</span>
               </RecordRow>
               <RecordRow label="Classification">{SENSITIVITY[n.sensitivity].label}</RecordRow>
               <RecordRow label="Attachments">{n.attachments.length ? n.attachments.map((a) => `${a.name} (${formatBytes(a.size)})`).join(", ") : "None"}</RecordRow>

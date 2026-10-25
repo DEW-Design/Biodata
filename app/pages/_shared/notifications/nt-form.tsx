@@ -591,7 +591,7 @@ export function NtForm({
                     title: (
                       <span className="text-sm text-secondary">
                         From {draft.fromName.trim() || "BioData SA"}
-                        {draft.replyTo.trim() ? `, replies to ${draft.replyTo.trim()}` : ""} · Sent emails {logSummary(draft).charAt(0).toLowerCase() + logSummary(draft).slice(1)}
+                        {draft.replyTo.trim() ? `, replies to ${draft.replyTo.trim()}` : ""}, sent emails {logSummary(draft).charAt(0).toLowerCase() + logSummary(draft).slice(1)}
                       </span>
                     ),
                     content: (

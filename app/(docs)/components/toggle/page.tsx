@@ -120,7 +120,7 @@ export default function TogglePage() {
                   />
                 </div>
                 <code className="text-xs text-quaternary">
-                  {previewSize} · {previewSlim ? "slim" : "default"}
+                  {previewSize}, {previewSlim ? "slim" : "default"}
                 </code>
               </div>
 
@@ -186,19 +186,19 @@ export default function TogglePage() {
           <Section label="Default / slim - off / on">
             <div className="flex flex-col items-center gap-2">
               <Toggle aria-label="Default off" />
-              <code className="text-xs">default · off</code>
+              <code className="text-xs">default, off</code>
             </div>
             <div className="flex flex-col items-center gap-2">
               <Toggle aria-label="Default on" defaultSelected />
-              <code className="text-xs">default · on</code>
+              <code className="text-xs">default, on</code>
             </div>
             <div className="flex flex-col items-center gap-2">
               <Toggle slim aria-label="Slim off" />
-              <code className="text-xs">slim · off</code>
+              <code className="text-xs">slim, off</code>
             </div>
             <div className="flex flex-col items-center gap-2">
               <Toggle slim aria-label="Slim on" defaultSelected />
-              <code className="text-xs">slim · on</code>
+              <code className="text-xs">slim, on</code>
             </div>
           </Section>
         </>

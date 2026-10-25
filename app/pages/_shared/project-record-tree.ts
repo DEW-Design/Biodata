@@ -17,7 +17,7 @@ export interface RecordNode {
   children?: RecordNode[];
 }
 
-// "Observation OBS094 · Individual" (id "obs-094") is the one node with a real page behind it -
+// "Observation OBS094, Individual" (id "obs-094") is the one node with a real page behind it -
 // app/pages/observation-detail. Every other node is honest content with nowhere real to go yet.
 export const projectRecordTree: RecordNode[] = [
   {
@@ -38,26 +38,26 @@ export const projectRecordTree: RecordNode[] = [
               {
                 id: "occ-individual",
                 type: "Occurrences",
-                label: "Occurrence OCC00501 · Individual",
-                children: [{ id: "obs-094", type: "Observations", label: "Observation OBS094 · Individual" }],
+                label: "Occurrence OCC00501, Individual",
+                children: [{ id: "obs-094", type: "Observations", label: "Observation OBS094, Individual" }],
               },
               {
                 id: "occ-population",
                 type: "Occurrences",
-                label: "Occurrence OCC00502 · Population",
-                children: [{ id: "obs-population", type: "Observations", label: "Observation OBS096 · Population" }],
+                label: "Occurrence OCC00502, Population",
+                children: [{ id: "obs-population", type: "Observations", label: "Observation OBS096, Population" }],
               },
               {
                 id: "occ-nonbiotic",
                 type: "Occurrences",
-                label: "Occurrence OCC00503 · Non-biotic",
-                children: [{ id: "obs-nonbiotic", type: "Observations", label: "Observation OBS097 · Non-biotic" }],
+                label: "Occurrence OCC00503, Non-biotic",
+                children: [{ id: "obs-nonbiotic", type: "Observations", label: "Observation OBS097, Non-biotic" }],
               },
               {
                 id: "occ-community",
                 type: "Occurrences",
-                label: "Occurrence OCC00504 · Community",
-                children: [{ id: "obs-community", type: "Observations", label: "Observation OBS098 · Community" }],
+                label: "Occurrence OCC00504, Community",
+                children: [{ id: "obs-community", type: "Observations", label: "Observation OBS098, Community" }],
               },
               { id: "transect", type: "Transects", label: "Transect TR00501" },
               { id: "quadrat", type: "Quadrats", label: "Quadrat QR00501" },
@@ -72,8 +72,8 @@ export const projectRecordTree: RecordNode[] = [
               {
                 id: "occ-095",
                 type: "Occurrences",
-                label: "Occurrence OCC00505 · Individual",
-                children: [{ id: "visit-obs", type: "Observations", label: "Observation OBS095 · Individual" }],
+                label: "Occurrence OCC00505, Individual",
+                children: [{ id: "visit-obs", type: "Observations", label: "Observation OBS095, Individual" }],
               },
             ],
           },
@@ -92,14 +92,14 @@ export const projectRecordTree: RecordNode[] = [
               {
                 id: "inc-occ-1",
                 type: "Occurrences",
-                label: "Occurrence OCC00777 · Individual",
-                children: [{ id: "inc-obs-1", type: "Observations", label: "Observation INC-0231 · Individual" }],
+                label: "Occurrence OCC00777, Individual",
+                children: [{ id: "inc-obs-1", type: "Observations", label: "Observation INC-0231, Individual" }],
               },
               {
                 id: "inc-occ-2",
                 type: "Occurrences",
-                label: "Occurrence OCC00778 · Community",
-                children: [{ id: "inc-obs-2", type: "Observations", label: "Observation INC-0232 · Community" }],
+                label: "Occurrence OCC00778, Community",
+                children: [{ id: "inc-obs-2", type: "Observations", label: "Observation INC-0232, Community" }],
               },
             ],
           },

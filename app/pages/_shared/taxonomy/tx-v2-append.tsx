@@ -332,7 +332,7 @@ export function AppendTaxonForm({
       }
     }
     toast.success(`${target.rank} appended`, {
-      description: `${target.name} · ${nsx}`,
+      description: `${target.name}, ${nsx}`,
     });
     router.push(roleHref(nodeHref(target.id)));
   };

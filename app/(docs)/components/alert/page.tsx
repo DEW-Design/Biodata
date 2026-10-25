@@ -166,7 +166,7 @@ export default function AlertPage() {
                   </div>
                 )}
                 <code className="text-xs text-quaternary">
-                  {previewType} · {previewColor}
+                  {previewType}, {previewColor}
                 </code>
               </div>
 

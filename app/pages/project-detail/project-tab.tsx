@@ -131,7 +131,7 @@ function Person({ name, role, team, email, phone, primary }: { name: string; rol
             Primary
           </Badge>
         )}
-        {role && <span className="font-normal text-tertiary">· {role}</span>}
+        {role && <span className="font-normal text-tertiary">{role}</span>}
       </p>
       {team && <p className="text-xs text-tertiary">{team}</p>}
       <div className="flex min-w-0 flex-wrap items-center gap-x-4 gap-y-1 text-sm text-tertiary">
@@ -810,7 +810,7 @@ export function ProjectTab({
                 />
               </div>
               {circle && (
-                <ExpandableMap title={`${d.shortTitle} · geographic extent`} boundaries={[{ id: "project-extent", kind: "circle", center: circle.center, radiusKm: circle.radiusKm }]} onBoundaryAdd={() => {}} activeDrawTool={null} onDrawToolChange={() => {}} className="h-64 w-full lg:h-full lg:min-h-64" />
+                <ExpandableMap title={`${d.shortTitle}, geographic extent`} boundaries={[{ id: "project-extent", kind: "circle", center: circle.center, radiusKm: circle.radiusKm }]} onBoundaryAdd={() => {}} activeDrawTool={null} onDrawToolChange={() => {}} className="h-64 w-full lg:h-full lg:min-h-64" />
               )}
             </div>
           </Card>

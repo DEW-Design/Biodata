@@ -76,13 +76,13 @@ function Review({ type, draft }: { type: ChangeType; draft: ChangeDraft }) {
       <div className="grid items-center gap-4 rounded-xl bg-secondary p-5 ring-1 ring-secondary ring-inset md:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)]">
         <div className="flex flex-col gap-2">
           <p className="text-xs font-semibold tracking-wide text-quaternary uppercase">Before</p>
-          {before.length ? before.map((t) => <ReviewTaxon key={t.id} name={t.scientific} note={`${t.nsx ?? ""} · current`} muted={type !== "rename"} />) : <p className="text-sm text-tertiary">Not in the taxonomy yet</p>}
+          {before.length ? before.map((t) => <ReviewTaxon key={t.id} name={t.scientific} note={`${t.nsx ?? ""}, current`} muted={type !== "rename"} />) : <p className="text-sm text-tertiary">Not in the taxonomy yet</p>}
         </div>
         <ArrowNarrowRight className="size-5 justify-self-center text-fg-quaternary max-md:rotate-90" aria-hidden />
         <div className="flex flex-col gap-2">
           <p className="text-xs font-semibold tracking-wide text-quaternary uppercase">After</p>
           {after.map((name, i) => (
-            <ReviewTaxon key={i} name={name} note={type === "rename" ? `${before[0]?.nsx ?? ""} · current` : `${(type === "split" ? draft.splitInto[i]?.nsx : draft.next.nsx)?.trim() ?? ""} · new`} />
+            <ReviewTaxon key={i} name={name} note={type === "rename" ? `${before[0]?.nsx ?? ""}, current` : `${(type === "split" ? draft.splitInto[i]?.nsx : draft.next.nsx)?.trim() ?? ""}, new`} />
           ))}
         </div>
       </div>
@@ -166,7 +166,7 @@ export function TaxonChangeFlow({ initialType, from }: { initialType: ChangeType
         />
       </FormSidebar>
       <FormPage
-        eyebrow={meta ? `${meta.verb} · ${meta.shape}` : undefined}
+        eyebrow={meta ? `${meta.verb}, ${meta.shape}` : undefined}
         title={step === "review" ? "Review and commit" : sections.find((s) => s.id === step)?.title ?? ""}
         subtitle={step === "type" ? "What should happen to the taxonomy?" : meta?.summary}
         onCancel={() => (visited.size > 1 || type ? setConfirmLeave(true) : leave())}
