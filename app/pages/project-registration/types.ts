@@ -66,7 +66,13 @@ export function emptyProjectManager(id: number): ProjectManager {
 export interface ProjectContact extends ProjectManager {
     /** No longer asked or read: a manager is the Project Manager role (`isManager` in option-2/sections.ts). */
     isManager: boolean;
+    /** What this person can do on the project (lab `/proto/project-access`, 25 Oct 2026). Optional so stored projects still
+     *  read; a Project Manager is always "full", whatever is stored (`accessOf`). */
+    access?: ProjectAccessLevel;
 }
+
+/** What a project contact can do on the project. Read through `accessOf` (data.ts). */
+export type ProjectAccessLevel = "full" | "records" | "view";
 
 export function emptyProjectContact(id: number): ProjectContact {
     return { ...emptyProjectManager(id), isManager: false };
@@ -99,6 +105,10 @@ export interface ProjectDetailsState {
     projectManagers: ProjectManager[];
     /** Version 2 of option 2 only (see `ProjectContact`). Optional, so a project saved before it existed still reads. */
     projectContacts?: ProjectContact[];
+    /** What each person on the project can do, by lower-case email (the project page's Project access tab; set from Project
+     *  contacts when a project is created). A person with no entry is View only; a project manager is always Full control.
+     *  Kept apart from the contact lists so editing a contact never loses it. Optional, so older projects still read. */
+    projectAccess?: Record<string, ProjectAccessLevel>;
 }
 
 export function initialProjectDetails(): ProjectDetailsState {
@@ -136,8 +146,11 @@ export interface GeoExtentValue {
     shapefileName?: string;
     /** Set by "Draw on the Map" or "Coordinates". */
     boundary?: Boundary | null;
-    /** Set by "Choose from a List" - the selected national park's id. */
+    /** Set by "Choose from a List" - the chosen Named location entry's id (a national park's id on choices saved before the
+     *  list was a vocabulary). */
     parkId?: string;
+    /** The chosen place's name, kept with the choice so it reads without the vocabulary. */
+    listName?: string;
 }
 
 export function emptyGeoExtent(): GeoExtentValue {
@@ -158,7 +171,7 @@ export function isGeoExtentComplete(extent: GeoExtentValue): boolean {
  *  which survey type they belong to (they do not carry that yet). */
 export type SurveyType = "biological" | "native-vegetation";
 
-export type CollectionMethod = "incidental" | "systematic" | "unknown" | "other";
+export type CollectionMethod = "incidental" | "systematic" | "analysis" | "unknown" | "other";
 
 export interface PermitRow {
     id: number;
@@ -199,6 +212,10 @@ export interface DataCollectionState {
     /** Version 2 of option 2 only: the methodologies added (a Systematic project), in the order added, each with its note.
      *  On create they are also written out as `methodDetails` and `limitationsAndBiases`, which the project page reads. */
     methodologies?: MethodologyChoice[];
+    /** The same for an Analysis/Reporting project: the kinds of analysis or reporting added, each with its note. */
+    analyses?: MethodologyChoice[];
+    /** The description an Other method must have (the designer, 25 Oct 2026). */
+    otherMethod?: string;
 }
 
 export function initialDataCollection(): DataCollectionState {
@@ -221,7 +238,11 @@ export function initialDataCollection(): DataCollectionState {
 
 // ── Step 3: Privacy and Restrictions ──
 
-export type RestrictionTypeKey = "embargo" | "species" | "locations" | "metadata" | "other";
+export type RestrictionTypeKey = "embargo" | "species" | "cultural" | "locations" | "all" | "metadata" | "other";
+
+/** What the person expects the restriction to be (the designer, 25 Oct 2026: "Expectations data restrictions"). An expectation
+ *  only: a BioData Admin decides the level after an internal review. */
+export type ExpectedRestriction = "1km" | "10km" | "government";
 
 export type EmbargoType = "publication" | "completion" | "cultural" | "other";
 
@@ -235,10 +256,12 @@ export interface EmbargoState {
     typeOther: string;
     reason: string;
     endDate: DateValue | null;
+    /** Any other sensitivity of the data to consider once the embargo has ended. Optional; older projects have none. */
+    afterEmbargo?: string;
 }
 
 export function emptyEmbargo(): EmbargoState {
-    return { types: [], typeOther: "", reason: "", endDate: null };
+    return { types: [], typeOther: "", reason: "", endDate: null, afterEmbargo: "" };
 }
 
 /** "Restrict all concepts" vs. "restrict only the concepts I pick" - the one choice a species
@@ -270,6 +293,7 @@ export interface SpeciesRestrictionEntry {
     scope: ConceptScope;
     concepts: ConceptValueRow[];
     justification: string;
+    expectation?: ExpectedRestriction | null;
 }
 
 export interface LocationRestrictionEntry {
@@ -277,6 +301,31 @@ export interface LocationRestrictionEntry {
     name: string;
     extent: GeoExtentValue;
     justification: string;
+    expectation?: ExpectedRestriction | null;
+}
+
+/** "Restrict data based on Cultural Sensitivities": who speaks for the data, and why it is restricted. */
+export interface CulturalRestrictionState {
+    /** The Indigenous Information Authority. */
+    authority: string;
+    /** How to reach the Indigenous Information Authority. */
+    contact: string;
+    justification: string;
+    expectation: ExpectedRestriction | null;
+}
+
+export function emptyCulturalRestriction(): CulturalRestrictionState {
+    return { authority: "", contact: "", justification: "", expectation: null };
+}
+
+/** "Restrict all records within this Project". */
+export interface AllRecordsRestrictionState {
+    justification: string;
+    expectation: ExpectedRestriction | null;
+}
+
+export function emptyAllRecordsRestriction(): AllRecordsRestrictionState {
+    return { justification: "", expectation: null };
 }
 
 export interface MetadataRestrictionState {
@@ -296,7 +345,13 @@ export interface RestrictionsState {
     locations: LocationRestrictionEntry[];
     metadata: MetadataRestrictionState;
     otherRestrictions: string;
+    /** Optional so a project saved before these kinds existed still reads; read them with `culturalOf` and `allRecordsOf`. */
+    cultural?: CulturalRestrictionState;
+    allRecords?: AllRecordsRestrictionState;
 }
+
+export const culturalOf = (r: RestrictionsState): CulturalRestrictionState => r.cultural ?? emptyCulturalRestriction();
+export const allRecordsOf = (r: RestrictionsState): AllRecordsRestrictionState => r.allRecords ?? emptyAllRecordsRestriction();
 
 export function initialRestrictions(): RestrictionsState {
     return {
@@ -307,5 +362,7 @@ export function initialRestrictions(): RestrictionsState {
         locations: [],
         metadata: initialMetadataRestriction(),
         otherRestrictions: "",
+        cultural: emptyCulturalRestriction(),
+        allRecords: emptyAllRecordsRestriction(),
     };
 }

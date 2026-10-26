@@ -12,9 +12,8 @@
 // - Fields carry notes (flags, comments, files), read here; on hover an edit icon opens that field in
 //   the full view's edit mode, where notes are added (field-notes.tsx).
 
-import { useEffect, useRef, useState, type Key as ReactKey, type ReactNode } from "react";
-import { SubmenuTrigger, type Key } from "react-aria-components";
-import { Activity, ChevronDownDouble, ChevronRight, ChevronUpDouble, DotsVertical, Edit02, Eye, Flag01, Folder, InfoCircle, Maximize02, MessageSquare01, Minimize02, Paperclip, Target05, Trash01 } from "@untitledui/icons";
+import { useEffect, useRef, useState, type FC, type Key as ReactKey } from "react";
+import { ChevronDown, ChevronDownDouble, ChevronRight, ChevronUpDouble, Edit05, Flag01, InfoCircle, Maximize02, MessageSquare01, Minimize02, Paperclip, Plus, Trash01 } from "@untitledui/icons";
 import { Accordion } from "@/components/base/accordion/accordion";
 import { Button } from "@/components/base/buttons/button";
 import { cx } from "@/utils/cx";
@@ -26,6 +25,8 @@ import { SpeciesPhoto } from "@/app/pages/_shared/map-search/species-photo";
 import { LocationDetailsTable } from "@/app/pages/_shared/location-details-table";
 import { useEditStore } from "./edit-store";
 import { ProjectCrumb, RecordIcon, recordIcon } from "./record-inspector";
+import { EventShape, ObservationShape, OccurrenceShape, typeLabel } from "@/app/pages/_shared/record-shapes";
+import { RecordQuickActions } from "./record-quick-actions";
 import {
   EMPTY_VALUES,
   displayValue,
@@ -38,7 +39,7 @@ import {
 } from "./field-schema";
 import { RecordMap } from "./record-map";
 import { flashElement } from "./flash";
-import { childOptions, type ChildOption } from "./record-rules";
+import { type ChildOption } from "./record-rules";
 import {
   formatDate,
   type MetaSection,
@@ -73,7 +74,7 @@ const iconButton =
 
 /**
  * A section's fields (and its map, for location), each with its notes. Hidden fields (the edit view's
- * "Fields shown" checklist) are left out. `onEditField` gives every field an edit icon on hover.
+ * "Concepts shown" checklist) are left out. `onEditField` gives every field an edit icon on hover.
  */
 export function SectionFields({
   record,
@@ -351,7 +352,7 @@ export function SectionTitle({
       {s.flags > 0 && (
         <span
           className={cx(NOTE_MARK, NOTE_TONE.flag)}
-          title={`${s.flags} flagged field${s.flags === 1 ? "" : "s"}`}
+          title={`${s.flags} flagged concept${s.flags === 1 ? "" : "s"}`}
         >
           <Flag01 className="size-3" />
           {s.flags}
@@ -437,7 +438,7 @@ export function Path({
                   <Dropdown.Item
                     key={a.id}
                     id={a.id}
-                    label={`${a.code} · ${a.name}`}
+                    label={a.name}
                     icon={recordIcon(a)}
                   />
                 ))}
@@ -449,7 +450,7 @@ export function Path({
       {shown.map((a) => (
         <span key={a.id} className="flex min-w-0 items-center gap-1">
           <ChevronRight className="size-3 shrink-0 text-fg-quaternary" />
-          {crumb(a.code, () => onSelect(a.id), a.name)}
+          {crumb(a.name, () => onSelect(a.id), `${typeLabel(a)}, ${a.code}`)}
         </span>
       ))}
       {current && (
@@ -460,7 +461,7 @@ export function Path({
             title={current.name}
             className="truncate px-1 py-0.5 font-medium text-primary"
           >
-            {current.code} · {current.name}
+            {current.name}
           </span>
         </span>
       )}
@@ -468,110 +469,69 @@ export function Path({
   );
 }
 
-const KIND_MENU: { kind: RecordKind; label: string; icon: typeof Activity }[] =
+const KIND_MENU: { kind: RecordKind; label: string; icon: FC<{ className?: string }> }[] =
   [
-    { kind: "event", label: "Events", icon: Activity },
-    { kind: "occurrence", label: "Occurrences", icon: Target05 },
-    { kind: "observation", label: "Observations", icon: Eye },
+    { kind: "event", label: "Events", icon: EventShape },
+    { kind: "occurrence", label: "Occurrences", icon: OccurrenceShape },
+    { kind: "observation", label: "Observations", icon: ObservationShape },
   ];
 
 /**
- * Every action on the record, in one menu: Edit record; Add inside, as Events, Occurrences and
- * Observations, each opening its types (the same grouping as the Record type filter); and Delete,
- * set apart below a divider and shown in the error colour, because it can't be undone.
+ * Add a record inside this one: one button, one menu. The types are listed under Events, Occurrences and
+ * Observations, each marked with the tree's shape, so a type is one click away instead of two levels down.
  */
-export function ActionsMenu({
+export function AddRecordMenu({
   options,
-  onEdit,
   onAdd,
-  onDelete,
-  trigger,
-  addHeading = "Add inside",
+  label = "Add",
+  size = "sm",
+  color = "secondary",
+  className,
 }: {
   options: ChildOption[];
-  onEdit?: () => void;
   onAdd: (o: ChildOption) => void;
-  onDelete?: () => void;
-  /** A button to open the menu in place of the "..." icon (the empty Project records' "Add record"). */
-  trigger?: ReactNode;
-  /** The heading over the record types. */
-  addHeading?: string;
+  label?: string;
+  size?: "sm" | "md";
+  color?: "primary" | "secondary" | "tertiary";
+  className?: string;
 }) {
-  const pick = (key: Key) => {
-    const o = options.find((x) => `${x.kind}:${x.type}` === key);
-    if (o) onAdd(o);
-  };
   const kinds = KIND_MENU.filter((k) => options.some((o) => o.kind === k.kind));
+  if (kinds.length === 0) return null;
   return (
     <Dropdown.Root>
-      {trigger ?? (
-        <Tooltip title="Actions">
-          <TooltipTrigger aria-label="Record actions" className={iconButton}>
-            <DotsVertical className="size-5" />
-          </TooltipTrigger>
-        </Tooltip>
-      )}
-      <Dropdown.Popover placement={trigger ? "bottom" : "bottom end"} className="w-60">
+      <Button color={color} size={size} iconLeading={Plus} iconTrailing={ChevronDown} className={className}>
+        {label}
+      </Button>
+      <Dropdown.Popover placement="bottom end" className="w-56">
         <Dropdown.Menu
-          aria-label={trigger ? addHeading : "Record actions"}
+          aria-label="Add a record inside"
           onAction={(key) => {
-            if (key === "edit") onEdit?.();
-            else if (key === "delete") onDelete?.();
+            const o = options.find((x) => `${x.kind}:${x.type}` === key);
+            if (o) onAdd(o);
           }}
         >
-          {onEdit ? (
-            <Dropdown.Section>
-              <Dropdown.Item id="edit" label="Edit record" icon={Edit02} />
-            </Dropdown.Section>
-          ) : null}
-          {onEdit && kinds.length > 0 ? <Dropdown.Separator /> : null}
-          {kinds.length > 0 ? (
-            <Dropdown.Section>
-              <Dropdown.SectionHeader className="px-2.5 pt-1.5 pb-1 text-xs font-semibold text-quaternary">
-                {addHeading}
+          {kinds.map((k, i) => (
+            <Dropdown.Section key={k.kind}>
+              <Dropdown.SectionHeader
+                className={cx(
+                  "flex items-center gap-1.5 px-2.5 pt-1.5 pb-1 text-xs font-semibold text-quaternary",
+                  i > 0 && "mt-1 border-t border-secondary pt-2",
+                )}
+              >
+                <k.icon className="size-4" />
+                {k.label}
               </Dropdown.SectionHeader>
-              {kinds.map((k) => (
-                <SubmenuTrigger key={k.kind}>
+              {options
+                .filter((o) => o.kind === k.kind)
+                .map((o) => (
                   <Dropdown.Item
-                    id={`kind:${k.kind}`}
-                    label={k.label}
-                    icon={k.icon}
+                    key={`${o.kind}:${o.type}`}
+                    id={`${o.kind}:${o.type}`}
+                    label={o.type}
                   />
-                  <Dropdown.Popover placement="end top" className="w-52">
-                    <Dropdown.Menu
-                      aria-label={`Add ${k.label.toLowerCase()}`}
-                      onAction={pick}
-                    >
-                      {options
-                        .filter((o) => o.kind === k.kind)
-                        .map((o) => (
-                          <Dropdown.Item
-                            key={`${o.kind}:${o.type}`}
-                            id={`${o.kind}:${o.type}`}
-                            label={o.type}
-                            icon={recordIcon({
-                              kind: o.kind,
-                              type: o.type as SurveyRecord["type"],
-                            })}
-                          />
-                        ))}
-                    </Dropdown.Menu>
-                  </Dropdown.Popover>
-                </SubmenuTrigger>
-              ))}
+                ))}
             </Dropdown.Section>
-          ) : null}
-          {onDelete ? <Dropdown.Separator /> : null}
-          {onDelete ? (
-            <Dropdown.Section>
-              <Dropdown.Item
-                id="delete"
-                label="Delete record"
-                icon={Trash01}
-                destructive
-              />
-            </Dropdown.Section>
-          ) : null}
+          ))}
         </Dropdown.Menu>
       </Dropdown.Popover>
     </Dropdown.Root>
@@ -645,7 +605,7 @@ export function SectionEditIcon({
         onPress={onPress}
         className="flex size-7 cursor-pointer items-center justify-center rounded-md text-fg-quaternary opacity-0 outline-focus-ring transition-opacity group-hover/accordion-item:opacity-100 group-hover/section:opacity-100 hover:bg-primary_hover hover:text-fg-quaternary_hover focus-visible:opacity-100 focus-visible:outline-2"
       >
-        <Edit02 className="size-3.5" />
+        <Edit05 className="size-3.5" />
       </TooltipTrigger>
     </Tooltip>
   );
@@ -697,7 +657,7 @@ export function RecordPanel({
   record: SurveyRecord | undefined;
   onSelect: (id: string | null) => void;
   /** Opens the record full screen with a card in edit mode (the first, or a section and field). */
-  onEdit: (sectionId?: string, fieldKey?: string) => void;
+  onEdit: (sectionId?: string, fieldKey?: string, addSection?: boolean) => void;
   onAdd: (parent: SurveyRecord | null, option: ChildOption) => void;
   onFullscreen: () => void;
   /** A field to scroll to and briefly highlight (from an artefact's "Open record"). */
@@ -707,7 +667,16 @@ export function RecordPanel({
   const del = useDeleteRecord(record, onSelect);
   const hidden = useHiddenFields(record?.id);
   const notesAll = useFieldNotes();
-  const [openSections, setOpenSections] = useState<Set<ReactKey>>(new Set());
+  // The first section starts open, so a record shows its details without a click (designer, 23 Oct 2026).
+  const [openSections, setOpenSections] = useState<Set<ReactKey>>(() => {
+    const notes = record ? (notesAll[record.id] ?? {}) : {};
+    const first = record?.sections.find(
+      (section) =>
+        isSectionShown(section, hidden) &&
+        sectionHasContent(section, (k) => hasNotes(notes[k])),
+    );
+    return new Set(first ? [first.id] : []);
+  });
   const rootRef = useRef<HTMLDivElement>(null);
 
   // Go to a field: open its section, scroll it into the middle of the panel, and flash it once in
@@ -731,7 +700,6 @@ export function RecordPanel({
   }, [focusField, record]);
 
   if (!record) {
-    const sites = store.childrenOf(null);
     return (
       <div className="flex min-h-0 flex-1 flex-col">
         <div className="flex shrink-0 items-center justify-between gap-2 border-b border-secondary bg-primary px-4 py-2">
@@ -741,28 +709,23 @@ export function RecordPanel({
               onPress={() => onSelect(null)}
             />
           </nav>
-          <div className="flex shrink-0 items-center gap-0.5">
-            {store.canEdit && (
-              <ActionsMenu
-                options={childOptions(null, sites)}
-                onAdd={(o) => onAdd(null, o)}
-              />
-            )}
-            <FullscreenToggle isFullscreen={false} onToggle={onFullscreen} />
-          </div>
+          <FullscreenToggle isFullscreen={false} onToggle={onFullscreen} />
         </div>
-        <div className="flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto p-5">
-          <div className="flex items-center gap-2.5">
-            <Folder className="size-5 shrink-0 text-fg-quaternary" />
-            <h2 className="text-lg font-semibold text-primary">
+        <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto p-5">
+          <div className="flex flex-col gap-1">
+            <p className="flex items-center gap-1 text-xs font-semibold tracking-wide text-quaternary uppercase">
+              <EventShape className="size-4" />
+              Project, {store.meta.code}
+            </p>
+            <h2 className="text-xl font-semibold text-balance text-primary">
               {store.project.details.shortTitle}
             </h2>
-            <span className="text-sm text-tertiary">Project</span>
           </div>
+          <RecordQuickActions record={null} onAdd={(o) => onAdd(null, o)} />
           <p className="text-sm text-tertiary">
-            {store.meta.code} · {store.records.length} records. Pick a record in the tree
-            or the table to see its details.
+            {store.records.length} records. Pick a record in the tree or the table to see its details.
           </p>
+
         </div>
       </div>
     );
@@ -782,51 +745,49 @@ export function RecordPanel({
           current={record}
           onSelect={onSelect}
         />
-        <div className="flex shrink-0 items-center gap-0.5">
-          {store.canEdit && (
-            <ActionsMenu
-              options={childOptions(record, store.childrenOf(record.id))}
-              onEdit={() => onEdit()}
-              onAdd={(o) => onAdd(record, o)}
-              onDelete={del.ask}
-            />
-          )}
-          <FullscreenToggle isFullscreen={false} onToggle={onFullscreen} />
-        </div>
+        <FullscreenToggle isFullscreen={false} onToggle={onFullscreen} />
       </div>
 
       {/* Only the body scrolls, so the scrollbar starts under the header, as in the list beside it. */}
       <div className="flex min-h-0 flex-1 flex-col gap-5 overflow-y-auto p-5">
-        <div className="flex items-start gap-3">
-          {record.scientificName ? (
-            <SpeciesPhoto
-              scientificName={record.scientificName}
-              alt={record.name}
-              fallbackIcon={recordIcon(record)}
-              className="size-10"
-            />
-          ) : (
-            <span className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-secondary text-fg-quaternary">
-              <RecordIcon record={record} className="size-5" />
-            </span>
-          )}
-          <div className="flex min-w-0 flex-col gap-0.5">
-            <h2 className="flex flex-wrap items-baseline gap-x-2 text-lg font-semibold text-balance text-primary">
-              {record.name}
-              <span className="text-sm font-normal text-tertiary">
-                {record.type}
-              </span>
-            </h2>
+        {/* The full view's header at the panel's size (designer, 23 Oct 2026: "make it look clean like it is in full
+            screen"): the kind's shape and type as the eyebrow, with the ID and date, then the name; the quick actions under it. */}
+        <div className="flex flex-col gap-3">
+          <div className="flex items-start gap-3">
             {record.scientificName && (
-              <p className="text-sm text-tertiary italic">
-                {record.scientificName}
-              </p>
+              <SpeciesPhoto
+                scientificName={record.scientificName}
+                alt={record.name}
+                fallbackIcon={recordIcon(record)}
+                className="size-12"
+              />
             )}
-            <p className="text-xs text-tertiary">
-              {record.code}
-              {hasDateField(record) && ` · ${formatDate(record.date)}`}
-            </p>
+            <div className="flex min-w-0 flex-col gap-1">
+              <p className="flex items-center gap-1 text-xs font-semibold tracking-wide text-quaternary uppercase">
+                <RecordIcon record={record} className="size-4 shrink-0" />
+                {/* One run of text, so the commas sit against the words and not in a flex gap. */}
+                <span>
+                  {typeLabel(record)}
+                  <span className="font-normal normal-case tracking-normal">
+                    , {record.code}
+                    {hasDateField(record) && `, ${formatDate(record.date)}`}
+                  </span>
+                </span>
+              </p>
+              <h2 className="text-xl font-semibold text-balance text-primary">{record.name}</h2>
+              {record.scientificName && (
+                <p className="text-sm text-tertiary italic">{record.scientificName}</p>
+              )}
+            </div>
           </div>
+          <RecordQuickActions
+            record={record}
+            onAdd={(o) => onAdd(record, o)}
+            onEdit={() => onEdit()}
+            onDelete={del.ask}
+            sections={record.sections.filter((x) => !shownSections.includes(x))}
+            onAddSection={(id) => onEdit(id, undefined, true)}
+          />
         </div>
 
         {record.locationNote && (
@@ -837,7 +798,7 @@ export function RecordPanel({
         )}
 
         <div className="flex flex-col">
-          <div className="flex items-center justify-between border-t border-secondary py-1.5 pl-0.5">
+          <div className="flex items-center justify-between py-1.5 pl-0.5">
             <p className="text-xs font-medium text-tertiary">
               {shownSections.length} sections
             </p>
@@ -883,6 +844,7 @@ export function RecordPanel({
             }))}
           />
         </div>
+
       </div>
       {del.modal}
     </div>

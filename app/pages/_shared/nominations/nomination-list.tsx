@@ -24,6 +24,7 @@ import { ToolbarSearch } from "@/app/pages/_shared/toolbar-search";
 import { SpeciesPhoto } from "@/app/pages/_shared/map-search/species-photo";
 import { SPECIES_GROUP_ICON } from "@/app/pages/_shared/map-search/species-group-icons";
 import {
+  NOMINATION_ROOT,
   formatShortDate,
   nominationStatusMeta,
   nominationStatusOrder,
@@ -40,7 +41,6 @@ import { useNominations } from "@/app/pages/_shared/nominations/nomination-store
 import { SPECIES_GROUP_OPTIONS } from "@/app/pages/project-registration/data";
 import { useRoleHref } from "@/lib/use-role-href";
 import { useFeatureAccess } from "@/lib/use-feature-access";
-import { useNominationVersion } from "@/app/pages/_shared/nominations/nomination-version";
 import { NOMINATION_SECTION_LABEL } from "@/lib/registered-user-nav";
 import { RiskBadge } from "@/app/pages/_shared/nominations/nomination-rating-fields";
 import { ACCESS_LEVEL_ORDER, RELEASE_RISK_ORDER, accessLevelMeta, currentSpeciesRating, ratingSummary, releaseRiskMeta, type Rating } from "@/app/pages/_shared/nominations/nomination-rating";
@@ -48,9 +48,9 @@ import { ACCESS_LEVEL_ORDER, RELEASE_RISK_ORDER, accessLevelMeta, currentSpecies
 // The nominations list: Section header, search and filter, then the table (CONTRACTS 4.2), fitting
 // the viewport with rows scrolling under a sticky header. A row opens the record. Every status is in
 // one table; the status is a filter, not a place, as on the DLA and DSA lists.
-// Version 2 (the designer, 12 Oct 2026):
+// The designer's version of 12 Oct 2026 (the only one since 26 Oct 2026, when the first, species only, was retired):
 // - A species or a location is nominated: "Nominate" opens a menu, Sensitive species or Sensitive location, each the same form
-//   and steps (version 2's /new, ?kind=location). Version 1 keeps "Nominate a new species".
+//   and steps (/new, ?kind=location).
 // - Underline tabs, Species and Locations, each its own table with its own search and filter; All and My stay in column 2.
 // - For both admin roles, Data release risk and User access level columns: a species' current rating, its accepted nominations'
 //   ratings merged (the highest, where it is rated by attribute), a location's once it is accepted, else "Not rated". The Status
@@ -88,7 +88,6 @@ function ReviewSteps() {
 export function NominationBanner({ canReview }: { canReview: boolean }) {
   const all = useNominations();
   const roleHref = useRoleHref();
-  const { base } = useNominationVersion();
   const waiting = all.filter((n) => n.status === "submitted").length;
   const returned = all.filter((n) => n.status === "returned" && n.nominator.name === CURRENT_USER_NAME);
   if (canReview && waiting > 0)
@@ -100,7 +99,7 @@ export function NominationBanner({ canReview }: { canReview: boolean }) {
         status={nominationStatusMeta.submitted.label}
         statusColor={nominationStatusMeta.submitted.badgeColor}
         actionLabel="Review nominations"
-        actionHref={roleHref(`${base}?scope=all&status=submitted`)}
+        actionHref={roleHref(`${NOMINATION_ROOT}?scope=all&status=submitted`)}
       />
     );
   if (!canReview && returned.length > 0) {
@@ -113,31 +112,29 @@ export function NominationBanner({ canReview }: { canReview: boolean }) {
         status={nominationStatusMeta.returned.label}
         statusColor={nominationStatusMeta.returned.badgeColor}
         actionLabel={returned.length === 1 ? "Update nomination" : "View nominations"}
-        actionHref={roleHref(returned.length === 1 ? `${base}/${first.id}` : `${base}?status=returned`)}
+        actionHref={roleHref(returned.length === 1 ? `${NOMINATION_ROOT}/${first.id}` : `${NOMINATION_ROOT}?status=returned`)}
       />
     );
   }
   return null;
 }
 
-/** The list. Version 2 holds which tab is open; the table and its search and filter are `ListBody`,
+/** The list. It holds which tab is open; the table and its search and filter are `ListBody`,
  *  remounted per tab so each kind keeps its own columns and filter. */
 export function NominationList({ scope, organisation, initialStatuses = [], canReview }: { scope: AgreementScope; organisation: string | null; initialStatuses?: NominationStatus[]; canReview: boolean }) {
-  const { version } = useNominationVersion();
   const all = useNominations();
   const [tab, setTab] = useState<NominationKind>("species");
   const inScope = all.filter((n) => inNominationScope(n, scope, organisation));
   const count = (kind: NominationKind) => inScope.filter((n) => kindOf(n) === kind).length;
 
-  const tabs =
-    version >= 2 ? (
-      <Tabs selectedKey={tab} onSelectionChange={(key) => setTab(key as NominationKind)} className="shrink-0">
-        <TabList aria-label="Nomination kind" type="underline" size="md">
-          <Tab id="species" label="Species" icon={Feather} badge={count("species")} />
-          <Tab id="location" label="Locations" icon={MarkerPin04} badge={count("location")} />
-        </TabList>
-      </Tabs>
-    ) : null;
+  const tabs = (
+    <Tabs selectedKey={tab} onSelectionChange={(key) => setTab(key as NominationKind)} className="shrink-0">
+      <TabList aria-label="Nomination kind" type="underline" size="md">
+        <Tab id="species" label="Species" icon={Feather} badge={count("species")} />
+        <Tab id="location" label="Locations" icon={MarkerPin04} badge={count("location")} />
+      </TabList>
+    </Tabs>
+  );
 
   return (
     <ListBody
@@ -152,18 +149,17 @@ export function NominationList({ scope, organisation, initialStatuses = [], canR
   );
 }
 
-/** Version 2's create action: one button, a menu of the two kinds. */
+/** The create action: one button, a menu of the two kinds. */
 function NominateMenu() {
   const router = useRouter();
   const roleHref = useRoleHref();
-  const { base } = useNominationVersion();
   return (
     <Dropdown.Root>
       <Button color="primary" iconLeading={Plus} iconTrailing={ChevronDown}>
         Nominate
       </Button>
       <Dropdown.Popover placement="bottom end" className="w-56">
-        <Dropdown.Menu aria-label="Nominate" onAction={(key) => router.push(roleHref(key === "location" ? `${base}/new?kind=location` : `${base}/new`))}>
+        <Dropdown.Menu aria-label="Nominate" onAction={(key) => router.push(roleHref(key === "location" ? `${NOMINATION_ROOT}/new?kind=location` : `${NOMINATION_ROOT}/new`))}>
           <Dropdown.Item id="species" label="Sensitive species" icon={Feather} />
           <Dropdown.Item id="location" label="Sensitive location" icon={MarkerPin01} />
         </Dropdown.Menu>
@@ -191,16 +187,14 @@ function ListBody({
 }) {
   const all = useNominations();
   const roleHref = useRoleHref();
-  const { base, version } = useNominationVersion();
   // The rating columns: BioData Admin and Super Admin only (`nominationRating`), never anyone else.
   const canRate = useFeatureAccess("nominationRating");
-  const showsRating = version >= 2 && canRate;
+  const showsRating = canRate;
   /** What protects it now: a species' current rating (its accepted nominations' ratings merged), a location's once accepted. */
   const ratingOfRow = (n: Nomination): Rating | undefined =>
     kindOf(n) === "location" ? (n.status === "accepted" ? n.ratings?.location : undefined) : ratingSummary(currentSpeciesRating(all, n.speciesId));
   // Someone else's draft isn't submitted yet, so it isn't anyone else's to see; All is the organisation's (everyone's for the admin).
-  // Version 1 lists species only.
-  const inScope = all.filter((n) => inNominationScope(n, scope, organisation) && (version >= 2 || kindOf(n) === "species"));
+  const inScope = all.filter((n) => inNominationScope(n, scope, organisation));
   const scoped = inScope.filter((n) => kindOf(n) === kind);
   const isLocation = kind === "location";
   const [search, setSearch] = useState("");
@@ -281,20 +275,14 @@ function ListBody({
           <div className="flex flex-1 flex-col gap-1">
             <div className="flex items-center gap-2">
               <SectionHeader.Heading>{NOMINATION_SECTION_LABEL}</SectionHeader.Heading>
-              <CountBadge count={version >= 2 ? inScope.length : rows.length} color="brand" />
+              <CountBadge count={inScope.length} color="brand" />
             </div>
             <SectionHeader.Subheading>
-              {scope === "mine" ? `${version >= 2 ? "Species and locations" : "Species"} you nominated, and where each one is in review.` : organisation ? `Nominations from ${organisation}, across every status.` : "Every nomination, across every status."}
+              {scope === "mine" ? "Species and locations you nominated, and where each one is in review." : organisation ? `Nominations from ${organisation}, across every status.` : "Every nomination, across every status."}
             </SectionHeader.Subheading>
           </div>
           <SectionHeader.Actions>
-            {version >= 2 ? (
-              <NominateMenu />
-            ) : (
-              <Button color="primary" iconLeading={Plus} href={roleHref("/pages/nominations/new")}>
-                Nominate a new species
-              </Button>
-            )}
+            <NominateMenu />
           </SectionHeader.Actions>
         </SectionHeader.Group>
       </SectionHeader.Root>
@@ -304,19 +292,13 @@ function ListBody({
           <div className="flex max-w-md flex-col items-center gap-4">
             <FeaturedIcon icon={Feather} theme="modern" color="gray" size="lg" />
             <div className="flex flex-col gap-2">
-              <h2 className="m-0! text-lg! font-semibold! tracking-normal! text-primary!">{scope === "mine" ? `You haven't nominated ${version >= 2 ? "anything" : "a species"} yet` : "No nominations yet"}</h2>
+              <h2 className="m-0! text-lg! font-semibold! tracking-normal! text-primary!">{scope === "mine" ? "You haven't nominated anything yet" : "No nominations yet"}</h2>
               <p className="text-sm text-balance text-tertiary">
                 Nominate a species when its records could put it at risk, such as nest sites or small populations. The panel decides what gets protected.
               </p>
             </div>
           </div>
-          {version >= 2 ? (
-            <NominateMenu />
-          ) : (
-            <Button color="primary" iconLeading={Plus} href={roleHref("/pages/nominations/new")}>
-              Nominate a new species
-            </Button>
-          )}
+          <NominateMenu />
         </div>
       ) : (
         <div className="flex min-h-0 flex-1 flex-col gap-4 p-6">
@@ -385,7 +367,7 @@ function ListBody({
                       {(n) => {
                         const species = speciesFor(n.speciesId);
                         return (
-                          <Table.Row id={n.id} href={roleHref(`${base}/${n.id}`)} textValue={`${n.id} ${nominationSubject(n)}`} className="group data-[href]:cursor-pointer">
+                          <Table.Row id={n.id} href={roleHref(`${NOMINATION_ROOT}/${n.id}`)} textValue={`${n.id} ${nominationSubject(n)}`} className="group data-[href]:cursor-pointer">
                             <Table.Cell>
                               <span className="text-sm font-medium whitespace-nowrap text-primary group-hover:text-brand-700 group-hover:underline">{n.id}</span>
                             </Table.Cell>

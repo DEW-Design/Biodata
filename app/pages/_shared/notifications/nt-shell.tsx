@@ -16,14 +16,14 @@ import { MobileNavTrigger } from "@/app/pages/_shared/mobile-nav";
 import { sectionIcons } from "@/app/pages/_shared/nav-icons";
 import { PrimaryRail } from "@/app/pages/_shared/primary-rail";
 import { PrototypeTools } from "@/app/_prototype-tools/prototype-tools";
-import { SENSITIVITY, formatShortDate, ntStateMeta, ntTemplate, recipientsSummary, triggerSummary } from "@/app/pages/_shared/notifications/nt-data";
+import { NT_ROOT, SENSITIVITY, formatShortDate, ntStateMeta, ntTemplate, recipientsSummary, triggerSummary } from "@/app/pages/_shared/notifications/nt-data";
 import { useRecipientLabels, useSampleVolume } from "@/app/pages/_shared/notifications/nt-directory";
+import { NotificationSwitcher } from "@/app/pages/_shared/notifications/nt-switcher";
 import { useCategories, useNotifications } from "@/app/pages/_shared/notifications/nt-store";
 import { useFeatureAccess } from "@/lib/use-feature-access";
 import { useRoleHref } from "@/lib/use-role-href";
 import { useUserRole } from "@/lib/use-user-role";
 import { NOTIFICATION_SECTION_LABEL, keyHref, navForRole, type NavNode } from "@/lib/registered-user-nav";
-import { NtOptionSwitcher, useNtRoot } from "@/app/pages/_shared/notifications/nt-root";
 
 // The one shell every Notification Management route renders through (list, notification page, new,
 // edit): header, rail, column 2 and main (CONTRACTS 3.7), with the restriction in main for every role
@@ -60,7 +60,6 @@ function CategoryNav({ category }: { category: string }) {
   const all = useCategories();
   const router = useRouter();
   const roleHref = useRoleHref();
-  const root = useNtRoot();
   const [find, setFind] = useState("");
   const counts = new Map<string, number>();
   for (const n of items) counts.set(n.category, (counts.get(n.category) ?? 0) + 1);
@@ -79,7 +78,7 @@ function CategoryNav({ category }: { category: string }) {
         </div>
       )}
       <div className="max-h-[45vh] overflow-y-auto">
-        <Tabs orientation="vertical" selectedKey={category || "all"} onSelectionChange={(key) => router.push(roleHref(key === "all" ? root : `${root}?category=${encodeURIComponent(String(key))}`))}>
+        <Tabs orientation="vertical" selectedKey={category || "all"} onSelectionChange={(key) => router.push(roleHref(key === "all" ? NT_ROOT : `${NT_ROOT}?category=${encodeURIComponent(String(key))}`))}>
           <TabList aria-label="Categories" orientation="vertical" type="button-brand" fullWidth className="w-full">
             <Tab id="all" label="All notifications" icon={Bell01} badge={items.length} />
             {categories.map((c) => (
@@ -106,6 +105,7 @@ function CategoryNav({ category }: { category: string }) {
 export function NtShell({
   category = "",
   breadcrumbCurrent,
+  recordId,
   formSidebar = false,
   children,
 }: {
@@ -113,6 +113,8 @@ export function NtShell({
   category?: string;
   /** The final crumb (a notification's name, "New notification"). When set, the section crumb links back to the list. */
   breadcrumbCurrent?: string;
+  /** The notification a record page shows: its section crumb is a switcher over the other notifications (CONTRACTS 4.6). */
+  recordId?: string;
   /** A create or edit form is rendered: column 2 becomes its section list (the form portals into it through `FormSidebar`). */
   formSidebar?: boolean;
   children: ReactNode;
@@ -122,7 +124,6 @@ export function NtShell({
   const canManage = useFeatureAccess("notificationManagement");
   const nav = navForRole(role);
   const roleHref = useRoleHref();
-  const root = useNtRoot();
 
   const [localSection, setLocalSection] = useState<string | null>(null);
   const activeSection = localSection ?? NOTIFICATION_SECTION_LABEL;
@@ -176,7 +177,6 @@ export function NtShell({
   return (
     <div className="font-barlow flex h-screen flex-col overflow-hidden">
       <PrototypeTools />
-      {canManage && <NtOptionSwitcher />}
       <AppHeader
         mobileNav={
           <MobileNavTrigger
@@ -192,8 +192,10 @@ export function NtShell({
           </MobileNavTrigger>
         }
         section={
-          breadcrumbCurrent && !otherSection && canManage ? (
-            <Link href={roleHref(root)} className="hover:text-primary">
+          recordId && !otherSection && canManage ? (
+            <NotificationSwitcher currentId={recordId} />
+          ) : breadcrumbCurrent && !otherSection && canManage ? (
+            <Link href={roleHref(NT_ROOT)} className="hover:text-primary">
               {activeSection}
             </Link>
           ) : (

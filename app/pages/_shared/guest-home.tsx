@@ -74,9 +74,20 @@ function useCardSwap() {
 // `min-h` on the text column reserves a headline plus two body lines so switching tabs never
 // shifts the dashboard content below (caught live in the lab: one message once wrapped an extra
 // line and moved the tab row 8px).
-export function GuestGradientCard({ tab }: { tab: Key }) {
+export function GuestGradientCard({ tab, compact = false }: { tab: Key; compact?: boolean }) {
   const ask = tabAsks[String(tab)] ?? tabAsks.overview;
   const swap = useCardSwap();
+  // `compact`: the same ask as one line on a brand tint, the way Home's "Continue where you left off" strip sits, so the dashboard is what the visitor reads first (the lab's option B; default unchanged).
+  if (compact) {
+    return (
+      <div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-3 rounded-lg bg-brand-50 px-4 py-3">
+        <motion.p key={String(tab)} {...swap} className="m-0 text-sm font-semibold text-balance text-primary">
+          {ask.headline}
+        </motion.p>
+        <GuestActionButton icon={UserPlus01} label="Create a free account" color="secondary" isGuest modalTitle={ask.modalTitle} modalDescription={ask.modalDescription} />
+      </div>
+    );
+  }
   return (
     <div className="rounded-2xl bg-gradient-to-b from-brand-900 via-brand-800 via-[63.942%] to-brand-700 p-8">
       <motion.div key={String(tab)} {...swap} className="flex flex-wrap items-center justify-between gap-x-8 gap-y-5">

@@ -1,8 +1,8 @@
 "use client";
 
 // The project's Datasets page (30 Sept 2026): a report of every dataset uploaded to this project,
-// opened from the Datasets box in "Project at a glance" (`?view=datasets`, same route so the session's
-// edits stay, like the flagged concepts review). It follows the collection pattern: a section header
+// opened by `?view=datasets` (same route so the session's edits stay, like the flagged concepts review). Its door was the Datasets box in
+// "Project at a glance" until the designer removed that section (26 Oct 2026); nothing on the project page opens it now (open: where it goes). It follows the collection pattern: a section header
 // with the count and Upload dataset, then search and a table whose rows open the dataset
 // (`&dataset=<id>`), laid out like every record page (back link, identity card, tabs).
 //
@@ -244,7 +244,7 @@ function DatasetsList({ rows, projectHref, datasetHref }: { rows: DatasetRow[]; 
               <div className="flex min-w-0 flex-col gap-0.5">
                 <h3 className="text-sm font-semibold text-primary">{current.view.done ? "Latest upload" : "Uploading now"}</h3>
                 <p className="truncate text-sm text-tertiary" title={current.view.subject.fileName}>
-                  {current.dataset.id} · {current.view.subject.fileName} · {current.view.subject.rows} rows
+                  {current.dataset.id} - {current.view.subject.fileName}, {current.view.subject.rows} rows
                 </p>
               </div>
               <div className="flex items-center gap-3">
@@ -384,7 +384,7 @@ function DatasetDetail({ row, datasetId, backHref }: { row: DatasetRow | null; d
               <ul className="m-0 flex list-none flex-col gap-1 p-0">
                 {d.files.map((f) => (
                   <li key={f.name}>
-                    {f.name} <span className="text-tertiary">· {formatFileSize(f.size)}</span>
+                    {f.name}<span className="text-tertiary">, {formatFileSize(f.size)}</span>
                   </li>
                 ))}
               </ul>
@@ -418,7 +418,8 @@ function DatasetDetail({ row, datasetId, backHref }: { row: DatasetRow | null; d
 }
 
 
-// ── The Datasets card (Project at a glance, Option 3) ──
+// ── The Datasets card (drawn nowhere since 26 Oct 2026) ──
+// It was the first card of "Project at a glance", which the designer removed; it is kept, whole, for wherever the Datasets list gets its door.
 // Its own card above the records card, since datasets are the feed and not part of the records. The
 // header names it with its count and holds its actions (View all, Upload dataset); one row under it is
 // the last upload: the file and, in a few words, what is happening with it (live while it runs),
@@ -431,17 +432,17 @@ function snapshotOf({ view, status }: DatasetRow): Snapshot {
   if (!view.done) {
     const validating = view.stageIndex === 0;
     const pct = validating ? view.stagePercents[0] : Math.round(((view.stagePercents[1] + view.stagePercents[2]) / 200) * 100);
-    return { tone: "brand", state: `${validating ? "Pre-flight validation" : "Adding records"} · ${pct}%`, running: true };
+    return { tone: "brand", state: `${validating ? "Pre-flight validation" : "Adding records"}, ${pct}%`, running: true };
   }
   if (view.failed) {
-    if (isSystemFault(view)) return { tone: "error", state: "Not added · something went wrong on our side", running: false };
+    if (isSystemFault(view)) return { tone: "error", state: "Not added, something went wrong on our side", running: false };
     const problems = plural(view.reasons.length, "problem", "problems");
-    return { tone: "error", state: view.failedStage === 0 ? `Failed pre-flight validation · ${problems}` : `Not added · ${problems} with the rows`, running: false };
+    return { tone: "error", state: view.failedStage === 0 ? `Failed pre-flight validation, ${problems}` : `Not added, ${problems} with the rows`, running: false };
   }
   const added = placedRows(view);
-  if (view.partial) return { tone: "warning", state: `${added} records added · ${view.unmapped} rows not placed`, running: false };
+  if (view.partial) return { tone: "warning", state: `${added} records added, ${view.unmapped} rows not placed`, running: false };
   const approved = status === "approved" || status === "auto_approved";
-  return { tone: approved ? "success" : "brand", state: `${added} records added · ${approved ? "approved" : "in review"}`, running: false };
+  return { tone: approved ? "success" : "brand", state: `${added} records added, ${approved ? "approved" : "in review"}`, running: false };
 }
 
 export function DatasetsCard({ onOpenDataset, onOpenDatasets }: { onOpenDataset: (id: string) => void; onOpenDatasets: () => void }) {
@@ -476,7 +477,7 @@ export function DatasetsCard({ onOpenDataset, onOpenDatasets }: { onOpenDataset:
         >
           <FeaturedIcon icon={Database01} color={snap.tone} theme="modern" size="sm" />
           <span className="flex min-w-0 flex-1 flex-col">
-            <span className="text-tertiary">Last upload · {formatShortDate(last.dataset.uploadedAt)}</span>
+            <span className="text-tertiary">Last upload: {formatShortDate(last.dataset.uploadedAt)}</span>
             <span className="flex min-w-0 items-center gap-1.5">
               {snap.running && <RefreshCcw01 aria-hidden className="size-3.5 shrink-0 text-fg-brand-primary motion-safe:animate-spin" />}
               <span className="truncate font-semibold text-primary">{last.dataset.files[0]?.name ?? last.dataset.id}</span>

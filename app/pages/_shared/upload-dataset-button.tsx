@@ -9,8 +9,7 @@ import { SignUpPromptModal } from "@/app/pages/_shared/guest-action-gate";
 import { useRoleHref } from "@/lib/use-role-href";
 import { useUserRole } from "@/lib/use-user-role";
 
-// "Upload dataset" for one project, wherever it appears (the project card, the Project at a glance
-// Datasets cell, the Datasets page). Everyone sees it; a public user gets the sign-up prompt instead
+// "Upload dataset" for one project, wherever it appears (the project card, the Datasets page). Everyone sees it; a public user gets the sign-up prompt instead
 // of the upload page (visible but gated, like the header's Add menu).
 export function UploadDatasetButton({
   projectId,

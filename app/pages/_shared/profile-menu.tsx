@@ -20,7 +20,7 @@ export function ProfileMenu() {
 
   return (
     <DialogTrigger onOpenChange={setOpen}>
-      <AriaButton className="flex items-center gap-1 rounded-md outline-brand focus-visible:outline-2 focus-visible:outline-offset-2">
+      <AriaButton className="hit-area -m-1 flex items-center gap-1 rounded-lg p-1 outline-brand transition-colors duration-100 ease-linear hover:bg-primary_hover focus-visible:outline-2 focus-visible:outline-offset-2">
         <Avatar size="md" initials="OW" alt="Olivia Wyatt" />
         <ChevronDown className={cx("size-3.5 text-quaternary transition-transform", open && "rotate-180")} />
       </AriaButton>

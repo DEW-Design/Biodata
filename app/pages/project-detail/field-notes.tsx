@@ -19,7 +19,7 @@
 // edited as a value only: it takes no notes.
 
 import { createElement, useRef, useState, type FC, type ReactNode } from "react";
-import { Check, CheckCircle, ChevronDown, DotsVertical, Edit02, FileAttachment02, FileCheck02, Flag01, Image01, Link01, MessageSquare01, Paperclip, Plus, Save01, Trash01, UploadCloud02, VideoRecorder, XClose } from "@untitledui/icons";
+import { Check, CheckCircle, ChevronDown, DotsVertical, Edit05, FileAttachment02, FileCheck02, Flag01, Image01, Link01, MessageSquare01, Paperclip, Plus, Save01, Trash01, UploadCloud02, VideoRecorder, XClose } from "@untitledui/icons";
 import { Button } from "@/components/base/buttons/button";
 import { Dropdown } from "@/components/base/dropdown/dropdown";
 import { Input } from "@/components/base/input/input";
@@ -261,7 +261,7 @@ function CardMenu({
           onAction={(k) => (k === "edit" ? onEdit?.() : onRemove?.())}
         >
           {onEdit ? (
-            <Dropdown.Item id="edit" label="Edit" icon={Edit02} />
+            <Dropdown.Item id="edit" label="Edit" icon={Edit05} />
           ) : null}
           {onRemove ? (
             <Dropdown.Item
@@ -401,7 +401,7 @@ function CommentCard({
         <>
           <p className="text-sm text-balance text-primary">{comment.text}</p>
           <Meta>
-            {comment.author} · {comment.date}
+            {comment.author}, {comment.date}
           </Meta>
         </>
       )}
@@ -475,7 +475,7 @@ function QuestionableCard({
         <>
           <p className="text-sm text-balance text-primary">{flag.reason}</p>
           <Meta>
-            {flag.by} · {flag.date}
+            {flag.by}, {flag.date}
           </Meta>
         </>
       )}
@@ -484,7 +484,7 @@ function QuestionableCard({
           label="Why is it resolved?"
           placeholder="Why is it resolved?"
           action="Resolve" actionIcon={CheckCircle}
-          hint="The reason is kept with the field."
+          hint="The reason is kept with the concept."
           onCancel={() => setMode("view")}
           onSave={(reason) => {
             onChange({
@@ -520,7 +520,7 @@ function ResolvedCard({ notes }: { notes: FieldNotes }) {
       <CardHeader icon={Check} title="Resolved" />
       <p className="text-sm text-balance text-secondary">{r.reason}</p>
       <Meta>
-        {r.by} · {r.date} · it had been questioned as: &ldquo;{r.flagReason}
+        {r.by}, {r.date}. It had been questioned as: &ldquo;{r.flagReason}
         &rdquo;
       </Meta>
     </CardShell>
@@ -643,7 +643,7 @@ export function FieldNotesArea({
             label="Add a comment"
             placeholder="What should people know about this value?"
             action="Add comment" actionIcon={Plus}
-            hint="A field has one comment. Once added, it can be edited."
+            hint="A concept has one comment. Once added, it can be edited."
             onCancel={done}
             onSave={(text) => {
               onChange({
@@ -951,7 +951,7 @@ export function FieldRow({
                   reveal,
                 )}
               >
-                <Edit02 className="size-3.5" />
+                <Edit05 className="size-3.5" />
               </TooltipTrigger>
             </Tooltip>
           )}
@@ -988,7 +988,7 @@ export function FieldRow({
           onResolved={() =>
             toast.success(`${label} resolved`, {
               description:
-                "It is no longer marked questionable. The reason is kept with the field.",
+                "It is no longer marked questionable. The reason is kept with the concept.",
             })
           }
         />

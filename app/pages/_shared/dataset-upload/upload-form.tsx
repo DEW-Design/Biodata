@@ -12,7 +12,6 @@ import { FormRow } from "@/app/pages/_shared/form-row";
 import { FormSectionList, FormSidebar, deriveSectionStatus } from "@/app/pages/_shared/form-section-list";
 import { FileQueue, UploadDropzone, useFileQueue } from "@/app/pages/_shared/dataset-upload/upload-dropzone";
 import {
-  UPLOAD_SECTION_ORDER,
   dataLicenceOptions,
   emptyUploadDraft,
   firstNationsOptions,
@@ -20,6 +19,7 @@ import {
   needsIiaReference,
   recommendedTemplates,
   securityClassificationOptions,
+  uploadSectionOrder,
   uploadSections,
   type DatasetTemplate,
   type FirstNationsConsideration,
@@ -27,6 +27,8 @@ import {
   type UploadSection,
 } from "@/app/pages/_shared/dataset-upload/dataset-data";
 import { useDatasets } from "@/app/pages/_shared/dataset-upload/dataset-store";
+import { describePlace, useDetectedConcepts } from "@/app/pages/_shared/dataset-upload/custom-concepts";
+import { CustomConceptRows } from "@/app/pages/_shared/dataset-upload/custom-concepts-views";
 import { projectDetailsPath } from "@/app/pages/_shared/project-routes";
 import { useRoleHref } from "@/lib/use-role-href";
 import { ArrowLeft, Trash01 } from "@untitledui/icons";
@@ -86,10 +88,13 @@ export function UploadForm({
   const [confirmDiscard, setConfirmDiscard] = useState(false);
 
   const update = (change: Partial<typeof answers>) => setAnswers((a) => ({ ...a, ...change }));
-  const draft: UploadDraft = { ...emptyUploadDraft, ...answers, files: queue.files.filter((f) => f.status === "complete").map((f) => ({ name: f.name, size: f.size })) };
+  const draft: UploadDraft = { ...emptyUploadDraft, ...answers, files: queue.files.filter((f) => f.status === "complete").map((f) => ({ name: f.name, size: f.size, ...(f.sheets ? { sheets: f.sheets } : {}) })) };
   const missing = missingForUpload(draft, queue.uploading);
-  const index = UPLOAD_SECTION_ORDER.indexOf(section);
-  const isLast = index === UPLOAD_SECTION_ORDER.length - 1;
+  // Columns the controlled vocabularies do not have: a section of their own while there are some, and none when there are not.
+  const detected = useDetectedConcepts(draft.files);
+  const order = uploadSectionOrder(detected.length > 0);
+  const index = Math.max(0, order.indexOf(section));
+  const isLast = index === order.length - 1;
   const showErrors = (id: UploadSection) => submitPressed || blocked.has(id);
   const dirty = queue.files.length > 0 || answers.licence !== "" || answers.classification !== "" || answers.firstNations !== "" || answers.privacyConfirmed;
 
@@ -99,7 +104,7 @@ export function UploadForm({
   };
   // Continue, and jumping ahead in column 2, refuse to leave a section with mandatory details missing.
   const proceed = (next: UploadSection) => {
-    if (UPLOAD_SECTION_ORDER.indexOf(next) > index && missing[section].length > 0) {
+    if (order.indexOf(next) > index && missing[section].length > 0) {
       setBlocked((b) => new Set(b).add(section));
       return;
     }
@@ -108,7 +113,7 @@ export function UploadForm({
 
   const submit = () => {
     setSubmitPressed(true);
-    const first = UPLOAD_SECTION_ORDER.find((id) => missing[id].length > 0);
+    const first = order.find((id) => missing[id].length > 0);
     if (first) {
       setSection(first);
       return;
@@ -116,7 +121,7 @@ export function UploadForm({
     onSubmit(draft);
   };
 
-  const sectionItems = UPLOAD_SECTION_ORDER.map((id) => ({
+  const sectionItems = order.map((id) => ({
     id,
     title: uploadSections[id].title,
     status: deriveSectionStatus({ isCurrent: id === section, isValid: missing[id].length === 0, visited: visited.has(id), attempted: showErrors(id) }),
@@ -132,21 +137,21 @@ export function UploadForm({
         <FormSectionList
           heading="Upload dataset"
           groups={[{ sections: sectionItems }]}
-          progress={{ done: sectionItems.filter((i) => i.status === "complete").length, total: UPLOAD_SECTION_ORDER.length }}
+          progress={{ done: sectionItems.filter((i) => i.status === "complete").length, total: order.length }}
           onSelect={(id) => proceed(id as UploadSection)}
         />
       </FormSidebar>
 
       <FormPage
-        eyebrow={`${project.name} - Step ${index + 1} of ${UPLOAD_SECTION_ORDER.length}`}
+        eyebrow={`${project.name} - Step ${index + 1} of ${order.length}`}
         title={uploadSections[section].title}
         subtitle={uploadSections[section].description}
         onCancel={() => (dirty ? setConfirmDiscard(true) : onCancel())}
-        onBack={index > 0 ? () => goTo(UPLOAD_SECTION_ORDER[index - 1]) : undefined}
+        onBack={index > 0 ? () => goTo(order[index - 1]) : undefined}
         problems={problems.length ? { items: problems } : undefined}
         primaryLabel={isLast ? "Confirm and upload" : "Continue"}
         primaryIsContinue={!isLast}
-        onPrimary={isLast ? submit : () => proceed(UPLOAD_SECTION_ORDER[index + 1])}
+        onPrimary={isLast ? submit : () => proceed(order[index + 1])}
       >
         {section === "files" && (
           <>
@@ -171,6 +176,22 @@ export function UploadForm({
                   <TemplateCard key={template.id} template={template} />
                 ))}
               </div>
+            </FormRow>
+          </>
+        )}
+
+        {section === "custom" && (
+          <>
+            <FormRow title="Columns to approve">
+              <CustomConceptRows
+                label="Custom concepts in your files"
+                rows={detected.map((d) => ({ key: d.key, name: d.name, where: describePlace(d.places, draft.files.length > 1) }))}
+              />
+            </FormRow>
+            <FormRow title="What happens next">
+              <p className="text-sm text-balance text-tertiary">
+                Your data uploads as usual. A BioData admin approves or declines each concept. Until then it shows as Awaiting approval under the upload on the project&apos;s Datasets page.
+              </p>
             </FormRow>
           </>
         )}

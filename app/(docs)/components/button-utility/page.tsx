@@ -114,7 +114,7 @@ export default function ButtonUtilityPage() {
                   />
                 </div>
                 <code className="text-xs text-quaternary">
-                  {previewColor} · {previewSize} · {previewDisabled ? "disabled" : "enabled"}
+                  {previewColor}, {previewSize}, {previewDisabled ? "disabled" : "enabled"}
                 </code>
               </div>
 

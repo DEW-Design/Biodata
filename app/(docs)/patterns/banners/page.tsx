@@ -184,10 +184,9 @@ export default function BannersPatternPage() {
       <h2 className="text-balance">Where it is used</h2>
       <ul>
         <li>
-          <strong>Explore:</strong> <code>/pages/observations</code>, and the results page of{" "}
-          <code>/pages/observations/option-2</code>, carry the data-access notice for every role that does not see all data
-          (&quot;You&apos;re viewing public data&quot; for a signed-out visitor, &quot;Some locations are approximate&quot; for
-          a signed-in role).
+          <strong>Explore:</strong> <code>/pages/observations</code> carries the data-access notice for every role that does
+          not see all data (&quot;You&apos;re viewing public data&quot; for a signed-out visitor, &quot;Some locations are
+          approximate&quot; for a signed-in role).
         </li>
         <li>
           <strong>Contained alerts, for comparison:</strong> a nomination&apos;s status, a pending invitation, a flagged-concepts

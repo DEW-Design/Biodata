@@ -33,7 +33,7 @@ export function ThreatSummaryCard({ summary, isPinned, onTogglePin }: { summary:
           onClick={onTogglePin}
           aria-pressed={isPinned}
           aria-label={isPinned ? `Unpin ${title}` : `Pin ${title}`}
-          className="relative shrink-0 rounded-md p-0.5 text-quaternary outline-brand transition-transform before:absolute before:-inset-2.5 before:content-[''] hover:text-warning-500 focus-visible:outline-2 focus-visible:outline-offset-2 active:scale-[0.96]"
+          className="hit-area relative shrink-0 rounded-md p-0.5 text-quaternary outline-brand transition-transform hover:text-warning-500 focus-visible:outline-2 focus-visible:outline-offset-2 active:scale-[0.96]"
         >
           <Star01 className={cx("size-4", isPinned && "fill-warning-500 text-warning-500")} />
         </button>

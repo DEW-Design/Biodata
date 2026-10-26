@@ -148,9 +148,9 @@ export default function InputPage() {
                 </div>
                 <code className="text-xs text-quaternary">
                   {previewSize}
-                  {previewInvalid ? " · invalid" : ""}
-                  {previewDisabled ? " · disabled" : ""}
-                  {previewRequired ? " · required" : ""}
+                  {previewInvalid ? ", invalid" : ""}
+                  {previewDisabled ? ", disabled" : ""}
+                  {previewRequired ? ", required" : ""}
                 </code>
               </div>
 

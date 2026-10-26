@@ -404,7 +404,7 @@ export function DlaForm({
                     <span className="text-xs font-medium text-quaternary">Data Requestor</span>
                     <p className="text-sm text-secondary">
                       {[draft.requestor.firstName, draft.requestor.lastName].filter(Boolean).join(" ") || "Not provided"}
-                      {draft.requestor.organisation ? ` · ${draft.requestor.organisation}` : ""}
+                      {draft.requestor.organisation ? `, ${draft.requestor.organisation}` : ""}
                     </p>
                     <p className="text-sm text-tertiary">{draft.requestor.email || "Not provided"}</p>
                   </div>

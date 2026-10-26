@@ -182,7 +182,7 @@ export const InputBase = ({
                         (e.target as HTMLElement).parentElement?.querySelector("input")?.focus();
                     }}
                     className={cx(
-                        "absolute flex cursor-pointer items-center justify-center rounded-sm text-fg-quaternary outline-focus-ring transition duration-100 ease-linear group-invalid/input:hidden before:absolute before:-inset-2.5 hover:text-fg-quaternary_hover focus-visible:outline-2 focus-visible:outline-offset-2",
+                        "absolute flex cursor-pointer items-center justify-center rounded-sm text-fg-quaternary outline-focus-ring transition duration-100 ease-linear group-invalid/input:hidden hit-area hover:text-fg-quaternary_hover focus-visible:outline-2 focus-visible:outline-offset-2",
                         sizes[inputSize].iconTrailing,
                     )}
                 >
@@ -196,7 +196,7 @@ export const InputBase = ({
                     aria-label="Toggle password visibility"
                     onClick={() => setIsPasswordVisible(!isPasswordVisible)}
                     className={cx(
-                        "absolute flex cursor-pointer items-center justify-center text-fg-quaternary transition duration-100 ease-linear hover:text-fg-quaternary_hover focus:text-fg-quaternary_hover focus:outline-hidden",
+                        "hit-area absolute flex cursor-pointer items-center justify-center text-fg-quaternary transition duration-100 ease-linear hover:text-fg-quaternary_hover focus:text-fg-quaternary_hover focus:outline-hidden",
                         sizes[inputSize].iconTrailing,
                     )}
                 >
@@ -226,7 +226,7 @@ export const InputBase = ({
 
 InputBase.displayName = "InputBase";
 
-interface TextFieldContextProps extends Partial<Pick<InputBaseProps, "size" | "wrapperClassName" | "inputClassName" | "iconClassName" | "tooltipClassName">> {}
+type TextFieldContextProps = Partial<Pick<InputBaseProps, "size" | "wrapperClassName" | "inputClassName" | "iconClassName" | "tooltipClassName">>;
 
 const TextFieldContext = createContext<TextFieldContextProps>({});
 

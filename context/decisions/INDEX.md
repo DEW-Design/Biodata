@@ -513,3 +513,104 @@ Not imported into every session on purpose: read or grep it when a task needs hi
 - [2026-10-22] post-6-oct: the project header's toggle no longer moves, the facts sit in the title's row - `2026-10-22-04-post-6-oct-the-project-header-s-toggle.md`
 - [2026-10-22] On this page: constant weight and an inset focus ring - `2026-10-22-05-on-this-page-constant-weight-and-an-inset.md`
 - [2026-10-23] Add Project option 2 (one question per card) sunset - `2026-10-23-01-add-project-option-2-one-question-per-card.md`
+- [2026-10-23] Data Validation Error report: Map visualise opens Explore on the dataset, with coordinate outliers - `2026-10-23-02-data-validation-error-report-map-visualise-opens-explore.md`
+- [2026-10-23] Map visualise: the card is only filters over Explore's own card - `2026-10-23-03-map-visualise-the-card-is-only-filters-over.md`
+- [2026-10-23] Map visualise: Show more scrolls to the next set - `2026-10-23-04-map-visualise-show-more-scrolls-to-the-next.md`
+- [2026-10-23] Map visualise: rows lead with what differs, one grey for supporting lines - `2026-10-23-05-map-visualise-rows-lead-with-what-differs-one.md`
+- [2026-10-23] Map visualise: the header names the project and dataset - `2026-10-23-06-map-visualise-the-header-names-the-project-and.md`
+- [2026-10-23] Map visualise: four ways to name the dataset, compared on the tools bar - `2026-10-23-07-map-visualise-four-ways-to-name-the-dataset.md`
+- [2026-10-23] Map visualise: the header is two groups, and each id sits with its name - `2026-10-23-08-map-visualise-the-header-is-two-groups-and.md`
+- [2026-10-23] Map visualise: the trail says where you came from, and the way back is checked - `2026-10-23-09-map-visualise-the-trail-says-where-you-came.md`
+- [2026-10-23] Map visualise: swap the project or the dataset from the card - `2026-10-23-10-map-visualise-swap-the-project-or-the-dataset.md`
+- [2026-10-23] Map visualise: the list is scannable, and detail waits for the click - `2026-10-23-11-map-visualise-the-list-is-scannable-and-detail.md`
+- [2026-10-23] Map visualise: text is cut by role, so the part that tells things apart stays - `2026-10-23-12-map-visualise-text-is-cut-by-role-so.md`
+- [2026-10-23] Map visualise: the switcher popups are anchored and the open one is marked - `2026-10-23-13-map-visualise-the-switcher-popups-are-anchored-and.md`
+- [2026-10-23] Map visualise: four ways to set an open popup apart from the white card - `2026-10-23-14-map-visualise-four-ways-to-set-an-open.md`
+- [2026-10-23] Map visualise: the header is file as title, and the project line steps up - `2026-10-23-15-map-visualise-the-header-is-file-as-title.md`
+- [2026-10-23] Popups: what Mobbin shows for dim, edge and both, and what a dim would touch - `2026-10-23-16-popups-what-mobbin-shows-for-dim-edge-and.md`
+- [2026-10-23] Layout thrashing: an audit of animated layout properties, and the one switch fixed - `2026-10-23-17-layout-thrashing-an-audit-of-animated-layout-properties.md`
+- [2026-10-23] Map visualise: an Other errors tab, and one alpha edge for what floats over the map - `2026-10-23-18-map-visualise-an-other-errors-tab-and-one.md`
+- [2026-10-23] Map visualise: hide and show the left panel - `2026-10-23-19-map-visualise-hide-and-show-the-left-panel.md`
+- [2026-10-23] Map visualise: the project code is part of the project name - `2026-10-23-20-map-visualise-the-project-code-is-part-of.md`
+- [2026-10-23] Switcher popups: the current row is the selected row, and the icon is part of it - `2026-10-23-21-switcher-popups-the-current-row-is-the-selected.md`
+- [2026-10-23] Data Validation Error Report: the errors by kind move into the card - `2026-10-23-22-data-validation-error-report-the-errors-by-kind.md`
+- [2026-10-23] Map visualise: the dataset is the title, the way back names the report, and the swap menus go - `2026-10-23-23-map-visualise-the-dataset-is-the-title-the.md`
+- [2026-10-23] Map visualise: category tabs from the report, severity at the right edge, an even header - `2026-10-23-24-map-visualise-category-tabs-from-the-report-severity.md`
+- [2026-10-23] Touch targets on Map visualise: every control at 40px or more, most at 44 - `2026-10-23-25-touch-targets-on-map-visualise-every-control-at.md`
+- [2026-10-23] Map visualise: project before file, the file regular, and a clearer type ladder - `2026-10-23-26-map-visualise-project-before-file-the-file-regular.md`
+- [2026-10-23] Map visualise: severity gets a label over its column, and what it means is still unsourced - `2026-10-23-27-map-visualise-severity-gets-a-label-over-its.md`
+- [2026-10-23] Map visualise: the key names the report's categories, and a dot's colour is its category - `2026-10-23-28-map-visualise-the-key-names-the-report-s.md`
+- [2026-10-23] Map visualise: the group heading is the same in every view - `2026-10-23-29-map-visualise-the-group-heading-is-the-same.md`
+- [2026-10-23] A key's entries line up in one column, now contract 2.14 - `2026-10-23-30-a-key-s-entries-line-up-in-one.md`
+- [2026-10-23] Map visualise: the list scrolls without a drawn scrollbar - `2026-10-23-31-map-visualise-the-list-scrolls-without-a-drawn.md`
+- [2026-10-23] Map visualise: three ways to show the record summary's facts, on the tools bar - `2026-10-23-32-map-visualise-three-ways-to-show-the-record.md`
+- [2026-10-23] Map visualise: the card shows the table's own data, and the species leads - `2026-10-23-33-map-visualise-the-card-shows-the-table-s.md`
+- [2026-10-23] Explore option 2 sunset - `2026-10-23-34-explore-option-2-sunset.md`
+- [2026-10-23] Map visualise: the species is written as the report's table writes it, now contract 2.15 - `2026-10-23-35-map-visualise-the-species-is-written-as-the.md`
+- [2026-10-23] Map visualise: the list fades at its foot and the Show more button lifts - `2026-10-23-36-map-visualise-the-list-fades-at-its-foot.md`
+- [2026-10-23] Map visualise: the Show more button has its own clear space at the foot of the list - `2026-10-23-37-map-visualise-the-show-more-button-has-its.md`
+- [2026-10-23] Map visualise: the last record on view fades out, a row going - `2026-10-23-38-map-visualise-the-last-record-on-view-fades.md`
+- [2026-10-23] Map visualise: the summary's facts are rows with lines, the other two options are gone - `2026-10-23-39-map-visualise-the-summary-s-facts-are-rows.md`
+- [2026-10-23] Field is Concept: a data item of a record is called a concept across the webapp - `2026-10-23-40-field-is-concept-a-data-item-of-a.md`
+- [2026-10-23] Touch targets are built into the components: one hit-area utility, applied across the webapp - `2026-10-23-41-touch-targets-are-built-into-the-components-one.md`
+- [2026-10-23] Contract 2.16: a control's hit area is built into its component - `2026-10-23-42-contract-2-16-a-control-s-hit-area.md`
+- [2026-10-23] Map list card: one pattern for Explore and Map visualise, documented in the design system - `2026-10-23-43-map-list-card-one-pattern-for-explore-and.md`
+- [2026-10-23] The ghost button has a grey fill on hover, in the design system and across production - `2026-10-23-44-the-ghost-button-has-a-grey-fill-on.md`
+- [2026-10-23] Design principles written down, craft documented, and explorations start design-first (contract 0.10) - `2026-10-23-45-design-principles-written-down-craft-documented-and-explorat.md`
+- [2026-10-23] Explore takes Map visualise's list fold and tab icons (contract 3.13 exemption removed) - `2026-10-23-46-explore-takes-map-visualise-s-list-fold-and.md`
+- [2026-10-23] Ghost controls: the drawn box is the touch target (ghost-fill); Explore's list heading with Export data - `2026-10-23-47-ghost-controls-the-drawn-box-is-the-touch.md`
+- [2026-10-23] Explore search card redesigned as drawn; tab icons taken off again; ghost box measured across 80 screens - `2026-10-23-48-explore-search-card-redesigned-as-drawn-tab-icons.md`
+- [2026-10-23] Explore panel: Events, Occurrences, Observations and Artefacts tabs removed - `2026-10-23-49-explore-panel-events-occurrences-observations-and-artefacts-.md`
+- [2026-10-23] Scrollbars on the map cards: what a browser allows, and a lab of four treatments - `2026-10-23-50-scrollbars-on-the-map-cards-what-a-browser.md`
+- [2026-10-23] Explore: drawing instructions move to a bar on the map; Add area is a brand ghost (Ghost colour) - `2026-10-23-51-explore-drawing-instructions-move-to-a-bar-on.md`
+- [2026-10-23] Show N more follows the fade: Explore's list, and every short list on a map card - `2026-10-23-52-show-n-more-follows-the-fade-explore-s.md`
+- [2026-10-23] Scrollbar on the map cards: option D (a drawn thumb), built into the shared list - `2026-10-23-53-scrollbar-on-the-map-cards-option-d-a.md`
+- [2026-10-23] Explore search areas as tidy chips: the row controls taken out for now - `2026-10-23-54-explore-search-areas-as-tidy-chips-the-row.md`
+- [2026-10-23] Explore summary card: a species record reads Species, not Occurrence - `2026-10-23-55-explore-summary-card-a-species-record-reads-species.md`
+- [2026-10-23] The draw bar on the map, ranked: an icon tile, a title, a hint, a quiet Cancel - `2026-10-23-56-the-draw-bar-on-the-map-ranked-an.md`
+- [2026-10-23] Area chips use the large Tag - `2026-10-23-57-area-chips-use-the-large-tag.md`
+- [2026-10-23] Explore empty card: the guidance line is the field's scope-first hint - `2026-10-23-58-explore-empty-card-the-guidance-line-is-the.md`
+- [2026-10-23] Ghost box back to 32px with a 40px target; right-edge ghosts align by their fill; the empty-card line reworded - `2026-10-23-59-ghost-box-back-to-32px-with-a-40px.md`
+- [2026-10-23] Area chip labels at the size of the Search results heading - `2026-10-23-60-area-chip-labels-at-the-size-of-the.md`
+- [2026-10-23] The draw bar is centred on the map - `2026-10-23-61-the-draw-bar-is-centred-on-the-map.md`
+- [2026-10-23] An area and its shape answer the pointer: chip hover, cursor and press, shape hover and press, crosshair... - `2026-10-23-62-an-area-and-its-shape-answer-the-pointer.md`
+- [2026-10-23] Data Validation Error Report: project and dataset are dropdowns on the toolbar, right of Filter - `2026-10-23-63-data-validation-error-report-project-and-dataset-are.md`
+- [2026-10-23] Explore add-area forms: the choice and the radius on one line, a tinted step, no clipped rows - `2026-10-23-64-explore-add-area-forms-the-choice-and-the.md`
+- [2026-10-23] Dropdowns on a toolbar name themselves: Select inlineLabel on the Data Validation Error Report - `2026-10-23-65-dropdowns-on-a-toolbar-name-themselves-select-inlinelabel.md`
+- [2026-10-23] Truncation strategy for the report's dropdowns: files cut in the middle, titles at a word, the list wide... - `2026-10-23-66-truncation-strategy-for-the-report-s-dropdowns-files.md`
+- [2026-10-23] Explore parks form: no Done, no title, it leaves like a popover - `2026-10-23-67-explore-parks-form-no-done-no-title-it.md`
+- [2026-10-23] One scrollbar for every scroller in the product: the drawn thumb, built once - `2026-10-23-68-one-scrollbar-for-every-scroller-in-the-product.md`
+- [2026-10-23] The report's dropdowns take the design system's label above them; Select inlineLabel removed - `2026-10-23-69-the-report-s-dropdowns-take-the-design-system.md`
+- [2026-10-23] Behaviour is a component: contract 1.10, and the behaviours built outside components today - `2026-10-23-70-behaviour-is-a-component-contract-1-10-and.md`
+- [2026-10-23] Project records tree: kind shapes, full type names, 38 percent resizable tree, visible Edit and Add, first... - `2026-10-23-71-project-records-tree-kind-shapes-full-type-names.md`
+- [2026-10-23] Edit screens: no Editing label, Fields per section, Add section, where the record sits - `2026-10-23-72-edit-screens-no-editing-label-fields-per-section.md`
+- [2026-10-25] Species tab cards: a restricted species' card has the same rhythm as every other - `2026-10-25-01-species-tab-cards-a-restricted-species-card-has.md`
+- [2026-10-25] No dot between pieces of text: contract 2.3c, ratcheted, the conversion waits on the replacement - `2026-10-25-02-no-dot-between-pieces-of-text-contract-2.md`
+- [2026-10-25] My BioData landing: the 5 Oct audit folded into the live Home, and Home options for the three roles in the lab - `2026-10-25-03-my-biodata-landing-the-5-oct-audit-folded.md`
+- [2026-10-25] The dot separator is gone from the webapp: the approved mapping applied to 157 lines - `2026-10-25-04-the-dot-separator-is-gone-from-the-webapp.md`
+- [2026-10-25] Home patterns from Mobbin, by what each role is asking: proposed, nothing built - `2026-10-25-05-home-patterns-from-mobbin-by-what-each-role.md`
+- [2026-10-25] Home: the Mobbin patterns built as lab options for the three roles - `2026-10-25-06-home-the-mobbin-patterns-built-as-lab-options.md`
+- [2026-10-25] Open: the dashboard Home, parked to come back to - `2026-10-25-07-open-the-dashboard-home-parked-to-come-back.md`
+- [2026-10-25] Result card metadata: the two grey lines at 14px - `2026-10-25-08-result-card-metadata-the-two-grey-lines-at.md`
+- [2026-10-25] The end of a map-card list lands quietly: no jump, the button and the fade ease away - `2026-10-25-09-the-end-of-a-map-card-list-lands.md`
+- [2026-10-25] Carousel ingested into the design system; the species photo is a Carousel with its credit as an info icon - `2026-10-25-10-carousel-ingested-into-the-design-system-the-species.md`
+- [2026-10-25] The photo credit's tooltip stays inside the card and reads in two lines - `2026-10-25-11-the-photo-credit-s-tooltip-stays-inside-the.md`
+- [2026-10-25] Record actions in one place, labelled - `2026-10-25-12-record-actions-in-one-place-labelled.md`
+- [2026-10-25] MultiSelect lists its selections as dismissible badges - `2026-10-25-13-multiselect-lists-its-selections-as-dismissible-badges.md`
+- [2026-10-25] Add Project: no logo, primary contact by delete, draw on map first, Analysis/Reporting method - `2026-10-25-14-add-project-no-logo-primary-contact-by-delete.md`
+- [2026-10-25] Locations from a Named location vocabulary, Other method described, next steps without numbers - `2026-10-25-15-locations-from-a-named-location-vocabulary-other-method.md`
+- [2026-10-25] New project restriction kinds, expected restriction level, managers and admins can edit restrictions - `2026-10-25-16-new-project-restriction-kinds-expected-restriction-level-man.md`
+- [2026-10-25] Restrictions layout, location empty state, embargo justification, project access lab - `2026-10-25-17-restrictions-layout-location-empty-state-embargo-justificati.md`
+- [2026-10-25] Project access in Add Project and on the project page, survey type removed from the edit drawer - `2026-10-25-18-project-access-in-add-project-and-on-the.md`
+- [2026-10-25] Nominations: see what is already protected and suggest removals; Painted Dragon and more species - `2026-10-25-19-nominations-see-what-is-already-protected-and-suggest.md`
+- [2026-10-25] Nominations: existing restrictions as a table with status; a restriction is a whole nomination - `2026-10-25-20-nominations-existing-restrictions-as-a-table-with-status.md`
+- [2026-10-25] Nominations: challenge any user's restriction from the species step; basic table when rows fit one page (4.2h) - `2026-10-25-21-nominations-challenge-any-user-s-restriction-from-the.md`
+- [2026-10-25] Nominations: request a change to a restriction, not a challenge; a prominent already-restricted warning; more... - `2026-10-25-22-nominations-request-a-change-to-a-restriction-not.md`
+- [2026-10-25] Nominations: the existing restrictions table is read only - `2026-10-25-23-nominations-the-existing-restrictions-table-is-read-only.md`
+- [2026-10-25] Bulk upload of attachments and web links with a project template - `2026-10-25-24-bulk-upload-of-attachments-and-web-links-with.md`
+- [2026-10-26] Custom concepts: columns added to a sheet at upload are flagged for admin approval - `2026-10-26-01-custom-concepts-columns-added-to-a-sheet-at.md`
+- [2026-10-26] Merge of mohan-wips into sai-wips: what came in, what was renumbered, and the mismatches handled - `2026-10-26-02-merge-of-mohan-wips-into-sai-wips-what.md`
+- [2026-10-26] Project page: the Project tab is Overview, and Project at a glance is removed - `2026-10-26-03-project-page-the-project-tab-is-overview-and.md`
+- [2026-10-26] Sunset the other options: nominations, voucher, taxonomy and notification management - `2026-10-26-04-sunset-the-other-options-nominations-voucher-taxonomy-and.md`
+- [2026-10-26] Record pages: the section crumb is a switcher on notifications, taxonomy, vouchers and vocabulary - `2026-10-26-05-record-pages-the-section-crumb-is-a-switcher.md`
+- [2026-10-26] Nominations: an admin's nomination follows the same workflow as every role - `2026-10-26-06-nominations-an-admin-s-nomination-follows-the-same.md`

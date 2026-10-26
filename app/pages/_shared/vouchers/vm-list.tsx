@@ -12,8 +12,7 @@ import { monthOptions, type FilterGetters, type FilterSection, type FilterSelect
 import { AttributeFilterChips } from "@/app/pages/_shared/attribute-filter";
 import { FilterMenu } from "@/app/pages/_shared/filter-menu";
 import { ToolbarSearch } from "@/app/pages/_shared/toolbar-search";
-import { BATCHES, BATCH_STATUS, BATCH_STATUS_ORDER, SOURCE_LABEL, readDate, type VmBatch, type VmSource } from "@/app/pages/_shared/vouchers/vm-data";
-import { useVmRoot } from "@/app/pages/_shared/vouchers/vm-root";
+import { VM_ROOT, BATCHES, BATCH_STATUS, BATCH_STATUS_ORDER, SOURCE_LABEL, readDate, type VmBatch, type VmSource } from "@/app/pages/_shared/vouchers/vm-data";
 import { useBatchSummaries, type BatchSummary } from "@/app/pages/_shared/vouchers/vm-store";
 import { useRoleHref } from "@/lib/use-role-href";
 
@@ -51,7 +50,6 @@ function Count({ n }: { n: number }) {
 export function VmList({ source }: { source: VmSource | "" }) {
   const summaries = useBatchSummaries();
   const roleHref = useRoleHref();
-  const root = useVmRoot();
   const all: Row[] = BATCHES.filter((b) => !source || b.source === source).map((b) => ({ ...b, s: summaries.get(b.id)! }));
   const [search, setSearch] = useState("");
   const [filters, setFilters] = useState<FilterSelection>({});
@@ -146,13 +144,13 @@ export function VmList({ source }: { source: VmSource | "" }) {
                 <Table.Head id="ranOn" label="Ran on" allowsSorting className="w-[14%]" />
                 {!source ? <Table.Head id="source" label="Source" className="w-[16%]" /> : null}
                 <Table.Head id="checked" label="Records checked" allowsSorting className="w-[14%]" />
-                <Table.Head id="different" label="Differences" tooltip="Fields whose values differ between the source and BioData" allowsSorting className="w-[14%]" />
+                <Table.Head id="different" label="Differences" tooltip="Concepts whose values differ between the source and BioData" allowsSorting className="w-[14%]" />
                 <Table.Head id="decided" label="Decided" allowsSorting className="w-[12%]" />
                 <Table.Head id="status" label="Status" allowsSorting className="w-[14%]" />
               </Table.Header>
               <Table.Body items={paged} dependencies={[summaries, source]}>
                 {(r) => (
-                  <Table.Row id={r.id} href={roleHref(`${root}/${r.id}`)} textValue={`Batch ${r.id}`} className="group data-[href]:cursor-pointer">
+                  <Table.Row id={r.id} href={roleHref(`${VM_ROOT}/${r.id}`)} textValue={`Batch ${r.id}`} className="group data-[href]:cursor-pointer">
                     <Table.Cell>
                       <div className="flex flex-col">
                         <p className="text-sm font-medium whitespace-nowrap text-primary tabular-nums group-hover:text-brand-700 group-hover:underline">Batch {r.id}</p>
@@ -184,7 +182,7 @@ export function VmList({ source }: { source: VmSource | "" }) {
                       {r.s.updated + r.s.ignored === 0 ? (
                         <Count n={0} />
                       ) : (
-                        <span className="text-sm text-secondary tabular-nums">{[r.s.updated && `${r.s.updated} updated`, r.s.ignored && `${r.s.ignored} ignored`].filter(Boolean).join(" · ")}</span>
+                        <span className="text-sm text-secondary tabular-nums">{[r.s.updated && `${r.s.updated} updated`, r.s.ignored && `${r.s.ignored} ignored`].filter(Boolean).join(", ")}</span>
                       )}
                     </Table.Cell>
                     <Table.Cell>

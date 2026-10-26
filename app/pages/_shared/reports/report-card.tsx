@@ -18,7 +18,7 @@ export function ReportCard({ report, isFavourite, openedAt }: { report: ReportEn
     <BentoCard className="group relative gap-4 transition-colors duration-150 hover:border-primary">
       <div className="flex items-start justify-between gap-3">
         <FeaturedIcon icon={report.icon} theme="light" color="brand" size="lg" />
-        <div className="relative z-10 flex items-center gap-1">
+        <div className="relative z-10 flex items-center gap-1 [--hit-min:32px]">
           <FavouriteButton report={report} isFavourite={isFavourite} />
           <ReportMenu report={report} isFavourite={isFavourite} />
         </div>

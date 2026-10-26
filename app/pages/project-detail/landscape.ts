@@ -151,7 +151,7 @@ export function scoreLandscape(ids: FactorId[], inputs: LandscapeInputs, ctx: { 
         points: (a?.points ?? 0) + (s?.points ?? 0),
         max: 0.1,
         entered: !!(a || s),
-        detail: a || s ? `${ibra.association} ${ibra.associationPct ?? "?"}% · ${ibra.subregion} ${ibra.subregionPct ?? "?"}%` : "No IBRA figures for this location",
+        detail: a || s ? `${ibra.association} ${ibra.associationPct ?? "?"}%, ${ibra.subregion} ${ibra.subregionPct ?? "?"}%` : "No IBRA figures for this location",
       };
     }
     if (id === "protected") {

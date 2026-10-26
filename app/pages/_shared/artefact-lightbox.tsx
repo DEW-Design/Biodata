@@ -1,7 +1,7 @@
 "use client";
 
 import type { FC, ReactNode } from "react";
-import { ChevronLeft, ChevronRight, DownloadCloud02, Image01, FileAttachment02, VideoRecorder, FileCheck02, Link02 } from "@untitledui/icons";
+import { ChevronLeft, ChevronRight, Download01, Image01, FileAttachment02, VideoRecorder, FileCheck02, Link02 } from "@untitledui/icons";
 import { Badge, CountBadge } from "@/components/base/badges/badges";
 import { Button } from "@/components/base/buttons/button";
 import { CloseButton } from "@/components/base/buttons/close-button";
@@ -130,7 +130,7 @@ export function ArtefactTile({ artefact, onOpen }: { artefact: Artefact; onOpen:
 
 export function ArtefactCarousel({ artefacts, onOpen }: { artefacts: Artefact[]; onOpen: (index: number) => void }) {
   return (
-    <div className="flex gap-3 overflow-x-auto pb-1" style={{ scrollbarWidth: "none" }}>
+    <div data-no-drawn-scrollbar className="flex gap-3 overflow-x-auto pb-1">
       {artefacts.map((artefact, i) => (
         <ArtefactTile key={artefact.id} artefact={artefact} onOpen={() => onOpen(i)} />
       ))}
@@ -244,7 +244,7 @@ export function ArtefactLightbox({
                 <MetaField label="Type">{artefact.dcType}</MetaField>
                 <MetaField label="BioDataID">{artefact.bioDataId}</MetaField>
               </div>
-              <Button color="primary" iconLeading={DownloadCloud02} className="mt-auto w-full">
+              <Button color="primary" iconLeading={Download01} className="mt-auto w-full">
                 Download
               </Button>
             </div>

@@ -1,4 +1,5 @@
 import type { Outcome, RunView } from "@/app/pages/_shared/dataset-upload/ingestion";
+import type { SheetColumns } from "@/app/pages/_shared/dataset-upload/custom-concepts";
 import type { BadgeColor } from "@/components/base/badges/badges";
 import { datasetTemplates, type DatasetTemplate } from "@/app/pages/_shared/template-finder/template-data";
 
@@ -95,6 +96,8 @@ export interface DatasetFile {
   name: string;
   /** Bytes. */
   size: number;
+  /** The headings read from the first row of each visible sheet (names and letters only, never values). Absent on files saved before custom concepts, or when the file could not be read. */
+  sheets?: SheetColumns[];
 }
 
 export interface Dataset {
@@ -130,11 +133,15 @@ export interface UploadDraft {
 export const emptyUploadDraft: UploadDraft = { files: [], licence: "", classification: "", firstNations: "", iiaReference: "", privacyConfirmed: false };
 
 // ── The form's sections ──
-export type UploadSection = "files" | "acknowledgement";
+export type UploadSection = "files" | "custom" | "acknowledgement";
 export const UPLOAD_SECTION_ORDER: UploadSection[] = ["files", "acknowledgement"];
+
+/** The sections in order. "Custom concepts" is there only when the files hold some: a conditional section is conditional in the UI (4.3). */
+export const uploadSectionOrder = (hasCustomConcepts: boolean): UploadSection[] => (hasCustomConcepts ? ["files", "custom", "acknowledgement"] : UPLOAD_SECTION_ORDER);
 
 export const uploadSections: Record<UploadSection, { title: string; description: string }> = {
   files: { title: "Upload files", description: "Add the dataset files for this project. Use the recommended templates when preparing your data." },
+  custom: { title: "Custom concepts", description: "Columns in your files that aren't in BioData's controlled vocabularies." },
   acknowledgement: { title: "Data upload acknowledgement", description: "Before uploading, you must confirm the classification and clearance details of this dataset." },
 };
 
@@ -151,7 +158,8 @@ export function missingForUpload(draft: UploadDraft, uploading: boolean): Record
   else if (needsIiaReference(draft.firstNations) && !draft.iiaReference.trim()) acknowledgement.push("IIA reference or authority name");
   if (!draft.privacyConfirmed) acknowledgement.push("Privacy and restriction confirmation");
 
-  return { files, acknowledgement };
+  // Nothing in the custom concepts section is required: the concepts are flagged, the upload goes ahead.
+  return { files, custom: [], acknowledgement };
 }
 
 // ── Recommended templates ──

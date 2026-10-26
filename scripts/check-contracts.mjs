@@ -75,7 +75,7 @@ const hardRules = [
     id: "3.13",
     name: "underline tabs have icons",
     test: (s) => [...s.matchAll(/<TabList\b[^>]*type="underline"[^>]*>[\s\S]*?<\/TabList>/g)].some((list) => !/\bicon=/.test(list[0])),
-    // Explore's results card is too narrow for icons; the record sections' titles come from the data.
+    // Explore's results card is too narrow for icons (and is drawn without them); the record sections' titles come from the data.
     allow: ["observations/observations-search.tsx", "project-list/[id]/project-details/project-details-view.tsx"],
     message: "An underline tab list whose tabs have no icon. Every tab carries the icon of what it holds: Tab icon={...} (CONTRACTS.md 3.13).",
   },
@@ -130,6 +130,15 @@ const hardRules = [
     message: "A shell that draws column 2 and takes a record prop (recordId, breadcrumbCurrent, currentId) without recordPage. A record page uses the whole width: hide the sidebar for it (CONTRACTS.md 3.7).",
   },
   {
+    // 4.6b: a record page's section crumb is a switcher (CONTRACTS 4.6 item 5). A shell that hides column 2 for a record
+    // (`recordPage`) must draw some collection switcher, a thin wrapper over BreadcrumbSwitcher, for it.
+    id: "4.6b",
+    name: "record page section crumb is a switcher",
+    test: (s) => /\bconst recordPage\b/.test(s) && !/<(?!\w*(?:Option|Version)Switcher)\w*Switcher\b/.test(s), // the layout and version tools on the Prototype bar are not a record switcher
+    allow: [],
+    message: "A shell that has a record page (recordPage) but draws no switcher for its section crumb. The crumb of a record page is that collection's switcher over BreadcrumbSwitcher (see DlaSwitcher), not a plain link (CONTRACTS.md 4.6 item 5).",
+  },
+  {
     id: "4.2d",
     name: "one filter",
     // The three filters this replaced were a popover of every section, an "Add filter" popover and an "All Filters" side
@@ -144,7 +153,7 @@ const hardRules = [
     // A collection toolbar is where the Filter menu lives. Its search box is ToolbarSearch (384px),
     // never a hand-rolled Input that grows to fill the row or picks its own width.
     test: (s) => /<FilterMenu\b/.test(s) && /<Input\b[^>]*icon=\{Search(?:Md|Lg|Sm)\}/.test(s),
-    allow: ["_shared/map-search/species-results.tsx", "observations/observations-search.tsx"], // Explore's full-width results search: the designer's call, open (CONTRACTS 4.2c)
+    allow: ["_shared/map-search/species-results.tsx"], // The species results' full-width search (now only the dataset ingestion lab): the designer's call, open (CONTRACTS 4.2c)
     message: "A toolbar with a Filter button whose search is a hand-rolled <Input>. Use <ToolbarSearch> (app/pages/_shared/toolbar-search.tsx): one 384px search width on every collection toolbar (CONTRACTS.md 4.2c).",
   },
   {
@@ -175,9 +184,18 @@ const hardRules = [
       }
       return false;
     },
-    // The Explore results table lets the person choose its columns; the ingestion report view is lab-only.
+    // The results table lets the person choose its columns (the dataset ingestion lab's species results); the ingestion report view is lab-only.
     allow: ["_shared/map-search/results-table.tsx", "_shared/reports/ingestion-report.tsx"],
     message: 'A collection table (Table bodyScrollable) without layout="fixed". Its columns must keep their width whatever rows show: fixed layout, a width on every Table.Head, a min-w on the table (CONTRACTS.md 4.2f).',
+  },
+  {
+    id: "2.16b",
+    name: "a hit area is the component's",
+    // A target is enlarged by the component (`hit-area`, app/globals.css), never by a `before:` or `after:` written where it is used: that one has no mouse and touch sizes, is not tested, and was the reason
+    // every other screen still had 28px icon buttons (CONTRACTS.md 2.16).
+    test: (s) => /\b(?:before|after):-(?:inset|top|bottom|left|right)(?:-[xy])?-/.test(s),
+    allow: [],
+    message: "A negative-inset before: or after: that enlarges a target. Use a component that carries the hit area (Button, ButtonUtility, CloseButton, Tab...), or add `hit-area` to the control (CONTRACTS.md 2.16).",
   },
   {
     id: "4.2f",
@@ -237,6 +255,8 @@ const ratchetRules = [
   },
   { id: "2.3a", name: "em-dash", test: (line) => /—/.test(line) },
   { id: "2.3b", name: "arrow character", test: (line) => /[←-↓⇒]/.test(line) },
+  // 2.3c: no dot between pieces of text. The middle dot, as the character, as its escape in a string, or as an entity; comments are not copy.
+  { id: "2.3c", name: "middle-dot separator", test: (line) => !isComment(line) && /\u00b7|\\u00b7|&middot;/i.test(line) },
 ];
 
 // 2.1c: app/globals.css's own --color-* primitives must match contracts/figma-colours.json exactly.
@@ -346,9 +366,57 @@ function actionButtonsWithoutIcon(src) {
   return found;
 }
 
+// 3.12b: one icon per action, everywhere. An action named by its label (a menu item or RecordAction's `label` with its
+// `icon`, a Button's text with its `iconLeading`) takes the icon the 3.12 table gives that action, whatever the screen.
+// Keyed by the label's first word; "Add" and "Cancel" are left out because the table gives them more than one icon by
+// what is added or cancelled (Add attachment, Add a link; Cancel, Cancel an agreement), and "Change" because a change
+// made with a control of its own names that control (Change radius, Sliders01). The marketing home is exempt: its
+// feature tiles name features, not actions ("Export for research").
+const ACTION_ICON = {
+  edit: "Edit05",
+  delete: "Trash01", discard: "Trash01",
+  download: "Download01", export: "Download01",
+  upload: "Upload01", replace: "Upload01",
+  save: "Save01",
+  rename: "PencilLine",
+  duplicate: "Copy01",
+  approve: "CheckCircle", accept: "CheckCircle", resolve: "CheckCircle",
+  reject: "XCircle",
+  archive: "Archive", restore: "FlipBackward",
+};
+// The other pencils are never an action's icon: edit is Edit05.
+const STRAY_EDIT_GLYPH = /\b(Edit0[1-46-9]|Pencil0\d)\b/;
+function actionIconMismatches(src) {
+  const found = [];
+  const check = (label, icon, at) => {
+    const want = ACTION_ICON[label.trim().split(/\s+/)[0]?.toLowerCase()];
+    if (want && icon !== want) found.push({ line: src.slice(0, at).split("\n").length, label: label.trim(), icon, want });
+  };
+  // label="X" ... icon={Y} (or the other way round) inside one tag or object literal
+  for (const m of src.matchAll(/label[=:]\s*\{?["'`]([^"'`$]+)["'`]\}?[^<>{}]{0,160}?\bicon[=:]\s*\{?([A-Z]\w+)/g)) check(m[1], m[2], m.index);
+  for (const m of src.matchAll(/\bicon[=:]\s*\{?([A-Z]\w+)\}?[^<>{}]{0,160}?\blabel[=:]\s*\{?["'`]([^"'`$]+)["'`]/g)) check(m[2], m[1], m.index);
+  // <Button ... iconLeading={Y} ...>X</Button>
+  for (const m of src.matchAll(/<Button\b[^>]*?\biconLeading=\{([A-Z]\w+)\}[^>]*>\s*([A-Za-z][^<{]*?)\s*<\/Button>/g)) check(m[2], m[1], m.index);
+  return found;
+}
+
 export function runChecks() {
   const violations = [];
   const improvements = [];
+
+  // 3.12b: one icon per action, on every screen, doc page and shared component
+  for (const dir of ["app/pages", "app/(docs)", "app/_prototype-tools", "components/application", "components/base", "components/custom"]) {
+    const root = join(ROOT, dir);
+    if (!existsSync(root)) continue;
+    for (const file of walk(root)) {
+      if (!/\.tsx?$/.test(file) || rel(file).startsWith("app/pages/biodata-home/")) continue;
+      const src = readFileSync(file, "utf8");
+      const stray = src.match(new RegExp(`import\\s*\\{[^}]*${STRAY_EDIT_GLYPH.source}[^}]*\\}\\s*from\\s*["']@untitledui/icons["']`));
+      if (stray) violations.push({ clause: "3.12b", file: rel(file), message: `${stray[1]} imported. Edit is Edit05 everywhere; no other pencil is an action's icon (CONTRACTS.md 3.12).` });
+      for (const x of actionIconMismatches(src))
+        violations.push({ clause: "3.12b", file: `${rel(file)}:${x.line}`, message: `"${x.label}" carries ${x.icon}; that action is ${x.want} on every screen (CONTRACTS.md 3.12, one icon per action).` });
+    }
+  }
 
   // hard shell / pattern rules
   for (const file of walk(PAGES)) {
@@ -419,6 +487,63 @@ export function runChecks() {
     if (o.status !== "active") continue;
     if (!o.reviewBy) violations.push({ clause: "1.4b", file: o.component, message: `Override ${o.id} has no reviewBy date. Every override needs one (CONTRACTS.md 1.4, 9.2).` });
     else if (o.reviewBy < today) violations.push({ clause: "1.4b", file: o.component, message: `Override ${o.id}'s reviewBy (${o.reviewBy}) has passed. Renew it with a new reviewBy, or retire it - it MUST NOT just sit there overdue (CONTRACTS.md 9.2).` });
+  }
+
+  // 2.16a: the components that render a control smaller than 40px carry the hit area on their own root, so no screen has to ask for it.
+  const HIT_AREA_FILES = [
+    "components/base/buttons/button.tsx",
+    "components/base/buttons/button-utility.tsx",
+    "components/base/buttons/close-button.tsx",
+    "components/application/tabs/tabs.tsx",
+    "components/base/checkbox/checkbox.tsx",
+    "components/base/radio-buttons/radio-buttons.tsx",
+    "components/base/toggle/toggle.tsx",
+    "components/base/input/input.tsx",
+    "components/application/table/table.tsx",
+    "components/base/dropdown/dropdown.tsx",
+    "components/base/tooltip/tooltip.tsx",
+    "components/custom/date-picker/input-date-picker.tsx",
+  ];
+  for (const f of HIT_AREA_FILES) {
+    if (!existsSync(join(ROOT, f))) continue;
+    if (!/\bhit-area\b/.test(readFileSync(join(ROOT, f), "utf8"))) violations.push({ clause: "2.16a", file: f, message: "A component that renders a control smaller than 40px has lost its hit-area class. Every press target is 40px with a mouse and 44px on touch, built into the component (CONTRACTS.md 2.16)." });
+  }
+
+  // 2.16c: a ghost control's drawn box comes from one utility and its target from the hit area; the files that draw one keep both.
+  const GHOST_FILES = [
+    "components/base/buttons/button.tsx",
+    "app/pages/_shared/record-hero.tsx",
+    "app/pages/_shared/breadcrumb-switcher.tsx",
+    "app/pages/_shared/app-header.tsx",
+  ];
+  for (const f of GHOST_FILES) {
+    if (!existsSync(join(ROOT, f))) continue;
+    // Comments are stripped first: a comment that names `ghost-fill` is not the class.
+    const code = readFileSync(join(ROOT, f), "utf8").replace(/\/\*[\s\S]*?\*\/|^\s*\/\/.*$/gm, "");
+    if (!/\bghost-fill\b/.test(code) || !/\bhit-area\b/.test(code)) violations.push({ clause: "2.16c", file: f, message: "A ghost control has lost `ghost-fill` or its `hit-area`: it draws a 32px box (padding and negative margin from one utility, never set by hand) and keeps a 40px target (CONTRACTS.md 2.16)." });
+  }
+
+  // 1.10 behaviour is a component: the root layout renders components from components/** only. A behaviour built elsewhere and mounted from the layout is named here as open, not hidden; the designer decides its move (1.4).
+  const OPEN_1_10 = ["@/app/_scrollbars/drawn-scrollbars"];
+  const layout110 = readFileSync(join(ROOT, "app/layout.tsx"), "utf8").replace(/\/\*[\s\S]*?\*\/|^\s*\/\/.*$/gm, "");
+  for (const m of layout110.matchAll(/from\s+"(@\/app\/[^"]+)"/g)) {
+    if (!OPEN_1_10.includes(m[1])) violations.push({ clause: "1.10", file: "app/layout.tsx", message: `The root layout renders ${m[1]}, which is built under app/. A behaviour or element more than one screen has is a component and is built in components/** with the designer's override (CONTRACTS.md 1.10, 1.4).` });
+  }
+
+  // 2.17 one scrollbar: the browser's bar is off in one global rule and one component draws the thumb for every scroller. Neither may go, and no scroller makes its own (comments stripped).
+  const css217 = readFileSync(join(ROOT, "app/globals.css"), "utf8").replace(/\/\*[\s\S]*?\*\//g, "");
+  if (!/\*\s*\{\s*scrollbar-width:\s*none/.test(css217) || !/\*::-webkit-scrollbar\s*\{\s*display:\s*none/.test(css217)) {
+    violations.push({ clause: "2.17", file: "app/globals.css", message: "The global rule that turns the browser's scrollbar off (`* { scrollbar-width: none }` and `*::-webkit-scrollbar { display: none }`) is gone: every scroller draws the one thumb instead (CONTRACTS.md 2.17)." });
+  }
+  if (!/<DrawnScrollbars\b/.test(readFileSync(join(ROOT, "app/layout.tsx"), "utf8")) || !existsSync(join(ROOT, "app/_scrollbars/drawn-scrollbars.tsx"))) {
+    violations.push({ clause: "2.17", file: "app/layout.tsx", message: "`<DrawnScrollbars />` is not mounted in the root layout (or `app/_scrollbars/drawn-scrollbars.tsx` is gone): with the browser's bar off, no scroller would show one (CONTRACTS.md 2.17)." });
+  }
+  const own217 = [...componentFiles(), ...[...walk(PAGES)].filter((f) => /\.tsx?$/.test(f)).map(rel)];
+  for (const f of own217) {
+    const code = readFileSync(join(ROOT, f), "utf8").replace(/\/\*[\s\S]*?\*\/|^\s*\/\/.*$/gm, "");
+    if (/scrollbar-width|::-webkit-scrollbar|\[&::-webkit-scrollbar\]|scrollbar-color|scrollbarWidth|overflow:\s*overlay/.test(code)) {
+      violations.push({ clause: "2.17", file: f, message: "A scrollbar drawn or switched at one scroller (`scrollbar-width`, `::-webkit-scrollbar`, `scrollbar-color`, `overflow: overlay`). Every scroller has the one drawn thumb; a box with its own cue opts out with `data-no-drawn-scrollbar` (CONTRACTS.md 2.17)." });
+    }
   }
 
   // 1.9a behaviour patterns: a multiple-selection listbox in a component must switch off react-aria's

@@ -7,6 +7,7 @@ import { Button } from "@/components/base/buttons/button";
 import { ProgressBarBase } from "@/components/base/progress-indicators/progress-indicators";
 import { FeaturedIcon } from "@/components/foundations/featured-icon/featured-icon";
 import { ACCEPTED_EXTENSIONS, formatFileSize, isAcceptedFile } from "@/app/pages/_shared/dataset-upload/dataset-data";
+import { readWorkbookColumns, type SheetColumns } from "@/app/pages/_shared/dataset-upload/custom-concepts";
 import { cx } from "@/utils/cx";
 
 // The upload area and its file queue, from the wireframe (Figma YMproGZfrFB5jUqPHPxMhk node 67:33213):
@@ -20,7 +21,8 @@ import { cx } from "@/utils/cx";
 //
 // Progress is real: each file is read in the browser with `FileReader` and the bar follows its
 // `progress` events. Nothing leaves the browser (there is no server here), and the contents are not
-// kept, only the name and size.
+// kept, only the name, the size and the headings of each visible sheet (`sheets`, read from the same
+// bytes once the file is in: they say which columns are custom concepts, see custom-concepts.ts).
 
 export interface QueuedFile {
   id: string;
@@ -28,6 +30,8 @@ export interface QueuedFile {
   size: number;
   loaded: number;
   status: "uploading" | "complete" | "error";
+  /** The headings of each visible sheet, once read. Absent until then, and when the file could not be read as a workbook. */
+  sheets?: SheetColumns[];
 }
 
 /** The queue's state and the reading of each file. */
@@ -48,7 +52,13 @@ export function useFileQueue() {
       for (const { file, entry } of entries) {
         const reader = new FileReader();
         reader.onprogress = (e) => e.lengthComputable && patch(entry.id, { loaded: e.loaded });
-        reader.onload = () => patch(entry.id, { loaded: file.size, status: "complete" });
+        reader.onload = () => {
+          patch(entry.id, { loaded: file.size, status: "complete" });
+          // A file that is not a readable workbook is still uploaded; it just has no headings to check.
+          readWorkbookColumns(reader.result as ArrayBuffer)
+            .then((sheets) => patch(entry.id, { sheets }))
+            .catch(() => undefined);
+        };
         reader.onerror = () => patch(entry.id, { status: "error" });
         reader.readAsArrayBuffer(file);
       }
@@ -60,7 +70,19 @@ export function useFileQueue() {
   return { files, rejected, add, remove, uploading: files.some((f) => f.status === "uploading") };
 }
 
-export function UploadDropzone({ onAdd, isInvalid }: { onAdd: (files: File[]) => void; isInvalid?: boolean }) {
+export function UploadDropzone({
+  onAdd,
+  isInvalid,
+  acceptedFileTypes = ACCEPTED_EXTENSIONS,
+  formats = "XLS or XLSX",
+}: {
+  onAdd: (files: File[]) => void;
+  isInvalid?: boolean;
+  /** What the file picker offers. Dropped files are not filtered here: the caller checks them. */
+  acceptedFileTypes?: string[];
+  /** The line under "Click to upload", naming what can be added. */
+  formats?: string;
+}) {
   const onDrop: NonNullable<DropZoneProps["onDrop"]> = async (e) => {
     const dropped = await Promise.all(e.items.flatMap((item) => (item.kind === "file" ? [item.getFile()] : [])));
     onAdd(dropped);
@@ -80,14 +102,14 @@ export function UploadDropzone({ onAdd, isInvalid }: { onAdd: (files: File[]) =>
     >
       <FeaturedIcon icon={Upload01} theme="modern" color="gray" size="md" />
       <Text slot="label" className="flex flex-wrap items-baseline justify-center gap-x-1 text-sm text-tertiary">
-        <FileTrigger acceptedFileTypes={ACCEPTED_EXTENSIONS} allowsMultiple onSelect={(list) => list && onAdd(Array.from(list))}>
+        <FileTrigger acceptedFileTypes={acceptedFileTypes} allowsMultiple onSelect={(list) => list && onAdd(Array.from(list))}>
           <Button color="link-color" size="sm">
             Click to upload
           </Button>
         </FileTrigger>
         <span>or drag and drop here</span>
       </Text>
-      <p className="text-xs text-quaternary">XLS or XLSX</p>
+      <p className="text-xs text-balance text-quaternary">{formats}</p>
     </DropZone>
   );
 }

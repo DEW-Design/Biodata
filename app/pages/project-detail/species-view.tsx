@@ -33,6 +33,7 @@ import { optionsFromValues, type FilterSection, useListFilter } from "@/app/page
 import { AttributeFilterChips } from "@/app/pages/_shared/attribute-filter";
 import { FilterMenu } from "@/app/pages/_shared/filter-menu";
 import { ToolbarSearch } from "@/app/pages/_shared/toolbar-search";
+import { FittedText } from "@/app/pages/_shared/fitted-text";
 import { MetricTile } from "@/app/pages/_shared/map-search/metric-tile";
 import { SPECIES_GROUP_ICON } from "@/app/pages/_shared/map-search/species-group-icons";
 import { SpeciesPhoto } from "@/app/pages/_shared/map-search/species-photo";
@@ -143,7 +144,7 @@ function GoToRecord({
             <Dropdown.Item
               key={o.id}
               id={o.id}
-              label={`${o.code} · ${o.type}`}
+              label={`${o.code}, ${o.type}`}
               addon={formatDate(o.date)}
             />
           ))}
@@ -333,20 +334,23 @@ export function SpeciesView({
                   className="size-14"
                 />
                 <div className="flex min-w-0 flex-1 flex-col gap-0.5">
-                  <p className="flex flex-wrap items-center gap-2 text-sm font-semibold text-primary">
-                    {r.common}
-                    {r.restricted && restrictedBadge}
+                  {/* The name and its badge are one line, as on Explore's result card (`ResultCard`): the name is cut after its last whole word that fits (`FittedText`, whole name as the tooltip) and the badge never wraps,
+                      so a restricted species' card has the rhythm of every other card at any width. The badge is 24px high and the name's line 20px: its box counts as 20px (`-my-0.5` takes the 2px above and below
+                      back), or it raised the title row by 4px and moved every line under it. */}
+                  <p className="flex min-w-0 items-center gap-2">
+                    <FittedText text={r.common} className="text-sm font-semibold text-primary" />
+                    {r.restricted && <span className="-my-0.5 inline-flex shrink-0">{restrictedBadge}</span>}
                   </p>
                   <p className="text-sm text-tertiary italic">{r.scientific}</p>
                   <p className="text-xs text-tertiary">
-                    {r.family} · {r.group}
+                    {r.family}, {r.group}
                   </p>
                 </div>
               </div>
               <dl className="grid grid-cols-[auto_minmax(0,1fr)] gap-x-3 gap-y-1 text-sm">
                 <dt className="text-tertiary">Records</dt>
                 <dd className="text-primary">
-                  {recordsLabel(r.occurrences.length)} · {r.types.join(", ")}
+                  {recordsLabel(r.occurrences.length)}{r.types.length === 1 ? ", " : ": "}{r.types.join(", ")}
                 </dd>
                 <dt className="text-tertiary">Sites</dt>
                 <dd

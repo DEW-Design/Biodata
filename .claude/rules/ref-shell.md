@@ -82,7 +82,7 @@ A preview of a real product screen, not a doc page and not a `/test-*` proof.
 
 1. **Components** (`components/base/**`, `components/application/**`), the DEW layer, never patched for one
    screen.
-2. **Shell:** `AppHeader`, `PrimaryRail`, the legal links as icons at the foot of `PrimaryRail`, column 2 (absent on every record page, §3.7, and on Explore's first layout), `MobileNavTrigger`, and
+2. **Shell:** `AppHeader`, `PrimaryRail`, the legal links as icons at the foot of `PrimaryRail`, column 2 (absent on every record page, §3.7, and on Explore), `MobileNavTrigger`, and
    `<PrototypeTools />` (§3.1-§3.8; anatomy at `/patterns/navigation`). Borrow it; never draw a new one.
 3. **Screen:** the shell plus the page's own content, built from components and the patterns below.
 4. **Flow:** the unit that gets user-tested (dashboard, project list, project, record). A screen can pass
@@ -156,19 +156,22 @@ Supabase pattern catalog gathered earlier is in the archive.
   guides, the empty state, the Add project flow, Home) and, if a walkthrough returns, what it should look like; the
   Nominations card takes about 140px of its list and raises the same question. **Revisit when** the designer decides
   how first-time help should work across the app, or the copy has been through a content review.
-- **Explore's results table still sizes its columns to their content** (`map-search/results-table.tsx`, allowed in the
-  §4.2f check): the person chooses its columns ("customise columns"), so there is no fixed set to give widths to, and each
-  tab (Species, Projects, Events) is its own table inside a 440px card. Decide whether it should get a width per
-  column from its column definitions, like the reports. The lab-only `ingestion-report.tsx` is also exempt.
+- **The results table still sizes its columns to their content** (`map-search/results-table.tsx`, allowed in the
+  §4.2f check): the person chooses its columns ("customise columns"), so there is no fixed set to give widths to. Explore no
+  longer shows it (its second layout, which did, was retired on 23 Oct 2026); only the species results of the dataset
+  ingestion lab do. Decide whether it should get a width per column from its column definitions, like the reports, or go
+  with that lab. The lab-only `ingestion-report.tsx` is also exempt.
 - **Icons on the underline tabs: done, with three exceptions (3.13).** Treatment B (an icon on every tab) was chosen by the
   designer ("these to also have icons", 1 Oct 2026) and applied to the project page and its option 2, the record pages
   (DLA, DSA, nominations, user, role), the Flora and Fauna dashboard, Reports and the records report. Open: Explore's
-  results tabs (the 440px card needs about 780px with icons and scrolls sideways; the lab `/proto/tab-icons`), a record's
+  results tabs (Species and Projects only since 23 Oct 2026, when Events, Occurrences, Observations and Artefacts were
+  removed from the panel; with two tabs icons would fit, but the designer's redesign of the card draws them without, and icons added
+  earlier that day were taken off; the lab `/proto/tab-icons`), a record's
   dynamic section tabs (`project-details-view.tsx`, titles from the data, so no icon to choose), and Home's task status
   filters (filters, not sections).
 - **Open, filters:** the filter chips appear under the toolbar when a filter is turned on, so the table (which takes the rest of
   the height) starts about 32px lower; the toolbar does not move. If that reads as a jump, the chips could live in the toolbar
-  row, scrolling sideways, or a strip could be reserved. The Explore results toolbars keep their full-width search (4.2c,
+  row, scrolling sideways, or a strip could be reserved. The species results toolbar (now only in the dataset ingestion lab) keeps its full-width search (4.2c,
   not decided).
 
 ## Registered User dashboard scope
@@ -176,5 +179,5 @@ Supabase pattern catalog gathered earlier is in the archive.
 Per the designer, Home for a `registered-user` is a personal tracker, not a BI surface: their DLA requests,
 their sensitive species nominations, the datasets they uploaded, and the projects they created, with adding
 data to an existing project as the core recurring action. DLA requests and nominations already surface in
-"Needs your attention" (`app/pages/_shared/home-dashboard.tsx`); check that file for what else is built
+"Your requests" (`app/pages/_shared/home-dashboard.tsx`; called "Needs your attention" until 25 Oct 2026, when it was found to list nothing the person had to do); check that file for what else is built
 before extending it.

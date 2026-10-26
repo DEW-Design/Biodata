@@ -21,15 +21,16 @@ import {
   SpeciesTypeField,
 } from "@/app/pages/_shared/taxonomy/tx-actions";
 import {
+  TX_ROOT,
   emptyNameParts,
   type Kingdom,
   type Taxon,
 } from "@/app/pages/_shared/taxonomy/tx-data";
 import {
+  nodeHref,
   APPEND_RANKS,
   KINGDOM_NAME,
   RANKS,
-  TX_V2_ROOT,
   addMoves,
   childId,
   commitHigherSplit,
@@ -56,7 +57,6 @@ import {
   NodeTree,
   WithHierarchy,
   italicRank,
-  nodeHref,
 } from "@/app/pages/_shared/taxonomy/tx-v2-list";
 import { ValueGrid } from "@/app/pages/_shared/taxonomy/tx-v2-record";
 import { useRoleHref } from "@/lib/use-role-href";
@@ -327,7 +327,7 @@ export function SplitTaxonForm({
   const touched = !!(kingdom !== initialKingdom || rank || oldId);
   const leave = () =>
     router.push(
-      roleHref(kingdom ? `${TX_V2_ROOT}?kingdom=${kingdom}` : TX_V2_ROOT),
+      roleHref(kingdom ? `${TX_ROOT}?kingdom=${kingdom}` : TX_ROOT),
     );
 
   // ── The tree: the path to the taxon being split, the taxa beside it at each rank, and the new taxa among them ──

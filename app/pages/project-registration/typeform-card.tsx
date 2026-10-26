@@ -92,7 +92,7 @@ export function TypeformCard({
                         <div className="flex flex-col gap-3">
                             <span className="text-xs font-semibold tracking-wide text-brand-tertiary uppercase">
                                 {kicker}
-                                {showQuestionCount && ` · Question ${step} of ${totalSteps}`}
+                                {showQuestionCount && `, question ${step} of ${totalSteps}`}
                             </span>
                             <h2 className="text-display-xs font-semibold text-balance text-primary">{title}</h2>
                             {description && <p className="text-base text-tertiary">{description}</p>}

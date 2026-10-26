@@ -7,9 +7,9 @@ import { File06 } from "@untitledui/icons";
 import { Tab, TabList, TabPanel, Tabs } from "@/components/application/tabs/tabs";
 import { Button } from "@/components/base/buttons/button";
 import { HeroMeta, RecordBackLink, RecordHero } from "@/app/pages/_shared/record-hero";
-import { tabsFor, type TabDef, type Taxon } from "@/app/pages/_shared/taxonomy/tx-data";
+import { TX_ROOT, tabsFor, type TabDef, type Taxon } from "@/app/pages/_shared/taxonomy/tx-data";
 import { NOT_PROVIDED } from "@/app/pages/_shared/taxonomy/tx-fields";
-import { TX_V2_ROOT, lineage, nsxOf, rankIndex, useTaxonNodes, type TaxonNode } from "@/app/pages/_shared/taxonomy/tx-hierarchy";
+import { lineage, nsxOf, rankIndex, useTaxonNodes, type TaxonNode } from "@/app/pages/_shared/taxonomy/tx-hierarchy";
 import { useTaxaHydrated } from "@/app/pages/_shared/taxonomy/tx-store";
 import { SpeciesRecord, TAB_ICON, TabView } from "@/app/pages/_shared/taxonomy/tx-records";
 import { useRoleHref } from "@/lib/use-role-href";
@@ -115,7 +115,7 @@ function HigherRecord({ node, nodes }: { node: TaxonNode; nodes: TaxonNode[] }) 
 
   return (
     <div className="min-h-0 flex-1 overflow-y-auto pb-6">
-      <RecordBackLink href={roleHref(TX_V2_ROOT)}>All taxa</RecordBackLink>
+      <RecordBackLink href={roleHref(TX_ROOT)}>All taxa</RecordBackLink>
       <RecordHero eyebrow={`${node.kingdom} ${node.rank.toLowerCase()}`} title={node.name}>
         <HeroMeta label="NSX Code">{nsxOf(node) ?? NOT_PROVIDED}</HeroMeta>
         <HeroMeta label="Status">{node.current ? "Current" : "Superseded"}</HeroMeta>
@@ -129,12 +129,12 @@ function HigherRecord({ node, nodes }: { node: TaxonNode; nodes: TaxonNode[] }) 
             title="This taxon is no longer current"
             description={successors.length ? `It was split into ${successors.map((s) => s.name).join(", ")}.` : "It can be viewed, but not changed."}
             confirmLabel={successors.length ? `Open ${successors[0].name}` : "All taxa"}
-            onConfirm={() => router.push(roleHref(successors.length ? `${TX_V2_ROOT}/record?id=${encodeURIComponent(successors[0].id)}` : TX_V2_ROOT))}
+            onConfirm={() => router.push(roleHref(successors.length ? `${TX_ROOT}/record?id=${encodeURIComponent(successors[0].id)}` : TX_ROOT))}
           />
         </div>
       )}
       <Tabs selectedKey={tab} onSelectionChange={(k) => setTab(String(k))} className="px-6 pt-6">
-        <div className="overflow-x-auto">
+        <div className="-mb-1.5 overflow-x-auto pb-1.5">
           <TabList aria-label={`${node.rank} details`} type="underline" items={tabs.map((t) => ({ id: t.id, label: t.label, icon: TAB_ICON[t.id] ?? File06 }))} className="w-max min-w-full">
             {(item) => <Tab id={item.id} label={item.label} icon={item.icon} />}
           </TabList>
@@ -160,11 +160,11 @@ export function TaxonNodeRecord({ id }: { id: string }) {
       <div className="flex flex-1 flex-col items-center justify-center gap-3 p-12 text-center">
         <h1 className="text-lg font-semibold text-primary">Taxon not found</h1>
         <p className="max-w-sm text-sm text-balance text-tertiary">There is no taxon at &ldquo;{id}&rdquo;.</p>
-        <Button color="link-color" size="sm" href={roleHref(TX_V2_ROOT)}>
+        <Button color="link-color" size="sm" href={roleHref(TX_ROOT)}>
           All taxa
         </Button>
       </div>
     ) : null;
-  if (node.taxon) return <SpeciesRecord id={node.taxon.id} back={{ href: TX_V2_ROOT, label: "All taxa" }} />;
+  if (node.taxon) return <SpeciesRecord id={node.taxon.id} />;
   return <HigherRecord node={node} nodes={nodes} />;
 }

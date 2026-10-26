@@ -3,7 +3,7 @@
 // Reviewing flagged concepts: the admin's management screen for this project (29 Sept 2026).
 // A flagged concept is a value on a survey record that has been marked questionable. It is
 // management work, not a view of the records, so it is not a tab: Project records shows a banner
-// ("N flagged concepts need review across this project · Review") that opens this screen, and the
+// ("N flagged concepts need review across this project", with its Review action) that opens this screen, and the
 // admin's Home lists the oldest ones across projects.
 //
 // The screen follows the DSA and DLA forms (CONTRACTS 4.1): column 2 is the queue, the way a form's
@@ -17,7 +17,7 @@
 //
 // Reads the persisted field-notes store, so it always agrees with the markers on the records.
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, type ReactNode } from "react";
 import {
   Focusable,
   Header,
@@ -242,7 +242,10 @@ export function ReviewScreen({
   exitLabel,
   onExit,
   onGoToRecord,
+  kindNav,
 }: {
+  /** The page's switch between its kinds of flagged concept (the all-projects page has two), drawn under the way back. */
+  kindNav?: ReactNode;
   entries: ReviewEntry[];
   initialItem?: string | null;
   showProjects?: boolean;
@@ -338,7 +341,7 @@ export function ReviewScreen({
     const next = items[index + 1] ?? items[index - 1];
     select(next?.id);
     toast.success(`${entry.field} resolved`, {
-      description: `${entry.recordCode} · ${entry.recordName}, ${entry.projectName}. The reason is kept with the field.`,
+      description: `${entry.recordCode} - ${entry.recordName}, ${entry.projectName}. The reason is kept with the concept.`,
       actionLabel: "Undo",
       onAction: () => {
         undo();
@@ -386,7 +389,7 @@ export function ReviewScreen({
             </span>
           </div>
           <span className="truncate pl-[22px] text-xs text-tertiary">
-            {item.recordCode} · {item.recordName}
+            {item.recordCode} - {item.recordName}
           </span>
         </>
       )}
@@ -409,6 +412,7 @@ export function ReviewScreen({
             <ArrowNarrowLeft className="size-4" />
             {exitLabel}
           </button>
+          {kindNav}
           <div className="flex flex-col gap-2">
             <p className="text-xs font-semibold tracking-wide text-quaternary uppercase">
               Flagged concepts
@@ -419,7 +423,7 @@ export function ReviewScreen({
             <p className="text-xs text-balance text-tertiary">
               {open.length === 0
                 ? "All resolved"
-                : `${open.length} open across ${recordsAffected} record${recordsAffected === 1 ? "" : "s"}${showProjects ? ` in ${projectsAffected} project${projectsAffected === 1 ? "" : "s"}` : ""} · ${resolved.length} resolved`}
+                : `${open.length} open across ${recordsAffected} record${recordsAffected === 1 ? "" : "s"}${showProjects ? ` in ${projectsAffected} project${projectsAffected === 1 ? "" : "s"}` : ""}, ${resolved.length} resolved`}
             </p>
           </div>
           {showProjects && onProjectFilterChange && (
@@ -430,7 +434,7 @@ export function ReviewScreen({
               items={projectOptions.map((p) => ({
                 id: p.code,
                 label: p.name,
-                supportingText: `${p.code} · ${p.open} open`,
+                supportingText: `${p.code}, ${p.open} open`,
               }))}
               selectedKeys={new Set(projectFilter ?? [])}
               onSelectionChange={(keys) => {
@@ -573,8 +577,8 @@ export function ReviewScreen({
                 <p className="text-sm text-primary">
                   {selected.projectName}
                   <span className="text-tertiary">
-                    {" "}
-                    · {selected.projectCode}
+                    
+                    , {selected.projectCode}
                   </span>
                 </p>
               </FormRow>
@@ -590,7 +594,7 @@ export function ReviewScreen({
                     className="size-4 shrink-0 text-fg-quaternary"
                   />
                   <span className="truncate">
-                    {selected.recordCode} · {selected.recordName}
+                    {selected.recordCode} - {selected.recordName}
                   </span>
                   <span className="text-xs text-tertiary">
                     {selected.recordType}
@@ -682,7 +686,7 @@ export function ReviewScreen({
                   {selected.reason}
                 </p>
                 <p className="text-xs text-tertiary">
-                  {selected.by} · {selected.date}
+                  {selected.by}, {selected.date}
                 </p>
                 {status === "resolved" && selected.flagReason && (
                   <p className="text-xs text-tertiary">
@@ -694,8 +698,8 @@ export function ReviewScreen({
 
             {(selected.comment || selected.files.length > 0) && (
               <FormRow
-                title="Notes on this field"
-                description="The field's comment and attachments."
+                title="Notes on this concept"
+                description="The concept's comment and attachments."
               >
                 {selected.comment && (
                   <div className="flex gap-2 text-sm">
@@ -705,7 +709,7 @@ export function ReviewScreen({
                         {selected.comment.text}
                       </p>
                       <p className="text-xs text-tertiary">
-                        {selected.comment.author} · {selected.comment.date}
+                        {selected.comment.author}, {selected.comment.date}
                       </p>
                     </div>
                   </div>
@@ -723,7 +727,7 @@ export function ReviewScreen({
               <FormRow
                 title="Why is it resolved?"
                 required
-                description="Kept with the field, so anyone can see why it stands or what changed."
+                description="Kept with the concept, so anyone can see why it stands or what changed."
               >
                 <TextArea
                   aria-label="Why is it resolved?"

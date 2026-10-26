@@ -23,11 +23,11 @@ import { SURVEY_RECORDS } from "./survey-data";
 const REVIEW_PATH = "/pages/flagged-concepts";
 const SHOWN = 5;
 
-export function FlaggedConceptsHomeQueue() {
-  const roleHref = useRoleHref();
+/** Every open flagged concept across every project, the ones waiting longest first. */
+export function useOpenFlaggedConcepts() {
   const notes = useFieldNotes();
   const portfolio = usePortfolioEntries();
-  const all = useMemo(
+  return useMemo(
     () =>
       [
         ...collectReviewItems(notes, SURVEY_RECORDS).open.map((i) =>
@@ -37,6 +37,11 @@ export function FlaggedConceptsHomeQueue() {
       ].sort((a, b) => (b.daysWaiting ?? 0) - (a.daysWaiting ?? 0)),
     [notes, portfolio],
   );
+}
+
+export function FlaggedConceptsHomeQueue() {
+  const roleHref = useRoleHref();
+  const all = useOpenFlaggedConcepts();
   const projectCount = new Set(all.map((e) => e.projectCode)).size;
 
   return (
@@ -87,12 +92,12 @@ export function FlaggedConceptsHomeQueue() {
                       <p className="truncate text-sm font-semibold text-primary">
                         {e.field}
                         <span className="font-normal text-tertiary">
-                          {" "}
-                          · {e.recordCode} {e.recordName}
+                          
+                          , {e.recordCode} {e.recordName}
                         </span>
                       </p>
                       <p className="truncate text-xs text-tertiary">
-                        {e.projectCode} · {e.projectName} · {e.reason}
+                        {e.projectCode} - {e.projectName}, {e.reason}
                       </p>
                     </div>
                     <span className="shrink-0 text-xs text-tertiary">

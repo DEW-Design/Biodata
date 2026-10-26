@@ -22,9 +22,9 @@ import { ChevronDown } from "@untitledui/icons";
 import { Tooltip, TooltipTrigger } from "@/components/base/tooltip/tooltip";
 import { cx } from "@/utils/cx";
 import { BadgeWithDot } from "@/components/base/badges/badges";
-import { ArtefactLightbox, type Artefact } from "@/app/pages/_shared/artefact-lightbox";
+import { ArtefactLightbox } from "@/app/pages/_shared/artefact-lightbox";
 import type { FilterSelection } from "@/app/pages/_shared/list-filter";
-import { ArtefactsView } from "@/app/pages/project-detail/artefacts-view";
+import { ArtefactsView, fieldArtefact } from "@/app/pages/project-detail/artefacts-view";
 import { useEditStore, EditStoreProvider } from "@/app/pages/project-detail/edit-store";
 import { allFiles, recordFieldKeys, useFieldNotes } from "@/app/pages/project-detail/field-notes-store";
 import { ProjectTab, formatDay } from "@/app/pages/project-detail/project-tab";
@@ -36,7 +36,7 @@ import { FlaggedAlert, ProjectNotices } from "./project-notices";
 import { ProjectProperties } from "./project-properties";
 import { ProjectViewTabs } from "./project-tabs";
 import { ADELAIDE_HILLS_ID, adelaideHillsSeed, exploreProject, seedFromExplore, type ProjectSeed } from "@/app/pages/project-detail/project-seed";
-import { RecordsExplorer, filterForKind, type KindFilter, type RecordsView } from "@/app/pages/project-detail/records-explorer";
+import { RecordsExplorer, type RecordsView } from "@/app/pages/project-detail/records-explorer";
 import type { ChildOption } from "@/app/pages/project-detail/record-rules";
 import { SpeciesView } from "@/app/pages/project-detail/species-view";
 import { projectDetailsPath } from "@/app/pages/_shared/project-routes";
@@ -128,30 +128,7 @@ function useArtefacts() {
       allFiles(notes).flatMap(({ recordId, key, file }) => {
         const rec = recordById(recordId);
         if (!rec || !recordFieldKeys(rec).has(key)) return [];
-        const field = key.slice(key.indexOf(":") + 1);
-        const a: Artefact & { recordId: string; fieldKey: string } = {
-          fieldKey: key,
-          id: file.id,
-          recordId,
-          title: file.name,
-          type: file.kind,
-          size: file.size || "Link",
-          recordLabel: `${rec.name} · ${field}`,
-          metaTitle: file.name,
-          created: file.date,
-          creator: file.addedBy,
-          objectId: `${meta.objectPrefix}:${rec.code}:${file.id.toUpperCase()}`,
-          description: `Attached to "${field}" on ${rec.type} ${rec.code}, ${rec.name}.${file.review?.status === "rejected" ? ` Rejected by ${file.review.by}: ${file.review.reason}` : ""}`,
-          review: file.review,
-          format: { image: "image/jpeg", pdf: "application/pdf", spreadsheet: "application/vnd.ms-excel", video: "video/mp4", link: "text/uri-list" }[file.kind],
-          identifierUrl: file.url ?? "https://data.environment.sa.gov.au",
-          licenseUrl: "https://creativecommons.org/licenses/by/4.0/",
-          publisher: meta.publisher,
-          rightsHolder: meta.publisher,
-          dcType: { image: "StillImage", pdf: "Text", spreadsheet: "Dataset", video: "MovingImage", link: "InteractiveResource" }[file.kind],
-          bioDataId: `${meta.code.replace("-", "")}-${rec.code}`,
-        };
-        return [a];
+        return [fieldArtefact({ recordId, key, file }, rec, meta)];
       }),
     [notes, recordById, meta],
   );
@@ -191,14 +168,8 @@ function Views({ view, setView, branchOpen, onBranchClose, propertiesOpen, onPro
 
   // The Datasets and flagged-concepts screens are their own pages; the lab opens them on the real project page.
   const pagePath = projectDetailsPath(meta.id);
-  const datasetsHref = roleHref(withQuery(pagePath, "view=datasets"));
   const datasetHref = (id: string) => roleHref(withQuery(pagePath, `view=datasets&dataset=${encodeURIComponent(id)}`));
 
-  const goToRecords = (kind: KindFilter, recordId?: string) => {
-    setRecordFilter(filterForKind(kind));
-    if (recordId) setSelectedId(recordId);
-    setView("records");
-  };
   const openRecord = (id: string) => {
     setRecordFilter({});
     setSelectedId(id);
@@ -218,8 +189,6 @@ function Views({ view, setView, branchOpen, onBranchClose, propertiesOpen, onPro
   };
 
   const toFlagged = () => router.push(roleHref(withQuery(pagePath, "view=review&from=project")));
-  const artefactKinds = artefacts.map((a) => a.type);
-  const artefactRecordCount = new Set(artefacts.map((a) => a.recordId)).size;
   // The header and the tabs, 32px apart (Figma 484:3929), then the view: the production page's order (hero, tabs, panel), the hero's content in the page. The notices are the
   // first rows of the Overview's sheet, and a box of their own above the other tabs' content (project-notices.tsx); the flagged-concepts chip is beside the title.
   const lead = (
@@ -234,20 +203,11 @@ function Views({ view, setView, branchOpen, onBranchClose, propertiesOpen, onPro
       <ProjectTab
         layout="v3"
         sheet
-        showGlance={false}
         repeatHeaderFacts={false}
         overviewHeading={false}
         disclosure
         lead={lead}
         sheetTop={notices(false)}
-        onGoToRecords={goToRecords}
-        onGoToArtefacts={() => setView("artefacts")}
-        onGoToDatasets={() => router.push(datasetsHref)}
-        onGoToDataset={(id) => router.push(datasetHref(id))}
-        artefactKinds={artefactKinds}
-        artefactRecordCount={artefactRecordCount}
-        onGoToSpecies={() => setView("species")}
-        onGoToFlagged={toFlagged}
       />
     ) : (
       <div className="flex flex-col gap-6">

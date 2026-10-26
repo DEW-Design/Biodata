@@ -11,7 +11,7 @@ import {
   ScaffoldTextInput,
   SegmentedControl,
 } from "@/components/scaffold/controls";
-import { Plus, ArrowRight, ArrowLeft, Download01, Trash01, Edit01, Send01, ChevronDown } from "@untitledui/icons";
+import { Plus, ArrowRight, ArrowLeft, Download01, Trash01, Edit05, Send01, ChevronDown } from "@untitledui/icons";
 import { enabledVariants, isFeatureEnabled } from "@/config/design-system.config";
 import { useConfig } from "@/lib/config-context";
 
@@ -43,7 +43,7 @@ const sectionToggles = [
 ];
 
 const props = [
-  { name: "color",               type: "\"primary\" | \"secondary\" | \"tertiary\" | \"link-color\" | \"link-gray\" | \"primary-destructive\" | \"secondary-destructive\" | \"tertiary-destructive\" | \"link-destructive\"", default: "\"primary\"" },
+  { name: "color",               type: "\"primary\" | \"secondary\" | \"tertiary\" | \"link-color\" | \"link-gray\" | \"ghost-color\" | \"primary-destructive\" | \"secondary-destructive\" | \"tertiary-destructive\" | \"link-destructive\"", default: "\"primary\"" },
   { name: "size",                type: "\"xs\" | \"sm\" | \"md\" | \"lg\" | \"xl\"",  default: "\"sm\"" },
   { name: "iconLeading",         type: "FC | ReactNode",  default: "-" },
   { name: "iconTrailing",        type: "FC | ReactNode",  default: "-" },
@@ -129,7 +129,7 @@ export default function ButtonPage() {
                   </Button>
                 </div>
                 <code className="text-xs text-quaternary">
-                  {previewColor} · {previewSize}
+                  {previewColor}, {previewSize}
                 </code>
               </div>
 
@@ -196,7 +196,7 @@ export default function ButtonPage() {
       {colors.length > 0 && (
         <>
           <h2 className="text-balance">Variants</h2>
-          <p className="text-balance">Choose a colour based on the action&apos;s visual weight and context. Destructive variants are for irreversible actions.</p>
+          <p className="text-balance">Choose a colour based on the action&apos;s visual weight and context. Destructive variants are for irreversible actions. Link grey is the ghost button: nothing around it until it is pointed at, then a gray fill, as Tertiary has. Its padding draws a 32px fill (6px all round) and an equal negative margin takes it back, so the text does not move; the target stays 40px with a mouse and 44px on touch, invisibly. Ghost colour is the same in the brand colour, with a brand-50 fill, for a brand action that is not a link (Explore&apos;s Add area): Link colour is a hyperlink and keeps its underline.</p>
 
           <div className="mt-4 flex flex-col gap-4">
             {standardColors.length > 0 && (
@@ -243,7 +243,7 @@ export default function ButtonPage() {
               <Section label="Leading icon">
                 <Button color="primary" iconLeading={Plus}>Add item</Button>
                 <Button color="secondary" iconLeading={Download01}>Download</Button>
-                <Button color="tertiary" iconLeading={Edit01}>Edit</Button>
+                <Button color="tertiary" iconLeading={Edit05}>Edit</Button>
               </Section>
             )}
 
@@ -271,7 +271,7 @@ export default function ButtonPage() {
                 <Button color="primary" iconLeading={Plus} size="sm" />
                 <Button color="primary" iconLeading={Plus} size="md" />
                 <Button color="secondary" iconLeading={Download01} size="md" />
-                <Button color="secondary" iconLeading={Edit01} size="md" />
+                <Button color="secondary" iconLeading={Edit05} size="md" />
                 <Button color="tertiary-destructive" iconLeading={Trash01} size="md" />
               </Section>
             )}
@@ -370,6 +370,8 @@ export default function ButtonPage() {
             { v: "primary",              bg: "bg-brand-solid",   text: "text-white",          ring: "ring-transparent" },
             { v: "secondary",            bg: "bg-primary",       text: "text-secondary",       ring: "ring-primary" },
             { v: "tertiary",             bg: "transparent",      text: "text-tertiary",        ring: "none" },
+            { v: "link-gray",            bg: "transparent, hover: bg-primary_hover", text: "text-tertiary", ring: "none" },
+            { v: "ghost-color",          bg: "transparent, hover: bg-brand-primary", text: "text-brand-secondary", ring: "none" },
             { v: "primary-destructive",  bg: "bg-error-solid",   text: "text-white",          ring: "ring-transparent" },
             { v: "secondary-destructive",bg: "bg-primary",       text: "text-error-primary",   ring: "ring-error_subtle" },
             { v: "tertiary-destructive", bg: "transparent",      text: "text-error-primary",   ring: "none" },

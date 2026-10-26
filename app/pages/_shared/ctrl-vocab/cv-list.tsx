@@ -63,7 +63,7 @@ function entryMatches(cv: Cv, query: string): CvEntry[] {
 
 function matchLine(cv: Cv, matches: CvEntry[]): string {
   const first = matches[0];
-  const label = [first.code, first.name].filter(Boolean).join(" · ");
+  const label = [first.code, first.name].filter(Boolean).join(" - ");
   const more = matches.length > 1 ? ` and ${matches.length - 1} more` : "";
   return `${matches.length === 1 ? "Entry" : "Entries"}: ${identifierLabel(cv.idKind) === "ID" ? `ID ${label}` : label}${more}`;
 }

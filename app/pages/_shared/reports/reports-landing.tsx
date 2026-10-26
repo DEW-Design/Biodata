@@ -114,7 +114,7 @@ function ReportsCatalogue() {
 
       <Tabs selectedKey={tab} onSelectionChange={(key) => choose(String(key))} className="flex min-h-0 flex-1 flex-col">
         {/* With nine categories the strip is wider than main beside the rail and column 2 below about 1500px: it scrolls inside itself and never clips a tab or widens the page. */}
-        <div className="shrink-0 overflow-x-auto px-6 pt-4">
+        <div className="-mb-1.5 shrink-0 overflow-x-auto px-6 pt-4 pb-1.5">
           <TabList type="underline" aria-label="Report categories">
             <Tab id="all" icon={Grid01}>
               All

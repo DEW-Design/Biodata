@@ -33,8 +33,7 @@ import { cx } from "@/utils/cx";
 //
 // A task-first dashboard for a registered user. Personal activity stats (KPI row) stay at the top,
 // directly under the greeting - that positioning is a fixed convention, not something to relitigate
-// per redesign. "Needs your attention" (a pending DLA request, a nomination under review, a draft
-// project) follows below it - that's the "task first" part: it's the dashboard's actual primary
+// per redesign. "Your requests" (a DLA request, a nomination under review) and the draft to continue follow below it - that's the "task first" part: it's the dashboard's actual primary
 // content, the reason personal contribution stats and org-wide accountability numbers (total
 // records, flora/fauna species counts, the map) that used to live here have been trimmed to just
 // the KPI row. Decided directly by the user: a registered user has limited scope on this platform,

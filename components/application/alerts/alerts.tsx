@@ -166,7 +166,7 @@ interface AlertFullWidthProps {
     /**
      * With `contained`: one line instead of stacked. The title and description run on together and
      * the actions sit at the right, wrapping under the text only when the card is too narrow. Use for
-     * a short notice with one action ("7 flagged concepts need review across this project · Review").
+     * a short notice with one action ("7 flagged concepts need review across this project", with its Review action).
      * @default false
      */
     inline?: boolean;
@@ -279,7 +279,7 @@ export const AlertFullWidth = ({
                 {(onConfirm || onClose) && (
                     <div className="flex gap-2">
                         {actions}
-                        {onClose && <CloseButton onClick={onClose} size="sm" label={dismissLabel} className="absolute top-2 right-2 shrink-0 md:static" />}
+                        {onClose && <CloseButton onClick={onClose} size="sm" label={dismissLabel} className="absolute top-2 right-2 shrink-0 md:relative md:top-auto md:right-auto" />}
                     </div>
                 )}
             </div>

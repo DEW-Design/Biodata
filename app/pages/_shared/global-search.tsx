@@ -99,7 +99,7 @@ export const matchesSpecies = (s: SpeciesEntry, q: string) => [s.commonName, s.s
 
 // Provenance leads: who published the record and in which project, before anything else. A species
 // recorded by several projects shows the first and counts the rest on the right.
-const provenanceOf = (s: SpeciesEntry) => `${s.projectOrgs[0]} · ${s.projectNames[0]}`;
+const provenanceOf = (s: SpeciesEntry) => `${s.projectOrgs[0]}, ${s.projectNames[0]}`;
 const moreProjects = (s: SpeciesEntry) => (s.projectIds.length > 1 ? `+${s.projectIds.length - 1} more` : undefined);
 
 // Enter with no row highlighted opens Explore for what was typed. It is listened for on the window

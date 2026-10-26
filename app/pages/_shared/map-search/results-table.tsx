@@ -74,7 +74,7 @@ export interface TypeFilterOption {
  *    menu wasn't intuitive, a hidden set of options behind an ambiguous dots icon. This is the same
  *    collapsed-ellipsis breadcrumb already familiar from GitHub's file-path breadcrumb, Finder/
  *    Explorer's path bar, and VS Code's own breadcrumb: starts collapsed to the last two levels
- *    (the record plus its immediate parent) with a single "···" segment standing in for whatever's
+ *    (the record plus its immediate parent) with a single ellipsis segment standing in for whatever's
  *    hidden above - one click expands the full chain inline, and a small "‹" segment appears at the
  *    front to collapse it back. One clear toggle, not four buried options.
  *  `expanded`/`detailEvent` are self-contained per cell instance - each row/column render produces

@@ -5,6 +5,7 @@ import { Agentation } from "agentation";
 import { Toaster } from "@/components/application/toast/toast";
 import { ConfigProvider } from "@/lib/config-context";
 import { AppRouterProvider } from "@/components/app-router-provider";
+import { DrawnScrollbars } from "@/app/_scrollbars/drawn-scrollbars";
 
 // Geist dresses the docs site chrome (sidebar, headings, prose).
 const geist = Geist({
@@ -50,6 +51,7 @@ export default function RootLayout({
           <ConfigProvider>
             {children}
             <Toaster />
+            <DrawnScrollbars />
             {process.env.NODE_ENV === "development" && <Agentation />}
           </ConfigProvider>
         </AppRouterProvider>

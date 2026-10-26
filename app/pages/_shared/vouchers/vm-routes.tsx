@@ -2,8 +2,7 @@
 
 import { Suspense } from "react";
 import { useParams, useSearchParams } from "next/navigation";
-import { SOURCES, SOURCE_LABEL, vmBatch, type VmSource } from "@/app/pages/_shared/vouchers/vm-data";
-import { VmRootProvider, useVmRoot, type VmOption } from "@/app/pages/_shared/vouchers/vm-root";
+import { SOURCES, SOURCE_LABEL, VM_ROOT, vmBatch, type VmSource } from "@/app/pages/_shared/vouchers/vm-data";
 import { VmBatchPage } from "@/app/pages/_shared/vouchers/vm-batch";
 import { VmList } from "@/app/pages/_shared/vouchers/vm-list";
 import { VmRecordNotFound, VmRecordPage } from "@/app/pages/_shared/vouchers/vm-record";
@@ -27,7 +26,6 @@ function ListScreen() {
 function BatchScreen() {
   const { id } = useParams<{ id: string }>();
   const recordId = useSearchParams().get("record");
-  const root = useVmRoot();
   const batch = vmBatch(id);
   const records = useAllRecords(batch);
   const hydrated = useVouchersHydrated();
@@ -42,32 +40,28 @@ function BatchScreen() {
         </div>
       </VmShell>
     );
-  const sourceCrumb = { label: SOURCE_LABEL[batch.source], href: `${root}?source=${batch.source}` };
-  const batchCrumb = { label: `Batch ${batch.id}`, href: `${root}/${batch.id}` };
+  const sourceCrumb = { label: SOURCE_LABEL[batch.source], href: `${VM_ROOT}?source=${batch.source}` };
+  const batchCrumb = { label: `Batch ${batch.id}`, href: `${VM_ROOT}/${batch.id}` };
   return (
-    <VmShell source={batch.source} breadcrumb={recordId ? [sourceCrumb, batchCrumb, { label: recordId }] : [sourceCrumb, { label: batchCrumb.label }]}>
+    <VmShell source={batch.source} batchId={batch.id} breadcrumb={recordId ? [sourceCrumb, batchCrumb, { label: recordId }] : [sourceCrumb, { label: batchCrumb.label }]}>
       {/* Decisions live in the browser: wait for them, so a reviewed batch never flashes as unreviewed. */}
       {!hydrated ? null : recordId ? record ? <VmRecordPage key={record.id} batch={batch} record={record} /> : <VmRecordNotFound batch={batch} id={recordId} /> : <VmBatchPage key={batch.id} batch={batch} />}
     </VmShell>
   );
 }
 
-export function VmListRoute({ option = "1" }: { option?: VmOption }) {
+export function VmListRoute() {
   return (
-    <VmRootProvider option={option}>
-      <Suspense fallback={null}>
-        <ListScreen />
-      </Suspense>
-    </VmRootProvider>
+    <Suspense fallback={null}>
+      <ListScreen />
+    </Suspense>
   );
 }
 
-export function VmBatchRoute({ option = "1" }: { option?: VmOption }) {
+export function VmBatchRoute() {
   return (
-    <VmRootProvider option={option}>
-      <Suspense fallback={null}>
-        <BatchScreen />
-      </Suspense>
-    </VmRootProvider>
+    <Suspense fallback={null}>
+      <BatchScreen />
+    </Suspense>
   );
 }

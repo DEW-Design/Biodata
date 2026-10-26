@@ -16,7 +16,7 @@ Doc pages, generated /test-* screens, navigation order. Full text and numbering:
 
 `lib/nav.ts` `Components` and `config/design-system.config.ts` keys are strictly A-Z. A new entry is
 slotted, never appended. If either list is found out of order, the whole list is fixed. (`Primitives` and
-`Patterns` follow a foundations-first order and are exempt.)
+`Patterns` follow a foundations-first order, and `Principles` comes before them, so they are exempt.)
 
 ### §4.5 Generated screens
 

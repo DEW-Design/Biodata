@@ -14,6 +14,13 @@ export type NavSection = {
 
 export const rawNav: NavSection[] = [
   {
+    title: "Principles",
+    items: [
+      { title: "Design principles", href: "/principles", description: "The nine design principles, read from the decision log and the designer's own words, with the question to ask of a screen and the clauses that hold each; and how an exploration starts from them. A draft for the designer to confirm." },
+      { title: "Craft details", href: "/principles/craft", description: "The details that make the interface feel finished, with their values and where each lives: edges, concentric corners, the type ladder, space, scroll and fade, quiet motion, hit areas and the source's words." },
+    ],
+  },
+  {
     title: "Primitives",
     items: [
       { title: "Colours", href: "/primitives/colours", description: "12-step colour scale - Gray, Brand, Error, Warning, Success - plus semantic bg/text/ring tokens." },
@@ -34,6 +41,7 @@ export const rawNav: NavSection[] = [
       { title: "Badge", href: "/components/badge", description: "Status labels - pill and badge-colour styles, 5 documented colours, dot/icon/dismiss variants." },
       { title: "Button", href: "/components/button", description: "Primary action trigger - 8 colour variants, 5 sizes, icon and loading states." },
       { title: "Button utility", href: "/components/button-utility", description: "Icon-only button for toolbars and row actions - secondary and tertiary colours, two sizes, tooltip that doubles as the accessible name, optional link." },
+      { title: "Carousel", href: "/components/carousel", description: "Pages through slides of one kind - Embla-based and headless: arrows, dot indicators, swipe and arrow keys, horizontal or vertical, no autoplay. Replaces the hand-built species photo carousel." },
       { title: "Checkbox", href: "/components/checkbox", description: "Binary selection control with an indeterminate state and two sizes." },
       { title: "Dropdown", href: "/components/dropdown", description: "Menu built on React Aria - icon items, sections, and checkmark/checkbox/radio/toggle selection indicators." },
       { title: "Input", href: "/components/input", description: "Text field plus specialised variants - password, date, number, payment, tags, file upload, PIN." },
@@ -70,6 +78,7 @@ export const rawNav: NavSection[] = [
       { title: "Filters", href: "/patterns/filters", description: "The one filter for every table that can be filtered: a Filter button that opens a contextual menu of the attributes, each opening its values beside it (searchable when the list grows with the data), with the filters that are on shown as chips under the toolbar." },
       { title: "Report toolbar", href: "/patterns/report-toolbar", description: "One row above a report's table: the search, a Parameters button (a popover of what the report is run on, with what is set shown beside it), the Filter and the Columns chooser, so the table gets the screen. Every report uses it." },
       { title: "Audit log", href: "/patterns/audit-log", description: "The Audit Log tab of a record page - one sentence per status move, newest first, with the person, the status badge and the date, a Current chip on the newest move, and same-person runs under one header." },
+      { title: "Map list card", href: "/patterns/map-list-card", description: "A card that floats over the map and lists what is on it (Explore's results, Map visualise's errors): tabs, a list of result cards that fades out at its foot with one pinned Show N more, no scrollbar, a summary card whose facts are rows, and the key." },
       { title: "Empty states", href: "/patterns/empty-states", description: "Documentation coming soon." },
       { title: "Loading states", href: "/patterns/loading-states", description: "Documentation coming soon." },
       { title: "Feedback", href: "/patterns/feedback", description: "Documentation coming soon." },

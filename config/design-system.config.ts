@@ -154,6 +154,7 @@ export const designSystemConfig: DesignSystemConfig = {
       { key: "tertiary",             label: "Tertiary",  enabled: true, group: "standard" },
       { key: "link-color",           label: "Link colour", enabled: true, group: "standard" },
       { key: "link-gray",            label: "Link grey",   enabled: true, group: "standard" },
+      { key: "ghost-color",          label: "Ghost colour", enabled: true, group: "standard" },
       { key: "primary-destructive",   label: "Primary",   enabled: true, group: "destructive" },
       { key: "secondary-destructive", label: "Secondary", enabled: true, group: "destructive" },
       { key: "tertiary-destructive",  label: "Tertiary",  enabled: true, group: "destructive" },
@@ -201,6 +202,20 @@ export const designSystemConfig: DesignSystemConfig = {
       withTooltip: true,
       asLink: true,
       disabled: true,
+      usage: true,
+      figma: true,
+    },
+  },
+
+  carousel: {
+    title: "Carousel",
+    enabled: true,
+    features: {
+      playground: true,
+      arrows: true,
+      indicators: true,
+      vertical: true,
+      onPhoto: true,
       usage: true,
       figma: true,
     },

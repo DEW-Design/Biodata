@@ -84,7 +84,7 @@ export const Checkbox = ({ label, hint, size = "sm", className, ...ariaCheckboxP
             {...ariaCheckboxProps}
             className={(state) =>
                 cx(
-                    "font-barlow relative flex items-start",
+                    "font-barlow hit-area relative flex items-start",
                     state.isDisabled && "cursor-not-allowed",
                     sizes[size].root,
                     typeof className === "function" ? className(state) : className,

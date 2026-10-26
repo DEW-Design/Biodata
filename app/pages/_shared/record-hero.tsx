@@ -3,24 +3,31 @@
 import type { ReactNode } from "react";
 import Link from "next/link";
 import { ArrowNarrowLeft } from "@untitledui/icons";
+import { cx } from "@/utils/cx";
 
 // The top of every record page, taken from the project page (project-detail): a Back link on its own,
 // then the gradient identity card with the eyebrow, the title, the record's actions at its top right
 // (RecordActionBar `onDark`: one white button and a "..." menu, like the project's Upload dataset),
 // and a row of label/value facts. Tabs and content follow on the page itself.
 
-export function RecordBackLink({ href, children }: { href: string; children: ReactNode }) {
-  return (
-    <div className="shrink-0 px-6 pt-6">
-      <Link
-        href={href}
-        className="flex w-fit items-center gap-1.5 rounded-sm text-sm font-medium text-tertiary outline-focus-ring hover:text-primary focus-visible:outline-2 focus-visible:outline-offset-2"
-      >
-        <ArrowNarrowLeft className="size-4" />
-        {children}
-      </Link>
-    </div>
+// `inline` is for a card that carries its own way back (Map visualise's floating card): the link without the page-width wrapper (its own padding), able to give way where the card is narrow, and taking a
+// `className`. The type is the same either way: 14/500, tertiary, primary on hover, the way back on every record page.
+export function RecordBackLink({ href, children, inline = false, className }: { href: string; children: ReactNode; inline?: boolean; className?: string }) {
+  const link = (
+    <Link
+      href={href}
+      className={cx(
+        "hit-area ghost-fill flex w-fit items-center gap-1.5 rounded-md text-sm font-medium text-tertiary outline-focus-ring hover:bg-primary_hover hover:text-primary focus-visible:outline-2 focus-visible:outline-offset-2",
+        inline && "max-w-full",
+        className,
+      )}
+    >
+      <ArrowNarrowLeft className={cx("size-4", inline && "shrink-0")} />
+      {inline ? <span className="min-w-0 truncate">{children}</span> : children}
+    </Link>
   );
+  if (inline) return link;
+  return <div className="shrink-0 px-6 pt-6">{link}</div>;
 }
 
 export function HeroMeta({ label, children }: { label: string; children: ReactNode }) {

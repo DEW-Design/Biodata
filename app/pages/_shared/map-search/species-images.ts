@@ -37,7 +37,13 @@ const IMAGES: Record<string, SpeciesImageEntry | SpeciesImageEntry[]> = {
     "Xanthorrhoea semiplana": { file: "xanthorrhoea-semiplana.jpg", creator: "Liz", licence: "CC BY-NC", imageId: "8c7d98a0-1398-4d24-8879-c0ab78700c28" },
     "Santalum acuminatum": { file: "santalum-acuminatum.jpg", creator: "patrickwhite57", licence: "CC BY-NC", imageId: "f420121b-57a5-4ac2-9cd9-0301f004606c" },
     "Grevillea lavandulacea": { file: "grevillea-lavandulacea.jpg", creator: "Kym Nicolson", licence: "CC BY", imageId: "49f0c609-669c-4f3e-b17f-bf5f58b62443" },
-    "Isoodon obesulus": { file: "isoodon-obesulus.jpg", creator: "Robert Browne-Cooper", licence: "CC BY", imageId: "3ddf0dea-7b84-48b6-9e23-50fd4b1e3b22" },
+    // More than one image, so its summary card is a carousel (25 Oct 2026). The three after the first are the species' photos on ALA that are live animals, sharp, and CC BY-NC (iNaturalist Australia).
+    "Isoodon obesulus": [
+        { file: "isoodon-obesulus.jpg", creator: "Robert Browne-Cooper", licence: "CC BY", imageId: "3ddf0dea-7b84-48b6-9e23-50fd4b1e3b22" },
+        { file: "isoodon-obesulus-2.jpg", creator: "Rueben", licence: "CC BY-NC", imageId: "8842635a-19b0-4ff4-9cc7-c4a1bec9c690" },
+        { file: "isoodon-obesulus-3.jpg", creator: "Glenn Gale", licence: "CC BY-NC", imageId: "a05a5c99-7e5a-450d-b622-6ef896d68e89" },
+        { file: "isoodon-obesulus-4.jpg", creator: "Bijoy Venugopal", licence: "CC BY-NC", imageId: "b3cb467c-ec65-430c-822b-69e1a886afff" },
+    ],
 };
 
 export interface SpeciesImage {

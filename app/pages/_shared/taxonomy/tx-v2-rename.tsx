@@ -17,13 +17,13 @@ import {
   FieldCard,
   SpeciesTypeField,
 } from "@/app/pages/_shared/taxonomy/tx-actions";
-import { type Kingdom, type Taxon } from "@/app/pages/_shared/taxonomy/tx-data";
+import { TX_ROOT, type Kingdom, type Taxon } from "@/app/pages/_shared/taxonomy/tx-data";
 import { NOT_PROVIDED } from "@/app/pages/_shared/taxonomy/tx-fields";
 import {
+  nodeHref,
   APPEND_RANKS,
   KINGDOM_NAME,
   RANKS,
-  TX_V2_ROOT,
   addMoves,
   childId,
   infraRanksFor,
@@ -40,7 +40,6 @@ import {
   NodeTree,
   WithHierarchy,
   italicRank,
-  nodeHref,
 } from "@/app/pages/_shared/taxonomy/tx-v2-list";
 import { ValueGrid } from "@/app/pages/_shared/taxonomy/tx-v2-record";
 import { useRoleHref } from "@/lib/use-role-href";
@@ -231,7 +230,7 @@ export function RenameTaxonForm({
   const touched = !!(kingdom !== initialKingdom || rank || targetId);
   const leave = () =>
     router.push(
-      roleHref(kingdom ? `${TX_V2_ROOT}?kingdom=${kingdom}` : TX_V2_ROOT),
+      roleHref(kingdom ? `${TX_ROOT}?kingdom=${kingdom}` : TX_ROOT),
     );
 
   // ── The tree: the taxon renamed in place as the name is typed (the designer, 15 Oct 2026: "the existing ones must be

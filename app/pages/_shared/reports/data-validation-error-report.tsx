@@ -1,8 +1,8 @@
 "use client";
 
 import { useMemo, useState, type ComponentProps } from "react";
-import { useSearchParams } from "next/navigation";
-import { AlertCircle, AlertTriangle, CheckCircle, Download01, Map01, MarkerPin01, Rows01, Tag01 } from "@untitledui/icons";
+import { useRouter, useSearchParams } from "next/navigation";
+import { AlertTriangle, Download01, Map01 } from "@untitledui/icons";
 import { Badge } from "@/components/base/badges/badges";
 import { Select } from "@/components/base/select/select";
 import { RecordHero } from "@/app/pages/_shared/record-hero";
@@ -10,7 +10,7 @@ import { downloadCsv } from "@/app/pages/_shared/agreement-actions";
 import type { Attribute } from "@/app/pages/_shared/attribute-filter";
 import { ListEmptyState } from "@/app/pages/_shared/list-empty-state";
 import { optionsFromValues } from "@/app/pages/_shared/list-filter";
-import { Clamped, DataReport, SpeciesCell, TextCell, IdCell, ReportTiles, type ReportColumn } from "@/app/pages/_shared/reports/report-table";
+import { Clamped, DataReport, SpeciesCell, TextCell, IdCell, type ReportColumn } from "@/app/pages/_shared/reports/report-table";
 import { useIngestionRuns } from "@/app/pages/_shared/reports/use-ingestion-runs";
 import {
   ERROR_CATEGORIES,
@@ -25,15 +25,20 @@ import {
   type ErrorRow,
 } from "@/app/pages/_shared/reports/data-validation-error-report-data";
 import { formatDateTime } from "@/app/pages/_shared/reports/ingestion-report-data";
+import { useRoleHref } from "@/lib/use-role-href";
+import { splitFileName } from "@/utils/split-file-name";
 
 // The Data Validation Error Report (Figma YMproGZfrFB5jUqPHPxMhk node 1520:12791): the errors found in ONE dataset,
-// chosen by project and then by dataset. Six counts for the chosen dataset, then a table of its errors with the
+// chosen by project and then by dataset. Seven facts for the chosen dataset in the card (when it was ingested, the three totals, and the errors by
+// kind: business rule, coordinate, metadata; the errors by kind were tiles under the card until the designer moved them in, 23 Oct 2026), then a table of its errors with the
 // wireframe's eight columns, in the shared report table. Fitted into the collection pattern (CONTRACTS 4.2), with these
 // departures from the wireframe, on purpose:
 //   - the always-open filters and "Apply Filter" are the attribute filter (4.2d); the free-text filters are the search box;
-//   - "Download source dataset" and "Map visualise" are shown but disabled, with a "Not available in this preview yet"
-//     tooltip, the way the template downloads are: uploaded files are never read, so there is no source file to download
-//     and no coordinates to map, and neither is faked;
+//   - "Download source dataset" is shown but disabled: uploaded files are never read, so there is no source file to download,
+//     and it is not faked;
+//   - "Map visualise" opens Explore on the dataset (/pages/observations?dataset=, observations/dataset-error-map.tsx): the
+//     dataset's error records over the map, coordinate outliers called out, and a way back to this report. Where a record is
+//     comes from the report's data (derived, never read from a file);
 //   - only projects and datasets that had errors are offered, so the page opens on the newest one instead of empty.
 // Choosing another dataset keeps the search, filters, sort and page as they are (the report is one table whose rows change),
 // so the chips under the toolbar always say what is narrowing it.
@@ -45,7 +50,7 @@ const WIDTH = {
   species: "w-[248px]",
   category: "w-[172px]",
   rule: "w-[212px]",
-  field: "w-[168px]",
+  concept: "w-[168px]",
   severity: "w-[120px]",
   description: "w-[520px]",
 } as const;
@@ -56,7 +61,7 @@ const columns: ReportColumn<ErrorRow>[] = [
   { id: "species", label: "Species", width: WIDTH.species, sort: (r) => r.scientificName, cell: (r) => <SpeciesCell scientific={r.scientificName} common={r.commonName} /> },
   { id: "category", label: "Category", width: WIDTH.category, sort: (r) => r.category, cell: (r) => <TextCell>{r.category}</TextCell> },
   { id: "rule", label: "Rule", width: WIDTH.rule, sort: (r) => r.rule, cell: (r) => <TextCell>{r.rule}</TextCell> },
-  { id: "field", label: "Field", width: WIDTH.field, sort: (r) => r.field, cell: (r) => <TextCell>{r.field}</TextCell> },
+  { id: "concept", label: "Concept", width: WIDTH.concept, sort: (r) => r.concept, cell: (r) => <TextCell>{r.concept}</TextCell> },
   {
     id: "severity",
     label: "Severity",
@@ -71,12 +76,9 @@ const columns: ReportColumn<ErrorRow>[] = [
   { id: "description", label: "Description", width: WIDTH.description, sort: (r) => r.description, cell: (r) => <Clamped text={r.description} max="max-w-[496px]" /> },
 ];
 
-// One icon per tile, in the order `errorTilesFor` lists them: total, clean, with errors, business rule, coordinate, metadata.
-const TILE_ICONS = [Rows01, CheckCircle, AlertTriangle, AlertCircle, MarkerPin01, Tag01];
-
-// The project and the dataset the report is on are its Parameters (report-parameters.tsx): a popover on the toolbar's row, with the chosen project and dataset
-// shown beside the button. Two ways of drawing them were compared while the screen was explored (the selects in a row between the card and the counts,
-// and in the toolbar); the designer chose the Parameters popover for every report on 15 Oct 2026 and both were removed (CONTRACTS 4.4).
+// The project and the dataset the report is on are its Parameters (report-parameters.tsx), drawn inline: two dropdowns on the toolbar's row, to the right of Filter, each showing what it is set to. Every other report
+// has its parameters as one button and a popover (the designer chose that for every report on 15 Oct 2026, and the selects between the card and the counts were removed, CONTRACTS 4.4); this report's are two
+// linked choices that it is about as a whole and that are changed often, and the designer asked for them as dropdowns on 23 Oct 2026 ("I feel having parameters is weird. What if they sat as drop downs").
 
 /** What the layout lab (/proto/layouts) changes around the table; the product screens pass nothing. */
 export interface ReportChrome {
@@ -86,6 +88,8 @@ export interface ReportChrome {
 
 export function DataValidationErrorReport({ chrome }: { chrome?: ReportChrome }) {
   const { runs } = useIngestionRuns();
+  const router = useRouter();
+  const roleHref = useRoleHref();
   const requested = useSearchParams().get("dataset");
   const [picked, setPicked] = useState<string | null>(requested);
 
@@ -95,17 +99,25 @@ export function DataValidationErrorReport({ chrome }: { chrome?: ReportChrome })
   const errors = useMemo(() => (run ? errorRowsFor(run) : []), [run]);
   const tiles = useMemo(() => (run ? errorTilesFor(run, errors) : []), [run, errors]);
 
+  // A project is its code and its name, a dataset its id and its file, in one line each: the code and the id lead, and they are what tells one from the next. A cut has a strategy by what the text is: the project's name is cut
+  // at a word, the dataset's file name in the middle, so that its version and extension stay ("flinders_bush...01.xlsx"); `splitFileName` says which end stays. (As a label with supporting text the dropdown cut the label first.)
   const projectOptions = useMemo(() => {
     const seen = new Map<string, string>();
-    for (const r of errored) if (!seen.has(r.projectId)) seen.set(r.projectId, `${r.projectTitle} (${r.projectCode})`);
+    for (const r of errored) if (!seen.has(r.projectId)) seen.set(r.projectId, `${r.projectCode} - ${r.projectTitle}`);
     return [...seen].map(([id, label]) => ({ id, label })).sort((a, b) => a.label.localeCompare(b.label));
   }, [errored]);
   const datasetOptions = useMemo(
-    () => errored.filter((r) => r.projectId === run?.projectId).map((r) => ({ id: r.id, label: r.id, supportingText: r.fileName })),
+    () =>
+      errored
+        .filter((r) => r.projectId === run?.projectId)
+        .map((r) => {
+          const { head, tail } = splitFileName(r.fileName);
+          return { id: r.id, label: `${r.id} - ${head}`, labelEnd: tail };
+        }),
     [errored, run?.projectId],
   );
 
-  // The rules and fields a dataset of this kind can have errors on: the same list for every dataset of a kind, so a filter
+  // The rules and concepts a dataset of this kind can have errors on: the same list for every dataset of a kind, so a filter
   // that is on stays meaningful when another dataset is chosen.
   const rules = useMemo(() => rulesFor(run), [run]);
   const attributes: Attribute<ErrorRow>[] = useMemo(
@@ -113,7 +125,7 @@ export function DataValidationErrorReport({ chrome }: { chrome?: ReportChrome })
       { id: "category", kind: "options", label: "Category", options: ERROR_CATEGORIES.map((c) => ({ id: c, label: c })), get: (r) => r.category },
       { id: "severity", kind: "options", label: "Severity", options: ERROR_SEVERITIES.map((s) => ({ id: s, label: s })), get: (r) => r.severity },
       { id: "rule", kind: "options", label: "Rule", options: optionsFromValues(rules.map((r) => r.id)), get: (r) => r.rule },
-      { id: "field", kind: "options", label: "Field", options: optionsFromValues(rules.map((r) => r.field)), get: (r) => r.field },
+      { id: "concept", kind: "options", label: "Concept", options: optionsFromValues(rules.map((r) => r.concept)), get: (r) => r.concept },
     ],
     [rules],
   );
@@ -130,15 +142,19 @@ export function DataValidationErrorReport({ chrome }: { chrome?: ReportChrome })
     );
   }
 
+  // The open list is as wide as its longest row (never narrower than the dropdown, never wider than 40rem or the window), so a row is shown whole before any of it is cut.
+  const LIST_FITS_ITS_ROWS = "w-max min-w-(--trigger-width) max-w-[min(40rem,calc(100vw-2rem))]";
+  // 256px at the least (the row still fits one line at 1280px), growing into the room a wide window leaves, up to 384px, so the name after the code is cut as little as the window allows.
   const projectSelect = (
     <Select
       size="sm"
       label="Project"
       placeholder="Select project"
-      popoverClassName="min-w-[24rem]"
+      truncateAtWords
+      popoverClassName={LIST_FITS_ITS_ROWS}
       items={projectOptions}
       selectedKey={run.projectId}
-      className="w-full"
+      className="w-64 max-w-[min(24rem,100%)] shrink-0 grow"
       onSelectionChange={(key) => {
         const next = errored.find((r) => r.projectId === key);
         if (next && next.id !== run.id) setPicked(next.id);
@@ -152,15 +168,15 @@ export function DataValidationErrorReport({ chrome }: { chrome?: ReportChrome })
       size="sm"
       label="Dataset"
       placeholder="Select dataset"
-      popoverClassName="min-w-[24rem]"
+      popoverClassName={LIST_FITS_ITS_ROWS}
       items={datasetOptions}
       selectedKey={run.id}
-      className="w-full"
+      className="w-64 max-w-[min(24rem,100%)] shrink-0 grow"
       onSelectionChange={(key) => {
         if (key && key !== run.id) setPicked(String(key));
       }}
     >
-      {(item) => <Select.Item id={item.id} label={item.label} supportingText={item.supportingText} />}
+      {(item) => <Select.Item id={item.id} label={item.label} labelEnd={item.labelEnd} />}
     </Select>
   );
 
@@ -176,39 +192,40 @@ export function DataValidationErrorReport({ chrome }: { chrome?: ReportChrome })
         { label: "Total records", value: tiles[0].value.toLocaleString("en-AU") },
         { label: "Clean records", value: tiles[1].value.toLocaleString("en-AU") },
         { label: "Records with errors", value: tiles[2].value.toLocaleString("en-AU") },
+        // The errors by kind (business rule, coordinate, metadata) are facts of the card, after the totals they add up to. They were a row of tiles under the card (CONTRACTS 4.6 item 4); the designer moved
+        // them into it on 23 Oct 2026 ("move business rule failure, coordinate mismatch and metadata mismatch into the gradient card"), an override of that clause for this report only.
+        ...tiles.slice(3).map((t) => ({ label: t.label, value: t.value.toLocaleString("en-AU") })),
       ]}
       icon={AlertTriangle}
       rows={errors}
       rowId={(r) => r.recordId}
       columns={columns}
       attributes={attributes}
-      searchText={(r) => [r.recordId, r.projectCode, r.scientificName, r.commonName, r.category, r.rule, r.field, r.description]}
+      searchText={(r) => [r.recordId, r.projectCode, r.scientificName, r.commonName, r.category, r.rule, r.concept, r.description]}
       searchLabel="Search the errors"
-      searchPlaceholder="Search by record, species, rule or field"
+      searchPlaceholder="Search by record, species, rule or concept"
       tableLabel={`Validation errors in ${run.fileName}`}
       noun="errors"
       emptyDescription="Errors found in this dataset appear here."
       initialSort={{ column: "record", direction: "ascending" }}
+      // The two choices the report is about, a project and then one of its datasets, are dropdowns on the toolbar, to the right of Filter (designer, 23 Oct 2026: "I feel having parameters is weird. What if they sat as
+      // drop downs instead"). They are two linked choices that are changed often and say what the whole page is about, so what each is set to is on the toolbar and not behind a button and in chips.
       parameters={{
+        inline: true,
         fields: (
-          <div className="flex flex-col gap-4">
+          <>
             {projectSelect}
             {datasetSelect}
-          </div>
+          </>
         ),
-        // The report is always on one dataset, so both are always set and there is nothing to reset.
-        summary: [
-          ["Project", run.projectCode],
-          ["Dataset", run.id],
-        ],
-          }}
-      belowHeader={<ReportTiles compact={chrome?.header === "line"} tiles={tiles.slice(3).map((t, i) => ({ ...t, icon: TILE_ICONS[i + 3] }))} label={`Errors in ${run.id} by kind`} />}
+        summary: [],
+      }}
       exportName={`${run.id}-errors`}
       // Map visualise is the card's one next step, the white button where the project page has Upload dataset; the downloads
-      // are in the menu after the exports. The source dataset and the map have nothing to show in the preview (uploaded files are
-      // never read), so they are disabled rather than promised.
+      // are in the menu after the exports. The source dataset has nothing to download in the preview (uploaded files are never
+      // read), so it is disabled rather than promised.
       extraActions={{
-        primary: { id: "map-visualise", label: "Map visualise", icon: Map01, onPress: () => {}, isDisabled: true },
+        primary: { id: "map-visualise", label: "Map visualise", icon: Map01, onPress: () => router.push(roleHref(`/pages/observations?dataset=${encodeURIComponent(run.id)}`)) },
         menu: [
           {
             id: "download-error-report",

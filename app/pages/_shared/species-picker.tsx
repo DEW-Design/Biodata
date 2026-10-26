@@ -114,7 +114,7 @@ export function SpeciesSummaryCard({ species, onChange, children }: { species: R
           <span className="text-base font-semibold text-primary">{species.commonName}</span>
           <span className="text-sm text-tertiary italic">{species.species}</span>
           <span className="text-xs text-quaternary">
-            {species.family} · {species.group}
+            {species.family}, {species.group}
           </span>
         </div>
         <Button iconLeading={Edit05} color="secondary" size="sm" onPress={onChange}>

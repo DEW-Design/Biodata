@@ -138,7 +138,7 @@ export function LogoUpload({ value, onChange, orgName }: { value: OrgLogo | null
             ) : (
                 <p className="flex items-start gap-2 text-sm text-tertiary">
                     <Image01 aria-hidden className="mt-0.5 size-4 shrink-0 text-fg-quaternary" />
-                    <span>{LOGO_REQUIREMENTS.join(" · ")}</span>
+                    <span>{LOGO_REQUIREMENTS.join(", ")}</span>
                 </p>
             )}
         </div>

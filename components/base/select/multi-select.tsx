@@ -16,6 +16,7 @@ import {
     SearchField as AriaSearchField,
     TextContext as AriaTextContext,
 } from "react-aria-components";
+import { BadgeWithButton } from "@/components/base/badges/badges";
 import { Button } from "@/components/base/buttons/button";
 import { HintText } from "@/components/base/input/hint-text";
 import { Label } from "@/components/base/input/label";
@@ -178,6 +179,14 @@ interface MultiSelectProps extends RefAttributes<HTMLDivElement>, CommonProps {
     onCreate?: (value: string) => void;
     /** The label of that row, from the typed text. @default `Add "<typed>"` */
     createLabel?: (value: string) => string;
+    /**
+     * Lists each selection under the field as a badge with a remove button (multiple mode only), so what is chosen
+     * can be read and taken off without opening the list (designer, 25 Oct 2026: on every MultiSelect).
+     * @default true
+     */
+    showSelectedBadges?: boolean;
+    /** Names the field when it has no visible `label` (the trigger, its list and the selected badges). */
+    "aria-label"?: string;
 }
 
 const MultiSelectRoot = ({
@@ -212,8 +221,23 @@ const MultiSelectRoot = ({
     loadingLabel = "Searching",
     onCreate,
     createLabel = (value) => `Add "${value}"`,
+    showSelectedBadges = true,
+    "aria-label": ariaLabel,
 }: MultiSelectProps) => {
+    const name = label || ariaLabel;
     const single = selectionMode === "single";
+    // Uncontrolled, the selection is kept here, so the trigger's count and the badges can read it too.
+    const [innerKeys, setInnerKeys] = useState<Selection>(defaultSelectedKeys ?? new Set());
+    const currentKeys = selectedKeys ?? innerKeys;
+    const changeSelection = (keys: Selection) => {
+        if (selectedKeys === undefined) setInnerKeys(keys);
+        onSelectionChange?.(keys);
+    };
+    // Labels of every item seen, so a badge keeps its name while a search hands over only the matches.
+    const [labels, setLabels] = useState<Record<string, string>>({});
+    const unseen = (items ?? []).filter((item) => labels[String(item.id)] !== (item.label ?? String(item.id)));
+    if (unseen.length > 0)
+        setLabels((was) => ({ ...was, ...Object.fromEntries(unseen.map((item) => [String(item.id), item.label ?? String(item.id)])) }));
     const [isOpen, setOpen] = useState(false);
     const { contains } = useFilter({ sensitivity: "base" });
     const [searchValue, setSearchValueState] = useState("");
@@ -228,6 +252,17 @@ const MultiSelectRoot = ({
     const canCreate = !!onCreate && !!typed && !isLoading && !items?.some((item) => item.label?.trim().toLowerCase() === typed.toLowerCase());
 
     const triggerRef = useRef<HTMLButtonElement>(null);
+    const badgesRef = useRef<HTMLUListElement>(null);
+    // Taking a badge off keeps the keyboard in place: focus moves to the badge now in its spot (or the one before it),
+    // and to the field once none are left.
+    const removeSelected = (id: string, index: number) => {
+        changeSelection(new Set(selectedIds.filter((x) => x !== id)));
+        requestAnimationFrame(() => {
+            const buttons = badgesRef.current?.querySelectorAll("button");
+            const next = buttons?.[Math.min(index, buttons.length - 1)];
+            (next ?? triggerRef.current)?.focus();
+        });
+    };
     const [popoverWidth, setPopoverWidth] = useState("");
 
     const onResize = useCallback(() => {
@@ -236,9 +271,10 @@ const MultiSelectRoot = ({
         setPopoverWidth(rect.width + "px");
     }, []);
 
-    const selectedCount = selectedKeys instanceof Set ? selectedKeys.size : selectedKeys === "all" ? (items?.length ?? 0) : 0;
+    const selectedIds = currentKeys === "all" ? (items ?? []).map((item) => String(item.id)) : [...currentKeys].map(String);
+    const selectedCount = selectedIds.length;
     const hasSelection = selectedCount > 0;
-    const selectedItem = single && selectedKeys instanceof Set ? items?.find((item) => selectedKeys.has(item.id)) : undefined;
+    const selectedItem = single ? items?.find((item) => selectedIds.includes(String(item.id))) : undefined;
 
     const handleClearSearch = useCallback(() => {
         setSearchValue("");
@@ -256,6 +292,12 @@ const MultiSelectRoot = ({
                 <AriaDialogTrigger isOpen={isOpen} onOpenChange={setOpen}>
                     <AriaButton
                         ref={triggerRef}
+                        // With no visible label, the name and what is chosen are read together ("Observers, 2 selected").
+                        aria-label={
+                            label || !ariaLabel
+                                ? undefined
+                                : `${ariaLabel}, ${single ? (selectedItem?.label ?? placeholder) : hasSelection ? `${selectedCount} selected` : placeholder}`
+                        }
                         isDisabled={isDisabled}
                         onClick={onResize}
                         className={(state) =>
@@ -361,16 +403,15 @@ const MultiSelectRoot = ({
                                 )}
 
                                 <AriaListBox
-                                    aria-label={label || "Options"}
+                                    aria-label={name || "Options"}
                                     items={items}
                                     selectionMode={single ? "single" : "multiple"}
                                     // Escape closes the popover and never touches the value: react-aria's
                                     // default ("clearSelection") wiped the whole selection on Escape.
                                     escapeKeyBehavior="none"
-                                    selectedKeys={selectedKeys}
-                                    defaultSelectedKeys={defaultSelectedKeys}
+                                    selectedKeys={currentKeys}
                                     onSelectionChange={(keys) => {
-                                        onSelectionChange?.(keys);
+                                        changeSelection(keys);
                                         // A single choice is made in one pick: close, and focus returns to the trigger.
                                         if (single) setOpen(false);
                                     }}
@@ -418,6 +459,27 @@ const MultiSelectRoot = ({
                         </AriaDialog>
                     </AriaPopover>
                 </AriaDialogTrigger>
+
+                {showSelectedBadges && !single && hasSelection && (
+                    <ul ref={badgesRef} aria-label={name ? `${name}, selected` : "Selected"} className="m-0 flex list-none flex-wrap gap-1.5 p-0 pt-0.5">
+                        {selectedIds.map((id, index) => {
+                            const itemLabel = labels[id] ?? id;
+                            return (
+                                <li key={id}>
+                                    <BadgeWithButton
+                                        size={size === "sm" ? "sm" : "md"}
+                                        color="gray"
+                                        uppercase={false}
+                                        buttonLabel={`Remove ${itemLabel}`}
+                                        onButtonClick={isDisabled ? undefined : () => removeSelected(id, index)}
+                                    >
+                                        {itemLabel}
+                                    </BadgeWithButton>
+                                </li>
+                            );
+                        })}
+                    </ul>
+                )}
 
                 {/* MultiSelect is not a react-aria field, so its hint would otherwise pick up the text slots
                     of whatever surrounds it: inside a Dialog (a FormModal) that offers only "description",

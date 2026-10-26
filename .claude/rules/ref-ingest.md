@@ -38,7 +38,7 @@ being demonstrated is DEW (Barlow); what operates or wraps the demonstration is 
 
 ## New component workflow
 
-1. **Authorise it first.** A new component is a designer override (§1.4): an entry in
+1. **Authorise it first.** A new component is a designer override (§1.4), and **behaviour is a component** (§1.10): a scrollbar, a dismiss, a way of cutting text or a drag is built here, in `components/**`, not in a screen, in `app/pages/_shared` or in the layout. Look in `components/**` first (§0.9). An entry in
    `contracts/overrides.json` (`npm run contracts:override`), and it starts in `components/custom/**`. It
    must not duplicate an existing component (§1.7).
 2. **Bring in the source** from Untitled UI into `components/base/<name>/`. Per the designer's standing
@@ -71,6 +71,13 @@ item has caught a real shipped bug; the incidents are in the archive.
 9. A bug found here is grepped for in every sibling and dependent file before it is called fixed.
 10. A larger issue this pass surfaces is logged in a `context/decisions/` entry, not fixed on the spot and not
     dropped.
+11. **Hit area.** A control that draws smaller than 40px (a small button, an icon button, a tab, a bare checkbox, a close or
+    clear icon) carries `hit-area` (`app/globals.css`) on its own root, so it is 40px to hit with a mouse and 44px on a touch
+    screen without looking or sitting any different, and no screen has to ask for it. Check it live by pressing just inside and just
+    outside the box, with a mouse and with touch emulated (`hasTouch`); give a scrolling container around it room for the extension
+    (no phantom scroll); cap or turn it off for controls that touch (`[--hit-min:32px]` on their group, `after:content-none` on
+    each). Not for a full-width field, a menu or list row, or a chip's own remove icon: they are stacked or sit on a label the
+    extension would take over. A ghost control (Link grey, Ghost colour, a way back, a crumb) draws its 32px box with `ghost-fill`, never a hand-set padding and negative margin, and keeps `hit-area` for its 40px target (2.16).
 
 ## Doc page template
 

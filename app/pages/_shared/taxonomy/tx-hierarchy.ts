@@ -4,7 +4,7 @@ import { useMemo } from "react";
 import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
 import { browserStorage, useRehydrate } from "@/app/pages/_shared/zustand-persist";
-import { INFRASPECIFIC_RANKS, type Kingdom, type Taxon } from "@/app/pages/_shared/taxonomy/tx-data";
+import { INFRASPECIFIC_RANKS, TX_ROOT, type Kingdom, type Taxon } from "@/app/pages/_shared/taxonomy/tx-data";
 import { useTaxa } from "@/app/pages/_shared/taxonomy/tx-store";
 
 // Taxonomy Management version 2: the whole hierarchy, not just species (the designer, 14 Oct 2026). Every rank from
@@ -18,7 +18,8 @@ import { useTaxa } from "@/app/pages/_shared/taxonomy/tx-store";
 // A node's id is its path of names ("Animalia/Chordata/Aves/Passeriformes/Maluridae/Malurus"), so the two sources meet
 // on the same id and never duplicate.
 
-export const TX_V2_ROOT = "/pages/taxonomy/version-2";
+/** A taxon's page, at any rank: the id is its path of names, so the page is one static route. */
+export const nodeHref = (id: string) => `${TX_ROOT}/record?id=${encodeURIComponent(id)}`;
 
 export const RANKS = ["Kingdom", "Phylum", "Class", "Order", "Family", "Genus", "Species", "Infraspecies"] as const;
 export type Rank = (typeof RANKS)[number];

@@ -164,7 +164,7 @@ export default function AvatarPage() {
                   />
                 </div>
                 <code className="text-xs text-quaternary">
-                  {previewSize} · {sizePx[previewSize]}px
+                  {previewSize}, {sizePx[previewSize]}px
                 </code>
               </div>
 

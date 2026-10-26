@@ -98,9 +98,9 @@ export default function PagesIndex() {
               }}
             />
           </div>
-          <div className="w-64">
+          <div className="w-80 max-w-full">
             <Select
-              aria-label="Open screens as"
+              label="Open screens as"
               size="sm"
               items={USER_ROLES.map((id) => ({ id, label: ROLE_NAMES[id] }))}
               selectedKey={role}

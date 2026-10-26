@@ -22,7 +22,6 @@ import {
 } from "@untitledui/icons";
 import { Button } from "@/components/base/buttons/button";
 import { Tooltip } from "@/components/base/tooltip/tooltip";
-import { Tabs } from "@/components/application/tabs/tabs";
 import { Badge, CountBadge } from "@/components/base/badges/badges";
 import type { BadgeColor } from "@/components/base/badges/badges";
 import { FeaturedIcon } from "@/components/foundations/featured-icon/featured-icon";
@@ -92,7 +91,7 @@ function KpiStat({
     <div className={cx("flex flex-col gap-2 pr-6", !last && (onDark ? "border-r border-white/20" : "border-r border-secondary"))}>
       <p className={cx("text-2xl font-medium tabular-nums", onDark ? "text-white" : "text-primary")}>{value}</p>
       <p className={cx("text-md font-medium", onDark ? "text-white" : "text-primary")}>{label}</p>
-      <div className={cx("flex items-center gap-1.5 text-sm", onDark ? "text-white/60" : "text-tertiary")}>
+      <div className={cx("flex items-center gap-1.5 text-sm", onDark ? "text-white/80" : "text-tertiary")}>
         {trend && <TrendUp02 className="size-3.5 text-fg-success-primary" />}
         <span>{note}</span>
       </div>
@@ -166,7 +165,8 @@ export function TaskItem({
   footer,
 }: {
   title: string;
-  detail: string;
+  /** One line under the title. Left out where the step list says the same thing (a card with `progress`). */
+  detail?: string;
   status: string;
   statusColor: BadgeColor<"pill-color">;
   icon: FC<{ className?: string }>;
@@ -189,7 +189,7 @@ export function TaskItem({
               <p className="text-base font-medium text-primary">{title}</p>
               <Badge size="sm" color={statusColor}>{status}</Badge>
             </div>
-            <p className="text-sm text-tertiary">{detail}</p>
+            {detail && <p className="text-sm text-tertiary">{detail}</p>}
           </div>
         </div>
         {actionLabel && actionHref && (
@@ -214,7 +214,7 @@ export function TaskItem({
             const isDone = step.percent === 100 && !isFailed;
             return (
               <div key={step.label} className="flex flex-col gap-2">
-                <span className={cx("flex items-center gap-1.5 text-sm", isFailed ? "font-semibold text-error-primary" : isCurrent ? "font-semibold text-primary" : "text-quaternary")}>
+                <span className={cx("flex items-center gap-1.5 text-sm", isFailed ? "font-semibold text-error-primary" : isCurrent ? "font-semibold text-primary" : isDone ? "font-medium text-secondary" : "text-tertiary")}>
                   {/* Small tick on the done step - flagged directly by the user as a UX tweak on
                       the "Submitted" step specifically, but keyed off isDone (not the label) so any
                       step that reaches 100% gets the same treatment, not just the first one. */}
@@ -324,13 +324,8 @@ function KnowledgeBaseCard({ icon: Icon, title, description }: { icon: FC<{ clas
           comment). */}
       <Icon className="size-6 text-fg-brand-primary" />
       <div className="flex flex-col gap-1.5">
-        {/* text-brand-secondary, not text-primary - flagged directly by the user: title text
-            should be primary colour too, same as the icon above it. Different token family on
-            purpose - text-fg-brand-primary is the "fg" token (shared across bg-/text-/border-/
-            ring- for icon-like uses); text-brand-secondary (--ui-text-brand-secondary, brand-700)
-            is this codebase's dedicated *text* colour token, already used everywhere brand-
-            coloured text appears (e.g. the "View all projects" link button). */}
-        <p className="text-base font-semibold text-brand-secondary">{title}</p>
+        {/* The title is plain text: none of these cards links anywhere yet, and link-coloured text promises a destination (2.10, the 5 Oct 2026 audit). */}
+        <p className="text-base font-semibold text-primary">{title}</p>
         <p className="text-sm text-tertiary">{description}</p>
       </div>
     </BentoCard>
@@ -368,7 +363,7 @@ function FeaturedProjectsSection({ roleHref }: { roleHref: (path: string) => str
   return (
     <div className="flex flex-col gap-3">
       <div className="flex items-center justify-between gap-2">
-        <h2 className="text-lg font-semibold text-primary">Featured Projects</h2>
+        <h2 className="text-lg font-semibold text-primary">Featured projects</h2>
         <Button color="link-color" size="sm" href={roleHref("/pages/project-list")} iconTrailing={ArrowNarrowRight}>
           View all projects
         </Button>
@@ -385,7 +380,7 @@ function FeaturedProjectsSection({ roleHref }: { roleHref: (path: string) => str
 function KnowledgeBaseSection() {
   return (
     <div className="flex flex-col gap-3">
-      <h2 className="text-lg font-semibold text-primary">Knowledge Base</h2>
+      <h2 className="text-lg font-semibold text-primary">Knowledge base</h2>
       <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
         {knowledgeBaseItems.map((item) => (
           <KnowledgeBaseCard key={item.title} {...item} />
@@ -412,11 +407,21 @@ function KnowledgeBaseSection() {
 // the real records waiting for a decision (from the DLA and nomination stores) and link to them.
 type AdminQueue = { id: string; label: string; count: number; icon: FC<{ className?: string }>; description: string; href?: string };
 
-const USER_ACCESS_REQUESTS = 247;
+export const USER_ACCESS_REQUESTS = 247;
 
 // Statuses that are waiting on a reviewer.
-const PENDING_DLA = ["submitted", "under_review", "on_hold"] as const;
-const PENDING_NOMINATION = ["submitted", "under_review"] as const;
+export const PENDING_DLA = ["submitted", "under_review", "on_hold"] as const;
+export const PENDING_NOMINATION = ["submitted", "under_review"] as const;
+
+/** The requests and nominations waiting on a reviewer, counted from the DLA and nomination stores. */
+export function useAdminPendingCounts() {
+  const dlas = useDlas();
+  const nominations = useNominations();
+  return {
+    dlas: dlas.filter((d) => (PENDING_DLA as readonly string[]).includes(d.status)).length,
+    nominations: nominations.filter((n) => (PENDING_NOMINATION as readonly string[]).includes(n.status)).length,
+  };
+}
 
 function AdminQueueCard({ queue }: { queue: AdminQueue }) {
   return (
@@ -454,10 +459,7 @@ function AdminHomeDashboardContent() {
   // Controlled Vocabulary is the BioData Super Admin's alone.
   const canManageVocab = useFeatureAccess("ctrlVocabManagement");
   const roleHref = useRoleHref();
-  const dlas = useDlas();
-  const nominations = useNominations();
-  const pendingDlas = dlas.filter((d) => (PENDING_DLA as readonly string[]).includes(d.status)).length;
-  const pendingNominations = nominations.filter((n) => (PENDING_NOMINATION as readonly string[]).includes(n.status)).length;
+  const { dlas: pendingDlas, nominations: pendingNominations } = useAdminPendingCounts();
   const alsoPending: AdminQueue[] = [
     {
       id: "dla",
@@ -624,20 +626,11 @@ export function HomeDashboardContent() {
     return <AdminHomeDashboardContent />;
   }
 
-  // The task the user can continue gets pulled into its own ContinueStrip above; the
-  // Needs-your-attention list below shows the rest, so it isn't stated twice. The icon rail's own
-  // notification dot (and project-detail's sidebar copy of it) still badges off the full
-  // `dashboardTasks.length` (3) - that's a different, correctly-scoped question ("how many things
-  // need attention across the app"), not this list's own "how many rows am I showing" count.
+  // The task the user can pick up (a draft) is the ContinueStrip; "Your requests" below shows the rest, so nothing is stated twice. The rail's red dot on the Home icon still badges off the full `dashboardTasks.length`,
+  // a different question (how many things across the app), left for the designer (the 5 Oct 2026 audit).
   // Only something the user can pick up and continue (a draft), not a link to something they are waiting on.
   const continueTask = dashboardTasks.find((task) => task.actionHref && task.actionLabel === "Continue");
   const otherTasks = dashboardTasks.filter((task) => task !== continueTask);
-
-  // Filter tabs on top of the flat list, ported from dashboard/option-2's own Needs-your-attention
-  // (that shell's own comment credits the idea to the Mobbin dashboard research: Deel's "For you
-  // today" all-items default + Asana's status-filtered tabs). Derived from `otherTasks` itself, not
-  // a separately maintained list, so a status can't appear as a tab without a real task behind it.
-  const taskStatuses = Array.from(new Set(otherTasks.map((task) => task.status)));
 
   return (
     <>
@@ -655,9 +648,9 @@ export function HomeDashboardContent() {
             <p className="text-md text-white">Your activity at a glance</p>
           </div>
           <div className="flex flex-wrap items-start gap-x-6 gap-y-4">
-            <KpiStat value="15" label="Species Observed" note="3 up from last week" trend onDark />
+            <KpiStat value="15" label="Species observed" note="3 up from last week" trend onDark />
             <KpiStat value="3" label="Datasets contributed" note="1 dataset under review" onDark />
-            <KpiStat value="2" label="Completed Checklists" note="2 completed this month" last onDark />
+            <KpiStat value="2" label="Completed checklists" note="2 completed this month" last onDark />
           </div>
         </div>
       </div>
@@ -667,10 +660,17 @@ export function HomeDashboardContent() {
           underneath for actions). ── */}
       <div className="flex flex-col gap-3 px-6 pb-6">
         <h2 className="text-lg font-semibold text-primary">Quick actions</h2>
+        {/* The Add menu's own names for these (lib/create-menu.ts), so one thing has one name; each moves on to another screen, so its icon is the forward arrow (3.12). */}
         <div className="flex flex-wrap items-center gap-2">
-          <QuickAction icon={Folder} label="Manage projects & datasets" href={roleHref("/pages/project-list")} />
-          <QuickAction icon={FileLock01} label="Request new DLA" href={roleHref("/pages/dla/new")} />
-          <QuickAction icon={Feather} label="Nominate Sensitive Species" href={roleHref("/pages/nominations/new")} />
+          <Button color="secondary" iconTrailing={ArrowNarrowRight} href={roleHref("/pages/project-list")}>
+            Your projects and datasets
+          </Button>
+          <Button color="secondary" iconTrailing={ArrowNarrowRight} href={roleHref("/pages/dla/new")}>
+            Data licence request
+          </Button>
+          <Button color="secondary" iconTrailing={ArrowNarrowRight} href={roleHref("/pages/nominations/new")}>
+            Sensitive species nomination
+          </Button>
         </div>
       </div>
 
@@ -679,38 +679,14 @@ export function HomeDashboardContent() {
           <ContinueStrip title={continueTask.title} actionLabel={continueTask.actionLabel} actionHref={roleHref(continueTask.actionHref)} />
         )}
         <div className="flex flex-col gap-3">
-          <div className="flex items-center gap-2">
-            <h2 className="text-lg font-semibold text-primary">Needs your attention</h2>
-            {/* CountBadge, not Badge - a padding-tuned Badge still rendered as an oval, not a
-                circle. Flagged directly by the user: bring in the true-circle counter pattern
-                already used elsewhere (the icon rail's notification dot) instead of another
-                padding tweak. color="error" matches that same icon-rail dot - flagged directly by
-                the user as too low-contrast in gray. See components/base/badges/badges.tsx's
-                CountBadge. Counts `otherTasks`, not the full list - see the comment above on why. */}
-            <CountBadge count={otherTasks.length} color="error" />
-          </div>
-          <Tabs defaultSelectedKey="all" className="flex flex-col gap-3">
-            <Tabs.List aria-label="Filter by status" type="underline" size="sm">
-              <Tabs.Item id="all" label="For you" badge={otherTasks.length} />
-              {taskStatuses.map((status) => (
-                <Tabs.Item key={status} id={status} label={status} badge={otherTasks.filter((task) => task.status === status).length} />
-              ))}
-            </Tabs.List>
-            <Tabs.Panel id="all" className="flex flex-col gap-3">
-              {otherTasks.map((task) => (
-                <TaskItem key={task.title} {...task} actionHref={task.actionHref ? roleHref(task.actionHref) : undefined} />
-              ))}
-            </Tabs.Panel>
-            {taskStatuses.map((status) => (
-              <Tabs.Panel key={status} id={status} className="flex flex-col gap-3">
-                {otherTasks
-                  .filter((task) => task.status === status)
-                  .map((task) => (
-                    <TaskItem key={task.title} {...task} actionHref={task.actionHref ? roleHref(task.actionHref) : undefined} />
-                  ))}
-              </Tabs.Panel>
+          {/* What the person has put in and where it has got to: a request they are waiting on is not something that "needs your attention", so the heading says what it is, and there is no red count
+              or filter row over two items (the 5 Oct 2026 audit). The draft they can pick up is the strip above. */}
+          <h2 className="text-lg font-semibold text-primary">Your requests</h2>
+          <div className="flex flex-col gap-3">
+            {otherTasks.map((task) => (
+              <TaskItem key={task.title} {...task} detail={task.progress ? undefined : task.detail} actionHref={task.actionHref ? roleHref(task.actionHref) : undefined} />
             ))}
-          </Tabs>
+          </div>
         </div>
         <FeaturedProjectsSection roleHref={roleHref} />
         <KnowledgeBaseSection />

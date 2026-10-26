@@ -7,7 +7,7 @@
 // - the details panel is the cleaner v3 panel (record-panel.tsx) with every action in one toolbar;
 // - full screen shows the record wide (record-full-view.tsx). Edit, a section's edit icon or a
 //   field's opens it there with that one card in edit mode; Add inside opens a new record full
-//   screen with every card in edit mode and the Fields shown panel, as editing does.
+//   screen with every card in edit mode and the Concepts shown panel, as editing does.
 // - the tree has one Expand all / Collapse all toggle in its own header, beside the record count
 //   (the VS Code explorer and GitHub file tree pattern), instead of two links in the toolbar.
 // - the search is the shared ToolbarSearch, the same 384px as every list (CONTRACTS 4.2c).
@@ -36,13 +36,10 @@ import {
   type SortDescriptor,
 } from "react-aria-components";
 import {
-  ChevronDown,
   Database01,
   Dataflow03,
   Flag01,
-  Plus,
   Table as TableIcon,
-  Folder,
   Tag01,
 } from "@untitledui/icons";
 import { Badge } from "@/components/base/badges/badges";
@@ -57,13 +54,13 @@ import {
   KIND_PLURAL,
   recordIcon,
 } from "./record-inspector";
-import { ActionsMenu, ExpandAllToggle, RecordPanel } from "./record-panel";
-import { Button } from "@/components/base/buttons/button";
+import { AddRecordMenu, ExpandAllToggle, RecordPanel } from "./record-panel";
 import { ListEmptyState } from "@/app/pages/_shared/list-empty-state";
 import { UploadDatasetButton } from "@/app/pages/_shared/upload-dataset-button";
 import { hasDateField } from "./field-schema";
 import { RecordFullView, type EditTarget } from "./record-full-view";
 import { RecordFullscreenV3 } from "./record-fullscreen";
+import { EventShape, KindShapeLegend, typeLabel } from "@/app/pages/_shared/record-shapes";
 import { formatDate, type RecordKind, type SurveyRecord } from "./survey-data";
 import { useEditStore } from "./edit-store";
 import { useFlagCounts } from "./review-view";
@@ -113,6 +110,7 @@ export function filterForKind(kind: KindFilter): FilterSelection {
 export type RecordsView = "tree" | "table";
 
 const PROJECT_NODE = "project";
+const TREE_PCT = 38;
 
 function matchesSearch(r: SurveyRecord, q: string, name: string) {
   if (!q) return true;
@@ -169,14 +167,23 @@ export function RecordsExplorer({
     undefined,
   );
   const [cardEditing, setCardEditing] = useState(false);
-  // Edit opened from the side panel goes full screen to edit, then comes back to the panel when the
-  // edit is saved or cancelled. An edit started inside the full view stays there.
-  const openEdit = (sectionId?: string, fieldKey?: string) => {
+  // Edit started in the details panel happens in the panel (designer, 23 Oct 2026: "the edit must happen in the same
+  // screen unless the user clicks and sees the expanded view"), with the records area brought to the top of the window
+  // so the panel has the height. An edit started in the full view stays there. A new record added from the panel is
+  // filled in there too. `for` is the selection it belongs to: picking another record leaves it.
+  const [panelEdit, setPanelEdit] = useState<
+    | null
+    | { for: string | null; target: EditTarget; creating?: undefined }
+    | { for: string | null; creating: SurveyRecord; target?: undefined }
+  >(null);
+  const topRef = useRef<HTMLDivElement>(null);
+  const bringToTop = () => topRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+  const openEdit = (sectionId?: string, fieldKey?: string, addSection?: boolean) => {
     if (!recordById(selectedId)) return;
-    setEditTarget({ sectionId: sectionId ?? "*", fieldKey });
-    fromPanel.current = true;
-    setFullscreen("view");
+    setPanelEdit({ for: selectedId, target: { sectionId: sectionId ?? "*", fieldKey, addSection } });
+    bringToTop();
   };
+  if (panelEdit && panelEdit.for !== selectedId) setPanelEdit(null);
   const fromPanel = useRef(false);
   const wasEditing = useRef(false);
   const onCardEditingChange = (editing: boolean) => {
@@ -190,20 +197,24 @@ export function RecordsExplorer({
   const startAdd = (
     parent: SurveyRecord | null,
     option: ChildOption,
-    origin: "panel" | "full" = "panel",
+    origin: "panel" | "full" | "empty" = "panel",
   ) => {
-    setCreating(
-      createRecord({
-        kind: option.kind,
-        type: option.type,
-        parent,
-        name: "",
-        date: new Date().toISOString().slice(0, 10),
-        recordedBy: "Olivia Wyatt",
-        records,
-      }),
-    );
-    fromPanel.current = origin === "panel";
+    const record = createRecord({
+      kind: option.kind,
+      type: option.type,
+      parent,
+      name: "",
+      date: new Date().toISOString().slice(0, 10),
+      recordedBy: "Olivia Wyatt",
+      records,
+    });
+    if (origin === "panel") {
+      setPanelEdit({ for: selectedId, creating: record });
+      bringToTop();
+      return;
+    }
+    setCreating(record);
+    fromPanel.current = origin === "empty";
     setFullscreen("edit");
   };
   const closeFullscreen = () => {
@@ -215,20 +226,31 @@ export function RecordsExplorer({
     setCardEditing(false);
   };
 
-  // The list and the panel share the row; the panel's width is dragged from the handle between them.
+  // The list and the panel share the row, split by a handle that drags (or moves with the arrow keys).
+  // The tree takes 38% of the row to start (designer, 23 Oct 2026: 35 to 40%), the panel the rest; the table,
+  // which needs its width, keeps a 440px panel beside it.
   const [panelWidth, setPanelWidth] = useState(440);
+  const [treePct, setTreePct] = useState(TREE_PCT);
   const rowRef = useRef<HTMLDivElement>(null);
-  const clampWidth = (w: number) => {
-    const total = rowRef.current?.getBoundingClientRect().width ?? 1200;
-    return Math.round(Math.min(Math.max(w, 340), total - 360));
+  const rowTotal = () => rowRef.current?.getBoundingClientRect().width ?? 1200;
+  const clampWidth = (w: number) =>
+    Math.round(Math.min(Math.max(w, 340), rowTotal() - 360));
+  // The tree keeps at least 280px and leaves the panel at least 360px.
+  const clampPct = (pct: number) => {
+    const total = rowTotal();
+    const px = Math.min(Math.max((pct / 100) * total, 280), total - 376);
+    return Math.round((px / total) * 1000) / 10;
   };
   const onHandleDown = (e: PointerEvent<HTMLDivElement>) => {
     e.preventDefault();
     e.currentTarget.setPointerCapture(e.pointerId);
-    const right =
-      rowRef.current?.getBoundingClientRect().right ?? window.innerWidth;
+    const box = rowRef.current?.getBoundingClientRect();
+    const left = box?.left ?? 0;
+    const right = box?.right ?? window.innerWidth;
     const move = (ev: globalThis.PointerEvent) =>
-      setPanelWidth(clampWidth(right - ev.clientX - 8));
+      view === "tree"
+        ? setTreePct(clampPct(((ev.clientX - left - 8) / rowTotal()) * 100))
+        : setPanelWidth(clampWidth(right - ev.clientX - 8));
     const up = () => {
       window.removeEventListener("pointermove", move);
       window.removeEventListener("pointerup", up);
@@ -237,8 +259,10 @@ export function RecordsExplorer({
     window.addEventListener("pointerup", up);
   };
   const onHandleKey = (e: KeyboardEvent<HTMLDivElement>) => {
-    if (e.key === "ArrowLeft") setPanelWidth((w) => clampWidth(w + 24));
-    if (e.key === "ArrowRight") setPanelWidth((w) => clampWidth(w - 24));
+    const step = e.key === "ArrowLeft" ? -1 : e.key === "ArrowRight" ? 1 : 0;
+    if (!step) return;
+    if (view === "tree") setTreePct((p) => clampPct(p + step * 2));
+    else setPanelWidth((w) => clampWidth(w - step * 24));
   };
   const [expanded, setExpanded] = useState<Set<Key>>(
     () => new Set([PROJECT_NODE, ...ALL_PARENT_IDS]),
@@ -384,7 +408,7 @@ export function RecordsExplorer({
             {r.name}
           </span>
           <span className="ml-2 text-xs font-normal text-tertiary">
-            {r.type}
+            {typeLabel(r)}
           </span>
         </TreeView.ItemContent>
         {kids.map(renderNode)}
@@ -468,15 +492,12 @@ export function RecordsExplorer({
         >
           <UploadDatasetButton projectId={meta.id} color={canEdit ? "secondary" : "primary"} size="md" />
           {canEdit && (
-            <ActionsMenu
+            <AddRecordMenu
               options={childOptions(null, [])}
-              onAdd={(o) => startAdd(null, o)}
-              addHeading="Add to this project"
-              trigger={
-                <Button color="primary" size="md" iconLeading={Plus} iconTrailing={ChevronDown}>
-                  Add record
-                </Button>
-              }
+              onAdd={(o) => startAdd(null, o, "empty")}
+              label="Add record"
+              size="md"
+              color="primary"
             />
           )}
         </ListEmptyState>
@@ -485,7 +506,7 @@ export function RecordsExplorer({
     );
 
   return (
-    <div className="flex flex-col gap-3">
+    <div ref={topRef} className="flex scroll-mt-4 flex-col gap-3">
       {/* ── Toolbar ── */}
       <div className="flex flex-wrap items-center gap-3">
         <ToolbarSearch
@@ -525,7 +546,13 @@ export function RecordsExplorer({
 
       {/* ── Records + inspector ── */}
       <div ref={rowRef} className="flex h-[calc(100dvh-9rem)] min-h-[560px]">
-        <div className="flex min-w-0 flex-1 flex-col overflow-hidden rounded-xl border border-secondary bg-primary">
+        <div
+          style={view === "tree" ? { width: `${treePct}%` } : undefined}
+          className={cx(
+            "flex min-w-0 flex-col overflow-hidden rounded-xl border border-secondary bg-primary",
+            view === "tree" ? "shrink-0" : "flex-1",
+          )}
+        >
           {matches.length === 0 && !(view === "table" && projectMatches) ? (
             <div className="flex flex-1 flex-col items-center justify-center gap-1 p-8 text-center">
               <p className="text-sm font-medium text-primary">
@@ -537,12 +564,13 @@ export function RecordsExplorer({
             </div>
           ) : view === "tree" ? (
             <>
-              <div className="flex shrink-0 items-center justify-between gap-2 border-b border-secondary py-1.5 pr-2 pl-4">
+              <div className="flex min-h-10 shrink-0 items-center gap-2 border-b border-secondary py-1.5 pr-2 pl-4">
                 <p className="text-xs font-medium text-tertiary tabular-nums">
                   {filterOn
                     ? `${matches.length} of ${records.length} records match`
                     : `${records.length} records`}
                 </p>
+                <KindShapeLegend className="ml-auto" />
                 {!filterOn && (
                   <ExpandAllToggle
                     allOpen={allOpen}
@@ -585,9 +613,9 @@ export function RecordsExplorer({
                 >
                   <TreeView.Item id={PROJECT_NODE} textValue={projectTitle}>
                     <TreeView.ItemContent
-                      icon={Folder}
+                      icon={EventShape}
                       className={cx(
-                        treeSelectedKey === PROJECT_NODE &&
+                                    treeSelectedKey === PROJECT_NODE &&
                           "bg-brand-50 hover:bg-brand-50",
                       )}
                       action={
@@ -725,11 +753,13 @@ export function RecordsExplorer({
           role="separator"
           aria-orientation="vertical"
           aria-label="Resize the list and the details panel"
-          aria-valuenow={panelWidth}
+          aria-valuenow={view === "tree" ? treePct : panelWidth}
           tabIndex={0}
           onPointerDown={onHandleDown}
           onKeyDown={onHandleKey}
-          onDoubleClick={() => setPanelWidth(440)}
+          onDoubleClick={() =>
+            view === "tree" ? setTreePct(TREE_PCT) : setPanelWidth(440)
+          }
           title="Drag to resize. Double-click to reset."
           className="group flex w-[16px] shrink-0 cursor-col-resize touch-none items-center justify-center outline-focus-ring focus-visible:outline-2"
         >
@@ -739,9 +769,32 @@ export function RecordsExplorer({
         <aside
           key={selectedId ?? "project"}
           aria-label="Record details"
-          style={{ width: panelWidth }}
-          className="flex shrink-0 flex-col overflow-hidden rounded-xl border border-secondary bg-primary"
+          style={view === "tree" ? undefined : { width: panelWidth }}
+          className={cx(
+            "flex min-w-0 flex-col overflow-hidden rounded-xl border border-secondary bg-primary",
+            view === "tree" ? "flex-1" : "shrink-0",
+          )}
         >
+          {panelEdit && (panelEdit.creating || selected) ? (
+            <div className="flex min-h-0 flex-1 flex-col overflow-y-auto">
+              <RecordFullView
+                key={panelEdit.creating?.id ?? `${selectedId}-edit`}
+                variant="panel"
+                record={panelEdit.creating ?? selected!}
+                isNew={!!panelEdit.creating}
+                initialEdit={panelEdit.target}
+                onSelect={onSelect}
+                onAdd={(parent, o) => startAdd(parent, o, "panel")}
+                onExit={() => setPanelEdit(null)}
+                onEditingChange={(editing) => !editing && setPanelEdit(null)}
+                onCreated={(r) => {
+                  setPanelEdit(null);
+                  onSelect(r.id);
+                }}
+                onDiscardNew={() => setPanelEdit(null)}
+              />
+            </div>
+          ) : (
           <RecordPanel
             record={selected}
             focusField={
@@ -757,6 +810,7 @@ export function RecordsExplorer({
               setFullscreen("view");
             }}
           />
+          )}
         </aside>
         {fullscreenView}
       </div>

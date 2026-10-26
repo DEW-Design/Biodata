@@ -1,6 +1,6 @@
-import { PROJECT_MANAGER_ROLE } from "../data";
+import { accessKey, accessOf, PROJECT_MANAGER_ROLE } from "../data";
 import { OTHER_METHODOLOGY } from "../methodology-fields";
-import { isGeoExtentComplete, type DataCollectionState, type MethodologyChoice, type ProjectContact, type ProjectDetailsState, type RestrictionsState, type RestrictionTypeKey } from "../types";
+import { allRecordsOf, culturalOf, isGeoExtentComplete, type DataCollectionState, type MethodologyChoice, type ProjectContact, type ProjectDetailsState, type RestrictionsState, type RestrictionTypeKey } from "../types";
 import { isTypeValid, OFFERED_RESTRICTION_TYPES } from "../step-3-privacy-restrictions";
 
 // The Add Project flow's sections for the second (three-column) layout. The first layout asks one
@@ -64,7 +64,9 @@ const FIXED_SECTIONS_V2: Partial<typeof FIXED_SECTIONS> = {
 const TYPE_TITLES: Record<RestrictionTypeKey, { title: string; description: string }> = {
   embargo: { title: "Embargo", description: "Choose why this project is embargoed and when it should become available." },
   species: { title: "Species restrictions", description: "Nominate every species whose records in this project should be treated as sensitive." },
-  locations: { title: "Location restrictions", description: "Nominate every location whose records in this project should be protected." },
+  cultural: { title: "Cultural sensitivities", description: "Name the Indigenous Information Authority for this project's culturally sensitive data, and tell us why it is restricted." },
+  locations: { title: "Location restrictions", description: "Add every location whose records in this project should be protected." },
+  all: { title: "All records", description: "Every record in this project is restricted. Tell us why." },
   metadata: { title: "Project metadata restrictions", description: "Pick the project details to protect, and tell us why." },
   other: { title: "Other restrictions", description: "Anything not covered by the other restriction types." },
 };
@@ -119,7 +121,7 @@ function missingContactFields(d: ProjectDetailsState): string[] {
   return out.map((m) => m.charAt(0).toUpperCase() + m.slice(1));
 }
 
-function missingMethodFieldsV2(c: DataCollectionState): string[] {
+export function missingMethodFieldsV2(c: DataCollectionState): string[] {
   const out: string[] = [];
   if (c.focusAreas.length === 0) out.push("Focus areas");
   if (c.focusAreas.includes("other") && !c.focusAreaOther.trim()) out.push("Focus area (please specify)");
@@ -128,6 +130,12 @@ function missingMethodFieldsV2(c: DataCollectionState): string[] {
     const chosen = c.methodologies ?? [];
     if (chosen.length === 0) out.push("At least one methodology");
     if (chosen.some((m) => m.id === OTHER_METHODOLOGY && !m.other?.trim())) out.push("Other methodology (please name it)");
+  }
+  if (c.collectionMethod === "other" && !c.otherMethod?.trim()) out.push("Description of the methodology");
+  if (c.collectionMethod === "analysis") {
+    const chosen = c.analyses ?? [];
+    if (chosen.length === 0) out.push("At least one type of analysis or reporting");
+    if (chosen.some((m) => m.id === OTHER_METHODOLOGY && !m.other?.trim())) out.push("Other analysis or reporting (please name it)");
   }
   return out;
 }
@@ -146,10 +154,18 @@ function missingFieldsV2(id: SectionId, s: FormState): string[] | null {
   }
 }
 
+/** A project saved before methodologies were a list (the project page's seed, version 1) holds its methodology as text. For editing
+ *  it in the list, that text becomes one entry with the limitations as its note; nothing is rewritten until the list is changed. */
+export function withLegacyMethodologies(c: DataCollectionState): DataCollectionState {
+  if (c.collectionMethod !== "systematic" || c.methodologies || !c.methodDetails.trim()) return c;
+  return { ...c, methodologies: [{ rid: 1, id: c.methodDetails.trim(), note: c.limitationsAndBiases }] };
+}
+
 /** The methodologies as text: names for `methodDetails`, and each note under its name for `limitationsAndBiases`. */
 export function methodologySummary(c: DataCollectionState): { names: string; notes: string } {
   const label = (m: MethodologyChoice) => (m.id === OTHER_METHODOLOGY && m.other?.trim() ? m.other.trim() : m.id);
-  const chosen = c.collectionMethod === "systematic" ? (c.methodologies ?? []) : [];
+  const chosen = c.collectionMethod === "systematic" ? (c.methodologies ?? []) : c.collectionMethod === "analysis" ? (c.analyses ?? []) : [];
+  if (c.collectionMethod === "other") return { names: c.otherMethod?.trim() ?? "", notes: "" };
   return {
     names: chosen.map(label).join(", "),
     notes: chosen
@@ -175,6 +191,8 @@ export function toSavedForm(s: FormState, version: FormVersion): FormState {
       roleOfWorkOther: primary?.roleOther ?? "",
       dataOwnerContacts: ordered.map(({ id, firstName, lastName, email, phone, role, roleOther }) => ({ id, firstName, lastName, email, phone, role, roleOther })),
       projectManagers: people.filter(isManager).map(({ id, firstName, lastName, email, phone, organisation, role, roleOther, isPrimary }) => ({ id, firstName, lastName, email, phone, organisation, role, roleOther, isPrimary })),
+      // What each person can do, as set on their contact card (a project manager is always Full control, so is not stored).
+      projectAccess: Object.fromEntries(people.filter((p) => !isManager(p) && accessKey(p)).map((p) => [accessKey(p), accessOf(p)])),
     },
     collection: { ...s.collection, surveyType: null, methodDetails: names, limitationsAndBiases: notes },
   };
@@ -284,7 +302,7 @@ export function missingFields(id: SectionId, s: FormState, version: FormVersion 
     case "embargo":
       if (r.embargo.types.length === 0) out.push("Type of embargo");
       if (r.embargo.types.includes("other") && blank(r.embargo.typeOther)) out.push("Embargo type (please specify)");
-      if (blank(r.embargo.reason)) out.push("Embargo reason");
+      if (blank(r.embargo.reason)) out.push("Embargo justification");
       if (!r.embargo.endDate) out.push("Embargo end date");
       break;
     case "species":
@@ -293,6 +311,20 @@ export function missingFields(id: SectionId, s: FormState, version: FormVersion 
       break;
     case "locations":
       if (r.locations.length === 0) out.push("At least one location");
+      else {
+        if (r.locations.some((l) => !l.name.trim())) out.push("A name for each location");
+        if (r.locations.some((l) => !l.justification.trim())) out.push("A justification for each location");
+      }
+      break;
+    case "cultural": {
+      const cu = culturalOf(r);
+      if (blank(cu.authority)) out.push("Indigenous Information Authority");
+      if (blank(cu.contact)) out.push("IIA contact details");
+      if (blank(cu.justification)) out.push("Justification");
+      break;
+    }
+    case "all":
+      if (blank(allRecordsOf(r).justification)) out.push("Justification");
       break;
     case "metadata":
       if (!isTypeValid("metadata", r)) out.push("A project detail to restrict, and the justification");

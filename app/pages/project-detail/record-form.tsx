@@ -56,7 +56,7 @@ export const SECTION_HINT: Record<string, string> = {
   voucher: "The specimen or sample kept, if any.",
   observation: "Who measured what, and how.",
   measurements: "One row per measurement or fact.",
-  custom: "Anything the standard fields don't cover.",
+  custom: "Anything the standard concepts don't cover.",
 };
 
 let nextLocalId = 1;
@@ -291,7 +291,7 @@ export function RecordDrawer({
     <EditDrawer isOpen title={mode === "create" ? `Add ${kindLabel}` : `Edit ${record.name}`} context={`${kindLabel} ${record.code}`} isDirty={dirty} onClose={onClose}>
       {(requestClose) => (
         <FormPage
-          eyebrow={mode === "create" ? `Add · ${record.kind}` : `Edit · ${record.kind}`}
+          eyebrow={mode === "create" ? `Add ${record.kind}` : `Edit ${record.kind}`}
           title={mode === "create" ? `New ${kindLabel.toLowerCase()}` : record.name}
           subtitle={mode === "create" ? "Only the name and date are needed now. Everything else can be added later." : `${kindLabel} ${record.code}`}
           onCancel={requestClose}

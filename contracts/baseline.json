@@ -73,6 +73,7 @@
       "app/pages/_shared/home-dashboard.tsx": 1,
       "components/application/table/table.tsx": 1,
       "lib/nav.ts": 1
-    }
+    },
+    "2.3c": {}
   }
 }

@@ -20,9 +20,9 @@ import { useUserRole } from "@/lib/use-user-role";
 //     "User", and Additional filter is the menu itself, offering Action, Entity type, Source type and Source;
 //   - Comments is empty for every row: neither Add Project nor the project's edit asks for a comment, so there is none to show;
 //   - the log is only what has been done in this browser since the log began (project-audit-log-store.ts): a CREATE when a project
-//     is registered, an UPDATE per field when an edit is saved. A project nobody has registered or edited since has no rows, and
+//     is registered, an UPDATE per concept when an edit is saved. A project nobody has registered or edited since has no rows, and
 //     none are made up; the one exception is the "Example record" the table shows while the log is empty (the designer, 16 Oct 2026), marked as such;
-//   - Previous details is empty for a CREATE and for a field that had no value before; Current details likewise;
+//   - Previous details is empty for a CREATE and for a concept that had no value before; Current details likewise;
 //   - BioData Admin only (role-access `projectAuditLog`): no other role has rows, and the report is not offered to them.
 
 const columns: ViewColumn<AuditReportRow>[] = [
@@ -89,7 +89,7 @@ export function ProjectAuditLogReport() {
   return (
     <DataReport
       title="Project Audit Log Report"
-      subtitle="Every change to a project, one row per field: what it was, what it is now, who changed it and where from."
+      subtitle="Every change to a project, one row per concept: what it was, what it is now, who changed it and where from."
       icon={ClockRewind}
       rows={rows}
       example={EXAMPLE}
@@ -98,7 +98,7 @@ export function ProjectAuditLogReport() {
       attributes={attributes}
       searchText={(r) => [r.projectCode, r.projectTitle, r.modifiedEntity, r.previous, r.current, r.user]}
       searchLabel="Search the report"
-      searchPlaceholder="Search by project ID or title, field or user"
+      searchPlaceholder="Search by project ID or title, concept or user"
       tableLabel="Project changes, one row each"
       noun="changes"
       emptyDescription="Changes appear here as projects are registered and edited, from the moment this log began."

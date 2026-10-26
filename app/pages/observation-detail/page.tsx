@@ -11,7 +11,6 @@ import {
   SearchMd,
   ChevronDown,
   ChevronSelectorVertical,
-  ArrowNarrowLeft,
   ArrowNarrowRight,
   Folder,
   Eye,
@@ -44,6 +43,7 @@ import { PrototypeTools } from "@/app/_prototype-tools/prototype-tools";
 import { MapView } from "@/app/pages/_shared/map-view";
 import { LocationDetailsTable } from "@/app/pages/_shared/location-details-table";
 import { useUserRole } from "@/lib/use-user-role";
+import { RecordBackLink } from "@/app/pages/_shared/record-hero";
 import { useRoleHref } from "@/lib/use-role-href";
 import { navForRole, keyHref, type NavNode } from "@/lib/registered-user-nav";
 import { cx } from "@/utils/cx";
@@ -466,7 +466,7 @@ function MetaField({ label, children }: { label: string; children: ReactNode }) 
 // that indicator should first show up for real, not a hypothetical for later.
 function FlagIndicator() {
   return (
-    <Tooltip title="Flagged by an admin - this field may need review or updating">
+    <Tooltip title="Flagged by an admin - this concept may need review or updating">
       <span className="inline-flex shrink-0 items-center justify-center">
         <Flag03 className="size-3.5 text-fg-warning-primary" />
       </span>
@@ -959,15 +959,7 @@ function ObservationDetail() {
             <main className="flex flex-1 flex-col overflow-y-auto [scrollbar-gutter:stable]">
               {activeSection === "Projects" ? (
                 <>
-                  <div className="p-6 pb-0">
-                    <Link
-                      href={roleHref("/pages/project-detail")}
-                      className="flex w-fit items-center gap-1.5 text-sm font-medium text-tertiary hover:text-primary"
-                    >
-                      <ArrowNarrowLeft className="size-4" />
-                      Back to Adelaide Hills Bushland Survey
-                    </Link>
-                  </div>
+                  <RecordBackLink href={roleHref("/pages/project-detail")}>Back to Adelaide Hills Bushland Survey</RecordBackLink>
 
                   <div className="flex flex-col gap-1 p-6 pb-0">
                     <p className="text-xs font-semibold tracking-wide text-quaternary uppercase">Observation</p>

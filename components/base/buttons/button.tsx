@@ -10,7 +10,9 @@ import { isReactComponent } from "@/utils/is-react-component";
 export const styles = sortCx({
     common: {
         root: [
-            "font-barlow group relative inline-flex h-max cursor-pointer items-center justify-center whitespace-nowrap outline-brand transition duration-100 ease-linear before:absolute focus-visible:outline-2 focus-visible:outline-offset-2 active:scale-[0.96]",
+            "font-barlow hit-area group relative inline-flex h-max cursor-pointer items-center justify-center whitespace-nowrap outline-brand transition duration-100 ease-linear before:absolute focus-visible:outline-2 focus-visible:outline-offset-2 active:scale-[0.96]",
+            // The invisible hit area (`hit-area`, globals.css) is off beside the input it is joined to: the two touch.
+            "in-data-input-wrapper:after:content-none",
             // When button is used within `InputGroup`
             "in-data-input-wrapper:shadow-xs in-data-input-wrapper:focus:!z-50 in-data-input-wrapper:in-data-leading:-mr-px in-data-input-wrapper:in-data-leading:rounded-r-none in-data-input-wrapper:in-data-leading:before:rounded-r-none in-data-input-wrapper:in-data-trailing:-ml-px in-data-input-wrapper:in-data-trailing:rounded-l-none in-data-input-wrapper:in-data-trailing:before:rounded-l-none",
             // Disabled styles
@@ -88,11 +90,20 @@ export const styles = sortCx({
         },
         "link-gray": {
             root: [
-                "justify-normal rounded p-0! text-tertiary hover:text-tertiary_hover",
-                // Inner text underline
-                "*:data-text:underline *:data-text:decoration-transparent hover:*:data-text:decoration-fg-quaternary",
+                // The ghost button: nothing around it until it is pointed at, then a gray fill (the tertiary button's own hover). Its padding draws a 32px box (`ghost-fill`, globals.css) and an equal negative margin
+                // gives the room back, so the text sits where it always sat and nothing around it moves; the 40px target is the root's `hit-area`.
+                "ghost-fill justify-normal rounded-md text-tertiary hover:bg-primary_hover hover:text-tertiary_hover",
                 // Icon styles
                 "*:data-icon:text-fg-quaternary hover:*:data-icon:text-fg-quaternary_hover",
+            ].join(" "),
+        },
+        "ghost-color": {
+            root: [
+                // The brand ghost: the ghost button (Link grey) in the brand colour. Nothing around it until it is pointed at, then a brand-50 fill, and no underline: a fill says "pressable" and an underline
+                // would say it twice. Same box as Link grey (`ghost-fill`).
+                "ghost-fill justify-normal rounded-md text-brand-secondary hover:bg-brand-primary hover:text-brand-secondary_hover",
+                // Icon styles
+                "*:data-icon:text-fg-brand-secondary_alt hover:*:data-icon:text-fg-brand-secondary_hover",
             ].join(" "),
         },
         "primary-destructive": {

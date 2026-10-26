@@ -135,7 +135,7 @@ export default function RadioButtonsPage() {
                   </RadioGroup>
                 </div>
                 <code className="text-xs text-quaternary">
-                  {previewSize} · {previewOrientation}
+                  {previewSize}, {previewOrientation}
                 </code>
               </div>
 

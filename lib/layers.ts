@@ -8,4 +8,6 @@
 //   z-[20000]  modals and slide-over panels - above everything, the dev tools included
 //   popovers   react-aria sets its own z-index of 100000, so a menu or date picker inside a modal
 //              still opens above it
+//   z-[100001] the drawn scrollbars (app/_scrollbars): one layer over everything, so the thumb of a scroller inside a menu or a modal is not under it. A thumb is drawn only where its scroller is what is under it.
 export const MODAL_Z_INDEX = "z-[20000]";
+export const SCROLLBAR_Z_INDEX = "z-[100001]";

@@ -1,10 +1,10 @@
 "use client";
 
-// Editing one card of the Project tab in the edit drawer. The cards and their titles are the same as
+// Editing one card of the Overview tab in the edit drawer. The cards and their titles are the same as
 // the page shows (Project details, Published by, Project managers, Geographic extent, Focus, species
 // and method, Permits and identifiers, and one card per restriction). Each card's form is built from
 // the Add Project registration's own pieces (`SectionFields` for Project details and each
-// restriction, `GeoExtentPicker`, `ManagerCard`, `LogoUpload`, the same option lists), so fields,
+// restriction, `MethodologyRow`, `GeoExtentPicker`, `ManagerCard`, the same option lists), so fields,
 // add and remove controls and rules match registration. Save changes applies the one card; Cancel
 // asks before discarding.
 //
@@ -20,25 +20,22 @@ import { Input } from "@/components/base/input/input";
 import { RadioButton, RadioGroup } from "@/components/base/radio-buttons/radio-buttons";
 import { MultiSelect } from "@/components/base/select/multi-select";
 import { Select } from "@/components/base/select/select";
-import { TextArea } from "@/components/base/textarea/textarea";
 import { toast } from "@/components/application/toast/toast";
 import { AlertFullWidth } from "@/components/application/alerts/alerts";
 import { ConfirmationModal } from "@/components/application/modals/modal";
 import { FormPage } from "@/app/pages/_shared/form-page";
 import { FormRow } from "@/app/pages/_shared/form-row";
-import { COLLECTION_METHOD_OPTIONS, FOCUS_AREA_OPTIONS, PERMIT_TYPE_OPTIONS, REGISTRATION_SPECIES, ROLE_OF_WORK_OPTIONS } from "@/app/pages/project-registration/data";
+import { FOCUS_AREA_OPTIONS, PERMIT_TYPE_OPTIONS, REGISTRATION_SPECIES, ROLE_OF_WORK_OPTIONS } from "@/app/pages/project-registration/data";
 import { GeoExtentPicker } from "@/app/pages/project-registration/geo-extent-picker";
-import { LogoUpload } from "@/app/pages/project-registration/logo-upload";
-import { MethodologySelect, SurveyTypeRadios } from "@/app/pages/project-registration/methodology-fields";
-import { SectionFields } from "@/app/pages/project-registration/option-2/form-sections";
-import { isSectionValid, missingFields, missingOwnerFields } from "@/app/pages/project-registration/option-2/sections";
+import { MethodologyRow, SectionFields } from "@/app/pages/project-registration/option-2/form-sections";
+import { isSectionValid, methodologySummary, missingFields, missingMethodFieldsV2, missingOwnerFields, withLegacyMethodologies } from "@/app/pages/project-registration/option-2/sections";
 import { ManagerCard } from "@/app/pages/project-registration/step-1-project-details";
 import { OFFERED_RESTRICTION_TYPES, RESTRICTION_TYPE_META } from "@/app/pages/project-registration/step-3-privacy-restrictions";
-import { emptyContact, emptyPermitRow, emptyProjectManager, isGeoExtentComplete, type CollectionMethod, type ContactPerson, type ProjectDetailsState, type ProjectManager, type RestrictionTypeKey } from "@/app/pages/project-registration/types";
+import { emptyContact, emptyPermitRow, emptyProjectManager, isGeoExtentComplete, type ContactPerson, type ProjectDetailsState, type ProjectManager, type RestrictionTypeKey } from "@/app/pages/project-registration/types";
 import { EditDrawer } from "./edit-drawer";
 import { PROJECT_STATUSES, useEditStore, type ProjectState, type ProjectStatus } from "./edit-store";
 
-/** The cards of the Project tab. Restriction cards use the registration's restriction keys. */
+/** The cards of the Overview tab. Restriction cards use the registration's restriction keys. */
 export type ProjectCardId = "details" | "owner" | "managers" | "extent" | "collection" | "permits" | "add-restriction" | RestrictionTypeKey;
 
 export const CARD_TITLES: Record<ProjectCardId, string> = {
@@ -51,7 +48,9 @@ export const CARD_TITLES: Record<ProjectCardId, string> = {
   "add-restriction": "Add a restriction",
   embargo: "Embargo",
   species: "Species restriction",
+  cultural: "Cultural sensitivities restriction",
   locations: "Location restriction",
+  all: "All records restriction",
   metadata: "Project metadata restriction",
   other: "Other restriction",
 };
@@ -66,7 +65,9 @@ const CARD_GROUP: Record<ProjectCardId, string> = {
   "add-restriction": "Privacy and restrictions",
   embargo: "Privacy and restrictions",
   species: "Privacy and restrictions",
+  cultural: "Privacy and restrictions",
   locations: "Privacy and restrictions",
+  all: "Privacy and restrictions",
   metadata: "Privacy and restrictions",
   other: "Privacy and restrictions",
 };
@@ -112,12 +113,9 @@ export function cardMissing(id: ProjectCardId, s: ProjectState): string[] {
       if (!isGeoExtentComplete(c.geographicExtent)) out.push("Geographic extent");
       return out;
     case "collection":
-      if (c.focusAreas.length === 0) out.push("Focus areas");
-      if (c.focusAreas.includes("other") && blank(c.focusAreaOther)) out.push("Focus area (please specify)");
       // Survey type is optional (16 Oct 2026): Add Project stopped asking it, so a project created there is complete without it.
-      if (!c.collectionMethod) out.push("Method of data collection");
-      if (blank(c.methodDetails)) out.push("Methodology");
-      return out;
+      // The methodology is checked as Add Project checks it (the designer, 25 Oct 2026).
+      return missingMethodFieldsV2(withLegacyMethodologies(c));
     case "permits":
       return out;
     case "add-restriction":
@@ -178,7 +176,6 @@ function OwnerForm({ draft, update, showErrors }: FormProps) {
               isInvalid={missing(d.dataOwnerOrgName)}
               hint={missing(d.dataOwnerOrgName) ? "Enter the organisation name" : undefined}
             />
-            <LogoUpload value={d.dataOwnerOrgLogo} onChange={(dataOwnerOrgLogo) => patch({ dataOwnerOrgLogo })} orgName={d.dataOwnerOrgName} />
           </>
         )}
       </FormRow>
@@ -295,22 +292,16 @@ function CollectionForm({ draft, update, showErrors }: FormProps) {
           {(item) => <MultiSelect.Item {...item} selectionIndicator="checkbox" selectionIndicatorAlign="left" />}
         </MultiSelect>
       </FormRow>
-      <FormRow title="Survey type" description="The kind of survey this project runs.">
-        <SurveyTypeRadios value={c.surveyType} onChange={(surveyType) => patch({ surveyType })} />
-      </FormRow>
-      <FormRow title="Method of data collection" required description="Pick the closest match." error={showErrors && !c.collectionMethod ? "Choose a method" : undefined}>
-        <RadioGroup aria-label="Method of data collection" value={c.collectionMethod ?? ""} onChange={(v) => patch({ collectionMethod: v as CollectionMethod })}>
-          {COLLECTION_METHOD_OPTIONS.map((o) => (
-            <RadioButton key={o.id} value={o.id} label={o.label} hint={o.description} />
-          ))}
-        </RadioGroup>
-      </FormRow>
-      <FormRow title="Methodology" required description="The survey technique used, from the Survey method vocabulary.">
-        <MethodologySelect value={c.methodDetails} onChange={(methodDetails) => patch({ methodDetails })} isInvalid={showErrors && blank(c.methodDetails)} />
-      </FormRow>
-      <FormRow title="Limitations and biases" description="What the method may miss or over-represent.">
-        <TextArea aria-label="Limitations and biases" rows={3} value={c.limitationsAndBiases} onChange={(v) => patch({ limitationsAndBiases: v })} />
-      </FormRow>
+      {/* Asked as Add Project asks it (the designer, 25 Oct 2026). The page reads the methodology as text, so a change to the
+          list is written back as `methodDetails` and `limitationsAndBiases`, as creating a project does (toSavedForm). */}
+      <MethodologyRow
+        state={{ ...draft, collection: withLegacyMethodologies(c) }}
+        onChange={(next) => {
+          const { names, notes } = methodologySummary(next.collection);
+          update({ ...draft, collection: { ...next.collection, methodDetails: names, limitationsAndBiases: notes } });
+        }}
+        showErrors={showErrors}
+      />
     </>
   );
 }
@@ -421,10 +412,10 @@ function CardDrawer({ id, onClose, onOpenNext }: { id: ProjectCardId; onClose: (
   };
 
   return (
-    <EditDrawer isOpen title={`Edit ${title}`} context={`Project ${meta.code} · ${project.details.shortTitle}`} isDirty={dirty} onClose={onClose}>
+    <EditDrawer isOpen title={`Edit ${title}`} context={`Project ${meta.code} - ${project.details.shortTitle}`} isDirty={dirty} onClose={onClose}>
       {(requestClose): ReactNode => (
         <FormPage
-          eyebrow={`Edit · ${CARD_GROUP[id]}`}
+          eyebrow={`Edit ${CARD_GROUP[id].toLowerCase()}`}
           title={title}
           onCancel={requestClose}
           problems={attempted && missing.length > 0 ? { items: missing } : undefined}
@@ -438,7 +429,7 @@ function CardDrawer({ id, onClose, onOpenNext }: { id: ProjectCardId; onClose: (
   );
 }
 
-/** Opens the drawer for one card of the Project tab; `null` closes it. */
+/** Opens the drawer for one card of the Overview tab; `null` closes it. */
 export function ProjectCardDrawer({ card, onChange }: { card: ProjectCardId | null; onChange: (next: ProjectCardId | null) => void }) {
   if (!card) return null;
   // Keyed so each card starts from the current saved project, never a stale draft.
@@ -523,7 +514,7 @@ export function InlineCardEditor({
       <div className="flex items-center justify-between gap-3 px-6 py-4">
         <p className="text-sm text-tertiary">
           Editing <span className="font-semibold text-primary">{title}</span>
-          {dirty && <span className="text-quaternary"> · Unsaved changes</span>}
+          {dirty && <span className="text-quaternary">, unsaved changes</span>}
         </p>
         <div className="flex items-center gap-3">
           <Button iconLeading={XClose} color="secondary" onClick={() => (dirty ? setConfirm(true) : onClose())}>

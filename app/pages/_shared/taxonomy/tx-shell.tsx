@@ -15,6 +15,7 @@ import { SPECIES_GROUP_ICON } from "@/app/pages/_shared/map-search/species-group
 import { PrimaryRail } from "@/app/pages/_shared/primary-rail";
 import { PrototypeTools } from "@/app/_prototype-tools/prototype-tools";
 import { TX_ROOT } from "@/app/pages/_shared/taxonomy/tx-data";
+import { TaxonSwitcher } from "@/app/pages/_shared/taxonomy/tx-switcher";
 import { useTaxa } from "@/app/pages/_shared/taxonomy/tx-store";
 import { useFeatureAccess } from "@/lib/use-feature-access";
 import { useRoleHref } from "@/lib/use-role-href";
@@ -28,7 +29,8 @@ import { TAXONOMY_SECTION_LABEL, keyHref, navForRole, type NavNode } from "@/lib
 // taxon change is being made, column 2 is that form's steps (4.1).
 //
 // Options 1 (as drawn in Figma) and 2 (species first, prefilled Figma forms) were retired on Oct 1
-// 2026 when the designer chose Option 3 (the guided change); see context/decisions.
+// 2026 when the designer chose Option 3 (the guided change); that guided change and its species-only list were
+// retired on 26 Oct 2026, when the designer kept version 2 (every rank, each change on one page); see context/decisions.
 
 const CURRENT_KEY = "taxonomy";
 
@@ -86,10 +88,11 @@ export interface KingdomCounts {
 export function TxShell({
   current,
   breadcrumbCurrent,
+  recordId,
   formSidebar = false,
   formOnePage = false,
   base = TX_ROOT,
-  noun = "Species",
+  noun = "Taxa",
   counts,
   children,
 }: {
@@ -97,15 +100,17 @@ export function TxShell({
   current: string;
   /** The final crumb (a species, "Rename Taxon"). When set, the section crumb links back. */
   breadcrumbCurrent?: string;
+  /** The taxon (its path of names) a record page shows: its section crumb is a switcher over the other taxa (CONTRACTS 4.6). */
+  recordId?: string;
   /** A form with steps is open: column 2 becomes its section list (the form portals into it). */
   formSidebar?: boolean;
-  /** A form on one page, with no sections to list (version 2's Append): column 2 stays where you are among the species. */
+  /** A form on one page, with no sections to list (Append, Split, Combine, Rename): column 2 stays where you are among the taxa. */
   formOnePage?: boolean;
-  /** The list column 2 and the breadcrumb lead to: version 2 passes its own (tx-hierarchy.ts). */
+  /** The list column 2 and the breadcrumb lead to. */
   base?: string;
-  /** What column 2 lists: "Species" in version 1, "Taxa" in version 2, which manages every rank. */
+  /** What column 2 lists: "Taxa", since the list manages every rank. */
   noun?: string;
-  /** Column 2's counts, when the list counts something other than current species (version 2 counts every rank). */
+  /** Column 2's counts, when the list counts something other than current species (the list counts every rank). */
   counts?: KingdomCounts;
   children: ReactNode;
 }) {
@@ -165,7 +170,9 @@ export function TxShell({
           </MobileNavTrigger>
         }
         section={
-          breadcrumbCurrent && !otherSection && canManage ? (
+          recordId && !otherSection && canManage ? (
+            <TaxonSwitcher currentId={recordId} />
+          ) : breadcrumbCurrent && !otherSection && canManage ? (
             <Link href={roleHref(base)} className="hover:text-primary">
               {activeSection}
             </Link>

@@ -22,9 +22,9 @@ export interface ProjectAuditEntry {
   /** The project's own ID, e.g. BD-5039. */
   projectCode: string;
   projectTitle: string;
-  /** "Record" for a whole project (a CREATE), "Field" for one of its fields (an UPDATE). */
-  entityType: "Record" | "Field";
-  /** What was changed: "Record", or the field's name. */
+  /** "Record" for a whole project (a CREATE), "Concept" for one of its concepts (an UPDATE). */
+  entityType: "Record" | "Concept";
+  /** What was changed: "Record", or the concept's name. */
   modifiedEntity: string;
   previous: string;
   current: string;
@@ -43,7 +43,13 @@ interface AuditState {
 const useAuditStore = create<AuditState>()(
   persist<AuditState>(() => ({ entries: [] }), {
     name: "biodata-project-audit-log",
-    version: 1,
+    version: 2,
+    // Version 2: a data item of a project is a "Concept" (it was a "Field"); an entry saved before keeps its place under the new name.
+    migrate: (persisted, version) => {
+      const state = persisted as { entries?: { entityType: string }[] };
+      if (version < 2) return { ...state, entries: (state.entries ?? []).map((e) => (e.entityType === "Field" ? { ...e, entityType: "Concept" } : e)) } as AuditState;
+      return state as AuditState;
+    },
     storage: createJSONStorage(browserStorage),
     skipHydration: true,
   }),
@@ -80,7 +86,7 @@ export function logProjectCreated(project: { code: string; title: string }, role
 export function logProjectChanges(project: { code: string }, before: ProjectFieldState, after: ProjectFieldState, role: UserRole) {
   const changes = diffProjectFields(before, after);
   append(
-    changes.map((c) => ({ projectCode: project.code, projectTitle: after.details.shortTitle, entityType: "Field" as const, modifiedEntity: c.field, previous: c.previous, current: c.current, action: "UPDATE" as const })),
+    changes.map((c) => ({ projectCode: project.code, projectTitle: after.details.shortTitle, entityType: "Concept" as const, modifiedEntity: c.field, previous: c.previous, current: c.current, action: "UPDATE" as const })),
     role,
   );
 }

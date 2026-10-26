@@ -63,7 +63,7 @@ function TodayButton() {
                 isDisabled={unavailable}
                 onPress={() => state?.setValue(now)}
                 className={({ isDisabled }) =>
-                    cx("rounded-md px-3 py-1 text-sm font-semibold text-brand-secondary outline-focus-ring transition-colors hover:bg-brand-secondary focus-visible:outline-2", isDisabled && "pointer-events-none opacity-30")
+                    cx("hit-area rounded-md px-3 py-1 text-sm font-semibold text-brand-secondary outline-focus-ring transition-colors hover:bg-brand-secondary focus-visible:outline-2", isDisabled && "pointer-events-none opacity-30")
                 }
             >
                 Today
@@ -108,7 +108,7 @@ export function InputDatePicker<T extends DateValue = DateValue>({ label, hint, 
                         </AriaDateInput>
                         <AriaButton
                             aria-label="Open calendar"
-                            className="flex items-center px-3 py-2 text-fg-quaternary outline-hidden transition-colors hover:text-fg-quaternary_hover"
+                            className="hit-area flex items-center px-3 py-2 text-fg-quaternary outline-hidden transition-colors hover:text-fg-quaternary_hover"
                         >
                             <CalendarIcon className="size-4" />
                         </AriaButton>
@@ -126,7 +126,7 @@ export function InputDatePicker<T extends DateValue = DateValue>({ label, hint, 
                                         slot="previous"
                                         className={({ isDisabled }) =>
                                             cx(
-                                                "flex size-7 items-center justify-center rounded-md text-quaternary outline-hidden transition-colors hover:bg-secondary",
+                                                "hit-area flex size-7 items-center justify-center rounded-md text-quaternary outline-hidden transition-colors hover:bg-secondary",
                                                 isDisabled && "pointer-events-none opacity-30",
                                             )
                                         }
@@ -138,7 +138,7 @@ export function InputDatePicker<T extends DateValue = DateValue>({ label, hint, 
                                         slot="next"
                                         className={({ isDisabled }) =>
                                             cx(
-                                                "flex size-7 items-center justify-center rounded-md text-quaternary outline-hidden transition-colors hover:bg-secondary",
+                                                "hit-area flex size-7 items-center justify-center rounded-md text-quaternary outline-hidden transition-colors hover:bg-secondary",
                                                 isDisabled && "pointer-events-none opacity-30",
                                             )
                                         }

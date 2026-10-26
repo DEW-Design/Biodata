@@ -1,7 +1,8 @@
 "use client";
 
-// The Project tab. Same sections, cards, titles and rows as the previous (inline edit) version:
-// Project at a glance (project records, flagged concepts, datasets, artefacts); Overview (Project details, Published by, Project managers); Data collection and
+// The Overview tab (it was called Project until 26 Oct 2026). Same sections, cards, titles and rows as the previous (inline edit) version, less "Project at a glance" (the
+// designer removed it: its counts and rows repeated what the tabs, the header and the records already say):
+// Overview (Project details, Published by, Project managers); Data collection and
 // storage (Geographic extent; Focus, species and method; Permits and identifiers); Privacy and
 // restrictions (one card per restriction). The only difference is where editing happens: each
 // card's Edit opens that card's form in the edit drawer (project-edit.tsx), built from the Add
@@ -16,7 +17,7 @@
 import { createContext, createElement, useContext, useEffect, useRef, useState, type Key, type ReactNode } from "react";
 import { getLocalTimeZone } from "@internationalized/date";
 import type { DateValue } from "react-aria-components";
-import { Activity, ArrowLeft, ChevronRight, Edit02, Eye, Flag01, Mail01, Paperclip, Phone01, Plus, Target05, Trash01 } from "@untitledui/icons";
+import { ArrowLeft, Edit05, Mail01, Phone01, Plus, Trash01 } from "@untitledui/icons";
 import { Accordion } from "@/components/base/accordion/accordion";
 import { Badge, CountBadge } from "@/components/base/badges/badges";
 import { Button } from "@/components/base/buttons/button";
@@ -25,22 +26,15 @@ import { DestructiveModal } from "@/components/application/modals/modal";
 import { toast } from "@/components/application/toast/toast";
 import { LocationDetailsTable } from "@/app/pages/_shared/location-details-table";
 import { ExpandableMap } from "@/app/pages/_shared/map-search/expandable-map";
-import { COLLECTION_METHOD_OPTIONS, EMBARGO_TYPE_OPTIONS, FOCUS_AREA_OPTIONS, PERMIT_TYPE_OPTIONS, PROJECT_METADATA_CONCEPTS, REGISTRATION_SPECIES, SPECIES_CONCEPTS, SURVEY_TYPE_OPTIONS } from "@/app/pages/project-registration/data";
+import { COLLECTION_METHOD_OPTIONS, EMBARGO_TYPE_OPTIONS, FOCUS_AREA_OPTIONS, PERMIT_TYPE_OPTIONS, PROJECT_METADATA_CONCEPTS, REGISTRATION_SPECIES, SPECIES_CONCEPTS } from "@/app/pages/project-registration/data";
 import { conceptLabel, conceptValueLabel } from "@/app/pages/project-registration/concept-rows";
 import { geoExtentSummary } from "@/app/pages/project-registration/geo-extent-picker";
 import { OFFERED_RESTRICTION_TYPES, RESTRICTION_TYPE_META } from "@/app/pages/project-registration/step-3-privacy-restrictions";
-import type { RestrictionTypeKey } from "@/app/pages/project-registration/types";
+import { allRecordsOf, culturalOf, isGeoExtentComplete, type RestrictionTypeKey } from "@/app/pages/project-registration/types";
+import { expectationLabel } from "@/app/pages/project-registration/restriction-fields";
 import { cx } from "@/utils/cx";
 import { useEditStore } from "./edit-store";
 import { CARD_TITLES, InlineCardEditor, ProjectCardDrawer, cardMissing, contactRole, roleLabel, type ProjectCardId } from "./project-edit";
-import type { RecordKind } from "./survey-data";
-import { useReviewItems } from "./review-view";
-import { useCanReview } from "./field-notes";
-import { useProjectSpecies } from "./species-view";
-import { SpeciesPhoto } from "@/app/pages/_shared/map-search/species-photo";
-import { SPECIES_GROUP_ICON } from "@/app/pages/_shared/map-search/species-group-icons";
-import { DatasetsCard } from "./datasets-view";
-import { useFeatureAccess } from "@/lib/use-feature-access";
 
 export function formatDay(d: DateValue | null): string {
   return d ? d.toDate(getLocalTimeZone()).toLocaleDateString("en-AU", { day: "numeric", month: "short", year: "numeric" }) : "";
@@ -49,6 +43,8 @@ export function formatDay(d: DateValue | null): string {
 export const RESTRICTION_DESCRIPTIONS: Record<RestrictionTypeKey, string> = {
   embargo: "The whole dataset is withheld from public release until the end date.",
   species: "Records of these species are released with less detail than the rest.",
+  cultural: "Culturally sensitive data, released only as its Indigenous Information Authority agrees.",
+  all: "Every record in this project is restricted.",
   locations: "Records from these locations are protected.",
   metadata: "These project details are withheld from public view.",
   other: "Any other rule on how this project's data is shared.",
@@ -77,7 +73,7 @@ function FieldEditIcon({ label, onPress }: { label: string; onPress: () => void 
         onPress={onPress}
         className="-my-1 flex size-7 cursor-pointer items-center justify-center rounded-md text-fg-quaternary opacity-0 outline-focus-ring transition-opacity group-hover/field:opacity-100 hover:bg-secondary hover:text-fg-quaternary_hover focus-visible:opacity-100 focus-visible:outline-2"
       >
-        <Edit02 className="size-3.5" />
+        <Edit05 className="size-3.5" />
       </TooltipTrigger>
     </Tooltip>
   );
@@ -131,7 +127,7 @@ function Person({ name, role, team, email, phone, primary }: { name: string; rol
             Primary
           </Badge>
         )}
-        {role && <span className="font-normal text-tertiary">· {role}</span>}
+        {role && <span className="font-normal text-tertiary">{role}</span>}
       </p>
       {team && <p className="text-xs text-tertiary">{team}</p>}
       <div className="flex min-w-0 flex-wrap items-center gap-x-4 gap-y-1 text-sm text-tertiary">
@@ -173,7 +169,7 @@ const CardIdContext = createContext<ProjectCardId | null>(null);
 /** With the `disclosure` prop: the sections after the first are collapsed under their headings (progressive disclosure). `mounted` holds the ones opened at least once: a section's cards are not drawn until then. */
 const DisclosureContext = createContext<{ openKeys: Set<Key>; mounted: Set<Key>; onOpenKeysChange: (keys: Set<Key>) => void } | null>(null);
 
-function CardIcon({ label, icon, onPress, always }: { label: string; icon: typeof Edit02; onPress: () => void; always?: boolean }) {
+function CardIcon({ label, icon, onPress, always }: { label: string; icon: typeof Edit05; onPress: () => void; always?: boolean }) {
   return (
     <Tooltip title={label}>
       <TooltipTrigger
@@ -221,22 +217,16 @@ function Card({ card, description, onEdit, onRemove, children }: { card: Project
           </h3>
           {description && <p className="text-sm text-balance text-tertiary">{description}</p>}
         </div>
-        {isEditing && (
-          <span className="inline-flex shrink-0 items-center gap-1 text-xs font-semibold text-brand-tertiary">
-            <Edit02 className="size-3.5" />
-            Editing
-          </span>
-        )}
         {canEdit && layout === "v3" && !anyEditing && (
           <div className="flex shrink-0 items-center gap-0.5">
             {onRemove && <CardIcon label={`Remove ${title.toLowerCase()}`} icon={Trash01} onPress={onRemove} />}
-            <CardIcon label={needs ? `Add details to ${title.toLowerCase()}` : `Edit ${title.toLowerCase()}`} icon={Edit02} onPress={() => onEdit(card)} always={needs} />
+            <CardIcon label={needs ? `Add details to ${title.toLowerCase()}` : `Edit ${title.toLowerCase()}`} icon={Edit05} onPress={() => onEdit(card)} always={needs} />
           </div>
         )}
         {canEdit && layout === "default" && (
           <div className="flex shrink-0 items-center gap-2">
             {onRemove && <Button color="tertiary" size="sm" iconLeading={Trash01} aria-label={`Remove ${title}`} onClick={onRemove} />}
-            <Button color="secondary" size="sm" iconLeading={Edit02} onClick={() => onEdit(card)} aria-label={`Edit ${title}`}>
+            <Button color="secondary" size="sm" iconLeading={Edit05} onClick={() => onEdit(card)} aria-label={`Edit ${title}`}>
               Edit
             </Button>
           </div>
@@ -405,215 +395,23 @@ export function OnThisPage({ items, onBeforeGo }: { items: TocItem[]; /** Called
   );
 }
 
-const KINDS: { kind: RecordKind; label: string; icon: typeof Edit02 }[] = [
-  { kind: "event", label: "Events", icon: Activity },
-  { kind: "occurrence", label: "Occurrences", icon: Target05 },
-  { kind: "observation", label: "Observations", icon: Eye },
-];
-
-const FILE_KIND_LABEL: Record<string, [string, string]> = {
-  image: ["image", "images"],
-  pdf: ["PDF", "PDFs"],
-  spreadsheet: ["spreadsheet", "spreadsheets"],
-  video: ["video", "videos"],
-  link: ["link", "links"],
-};
-
-const plural = (n: number, one: string, many: string) => `${n} ${n === 1 ? one : many}`;
-
-// ── Project at a glance: the Datasets card, then the records card ──
-// Datasets are the feed, not part of the records, so they are their own card above it (DatasetsCard,
-// datasets-view.tsx: its count, View all, Upload dataset, and the last upload in one row). It is shown
-// only to roles that can upload (`datasetUpload`: registered users and above); a public user cannot
-// upload, so it is not there for them. The records card is about the project's records, and its other
-// figures take their meaning from where they sit:
-//  - The body is the records: the total, then events, occurrences and observations (each opens that
-//    kind in Project records).
-//  - The rows under it are what the records yield, worded as properties of them: the species their
-//    occurrences name ("7 species in 8 occurrences", with the most recorded species' photos), then what
-//    their fields carry ("7 flagged concepts on 6 records"): list rows inside the records card, not
-//    peers of it.
-// Type: the figure is Home's KpiStat (text-2xl medium, tabular); the kind figures MetricTile's value
-// (text-lg medium, tabular); labels and context text-sm tertiary; row lead text-sm medium primary.
-
-/** The most recorded species' photos, overlapped, in the space a row's icon takes. */
-function SpeciesStack({ species }: { species: ReturnType<typeof useProjectSpecies> }) {
-  return (
-    <span aria-hidden className="flex shrink-0 -space-x-1.5">
-      {species.map((sp) => (
-        <SpeciesPhoto key={sp.id} scientificName={sp.scientific} alt="" fallbackIcon={SPECIES_GROUP_ICON[sp.group]} className="size-5 rounded-full ring-2 ring-bg-primary" />
-      ))}
-    </span>
-  );
-}
-
-function RecordsCard({
-  counts,
-  flagged,
-  artefactKinds,
-  artefactRecordCount,
-  onGoToRecords,
-  onGoToFlagged,
-  onGoToArtefacts,
-  species,
-  onGoToSpecies,
-  showFlagged,
-}: {
-  counts: Record<RecordKind, number>;
-  flagged: { concepts: number; records: number; oldestDays: number };
-  artefactKinds: string[];
-  artefactRecordCount: number;
-  species: ReturnType<typeof useProjectSpecies>;
-  onGoToSpecies: () => void;
-  /** Whether this role manages flagged concepts, and so sees their row. */
-  showFlagged: boolean;
-  onGoToRecords: (kind: RecordKind | "all") => void;
-  onGoToFlagged: () => void;
-  onGoToArtefacts: () => void;
-}) {
-  const total = counts.event + counts.occurrence + counts.observation;
-  const kinds = Object.entries(
-    artefactKinds.reduce<Record<string, number>>((m, k) => ({ ...m, [k]: (m[k] ?? 0) + 1 }), {}),
-  ).sort((a, b) => b[1] - a[1]);
-  const fileMix = kinds
-    .slice(0, 2)
-    .map(([k, n]) => plural(n, ...(FILE_KIND_LABEL[k] ?? [k, `${k}s`])))
-    .join(", ");
-  const moreFiles = kinds.slice(2).reduce((n, [, c]) => n + c, 0);
-  const topSpecies = [...species].sort((a, b) => b.occurrences.length - a.occurrences.length);
-  const rows = [
-    {
-      id: "species",
-      icon: null,
-      iconClass: "",
-      lead: plural(species.length, "species", "species"),
-      rest: species.length > 0 ? ` in ${plural(counts.occurrence, "occurrence", "occurrences")}` : "",
-      meta: topSpecies[0] ? `Most recorded: ${topSpecies[0].common}` : "",
-      onPress: onGoToSpecies,
-    },
-    {
-      id: "flagged",
-      icon: Flag01,
-      iconClass: flagged.concepts > 0 ? "text-fg-warning-primary" : "text-fg-quaternary",
-      lead: plural(flagged.concepts, "flagged concept", "flagged concepts"),
-      rest: flagged.concepts > 0 ? ` on ${plural(flagged.records, "record", "records")}` : "",
-      meta: flagged.concepts > 0 && flagged.oldestDays > 0 ? `Oldest ${plural(flagged.oldestDays, "day", "days")}` : "",
-      onPress: onGoToFlagged,
-    },
-    {
-      id: "artefacts",
-      icon: Paperclip as typeof Paperclip | null,
-      iconClass: "text-fg-quaternary",
-      lead: plural(artefactKinds.length, "artefact or attachment", "artefacts and attachments"),
-      rest: artefactKinds.length > 0 ? ` on ${plural(artefactRecordCount, "record", "records")}` : "",
-      meta: kinds.length > 0 ? `${fileMix}${moreFiles > 0 ? ` +${moreFiles}` : ""}` : "",
-      onPress: onGoToArtefacts,
-    },
-  ];
-  return (
-    <section aria-label="Project records" className="@container overflow-hidden rounded-xl border border-secondary bg-primary">
-      {/* The records. */}
-      <div className="grid gap-5 p-5 @min-[560px]:grid-cols-[minmax(0,12rem)_minmax(0,1fr)] @min-[560px]:items-end">
-        <button type="button" onClick={() => onGoToRecords("all")} className="group/total -m-2 flex flex-col items-start gap-1 rounded-md p-2 text-left outline-focus-ring transition-colors hover:bg-primary_hover focus-visible:outline-2">
-          <span className="flex items-center gap-1 text-sm text-tertiary">
-            Project records
-            <ChevronRight aria-hidden className="size-4 text-fg-quaternary opacity-0 transition-opacity group-hover/total:opacity-100" />
-          </span>
-          <span className="text-2xl font-medium text-primary tabular-nums">{total}</span>
-        </button>
-        <ul className="m-0 grid list-none grid-cols-3 gap-2 p-0">
-          {KINDS.map((k) => (
-            <li key={k.kind}>
-              <button
-                type="button"
-                onClick={() => onGoToRecords(k.kind)}
-                aria-label={`${counts[k.kind]} ${k.label.toLowerCase()}`}
-                className="flex w-full flex-col items-start gap-1 rounded-md border border-secondary px-3 py-2 text-left outline-focus-ring transition-colors hover:bg-primary_hover focus-visible:outline-2"
-              >
-                <span className="flex items-center gap-1.5 text-sm text-tertiary">
-                  <k.icon aria-hidden className="size-4 shrink-0 text-fg-quaternary" />
-                  <span className="truncate">{k.label}</span>
-                </span>
-                <span className="text-lg font-medium text-primary tabular-nums">{counts[k.kind]}</span>
-              </button>
-            </li>
-          ))}
-        </ul>
-      </div>
-
-      {/* What the records' fields carry. */}
-      <ul className="m-0 list-none border-t border-secondary p-0">
-        {/* Flagged concepts are managed by admins (BioData Admin, Privileged Admin): the row, and the
-            management page it opens, are theirs only. Other roles see the flag markers on the records. */}
-        {rows.filter((r) => r.id !== "flagged" || showFlagged).map((r) => (
-          <li key={r.id} className="border-b border-secondary last:border-b-0">
-            <button
-              type="button"
-              onClick={r.onPress}
-              className="group/row flex w-full items-center gap-3 px-5 py-3 text-left text-sm outline-focus-ring transition-colors hover:bg-primary_hover focus-visible:outline-2 focus-visible:-outline-offset-2"
-            >
-              {r.icon ? (
-                <r.icon aria-hidden className={cx("size-4 shrink-0", r.iconClass)} />
-              ) : (
-                <SpeciesStack species={topSpecies.slice(0, 3)} />
-              )}
-              <span className="min-w-0 flex-1 truncate text-tertiary">
-                <span className="font-medium text-primary tabular-nums">{r.lead}</span>
-                {r.rest}
-              </span>
-              {r.meta && <span className="hidden shrink-0 text-tertiary tabular-nums @min-[480px]:inline">{r.meta}</span>}
-              <ChevronRight aria-hidden className="size-4 shrink-0 text-fg-quaternary transition-transform group-hover/row:translate-x-0.5" />
-            </button>
-          </li>
-        ))}
-      </ul>
-    </section>
-  );
-}
-
 // ── The tab ──
 
 export function ProjectTab({
-  onGoToRecords,
-  onGoToArtefacts,
-  onGoToDatasets,
-  onGoToDataset,
-  onGoToFlagged,
-  artefactKinds,
-  artefactRecordCount,
-  onGoToSpecies,
   layout = "default",
   lead,
   sheet = false,
-  showGlance = true,
   repeatHeaderFacts = true,
   overviewHeading = true,
   sheetTop,
   disclosure = false,
 }: {
-  onGoToRecords: (kind: RecordKind | "all") => void;
-  onGoToArtefacts: () => void;
-  /** Opens the project's Datasets page. */
-  onGoToDatasets: () => void;
-  /** Opens one dataset's page. */
-  onGoToDataset: (id: string) => void;
-  /** Opens the flagged concepts management page (the row is shown to roles that can review only). */
-  onGoToFlagged: () => void;
-  /** Each artefact's file kind (version 3 counts files attached to properties). */
-  artefactKinds?: string[];
-  /** Opens the Species tab. */
-  onGoToSpecies: () => void;
-  /** How many records have a file attached to one of their fields. */
-  artefactRecordCount?: number;
   /** "v3": icon-only card actions on hover and a full-width content column. */
   layout?: "default" | "v3";
   /** Content above the first section, inside the content column, so "On this page" starts level with it. */
   lead?: ReactNode;
   /** Draw the four sections as one white sheet, divided by lines, instead of stacked with gaps. Nothing in them changes. */
   sheet?: boolean;
-  /** Draw "Project at a glance" (the Datasets card and the records card), and list it in "On this page". The product page does; a layout whose header, tabs and notices
-   *  already say what it holds (the post-6-oct lab, 19 Oct 2026) turns it off. @default true */
-  showGlance?: boolean;
   /** Repeat the status and the start and end dates in the Project details card. A layout whose header already shows them turns this off (CONTRACTS 4.3: never restate a
    *  fact in two treatments on one screen). @default true */
   repeatHeaderFacts?: boolean;
@@ -625,20 +423,7 @@ export function ProjectTab({
    *  card open the section that holds it. Needs `sheet`. The product page leaves it off and is unchanged. @default false */
   disclosure?: boolean;
 }) {
-  const { project, saveProject, records, artefacts, canEdit } = useEditStore();
-  // Only roles that can upload see the Datasets card.
-  const canUpload = useFeatureAccess("datasetUpload");
-  // Only roles that manage flagged concepts see their row.
-  const canReview = useCanReview();
-  const review = useReviewItems();
-  const recordedSpecies = useProjectSpecies();
-  const glanceCounts = { event: records.filter((x) => x.kind === "event").length, occurrence: records.filter((x) => x.kind === "occurrence").length, observation: records.filter((x) => x.kind === "observation").length };
-  const glanceFlagged = {
-    concepts: review.open.length,
-    records: new Set(review.open.map((i) => i.record.id)).size,
-    oldestDays: Math.max(0, ...review.open.map((i) => i.daysWaiting ?? 0)),
-  };
-  const kinds = artefactKinds ?? artefacts.map((x) => x.type);
+  const { project, saveProject, canEdit } = useEditStore();
   const [editing, setEditingState] = useState<ProjectCardId | null>(null);
   const [focusLabel, setFocusLabel] = useState<string | undefined>(undefined);
   const [footer, setFooter] = useState<HTMLElement | null>(null);
@@ -689,7 +474,6 @@ export function ProjectTab({
   );
 
   const toc: TocItem[] = [
-    ...(showGlance ? [{ id: "at-a-glance", label: "Project at a glance" }] : []),
     { id: "overview", label: "Overview", children: [card("details"), card("owner"), card("managers")] },
     { id: "data-collection", label: "Data collection and methodology", children: [card("extent"), card("collection"), card("permits")] },
     { id: "privacy", label: "Privacy and restrictions", children: enabled.map((m) => card(m.key)) },
@@ -713,30 +497,6 @@ export function ProjectTab({
         <DisclosureContext.Provider value={disclosure ? { openKeys: openSections, mounted: mountedSections, onOpenKeysChange: changeOpenSections } : null}>
         <div className={sheet ? "flex flex-col overflow-hidden rounded-xl border border-secondary bg-primary" : "contents"}>
         {sheet && sheetTop}
-        {showGlance && (
-          <Section
-            id="at-a-glance"
-            title="Project at a glance"
-            description="What this project holds so far."
-          >
-            <div className="flex flex-col gap-3">
-              {canUpload && <DatasetsCard onOpenDataset={onGoToDataset} onOpenDatasets={onGoToDatasets} />}
-              <RecordsCard
-                species={recordedSpecies}
-                onGoToSpecies={onGoToSpecies}
-                showFlagged={canReview}
-                counts={glanceCounts}
-                flagged={glanceFlagged}
-                artefactKinds={kinds}
-                artefactRecordCount={artefactRecordCount ?? new Set(artefacts.map((x) => x.recordId)).size}
-                onGoToRecords={onGoToRecords}
-                onGoToFlagged={onGoToFlagged}
-                onGoToArtefacts={onGoToArtefacts}
-              />
-            </div>
-          </Section>
-        )}
-
         <Section id="overview" title="Overview" description="What the project is and who runs it." bare={!overviewHeading}>
           <Card card="details" onEdit={setEditing}>
             <Rows
@@ -810,7 +570,7 @@ export function ProjectTab({
                 />
               </div>
               {circle && (
-                <ExpandableMap title={`${d.shortTitle} · geographic extent`} boundaries={[{ id: "project-extent", kind: "circle", center: circle.center, radiusKm: circle.radiusKm }]} onBoundaryAdd={() => {}} activeDrawTool={null} onDrawToolChange={() => {}} className="h-64 w-full lg:h-full lg:min-h-64" />
+                <ExpandableMap title={`${d.shortTitle}, geographic extent`} boundaries={[{ id: "project-extent", kind: "circle", center: circle.center, radiusKm: circle.radiusKm }]} onBoundaryAdd={() => {}} activeDrawTool={null} onDrawToolChange={() => {}} className="h-64 w-full lg:h-full lg:min-h-64" />
               )}
             </div>
           </Card>
@@ -826,7 +586,6 @@ export function ProjectTab({
               </div>
               <Rows
                 rows={[
-                  { label: "Survey type", value: SURVEY_TYPE_OPTIONS.find((o) => o.id === c.surveyType)?.label },
                   { label: "Collection method", value: method?.label },
                   { label: "Methodology", value: c.methodDetails },
                   { label: "Limitations and biases", value: c.limitationsAndBiases },
@@ -870,8 +629,9 @@ export function ProjectTab({
                 <Rows
                   rows={[
                     { label: "Embargo type", value: r.embargo.types.map((t) => (t === "other" ? r.embargo.typeOther || "Other" : EMBARGO_TYPE_OPTIONS.find((o) => o.id === t)?.label)).join(", ") },
-                    { label: "Reason", value: r.embargo.reason },
+                    { label: "Justification", value: r.embargo.reason },
                     { label: "Ends", value: formatDay(r.embargo.endDate) },
+                    { label: "After the embargo ends", value: r.embargo.afterEmbargo ?? "" },
                   ]}
                 />
               )}
@@ -890,6 +650,7 @@ export function ProjectTab({
                             value: s.scope === "all" ? "All concepts" : s.concepts.filter((cr) => cr.concept).map((cr) => conceptLabel(cr, SPECIES_CONCEPTS)).join(", "),
                           },
                           ...(s.scope === "selected" ? [{ label: "Rule", value: s.concepts.filter((cr) => cr.concept).map((cr) => conceptValueLabel(cr, SPECIES_CONCEPTS) || "Withheld").join(", ") }] : []),
+                          { label: "Expectations data restrictions", value: expectationLabel(s.expectation) },
                           ...(s.scope === "all"
                             ? [{ label: "Justification", value: s.justification }]
                             : s.concepts.filter((cr) => cr.concept).map((cr) => ({ label: `Justification: ${conceptLabel(cr, SPECIES_CONCEPTS)}`, value: cr.justification }))),
@@ -908,7 +669,8 @@ export function ProjectTab({
                         key={l.id}
                         rows={[
                           { label: "Location", value: l.name },
-                          { label: "Extent", value: geoExtentSummary(l.extent) },
+                          { label: "Extent", value: isGeoExtentComplete(l.extent) ? geoExtentSummary(l.extent) : "" },
+                          { label: "Expectations data restrictions", value: expectationLabel(l.expectation) },
                           { label: "Justification", value: l.justification },
                         ]}
                       />
@@ -924,6 +686,24 @@ export function ProjectTab({
                         { label: conceptLabel(cr, PROJECT_METADATA_CONCEPTS), value: conceptValueLabel(cr, PROJECT_METADATA_CONCEPTS) },
                         { label: "Justification", value: cr.justification },
                       ]),
+                  ]}
+                />
+              )}
+              {m.key === "cultural" && (
+                <Rows
+                  rows={[
+                    { label: "Indigenous Information Authority", value: culturalOf(r).authority },
+                    { label: "IIA contact details", value: culturalOf(r).contact },
+                    { label: "Expectations data restrictions", value: expectationLabel(culturalOf(r).expectation) },
+                    { label: "Justification", value: culturalOf(r).justification },
+                  ]}
+                />
+              )}
+              {m.key === "all" && (
+                <Rows
+                  rows={[
+                    { label: "Expectations data restrictions", value: expectationLabel(allRecordsOf(r).expectation) },
+                    { label: "Justification", value: allRecordsOf(r).justification },
                   ]}
                 />
               )}

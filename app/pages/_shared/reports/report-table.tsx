@@ -195,7 +195,7 @@ export interface DataReportProps<R> {
   /** More facts in the hero, after Latest record (a label and its value): the report's own totals. A function gets the rows in view. */
   facts?: ReportFact[] | ((rowsInView: R[]) => ReportFact[]);
   /** What the report is run on (a project, a dataset, a species code, a date range): one Parameters button right after the search and before Filter,
-   *  with a popover of the report's fields and a chip beside it for each one that is set. Leave out where the report has none (report-parameters.tsx). */
+   *  with a popover of the report's fields and a chip beside it for each one that is set, or (`inline`) the fields themselves as dropdowns to the right of Filter. Leave out where the report has none (report-parameters.tsx). */
   parameters?: ReportParameters;
   /** Between the hero and the toolbar: tiles, a project scope, tabs. A function gets the rows in view, so tiles can count them. */
   belowHeader?: RowsSlot<R>;
@@ -301,7 +301,7 @@ export function DataReport<R>({
 
   const body = (
     <div className={cx("flex min-h-0 min-w-0 flex-1 flex-col", header === "line" ? "gap-3 px-6 pb-4 pt-3" : "gap-4 p-6")}>
-      <div className="flex shrink-0 flex-wrap items-center gap-3">
+      <div className={cx("flex shrink-0 flex-wrap gap-3", parameters?.inline ? "items-end" : "items-center")}>
         <ToolbarSearch
           label={searchLabel}
           placeholder={searchPlaceholder}
@@ -317,6 +317,8 @@ export function DataReport<R>({
         />
         {parameters ? <ParametersPopover parameters={parameters} /> : null}
         {!filterPanel && <FilterMenu filter={filter} />}
+        {/* A report whose parameters are drawn inline has them here, to the right of Filter, as dropdowns (report-parameters.tsx). */}
+        {parameters?.inline ? parameters.fields : null}
         <div className="ml-auto flex items-center gap-3">
           {showingExample ? <Badge color="gray" size="md">Example record</Badge> : null}
           <ColumnChooser chooser={chooser} />

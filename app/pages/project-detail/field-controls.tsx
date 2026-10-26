@@ -591,7 +591,7 @@ export function SpeciesControl({
       hint={isInvalid ? "Choose a species" : undefined}
       items={NSX_SPECIES.map((s) => ({
         id: s.nsx,
-        label: `${s.nsx} · ${s.scientific}`,
+        label: `${s.nsx} - ${s.scientific}`,
         supportingText: s.common,
       }))}
       value={nsxSpecies(value) ? value : null}

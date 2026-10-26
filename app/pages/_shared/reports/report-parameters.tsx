@@ -27,11 +27,17 @@ export interface ReportParameters {
   summary: [label: string, value: string][];
   /** Puts every parameter back to its starting value. Left out where there is no such state (a report that is always on one dataset). */
   reset?: () => void;
+  /** Draw the fields themselves on the toolbar, to the right of Filter, as dropdowns (each its own design system `Select` with its `label` above it, 256px wide at the least, the row aligned by its foot), in place of the button, its popover and the chips:
+   *  what each is set to is what it shows. For the report whose parameters are two linked choices that it is about as a whole (the Data Validation Error Report's project and dataset), designer, 23 Oct 2026.
+   *  `summary` and `reset` are not used then. */
+  inline?: boolean;
 }
 
 /** The Parameters button, the popover of the report's fields and, beside the button, a chip for each parameter that is set. */
 export function ParametersPopover({ parameters }: { parameters: ReportParameters }) {
   const { fields, summary, reset } = parameters;
+  // An inline report draws its fields on the toolbar itself (`DataReport`), not as a button.
+  if (parameters.inline) return null;
   return (
     <>
       <DialogTrigger>

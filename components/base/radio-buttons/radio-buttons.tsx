@@ -74,7 +74,7 @@ export const RadioButton = ({ label, hint, className, size = "sm", ...ariaRadioP
             {...ariaRadioProps}
             className={(state) =>
                 cx(
-                    "font-barlow relative flex items-start",
+                    "font-barlow hit-area relative flex items-start",
                     state.isDisabled && "cursor-not-allowed",
                     sizes[size].root,
                     typeof className === "function" ? className(state) : className,

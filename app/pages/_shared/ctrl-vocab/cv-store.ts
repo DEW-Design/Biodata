@@ -40,7 +40,8 @@ const useCvStore = create<CvStoreState>()(
     //    in this browser that already took that ID keeps everything but its ID, which moves to the next free one.
     // 6: Survey methodology's entries became the designer's second list (9 Oct 2026). The seed replaces the one saved under
     //    version 5, which was only ever the seed; one created in this browser under another name is left alone.
-    version: 6,
+    // 7: the Named location seed (BIODATA-118, 25 Oct 2026) reaches browsers that already had data, as Survey methodology did in 5.
+    version: 7,
     migrate: (persisted, version) => {
       const state = persisted as { cvs: Cv[] };
       let cvs: Cv[] = state.cvs.map((cv) => ({ ...cv, idKind: cv.idKind ?? "code", templates: cv.templates ?? [] }));
@@ -79,6 +80,15 @@ const useCvStore = create<CvStoreState>()(
       if (version < 6) {
         const seed = seedCvs.find((cv) => cv.id === "BIODATA-117");
         if (seed) cvs = cvs.map((cv) => (cv.id === seed.id && cv.name === seed.name ? seed : cv));
+      }
+      if (version < 7) {
+        const seed = seedCvs.find((cv) => cv.id === "BIODATA-118");
+        const taken = cvs.find((cv) => cv.id === "BIODATA-118");
+        if (seed && taken?.name !== seed.name) {
+          const all = [...seedCvs, ...cvs, ...deletedIds.map((id) => ({ id }) as Cv)];
+          if (taken) cvs = cvs.map((cv) => (cv === taken ? { ...cv, id: nextCvId(all) } : cv));
+          cvs = [seed, ...cvs];
+        }
       }
       return { cvs, deletedIds };
     },

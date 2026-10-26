@@ -10,12 +10,13 @@ import { RadioButton, RadioGroup } from "@/components/base/radio-buttons/radio-b
 import { MultiSelect } from "@/components/base/select/multi-select";
 import { Select } from "@/components/base/select/select";
 import { TextArea } from "@/components/base/textarea/textarea";
+import { AlertFullWidth } from "@/components/application/alerts/alerts";
 import { InputDatePicker } from "@/components/custom/date-picker/input-date-picker";
 import { FormRow } from "@/app/pages/_shared/form-row";
 import { BentoCard } from "@/app/pages/_shared/bento-card";
-import { COLLECTION_METHOD_OPTIONS, COLLECTION_METHOD_OPTIONS_V2, FOCUS_AREA_OPTIONS, PERMIT_TYPE_OPTIONS, REGISTRATION_SPECIES, ROLE_IN_PROJECT_OPTIONS, ROLE_OF_WORK_OPTIONS } from "../data";
+import { ANALYSIS_REPORTING_OPTIONS, COLLECTION_METHOD_OPTIONS, COLLECTION_METHOD_OPTIONS_V2, FOCUS_AREA_OPTIONS, PERMIT_TYPE_OPTIONS, REGISTRATION_SPECIES, ROLE_IN_PROJECT_OPTIONS, ROLE_OF_WORK_OPTIONS } from "../data";
 import { GeoExtentPicker } from "../geo-extent-picker";
-import { LogoUpload } from "../logo-upload";
+import { ProjectAccessSelect } from "../project-access";
 import { MethodologySelect, OTHER_METHODOLOGY, SurveyTypeRadios, useMethodologyOptions } from "../methodology-fields";
 import { ManagerCard } from "../step-1-project-details";
 import { OFFERED_RESTRICTION_TYPES, RESTRICTION_TYPE_META, RestrictionTypeFields } from "../step-3-privacy-restrictions";
@@ -23,13 +24,13 @@ import { emptyContact, emptyPermitRow, emptyProjectContact, emptyProjectManager,
 import { contactsOf, isManager, PROJECT_NAME_MAX, type FormState, type FormVersion, type SectionId } from "./sections";
 
 // One component per section of the second Add Project layout. Every field is a real DEW component
-// (`Input`, `TextArea`, `Select`, `MultiSelect`, `RadioGroup`, `Checkbox`, `Accordion`); the two
-// custom pieces - the calendar date picker and the logo upload - are the same ones the first
-// layout uses, since DEW has no calendar picker or file dropzone yet. Required fields show an
+// (`Input`, `TextArea`, `Select`, `MultiSelect`, `RadioGroup`, `Checkbox`, `Accordion`); the one
+// custom piece, the calendar date picker, is the same one the first layout uses, since DEW has no
+// calendar picker yet. Required fields show an
 // inline message only after the person tries to move on (`showErrors`), never while they are still
 // typing their first answer.
 
-interface SectionProps {
+export interface SectionProps {
   state: FormState;
   onChange: (next: FormState) => void;
   /** True once Continue/Create was pressed on this section with something missing. */
@@ -182,7 +183,7 @@ function OwnerSection(props: SectionProps) {
     return (
       <>
         <DataOwnerRow {...props} />
-        <ContactsRow {...props} />
+        <ContactsRow {...props} showAccess />
       </>
     );
   return (
@@ -193,7 +194,7 @@ function OwnerSection(props: SectionProps) {
   );
 }
 
-// The data owner, its organisation name and logo. Both versions ask it.
+// The data owner and its organisation name. Both versions ask it. The logo upload was taken out (the designer, 25 Oct 2026).
 function DataOwnerRow({ state, onChange, showErrors }: SectionProps) {
   const { patchDetails } = useSectionPatches(state, onChange);
   const d = state.details;
@@ -212,18 +213,15 @@ function DataOwnerRow({ state, onChange, showErrors }: SectionProps) {
         <RadioButton value="individual" label="Individual / Person" />
       </RadioGroup>
       {d.dataOwnerType === "organisation" && (
-        <>
-          <Input
-            label="Organisation / Institution name"
-            isRequired
-            placeholder="Department for Housing and Urban Development"
-            value={d.dataOwnerOrgName}
-            onChange={(v) => patchDetails({ dataOwnerOrgName: v })}
-            isInvalid={missing(d.dataOwnerOrgName)}
-            hint={missing(d.dataOwnerOrgName) ? "Enter the organisation name" : undefined}
-          />
-          <LogoUpload value={d.dataOwnerOrgLogo} onChange={(dataOwnerOrgLogo) => patchDetails({ dataOwnerOrgLogo })} orgName={d.dataOwnerOrgName} />
-        </>
+        <Input
+          label="Organisation / Institution name"
+          isRequired
+          placeholder="Department for Housing and Urban Development"
+          value={d.dataOwnerOrgName}
+          onChange={(v) => patchDetails({ dataOwnerOrgName: v })}
+          isInvalid={missing(d.dataOwnerOrgName)}
+          hint={missing(d.dataOwnerOrgName) ? "Enter the organisation name" : undefined}
+        />
       )}
     </FormRow>
   );
@@ -276,8 +274,9 @@ function OwnerRows(props: SectionProps) {
 // (exactly one person; ticking it moves it). A project manager is a person whose role is Project Manager (16 Oct 2026: the
 // Project manager tick went into the role list). The Primary contact tick only works with two or more people: one person is
 // the primary contact, so their tick is on and cannot be changed. It replaces "Your role" as well: the person registering adds
-// themselves here with their role (CONTRACTS 4.7: the role belongs to the contact).
-function ContactsRow({ state, onChange, showErrors }: SectionProps) {
+// themselves here with their role (CONTRACTS 4.7: the role belongs to the contact). `showAccess` (off by default, so Add Project
+// is unchanged) adds what each person can do on the project to their card: explored in `/proto/project-access`.
+export function ContactsRow({ state, onChange, showErrors, showAccess = false }: SectionProps & { showAccess?: boolean }) {
   const { patchDetails } = useSectionPatches(state, onChange);
   const d = state.details;
   const people = contactsOf(d);
@@ -318,6 +317,7 @@ function ContactsRow({ state, onChange, showErrors }: SectionProps) {
           person={person}
           index={i}
           showErrors={showErrors}
+          showAccess={showAccess}
           canRemove={people.length > 1}
           canChoosePrimary={people.length > 1}
           onChange={(p) => update(person.id, p)}
@@ -336,6 +336,7 @@ function ContactCard({
   person,
   index,
   showErrors,
+  showAccess,
   canRemove,
   canChoosePrimary,
   onChange,
@@ -345,6 +346,7 @@ function ContactCard({
   person: ProjectContact;
   index: number;
   showErrors: boolean;
+  showAccess: boolean;
   canRemove: boolean;
   /** False with only one person, who is the primary contact. */
   canChoosePrimary: boolean;
@@ -358,9 +360,12 @@ function ContactCard({
 
   return (
     <BentoCard className="gap-4">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between gap-4">
         <p className="text-sm font-medium text-primary">Contact {index + 1}</p>
-        {canRemove && <Button color="secondary" size="sm" iconLeading={Trash01} aria-label={`Remove contact ${index + 1}`} onClick={onRemove} />}
+        <div className="flex items-center gap-4">
+          <Checkbox size="sm" label="Primary contact" isSelected={person.isPrimary} isDisabled={!canChoosePrimary} onChange={(on) => (on ? onSetPrimary() : onChange({ isPrimary: false }))} />
+          {canRemove && <Button color="secondary" size="sm" iconLeading={Trash01} aria-label={`Remove contact ${index + 1}`} onClick={onRemove} />}
+        </div>
       </div>
       <div className="grid gap-4 sm:grid-cols-2">
         <Input label="First name" isRequired placeholder="John" value={person.firstName} onChange={(v) => onChange({ firstName: v })} isInvalid={missing(person.firstName)} hint={missing(person.firstName) ? REQUIRED : undefined} />
@@ -383,7 +388,7 @@ function ContactCard({
       {person.role === "other" && (
         <Input label="Please specify" isRequired placeholder="Describe their role in the project" value={person.roleOther} onChange={(v) => onChange({ roleOther: v })} isInvalid={otherMissing} hint={otherMissing ? REQUIRED : undefined} />
       )}
-      <Checkbox size="sm" label="Primary contact" isSelected={person.isPrimary} isDisabled={!canChoosePrimary} onChange={(on) => (on ? onSetPrimary() : onChange({ isPrimary: false }))} />
+      {showAccess && <ProjectAccessSelect person={person} onChange={(access) => onChange({ access })} />}
     </BentoCard>
   );
 }
@@ -561,12 +566,15 @@ function OptionalMethodDetails({ state, onChange, withLimitations = true }: Pick
 // (project-detail/trap-effort.tsx). The list grows as the admins add to the vocabulary, so the picker is the searchable
 // single select (MultiSelect selectionMode="single", as the Observers field) instead of a menu: it lists only what is not added
 // yet (Other can be added more than once, each with its own name), and clears after each pick. A row's remove icon shows on
-// hover or keyboard focus, as a trap type's does.
-function MethodologyList({ state, onChange, showErrors }: SectionProps) {
+// hover or keyboard focus, as a trap type's does. An Analysis/Reporting project adds its kinds of analysis or reporting the same
+// way (the designer, 25 Oct 2026), from a fixed list plus Other, kept apart so switching between the two loses neither.
+function MethodologyList({ state, onChange, showErrors, kind }: SectionProps & { kind: "systematic" | "analysis" }) {
   const { patchCollection } = useSectionPatches(state, onChange);
-  const chosen = state.collection.methodologies ?? [];
-  const options = useMethodologyOptions(chosen.map((m) => m.id));
-  const set = (methodologies: MethodologyChoice[]) => patchCollection({ methodologies });
+  const analysis = kind === "analysis";
+  const chosen = (analysis ? state.collection.analyses : state.collection.methodologies) ?? [];
+  const methodologyOptions = useMethodologyOptions(chosen.map((m) => m.id));
+  const options = analysis ? [...ANALYSIS_REPORTING_OPTIONS, OTHER_METHODOLOGY] : methodologyOptions;
+  const set = (list: MethodologyChoice[]) => patchCollection(analysis ? { analyses: list } : { methodologies: list });
   const update = (rid: number, patch: Partial<MethodologyChoice>) => set(chosen.map((m) => (m.rid === rid ? { ...m, ...patch } : m)));
   const add = (id: string) => set([...chosen, { rid: Math.max(0, ...chosen.map((m) => m.rid ?? 0)) + 1, id, note: "" }]);
   const addable = options.filter((name) => name === OTHER_METHODOLOGY || !chosen.some((m) => m.id === name));
@@ -575,16 +583,16 @@ function MethodologyList({ state, onChange, showErrors }: SectionProps) {
     <div className="flex flex-col gap-4 pl-6">
       {chosen.map((m, i) => {
         const isOther = m.id === OTHER_METHODOLOGY;
-        const name = isOther ? m.other?.trim() || "other methodology" : m.id;
+        const name = isOther ? m.other?.trim() || (analysis ? "other analysis or reporting" : "other methodology") : m.id;
         const otherMissing = showErrors && isOther && !m.other?.trim();
         return (
           <div key={m.rid ?? i} className="group/methodology flex items-start gap-2">
             <div className="flex min-w-0 flex-1 flex-col gap-1.5">
               {isOther && (
                 <Input
-                  label="Other methodology"
+                  label={analysis ? "Other analysis or reporting" : "Other methodology"}
                   isRequired
-                  placeholder="Name the methodology"
+                  placeholder={analysis ? "Name the analysis or reporting" : "Name the methodology"}
                   value={m.other ?? ""}
                   onChange={(other) => update(m.rid, { other })}
                   isInvalid={otherMissing}
@@ -612,11 +620,19 @@ function MethodologyList({ state, onChange, showErrors }: SectionProps) {
         );
       })}
       <MultiSelect
-        aria-label="Add a methodology"
+        aria-label={analysis ? "Add a type of analysis or reporting" : "Add a methodology"}
         selectionMode="single"
-        placeholder={chosen.length === 0 ? "Search and add a methodology" : "Search and add another methodology"}
+        placeholder={
+          analysis
+            ? chosen.length === 0
+              ? "Search and add a type of analysis or reporting"
+              : "Search and add another type of analysis or reporting"
+            : chosen.length === 0
+              ? "Search and add a methodology"
+              : "Search and add another methodology"
+        }
         isInvalid={showErrors && chosen.length === 0}
-        emptyStateTitle="No methodology found"
+        emptyStateTitle={analysis ? "No type found" : "No methodology found"}
         emptyStateDescription="Pick Other and name it."
         items={addable.map((name) => ({ id: name, label: name }))}
         selectedKeys={new Set<string>()}
@@ -636,29 +652,68 @@ function MethodologyList({ state, onChange, showErrors }: SectionProps) {
 // data collection and Methodology merged into one question (the designer, 9 Oct 2026: "Merge method of data collection and
 // methodology into one"). Only Systematic asks which methodologies were used, right under its own choice.
 function MethodSectionV2(props: SectionProps) {
-  const { state, onChange, showErrors } = props;
-  const { patchCollection } = useSectionPatches(state, onChange);
-  const c = state.collection;
-  const systematic = c.collectionMethod === "systematic";
-  const error = !showErrors ? undefined : !c.collectionMethod ? "Choose a method" : systematic && (c.methodologies ?? []).length === 0 ? "Add at least one methodology" : undefined;
+  const { state, onChange } = props;
 
   return (
     <>
       <FocusAreasRow {...props} />
-      <FormRow title="Methodology" required description="How the data was collected. For a systematic survey, add each methodology used." error={error}>
-        <RadioGroup aria-label="Methodology" value={c.collectionMethod ?? ""} onChange={(v) => patchCollection({ collectionMethod: v as CollectionMethod })}>
-          {COLLECTION_METHOD_OPTIONS_V2.map((option) => (
-            <Fragment key={option.id}>
-              <RadioButton value={option.id} label={option.label} hint={option.description} />
-              {option.id === "systematic" && systematic && <MethodologyList {...props} />}
-            </Fragment>
-          ))}
-        </RadioGroup>
-      </FormRow>
+      <MethodologyRow {...props} />
       <FormRow title="Optional details" description="Only add these if they apply to this project.">
         <OptionalMethodDetails state={state} onChange={onChange} withLimitations={false} />
       </FormRow>
     </>
+  );
+}
+
+/** The Methodology question, with the Systematic and Analysis/Reporting lists under their choices. Also the project page's edit
+ *  form, so editing a project asks it exactly as Add Project does (the designer, 25 Oct 2026). A project that holds Unknown keeps
+ *  it as a choice, so a saved answer never disappears. */
+export function MethodologyRow(props: SectionProps) {
+  const { state, onChange, showErrors } = props;
+  const { patchCollection } = useSectionPatches(state, onChange);
+  const c = state.collection;
+  const systematic = c.collectionMethod === "systematic";
+  const analysis = c.collectionMethod === "analysis";
+  const other = c.collectionMethod === "other";
+  const otherMissing = showErrors && other && !c.otherMethod?.trim();
+  const error = !showErrors
+    ? undefined
+    : !c.collectionMethod
+      ? "Choose a method"
+      : systematic && (c.methodologies ?? []).length === 0
+        ? "Add at least one methodology"
+        : analysis && (c.analyses ?? []).length === 0
+          ? "Add at least one type of analysis or reporting"
+          : otherMissing
+            ? "Describe the methodology"
+            : undefined;
+  const offered = COLLECTION_METHOD_OPTIONS.filter((o) => COLLECTION_METHOD_OPTIONS_V2.includes(o) || o.id === c.collectionMethod);
+
+  return (
+    <FormRow title="Methodology" required description="How the data was collected. For a systematic survey or analysis/reporting, add each one used; for any other method, describe it." error={error}>
+      <RadioGroup aria-label="Methodology" value={c.collectionMethod ?? ""} onChange={(v) => patchCollection({ collectionMethod: v as CollectionMethod })}>
+        {offered.map((option) => (
+          <Fragment key={option.id}>
+            <RadioButton value={option.id} label={option.label} hint={option.description} />
+            {option.id === "systematic" && systematic && <MethodologyList {...props} kind="systematic" />}
+            {option.id === "analysis" && analysis && <MethodologyList {...props} kind="analysis" />}
+            {option.id === "other" && other && (
+              <div className="pl-6">
+                <TextArea
+                  label="Describe the methodology"
+                  isRequired
+                  rows={3}
+                  placeholder="How the data was or will be collected"
+                  value={c.otherMethod ?? ""}
+                  onChange={(otherMethod) => patchCollection({ otherMethod })}
+                  isInvalid={otherMissing}
+                />
+              </div>
+            )}
+          </Fragment>
+        ))}
+      </RadioGroup>
+    </FormRow>
   );
 }
 
@@ -708,8 +763,21 @@ function RestrictionsSection({ state, onChange, showErrors }: SectionProps) {
       <FormRow title="Restrictions on distribution" required description="Whether some or all of this project's data needs protecting.">
         <RadioGroup aria-label="Restrictions on distribution" value={r.hasRestrictions ? "yes" : "no"} onChange={(v) => patchRestrictions({ hasRestrictions: v === "yes" })}>
           <RadioButton value="no" label="No restrictions" hint="Everything in this project is openly available." />
-          <RadioButton value="yes" label="Yes, apply restrictions" hint="Embargo, sensitive species or locations, or other rules." />
+          <RadioButton value="yes" label="Yes, apply restrictions" hint="Embargo, or restricting species, cultural sensitivities, locations or all records." />
         </RadioGroup>
+        {r.hasRestrictions && (
+          // Who can see and change restrictions (the designer, 25 Oct 2026), said once, under the answer that reveals it and inside
+          // the field column, as the DSA and DLA forms place their notices (it spanned both columns until the designer asked for a
+          // better layout the same day).
+          <AlertFullWidth
+            color="gray"
+            title="Project Managers and BioData Admins can view and edit these restrictions"
+            description="Everyone with the role Project Manager in Project contacts, and every BioData Admin, can see and change the restrictions set here."
+            confirmLabel=""
+            contained
+            wrap
+          />
+        )}
       </FormRow>
       {r.hasRestrictions && (
         <FormRow title="Kinds of restriction" required description="Each one you tick gets its own section in the list on the left." error={showErrors && r.enabledTypes.size === 0 ? "Select at least one kind of restriction" : undefined}>
@@ -722,10 +790,10 @@ function RestrictionsSection({ state, onChange, showErrors }: SectionProps) {
   );
 }
 
-function RestrictionTypeSection({ typeKey, state, onChange }: { typeKey: (typeof RESTRICTION_TYPE_META)[number]["key"] } & Pick<SectionProps, "state" | "onChange">) {
+function RestrictionTypeSection({ typeKey, state, onChange, showErrors }: { typeKey: (typeof RESTRICTION_TYPE_META)[number]["key"] } & Pick<SectionProps, "state" | "onChange" | "showErrors">) {
   return (
     <div className="max-w-[720px]">
-      <RestrictionTypeFields typeKey={typeKey} value={state.restrictions} onChange={(restrictions) => onChange({ ...state, restrictions })} />
+      <RestrictionTypeFields typeKey={typeKey} value={state.restrictions} onChange={(restrictions) => onChange({ ...state, restrictions })} showErrors={showErrors} />
     </div>
   );
 }
@@ -744,6 +812,6 @@ export function SectionFields({ id, ...props }: SectionProps & { id: Exclude<Sec
     case "restrictions":
       return <RestrictionsSection {...props} />;
     default:
-      return <RestrictionTypeSection typeKey={id} state={props.state} onChange={props.onChange} />;
+      return <RestrictionTypeSection typeKey={id} state={props.state} onChange={props.onChange} showErrors={props.showErrors} />;
   }
 }

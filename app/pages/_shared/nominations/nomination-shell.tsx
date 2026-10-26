@@ -10,10 +10,9 @@ import { ActionsGroup, downloadCsv } from "@/app/pages/_shared/agreement-actions
 import { AgreementScopeNav } from "@/app/pages/_shared/agreement-scope";
 import { inNominationScope, useNominationScope } from "@/app/pages/_shared/nominations/nomination-scope";
 import { geoExtentSummary } from "@/app/pages/project-registration/geo-extent-picker";
-import { kindOf, nominationStatusMeta, nominationSubject, speciesFor } from "@/app/pages/_shared/nominations/nomination-data";
+import { NOMINATION_ROOT, kindOf, nominationStatusMeta, nominationSubject } from "@/app/pages/_shared/nominations/nomination-data";
 import { useNominations } from "@/app/pages/_shared/nominations/nomination-store";
 import { NominationSwitcher } from "@/app/pages/_shared/nominations/nomination-switcher";
-import { NominationVersionTool, useNominationVersion } from "@/app/pages/_shared/nominations/nomination-version";
 import { PrimaryRail } from "@/app/pages/_shared/primary-rail";
 import { sectionIcons } from "@/app/pages/_shared/nav-icons";
 import { AppHeader } from "@/app/pages/_shared/app-header";
@@ -34,8 +33,7 @@ import { NOMINATION_SECTION_LABEL, keyHref, navForRole, type NavNode } from "@/l
 // Column 2 is navigation and actions only. How a nomination is reviewed is information, so it sits
 // above the table on the list (`ReviewSteps` in nomination-list.tsx), not here.
 // Both get the Actions group (Export CSV of what they can see).
-// Version 2 (nomination-version.tsx): the same column 2; Export CSV lists species and locations. The Version tool shows
-// everywhere but the forms.
+// Export CSV lists species and locations.
 const CURRENT_KEY = "nominations";
 
 function SectionPlaceholder({ node }: { node: NavNode }) {
@@ -59,14 +57,13 @@ function SectionPlaceholder({ node }: { node: NavNode }) {
 function ScopeNav() {
   const nominations = useNominations();
   const { canAll, organisation } = useNominationScope();
-  const { version, base } = useNominationVersion();
-  const visible = nominations.filter((n) => inNominationScope(n, canAll ? "all" : "mine", organisation) && (version >= 2 || kindOf(n) === "species"));
+  const visible = nominations.filter((n) => inNominationScope(n, canAll ? "all" : "mine", organisation));
 
   return (
     <div className="flex flex-col gap-1">
       <AgreementScopeNav
         heading={NOMINATION_SECTION_LABEL}
-        basePath={base}
+        basePath={NOMINATION_ROOT}
         defaultScope={canAll ? "all" : "mine"}
         myLabel="My nominations"
         allLabel="All nominations"
@@ -75,25 +72,16 @@ function ScopeNav() {
       />
       <ActionsGroup
         onExportCsv={() =>
-          version >= 2
-              ? downloadCsv(
-                  "sensitive-nominations.csv",
-                  ["ID", "Type", "Species or location", "Scientific name or area", "Protection", "Nominated by", "Status", "Updated"],
-                  visible.map((n) => {
-                    const isLocation = kindOf(n) === "location";
-                    const detail = isLocation ? (n.location ? geoExtentSummary(n.location.extent) : "") : n.speciesId;
-                    const protection = isLocation ? "Everything in the area" : n.scope === "all" ? "All data" : "Specific attributes";
-                    return [n.id, isLocation ? "Location" : "Species", nominationSubject(n), detail, protection, n.nominator.name, nominationStatusMeta[n.status].label, n.updatedAt];
-                  }),
-                )
-              : downloadCsv(
-                  "sensitive-species-nominations.csv",
-                  ["ID", "Species", "Scientific name", "Protection", "Nominated by", "Status", "Updated"],
-                  visible.map((n) => {
-                    const species = speciesFor(n.speciesId);
-                    return [n.id, species?.commonName ?? "", n.speciesId, n.scope === "all" ? "All data" : "Specific attributes", n.nominator.name, nominationStatusMeta[n.status].label, n.updatedAt];
-                  }),
-                )
+          downloadCsv(
+            "sensitive-nominations.csv",
+            ["ID", "Type", "Species or location", "Scientific name or area", "Protection", "Nominated by", "Status", "Updated"],
+            visible.map((n) => {
+              const isLocation = kindOf(n) === "location";
+              const detail = isLocation ? (n.location ? geoExtentSummary(n.location.extent) : "") : n.speciesId;
+              const protection = isLocation ? "Everything in the area" : n.scope === "all" ? "All data" : "Specific attributes";
+              return [n.id, isLocation ? "Location" : "Species", nominationSubject(n), detail, protection, n.nominator.name, nominationStatusMeta[n.status].label, n.updatedAt];
+            }),
+          )
         }
       />
     </div>
@@ -119,7 +107,6 @@ export function NominationShell({
   const canAccess = useFeatureAccess("nominationAccess");
   const nav = navForRole(role);
   const roleHref = useRoleHref();
-  const { base } = useNominationVersion();
 
   const [localSection, setLocalSection] = useState<string | null>(null);
   const activeSection = localSection ?? NOMINATION_SECTION_LABEL;
@@ -154,7 +141,6 @@ export function NominationShell({
   return (
     <div className="font-barlow flex h-screen flex-col overflow-hidden">
       <PrototypeTools />
-      {canAccess && !formSidebar && <NominationVersionTool recordId={recordId} />}
       <AppHeader
         mobileNav={
           <MobileNavTrigger
@@ -173,7 +159,7 @@ export function NominationShell({
           recordId && canAccess && !otherSection ? (
             <NominationSwitcher currentId={recordId} />
           ) : breadcrumbCurrent && !otherSection ? (
-            <Link href={roleHref(base)} className="hover:text-primary">
+            <Link href={roleHref(NOMINATION_ROOT)} className="hover:text-primary">
               {activeSection}
             </Link>
           ) : (

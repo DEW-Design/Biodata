@@ -48,7 +48,7 @@ export function RecordMap({
 }) {
   return (
     <ExpandableMap
-      title={`${record.name} · location`}
+      title={`${record.name}, location`}
       {...recordMapShape(record, lat, lon)}
       onBoundaryAdd={noop}
       activeDrawTool={null}

@@ -9,6 +9,7 @@ import { Button } from "@/components/base/buttons/button";
 import { HeroMeta, RecordBackLink, RecordHero } from "@/app/pages/_shared/record-hero";
 import { AuditLog } from "@/app/pages/_shared/audit-log";
 import {
+  VM_ROOT,
   BATCHES,
   FIELDS,
   MATCH_LABEL,
@@ -23,7 +24,6 @@ import {
   type VmBatch,
   type VmRecord,
 } from "@/app/pages/_shared/vouchers/vm-data";
-import { VM_OPTION_2, useVmRoot } from "@/app/pages/_shared/vouchers/vm-root";
 import { IgnoreModal, PushModal, useProposal } from "@/app/pages/_shared/vouchers/vm-parts";
 import { CompareTable } from "@/app/pages/_shared/vouchers/vm-compare";
 import { fieldStatus, ignoreFields, pushFields, recordResult, restoreDecisions, setEdit, snapshotDecisions, useDecisions, useEdits } from "@/app/pages/_shared/vouchers/vm-store";
@@ -38,7 +38,6 @@ import { useRoleHref } from "@/lib/use-role-href";
 
 export function VmRecordPage({ batch, record }: { batch: VmBatch; record: VmRecord }) {
   const roleHref = useRoleHref();
-  const root = useVmRoot();
   const decisions = useDecisions();
   const edits = useEdits();
   const proposal = useProposal();
@@ -91,8 +90,8 @@ export function VmRecordPage({ batch, record }: { batch: VmBatch; record: VmReco
   return (
     <div className="flex min-h-0 flex-1 flex-col">
       <div className="flex min-h-0 flex-1 flex-col overflow-y-auto">
-        <RecordBackLink href={roleHref(`${root}/${batch.id}`)}>Batch {batch.id}</RecordBackLink>
-        <RecordHero eyebrow={`Voucher record · ${source}`} title={record.id} subtitle={
+        <RecordBackLink href={roleHref(`${VM_ROOT}/${batch.id}`)}>Batch {batch.id}</RecordBackLink>
+        <RecordHero eyebrow={`Voucher record, ${source}`} title={record.id} subtitle={
             nameNow ? (
               <span>
                 <span className="italic">{nameNow.text}</span>
@@ -116,7 +115,7 @@ export function VmRecordPage({ batch, record }: { batch: VmBatch; record: VmReco
           </TabList>
           <TabPanel id="comparison">
             {/* The batch's own comparison, for this one record, so it reads the same in both places. */}
-            <CompareTable showMatching layout={root === VM_OPTION_2 ? "rows" : "lines"} batch={batch} records={[record]} label={`${record.id} compared with the ${source}`} />
+            <CompareTable showMatching batch={batch} records={[record]} label={`${record.id} compared with the ${source}`} />
           </TabPanel>
           <TabPanel id="history">
             <AuditLog
@@ -142,8 +141,8 @@ export function VmRecordPage({ batch, record }: { batch: VmBatch; record: VmReco
                     <div className="min-w-0 flex-1 text-sm text-primary">
                       {h.what}
                       <span className="text-tertiary">
-                        {" "}
-                        · {h.by}, batch {h.batchId}
+                        
+                        , {h.by}, batch {h.batchId}
                       </span>
                     </div>
                   </div>
@@ -204,10 +203,9 @@ export function VmRecordPage({ batch, record }: { batch: VmBatch; record: VmReco
 
 export function VmRecordNotFound({ batch, id }: { batch: VmBatch; id: string }) {
   const roleHref = useRoleHref();
-  const root = useVmRoot();
   return (
     <div className="flex flex-1 flex-col">
-      <RecordBackLink href={roleHref(`${root}/${batch.id}`)}>Batch {batch.id}</RecordBackLink>
+      <RecordBackLink href={roleHref(`${VM_ROOT}/${batch.id}`)}>Batch {batch.id}</RecordBackLink>
       <div className="flex flex-1 flex-col items-center justify-center gap-2 p-12 text-center">
         <h1 className="text-lg font-semibold text-primary">Record not found</h1>
         <p className="max-w-sm text-sm text-balance text-tertiary">

@@ -35,7 +35,9 @@ import { RejectModal } from "@/app/pages/_shared/agreement-modals";
 import { isBiodataAdmin } from "@/lib/user-role";
 import { useUserRole } from "@/lib/use-user-role";
 import { useCurrentUserName } from "./field-notes";
-import { fieldNotesActions } from "./field-notes-store";
+import { fieldNotesActions, type FieldFile } from "./field-notes-store";
+import type { ProjectMeta } from "./project-seed";
+import type { SurveyRecord } from "./survey-data";
 import { type FilterSection, useListFilter } from "@/app/pages/_shared/list-filter";
 import { AttributeFilterChips } from "@/app/pages/_shared/attribute-filter";
 import { FilterMenu } from "@/app/pages/_shared/filter-menu";
@@ -43,7 +45,41 @@ import { ToolbarSearch } from "@/app/pages/_shared/toolbar-search";
 import { cx } from "@/utils/cx";
 import { segmentClass, segmentTrayClass } from "./segmented";
 
-export type FieldArtefact = Artefact & { recordId: string; fieldKey: string };
+/** `addedBy` is who attached it; `creator` (the viewer's Creator) is who made it, which the bulk upload template can give. */
+export type FieldArtefact = Artefact & { recordId: string; fieldKey: string; addedBy: string };
+
+/** A file attached to a record's field, shaped for the artefact viewer. What the bulk upload template gave (`file.meta`) wins over the defaults. */
+export function fieldArtefact(
+  { recordId, key, file }: { recordId: string; key: string; file: FieldFile },
+  rec: SurveyRecord,
+  meta: ProjectMeta,
+): FieldArtefact {
+  const field = key.slice(key.indexOf(":") + 1);
+  const m = file.meta ?? {};
+  return {
+    fieldKey: key,
+    id: file.id,
+    recordId,
+    addedBy: file.addedBy,
+    title: file.name,
+    type: file.kind,
+    size: file.size || "Link",
+    recordLabel: `${rec.name}, ${field}`,
+    metaTitle: m.title ?? file.name,
+    created: m.created ?? file.date,
+    creator: m.creator ?? file.addedBy,
+    objectId: `${meta.objectPrefix}:${rec.code}:${file.id.toUpperCase()}`,
+    description: `${m.description ? `${m.description.replace(/([^.!?])$/, "$1.")} ` : ""}Attached to "${field}" on ${rec.type} ${rec.code}, ${rec.name}.${file.review?.status === "rejected" ? ` Rejected by ${file.review.by}: ${file.review.reason}` : ""}`,
+    review: file.review,
+    format: { image: "image/jpeg", pdf: "application/pdf", spreadsheet: "application/vnd.ms-excel", video: "video/mp4", link: "text/uri-list" }[file.kind],
+    identifierUrl: file.url ?? "https://data.environment.sa.gov.au",
+    licenseUrl: m.licence === "cc0" ? "https://creativecommons.org/publicdomain/zero/1.0/" : "https://creativecommons.org/licenses/by/4.0/",
+    publisher: m.publisher ?? meta.publisher,
+    rightsHolder: m.rightsHolder ?? m.publisher ?? meta.publisher,
+    dcType: { image: "StillImage", pdf: "Text", spreadsheet: "Dataset", video: "MovingImage", link: "InteractiveResource" }[file.kind],
+    bioDataId: `${meta.code.replace("-", "")}-${rec.code}`,
+  };
+}
 
 export function ArtefactsView({
   artefacts,
@@ -100,7 +136,7 @@ export function ArtefactsView({
       (a) =>
         passesFilter(a) &&
         (!q ||
-          `${a.title} ${a.recordLabel} ${a.creator}`.toLowerCase().includes(q)),
+          `${a.title} ${a.recordLabel} ${a.addedBy}`.toLowerCase().includes(q)),
     );
     const key = sort.column as keyof FieldArtefact;
     return [...list].sort((a, b) => {
@@ -121,7 +157,7 @@ export function ArtefactsView({
   return (
     <div className="flex flex-col gap-4">
       <p className="text-sm text-balance text-tertiary">
-        Files, photos, recordings and links attached to the fields of this
+        Files, photos, recordings and links attached to the concepts of this
         project&apos;s records, in Project records. Each one opens in the viewer;
         &ldquo;Go to record&rdquo; shows the record it belongs to.
       </p>
@@ -200,7 +236,7 @@ export function ArtefactsView({
               <Table.Head id="type" label="Type" allowsSorting className="w-[13%]" />
               <Table.Head id="size" label="Size" className="w-[7%]" />
               <Table.Head id="recordLabel" label="Attached to" allowsSorting className="w-[16%]" />
-              <Table.Head id="creator" label="Added by" allowsSorting className="w-[11%]" />
+              <Table.Head id="addedBy" label="Added by" allowsSorting className="w-[11%]" />
               <Table.Head id="created" label="Date" className="w-[9%]" />
               <Table.Head id="open" label="" className="w-[23%]" />
             </Table.Header>
@@ -242,7 +278,7 @@ export function ArtefactsView({
                     </Table.Cell>
                     <Table.Cell>
                       <span className="text-sm whitespace-nowrap text-tertiary">
-                        {a.creator}
+                        {a.addedBy}
                       </span>
                     </Table.Cell>
                     <Table.Cell>
@@ -289,7 +325,7 @@ export function ArtefactsView({
           if (!open) setRejecting(null);
         }}
         title="Reject attachment"
-        description={rejecting ? `Say why ${rejecting.title} on ${rejecting.recordLabel} is not accepted. ${rejecting.creator} sees the reason.` : undefined}
+        description={rejecting ? `Say why ${rejecting.title} on ${rejecting.recordLabel} is not accepted. ${rejecting.addedBy} sees the reason.` : undefined}
         submitLabel="Reject"
         fieldLabel="Reason"
         onReject={(reason) => {

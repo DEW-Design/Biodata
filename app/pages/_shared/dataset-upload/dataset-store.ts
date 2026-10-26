@@ -7,10 +7,12 @@ import { CURRENT_USER_NAME } from "@/app/pages/_shared/agreement-scope";
 import { todayIso } from "@/app/pages/_shared/dla/dla-data";
 import type { Outcome } from "@/app/pages/_shared/dataset-upload/ingestion";
 import type { Dataset, DatasetStatus, UploadDraft } from "@/app/pages/_shared/dataset-upload/dataset-data";
+import { customConceptActions } from "@/app/pages/_shared/dataset-upload/custom-concepts";
 
 // Datasets (uploads to a project) in a zustand store persisted to localStorage, the same client-only
 // persistence as DSA, DLA and nominations (see zustand-persist.ts). Only the files' names and sizes
-// are kept, never their contents. Uploading creates a dataset at "File uploaded" (staged, waiting
+// are kept, never their contents (and the headings of each sheet, which say which columns are custom
+// concepts, see custom-concepts.ts). Uploading creates a dataset at "File uploaded" (staged, waiting
 // for pre-flight validation); the transitions after that arrive with the validation work.
 
 interface DatasetStoreState {
@@ -60,6 +62,8 @@ export function addDataset(project: { id: string; code: string }, draft: UploadD
     ingestion: { outcome: "success", startedAt: Date.now() },
   };
   useDatasetStore.setState({ datasets: [...existing, dataset] });
+  // Columns the controlled vocabularies do not have go to a BioData admin for approval; the upload goes ahead.
+  customConceptActions.submit(dataset);
   return dataset;
 }
 

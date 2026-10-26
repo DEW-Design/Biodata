@@ -31,6 +31,14 @@ const useVisibilityStore = create<VisibilityState>()(
   }),
 );
 
+/** A whole section taken off the record (Remove section, in edit mode); Add section puts it back. */
+export const sectionKey = (sectionId: string) => `${sectionId}:*`;
+
+/** A section can be removed whole only if none of its fields must stay shown (an ID, a name, a start date). */
+export function sectionRemovable(section: MetaSection) {
+  return !sectionFieldEntries(section).some((f) => f.locked);
+}
+
 export const ALWAYS_SHOWN = /^(?!Legacy\b).*(^|\s)ID$/;
 /** Fields a record needs (its name, start date, species): always shown and edited, never hidden. */
 export const REQUIRED_FIELD = /( name|^Start date|^NSX code & species)$/;
@@ -70,7 +78,7 @@ export function sectionFieldEntries(section: MetaSection): FieldEntry[] {
 
 /**
  * The fields of a record that have no value. They are left out of the view, and out of edit mode too
- * until they are ticked in "Fields shown" (which is how an empty field is added).
+ * until they are ticked in "Concepts shown" (which is how an empty field is added).
  */
 export function emptyFieldKeys(record: SurveyRecord): Set<string> {
   const out = new Set<string>();
@@ -119,6 +127,7 @@ export function sectionShownInEdit(
   section: MetaSection,
   hidden: Set<string>,
 ): boolean {
+  if (hidden.has(sectionKey(section.id))) return false;
   if (
     section.withMap ||
     section.trapEffort ||
@@ -197,6 +206,7 @@ export function sectionHasContent(
 }
 
 export function isSectionShown(section: MetaSection, hidden: Set<string>) {
+  if (hidden.has(sectionKey(section.id))) return false;
   // Custom properties show only once one has been added (they are added in edit mode).
   if (
     section.id === "custom" &&

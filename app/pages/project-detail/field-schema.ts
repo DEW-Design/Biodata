@@ -411,11 +411,11 @@ export function displayValue(row: MetaRow, rows: MetaRow[] = []): string {
   if (type === "people" || type === "multi") return splitList(row.value).join(", ");
   if (type === "vocab") {
     const term = vocabTerm(row.label, row.value);
-    return term ? `${term.code} · ${term.description}` : row.value;
+    return term ? `${term.code} - ${term.description}` : row.value;
   }
   if (type === "species") {
     const sp = nsxSpecies(row.value);
-    return sp ? `${sp.nsx} · ${sp.scientific}` : row.value;
+    return sp ? `${sp.nsx} - ${sp.scientific}` : row.value;
   }
   if (type === "voucher") {
     const inst = rows.find((r) => r.label === "Institution name")?.value ?? "";
@@ -426,7 +426,7 @@ export function displayValue(row: MetaRow, rows: MetaRow[] = []): string {
   if (type === "codes") {
     const cols = CODE_TABLES[row.table ?? row.label] ?? [];
     return parseJsonList<string[]>(row.value)
-      .map((codes) => codes.map((c, i) => (cols[i]?.vocab ? `${c} · ${CODE_VOCABS[cols[i].vocab!]?.find((t) => t.code === c)?.description ?? ""}` : c)).join(", "))
+      .map((codes) => codes.map((c, i) => (cols[i]?.vocab ? `${c} - ${CODE_VOCABS[cols[i].vocab!]?.find((t) => t.code === c)?.description ?? ""}` : c)).join(", "))
       .join("\n");
   }
   if (type === "date") return readIsoDate(row.value);
@@ -490,7 +490,7 @@ export function isBoundaryInside(inner: Boundary, outer: Boundary): boolean {
   return samplePoints(inner).every((p) => isPointInBoundary(p, outer));
 }
 
-/** How a record's location was entered, in words: "Drawn on the map · circle, 500 m radius". */
+/** How a record's location was entered, in words: "Drawn on the map: circle, 500 m radius". */
 export function locationSummary(location: { method: string | null; shapefileName?: string; boundary?: Boundary | null } | undefined): string {
   if (!location?.boundary) return "Not provided";
   const how =
@@ -503,7 +503,7 @@ export function locationSummary(location: { method: string | null; shapefileName
           : "Drawn on the map";
   const b = location.boundary;
   const shape = b.kind === "circle" ? `circle, ${b.radiusKm < 1 ? `${Math.round(b.radiusKm * 1000)} m` : `${b.radiusKm} km`} radius` : `polygon, ${b.points.length} points`;
-  return `${how} · ${shape}`;
+  return `${how}: ${shape}`;
 }
 
 /** A record shows a date only when its type has a date field (a site, for one, has none). */

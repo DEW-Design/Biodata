@@ -109,6 +109,16 @@
       "reviewBy": "2027-03-25",
       "reason": "Designer ingested the Untitled UI Button utility component via the ingestion workflow (1 Oct 2026). Checked: Button is the labelled button and CloseButton is a fixed X for dialogs and clears, so neither is an icon-only utility button with a tooltip and an optional link variant; not a twin (1.7). Text-editor's internal EditorButton and hand-rolled icon buttons under app/pages are possible later callers, not swapped in this task. Shipped in components/base/buttons/ as ingested, beside button.tsx and close-button.tsx.",
       "status": "active"
+    },
+    {
+      "id": "OVR-012",
+      "component": "components/application/carousel/carousel-base.tsx",
+      "designer": "Sai Maniganahalli",
+      "approvedBy": "Sai Maniganahalli",
+      "date": "2026-10-25",
+      "reviewBy": "2027-03-25",
+      "reason": "Designer ingested the Untitled UI Carousel (Embla, headless: Root, Content, Item, PrevTrigger, NextTrigger, IndicatorGroup, Indicator) and asked for it to be brought through the ingestion workflow and into the Explore record summary card (25 Oct 2026). Checked: no carousel in components/base, application, custom or foundations; the only carousel is SpeciesPhotoCarousel, a scroll-snap one hand-built in app/pages/_shared/map-search, which is a behaviour built outside components (1.10) and is replaced by this one, not kept beside it (1.7). Not a twin of Tabs (tabs name sections; a carousel pages through one kind of thing). Shipped in components/application/carousel/ as ingested; adds the embla-carousel-react dependency.",
+      "status": "active"
     }
   ]
 }

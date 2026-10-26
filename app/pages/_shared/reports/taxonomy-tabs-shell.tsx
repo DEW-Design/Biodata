@@ -57,7 +57,7 @@ export function TaxonomyTabs<T extends string>({ tabs, label, render }: { tabs: 
   }, [tab]);
 
   const list = (
-    <div ref={strip} className="shrink-0 overflow-x-auto px-6 pt-4">
+    <div ref={strip} className="-mb-1.5 shrink-0 overflow-x-auto px-6 pt-4 pb-1.5">
       <TabList type="underline" aria-label={label}>
         {tabs.map((t) => (
           <Tab key={t.id} id={t.id} icon={t.icon}>

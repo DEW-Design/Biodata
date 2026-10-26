@@ -19,13 +19,11 @@
 //  - Species: every species recorded in the project, with where and when.
 //  - Artefacts and attachments: every file attached to a record, each linked back to its record.
 //
-// The Project tab opens with Project at a glance: a Datasets card (registered users and above; the
-// last upload and what is happening with it) above a records card (records by kind, then species,
-// flagged concepts and artefacts as rows on them). The Datasets card's View all opens the project's
-// Datasets page (`?view=datasets`, datasets-view.tsx): every upload to this project, the one in progress
-// with its pre-flight validation, and each dataset's own page (`&dataset=<id>`).
+// The Overview tab (called Project until 26 Oct 2026) opens with the project's own cards. It had a "Project at a glance" section above them (a Datasets card over a records card);
+// the designer removed it as a double-up of the tabs' counts and the header. The project's Datasets page (`?view=datasets`, datasets-view.tsx: every upload to this project, the one
+// in progress with its pre-flight validation, and each dataset's own page, `&dataset=<id>`) still exists, and nothing on the project page opens it now: its door is open.
 //
-// Everyone but public users can edit: project metadata on the Project tab and each record's metadata
+// Everyone but public users can edit: project metadata on the Overview tab and each record's metadata
 // in the inspector, through one shared card and edit flow (editable-section.tsx). Edits are kept for
 // the session (edit-store.tsx).
 
@@ -37,7 +35,7 @@ import {
   TabPanel,
   Tabs as ContentTabs,
 } from "@/components/application/tabs/tabs";
-import { ArrowNarrowRight, Database01, Feather, Folder, Paperclip } from "@untitledui/icons";
+import { ArrowNarrowRight, Database01, Feather, Grid01, Key01, Paperclip } from "@untitledui/icons";
 import { Button } from "@/components/base/buttons/button";
 import { BadgeWithDot } from "@/components/base/badges/badges";
 import { AlertFullWidth } from "@/components/application/alerts/alerts";
@@ -48,16 +46,15 @@ import { AppHeader } from "@/app/pages/_shared/app-header";
 import { MobileNavTrigger } from "@/app/pages/_shared/mobile-nav";
 import { PrototypeTools } from "@/app/_prototype-tools/prototype-tools";
 import { ProjectCardActions } from "@/app/pages/_shared/project-card-actions";
-import {
-  ArtefactLightbox,
-  type Artefact,
-} from "@/app/pages/_shared/artefact-lightbox";
-import { ArtefactsView } from "./artefacts-view";
+import { ArtefactLightbox } from "@/app/pages/_shared/artefact-lightbox";
+import { ArtefactsView, fieldArtefact } from "./artefacts-view";
+import { BulkAttachModal } from "./bulk-attach-modal";
 import { DatasetsScreen } from "./datasets-view";
 import { ReviewScreen, useLiveEntries, useReviewItems } from "./review-view";
 import { useCanReview } from "./field-notes";
 import { allFiles, recordFieldKeys, useFieldNotes } from "./field-notes-store";
 import { useUserRole } from "@/lib/use-user-role";
+import { ProjectAccessTab } from "./project-access-view";
 import { useRoleHref } from "@/lib/use-role-href";
 import { navForRole, keyHref, type NavNode } from "@/lib/registered-user-nav";
 import { ProjectTab, formatDay } from "./project-tab";
@@ -68,13 +65,11 @@ import { EditStoreProvider, useEditStore } from "./edit-store";
 import { ADELAIDE_HILLS_ID, adelaideHillsSeed, exploreProject, seedFromExplore, type ProjectSeed } from "./project-seed";
 import {
   RecordsExplorer,
-  filterForKind,
-  type KindFilter,
   type RecordsView,
 } from "./records-explorer";
 import type { FilterSelection } from "@/app/pages/_shared/list-filter";
 
-type DetailTab = "project" | "records" | "species" | "artefacts";
+type DetailTab = "project" | "records" | "species" | "artefacts" | "access";
 
 function ProjectHero() {
   const { project, meta } = useEditStore();
@@ -86,9 +81,16 @@ function ProjectHero() {
       : status === "Under review"
         ? "warning"
         : "gray";
+  const [bulkAttach, setBulkAttach] = useState(false);
   // The shared record hero, so the title, eyebrow and facts are set exactly as on every other record page.
   return (
-    <RecordHero eyebrow="Project" title={d.shortTitle} actions={<ProjectCardActions projectId={meta.id} projectCode={meta.code} />}>
+    <>
+    <BulkAttachModal isOpen={bulkAttach} onClose={() => setBulkAttach(false)} />
+    <RecordHero
+      eyebrow="Project"
+      title={d.shortTitle}
+      actions={<ProjectCardActions projectId={meta.id} projectCode={meta.code} onUploadAttachments={() => setBulkAttach(true)} />}
+    >
       <HeroMeta label="Project ID">{meta.code}</HeroMeta>
       <HeroMeta label="Start Date">{formatDay(d.startDate) || "Not provided"}</HeroMeta>
       <HeroMeta label="End Date">{d.endDate ? formatDay(d.endDate) : "Ongoing"}</HeroMeta>
@@ -103,6 +105,7 @@ function ProjectHero() {
           : `${d.dataOwnerContacts[0]?.firstName ?? ""} ${d.dataOwnerContacts[0]?.lastName ?? ""}`.trim()}
       </HeroMeta>
     </RecordHero>
+    </>
   );
 }
 
@@ -189,7 +192,7 @@ function ProjectDetail({ basePath, notice }: ProjectDetailTemplateProps) {
   const species = useProjectSpecies();
   // Reviewing flagged concepts is an admin's job (BioData Admin, Privileged Admin). It is management
   // work, not a view of the records, so it is its own screen (`?view=review`, same route so the
-  // session's edits stay), opened from a banner in Project records, from Project at a glance, or from the admin's Home.
+  // session's edits stay), opened from a banner in Project records or from the admin's Home.
   const canReview = useCanReview();
   const openReviews = useReviewItems().open.length;
   const liveEntries = useLiveEntries();
@@ -201,8 +204,8 @@ function ProjectDetail({ basePath, notice }: ProjectDetailTemplateProps) {
   const datasetParam = searchParams.get("dataset");
   const datasetsHref = roleHref(withQuery(basePath, "view=datasets"));
   const datasetHref = (id: string) => roleHref(withQuery(basePath, `view=datasets&dataset=${encodeURIComponent(id)}`));
-  // The review returns to where it was opened from (`&from=`): the Project tab's at-a-glance, or
-  // Project records' banner. Anything else (an old link) goes back to Project records.
+  // The review returns to where it was opened from (`&from=`): the Overview tab (the lab's
+  // flagged concepts link), or Project records' banner. Anything else (an old link) goes back to Project records.
   const reviewFrom: DetailTab = searchParams.get("from") === "project" ? "project" : "records";
   const openReview = (from: DetailTab) => router.push(roleHref(withQuery(basePath, `view=review&from=${from}`)));
   const closeReview = () => {
@@ -218,42 +221,7 @@ function ProjectDetail({ basePath, notice }: ProjectDetailTemplateProps) {
         const rec = recordById(recordId);
         // Only files on a field the record still has.
         if (!rec || !recordFieldKeys(rec).has(key)) return [];
-        const field = key.slice(key.indexOf(":") + 1);
-        const a: Artefact & { recordId: string; fieldKey: string } = {
-          fieldKey: key,
-          id: file.id,
-          recordId,
-          title: file.name,
-          type: file.kind,
-          size: file.size || "Link",
-          recordLabel: `${rec.name} · ${field}`,
-          metaTitle: file.name,
-          created: file.date,
-          creator: file.addedBy,
-          objectId: `${meta.objectPrefix}:${rec.code}:${file.id.toUpperCase()}`,
-          description: `Attached to "${field}" on ${rec.type} ${rec.code}, ${rec.name}.${file.review?.status === "rejected" ? ` Rejected by ${file.review.by}: ${file.review.reason}` : ""}`,
-          review: file.review,
-          format: {
-            image: "image/jpeg",
-            pdf: "application/pdf",
-            spreadsheet: "application/vnd.ms-excel",
-            video: "video/mp4",
-            link: "text/uri-list",
-          }[file.kind],
-          identifierUrl: file.url ?? "https://data.environment.sa.gov.au",
-          licenseUrl: "https://creativecommons.org/licenses/by/4.0/",
-          publisher: meta.publisher,
-          rightsHolder: meta.publisher,
-          dcType: {
-            image: "StillImage",
-            pdf: "Text",
-            spreadsheet: "Dataset",
-            video: "MovingImage",
-            link: "InteractiveResource",
-          }[file.kind],
-          bioDataId: `${meta.code.replace("-", "")}-${rec.code}`,
-        };
-        return [a];
+        return [fieldArtefact({ recordId, key, file }, rec, meta)];
       }),
     [notes, recordById, meta],
   );
@@ -267,12 +235,6 @@ function ProjectDetail({ basePath, notice }: ProjectDetailTemplateProps) {
       : section.items?.find((item) => item.key);
     if (relatedLink?.key) router.push(roleHref(keyHref(relatedLink.key)));
     else setActiveSection(section.label);
-  };
-
-  const goToRecords = (kind: KindFilter, recordId?: string) => {
-    setRecordFilter(filterForKind(kind));
-    if (recordId) setSelectedId(recordId);
-    setDetailTab("records");
   };
 
   // "Open record" from an artefact goes to the record and to the field the file is attached to.
@@ -423,7 +385,7 @@ function ProjectDetail({ basePath, notice }: ProjectDetailTemplateProps) {
                       size="md"
                       className="gap-6"
                     >
-                      <Tab id="project" label="Project" icon={Folder} />
+                      <Tab id="project" label="Overview" icon={Grid01} />
                       <Tab
                         id="records"
                         label="Project records"
@@ -442,20 +404,12 @@ function ProjectDetail({ basePath, notice }: ProjectDetailTemplateProps) {
                         icon={Paperclip}
                         badge={artefacts.length}
                       />
+                      <Tab id="access" label="Project access" icon={Key01} />
                     </TabList>
 
                     <TabPanel id="project" className="pt-6">
-                      <ProjectTab
-                        layout="v3"
-                        onGoToRecords={goToRecords}
-                        onGoToArtefacts={() => setDetailTab("artefacts")}
-                        onGoToDatasets={() => router.push(datasetsHref)}
-                        onGoToDataset={(id) => router.push(datasetHref(id))}
-                        artefactKinds={artefacts.map((a) => a.type)}
-                        artefactRecordCount={new Set(artefacts.map((a) => a.recordId)).size}
-                        onGoToSpecies={() => setDetailTab("species")}
-                        onGoToFlagged={() => openReview("project")}
-                      />
+                      {/* The tab is called Overview, so the section inside it does not repeat the word as a heading. */}
+                      <ProjectTab layout="v3" overviewHeading={false} />
                     </TabPanel>
 
                     <TabPanel id="records" className="flex flex-col gap-4 pt-4">
@@ -492,6 +446,10 @@ function ProjectDetail({ basePath, notice }: ProjectDetailTemplateProps) {
                         onOpen={setLightboxIndex}
                         onOpenRecord={openRecord}
                       />
+                    </TabPanel>
+
+                    <TabPanel id="access" className="pt-6">
+                      <ProjectAccessTab />
                     </TabPanel>
                   </ContentTabs>
                 </div>

@@ -31,6 +31,7 @@
     "@untitledui/icons": "^0.0.23",
     "agentation": "^3.0.2",
     "clsx": "^2.1.1",
+    "embla-carousel-react": "^8.6.0",
     "highcharts": "^13.0.2",
     "highcharts-react-official": "^3.2.3",
     "input-otp": "^1.5.0",

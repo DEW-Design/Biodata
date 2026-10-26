@@ -13,8 +13,8 @@ import { MobileNavTrigger } from "@/app/pages/_shared/mobile-nav";
 import { sectionIcons } from "@/app/pages/_shared/nav-icons";
 import { PrimaryRail } from "@/app/pages/_shared/primary-rail";
 import { PrototypeTools } from "@/app/_prototype-tools/prototype-tools";
-import { BATCHES, BATCH_STATUS, SOURCES, SOURCE_LABEL, readDate, type VmSource } from "@/app/pages/_shared/vouchers/vm-data";
-import { VmOptionSwitcher, useVmRoot } from "@/app/pages/_shared/vouchers/vm-root";
+import { VM_ROOT, BATCHES, BATCH_STATUS, SOURCES, SOURCE_LABEL, readDate, type VmSource } from "@/app/pages/_shared/vouchers/vm-data";
+import { BatchSwitcher } from "@/app/pages/_shared/vouchers/vm-switcher";
 import { useBatchSummaries } from "@/app/pages/_shared/vouchers/vm-store";
 import { useFeatureAccess } from "@/lib/use-feature-access";
 import { useRoleHref } from "@/lib/use-role-href";
@@ -54,14 +54,13 @@ function SourceNav({ source }: { source: VmSource | "" }) {
   const summaries = useBatchSummaries();
   const router = useRouter();
   const roleHref = useRoleHref();
-  const root = useVmRoot();
   const needing = (s?: VmSource) => BATCHES.filter((b) => (!s || b.source === s) && summaries.get(b.id)?.status === "review").length;
   const badge = (n: number) => (n > 0 ? n : undefined);
   return (
     <div className="flex flex-col gap-1">
       <p className="mb-3 text-xs font-semibold tracking-wide text-quaternary uppercase">Sources</p>
       <div>
-        <Tabs orientation="vertical" selectedKey={source || "all"} onSelectionChange={(key) => router.push(roleHref(key === "all" ? root : `${root}?source=${String(key)}`))}>
+        <Tabs orientation="vertical" selectedKey={source || "all"} onSelectionChange={(key) => router.push(roleHref(key === "all" ? VM_ROOT : `${VM_ROOT}?source=${String(key)}`))}>
           <TabList aria-label="Sources" orientation="vertical" type="button-brand" fullWidth className="w-full">
             <Tab id="all" label="All batches" icon={SwitchHorizontal01} badge={badge(needing())} />
             {SOURCES.map((s) => (
@@ -90,12 +89,15 @@ function SourceNav({ source }: { source: VmSource | "" }) {
 export function VmShell({
   source = "",
   breadcrumb = [],
+  batchId,
   children,
 }: {
   /** The source highlighted in column 2: the list's, or the open batch's. */
   source?: VmSource | "";
   /** Crumbs after the section, each linking back except the last ("Batch 1012", then a record). */
   breadcrumb?: { label: string; href?: string }[];
+  /** The batch a record page shows (a batch, or a record in it): the section crumb is a switcher over the other batches (CONTRACTS 4.6). */
+  batchId?: string;
   children: ReactNode;
 }) {
   const router = useRouter();
@@ -103,7 +105,6 @@ export function VmShell({
   const canManage = useFeatureAccess("voucherManagement");
   const nav = navForRole(role);
   const roleHref = useRoleHref();
-  const root = useVmRoot();
 
   const [localSection, setLocalSection] = useState<string | null>(null);
   const activeSection = localSection ?? VOUCHER_SECTION_LABEL;
@@ -141,7 +142,6 @@ export function VmShell({
   return (
     <div className="font-barlow flex h-screen flex-col overflow-hidden">
       <PrototypeTools />
-      {canManage && <VmOptionSwitcher />}
       <AppHeader
         mobileNav={
           <MobileNavTrigger
@@ -159,9 +159,13 @@ export function VmShell({
         section={
           last ? (
             <>
-              <Link href={roleHref(root)} className="hover:text-primary">
-                {activeSection}
-              </Link>
+              {batchId && canManage ? (
+                <BatchSwitcher currentId={batchId} />
+              ) : (
+                <Link href={roleHref(VM_ROOT)} className="hover:text-primary">
+                  {activeSection}
+                </Link>
+              )}
               {middle.map((c) => (
                 <Fragment key={c.label}>
                   <span>/</span>

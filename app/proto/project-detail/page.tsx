@@ -135,7 +135,7 @@ const flaggedFields = new Set(["Targeted Species", "Study Area"]);
 
 function FlagIndicator() {
   return (
-    <Tooltip title="Flagged by an admin - this field may need review or updating">
+    <Tooltip title="Flagged by an admin - this concept may need review or updating">
       <span className="inline-flex shrink-0 items-center justify-center">
         <Flag03 className="size-3.5 text-fg-warning-primary" />
       </span>

@@ -9,13 +9,13 @@
 // "What should be restricted?" is two answer tiles (All concepts / Selected concepts). "Selected
 // concepts" reveals the shared concept editor, whose value control per concept matches Figma's own field
 // type (see concept-rows.tsx) and where every concept gives its own justification. "All concepts" has one
-// justification for the lot. Save is never disabled: pressing it with something missing shows what, on
+// justification for the lot. Above the justification, "Expectations data restrictions" says what the person expects
+// (the designer, 25 Oct 2026); a BioData Admin decides the level. Save is never disabled: pressing it with something missing shows what, on
 // the field.
 
 import { useMemo, useState } from "react";
 import { Edit05, Feather, Plus, Save01, SearchMd, Trash01, XClose } from "@untitledui/icons";
 import { AlertFullWidth } from "@/components/application/alerts/alerts";
-import { TextArea } from "@/components/base/textarea/textarea";
 import { Button } from "@/components/base/buttons/button";
 import { Badge } from "@/components/base/badges/badges";
 import { SidePanel } from "@/app/pages/_shared/map-search/side-panel";
@@ -28,9 +28,10 @@ import { ChoiceTile } from "./typeform-card";
 import { REGISTRATION_SPECIES, SPECIES_CONCEPTS, existingRestrictionsForSpecies, type RegistrationSpecies } from "./data";
 import { emptyConceptRow, type SpeciesRestrictionEntry } from "./types";
 import { ConceptRows, isConceptRowsValid } from "./concept-rows";
+import { ExpectationSelect, JustificationField } from "./restriction-fields";
 
 function emptyDraft(id: number, speciesId: string): SpeciesRestrictionEntry {
-    return { id, speciesId, scope: "all", concepts: [emptyConceptRow(1)], justification: "" };
+    return { id, speciesId, scope: "all", concepts: [emptyConceptRow(1)], justification: "", expectation: null };
 }
 
 export function isSpeciesEntryValid(entry: SpeciesRestrictionEntry): boolean {
@@ -71,7 +72,7 @@ function RestrictForm({ species, initial, onCancel, onSave }: { species: Registr
                     <span className="text-base font-semibold text-primary">{species.commonName}</span>
                     <span className="text-sm text-tertiary italic">{species.species}</span>
                     <span className="text-xs text-quaternary">
-                        {species.family} · {species.group}
+                        {species.family}, {species.group}
                     </span>
                 </div>
             </div>
@@ -96,19 +97,12 @@ function RestrictForm({ species, initial, onCancel, onSave }: { species: Registr
                 </div>
             </div>
 
+            <ExpectationSelect value={draft.expectation} onChange={(expectation) => setDraft({ ...draft, expectation })} />
+
             {draft.scope === "selected" ? (
                 <ConceptRows rows={draft.concepts} onChange={(concepts) => setDraft({ ...draft, concepts })} options={SPECIES_CONCEPTS} justifyEach showErrors={showErrors} />
             ) : (
-                <TextArea
-                    label="Justification"
-                    placeholder="Enter a justification..."
-                    hint={showErrors && !draft.justification.trim() ? "Enter a justification" : "Enter the reason for this restriction request."}
-                    isRequired
-                    isInvalid={showErrors && !draft.justification.trim()}
-                    rows={3}
-                    value={draft.justification}
-                    onChange={(v) => setDraft({ ...draft, justification: v })}
-                />
+                <JustificationField value={draft.justification} onChange={(justification) => setDraft({ ...draft, justification })} showErrors={showErrors} />
             )}
 
             <div className="flex justify-end gap-3 border-t border-secondary pt-4">
@@ -169,7 +163,7 @@ export function SpeciesRestrictionSection({ entries, onChange }: { entries: Spec
                                         {species.commonName} <span className="font-normal text-tertiary italic">{species.species}</span>
                                     </span>
                                     <span className="truncate text-sm text-tertiary">
-                                        {species.family} · {species.group}
+                                        {species.family}, {species.group}
                                     </span>
                                 </div>
                                 {species.alreadySensitive && (

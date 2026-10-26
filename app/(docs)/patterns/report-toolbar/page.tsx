@@ -97,7 +97,7 @@ function ReportToolbarDemo() {
             <span className="flex flex-col">
               <span className="text-sm font-medium text-primary italic">{r.species}</span>
               <span className="text-xs text-tertiary">
-                {r.project} · {r.day}
+                {r.project}, {r.day}
               </span>
             </span>
             <Badge size="sm" color={r.status === "Reviewed" ? "success" : "gray"}>
@@ -216,6 +216,12 @@ export default function ReportToolbarPatternPage() {
         <li>
           <strong>What is set is always visible.</strong> A chip for each parameter that is set and a count on the button, so closing the popover
           loses nothing. A report that is always on one thing (one dataset) shows it as chips and has no Reset.
+        </li>
+        <li>
+          <strong>One report draws them inline.</strong> The Data Validation Error Report&apos;s project and dataset are two dropdowns on the row, to the right of Filter
+          (<code>parameters.inline</code>), each the design system&apos;s <code>Select</code> with its own label above it (&quot;Project&quot;, &quot;Dataset&quot;) and showing what it is set to, so it has no
+          Parameters button and no chips (designer, 23 Oct 2026). The row there is: search, Filter, Project, Dataset, Columns, aligned by their foot. A value too long for its dropdown is cut by what it is: a project is cut at a word, a dataset&apos;s file name in the middle so its version and extension stay
+          (<code>truncateAtWords</code>, <code>labelEnd</code>), the open list is as wide as its longest row, and the full text is the tooltip.
         </li>
         <li>
           <strong>It applies as you choose.</strong> No Apply button; the table follows each field (section 1.9, item 2).

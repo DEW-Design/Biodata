@@ -120,7 +120,7 @@ export default function CheckboxPage() {
                   />
                 </div>
                 <code className="text-xs text-quaternary">
-                  {previewSize} · {previewIndeterminate ? "indeterminate" : previewSelected ? "selected" : "unselected"}
+                  {previewSize}, {previewIndeterminate ? "indeterminate" : previewSelected ? "selected" : "unselected"}
                 </code>
               </div>
 

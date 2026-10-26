@@ -23,7 +23,7 @@ export function FavouriteButton({ report, isFavourite }: { report: ReportEntry; 
       onPress={() => toggleFavourite(report.id)}
       className={({ isFocusVisible }) =>
         cx(
-          "flex cursor-pointer items-center rounded-md p-1 outline-focus-ring transition duration-100 ease-linear hover:text-fg-quaternary_hover",
+          "hit-area flex cursor-pointer items-center rounded-md p-1 outline-focus-ring transition duration-100 ease-linear hover:text-fg-quaternary_hover",
           isFavourite ? "text-fg-brand-secondary_alt" : "text-fg-quaternary",
           isFocusVisible && "outline-2 outline-offset-2",
         )
