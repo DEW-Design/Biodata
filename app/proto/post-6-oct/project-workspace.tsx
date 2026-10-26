@@ -36,7 +36,7 @@ import { FlaggedAlert, ProjectNotices } from "./project-notices";
 import { ProjectProperties } from "./project-properties";
 import { ProjectViewTabs } from "./project-tabs";
 import { ADELAIDE_HILLS_ID, adelaideHillsSeed, exploreProject, seedFromExplore, type ProjectSeed } from "@/app/pages/project-detail/project-seed";
-import { RecordsExplorer, filterForKind, type KindFilter, type RecordsView } from "@/app/pages/project-detail/records-explorer";
+import { RecordsExplorer, type RecordsView } from "@/app/pages/project-detail/records-explorer";
 import type { ChildOption } from "@/app/pages/project-detail/record-rules";
 import { SpeciesView } from "@/app/pages/project-detail/species-view";
 import { projectDetailsPath } from "@/app/pages/_shared/project-routes";
@@ -168,14 +168,8 @@ function Views({ view, setView, branchOpen, onBranchClose, propertiesOpen, onPro
 
   // The Datasets and flagged-concepts screens are their own pages; the lab opens them on the real project page.
   const pagePath = projectDetailsPath(meta.id);
-  const datasetsHref = roleHref(withQuery(pagePath, "view=datasets"));
   const datasetHref = (id: string) => roleHref(withQuery(pagePath, `view=datasets&dataset=${encodeURIComponent(id)}`));
 
-  const goToRecords = (kind: KindFilter, recordId?: string) => {
-    setRecordFilter(filterForKind(kind));
-    if (recordId) setSelectedId(recordId);
-    setView("records");
-  };
   const openRecord = (id: string) => {
     setRecordFilter({});
     setSelectedId(id);
@@ -195,8 +189,6 @@ function Views({ view, setView, branchOpen, onBranchClose, propertiesOpen, onPro
   };
 
   const toFlagged = () => router.push(roleHref(withQuery(pagePath, "view=review&from=project")));
-  const artefactKinds = artefacts.map((a) => a.type);
-  const artefactRecordCount = new Set(artefacts.map((a) => a.recordId)).size;
   // The header and the tabs, 32px apart (Figma 484:3929), then the view: the production page's order (hero, tabs, panel), the hero's content in the page. The notices are the
   // first rows of the Overview's sheet, and a box of their own above the other tabs' content (project-notices.tsx); the flagged-concepts chip is beside the title.
   const lead = (
@@ -211,20 +203,11 @@ function Views({ view, setView, branchOpen, onBranchClose, propertiesOpen, onPro
       <ProjectTab
         layout="v3"
         sheet
-        showGlance={false}
         repeatHeaderFacts={false}
         overviewHeading={false}
         disclosure
         lead={lead}
         sheetTop={notices(false)}
-        onGoToRecords={goToRecords}
-        onGoToArtefacts={() => setView("artefacts")}
-        onGoToDatasets={() => router.push(datasetsHref)}
-        onGoToDataset={(id) => router.push(datasetHref(id))}
-        artefactKinds={artefactKinds}
-        artefactRecordCount={artefactRecordCount}
-        onGoToSpecies={() => setView("species")}
-        onGoToFlagged={toFlagged}
       />
     ) : (
       <div className="flex flex-col gap-6">

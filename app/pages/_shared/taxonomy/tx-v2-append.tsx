@@ -22,12 +22,12 @@ import {
   FieldCard,
   SpeciesTypeField,
 } from "@/app/pages/_shared/taxonomy/tx-actions";
-import { type Kingdom } from "@/app/pages/_shared/taxonomy/tx-data";
+import { TX_ROOT, type Kingdom } from "@/app/pages/_shared/taxonomy/tx-data";
 import {
+  nodeHref,
   APPEND_RANKS,
   KINGDOM_NAME,
   RANKS,
-  TX_V2_ROOT,
   addHigherTaxa,
   ancestorAt,
   childId,
@@ -45,13 +45,12 @@ import {
   NodeTree,
   WithHierarchy,
   italicRank,
-  nodeHref,
 } from "@/app/pages/_shared/taxonomy/tx-v2-list";
 import { ValueGrid } from "@/app/pages/_shared/taxonomy/tx-v2-record";
 import { useRoleHref } from "@/lib/use-role-href";
 
 // Version 2's Append (the designer, 14 Oct 2026): version 1's three steps on one page, and a taxon of any of Order, Family,
-// Genus, Species or Infraspecies. Borrowed from version 1's Append (tx-flows.tsx): FormPage, FormRow, the Taxa Type
+// Genus, Species or Infraspecies. Borrowed from version 1's Append (tx-flows.tsx, retired on 26 Oct 2026): FormPage, FormRow, the Taxa Type
 // field, the FieldCard around a group, and the Taxonomy View's tree (0.9).
 //
 // One append adds one taxon (the designer: "the higher rank is used just to map the newly added under the selected rank"):
@@ -345,7 +344,7 @@ export function AppendTaxonForm({
   const touched = !!(kingdom !== initialKingdom || rank || name || parentId);
   const leave = () =>
     router.push(
-      roleHref(kingdom ? `${TX_V2_ROOT}?kingdom=${kingdom}` : TX_V2_ROOT),
+      roleHref(kingdom ? `${TX_ROOT}?kingdom=${kingdom}` : TX_ROOT),
     );
 
   // ── The tree beside the fields: the path to the chosen taxon, the taxa beside it at each rank, the new one among them ──

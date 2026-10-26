@@ -12,37 +12,22 @@ import { FilterMenu } from "@/app/pages/_shared/filter-menu";
 import { type FilterGetters, type FilterSection, type FilterSelection, useSelectionFilter } from "@/app/pages/_shared/list-filter";
 import { ListEmptyState } from "@/app/pages/_shared/list-empty-state";
 import { ToolbarSearch } from "@/app/pages/_shared/toolbar-search";
-import { VersionSwitcher } from "@/app/pages/_shared/version-switcher";
 import { CHANGE_META, GROUP_PLURAL, TX_ROOT, type Kingdom } from "@/app/pages/_shared/taxonomy/tx-data";
 import { NOT_PROVIDED } from "@/app/pages/_shared/taxonomy/tx-fields";
-import { RANKS, TX_V2_ROOT, groupOf as nodeGroup, lineage, nsxOf, rankIndex, useTaxonNodes, type Rank, type TaxonNode } from "@/app/pages/_shared/taxonomy/tx-hierarchy";
+import { RANKS, groupOf as nodeGroup, lineage, nodeHref, nsxOf, rankIndex, useTaxonNodes, type Rank, type TaxonNode } from "@/app/pages/_shared/taxonomy/tx-hierarchy";
 import { NewChangeMenu, ViewSwitch, statusBadge } from "@/app/pages/_shared/taxonomy/tx-records";
 import { useRoleHref } from "@/lib/use-role-href";
 import { cx } from "@/utils/cx";
 
-// Taxonomy Management version 2 (the designer, 14 Oct 2026): the list holds every rank, not only species. Borrowed
-// from version 1's species list (tx-records.tsx SpeciesList, 0.9): the same header, toolbar, filter, List / Hierarchy
-// switch and table, with Rank added as a column and as a filter in the Filter menu ("retain the rank within filter to
-// maintain consistency"). Wording is version 1's, unchanged (the designer: "dont change any wording").
+// Taxonomy Management's list (the designer's version 2, 14 Oct 2026; the species-only version 1 was retired on 26 Oct 2026):
+// the list holds every rank, not only species. Built from version 1's species list (0.9): the same header, toolbar, filter,
+// List / Hierarchy switch and table, with Rank added as a column and as a filter in the Filter menu ("retain the rank within
+// filter to maintain consistency"). Wording is version 1's, unchanged (the designer: "dont change any wording").
 //
 // Every row opens its taxon's page (tx-v2-record.tsx): a species or infraspecies its species record, a higher taxon the same
 // page cut to its own rank. The heading is Taxa, not Species: the list manages every rank (the designer, 14 Oct 2026);
 // column 2 stays Flora and Fauna, the two teams. The columns are the designer's: Name, Rank, NSX Code, Group, Synonyms,
-// Status. Update taxonomy's Append opens version 2's Append; Rename, Combine and Split are still version 1's flows.
-
-/** The Version tool on the Prototype tools bar, on version 1's and version 2's lists and on version 2's Append. */
-export function TxVersionTool({ version }: { version: 1 | 2 }) {
-  return (
-    <VersionSwitcher
-      label="Taxonomy Management version to show"
-      current={String(version)}
-      options={[
-        { id: "1", label: "Version 1", description: "Species only; Append adds a species in steps", href: TX_ROOT },
-        { id: "2", label: "Version 2", description: "Every rank; Append adds an order, family, genus, species or infraspecies on one page", href: TX_V2_ROOT },
-      ]}
-    />
-  );
-}
+// Status. Update taxonomy opens Append, Rename, Combine and Split, each on one page.
 
 /** Genus and the ranks under it are written in italics (the botanical and zoological codes). */
 export const italicRank = (r: Rank) => rankIndex(r) >= rankIndex("Genus");
@@ -123,9 +108,6 @@ export function NodeTree({
 
 const PAGE_SIZE = 10;
 
-/** A taxon's page in version 2, any rank. */
-export const nodeHref = (id: string) => `${TX_V2_ROOT}/record?id=${encodeURIComponent(id)}`;
-
 const matches = (n: TaxonNode, q: string) => !q || [n.name, n.taxon?.common ?? "", nsxOf(n) ?? "", ...(n.taxon?.synonyms.map((s) => s.name) ?? [])].some((v) => v.toLowerCase().includes(q));
 
 export function HierarchyList({ kingdom, initialSearch = "" }: { kingdom: Kingdom | null; initialSearch?: string }) {
@@ -181,7 +163,7 @@ export function HierarchyList({ kingdom, initialSearch = "" }: { kingdom: Kingdo
             <SectionHeader.Subheading>Open a taxon to view and edit it, or to rename, combine or split it.</SectionHeader.Subheading>
           </div>
           <SectionHeader.Actions>
-            <NewChangeMenu hrefFor={(t) => `${TX_V2_ROOT}/${t}`} labelFor={(t) => (t === "append" ? "Append Taxon" : CHANGE_META[t].title)} />
+            <NewChangeMenu hrefFor={(t) => `${TX_ROOT}/${t}`} labelFor={(t) => (t === "append" ? "Append Taxon" : CHANGE_META[t].title)} />
           </SectionHeader.Actions>
         </SectionHeader.Group>
       </SectionHeader.Root>

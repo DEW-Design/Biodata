@@ -4,7 +4,7 @@
 // each can do. Everyone who can open the project sees it; a Project Manager on the project and every BioData Admin can change it.
 // It is the role record's Users-tab table (`EmbeddedTableFrame`, CONTRACTS 0.9), read first and changed through "Edit access" with
 // one Cancel / Save changes bar, as the project's other cards are edited (4.8). People are added, or made a Project Manager, in
-// Project contacts on the Project tab, not here (designer: leave it as it is for now).
+// Project contacts on the Overview tab, not here (designer: leave it as it is for now).
 
 import { useState } from "react";
 import { ArrowLeft, Edit05, Save01, Trash01, User01, XClose } from "@untitledui/icons";
@@ -80,7 +80,7 @@ export function ProjectAccessView({ people, onChange, canManage }: { people: Pro
         title={canManage ? "Project Managers and BioData Admins have full control" : "Only a Project Manager or a BioData Admin can change access"}
         description={
           canManage
-            ? "Choose what everyone else can do on this project. To add a person, or to make someone a Project Manager, edit Project contacts on the Project tab."
+            ? "Choose what everyone else can do on this project. To add a person, or to make someone a Project Manager, edit Project contacts on the Overview tab."
             : "Ask a Project Manager on this project if someone needs to do more."
         }
       />

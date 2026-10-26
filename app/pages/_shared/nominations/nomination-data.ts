@@ -15,6 +15,9 @@ import { areaRatingKey, ratingsPerArea, ruleLabel, type Rating } from "@/app/pag
 
 export { formatShortDate, todayIso };
 
+/** Where the nominations screens live: the list, a record at `/<id>`, `/new` and `/<id>/edit`. */
+export const NOMINATION_ROOT = "/pages/nominations";
+
 export type NominationStatus = "draft" | "submitted" | "under_review" | "returned" | "accepted" | "rejected";
 
 /** Workflow order: the Status column and the Status filter sort by this, not alphabetically. */

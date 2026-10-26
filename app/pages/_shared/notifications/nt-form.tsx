@@ -13,7 +13,6 @@ import { Button } from "@/components/base/buttons/button";
 import { Accordion } from "@/components/base/accordion/accordion";
 import { Dropdown } from "@/components/base/dropdown/dropdown";
 import { Input } from "@/components/base/input/input";
-import { RadioButton, RadioGroup } from "@/components/base/radio-buttons/radio-buttons";
 import { RadioGroupIconCard } from "@/components/base/radio-groups/radio-group-icon-card";
 import { ComboBox } from "@/components/base/select/combobox";
 import { MultiSelect } from "@/components/base/select/multi-select";
@@ -159,7 +158,6 @@ const firstKey = (keys: Selection) => (keys === "all" ? undefined : ([...keys][0
 export function NtForm({
   initial,
   start,
-  flow = "sections",
   duplicatedFrom,
   onClose,
   onSaveDraft,
@@ -171,8 +169,6 @@ export function NtForm({
   start?: NtDraft;
   /** The ID a new notification was duplicated from, for its history. */
   duplicatedFrom?: string;
-  /** "guided" (Option 2): the email is previewed beside every section, not only Message, and the trigger is picked from two cards. */
-  flow?: "sections" | "guided";
   onClose: () => void;
   /** `label` names recipients in the history the save writes. */
   onSaveDraft: (draft: NtDraft, label: RecipientLabel) => void;
@@ -322,20 +318,17 @@ export function NtForm({
           </Button>
         </div>
       </div>
-      {flow === "guided" && <p className="m-0 text-sm text-balance text-tertiary">{draft.trigger.kind === "event" && !ntEvent(draft.trigger.event) ? "Sent when the event you choose happens." : `Sent ${triggerSummary(draft.trigger).charAt(0).toLowerCase()}${triggerSummary(draft.trigger).slice(1)}.`}</p>}
+      <p className="m-0 text-sm text-balance text-tertiary">{draft.trigger.kind === "event" && !ntEvent(draft.trigger.event) ? "Sent when the event you choose happens." : `Sent ${triggerSummary(draft.trigger).charAt(0).toLowerCase()}${triggerSummary(draft.trigger).slice(1)}.`}</p>
       <EmailPreview draft={draft} labelOf={directory.label} showVariables={showVariables} onRemoveAttachment={(id) => update({ attachments: draft.attachments.filter((x) => x.id !== id) })} />
     </div>
   );
-  // Option 2: Trigger and Recipients sit beside the email they shape, so it builds as the form is filled.
-  const besidePreview = (content: ReactNode) =>
-    flow === "guided" ? (
-      <div className="grid gap-8 xl:grid-cols-[minmax(0,1fr)_420px]">
-        <div className="min-w-0">{content}</div>
-        <div className="min-w-0">{previewPanel}</div>
-      </div>
-    ) : (
-      content
-    );
+  // Trigger and Recipients sit beside the email they shape, so it builds as the form is filled.
+  const besidePreview = (content: ReactNode) => (
+    <div className="grid gap-8 xl:grid-cols-[minmax(0,1fr)_420px]">
+      <div className="min-w-0">{content}</div>
+      <div className="min-w-0">{previewPanel}</div>
+    </div>
+  );
 
   return (
     <div className="flex min-h-0 flex-1 flex-col">
@@ -372,23 +365,16 @@ export function NtForm({
           besidePreview(
           <>
             <FormRow title="Sent" required description="Straight after something happens in BioData SA, or on a regular schedule.">
-              {flow === "guided" ? (
-                <RadioGroupIconCard
-                  aria-label="Sent"
-                  className="grid gap-3 sm:grid-cols-2"
-                  value={draft.trigger.kind}
-                  onChange={(kind) => kind !== draft.trigger.kind && update({ trigger: kind === "event" ? eventTrigger() : scheduleTrigger() })}
-                  items={[
-                    { value: "event", title: "When something happens", description: "For example, when an observation is approved.", icon: Zap },
-                    { value: "schedule", title: "On a schedule", description: "Every day, week, month or year.", icon: Clock },
-                  ]}
-                />
-              ) : (
-                <RadioGroup aria-label="Sent" value={draft.trigger.kind} onChange={(kind) => kind !== draft.trigger.kind && update({ trigger: kind === "event" ? eventTrigger() : scheduleTrigger() })}>
-                  <RadioButton value="event" label="When something happens" hint="For example, when an observation is approved." />
-                  <RadioButton value="schedule" label="On a schedule" hint="Every day, week, month or year." />
-                </RadioGroup>
-              )}
+              <RadioGroupIconCard
+                aria-label="Sent"
+                className="grid gap-3 sm:grid-cols-2"
+                value={draft.trigger.kind}
+                onChange={(kind) => kind !== draft.trigger.kind && update({ trigger: kind === "event" ? eventTrigger() : scheduleTrigger() })}
+                items={[
+                  { value: "event", title: "When something happens", description: "For example, when an observation is approved.", icon: Zap },
+                  { value: "schedule", title: "On a schedule", description: "Every day, week, month or year.", icon: Clock },
+                ]}
+              />
             </FormRow>
 
             {draft.trigger.kind === "event" && (

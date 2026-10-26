@@ -1,8 +1,8 @@
 "use client";
 
 // The project's Datasets page (30 Sept 2026): a report of every dataset uploaded to this project,
-// opened from the Datasets box in "Project at a glance" (`?view=datasets`, same route so the session's
-// edits stay, like the flagged concepts review). It follows the collection pattern: a section header
+// opened by `?view=datasets` (same route so the session's edits stay, like the flagged concepts review). Its door was the Datasets box in
+// "Project at a glance" until the designer removed that section (26 Oct 2026); nothing on the project page opens it now (open: where it goes). It follows the collection pattern: a section header
 // with the count and Upload dataset, then search and a table whose rows open the dataset
 // (`&dataset=<id>`), laid out like every record page (back link, identity card, tabs).
 //
@@ -418,7 +418,8 @@ function DatasetDetail({ row, datasetId, backHref }: { row: DatasetRow | null; d
 }
 
 
-// ── The Datasets card (Project at a glance, Option 3) ──
+// ── The Datasets card (drawn nowhere since 26 Oct 2026) ──
+// It was the first card of "Project at a glance", which the designer removed; it is kept, whole, for wherever the Datasets list gets its door.
 // Its own card above the records card, since datasets are the feed and not part of the records. The
 // header names it with its count and holds its actions (View all, Upload dataset); one row under it is
 // the last upload: the file and, in a few words, what is happening with it (live while it runs),

@@ -5,18 +5,15 @@ import { useSearchParams } from "next/navigation";
 import { NominationList } from "@/app/pages/_shared/nominations/nomination-list";
 import { NominationShell } from "@/app/pages/_shared/nominations/nomination-shell";
 import { useNominationScope } from "@/app/pages/_shared/nominations/nomination-scope";
-import { NominationVersionProvider, type NominationVersion } from "@/app/pages/_shared/nominations/nomination-version";
 import { nominationStatusOrder, type NominationStatus } from "@/app/pages/_shared/nominations/nomination-data";
 import { useFeatureAccess } from "@/lib/use-feature-access";
 
-// The nominations list, shared by both versions' routes (/pages/nominations and /pages/nominations/version-3).
-export function NominationsPage({ version }: { version: NominationVersion }) {
+// The nominations list (/pages/nominations).
+export function NominationsPage() {
   return (
-    <NominationVersionProvider version={version}>
-      <Suspense fallback={null}>
-        <Nominations />
-      </Suspense>
-    </NominationVersionProvider>
+    <Suspense fallback={null}>
+      <Nominations />
+    </Suspense>
   );
 }
 

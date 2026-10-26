@@ -19,13 +19,11 @@
 //  - Species: every species recorded in the project, with where and when.
 //  - Artefacts and attachments: every file attached to a record, each linked back to its record.
 //
-// The Project tab opens with Project at a glance: a Datasets card (registered users and above; the
-// last upload and what is happening with it) above a records card (records by kind, then species,
-// flagged concepts and artefacts as rows on them). The Datasets card's View all opens the project's
-// Datasets page (`?view=datasets`, datasets-view.tsx): every upload to this project, the one in progress
-// with its pre-flight validation, and each dataset's own page (`&dataset=<id>`).
+// The Overview tab (called Project until 26 Oct 2026) opens with the project's own cards. It had a "Project at a glance" section above them (a Datasets card over a records card);
+// the designer removed it as a double-up of the tabs' counts and the header. The project's Datasets page (`?view=datasets`, datasets-view.tsx: every upload to this project, the one
+// in progress with its pre-flight validation, and each dataset's own page, `&dataset=<id>`) still exists, and nothing on the project page opens it now: its door is open.
 //
-// Everyone but public users can edit: project metadata on the Project tab and each record's metadata
+// Everyone but public users can edit: project metadata on the Overview tab and each record's metadata
 // in the inspector, through one shared card and edit flow (editable-section.tsx). Edits are kept for
 // the session (edit-store.tsx).
 
@@ -37,7 +35,7 @@ import {
   TabPanel,
   Tabs as ContentTabs,
 } from "@/components/application/tabs/tabs";
-import { ArrowNarrowRight, Database01, Feather, Folder, Key01, Paperclip } from "@untitledui/icons";
+import { ArrowNarrowRight, Database01, Feather, Grid01, Key01, Paperclip } from "@untitledui/icons";
 import { Button } from "@/components/base/buttons/button";
 import { BadgeWithDot } from "@/components/base/badges/badges";
 import { AlertFullWidth } from "@/components/application/alerts/alerts";
@@ -67,8 +65,6 @@ import { EditStoreProvider, useEditStore } from "./edit-store";
 import { ADELAIDE_HILLS_ID, adelaideHillsSeed, exploreProject, seedFromExplore, type ProjectSeed } from "./project-seed";
 import {
   RecordsExplorer,
-  filterForKind,
-  type KindFilter,
   type RecordsView,
 } from "./records-explorer";
 import type { FilterSelection } from "@/app/pages/_shared/list-filter";
@@ -196,7 +192,7 @@ function ProjectDetail({ basePath, notice }: ProjectDetailTemplateProps) {
   const species = useProjectSpecies();
   // Reviewing flagged concepts is an admin's job (BioData Admin, Privileged Admin). It is management
   // work, not a view of the records, so it is its own screen (`?view=review`, same route so the
-  // session's edits stay), opened from a banner in Project records, from Project at a glance, or from the admin's Home.
+  // session's edits stay), opened from a banner in Project records or from the admin's Home.
   const canReview = useCanReview();
   const openReviews = useReviewItems().open.length;
   const liveEntries = useLiveEntries();
@@ -208,8 +204,8 @@ function ProjectDetail({ basePath, notice }: ProjectDetailTemplateProps) {
   const datasetParam = searchParams.get("dataset");
   const datasetsHref = roleHref(withQuery(basePath, "view=datasets"));
   const datasetHref = (id: string) => roleHref(withQuery(basePath, `view=datasets&dataset=${encodeURIComponent(id)}`));
-  // The review returns to where it was opened from (`&from=`): the Project tab's at-a-glance, or
-  // Project records' banner. Anything else (an old link) goes back to Project records.
+  // The review returns to where it was opened from (`&from=`): the Overview tab (the lab's
+  // flagged concepts link), or Project records' banner. Anything else (an old link) goes back to Project records.
   const reviewFrom: DetailTab = searchParams.get("from") === "project" ? "project" : "records";
   const openReview = (from: DetailTab) => router.push(roleHref(withQuery(basePath, `view=review&from=${from}`)));
   const closeReview = () => {
@@ -239,12 +235,6 @@ function ProjectDetail({ basePath, notice }: ProjectDetailTemplateProps) {
       : section.items?.find((item) => item.key);
     if (relatedLink?.key) router.push(roleHref(keyHref(relatedLink.key)));
     else setActiveSection(section.label);
-  };
-
-  const goToRecords = (kind: KindFilter, recordId?: string) => {
-    setRecordFilter(filterForKind(kind));
-    if (recordId) setSelectedId(recordId);
-    setDetailTab("records");
   };
 
   // "Open record" from an artefact goes to the record and to the field the file is attached to.
@@ -395,7 +385,7 @@ function ProjectDetail({ basePath, notice }: ProjectDetailTemplateProps) {
                       size="md"
                       className="gap-6"
                     >
-                      <Tab id="project" label="Project" icon={Folder} />
+                      <Tab id="project" label="Overview" icon={Grid01} />
                       <Tab
                         id="records"
                         label="Project records"
@@ -418,17 +408,8 @@ function ProjectDetail({ basePath, notice }: ProjectDetailTemplateProps) {
                     </TabList>
 
                     <TabPanel id="project" className="pt-6">
-                      <ProjectTab
-                        layout="v3"
-                        onGoToRecords={goToRecords}
-                        onGoToArtefacts={() => setDetailTab("artefacts")}
-                        onGoToDatasets={() => router.push(datasetsHref)}
-                        onGoToDataset={(id) => router.push(datasetHref(id))}
-                        artefactKinds={artefacts.map((a) => a.type)}
-                        artefactRecordCount={new Set(artefacts.map((a) => a.recordId)).size}
-                        onGoToSpecies={() => setDetailTab("species")}
-                        onGoToFlagged={() => openReview("project")}
-                      />
+                      {/* The tab is called Overview, so the section inside it does not repeat the word as a heading. */}
+                      <ProjectTab layout="v3" overviewHeading={false} />
                     </TabPanel>
 
                     <TabPanel id="records" className="flex flex-col gap-4 pt-4">

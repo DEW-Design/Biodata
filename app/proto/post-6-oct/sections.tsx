@@ -1,7 +1,7 @@
 "use client";
 
 // What each rail section shows in the panel for /proto/post-6-oct. The lists are the real ones (`DlaAllList`, `DsaAllList`,
-// `NominationList`, `UsersList`, `SpeciesList`, `NtList`, `CvList`, `ProjectListContent`, `TemplateList`), not lookalikes, taken
+// `NominationList`, `UsersList`, `HierarchyList`, `NtList`, `CvList`, `ProjectListContent`, `TemplateList`), not lookalikes, taken
 // without their shells. Each section's column 2 has no home in this layout, so it is described here as the section's
 // views (what the bar's view menu offers) and its actions (the bar's "..." menu):
 //   Projects  All projects, My projects            DLA            All requests, My requests (+ Export CSV)
@@ -50,7 +50,7 @@ import { NT_CATEGORIES } from "@/app/pages/_shared/notifications/nt-data";
 import { NtList } from "@/app/pages/_shared/notifications/nt-list";
 import { ProjectListContent } from "@/app/pages/_shared/project-list-content";
 import { sectionIcons } from "@/app/pages/_shared/nav-icons";
-import { SpeciesList } from "@/app/pages/_shared/taxonomy/tx-records";
+import { HierarchyList } from "@/app/pages/_shared/taxonomy/tx-v2-list";
 import type { Kingdom } from "@/app/pages/_shared/taxonomy/tx-data";
 import { TemplateList, useTemplateFilter } from "@/app/pages/_shared/template-finder/template-list";
 import { speciesIcon } from "@/app/pages/_shared/template-finder/template-nav";
@@ -189,7 +189,7 @@ const Taxonomy: SectionDef = {
       requested,
       "all",
     ),
-  Content: ({ view }) => <SpeciesList key={view} kingdom={view === "Flora" || view === "Fauna" ? (view as Kingdom) : null} />,
+  Content: ({ view }) => <HierarchyList key={view} kingdom={view === "Flora" || view === "Fauna" ? (view as Kingdom) : null} />,
 };
 
 const Notifications: SectionDef = {

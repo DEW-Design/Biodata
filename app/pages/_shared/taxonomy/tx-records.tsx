@@ -3,28 +3,23 @@
 import { useState, type FC } from "react";
 import { useRouter } from "next/navigation";
 import { ListBox, ListBoxItem, ToggleButton, ToggleButtonGroup } from "react-aria-components";
-import { ChevronDown, Dataflow03, Edit05, GitBranch01, GitMerge, PencilLine, Plus, Table as TableIcon, Trash01, Feather, Flag01, ArrowLeft, Save01, XClose, File06, Type01, Map02, Globe01, MarkerPin04, BookClosed, List } from "@untitledui/icons";
+import { ChevronDown, Edit05, GitBranch01, GitMerge, PencilLine, Plus, Trash01, Flag01, ArrowLeft, Save01, XClose, File06, Type01, Map02, Globe01, MarkerPin04, BookClosed, List } from "@untitledui/icons";
 import { AlertFullWidth } from "@/components/application/alerts/alerts";
 import { ConfirmationModal, DestructiveModal } from "@/components/application/modals/modal";
-import { SectionHeader } from "@/components/application/section-headers/section-headers";
-import { Table, TableCard } from "@/components/application/table/table";
+import { Table } from "@/components/application/table/table";
 import { Tab, TabList, TabPanel, Tabs } from "@/components/application/tabs/tabs";
 import { toast } from "@/components/application/toast/toast";
-import { Badge, CountBadge } from "@/components/base/badges/badges";
+import { Badge } from "@/components/base/badges/badges";
 import { Button } from "@/components/base/buttons/button";
 import { Dropdown } from "@/components/base/dropdown/dropdown";
 import { HeroMeta, RecordBackLink, RecordHero } from "@/app/pages/_shared/record-hero";
 import { RecordActionBar } from "@/app/pages/_shared/record-action-bar";
-import { type FilterGetters, type FilterSection, type FilterSelection, useSelectionFilter } from "@/app/pages/_shared/list-filter";
-import { AttributeFilterChips } from "@/app/pages/_shared/attribute-filter";
-import { FilterMenu } from "@/app/pages/_shared/filter-menu";
-import { ToolbarSearch } from "@/app/pages/_shared/toolbar-search";
 import { segmentClass, segmentTrayClass } from "@/app/pages/project-detail/segmented";
 import { FieldGrid, FieldGridView, NOT_PROVIDED, withValue } from "@/app/pages/_shared/taxonomy/tx-fields";
 import { TaxonTabContent, TaxonTableEditor, linkedRows, useDynamicOptions } from "@/app/pages/_shared/taxonomy/tx-editor";
-import { TaxonomyTree, matchesQuery } from "@/app/pages/_shared/taxonomy/tx-finder";
+import { nodeHref, useTaxonNodes } from "@/app/pages/_shared/taxonomy/tx-hierarchy";
 import { deleteSynonym, saveSynonym, saveTaxon, useTaxa, useTaxaHydrated, useTaxon } from "@/app/pages/_shared/taxonomy/tx-store";
-import { ATTRIBUTE_COLUMNS, CHANGE_META, TX_ROOT, CHANGE_TYPES, GROUP_PLURAL, synonymFieldsFor, tabsFor, type ChangeType, type FieldDef, type Kingdom, type Synonym, type TabDef, type Taxon } from "@/app/pages/_shared/taxonomy/tx-data";
+import { ATTRIBUTE_COLUMNS, CHANGE_META, TX_ROOT, CHANGE_TYPES, synonymFieldsFor, tabsFor, type ChangeType, type FieldDef, type Kingdom, type Synonym, type TabDef, type Taxon } from "@/app/pages/_shared/taxonomy/tx-data";
 import { useRoleHref } from "@/lib/use-role-href";
 import { cx } from "@/utils/cx";
 
@@ -41,23 +36,23 @@ export const TAB_ICON: Record<string, FC<{ className?: string }>> = {
   attributes: List,
 };
 
-// Taxonomy Management finds and shows a species the way every collection in the app does ("List ->
-// deep dive", ref-shell.md): a species table (4.2) with the hierarchy as a secondary view, and a
-// species record laid out like the project page (4.6), edited in place (4.8). A species' Rename,
-// Combine and Split, and "Update taxonomy" on the list, open the guided taxon change (tx-flows.tsx).
+// Taxonomy Management shows a species the way every collection in the app does ("List -> deep dive",
+// ref-shell.md): a species record laid out like the project page (4.6), edited in place (4.8), opened from the
+// list of every rank (tx-v2-list.tsx). A species' Rename, Combine and Split, and "Update taxonomy" on the
+// list, open each change on its own page (tx-v2-rename.tsx and the others). The species-only list and guided
+// change that were here were retired on 26 Oct 2026.
 //
 // Designer review, Sept 30 2026 (Option 3 chosen; Options 1 and 2 retired Oct 1 2026):
 // - the toolbar is search, then Filter on the left, and the List / Hierarchy switch on the right, drawn
 //   like the project page's Tree / Table switch (the same segmented classes and icons), spaced like
 //   User Management's lists;
-// - "Update taxonomy" is a menu of the four changes, each opening its guided change directly;
+// - "Update taxonomy" is a menu of the four changes;
 // - a record's cards read in the Figma's grid, label over value, the same columns as when edited;
 // - Synonyms is its own view of the record (the team's Figma comment: see them all, add one with "+",
 //   remove the one shown with "-"), not another tab.
 
-/** A taxon change, started from a species or not. */
-export const actionHref = (type: ChangeType, from?: string) => `${TX_ROOT}/new?type=${type}${from ? `&from=${encodeURIComponent(from)}` : ""}`;
-export const speciesHref = (id: string) => `${TX_ROOT}/${encodeURIComponent(id)}`;
+/** A taxon change's page (Append, Rename, Combine or Split), opened on a kingdom's taxa when one is given. */
+export const actionHref = (type: ChangeType, kingdom?: Kingdom) => `${TX_ROOT}/${type}${kingdom ? `?kingdom=${kingdom}` : ""}`;
 
 export const statusBadge = (t: { current: boolean }) => (
   <Badge size="sm" color={t.current ? "success" : "gray"}>
@@ -90,7 +85,7 @@ export function ViewSwitch<T extends string>({ label, value, onChange, items }: 
   );
 }
 
-/** "Update taxonomy": a menu of the four changes, each opening its guided change at the first step it needs. `hrefFor` sends a change elsewhere (version 2's Append). */
+/** "Update taxonomy": a menu of the four changes, each opening its own page. `hrefFor` sends a change elsewhere. */
 export function NewChangeMenu({ hrefFor = (t: ChangeType) => actionHref(t), labelFor = (t: ChangeType) => CHANGE_META[t].title }: { hrefFor?: (type: ChangeType) => string; labelFor?: (type: ChangeType) => string }) {
   const router = useRouter();
   const roleHref = useRoleHref();
@@ -108,139 +103,6 @@ export function NewChangeMenu({ hrefFor = (t: ChangeType) => actionHref(t), labe
         </Dropdown.Menu>
       </Dropdown.Popover>
     </Dropdown.Root>
-  );
-}
-
-const PAGE_SIZE = 10;
-
-export function SpeciesList({ kingdom }: { kingdom: Kingdom | null }) {
-  const roleHref = useRoleHref();
-  const router = useRouter();
-  const all = useTaxa();
-  const [search, setSearch] = useState("");
-  const [view, setView] = useState<"list" | "hierarchy">("list");
-  const [filters, setFilters] = useState<FilterSelection>({ status: new Set(["current"]) });
-  const [page, setPage] = useState(1);
-  const [pageSize, setPageSize] = useState(PAGE_SIZE);
-
-  const scoped = all.filter((t) => !kingdom || t.kingdom === kingdom);
-  const q = search.trim().toLowerCase();
-  const sections: FilterSection[] = [
-    { id: "group", label: "Group", icon: Feather, options: [...new Set(scoped.map((t) => GROUP_PLURAL[t.group]))].sort().map((g) => ({ id: g, label: g })) },
-    { id: "status", label: "Status", icon: Flag01, options: [{ id: "current", label: "Current" }, { id: "superseded", label: "Superseded" }] },
-  ];
-  const getters: FilterGetters<Taxon> = { group: (t) => GROUP_PLURAL[t.group], status: (t) => (t.current ? "current" : "superseded") };
-  const filter = useSelectionFilter(sections, getters, filters, (next) => {
-    setFilters(next);
-    setPage(1);
-  });
-  const rows = scoped.filter((t) => matchesQuery(t, q) && filter.matches(t)).sort((a, b) => (a.common || a.scientific).localeCompare(b.common || b.scientific));
-  const pageCount = Math.max(1, Math.ceil(rows.length / pageSize));
-  const currentPage = Math.min(page, pageCount);
-  const paged = rows.slice((currentPage - 1) * pageSize, currentPage * pageSize);
-  const title = kingdom ? `${kingdom} species` : "Species";
-
-  return (
-    <div className="flex min-h-0 flex-1 flex-col">
-      <SectionHeader.Root className="shrink-0 p-6">
-        <SectionHeader.Group>
-          <div className="flex flex-1 flex-col gap-1">
-            <div className="flex items-center gap-2">
-              <SectionHeader.Heading>{title}</SectionHeader.Heading>
-              <CountBadge count={rows.length} color="brand" />
-            </div>
-            <SectionHeader.Subheading>Open a species to view and edit its taxonomy, or to rename, combine or split it.</SectionHeader.Subheading>
-          </div>
-          <SectionHeader.Actions>
-            <NewChangeMenu />
-          </SectionHeader.Actions>
-        </SectionHeader.Group>
-      </SectionHeader.Root>
-
-      <div className="flex min-h-0 flex-1 flex-col gap-4 p-6">
-        <div className="flex shrink-0 flex-wrap items-center gap-3">
-          <ToolbarSearch
-            label="Search species"
-            placeholder="Search by name, NSX code, family or synonym"
-            value={search}
-            onChange={(v) => {
-              setSearch(v);
-              setPage(1);
-            }}
-          />
-          <FilterMenu filter={filter} />
-          <div className="ml-auto">
-            <ViewSwitch
-              label="Show species as"
-              value={view}
-              onChange={setView}
-              items={[
-                { id: "list", label: "List", icon: TableIcon },
-                { id: "hierarchy", label: "Hierarchy", icon: Dataflow03 },
-              ]}
-            />
-          </div>
-        </div>
-        <AttributeFilterChips filter={filter} />
-
-        {rows.length === 0 ? (
-          <p className="py-6 text-sm text-tertiary">{q ? `No species match "${search.trim()}".` : "No species match your filters."}</p>
-        ) : view === "hierarchy" ? (
-          <div className="min-h-0 flex-1 overflow-y-auto rounded-xl p-3 ring-1 ring-secondary ring-inset">
-            <TaxonomyTree key={`${q}:${rows.length}`} taxa={rows} selectedId={null} openAll={!!q} onSelect={(id) => router.push(roleHref(speciesHref(id)))} />
-          </div>
-        ) : (
-          <TableCard.Root className="flex min-h-48 flex-1 flex-col">
-            <Table layout="fixed" className="min-w-[1000px]" bodyScrollable aria-label={title}>
-              <Table.Header sticky>
-                <Table.Head id="name" label="Species" isRowHeader className="w-[28%]" />
-                <Table.Head id="nsx" label="NSX Code" className="w-[12%]" />
-                <Table.Head id="family" label="Family" className="w-[18%]" />
-                <Table.Head id="group" label="Group" className="w-[14%]" />
-                <Table.Head id="synonyms" label="Synonyms" className="w-[14%]" />
-                <Table.Head id="status" label="Status" className="w-[14%]" />
-              </Table.Header>
-              <Table.Body items={paged}>
-                {(t) => (
-                  <Table.Row id={t.id} href={roleHref(speciesHref(t.id))} textValue={t.scientific} className="group data-[href]:cursor-pointer">
-                    <Table.Cell>
-                      <div className="flex flex-col">
-                        <p className="text-sm font-medium whitespace-nowrap text-primary group-hover:text-brand-700 group-hover:underline">{t.common || t.scientific}</p>
-                        <p className="text-sm text-tertiary italic">{t.scientific}</p>
-                      </div>
-                    </Table.Cell>
-                    <Table.Cell>
-                      <span className={t.nsx ? "text-sm text-tertiary tabular-nums" : "text-sm text-quaternary"}>{t.nsx ?? NOT_PROVIDED}</span>
-                    </Table.Cell>
-                    <Table.Cell>
-                      <span className="text-sm text-secondary">{t.ranks.family || NOT_PROVIDED}</span>
-                    </Table.Cell>
-                    <Table.Cell>
-                      <span className="text-sm text-secondary">{GROUP_PLURAL[t.group]}</span>
-                    </Table.Cell>
-                    <Table.Cell>
-                      <span className="text-sm text-tertiary tabular-nums">{t.synonyms.length}</span>
-                    </Table.Cell>
-                    <Table.Cell>{statusBadge(t)}</Table.Cell>
-                  </Table.Row>
-                )}
-              </Table.Body>
-            </Table>
-            <TableCard.PaginationNumbered
-              page={currentPage}
-              pageCount={pageCount}
-              onPageChange={setPage}
-              pageSize={pageSize}
-              onPageSizeChange={(size) => {
-                setPageSize(size);
-                setPage(1);
-              }}
-              totalCount={rows.length}
-            />
-          </TableCard.Root>
-        )}
-      </div>
-    </div>
   );
 }
 
@@ -440,10 +302,11 @@ function SynonymsView({
   );
 }
 
-/** `back` sends the Back link elsewhere: version 2 opens a species from its list of every rank. */
-export function SpeciesRecord({ id, back = { href: TX_ROOT, label: "All species" } }: { id: string; back?: { href: string; label: string } }) {
+/** A species' page, opened from the list of every rank; its Back link returns there. */
+export function SpeciesRecord({ id }: { id: string }) {
   const taxon = useTaxon(id);
   const taxa = useTaxa();
+  const nodes = useTaxonNodes();
   const hydrated = useTaxaHydrated();
   const router = useRouter();
   const roleHref = useRoleHref();
@@ -461,7 +324,7 @@ export function SpeciesRecord({ id, back = { href: TX_ROOT, label: "All species"
         <h1 className="text-lg font-semibold text-primary">Species not found</h1>
         <p className="max-w-sm text-sm text-balance text-tertiary">There is no taxon with the id &ldquo;{id}&rdquo;.</p>
         <Button color="link-color" size="sm" href={roleHref(TX_ROOT)}>
-          All species
+          All taxa
         </Button>
       </div>
     ) : null;
@@ -496,7 +359,7 @@ export function SpeciesRecord({ id, back = { href: TX_ROOT, label: "All species"
   return (
     <div className="flex min-h-0 flex-1 flex-col">
       <div className="min-h-0 flex-1 overflow-y-auto pb-6">
-        <RecordBackLink href={roleHref(back.href)}>{back.label}</RecordBackLink>
+        <RecordBackLink href={roleHref(TX_ROOT)}>All taxa</RecordBackLink>
         <RecordHero
           eyebrow={`${taxon.kingdom} species`}
           title={taxon.common || taxon.scientific}
@@ -515,9 +378,9 @@ export function SpeciesRecord({ id, back = { href: TX_ROOT, label: "All species"
                 },
               }}
               menu={[
-                { id: "rename", label: "Rename", icon: PencilLine, onPress: () => router.push(roleHref(actionHref("rename", taxon.id))), isDisabled: !taxon.current || !taxon.nsx },
-                { id: "combine", label: "Combine with another taxon", icon: GitMerge, onPress: () => router.push(roleHref(actionHref("combine", taxon.id))), isDisabled: !taxon.current || !taxon.nsx },
-                { id: "split", label: "Split", icon: GitBranch01, onPress: () => router.push(roleHref(actionHref("split", taxon.id))), isDisabled: !taxon.current || !taxon.nsx },
+                { id: "rename", label: "Rename", icon: PencilLine, onPress: () => router.push(roleHref(actionHref("rename", taxon.kingdom))), isDisabled: !taxon.current || !taxon.nsx },
+                { id: "combine", label: "Combine with another taxon", icon: GitMerge, onPress: () => router.push(roleHref(actionHref("combine", taxon.kingdom))), isDisabled: !taxon.current || !taxon.nsx },
+                { id: "split", label: "Split", icon: GitBranch01, onPress: () => router.push(roleHref(actionHref("split", taxon.kingdom))), isDisabled: !taxon.current || !taxon.nsx },
               ]}
             />
           }
@@ -537,8 +400,8 @@ export function SpeciesRecord({ id, back = { href: TX_ROOT, label: "All species"
               color="gray"
               title="This taxon is no longer current"
               description={successors.length ? `It became ${successors.map((s) => s.scientific).join(", ")}. It can be viewed, but not renamed, combined or split.` : "It can be viewed, but not renamed, combined or split."}
-              confirmLabel={successors.length ? `Open ${successors[0].scientific}` : "All species"}
-              onConfirm={() => router.push(roleHref(successors.length ? speciesHref(successors[0].id) : TX_ROOT))}
+              confirmLabel={successors.length ? `Open ${successors[0].scientific}` : "All taxa"}
+              onConfirm={() => router.push(roleHref(successors.length ? nodeHref(nodes.find((n) => n.taxon?.id === successors[0].id)?.id ?? successors[0].id) : TX_ROOT))}
             />
           </div>
         )}

@@ -1,6 +1,6 @@
 "use client";
 
-// Editing one card of the Project tab in the edit drawer. The cards and their titles are the same as
+// Editing one card of the Overview tab in the edit drawer. The cards and their titles are the same as
 // the page shows (Project details, Published by, Project managers, Geographic extent, Focus, species
 // and method, Permits and identifiers, and one card per restriction). Each card's form is built from
 // the Add Project registration's own pieces (`SectionFields` for Project details and each
@@ -35,7 +35,7 @@ import { emptyContact, emptyPermitRow, emptyProjectManager, isGeoExtentComplete,
 import { EditDrawer } from "./edit-drawer";
 import { PROJECT_STATUSES, useEditStore, type ProjectState, type ProjectStatus } from "./edit-store";
 
-/** The cards of the Project tab. Restriction cards use the registration's restriction keys. */
+/** The cards of the Overview tab. Restriction cards use the registration's restriction keys. */
 export type ProjectCardId = "details" | "owner" | "managers" | "extent" | "collection" | "permits" | "add-restriction" | RestrictionTypeKey;
 
 export const CARD_TITLES: Record<ProjectCardId, string> = {
@@ -429,7 +429,7 @@ function CardDrawer({ id, onClose, onOpenNext }: { id: ProjectCardId; onClose: (
   );
 }
 
-/** Opens the drawer for one card of the Project tab; `null` closes it. */
+/** Opens the drawer for one card of the Overview tab; `null` closes it. */
 export function ProjectCardDrawer({ card, onChange }: { card: ProjectCardId | null; onChange: (next: ProjectCardId | null) => void }) {
   if (!card) return null;
   // Keyed so each card starts from the current saved project, never a stale draft.

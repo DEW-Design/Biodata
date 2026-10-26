@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { Tabs as ContentTabs, type Key } from "react-aria-components";
-import { CheckCircle, ClockRewind, Edit05, File06, MessageAlertCircle, PlayCircle, Trash01, XCircle } from "@untitledui/icons";
+import { ArrowNarrowLeft, CheckCircle, ClockRewind, Edit05, File06, MessageAlertCircle, PlayCircle, Trash01, XCircle } from "@untitledui/icons";
 import { Badge } from "@/components/base/badges/badges";
 import { Button } from "@/components/base/buttons/button";
 import { Tab, TabList, TabPanel } from "@/components/application/tabs/tabs";
@@ -15,15 +15,14 @@ import { RecordActionBar, type RecordAction } from "@/app/pages/_shared/record-a
 import { HeroMeta, RecordBackLink, RecordHero, RecordRow } from "@/app/pages/_shared/record-hero";
 import { ProtectionView } from "@/app/pages/_shared/nominations/nomination-protection";
 import { AlertFullWidth } from "@/components/application/alerts/alerts";
-import { formatShortDate, kindOf, nominationStatusMeta, nominationSubject, speciesFor, type Nomination } from "@/app/pages/_shared/nominations/nomination-data";
+import { NOMINATION_ROOT, formatShortDate, kindOf, nominationStatusMeta, nominationSubject, speciesFor, type Nomination } from "@/app/pages/_shared/nominations/nomination-data";
 import { RiskBadge } from "@/app/pages/_shared/nominations/nomination-rating-fields";
 import { accessLevelMeta, nominationRatingKeys, ratingKeyLabel } from "@/app/pages/_shared/nominations/nomination-rating";
 import { setNominationRating, useNominations } from "@/app/pages/_shared/nominations/nomination-store";
-import { useNominationVersion } from "@/app/pages/_shared/nominations/nomination-version";
 import { useFeatureAccess } from "@/lib/use-feature-access";
 import { useRoleHref } from "@/lib/use-role-href";
 
-// Version 3 of a nomination's page (the designer, 12 Oct 2026), rebuilt from the audit of what each person opens it for: the
+// A nomination's page (the designer's version 3, 12 Oct 2026; the first two layouts were retired on 26 Oct 2026), rebuilt from the audit of what each person opens it for: the
 // nominator (where is it, is anything waiting on me), the reviewer (is the case sound; accept, return or reject) and the Super
 // Admin (how sensitive is each thing protected, who may see it, what is already protected). A nomination reads as one sentence,
 // "this species or place, these details hidden, for this reason, at this stage", so the page keeps that sentence together:
@@ -32,17 +31,17 @@ import { useRoleHref } from "@/lib/use-role-href";
 //   designer: "the status card and the species card and the image on the right is not needed"): the status is the card's badge,
 //   the timeline is History, and the decisions are the card's actions again as 4.6 has them (Start review, or Accept with Return
 //   and Reject in "..."). Only a note the panel wrote is shown, as one notice under the card. Pressing Accept with ratings
-//   missing shows "Ratings missing" over the table, as version 2 does.
+//   missing shows "Ratings missing" over the table, as the earlier layout did.
 // - Two tabs, Nomination and History. Nomination: "Already protected" (what earlier accepted nominations of the species
 //   protect, for both admin roles, only when there is something), then what this nomination protects (`ProtectionView`,
 //   nomination-protection.tsx, 14 Oct 2026: a summary, then one card per reason listing the items it covers, each with its
-//   rating, set in place by an admin while under review), and no nominator's email (removed 14 Oct 2026). Audit history is the shared audit summary, as on version 2 (14 Oct 2026). The old
+//   rating, set in place by an admin while under review), and no nominator's email (removed 14 Oct 2026). Audit history is the shared audit summary (14 Oct 2026). The old
 //   Overview went: the card already holds its facts.
 // - One name, Protection: no "What to protect", "Data release" or "Current rating" headings, and no form helper text.
 
 type Decision = null | "accept" | "delete";
 
-export function NominationRecordV3({
+export function NominationRecord({
   nomination,
   onEdit,
   onDelete,
@@ -60,7 +59,6 @@ export function NominationRecordV3({
   onReturn: (note: string) => void;
 }) {
   const roleHref = useRoleHref();
-  const { base } = useNominationVersion();
   const all = useNominations();
   const canReview = useFeatureAccess("nominationReview");
   const canRate = useFeatureAccess("nominationRating");
@@ -123,7 +121,7 @@ export function NominationRecordV3({
 
   return (
     <div className="flex min-h-0 flex-1 flex-col overflow-y-auto">
-      <RecordBackLink href={roleHref(base)}>Back to nominations</RecordBackLink>
+      <RecordBackLink href={roleHref(NOMINATION_ROOT)}>Back to nominations</RecordBackLink>
 
       <RecordHero
         eyebrow={kind === "location" ? "Sensitive location nomination" : "Sensitive species nomination"}
@@ -179,7 +177,7 @@ export function NominationRecordV3({
                               <span>{ratingKeyLabel(o, k)}</span>
                               <RiskBadge risk={r.risk} />
                               <span className="text-tertiary">{accessLevelMeta[r.access].label}</span>
-                              <Button color="link-color" size="sm" href={roleHref(`${base}/${o.id}`)}>
+                              <Button color="link-color" size="sm" href={roleHref(`${NOMINATION_ROOT}/${o.id}`)}>
                                 {o.id}
                               </Button>
                             </li>
@@ -275,6 +273,19 @@ export function NominationRecordV3({
           setReturnOpen(false);
         }}
       />
+    </div>
+  );
+}
+
+export function NominationNotFound({ id }: { id: string }) {
+  const roleHref = useRoleHref();
+  return (
+    <div className="flex flex-1 flex-col items-center justify-center gap-3 p-12 text-center">
+      <h1 className="text-lg font-semibold text-primary">Nomination not found</h1>
+      <p className="max-w-sm text-sm text-balance text-tertiary">There is no nomination {id}. It may have been a draft that was deleted.</p>
+      <Button color="link-color" size="sm" href={roleHref(NOMINATION_ROOT)} iconLeading={ArrowNarrowLeft}>
+        Back to nominations
+      </Button>
     </div>
   );
 }

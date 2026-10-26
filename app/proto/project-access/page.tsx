@@ -1,7 +1,7 @@
 "use client";
 
 import { Suspense, useState } from "react";
-import { Columns03, Database01, Feather, Folder, Key01, Paperclip, User01 } from "@untitledui/icons";
+import { Columns03, Database01, Feather, Grid01, Key01, Paperclip, User01 } from "@untitledui/icons";
 import { Tabs } from "react-aria-components";
 import { Tab, TabList, TabPanel } from "@/components/application/tabs/tabs";
 import { PrototypeTools } from "@/app/_prototype-tools/prototype-tools";
@@ -94,7 +94,7 @@ function PageScreen({ people, onChange }: { people: ProjectContact[]; onChange: 
   return (
     <Tabs defaultSelectedKey="access" className="flex flex-col">
       <TabList aria-label="Project views" type="underline" size="md" className="gap-6">
-        <Tab id="project" label="Project" icon={Folder} />
+        <Tab id="project" label="Overview" icon={Grid01} />
         <Tab id="records" label="Project records" icon={Database01} />
         <Tab id="species" label="Species" icon={Feather} />
         <Tab id="artefacts" label="Artefacts and attachments" icon={Paperclip} />

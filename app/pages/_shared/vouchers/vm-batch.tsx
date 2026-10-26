@@ -13,8 +13,7 @@ import { FilterMenu } from "@/app/pages/_shared/filter-menu";
 import { RecordActionBar } from "@/app/pages/_shared/record-action-bar";
 import { HeroMeta, RecordBackLink, RecordHero } from "@/app/pages/_shared/record-hero";
 import { ToolbarSearch } from "@/app/pages/_shared/toolbar-search";
-import { FIELDS, MATCH_LABEL, sameValue, RESULT_META, SOURCE_LABEL, formatDateTime, readDate, valueText, type FieldKey, type MatchKey, type RecordResult, type VmBatch, type VmRecord } from "@/app/pages/_shared/vouchers/vm-data";
-import { VM_OPTION_2, useVmRoot } from "@/app/pages/_shared/vouchers/vm-root";
+import { VM_ROOT, FIELDS, MATCH_LABEL, sameValue, RESULT_META, SOURCE_LABEL, formatDateTime, readDate, valueText, type FieldKey, type MatchKey, type RecordResult, type VmBatch, type VmRecord } from "@/app/pages/_shared/vouchers/vm-data";
 import { CompareTable } from "@/app/pages/_shared/vouchers/vm-compare";
 import { IgnoreModal, PushModal, useProposal, type PushGroup } from "@/app/pages/_shared/vouchers/vm-parts";
 import { fieldStatus, ignoreFields, pushFields, recordResult, restoreDecisions, setEdit, snapshotDecisions, summarise, useAllRecords, useDecisions, useEdits } from "@/app/pages/_shared/vouchers/vm-store";
@@ -37,7 +36,6 @@ const STATUS_ORDER: RecordResult[] = ["review", "matched", "updated", "ignored"]
 
 export function VmBatchPage({ batch }: { batch: VmBatch }) {
   const roleHref = useRoleHref();
-  const root = useVmRoot();
   const decisions = useDecisions();
   const edits = useEdits();
   const proposal = useProposal();
@@ -76,7 +74,7 @@ export function VmBatchPage({ batch }: { batch: VmBatch }) {
   const currentPage = Math.min(page, pageCount);
   const paged = rows.slice((currentPage - 1) * pageSize, currentPage * pageSize);
 
-  const recordHref = (r: VmRecord) => roleHref(`${root}/${batch.id}?record=${encodeURIComponent(r.id)}`);
+  const recordHref = (r: VmRecord) => roleHref(`${VM_ROOT}/${batch.id}?record=${encodeURIComponent(r.id)}`);
 
   // ── Push or ignore the selected records ──
   const selectedRows = all.filter((r) => selected.has(r.id) && pendingOf(r).length > 0);
@@ -165,7 +163,7 @@ export function VmBatchPage({ batch }: { batch: VmBatch }) {
 
   return (
     <div className="flex min-h-0 flex-1 flex-col">
-      <RecordBackLink href={roleHref(`${root}?source=${batch.source}`)}>{source} batches</RecordBackLink>
+      <RecordBackLink href={roleHref(`${VM_ROOT}?source=${batch.source}`)}>{source} batches</RecordBackLink>
       <RecordHero eyebrow={`${source} scan`} title={`Batch ${batch.id}`} actions={<RecordActionBar onDark secondary={[{ id: "export", label: "Export differences", icon: Download01, onPress: exportCsv }]} />}>
         <HeroMeta label="Ran on">{readDate(batch.ranOn)}</HeroMeta>
         <HeroMeta label="Records checked">
@@ -220,7 +218,6 @@ export function VmBatchPage({ batch }: { batch: VmBatch }) {
         ) : (
           <CompareTable
             fill
-            layout={root === VM_OPTION_2 ? "rows" : "lines"}
             batch={batch}
             records={paged}
             label={`Records in batch ${batch.id}`}

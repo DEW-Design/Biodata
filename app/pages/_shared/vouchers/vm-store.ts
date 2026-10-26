@@ -58,7 +58,10 @@ export function useEdits() {
   return useVmStore((s) => s.edits);
 }
 
-export const useVouchersHydrated = () => useHydrated(useVmStore);
+export function useVouchersHydrated(): boolean {
+  useRehydrate(useVmStore);
+  return useHydrated(useVmStore);
+}
 
 /** Local date and time, as "2026-10-01T15:42:07": decisions are shown in the admin's own time. */
 const nowIso = () => {

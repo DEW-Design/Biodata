@@ -130,6 +130,15 @@ const hardRules = [
     message: "A shell that draws column 2 and takes a record prop (recordId, breadcrumbCurrent, currentId) without recordPage. A record page uses the whole width: hide the sidebar for it (CONTRACTS.md 3.7).",
   },
   {
+    // 4.6b: a record page's section crumb is a switcher (CONTRACTS 4.6 item 5). A shell that hides column 2 for a record
+    // (`recordPage`) must draw some collection switcher, a thin wrapper over BreadcrumbSwitcher, for it.
+    id: "4.6b",
+    name: "record page section crumb is a switcher",
+    test: (s) => /\bconst recordPage\b/.test(s) && !/<(?!\w*(?:Option|Version)Switcher)\w*Switcher\b/.test(s), // the layout and version tools on the Prototype bar are not a record switcher
+    allow: [],
+    message: "A shell that has a record page (recordPage) but draws no switcher for its section crumb. The crumb of a record page is that collection's switcher over BreadcrumbSwitcher (see DlaSwitcher), not a plain link (CONTRACTS.md 4.6 item 5).",
+  },
+  {
     id: "4.2d",
     name: "one filter",
     // The three filters this replaced were a popover of every section, an "Add filter" popover and an "All Filters" side

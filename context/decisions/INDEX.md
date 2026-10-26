@@ -610,3 +610,6 @@ Not imported into every session on purpose: read or grep it when a task needs hi
 - [2026-10-25] Bulk upload of attachments and web links with a project template - `2026-10-25-24-bulk-upload-of-attachments-and-web-links-with.md`
 - [2026-10-26] Custom concepts: columns added to a sheet at upload are flagged for admin approval - `2026-10-26-01-custom-concepts-columns-added-to-a-sheet-at.md`
 - [2026-10-26] Merge of mohan-wips into sai-wips: what came in, what was renumbered, and the mismatches handled - `2026-10-26-02-merge-of-mohan-wips-into-sai-wips-what.md`
+- [2026-10-26] Project page: the Project tab is Overview, and Project at a glance is removed - `2026-10-26-03-project-page-the-project-tab-is-overview-and.md`
+- [2026-10-26] Sunset the other options: nominations, voucher, taxonomy and notification management - `2026-10-26-04-sunset-the-other-options-nominations-voucher-taxonomy-and.md`
+- [2026-10-26] Record pages: the section crumb is a switcher on notifications, taxonomy, vouchers and vocabulary - `2026-10-26-05-record-pages-the-section-crumb-is-a-switcher.md`

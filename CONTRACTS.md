@@ -1149,6 +1149,7 @@ record) is laid out like the project page (`/pages/project-detail`):
 
 - MUST NOT put a record's actions in a bar above the card, or stack its content without tabs.
 - MUST NOT build a second switcher: a collection's record pages reuse `BreadcrumbSwitcher`.
+- MUST give every collection that has a record page the switcher on it: a shell that hides column 2 for a record (`recordPage`) draws its section crumb as that collection's switcher (a thin wrapper over `BreadcrumbSwitcher`, like `DlaSwitcher`). The new and edit forms keep the plain crumb that links back to the list.
 - MUST NOT build a second audit log: a record page's Audit Log tab reuses `AuditLog` and `AuditFeed`.
 - **Origin:** the nomination record page shipped with its actions above the card and no tabs, after
   the designer had already asked for every record page to follow the project page. The reports were first built
@@ -1163,8 +1164,11 @@ record) is laid out like the project page (`/pages/project-detail`):
   `/proto/report-controls` (Mobbin: Whop, Mercury, Docusign, Navattic, Google Ads, Mixpanel), and asked for it on every report
   (15 Oct 2026). The sheets of that report then showed their typed fields beside the table's search, and their lists and dates beside the
   Filter; the designer: "doesn't make sense to have two different search bars ... I feel like parameters are doubling up" (15 Oct 2026).
-- **Enforcement:** `REVIEW`; `tsc` for the removed `scopeControl`. First occurrence of the switcher gap, so no `AUTO` check yet (§0.8); one is due if a record
-  page ships with a plain section crumb again.
+  The switcher gap came back: a notification's record page, and the taxon, voucher batch and vocabulary pages with it, still drew the section crumb as a
+  plain link ("Notification Management" with no up-down caret); the designer, with a screenshot: "missing chevron up and down treatment. Please make sure
+  breadcrumbs are consistent." (26 Oct 2026).
+- **Enforcement:** `REVIEW`; `tsc` for the removed `scopeControl`. `AUTO §4.6b` (a shell that defines `recordPage` and renders no `*Switcher`), added on the second
+  occurrence of the switcher gap (§0.8).
 
 ### §4.7 Roles belong to the data owner's contacts; show only what is approved
 

@@ -18,6 +18,7 @@ import { PrimaryRail } from "@/app/pages/_shared/primary-rail";
 import { PrototypeTools } from "@/app/_prototype-tools/prototype-tools";
 import { CV_ROOT, cvStatus, cvStatusMeta, cvTypeLabel, formatShortDate } from "@/app/pages/_shared/ctrl-vocab/cv-data";
 import { TemplateActions } from "@/app/pages/_shared/ctrl-vocab/cv-template-ui";
+import { VocabularySwitcher } from "@/app/pages/_shared/ctrl-vocab/cv-switcher";
 import { useCvs, useSampleVolume } from "@/app/pages/_shared/ctrl-vocab/cv-store";
 import { useFeatureAccess } from "@/lib/use-feature-access";
 import { useRoleHref } from "@/lib/use-role-href";
@@ -205,7 +206,9 @@ export function CvShell({
           </MobileNavTrigger>
         }
         section={
-          breadcrumbCurrent && !otherSection && canManage ? (
+          currentId && !formSidebar && !otherSection && canManage ? (
+            <VocabularySwitcher currentId={currentId} />
+          ) : breadcrumbCurrent && !otherSection && canManage ? (
             <Link href={roleHref(base)} className="hover:text-primary">
               {activeSection}
             </Link>
