@@ -30,6 +30,7 @@ export const PRODUCTION_ROUTES: ProductionRoute[] = [
   { lab: "dataset-ingestion", label: "Project datasets", href: "/pages/project-list/adelaide-hills/project-details?view=datasets" },
   { lab: "home-cleanup", label: "Home", href: "/pages/dashboard", persona: ["registered-user"] },
   { lab: "layouts", label: "Data Validation Error report", href: "/pages/reports/data-validation-error" },
+  { lab: "project-access", label: "Add project", href: "/pages/project-registration?section=owner" },
   { lab: "project-detail", label: "Project page", href: "/pages/project-detail" },
   { lab: "project-header", label: "Project page", href: "/pages/project-detail" },
   { lab: "project-sidebar", label: "Project page", href: "/pages/project-detail" },

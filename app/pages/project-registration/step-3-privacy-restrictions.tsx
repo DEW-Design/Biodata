@@ -16,7 +16,7 @@
 
 import { useState } from "react";
 import { today, getLocalTimeZone } from "@internationalized/date";
-import { Database01, DotsHorizontal, Edit05, Feather, Globe01, Hourglass03, Lock01, MarkerPin04 } from "@untitledui/icons";
+import { Database01, DotsHorizontal, Edit05, Feather, Globe01, Hourglass03, Lock01, LockKeyholeCircle, MarkerPin04, Users03 } from "@untitledui/icons";
 import { Button } from "@/components/base/buttons/button";
 import { MultiSelect } from "@/components/base/select/multi-select";
 import { InputDatePicker } from "@/components/custom/date-picker/input-date-picker";
@@ -25,23 +25,27 @@ import { TextArea } from "@/components/base/textarea/textarea";
 import { TypeformCard, ChoiceTile } from "./typeform-card";
 import { EMBARGO_TYPE_OPTIONS, PROJECT_METADATA_CONCEPTS, REGISTRATION_SPECIES, SPECIES_CONCEPTS, maxEmbargoMonths, formatEmbargoDuration } from "./data";
 import { SpeciesRestrictionSection, isSpeciesEntryValid } from "./species-restriction";
-import { LocationRestrictionSection } from "./location-restriction";
+import { LocationRestrictionSection, isLocationEntryValid } from "./location-restriction";
+import { ExpectationSelect, JustificationField, expectationLabel } from "./restriction-fields";
 import { ConceptRows, isConceptRowsValid, conceptLabel } from "./concept-rows";
-import type { EmbargoType, RestrictionTypeKey, RestrictionsState } from "./types";
+import { allRecordsOf, culturalOf, type EmbargoType, type RestrictionTypeKey, type RestrictionsState } from "./types";
 
 const EMBARGO_TYPE_ITEMS = EMBARGO_TYPE_OPTIONS.map((o) => ({ id: o.id, label: o.label }));
 
 export const RESTRICTION_TYPE_META: { key: RestrictionTypeKey; title: string; description: string; icon: typeof Lock01 }[] = [
     { key: "embargo", title: "Embargo", description: "Temporarily hide this project from all users until a specified date", icon: Hourglass03 },
-    { key: "species", title: "Restrict data based on Species", description: "Manage protection rules for species recorded in this project", icon: Feather },
+    { key: "species", title: "Restrict data based on Species", description: "Select any species that you want restricted for your project", icon: Feather },
+    { key: "cultural", title: "Restrict data based on Cultural Sensitivities", description: "Name the Indigenous Information Authority for this project's culturally sensitive data", icon: Users03 },
     { key: "locations", title: "Restrict data based on Locations", description: "Manage protection rules for sensitive locations recorded in this project", icon: MarkerPin04 },
+    { key: "all", title: "Restrict all records within this Project", description: "Every record in this project is restricted", icon: LockKeyholeCircle },
     { key: "metadata", title: "Restrict data based on Project Metadata", description: "Set protection rules for project data such as collection methods and observer details", icon: Database01 },
     { key: "other", title: "Other Restrictions", description: "Request protection rules for any other restrictions associated with this project", icon: DotsHorizontal },
 ];
 
-/** The kinds of restriction a person can switch on. "Other restrictions" is hidden for now (the designer,
- *  2 Oct 2026): a project that already has one still shows and edits it, nothing new can add one. */
-export const OFFERED_RESTRICTION_TYPES = RESTRICTION_TYPE_META.filter((m) => m.key !== "other");
+/** The kinds of restriction a person can switch on (the designer, 25 Oct 2026): Embargo, Species, Cultural Sensitivities,
+ *  Locations and All records. "Other restrictions" (hidden 2 Oct 2026) and Project Metadata (replaced by All records, 25 Oct
+ *  2026) are no longer offered: a project that already has one still shows and edits it, nothing new can add one. */
+export const OFFERED_RESTRICTION_TYPES = RESTRICTION_TYPE_META.filter((m) => m.key !== "other" && m.key !== "metadata");
 
 export function isEmbargoValid(embargo: RestrictionsState["embargo"]): boolean {
     return (
@@ -57,7 +61,12 @@ export function isTypeValid(key: RestrictionTypeKey, r: RestrictionsState): bool
     // A "restrict by species/location" choice with nothing nominated restricts nothing - the
     // accordion version let this through silently; each now needs at least one real entry.
     if (key === "species") return r.species.length > 0 && r.species.every(isSpeciesEntryValid);
-    if (key === "locations") return r.locations.length > 0;
+    if (key === "locations") return r.locations.length > 0 && r.locations.every(isLocationEntryValid);
+    if (key === "cultural") {
+        const c = culturalOf(r);
+        return !!c.authority.trim() && !!c.contact.trim() && !!c.justification.trim();
+    }
+    if (key === "all") return !!allRecordsOf(r).justification.trim();
     if (key === "metadata") return isConceptRowsValid(r.metadata.concepts, PROJECT_METADATA_CONCEPTS, true);
     return r.otherRestrictions.trim().length > 0;
 }
@@ -73,7 +82,9 @@ type CardId = "any" | "types" | RestrictionTypeKey | "review";
 export const TYPE_CARD_TITLES: Record<RestrictionTypeKey, { title: string; description: string }> = {
     embargo: { title: "Tell us about the embargo", description: "Choose why this project is embargoed and when it should become available." },
     species: { title: "Which species need protecting?", description: "Nominate every species whose records in this project should be treated as sensitive." },
+    cultural: { title: "Which cultural sensitivities apply?", description: "Name the Indigenous Information Authority and tell us why the data is restricted." },
     locations: { title: "Which locations are sensitive?", description: "Nominate every location whose records in this project should be protected." },
+    all: { title: "Restrict every record", description: "Every record in this project is restricted. Tell us why." },
     metadata: { title: "Which project details should be restricted?", description: "Pick the concepts to protect, and tell us why." },
     other: { title: "Describe any other restriction", description: "Anything not covered by the other restriction types." },
 };
@@ -96,6 +107,11 @@ export function restrictionSummaryFor(key: RestrictionTypeKey, value: Restrictio
             })
             .join("; ");
     if (key === "locations") return value.locations.map((l) => l.name).join(", ");
+    if (key === "cultural") {
+        const c = culturalOf(value);
+        return [c.authority, expectationLabel(c.expectation)].filter(Boolean).join(" · ");
+    }
+    if (key === "all") return expectationLabel(allRecordsOf(value).expectation) || "All records";
     if (key === "metadata") return value.metadata.concepts.filter((c) => c.concept).map((c) => conceptLabel(c, PROJECT_METADATA_CONCEPTS)).join(", ");
     return value.otherRestrictions;
 }
@@ -113,7 +129,18 @@ export function restrictionsSummaryRows(value: RestrictionsState): { key: Restri
  *  Owns its own local "has the user touched the embargo end date" tracking (reset per mount, which
  *  is correct here - each standalone edit session starts fresh) rather than depending on the
  *  wizard's own step-level state, since a standalone caller never has that state to hand down. */
-export function RestrictionTypeFields({ typeKey, value, onChange }: { typeKey: RestrictionTypeKey; value: RestrictionsState; onChange: (value: RestrictionsState) => void }) {
+export function RestrictionTypeFields({
+    typeKey,
+    value,
+    onChange,
+    showErrors = false,
+}: {
+    typeKey: RestrictionTypeKey;
+    value: RestrictionsState;
+    onChange: (value: RestrictionsState) => void;
+    /** True once the person tried to move on with something missing: the newer kinds mark their empty fields. */
+    showErrors?: boolean;
+}) {
     const patch = (partial: Partial<RestrictionsState>) => onChange({ ...value, ...partial });
 
     const [embargoEndDateTouched, setEmbargoEndDateTouched] = useState(false);
@@ -159,14 +186,8 @@ export function RestrictionTypeFields({ typeKey, value, onChange }: { typeKey: R
                 {value.embargo.types.includes("other") && (
                     <Input label="Please specify" isRequired value={value.embargo.typeOther} onChange={(v) => patch({ embargo: { ...value.embargo, typeOther: v } })} />
                 )}
-                <TextArea
-                    label="Reason"
-                    placeholder="Provide justification for embargo"
-                    isRequired
-                    rows={3}
-                    value={value.embargo.reason}
-                    onChange={(v) => patch({ embargo: { ...value.embargo, reason: v } })}
-                />
+                {/* "Justification", as every other kind of restriction asks it (the designer, 25 Oct 2026; it was "Reason"). */}
+                <JustificationField value={value.embargo.reason} onChange={(v) => patch({ embargo: { ...value.embargo, reason: v } })} showErrors={showErrors} />
                 <div className="flex w-full max-w-xs flex-col gap-1.5">
                     <InputDatePicker
                         label="Embargo End Date"
@@ -185,11 +206,63 @@ export function RestrictionTypeFields({ typeKey, value, onChange }: { typeKey: R
                         </p>
                     )}
                 </div>
+                {/* The designer, 25 Oct 2026: what still needs care once the embargo has ended is asked here, with the embargo. */}
+                <TextArea
+                    label="Data sensitivities after the embargo ends"
+                    placeholder="Please outline below any additional data sensitivities of the project to consider once the embargo has ended"
+                    hint="Optional. A BioData Admin reviews these before the data is released."
+                    rows={3}
+                    value={value.embargo.afterEmbargo ?? ""}
+                    onChange={(v) => patch({ embargo: { ...value.embargo, afterEmbargo: v } })}
+                />
             </div>
         );
 
+    if (typeKey === "cultural") {
+        // The designer's four fields (25 Oct 2026): who speaks for the data and how to reach them, then the restriction itself.
+        const c = culturalOf(value);
+        const set = (p: Partial<typeof c>) => patch({ cultural: { ...c, ...p } });
+        const missing = (v: string) => showErrors && !v.trim();
+        return (
+            <div className="flex flex-col gap-4">
+                <Input
+                    label="Indigenous Information Authority"
+                    isRequired
+                    placeholder="The community, organisation or person who speaks for this information"
+                    value={c.authority}
+                    onChange={(authority) => set({ authority })}
+                    isInvalid={missing(c.authority)}
+                    hint={missing(c.authority) ? "Enter the Indigenous Information Authority" : undefined}
+                />
+                <TextArea
+                    label="IIA contact details"
+                    isRequired
+                    rows={2}
+                    placeholder="Name, email and phone number"
+                    hint={missing(c.contact) ? "Enter the contact details" : "How a BioData Admin can reach the Indigenous Information Authority."}
+                    value={c.contact}
+                    onChange={(contact) => set({ contact })}
+                    isInvalid={missing(c.contact)}
+                />
+                <ExpectationSelect value={c.expectation} onChange={(expectation) => set({ expectation })} />
+                <JustificationField value={c.justification} onChange={(justification) => set({ justification })} showErrors={showErrors} />
+            </div>
+        );
+    }
+
+    if (typeKey === "all") {
+        const a = allRecordsOf(value);
+        const set = (p: Partial<typeof a>) => patch({ allRecords: { ...a, ...p } });
+        return (
+            <div className="flex flex-col gap-4">
+                <ExpectationSelect value={a.expectation} onChange={(expectation) => set({ expectation })} />
+                <JustificationField value={a.justification} onChange={(justification) => set({ justification })} showErrors={showErrors} />
+            </div>
+        );
+    }
+
     if (typeKey === "species") return <SpeciesRestrictionSection entries={value.species} onChange={(species) => patch({ species })} />;
-    if (typeKey === "locations") return <LocationRestrictionSection entries={value.locations} onChange={(locations) => patch({ locations })} />;
+    if (typeKey === "locations") return <LocationRestrictionSection entries={value.locations} onChange={(locations) => patch({ locations })} showErrors={showErrors} />;
 
     if (typeKey === "metadata")
         return (
@@ -268,7 +341,7 @@ export function Step3PrivacyRestrictions({
             >
                 <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                     <ChoiceTile icon={Globe01} label="No restrictions" hint="Everything in this project is openly available" isSelected={!value.hasRestrictions} onClick={() => patch({ hasRestrictions: false })} />
-                    <ChoiceTile icon={Lock01} label="Yes, apply restrictions" hint="Embargo, sensitive species or locations, or other rules" isSelected={value.hasRestrictions} onClick={() => patch({ hasRestrictions: true })} />
+                    <ChoiceTile icon={Lock01} label="Yes, apply restrictions" hint="Embargo, or restricting species, cultural sensitivities, locations or all records" isSelected={value.hasRestrictions} onClick={() => patch({ hasRestrictions: true })} />
                 </div>
             </TypeformCard>
         );

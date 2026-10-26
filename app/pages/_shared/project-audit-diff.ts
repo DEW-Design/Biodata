@@ -1,5 +1,5 @@
-import { COLLECTION_METHOD_OPTIONS, EMBARGO_TYPE_OPTIONS, FOCUS_AREA_OPTIONS, PERMIT_TYPE_OPTIONS, PROJECT_METADATA_CONCEPTS, REGISTRATION_SPECIES, ROLE_OF_WORK_OPTIONS, SURVEY_TYPE_OPTIONS } from "@/app/pages/project-registration/data";
-import type { DataCollectionState, ProjectDetailsState, RestrictionsState, RestrictionTypeKey } from "@/app/pages/project-registration/types";
+import { accessLabel, accessOf, COLLECTION_METHOD_OPTIONS, EMBARGO_TYPE_OPTIONS, FOCUS_AREA_OPTIONS, PERMIT_TYPE_OPTIONS, PROJECT_METADATA_CONCEPTS, projectPeople, REGISTRATION_SPECIES, ROLE_OF_WORK_OPTIONS, SURVEY_TYPE_OPTIONS } from "@/app/pages/project-registration/data";
+import { allRecordsOf, culturalOf, type DataCollectionState, type ProjectDetailsState, type RestrictionsState, type RestrictionTypeKey } from "@/app/pages/project-registration/types";
 
 // What changed between two saves of a project, as the project audit log records it: one entry per field whose value, read the way
 // the project page shows it, is different (project-audit-log-store.ts). The field names are the ones the Project Detail Report
@@ -27,7 +27,9 @@ const list = (values: string[]) => values.filter(Boolean).join("; ");
 const RESTRICTION_TITLES: Record<RestrictionTypeKey, string> = {
   embargo: "Embargo",
   species: "Species restriction",
+  cultural: "Cultural sensitivities restriction",
   locations: "Location restriction",
+  all: "All records restriction",
   metadata: "Project metadata restriction",
   other: "Other restriction",
 };
@@ -47,6 +49,7 @@ const FIELDS: { field: string; read: (s: ProjectFieldState) => string }[] = [
   { field: "Owner role", read: (s) => roleText(s.details) },
   { field: "Project manager", read: (s) => list(s.details.projectManagers.map(person)) },
   { field: "Project manager email", read: (s) => list(s.details.projectManagers.map((m) => m.email)) },
+  { field: "Project access", read: (s) => list(projectPeople(s.details).map((p) => `${person(p)}: ${accessLabel(accessOf(p))}`)) },
   {
     field: "Project location",
     read: (s) => {
@@ -65,10 +68,15 @@ const FIELDS: { field: string; read: (s: ProjectFieldState) => string }[] = [
   { field: "Limitations and biases", read: (s) => s.collection.limitationsAndBiases },
   { field: "Project restriction", read: (s) => (s.restrictions.hasRestrictions ? list([...s.restrictions.enabledTypes].map((k) => RESTRICTION_TITLES[k])) : "") },
   { field: "Embargo type", read: (s) => list(s.restrictions.embargo.types.map((t) => (t === "other" ? s.restrictions.embargo.typeOther : labelOf(EMBARGO_TYPE_OPTIONS, t)))) },
-  { field: "Embargo reason", read: (s) => s.restrictions.embargo.reason },
+  { field: "Embargo justification", read: (s) => s.restrictions.embargo.reason },
   { field: "Embargo end date", read: (s) => day(s.restrictions.embargo.endDate) },
+  { field: "Data sensitivities after the embargo", read: (s) => s.restrictions.embargo.afterEmbargo ?? "" },
   { field: "Restricted species", read: (s) => list(s.restrictions.species.map((r) => REGISTRATION_SPECIES.find((sp) => sp.id === r.speciesId)?.commonName ?? r.speciesId)) },
   { field: "Restricted location", read: (s) => list(s.restrictions.locations.map((l) => l.name)) },
+  { field: "Indigenous Information Authority", read: (s) => culturalOf(s.restrictions).authority },
+  { field: "IIA contact details", read: (s) => culturalOf(s.restrictions).contact },
+  { field: "Cultural sensitivities justification", read: (s) => culturalOf(s.restrictions).justification },
+  { field: "All records justification", read: (s) => allRecordsOf(s.restrictions).justification },
   { field: "Restricted project metadata", read: (s) => list(s.restrictions.metadata.concepts.map((c) => (c.concept === "other" ? c.conceptOther : labelOf(PROJECT_METADATA_CONCEPTS, c.concept)))) },
   { field: "Other restriction", read: (s) => s.restrictions.otherRestrictions },
 ];

@@ -2,15 +2,14 @@
 
 // Shared 4-method geographic extent chooser - Step 2's own "Geographic Extent" and every location
 // restriction entry in Step 3 both need "upload a shapefile / draw on the map / pick from a list of
-// SA national parks / enter coordinates", so it's built once here rather than twice. Reuses the
-// real map (app/pages/_shared/map-search/sa-map.tsx) and the real SA national park list
-// (app/pages/_shared/map-search/geo.ts) already built for the Explore map-search screen, instead of
-// a second, disconnected geography.
+// named places / enter coordinates", so it's built once here rather than twice. Reuses the real map
+// (app/pages/_shared/map-search/sa-map.tsx) already built for the Explore map-search screen, instead
+// of a second, disconnected geography. The list is the Named location vocabulary (location-list.ts).
 
 import { useState } from "react";
 import dynamic from "next/dynamic";
 import { Dialog, Modal, ModalOverlay } from "react-aria-components";
-import { UploadCloud02, Map01, List as ListIcon, Target04, Circle, Pentagon, Maximize02, Minimize02 } from "@untitledui/icons";
+import { Upload01, Map01, List as ListIcon, Target04, Circle, Pentagon, Maximize02, Minimize02 } from "@untitledui/icons";
 import { Tabs, TabList, Tab, TabPanel } from "@/components/application/tabs/tabs";
 import { InputFile } from "@/components/base/input/input-file";
 import { InputNumber } from "@/components/base/input/input-number";
@@ -18,6 +17,7 @@ import { Select } from "@/components/base/select/select";
 import { SA_NATIONAL_PARKS, boundarySummary, type Boundary } from "@/app/pages/_shared/map-search/geo";
 import { parseShapefileUpload } from "@/app/pages/_shared/map-search/shapefile";
 import { ExpandableMap } from "@/app/pages/_shared/map-search/expandable-map";
+import { findListedLocation, useLocationList } from "@/app/pages/_shared/map-search/location-list";
 import { Button } from "@/components/base/buttons/button";
 import { cx } from "@/utils/cx";
 import type { GeoExtentValue, GeoMethod } from "./types";
@@ -28,7 +28,7 @@ import type { GeoExtentValue, GeoMethod } from "./types";
 export function geoExtentSummary(extent: GeoExtentValue): string {
     if (extent.method === "list" && extent.parkId) {
         const park = SA_NATIONAL_PARKS.find((p) => p.id === extent.parkId);
-        return park ? park.name : "Selected park";
+        return extent.listName ?? park?.name ?? "Selected location";
     }
     if (extent.method === "shapefile") return extent.shapefileName ?? "Uploaded shapefile";
     if (extent.boundary) return boundarySummary(extent.boundary);
@@ -44,18 +44,17 @@ const SAMap = dynamic(() => import("@/app/pages/_shared/map-search/sa-map"), {
     ),
 });
 
-const METHOD_TABS: { id: GeoMethod; label: string; icon: typeof UploadCloud02 }[] = [
-    { id: "shapefile", label: "Upload Shapefile", icon: UploadCloud02 },
+const METHOD_TABS: { id: GeoMethod; label: string; icon: typeof Upload01 }[] = [
     { id: "map", label: "Draw on the Map", icon: Map01 },
     { id: "list", label: "Choose from a List", icon: ListIcon },
     { id: "coordinates", label: "Coordinates", icon: Target04 },
+    { id: "shapefile", label: "Upload Shapefile", icon: Upload01 },
 ];
 
 const SHORT_LABELS: Record<GeoMethod, string> = { shapefile: "Shapefile", map: "Draw", list: "List", coordinates: "Coordinates" };
 
-const PARK_OPTIONS = SA_NATIONAL_PARKS.map((p) => ({ id: p.id, label: p.name }));
 
-/** The Draw circle/Draw polygon toggle pair - shared between the compact inline map and the
+/** The Draw polygon/Draw circle toggle pair - shared between the compact inline map and the
  *  full-screen overlay below, so a user can pick either tool from either view without the two
  *  ever presenting different options. */
 function DrawToolButtons({
@@ -68,15 +67,6 @@ function DrawToolButtons({
     return (
         <div className="flex gap-2">
             <Button
-                color={activeDrawTool === "circle" ? "primary" : "secondary"}
-                size="sm"
-                iconLeading={Circle}
-                className="flex-1"
-                onClick={() => onDrawToolChange(activeDrawTool === "circle" ? null : "circle")}
-            >
-                {activeDrawTool === "circle" ? "Drawing…" : "Draw circle"}
-            </Button>
-            <Button
                 color={activeDrawTool === "polygon" ? "primary" : "secondary"}
                 size="sm"
                 iconLeading={Pentagon}
@@ -84,6 +74,15 @@ function DrawToolButtons({
                 onClick={() => onDrawToolChange(activeDrawTool === "polygon" ? null : "polygon")}
             >
                 {activeDrawTool === "polygon" ? "Drawing…" : "Draw polygon"}
+            </Button>
+            <Button
+                color={activeDrawTool === "circle" ? "primary" : "secondary"}
+                size="sm"
+                iconLeading={Circle}
+                className="flex-1"
+                onClick={() => onDrawToolChange(activeDrawTool === "circle" ? null : "circle")}
+            >
+                {activeDrawTool === "circle" ? "Drawing…" : "Draw circle"}
             </Button>
         </div>
     );
@@ -186,10 +185,11 @@ export function GeoExtentPicker({
     const [coordRadius, setCoordRadius] = useState(defaultRadiusKm);
     const [shapefileError, setShapefileError] = useState<string | null>(null);
     const [isMapExpanded, setIsMapExpanded] = useState(false);
+    const locations = useLocationList();
 
     return (
         <div className="flex w-full flex-col gap-4">
-            <Tabs selectedKey={value.method ?? "shapefile"} onSelectionChange={(key) => onChange({ ...value, method: key as GeoMethod })} className="flex flex-col gap-3">
+            <Tabs selectedKey={value.method ?? "map"} onSelectionChange={(key) => onChange({ ...value, method: key as GeoMethod })} className="flex flex-col gap-3">
                 <TabList aria-label="Geographic extent method" type="button-border" size="sm" fullWidth>
                     {METHOD_TABS.map((m) => (
                         <Tab key={m.id} id={m.id} label={compactTabs ? SHORT_LABELS[m.id] : m.label} icon={m.icon} />
@@ -224,7 +224,7 @@ export function GeoExtentPicker({
                 </TabPanel>
 
                 <TabPanel id="map" className="flex flex-col gap-3 pt-2">
-                    <p className="text-sm text-tertiary">Draw a circle or polygon on the map to define this area.</p>
+                    <p className="text-sm text-tertiary">Draw a polygon or circle on the map to define this area.</p>
                     <DrawToolButtons activeDrawTool={activeDrawTool} onDrawToolChange={setActiveDrawTool} />
                     {expand === "modal" ? (
                         <ExpandableMap
@@ -286,17 +286,18 @@ export function GeoExtentPicker({
 
                 <TabPanel id="list" className="flex flex-col gap-3 pt-2">
                     <Select
-                        label="Select a national park"
+                        label="Select a location"
                         placeholder="Search and select from the list"
-                        items={PARK_OPTIONS}
-                        selectedKey={value.parkId ?? null}
+                        items={locations.map((l) => ({ id: l.id, label: l.name }))}
+                        selectedKey={findListedLocation(locations, value.parkId)?.id ?? null}
                         onSelectionChange={(key) => {
-                            const park = SA_NATIONAL_PARKS.find((p) => p.id === key);
-                            if (!park) return;
+                            const place = locations.find((l) => l.id === key);
+                            if (!place) return;
                             onChange({
                                 ...value,
-                                parkId: park.id,
-                                boundary: { id: `park-${park.id}`, kind: "circle", center: [park.lat, park.lon], radiusKm: 15, label: park.name },
+                                parkId: place.id,
+                                listName: place.name,
+                                boundary: place.center ? { id: `list-${place.id}`, kind: "circle", center: place.center, radiusKm: 15, label: place.name } : null,
                             });
                         }}
                         className="w-full"

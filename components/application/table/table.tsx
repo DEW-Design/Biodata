@@ -2,7 +2,7 @@
 
 import type { ComponentPropsWithRef, HTMLAttributes, ReactNode, Ref, TdHTMLAttributes, ThHTMLAttributes } from "react";
 import { createContext, isValidElement, useContext, useRef } from "react";
-import { ArrowDown, ArrowLeft, ArrowRight, ChevronSelectorVertical, Copy01, Edit01, HelpCircle, Trash01 } from "@untitledui/icons";
+import { ArrowDown, ArrowLeft, ArrowRight, ChevronSelectorVertical, Copy01, Edit05, HelpCircle, Trash01 } from "@untitledui/icons";
 import type {
     CellProps as AriaCellProps,
     ColumnProps as AriaColumnProps,
@@ -36,7 +36,7 @@ export const TableRowActionsDropdown = () => (
 
         <Dropdown.Popover className="w-min">
             <Dropdown.Menu>
-                <Dropdown.Item icon={Edit01}>
+                <Dropdown.Item icon={Edit05}>
                     <span className="pr-4">Edit</span>
                 </Dropdown.Item>
                 <Dropdown.Item icon={Copy01}>

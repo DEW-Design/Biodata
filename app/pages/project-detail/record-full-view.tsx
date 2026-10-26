@@ -12,8 +12,9 @@
 //
 // Editing happens here, one card at a time: only the card being edited turns into fields
 // (card-editor.tsx), the rest stay as they are. Its notes are added under each field. While a card is
-// in edit mode the right column becomes "Fields shown" (visibility-panel.tsx), a checklist of every
-// category and field of the record, and Cancel and Save changes sit in a footer across the bottom.
+// in edit mode its header has a "Fields" checklist of that section's fields (visibility-panel.tsx), "Add section"
+// under the cards puts back a section that isn't on screen, the right column keeps the Record card with where the
+// record sits, and Cancel and Save changes sit in a footer across the bottom.
 // Save commits the record, its notes and the fields shown together; Cancel discards all three.
 //
 // Designer override of CONTRACTS 4.1, logged in CONTEXT.md: this edit form does not render FormPage,
@@ -26,17 +27,20 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import { ArrowLeft, ChevronDown, Edit02, EyeOff, InfoCircle, Save01, Trash01, XClose } from "@untitledui/icons";
+import { ArrowLeft, ChevronDown, EyeOff, InfoCircle, Plus, Save01, Trash01, XClose } from "@untitledui/icons";
 import { AlertFullWidth } from "@/components/application/alerts/alerts";
 import { ConfirmationModal } from "@/components/application/modals/modal";
 import { toast } from "@/components/application/toast/toast";
 import { Button } from "@/components/base/buttons/button";
+import { Tooltip, TooltipTrigger } from "@/components/base/tooltip/tooltip";
 import { SpeciesPhoto } from "@/app/pages/_shared/map-search/species-photo";
 import { cx } from "@/utils/cx";
 import { useEditStore } from "./edit-store";
 import { fromDraft, missingFor, toDraft, type Draft } from "./record-form";
 import { RecordIcon, recordIcon } from "./record-inspector";
-import { childOptions, type ChildOption } from "./record-rules";
+import { typeLabel } from "@/app/pages/_shared/record-shapes";
+import { RecordQuickActions } from "./record-quick-actions";
+import { type ChildOption } from "./record-rules";
 import {
   formatDate,
   type MetaSection,
@@ -56,12 +60,14 @@ import {
   emptyFieldKeys,
   isSectionShown,
   sectionHasContent,
+  sectionFieldEntries,
+  sectionKey,
+  sectionRemovable,
   sectionShownInEdit,
   setHiddenFields,
   useHiddenFields,
 } from "./field-visibility-store";
 import {
-  ActionsMenu,
   ExpandAllToggle,
   FullscreenToggle,
   Path,
@@ -71,7 +77,9 @@ import {
   shownPosition,
   useDeleteRecord,
 } from "./record-panel";
-import { VisibilityPanel } from "./visibility-panel";
+import { SectionFieldsMenu } from "./visibility-panel";
+import { Dropdown } from "@/components/base/dropdown/dropdown";
+import { kindShape } from "@/app/pages/_shared/record-shapes";
 import { RecordMap } from "./record-map";
 import { hasDateField } from "./field-schema";
 import { flashElement } from "./flash";
@@ -116,10 +124,129 @@ function observerNames(record: SurveyRecord): string[] {
     .filter(Boolean);
 }
 
+/**
+ * Where the record sits, from the project down to this record: each step with its shape, full name and ID, indented
+ * a level at a time like the records tree, the record itself marked. Shown in view and while editing, so an edit
+ * always says which record it is in (designer, 23 Oct 2026: "not just IDs"). Steps open their record, except while
+ * editing, when leaving would lose the edit.
+ */
+function Hierarchy({
+  ancestors,
+  current,
+  onSelect,
+}: {
+  ancestors: SurveyRecord[];
+  current: SurveyRecord;
+  onSelect?: (id: string | null) => void;
+}) {
+  const { project, meta } = useEditStore();
+  const steps = [
+    { id: null, kind: "event" as const, name: project.details.shortTitle, code: meta.code, type: "Project" },
+    ...ancestors.map((a) => ({ id: a.id, kind: a.kind, name: a.name, code: a.code, type: typeLabel(a) })),
+    { id: current.id, kind: current.kind, name: current.name || "New record", code: current.code, type: typeLabel(current) },
+  ];
+  return (
+    <div className="flex flex-col gap-2 border-t border-secondary pt-3">
+      <p className="text-sm text-tertiary">Location in hierarchy</p>
+      <ol className="m-0 flex list-none flex-col gap-1 p-0">
+        {steps.map((step, i) => {
+          const Shape = kindShape(step.kind);
+          const isCurrent = i === steps.length - 1;
+          const body = (
+            <>
+              <Shape className="mt-0.5 size-4" />
+              <span className="flex min-w-0 flex-col">
+                <span className={cx("truncate text-sm", isCurrent ? "font-semibold text-primary" : "text-secondary")}>
+                  {step.name}
+                </span>
+                <span className="truncate text-xs text-tertiary">
+                  {step.type} · {step.code}
+                </span>
+              </span>
+            </>
+          );
+          return (
+            <li key={step.id ?? "project"} style={{ paddingLeft: i * 12 }}>
+              {onSelect && !isCurrent ? (
+                <button
+                  type="button"
+                  onClick={() => onSelect(step.id)}
+                  className="-mx-1.5 flex w-full items-start gap-2 rounded-md px-1.5 py-1 text-left outline-focus-ring hover:bg-primary_hover focus-visible:outline-2"
+                >
+                  {body}
+                </button>
+              ) : (
+                <div aria-current={isCurrent ? "page" : undefined} className="-mx-1.5 flex items-start gap-2 rounded-md px-1.5 py-1">
+                  {body}
+                </div>
+              )}
+            </li>
+          );
+        })}
+      </ol>
+    </div>
+  );
+}
+
+/**
+ * While editing, Add section puts back a section of this record that is not on screen (removed, hidden or empty). It is
+ * always there while editing, so adding a section can be found; with every section on screen it is disabled and says so.
+ */
+function AddSectionMenu({ sections, onAdd }: { sections: MetaSection[]; onAdd: (id: string) => void }) {
+  if (sections.length === 0)
+    return (
+      <div className="flex items-center gap-3">
+        <Button color="secondary" size="sm" iconLeading={Plus} isDisabled>
+          Add section
+        </Button>
+        <p className="text-sm text-tertiary">Every section is on this record.</p>
+      </div>
+    );
+  return (
+    <Dropdown.Root>
+      <Button color="secondary" size="sm" iconLeading={Plus} iconTrailing={ChevronDown} className="self-start">
+        Add section
+      </Button>
+      <Dropdown.Popover placement="bottom start" className="w-60">
+        <Dropdown.Menu aria-label="Add a section" onAction={(key) => onAdd(String(key))}>
+          {sections.map((section) => (
+            <Dropdown.Item key={section.id} id={section.id} label={section.title} />
+          ))}
+        </Dropdown.Menu>
+      </Dropdown.Popover>
+    </Dropdown.Root>
+  );
+}
+
+/**
+ * Remove section, in the header of a card being edited. A section holding a field that must stay (an ID, a name, a
+ * start date) can't be removed: the control stays, disabled, and its tooltip says why.
+ */
+function RemoveSectionButton({ title, removable, onPress }: { title: string; removable: boolean; onPress: () => void }) {
+  return (
+    <Tooltip title={removable ? `Remove ${title.toLowerCase()}` : `${title} holds required fields, so it can't be removed`}>
+      <TooltipTrigger
+        aria-label={`Remove ${title}`}
+        // Not isDisabled: a disabled button shows no tooltip, and the tooltip is what says why.
+        aria-disabled={!removable || undefined}
+        onPress={removable ? onPress : undefined}
+        className={cx(
+          "flex size-9 items-center justify-center rounded-lg text-fg-quaternary outline-focus-ring focus-visible:outline-2",
+          removable ? "cursor-pointer hover:bg-primary_hover hover:text-fg-error-secondary" : "cursor-not-allowed opacity-40",
+        )}
+      >
+        <Trash01 className="size-4" />
+      </TooltipTrigger>
+    </Tooltip>
+  );
+}
+
 export interface EditTarget {
   /** A section id, or "*" for every card at once (Edit record). */
   sectionId: string;
   fieldKey?: string;
+  /** The section is being added from the "+" menu: it is put back on the record (every field shown) as the edit opens. */
+  addSection?: boolean;
 }
 
 const ALL = "*";
@@ -145,7 +272,11 @@ export function RecordFullView({
   isNew = false,
   onCreated,
   onDiscardNew,
+  variant = "full",
 }: {
+  /** "panel": the same record and edit, laid out to fit the details panel beside the list (one column, no right-hand
+   *  column, no full-screen control), so Edit happens where it was started (designer, 23 Oct 2026). */
+  variant?: "full" | "panel";
   record: SurveyRecord;
   onSelect: (id: string | null) => void;
   onAdd: (parent: SurveyRecord | null, option: ChildOption) => void;
@@ -161,6 +292,7 @@ export function RecordFullView({
   onDiscardNew?: () => void;
 }) {
   const store = useEditStore();
+  const panel = variant === "panel";
   const notes = useFieldNotes();
   const savedHidden = useHiddenFields(record.id);
   // A section whose fields are all empty is left out of the view (it still shows in edit mode).
@@ -173,21 +305,29 @@ export function RecordFullView({
     onExit();
   });
 
-  const begin = (target: EditTarget): Session => ({
-    sectionIds: [target.sectionId],
-    focusField: target.fieldKey,
-    draft: toDraft(record, store.artefactsFor(record.id)),
-    notes: { ...(notes[record.id] ?? {}) },
-    // Empty fields start hidden: they are added by ticking them in "Fields shown".
-    hidden: new Set([
+  const begin = (target: EditTarget): Session => {
+    // Empty fields start hidden: they are added by ticking them in Manage fields.
+    const hidden = new Set([
       ...savedHidden,
       ...[...emptyFieldKeys(record)].filter(
         (k) => !REQUIRED_FIELD.test(k.slice(k.indexOf(":") + 1)),
       ),
-    ]),
-    dirty: false,
-    attempted: false,
-  });
+    ]);
+    const added = target.addSection ? record.sections.find((x) => x.id === target.sectionId) : undefined;
+    if (added) {
+      hidden.delete(sectionKey(added.id));
+      for (const f of sectionFieldEntries(added)) hidden.delete(f.key);
+    }
+    return {
+      sectionIds: [target.sectionId],
+      focusField: target.fieldKey,
+      draft: toDraft(record, store.artefactsFor(record.id)),
+      notes: { ...(notes[record.id] ?? {}) },
+      hidden,
+      dirty: !!added,
+      attempted: false,
+    };
+  };
   const [session, setSession] = useState<Session | null>(() =>
     isNew
       ? begin({ sectionId: ALL })
@@ -196,6 +336,36 @@ export function RecordFullView({
         : null,
   );
   const [confirm, setConfirm] = useState<null | "cancel" | "exit">(null);
+  // A section added from "+" may sit far down the record: once it is drawn, take the eye to it.
+  const [reveal, setReveal] = useState<string | null>(initialEdit?.addSection ? initialEdit.sectionId : null);
+  useEffect(() => {
+    if (!reveal) return;
+    const t = setTimeout(() => {
+      const el = rootRef.current?.querySelector<HTMLElement>(`[id="full-card-${reveal}"]`);
+      el?.scrollIntoView({ block: "start", behavior: "smooth" });
+      flashElement(el);
+      setReveal(null);
+    }, 400);
+    return () => clearTimeout(t);
+  }, [reveal]);
+  // The panel's box, for the fixed save bar to line up with it.
+  const [panelBox, setPanelBox] = useState<{ left: number; width: number } | null>(null);
+  useEffect(() => {
+    const el = rootRef.current?.parentElement;
+    if (!panel || !el) return;
+    const measure = () => {
+      const r = el.getBoundingClientRect();
+      setPanelBox({ left: r.left, width: r.width });
+    };
+    measure();
+    const ro = new ResizeObserver(measure);
+    ro.observe(el);
+    window.addEventListener("resize", measure);
+    return () => {
+      ro.disconnect();
+      window.removeEventListener("resize", measure);
+    };
+  }, [panel]);
   // Cards are accordions too: all open to start; a card in edit mode always stays open.
   const [closedCards, setClosedCards] = useState<Set<string>>(new Set());
   const editing = session !== null;
@@ -229,12 +399,38 @@ export function RecordFullView({
       ? record.sections[0].id
       : session.sectionIds[0]
     : undefined;
-  const lastEditing =
-    session && !allEditing
-      ? session.sectionIds[session.sectionIds.length - 1]
-      : undefined;
+  // Sections not on the record when viewed (removed, hidden or empty): what "+" > Add section offers.
+  const offRecord = record.sections.filter((x) => !isSectionShown(x, savedHidden) || !hasContent(x));
   const update = (p: Partial<Session>) =>
     setSession((s) => (s ? { ...s, ...p, dirty: true } : s));
+  // Remove section: the whole card comes off the record (its values are kept, and Add section puts it back).
+  const removeSection = (sectionId: string) => {
+    const title = record.sections.find((x) => x.id === sectionId)?.title ?? "Section";
+    update({ hidden: new Set([...(session?.hidden ?? []), sectionKey(sectionId)]) });
+    toast.success(`${title} removed`, { description: "Add section puts it back. Nothing changes until you save." });
+  };
+  // Add section: show every field of it, put it in edit mode with the rest, and take the eye to it.
+  const addSection = (sectionId: string) => {
+    const section = record.sections.find((x) => x.id === sectionId);
+    if (!section) return;
+    setSession((s) => {
+      if (!s) return s;
+      const next = new Set(s.hidden);
+      next.delete(sectionKey(sectionId));
+      for (const f of sectionFieldEntries(section)) next.delete(f.key);
+      return {
+        ...s,
+        hidden: next,
+        sectionIds: s.sectionIds.includes(ALL) || s.sectionIds.includes(sectionId) ? s.sectionIds : [...s.sectionIds, sectionId],
+        dirty: true,
+      };
+    });
+    setTimeout(() => {
+      const el = rootRef.current?.querySelector<HTMLElement>(`[id="full-card-${sectionId}"]`);
+      el?.scrollIntoView({ block: "start", behavior: "smooth" });
+      flashElement(el);
+    }, 60);
+  };
   const missing = session ? missingFor(session.draft) : [];
 
   const save = () => {
@@ -277,7 +473,6 @@ export function RecordFullView({
   const exit = () =>
     session?.dirty ? setConfirm("exit") : isNew ? discard() : onExit();
 
-  const parent = store.recordById(record.parentId);
   const [lat, lon] = shownPosition(record);
   const hasLocation = record.sections.some((s) => s.withMap);
   const hidden = session ? session.hidden : savedHidden;
@@ -334,46 +529,39 @@ export function RecordFullView({
 
   return (
     <div ref={rootRef} className="flex min-h-full flex-col">
-      <div className="sticky top-0 z-20 flex items-center justify-between gap-3 border-b border-secondary bg-primary px-8 py-2.5">
+      <div className={cx("sticky top-0 z-20 flex items-center justify-between gap-3 border-b border-secondary bg-primary", panel ? "px-4 py-2" : "px-8 py-2.5")}>
         <Path
           ancestors={store.ancestorsOf(record)}
           current={record}
           onSelect={onSelect}
-          fold={false}
+          fold={panel}
         />
-        <div className="flex shrink-0 items-center gap-0.5">
-          {store.canEdit && !editing && (
-            <ActionsMenu
-              options={childOptions(record, store.childrenOf(record.id))}
-              onEdit={() => startEdit(ALL)}
-              onAdd={(o) => onAdd(record, o)}
-              onDelete={del.ask}
-            />
-          )}
-          <FullscreenToggle isFullscreen onToggle={exit} />
-        </div>
+        {!panel && <FullscreenToggle isFullscreen onToggle={exit} />}
       </div>
 
-      <div className="mx-auto grid w-full max-w-6xl flex-1 grid-cols-1 gap-10 px-8 py-8 lg:grid-cols-[minmax(0,1fr)_20rem]">
+      <div
+        className={cx(
+          "grid w-full flex-1 grid-cols-1",
+          panel ? cx("gap-6 p-5", editing && "pb-24") : "mx-auto max-w-6xl gap-10 px-8 py-8 lg:grid-cols-[minmax(0,1fr)_20rem]",
+        )}
+      >
         <div className="flex min-w-0 flex-col gap-6">
           <div className="flex items-start gap-4">
-            {record.scientificName ? (
+            {record.scientificName && (
               <SpeciesPhoto
                 scientificName={record.scientificName}
                 alt={record.name}
                 fallbackIcon={recordIcon(record)}
                 className="size-14"
               />
-            ) : (
-              <span className="flex size-14 shrink-0 items-center justify-center rounded-xl bg-secondary text-fg-quaternary">
-                <RecordIcon record={record} className="size-6" />
-              </span>
             )}
             <div className="flex min-w-0 flex-col gap-1">
-              <p className="text-xs font-semibold tracking-wide text-quaternary uppercase">
-                {record.type}
+              {/* The kind's shape at the size the tree draws it, not a large tile (designer, 23 Oct 2026). */}
+              <p className="flex items-center gap-1 text-xs font-semibold tracking-wide text-quaternary uppercase">
+                <RecordIcon record={record} className="size-4" />
+                {typeLabel(record)}
               </p>
-              <h1 className="text-2xl font-semibold text-balance text-primary">
+              <h1 className={cx("font-semibold text-balance text-primary", panel ? "text-xl" : "text-2xl")}>
                 {isNew
                   ? `New ${(record.kind === "event" ? record.type : `${record.type} ${record.kind}`).toLowerCase()}`
                   : record.name}
@@ -385,6 +573,20 @@ export function RecordFullView({
               )}
             </div>
           </div>
+
+          {!editing && !isNew && (
+            <RecordQuickActions
+              record={record}
+              onAdd={(o) => onAdd(record, o)}
+              onEdit={() => startEdit(ALL)}
+              onDelete={del.ask}
+              sections={offRecord}
+              onAddSection={(id) => {
+                setSession(begin({ sectionId: id, addSection: true }));
+                setReveal(id);
+              }}
+            />
+          )}
 
           {record.locationNote && (
             <p className="flex items-start gap-2 rounded-lg bg-warning-25 px-3 py-2 text-sm text-secondary">
@@ -471,11 +673,19 @@ export function RecordFullView({
                     )}
                   </h2>
                   <div className="flex shrink-0 items-center gap-1">
-                    {isEditing ? (
-                      <span className="inline-flex items-center gap-1 text-xs font-semibold text-brand-tertiary">
-                        <Edit02 className="size-3.5" />
-                        Editing
-                      </span>
+                    {isEditing && session ? (
+                      <>
+                        <SectionFieldsMenu
+                          section={section}
+                          hidden={session.hidden}
+                          onChange={(next) => update({ hidden: next })}
+                        />
+                        <RemoveSectionButton
+                          title={section.title}
+                          removable={sectionRemovable(section)}
+                          onPress={() => removeSection(section.id)}
+                        />
+                      </>
                     ) : (
                       store.canEdit && (
                         <SectionEditIcon
@@ -553,55 +763,48 @@ export function RecordFullView({
               </section>
             );
           })}
+
+          {session && store.canEdit && (
+            <AddSectionMenu
+              sections={record.sections.filter((section) =>
+                allEditing || session.sectionIds.includes(section.id)
+                  ? !sectionShownInEdit(section, session.hidden)
+                  : !isSectionShown(section, hidden) || !hasContent(section),
+              )}
+              onAdd={addSection}
+            />
+          )}
         </div>
 
-        <aside className="flex flex-col gap-4 lg:sticky lg:top-20 lg:self-start">
-          {session ? (
-            <VisibilityPanel
-              record={record}
-              hidden={session.hidden}
-              onChange={(next) => update({ hidden: next })}
-              activeSection={lastEditing}
+        <aside className={cx("flex flex-col gap-4 lg:sticky lg:top-20 lg:self-start", panel && "hidden")}>
+          <SideCard title="Record">
+            <SummaryRow label="Type">{typeLabel(record)}</SummaryRow>
+            <SummaryRow label="ID">{record.code}</SummaryRow>
+            {hasDateField(record) && (
+              <SummaryRow label="Date">{formatDate(record.date)}</SummaryRow>
+            )}
+            {!session && observerNames(record).length > 0 && (
+              <SummaryRow label="Observers">
+                {/* The first name and a count; the full list is one click away in Observers. */}
+                <button
+                  type="button"
+                  onClick={() => jumpTo("observers:Recorded by")}
+                  className="rounded text-right text-brand-secondary outline-focus-ring hover:underline focus-visible:outline-2"
+                >
+                  {observerNames(record)[0]}
+                  {observerNames(record).length > 1 &&
+                    ` +${observerNames(record).length - 1} more`}
+                </button>
+              </SummaryRow>
+            )}
+            <Hierarchy
+              ancestors={store.ancestorsOf(record)}
+              current={record}
+              onSelect={editing ? undefined : onSelect}
             />
-          ) : (
+          </SideCard>
+          {!session && (
             <>
-              <SideCard title="Record">
-                <SummaryRow label="Type">{record.type}</SummaryRow>
-                <SummaryRow label="ID">{record.code}</SummaryRow>
-                {hasDateField(record) && (
-                  <SummaryRow label="Date">
-                    {formatDate(record.date)}
-                  </SummaryRow>
-                )}
-                <SummaryRow label="Within">
-                  {parent ? (
-                    <button
-                      type="button"
-                      onClick={() => onSelect(parent.id)}
-                      className="text-right text-brand-secondary hover:underline"
-                    >
-                      {parent.name}
-                    </button>
-                  ) : (
-                    "Project"
-                  )}
-                </SummaryRow>
-                {observerNames(record).length > 0 && (
-                  <SummaryRow label="Observers">
-                    {/* The first name and a count; the full list is one click away in Observers. */}
-                    <button
-                      type="button"
-                      onClick={() => jumpTo("observers:Recorded by")}
-                      className="rounded text-right text-brand-secondary outline-focus-ring hover:underline focus-visible:outline-2"
-                    >
-                      {observerNames(record)[0]}
-                      {observerNames(record).length > 1 &&
-                        ` +${observerNames(record).length - 1} more`}
-                    </button>
-                  </SummaryRow>
-                )}
-              </SideCard>
-
               {hasLocation && (
                 <SideCard title="Location">
                   <RecordMap
@@ -665,8 +868,16 @@ export function RecordFullView({
       </div>
 
       {session && (
-        <div className="sticky bottom-0 z-20 mt-auto border-t border-secondary bg-primary">
-          <div className="mx-auto flex w-full max-w-6xl items-center justify-between gap-3 px-8 py-4">
+        <div
+          // In the panel the bar is fixed to the bottom of the window across the panel's width, as the full view's is
+          // across the screen (designer, 23 Oct 2026), so Save is in reach however far down the page is scrolled.
+          style={panel && panelBox ? { left: panelBox.left, width: panelBox.width } : undefined}
+          className={cx(
+            "z-20 border-t border-secondary bg-primary",
+            panel ? "fixed bottom-0 rounded-b-xl border-x shadow-lg" : "sticky bottom-0 mt-auto",
+          )}
+        >
+          <div className={cx("flex w-full items-center justify-between gap-3", panel ? "px-5 py-3" : "mx-auto max-w-6xl px-8 py-4")}>
             <p className="text-sm text-tertiary">
               {isNew ? "Adding a new " : "Editing "}
               <span className="font-semibold text-primary">

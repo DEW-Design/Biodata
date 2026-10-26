@@ -14,7 +14,7 @@ import { MapLegend, type LegendItem } from "@/app/pages/_shared/map-search/map-l
 import type { SAMapMarker } from "@/app/pages/_shared/map-search/sa-map";
 import { MapZoomButtons } from "@/app/pages/_shared/map-search/map-zoom-buttons";
 import type { Map as LeafletMap } from "leaflet";
-import { Activity, ArrowNarrowLeft, ArrowNarrowRight, ChevronDown, ChevronUp, Circle, Download01, Eye, File01, File04, File06, File07, FileDownload01, FileLock01, Folder, Image01, LayerSingle, LayersThree01, Link02, Map02, MarkerPin02, PenTool02, Pentagon, Plus, Printer, RefreshCcw01, SearchLg, Target05, Trash01, UploadCloud02, UserPlus01, Users01, Waves } from "@untitledui/icons";
+import { Activity, ArrowNarrowLeft, ArrowNarrowRight, ChevronDown, ChevronUp, Circle, Download01, Eye, File01, File04, File06, File07, FileDownload01, FileLock01, Folder, Image01, LayerSingle, LayersThree01, Link02, Map02, MarkerPin02, PenTool02, Pentagon, Plus, Printer, RefreshCcw01, SearchLg, Target05, Trash01, Upload01, UserPlus01, Users01, Waves } from "@untitledui/icons";
 import { Button } from "@/components/base/buttons/button";
 import { Dropdown } from "@/components/base/dropdown/dropdown";
 import { Avatar } from "@/components/base/avatar/avatar";
@@ -118,7 +118,7 @@ const methodTabs: { id: Method; label: string; icon: FC<{ className?: string }> 
   { id: "draw", label: "Draw", icon: PenTool02 },
   { id: "coordinates", label: "Coordinates", icon: MarkerPin02 },
   { id: "location", label: "Location", icon: Map02 },
-  { id: "shapefile", label: "Shapefile", icon: UploadCloud02 },
+  { id: "shapefile", label: "Shapefile", icon: Upload01 },
 ];
 
 // Icons match Figma's own "Metrics section" exactly (node 209:27950, superseding the earlier
@@ -2019,7 +2019,7 @@ function ObservationsSearch({ layout }: { layout: ExploreLayout }) {
           <Dropdown.Separator />
           <Dropdown.Item id="coordinates" label="Enter coordinates" icon={MarkerPin02} />
           <Dropdown.Item id="location" label="Choose national parks" icon={Map02} />
-          <Dropdown.Item id="shapefile" label="Upload a shapefile" icon={UploadCloud02} />
+          <Dropdown.Item id="shapefile" label="Upload a shapefile" icon={Upload01} />
         </Dropdown.Menu>
       </Dropdown.Popover>
     </Dropdown.Root>

@@ -1,7 +1,7 @@
 "use client";
 
 import { useId, useState } from "react";
-import { Check, ChevronRight, Edit03, Eye, EyeOff, SearchLg, Sliders01, Trash01 } from "@untitledui/icons";
+import { Check, ChevronRight, Eye, EyeOff, SearchLg, PencilLine, Sliders01, Trash01 } from "@untitledui/icons";
 import { Button } from "@/components/base/buttons/button";
 import { CountBadge } from "@/components/base/badges/badges";
 import { Dropdown } from "@/components/base/dropdown/dropdown";
@@ -146,7 +146,7 @@ export function AreaLayerList({
                           if (key === "remove") onRemove(row.id);
                         }}
                       >
-                        <Dropdown.Item id="rename" label="Rename" icon={Edit03} />
+                        <Dropdown.Item id="rename" label="Rename" icon={PencilLine} />
                         {row.radiusKm !== undefined && <Dropdown.Item id="radius" label="Change radius" icon={Sliders01} />}
                         <Dropdown.Item id="remove" label="Remove" icon={Trash01} />
                       </Dropdown.Menu>

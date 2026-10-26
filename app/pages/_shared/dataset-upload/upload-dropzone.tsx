@@ -60,7 +60,19 @@ export function useFileQueue() {
   return { files, rejected, add, remove, uploading: files.some((f) => f.status === "uploading") };
 }
 
-export function UploadDropzone({ onAdd, isInvalid }: { onAdd: (files: File[]) => void; isInvalid?: boolean }) {
+export function UploadDropzone({
+  onAdd,
+  isInvalid,
+  acceptedFileTypes = ACCEPTED_EXTENSIONS,
+  formats = "XLS or XLSX",
+}: {
+  onAdd: (files: File[]) => void;
+  isInvalid?: boolean;
+  /** What the file picker offers. Dropped files are not filtered here: the caller checks them. */
+  acceptedFileTypes?: string[];
+  /** The line under "Click to upload", naming what can be added. */
+  formats?: string;
+}) {
   const onDrop: NonNullable<DropZoneProps["onDrop"]> = async (e) => {
     const dropped = await Promise.all(e.items.flatMap((item) => (item.kind === "file" ? [item.getFile()] : [])));
     onAdd(dropped);
@@ -80,14 +92,14 @@ export function UploadDropzone({ onAdd, isInvalid }: { onAdd: (files: File[]) =>
     >
       <FeaturedIcon icon={Upload01} theme="modern" color="gray" size="md" />
       <Text slot="label" className="flex flex-wrap items-baseline justify-center gap-x-1 text-sm text-tertiary">
-        <FileTrigger acceptedFileTypes={ACCEPTED_EXTENSIONS} allowsMultiple onSelect={(list) => list && onAdd(Array.from(list))}>
+        <FileTrigger acceptedFileTypes={acceptedFileTypes} allowsMultiple onSelect={(list) => list && onAdd(Array.from(list))}>
           <Button color="link-color" size="sm">
             Click to upload
           </Button>
         </FileTrigger>
         <span>or drag and drop here</span>
       </Text>
-      <p className="text-xs text-quaternary">XLS or XLSX</p>
+      <p className="text-xs text-balance text-quaternary">{formats}</p>
     </DropZone>
   );
 }

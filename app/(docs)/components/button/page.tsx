@@ -11,7 +11,7 @@ import {
   ScaffoldTextInput,
   SegmentedControl,
 } from "@/components/scaffold/controls";
-import { Plus, ArrowRight, ArrowLeft, Download01, Trash01, Edit01, Send01, ChevronDown } from "@untitledui/icons";
+import { Plus, ArrowRight, ArrowLeft, Download01, Trash01, Edit05, Send01, ChevronDown } from "@untitledui/icons";
 import { enabledVariants, isFeatureEnabled } from "@/config/design-system.config";
 import { useConfig } from "@/lib/config-context";
 
@@ -243,7 +243,7 @@ export default function ButtonPage() {
               <Section label="Leading icon">
                 <Button color="primary" iconLeading={Plus}>Add item</Button>
                 <Button color="secondary" iconLeading={Download01}>Download</Button>
-                <Button color="tertiary" iconLeading={Edit01}>Edit</Button>
+                <Button color="tertiary" iconLeading={Edit05}>Edit</Button>
               </Section>
             )}
 
@@ -271,7 +271,7 @@ export default function ButtonPage() {
                 <Button color="primary" iconLeading={Plus} size="sm" />
                 <Button color="primary" iconLeading={Plus} size="md" />
                 <Button color="secondary" iconLeading={Download01} size="md" />
-                <Button color="secondary" iconLeading={Edit01} size="md" />
+                <Button color="secondary" iconLeading={Edit05} size="md" />
                 <Button color="tertiary-destructive" iconLeading={Trash01} size="md" />
               </Section>
             )}

@@ -606,8 +606,13 @@ forward arrow on the right (`iconTrailing`) for a button that moves on. An actio
 
 - **Not action buttons.** An icon-only button (an `aria-label`, no text) and a link-style button (`link-color`,
   `link-gray`, `link-destructive`) are not covered; they may still carry an icon.
-- **One icon per action (§2.4).** The same action has the same icon on every screen. Workflow actions on a record
-  (`RecordAction`, whose `icon` is required) and the buttons in forms, modals and the auth flow use this set:
+- **One icon per action, everywhere (§2.4).** An action has exactly one icon, and it is the same wherever the action
+  appears: a labelled button, an icon-only button, a menu item, a `RecordAction`, a card's or a field's hover icon, a
+  doc page's example and a shared component's built-in menu (designer, 25 Oct 2026: "Icons must be same for the
+  corresponding actions across everywhere"). A near-twin glyph from the same family (`Edit01`-`Edit04` beside
+  `Edit05`, `UploadCloud02` beside `Upload01`, `DownloadCloud02` beside `Download01`) is a different icon and MUST NOT
+  stand in for the action's own. The reverse holds too: two different actions MUST NOT share an icon on one screen
+  (Rename and Edit are told apart). The set:
 
   | Action | Icon |
   | --- | --- |
@@ -628,6 +633,8 @@ forward arrow on the right (`iconTrailing`) for a button that moves on. An actio
   | Archive, restore | `Archive`, `FlipBackward` |
   | Cancel an agreement or request | `SlashCircle01` |
   | Edit, change | `Edit05` |
+  | Rename | `PencilLine` |
+  | Duplicate, copy | `Copy01` |
   | Download, export | `Download01` |
   | Upload, replace a file | `Upload01` |
   | Search | `SearchLg` |
@@ -640,6 +647,11 @@ forward arrow on the right (`iconTrailing`) for a button that moves on. An actio
   | Flag, add a link | `Flag01`, `Link01` |
 
   An action not in the set takes the icon Figma draws, or the closest existing one (§2.4), and is added here.
+- **One control per action.** An action appears once on a record: two controls that do the same thing (a header "..."
+  menu repeating the Add and Edit buttons under the title) are a defect. A record's actions sit together under its
+  title; the bar above it holds navigation only (the path, full screen).
+- **Not covered by the set.** An icon that names a concept rather than an action (a tab, a category tile, a resource
+  type, a record kind) follows §2.4 and §3.13, not this table: `UploadCloud02` is the Uploads tab, not the upload action.
 - **Modals and shared components.** A modal's buttons are action buttons. `ConfirmationModal`, `DestructiveModal` and
   `FormModal` require `confirmIcon` / `submitIcon` (an action is never the same twice, so there is no default) and
   default Cancel to `XClose`; "Keep editing" on a discard prompt takes `ArrowLeft` (`cancelIcon`). A button-style
@@ -650,10 +662,18 @@ forward arrow on the right (`iconTrailing`) for a button that moves on. An actio
   which did, and some 50 other filled and outlined buttons across the forms, the auth flow and the registration
   flow had none; the check then missed every modal, because their buttons live in a shared component (the Approve
   request modal's Cancel and Upload and Approve, the file field's Browse), so the same gap was found again
-  (designer, 1 Oct 2026, section 0.8).
+  (designer, 1 Oct 2026, section 0.8). One icon per action, everywhere: the project records panel had Edit and Add
+  both in its header "..." menu and under the title, Edit drawn with `Edit02` in one and `Edit05` in the other, and a
+  sweep found 22 more drifts (four pencils, `UploadCloud02` on four upload buttons, `DownloadCloud02`, Rename as
+  `Edit03` on the map and `PencilLine` in Taxonomy) (designer, 25 Oct 2026).
 - **Enforcement:** `AUTO §3.12` (an action button with no icon anywhere under `app/pages`, the auth flow and the
   home page included, or in `components/application`, `components/base` and `components/custom`; the two stale
-  unlinked drafts are exempt), and `tsc` for `RecordAction.icon` and the modals' required icon props.
+  unlinked drafts are exempt), and `tsc` for `RecordAction.icon` and the modals' required icon props. `AUTO §3.12b`
+  (under `app/pages`, the doc pages, the Prototype tools and `components/application`, `base` and `custom`: an import
+  of a pencil other than `Edit05`; or a labelled action, a `label` with its `icon` or a `Button`'s text with its
+  `iconLeading`, whose first word is in the table and whose icon is not that action's; "Add", "Cancel" and "Change"
+  are not keyed, because the table gives them more than one icon, and the marketing home's feature tiles are exempt).
+  `REVIEW` for icon-only controls and for one control per action.
 
 ### §3.13 Underline tabs carry icons
 
@@ -854,6 +874,22 @@ list, and 24px to the sides and bottom.
 - **Enforcement:** `AUTO §4.2g` (in a file with `<ToolbarSearch>`, no `div` between `</SectionHeader.Root>` and the
   first `<ToolbarSearch>` carries `p-6`, `pt-6` or `py-6`).
 
+**A table that fits one page is the basic table (§4.2h).** An embedded table (in a form, a review step, a record's tab, a
+popover) whose rows all fit on one page, 10 or fewer (the smallest page size `TableCard.PaginationNumbered` offers), is the
+basic Table primitive (`components/base/table/table.tsx`: `Table`, `TableHeader`, `Column`, `TableBody`, `Row`, `Cell`) in a
+bordered container (`overflow-hidden rounded-lg border border-secondary bg-primary`), with no pagination. Past 10 rows it is
+`TableCard.Root` with `TableCard.PaginationNumbered`, as above. The switch is made on the row count, so the same table moves
+between the two as rows come and go.
+
+- MUST NOT show "Rows per page", Previous, Next and "1 - 1 of 1" under a table that cannot have a second page.
+- A collection screen (a list page, a report) keeps `TableCard` and its pagination whatever its count: its rows grow, and its
+  toolbar and the fit-the-viewport rule depend on the card.
+- The basic table has no selection, sorting or card. A row action (Remove) is a link-style `Button` in a cell; a
+  bare `Checkbox` in a cell does not work, because the table's rows supply its checkbox context.
+- **Origin:** the nomination form's "Already restricted" table and the Review step's table showed a full pagination bar under a
+  single row; the designer: "use a basic table component if there is less results per page. add this to contract" (25 Oct 2026).
+- **Enforcement:** `REVIEW`. A first occurrence, so no `AUTO` check yet (§0.8): the row count is only known at run time.
+
 ### §4.3 Cognitive load
 
 More than five or six field groups needs tiering. A conditional field is conditional in the UI. One focal
@@ -1001,8 +1037,9 @@ behaves the same way, on every card and every page.
 1. **Entry:** a card's edit icon edits that card; a field's edit icon (on hover or focus) edits its card,
    scrolled to and focused on that field; "Edit record" (or the page's equivalent) edits every card. A new
    record opens the same way, every card in edit mode.
-2. **One treatment:** a card in edit mode has the brand border and brand-50 halo and says "Editing". The field
-   rows use the same label-left layout as when viewed.
+2. **One treatment:** a card in edit mode has the brand border and brand-50 halo, and no label: it MUST NOT say
+   "Editing" (designer, 23 Oct 2026: the status confused people). The field rows use the same label-left layout as
+   when viewed.
 3. **More than one card at a time:** while a card is in edit mode, the other cards stay at full strength and keep
    their edit icons; opening another adds it to the same edit. MUST NOT dim or lock the other cards.
 4. **Actions in one place:** Cancel and Save changes (or "Add <type>" for a new record) sit in one sticky footer
@@ -1010,12 +1047,19 @@ behaves the same way, on every card and every page.
    MUST NOT put them inside a card or repeat them per card.
 5. **Leaving:** Cancel or Exit with unsaved changes asks first. Save and Cancel return to the view the edit was
    started from (a side panel stays a side panel, a full view stays a full view).
-6. **Visibility:** where a record's fields can be hidden, the right-hand column becomes the "Fields shown"
-   checklist while a card is in edit mode, and for a new record.
+6. **Visibility, per section:** where a record's fields can be hidden, each card in edit mode has a quiet "Fields"
+   control in its header (with the count shown, e.g. 6/10) that opens a checklist of that section's fields; and
+   under the cards, "Add section" puts back a section the record has that is not on screen (hidden, or empty).
+   Identifiers and required fields stay shown. (Until 23 Oct 2026 the right-hand column became a record-wide
+   "Fields shown" checklist; the designer replaced it with this.)
+7. **Where the edit is:** the right-hand column keeps the record's summary while editing, with where the record
+   sits from the project down: each step's shape, full name and ID, not IDs alone.
 
 - **Origin:** Project details kept Cancel and Save inside the card while record editing had them in a page
   footer; the designer caught the difference ("Consistency is the key"). Item 3 replaced "the other cards dim and
   hide their edit icons" on 29 Sept 2026, by designer decision, after locking the other cards got in the way.
+  Items 2, 6 and 7 changed on 23 Oct 2026, by designer decision: the "Editing" label confused people, fields are
+  managed per section, and the hierarchy was not prominent and showed IDs only.
 - **Enforcement:** `REVIEW`.
 
 ---

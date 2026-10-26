@@ -346,9 +346,57 @@ function actionButtonsWithoutIcon(src) {
   return found;
 }
 
+// 3.12b: one icon per action, everywhere. An action named by its label (a menu item or RecordAction's `label` with its
+// `icon`, a Button's text with its `iconLeading`) takes the icon the 3.12 table gives that action, whatever the screen.
+// Keyed by the label's first word; "Add" and "Cancel" are left out because the table gives them more than one icon by
+// what is added or cancelled (Add attachment, Add a link; Cancel, Cancel an agreement), and "Change" because a change
+// made with a control of its own names that control (Change radius, Sliders01). The marketing home is exempt: its
+// feature tiles name features, not actions ("Export for research").
+const ACTION_ICON = {
+  edit: "Edit05",
+  delete: "Trash01", discard: "Trash01",
+  download: "Download01", export: "Download01",
+  upload: "Upload01", replace: "Upload01",
+  save: "Save01",
+  rename: "PencilLine",
+  duplicate: "Copy01",
+  approve: "CheckCircle", accept: "CheckCircle", resolve: "CheckCircle",
+  reject: "XCircle",
+  archive: "Archive", restore: "FlipBackward",
+};
+// The other pencils are never an action's icon: edit is Edit05.
+const STRAY_EDIT_GLYPH = /\b(Edit0[1-46-9]|Pencil0\d)\b/;
+function actionIconMismatches(src) {
+  const found = [];
+  const check = (label, icon, at) => {
+    const want = ACTION_ICON[label.trim().split(/\s+/)[0]?.toLowerCase()];
+    if (want && icon !== want) found.push({ line: src.slice(0, at).split("\n").length, label: label.trim(), icon, want });
+  };
+  // label="X" ... icon={Y} (or the other way round) inside one tag or object literal
+  for (const m of src.matchAll(/label[=:]\s*\{?["'`]([^"'`$]+)["'`]\}?[^<>{}]{0,160}?\bicon[=:]\s*\{?([A-Z]\w+)/g)) check(m[1], m[2], m.index);
+  for (const m of src.matchAll(/\bicon[=:]\s*\{?([A-Z]\w+)\}?[^<>{}]{0,160}?\blabel[=:]\s*\{?["'`]([^"'`$]+)["'`]/g)) check(m[2], m[1], m.index);
+  // <Button ... iconLeading={Y} ...>X</Button>
+  for (const m of src.matchAll(/<Button\b[^>]*?\biconLeading=\{([A-Z]\w+)\}[^>]*>\s*([A-Za-z][^<{]*?)\s*<\/Button>/g)) check(m[2], m[1], m.index);
+  return found;
+}
+
 export function runChecks() {
   const violations = [];
   const improvements = [];
+
+  // 3.12b: one icon per action, on every screen, doc page and shared component
+  for (const dir of ["app/pages", "app/(docs)", "app/_prototype-tools", "components/application", "components/base", "components/custom"]) {
+    const root = join(ROOT, dir);
+    if (!existsSync(root)) continue;
+    for (const file of walk(root)) {
+      if (!/\.tsx?$/.test(file) || rel(file).startsWith("app/pages/biodata-home/")) continue;
+      const src = readFileSync(file, "utf8");
+      const stray = src.match(new RegExp(`import\\s*\\{[^}]*${STRAY_EDIT_GLYPH.source}[^}]*\\}\\s*from\\s*["']@untitledui/icons["']`));
+      if (stray) violations.push({ clause: "3.12b", file: rel(file), message: `${stray[1]} imported. Edit is Edit05 everywhere; no other pencil is an action's icon (CONTRACTS.md 3.12).` });
+      for (const x of actionIconMismatches(src))
+        violations.push({ clause: "3.12b", file: `${rel(file)}:${x.line}`, message: `"${x.label}" carries ${x.icon}; that action is ${x.want} on every screen (CONTRACTS.md 3.12, one icon per action).` });
+    }
+  }
 
   // hard shell / pattern rules
   for (const file of walk(PAGES)) {

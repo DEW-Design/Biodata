@@ -69,7 +69,7 @@ export interface ProjectRow {
 const join = (items: (string | undefined)[], separator = "; ") => items.filter(Boolean).join(separator);
 
 function extentText(extent: GeoExtentValue): string {
-  if (extent.method === "list" && extent.parkId) return SA_NATIONAL_PARKS.find((p) => p.id === extent.parkId)?.name ?? "";
+  if (extent.method === "list" && extent.parkId) return extent.listName ?? SA_NATIONAL_PARKS.find((p) => p.id === extent.parkId)?.name ?? "";
   if (extent.method === "shapefile") return extent.shapefileName ?? "";
   return extent.boundary ? boundarySummary(extent.boundary) : "";
 }

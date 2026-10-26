@@ -26,6 +26,7 @@ import { trapLabels } from "./field-schema";
 import type { SurveyRecord } from "./survey-data";
 import { FACTOR_TITLES } from "./landscape";
 import { isBiodataAdmin, type UserRole } from "@/lib/user-role";
+import type { DataLicence } from "@/app/pages/_shared/dataset-upload/dataset-data";
 
 export type FieldFileKind = "image" | "pdf" | "spreadsheet" | "video" | "link";
 
@@ -62,6 +63,19 @@ export interface FieldFile {
   url?: string;
   /** Set while the file waits for review, and when it was rejected; absent once approved (or when it never needed review). */
   review?: FileReview;
+  /** The artefact's own details, given in the bulk upload template (bulk-attachments.ts); the viewer falls back to its defaults without them. */
+  meta?: FileMeta;
+}
+/** What the artefact viewer shows for a file, as entered in the bulk upload template. Every part is optional. */
+export interface FileMeta {
+  title?: string;
+  description?: string;
+  /** When the photo, document or recording was made, as "25 Oct 2026". */
+  created?: string;
+  creator?: string;
+  licence?: DataLicence;
+  publisher?: string;
+  rightsHolder?: string;
 }
 /** The last time a questionable value was resolved: why, by whom, and what had been questioned. */
 export interface FieldResolution {
@@ -77,7 +91,7 @@ export interface FieldNotes {
   files: FieldFile[];
 }
 
-type NotesMap = Record<string, Record<string, FieldNotes>>;
+export type NotesMap = Record<string, Record<string, FieldNotes>>;
 
 const c = (
   id: string,
@@ -518,6 +532,7 @@ export const fieldNotesActions = {
     file: { name: string; sizeBytes: number; kind: FieldFileKind },
     by: string,
     review?: FileReview,
+    meta?: FileMeta,
   ) {
     const size =
       file.sizeBytes >= 1_000_000
@@ -535,6 +550,26 @@ export const fieldNotesActions = {
           addedBy: by,
           date: today(),
           ...(review ? { review } : {}),
+          ...(meta ? { meta } : {}),
+        },
+      ],
+    }));
+  },
+  /** A web link on a field. Added through `update`, so several links added at once (a bulk upload) all land. */
+  addLink(recordId: string, key: string, link: { url: string; name: string; meta?: FileMeta }, by: string) {
+    update(recordId, key, (n) => ({
+      ...n,
+      files: [
+        ...n.files,
+        {
+          id: newId("l"),
+          name: link.name,
+          size: "",
+          kind: "link",
+          url: link.url,
+          addedBy: by,
+          date: today(),
+          ...(link.meta ? { meta: link.meta } : {}),
         },
       ],
     }));

@@ -2,7 +2,7 @@
 
 import type { ReactNode } from "react";
 import { Dialog, DialogTrigger } from "react-aria-components";
-import { AlertCircle, BarChart01, CheckCircle, ChevronDown, Eye, File06, RefreshCcw01, UploadCloud02 } from "@untitledui/icons";
+import { AlertCircle, BarChart01, CheckCircle, ChevronDown, Eye, File06, RefreshCcw01, Upload01 } from "@untitledui/icons";
 import { Badge, type BadgeColor } from "@/components/base/badges/badges";
 import { Button } from "@/components/base/buttons/button";
 import { ProgressBarBase } from "@/components/base/progress-indicators/progress-indicators";
@@ -90,7 +90,7 @@ function ReasonActions({ view, projectId, datasetId, onRetry }: { view: RunView;
           Try again
         </Button>
       ) : (
-        <Button color="primary" size="sm" iconLeading={UploadCloud02} href={roleHref(`/pages/project-list/${projectId}/upload`)}>
+        <Button color="primary" size="sm" iconLeading={Upload01} href={roleHref(`/pages/project-list/${projectId}/upload`)}>
           Upload a corrected file
         </Button>
       )}

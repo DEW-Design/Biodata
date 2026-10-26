@@ -1,7 +1,7 @@
 "use client";
 
 import type React from "react";
-import { Copy01, Edit01, LogOut01, Settings01, Trash01, UserPlus01 } from "@untitledui/icons";
+import { Copy01, Edit05, LogOut01, Settings01, Trash01, UserPlus01 } from "@untitledui/icons";
 import { Dropdown } from "@/components/base/dropdown/dropdown";
 import { PageHeader } from "@/components/PageHeader";
 import Link from "next/link";
@@ -34,7 +34,7 @@ export default function DropdownPage() {
           <Dropdown.DotsButton />
           <Dropdown.Popover className="w-56">
             <Dropdown.Menu>
-              <Dropdown.Item icon={Edit01} label="Edit" />
+              <Dropdown.Item icon={Edit05} label="Edit" />
               <Dropdown.Item icon={Copy01} label="Copy link" />
               <Dropdown.Separator />
               <Dropdown.Item icon={Trash01} label="Delete" />
@@ -137,14 +137,14 @@ export default function DropdownPage() {
       <h2 className="text-balance">Usage</h2>
       <pre className="overflow-x-auto rounded-xl border border-secondary bg-secondary p-5">
         <code className="font-mono text-[13px] text-secondary">
-{`import { Edit01, Copy01, Trash01 } from "@untitledui/icons";
+{`import { Edit05, Copy01, Trash01 } from "@untitledui/icons";
 import { Dropdown } from "@/components/base/dropdown/dropdown";
 
 <Dropdown.Root>
   <Dropdown.DotsButton />
   <Dropdown.Popover className="w-56">
     <Dropdown.Menu>
-      <Dropdown.Item icon={Edit01} label="Edit" />
+      <Dropdown.Item icon={Edit05} label="Edit" />
       <Dropdown.Item icon={Copy01} label="Copy link" />
       <Dropdown.Separator />
       <Dropdown.Item icon={Trash01} label="Delete" />

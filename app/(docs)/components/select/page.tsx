@@ -314,7 +314,7 @@ export default function SelectPage() {
       {isFeatureEnabled(config, "multiSelect") && (
         <>
           <h2 className="text-balance">Multi-select</h2>
-          <p className="text-balance"><code>MultiSelect</code> - checkbox-style multiple selection, with a search field and a Reset/Select all footer.</p>
+          <p className="text-balance"><code>MultiSelect</code> - checkbox-style multiple selection, with a search field and a Reset/Select all footer. Each selection is listed under the field as a dismissible badge (<code>showSelectedBadges</code>, on by default); removing one keeps focus on the badges. With no visible label, <code>aria-label</code> names the field.</p>
           <Section label="MultiSelect">
             <div className="w-72">
               <MultiSelect

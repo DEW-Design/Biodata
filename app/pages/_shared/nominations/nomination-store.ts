@@ -19,6 +19,9 @@ interface NominationStoreState {
   nominations: Nomination[];
 }
 
+// The restricted species seeded at version 8.
+const DEMO_RESTRICTIONS = new Set(["16", "17", "18", "19", "20", "21", "22"].map((n) => `NSS-2026-000${n}`));
+
 const useNominationStore = create<NominationStoreState>()(
   persist(() => ({ nominations: seedNominations }), {
     name: "biodata-nominations",
@@ -30,8 +33,10 @@ const useNominationStore = create<NominationStoreState>()(
     // of them is dropped and the seeded ones are added. 4: more seeded location nominations (NSS-2026-00010 to 00013); a
     // nomination made in this browser that already took one of those IDs keeps everything but its ID, which moves to the next
     // free one. 5: NSS-2026-00014, a twelve-attribute nomination for stress-testing what a nomination protects. 6: a Location is
-    // rated per area: a rating kept under a Location attribute's id moves to each of its areas (`ratingsPerArea`).
-    version: 6,
+    // rated per area: a rating kept under a Location attribute's id moves to each of its areas (`ratingsPerArea`). 7: NSS-2026-00015, an
+    // accepted Painted Dragon nomination, so a new one shows what is already protected. 8: NSS-2026-00016 to 00022, more restricted
+    // species for the demo.
+    version: 8,
     migrate: (persisted, from) => {
       const state = persisted as { nominations: (Omit<Nomination, "history"> & { history?: Nomination["history"] })[] };
       const seedRatings = (id: string) => seedNominations.find((s) => s.id === id)?.ratings;
@@ -43,7 +48,7 @@ const useNominationStore = create<NominationStoreState>()(
       let next = Math.max(0, ...[...kept, ...seedNominations].map((n) => Number(n.id.split("-")[2]) || 0)) + 1;
       kept = kept.map((n) => (seededIds.has(n.id) && !isSeed(n) ? { ...n, id: `NSS-${n.id.split("-")[1]}-${String(next++).padStart(5, "0")}` } : n));
       const held = new Set(kept.map((n) => n.id));
-      const added = (s: Nomination) => (s.kind === "location" || (from < 5 && s.id === "NSS-2026-00014")) && !held.has(s.id);
+      const added = (s: Nomination) => (s.kind === "location" || (from < 5 && s.id === "NSS-2026-00014") || (from < 7 && s.id === "NSS-2026-00015") || (from < 8 && DEMO_RESTRICTIONS.has(s.id))) && !held.has(s.id);
       return { nominations: [...kept, ...seedNominations.filter(added)] };
     },
     storage: createJSONStorage(browserStorage),

@@ -37,7 +37,7 @@ import {
   TabPanel,
   Tabs as ContentTabs,
 } from "@/components/application/tabs/tabs";
-import { ArrowNarrowRight, Database01, Feather, Folder, Paperclip } from "@untitledui/icons";
+import { ArrowNarrowRight, Database01, Feather, Folder, Key01, Paperclip } from "@untitledui/icons";
 import { Button } from "@/components/base/buttons/button";
 import { BadgeWithDot } from "@/components/base/badges/badges";
 import { AlertFullWidth } from "@/components/application/alerts/alerts";
@@ -48,16 +48,15 @@ import { AppHeader } from "@/app/pages/_shared/app-header";
 import { MobileNavTrigger } from "@/app/pages/_shared/mobile-nav";
 import { PrototypeTools } from "@/app/_prototype-tools/prototype-tools";
 import { ProjectCardActions } from "@/app/pages/_shared/project-card-actions";
-import {
-  ArtefactLightbox,
-  type Artefact,
-} from "@/app/pages/_shared/artefact-lightbox";
-import { ArtefactsView } from "./artefacts-view";
+import { ArtefactLightbox } from "@/app/pages/_shared/artefact-lightbox";
+import { ArtefactsView, fieldArtefact } from "./artefacts-view";
+import { BulkAttachModal } from "./bulk-attach-modal";
 import { DatasetsScreen } from "./datasets-view";
 import { ReviewScreen, useLiveEntries, useReviewItems } from "./review-view";
 import { useCanReview } from "./field-notes";
 import { allFiles, recordFieldKeys, useFieldNotes } from "./field-notes-store";
 import { useUserRole } from "@/lib/use-user-role";
+import { ProjectAccessTab } from "./project-access-view";
 import { useRoleHref } from "@/lib/use-role-href";
 import { navForRole, keyHref, type NavNode } from "@/lib/registered-user-nav";
 import { ProjectTab, formatDay } from "./project-tab";
@@ -74,7 +73,7 @@ import {
 } from "./records-explorer";
 import type { FilterSelection } from "@/app/pages/_shared/list-filter";
 
-type DetailTab = "project" | "records" | "species" | "artefacts";
+type DetailTab = "project" | "records" | "species" | "artefacts" | "access";
 
 function ProjectHero() {
   const { project, meta } = useEditStore();
@@ -86,9 +85,16 @@ function ProjectHero() {
       : status === "Under review"
         ? "warning"
         : "gray";
+  const [bulkAttach, setBulkAttach] = useState(false);
   // The shared record hero, so the title, eyebrow and facts are set exactly as on every other record page.
   return (
-    <RecordHero eyebrow="Project" title={d.shortTitle} actions={<ProjectCardActions projectId={meta.id} projectCode={meta.code} />}>
+    <>
+    <BulkAttachModal isOpen={bulkAttach} onClose={() => setBulkAttach(false)} />
+    <RecordHero
+      eyebrow="Project"
+      title={d.shortTitle}
+      actions={<ProjectCardActions projectId={meta.id} projectCode={meta.code} onUploadAttachments={() => setBulkAttach(true)} />}
+    >
       <HeroMeta label="Project ID">{meta.code}</HeroMeta>
       <HeroMeta label="Start Date">{formatDay(d.startDate) || "Not provided"}</HeroMeta>
       <HeroMeta label="End Date">{d.endDate ? formatDay(d.endDate) : "Ongoing"}</HeroMeta>
@@ -103,6 +109,7 @@ function ProjectHero() {
           : `${d.dataOwnerContacts[0]?.firstName ?? ""} ${d.dataOwnerContacts[0]?.lastName ?? ""}`.trim()}
       </HeroMeta>
     </RecordHero>
+    </>
   );
 }
 
@@ -218,42 +225,7 @@ function ProjectDetail({ basePath, notice }: ProjectDetailTemplateProps) {
         const rec = recordById(recordId);
         // Only files on a field the record still has.
         if (!rec || !recordFieldKeys(rec).has(key)) return [];
-        const field = key.slice(key.indexOf(":") + 1);
-        const a: Artefact & { recordId: string; fieldKey: string } = {
-          fieldKey: key,
-          id: file.id,
-          recordId,
-          title: file.name,
-          type: file.kind,
-          size: file.size || "Link",
-          recordLabel: `${rec.name} · ${field}`,
-          metaTitle: file.name,
-          created: file.date,
-          creator: file.addedBy,
-          objectId: `${meta.objectPrefix}:${rec.code}:${file.id.toUpperCase()}`,
-          description: `Attached to "${field}" on ${rec.type} ${rec.code}, ${rec.name}.${file.review?.status === "rejected" ? ` Rejected by ${file.review.by}: ${file.review.reason}` : ""}`,
-          review: file.review,
-          format: {
-            image: "image/jpeg",
-            pdf: "application/pdf",
-            spreadsheet: "application/vnd.ms-excel",
-            video: "video/mp4",
-            link: "text/uri-list",
-          }[file.kind],
-          identifierUrl: file.url ?? "https://data.environment.sa.gov.au",
-          licenseUrl: "https://creativecommons.org/licenses/by/4.0/",
-          publisher: meta.publisher,
-          rightsHolder: meta.publisher,
-          dcType: {
-            image: "StillImage",
-            pdf: "Text",
-            spreadsheet: "Dataset",
-            video: "MovingImage",
-            link: "InteractiveResource",
-          }[file.kind],
-          bioDataId: `${meta.code.replace("-", "")}-${rec.code}`,
-        };
-        return [a];
+        return [fieldArtefact({ recordId, key, file }, rec, meta)];
       }),
     [notes, recordById, meta],
   );
@@ -442,6 +414,7 @@ function ProjectDetail({ basePath, notice }: ProjectDetailTemplateProps) {
                         icon={Paperclip}
                         badge={artefacts.length}
                       />
+                      <Tab id="access" label="Project access" icon={Key01} />
                     </TabList>
 
                     <TabPanel id="project" className="pt-6">
@@ -492,6 +465,10 @@ function ProjectDetail({ basePath, notice }: ProjectDetailTemplateProps) {
                         onOpen={setLightboxIndex}
                         onOpenRecord={openRecord}
                       />
+                    </TabPanel>
+
+                    <TabPanel id="access" className="pt-6">
+                      <ProjectAccessTab />
                     </TabPanel>
                   </ContentTabs>
                 </div>

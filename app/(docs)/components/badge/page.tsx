@@ -42,6 +42,7 @@ const props = [
   { name: "size",     type: '"sm" | "md" | "lg"',                default: '"md"' },
   { name: "color",    type: "BadgeColors (12 options)",          default: '"gray"' },
   { name: "background", type: "boolean (BadgeWithDot pill-color)", default: "true" },
+  { name: "uppercase", type: "boolean (BadgeWithButton)",         default: "true" },
   { name: "children", type: "ReactNode",                          default: "-" },
 ];
 
@@ -311,6 +312,11 @@ export default function BadgePage() {
             <BadgeWithButton color="brand" buttonLabel="Remove">Design</BadgeWithButton>
             <BadgeWithButton color="gray" buttonLabel="Remove">Engineering</BadgeWithButton>
             <BadgeWithButton color="error" buttonLabel="Remove">Urgent</BadgeWithButton>
+          </Section>
+          <p className="text-balance">With <code>uppercase=&#123;false&#125;</code> the label reads as written: a chosen value, as <code>MultiSelect</code> lists its selections.</p>
+          <Section label="Dismissible, as written">
+            <BadgeWithButton color="gray" uppercase={false} buttonLabel="Remove Olivia Wyatt">Olivia Wyatt</BadgeWithButton>
+            <BadgeWithButton color="gray" uppercase={false} buttonLabel="Remove Phoenix Baker">Phoenix Baker</BadgeWithButton>
           </Section>
         </>
       )}

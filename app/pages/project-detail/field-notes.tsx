@@ -19,7 +19,7 @@
 // edited as a value only: it takes no notes.
 
 import { createElement, useRef, useState, type FC, type ReactNode } from "react";
-import { Check, CheckCircle, ChevronDown, DotsVertical, Edit02, FileAttachment02, FileCheck02, Flag01, Image01, Link01, MessageSquare01, Paperclip, Plus, Save01, Trash01, UploadCloud02, VideoRecorder, XClose } from "@untitledui/icons";
+import { Check, CheckCircle, ChevronDown, DotsVertical, Edit05, FileAttachment02, FileCheck02, Flag01, Image01, Link01, MessageSquare01, Paperclip, Plus, Save01, Trash01, UploadCloud02, VideoRecorder, XClose } from "@untitledui/icons";
 import { Button } from "@/components/base/buttons/button";
 import { Dropdown } from "@/components/base/dropdown/dropdown";
 import { Input } from "@/components/base/input/input";
@@ -261,7 +261,7 @@ function CardMenu({
           onAction={(k) => (k === "edit" ? onEdit?.() : onRemove?.())}
         >
           {onEdit ? (
-            <Dropdown.Item id="edit" label="Edit" icon={Edit02} />
+            <Dropdown.Item id="edit" label="Edit" icon={Edit05} />
           ) : null}
           {onRemove ? (
             <Dropdown.Item
@@ -951,7 +951,7 @@ export function FieldRow({
                   reveal,
                 )}
               >
-                <Edit02 className="size-3.5" />
+                <Edit05 className="size-3.5" />
               </TooltipTrigger>
             </Tooltip>
           )}

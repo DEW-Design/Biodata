@@ -513,3 +513,18 @@ Not imported into every session on purpose: read or grep it when a task needs hi
 - [2026-10-22] post-6-oct: the project header's toggle no longer moves, the facts sit in the title's row - `2026-10-22-04-post-6-oct-the-project-header-s-toggle.md`
 - [2026-10-22] On this page: constant weight and an inset focus ring - `2026-10-22-05-on-this-page-constant-weight-and-an-inset.md`
 - [2026-10-23] Add Project option 2 (one question per card) sunset - `2026-10-23-01-add-project-option-2-one-question-per-card.md`
+- [2026-10-23] Project records tree: kind shapes, full type names, 38 percent resizable tree, visible Edit and Add, first... - `2026-10-23-02-project-records-tree-kind-shapes-full-type-names.md`
+- [2026-10-23] Edit screens: no Editing label, Fields per section, Add section, where the record sits - `2026-10-23-03-edit-screens-no-editing-label-fields-per-section.md`
+- [2026-10-25] Record actions in one place, labelled - `2026-10-25-01-record-actions-in-one-place-labelled.md`
+- [2026-10-25] MultiSelect lists its selections as dismissible badges - `2026-10-25-02-multiselect-lists-its-selections-as-dismissible-badges.md`
+- [2026-10-25] Add Project: no logo, primary contact by delete, draw on map first, Analysis/Reporting method - `2026-10-25-03-add-project-no-logo-primary-contact-by-delete.md`
+- [2026-10-25] Locations from a Named location vocabulary, Other method described, next steps without numbers - `2026-10-25-04-locations-from-a-named-location-vocabulary-other-method.md`
+- [2026-10-25] New project restriction kinds, expected restriction level, managers and admins can edit restrictions - `2026-10-25-05-new-project-restriction-kinds-expected-restriction-level-man.md`
+- [2026-10-25] Restrictions layout, location empty state, embargo justification, project access lab - `2026-10-25-06-restrictions-layout-location-empty-state-embargo-justificati.md`
+- [2026-10-25] Project access in Add Project and on the project page, survey type removed from the edit drawer - `2026-10-25-07-project-access-in-add-project-and-on-the.md`
+- [2026-10-25] Nominations: see what is already protected and suggest removals; Painted Dragon and more species - `2026-10-25-08-nominations-see-what-is-already-protected-and-suggest.md`
+- [2026-10-25] Nominations: existing restrictions as a table with status; a restriction is a whole nomination - `2026-10-25-09-nominations-existing-restrictions-as-a-table-with-status.md`
+- [2026-10-25] Nominations: challenge any user's restriction from the species step; basic table when rows fit one page (4.2h) - `2026-10-25-10-nominations-challenge-any-user-s-restriction-from-the.md`
+- [2026-10-25] Nominations: request a change to a restriction, not a challenge; a prominent already-restricted warning; more... - `2026-10-25-11-nominations-request-a-change-to-a-restriction-not.md`
+- [2026-10-25] Nominations: the existing restrictions table is read only - `2026-10-25-12-nominations-the-existing-restrictions-table-is-read-only.md`
+- [2026-10-25] Bulk upload of attachments and web links with a project template - `2026-10-25-13-bulk-upload-of-attachments-and-web-links-with.md`

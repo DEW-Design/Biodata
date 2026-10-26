@@ -174,13 +174,24 @@ export function mergeRatings(current: SpeciesRating, incoming: SpeciesRating): S
  * (`mergeRatings`). A species with none is open (Negligible, Level 1).
  */
 export function currentSpeciesRating(
-  nominations: { kind?: string; status: string; speciesId: string; scope: string; attributes: NominationAttribute[]; ratings?: Record<string, Rating>; history: { status: string; at: string }[] }[],
+  nominations: {
+    kind?: string;
+    status: string;
+    speciesId: string;
+    scope: string;
+    attributes: NominationAttribute[];
+    id: string;
+    removals?: { key: string }[];
+    ratings?: Record<string, Rating>;
+    history: { status: string; at: string }[];
+  }[],
   speciesId: string,
 ): SpeciesRating {
   const acceptedAt = (n: (typeof nominations)[number]) => [...n.history].reverse().find((e) => e.status === "accepted")?.at ?? "";
   return nominations
     .filter((n) => n.kind !== "location" && n.status === "accepted" && n.speciesId === speciesId)
     .sort((a, b) => acceptedAt(a).localeCompare(acceptedAt(b)))
+    .filter((n, _, accepted) => !accepted.some((o) => o.removals?.some((r) => r.key === n.id)))
     .reduce<SpeciesRating>((current, n) => {
       const rating = ratingFromNomination(n);
       return rating ? mergeRatings(current, rating) : current;
