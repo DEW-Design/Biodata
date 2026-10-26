@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, CheckCircle, Edit05, Trash01 } from "@untitledui/icons";
+import { ArrowLeft, Edit05, Trash01 } from "@untitledui/icons";
 import { Button } from "@/components/base/buttons/button";
 import { RadioButton, RadioGroup } from "@/components/base/radio-buttons/radio-buttons";
 import { TextArea } from "@/components/base/textarea/textarea";
@@ -59,9 +59,10 @@ import { useRoleHref } from "@/lib/use-role-href";
 // Version 2 (the designer, 12 Oct 2026):
 // - A location nomination uses the same form and steps: Location (a name, then the area chosen as Add Project chooses its
 //   geographic extent, GeoExtentPicker, its map opening in the Expand dialog), Review.
-// - A BioData Admin or Super Admin approves their own nomination at once: the last step's action is "Approve nomination"
-//   instead of "Submit nomination". The Super Admin sets the data release risk and user access level on the Review step first,
-//   one pair per thing protected (the whole species, each attribute, or the location), as when reviewing someone else's.
+// - A nomination an admin makes follows the same workflow as anyone's (the designer, 26 Oct 2026: "an admin cannot directly
+//   submit an approved nomination, it has to follow the same workflow as the registered users"): the last step submits it, the
+//   panel reviews it, and it is accepted or rejected there. Until 26 Oct 2026 a BioData Admin or Super Admin could approve their
+//   own at once, rating each thing protected first; the rating is set while the nomination is under review, or when an admin edits it.
 // - Both admin roles edit any nomination past its draft (`onSaveChanges`): Save changes keeps its status, no draft. The Super
 //   Admin's rating fields show on Review, required once the nomination is accepted.
 // - Version 3: on Review, each rating sits beside the item it rates (under the location, the whole species, or each attribute)
@@ -208,32 +209,26 @@ function SummaryRow({ title, onEdit, children }: { title: string; onEdit: () => 
 export function NominationForm({
   initial,
   kind: newKind = "species",
-  canApprove = false,
   canRate = false,
   onBack,
   onSaveDraft,
   onSubmit,
-  onApprove,
   onSaveChanges,
 }: {
   initial?: Nomination;
   /** What a new nomination is for. An existing one keeps its own. */
   kind?: NominationKind;
-  /** Version 2, BioData Admin and Super Admin: the last step approves instead of submitting (`onApprove`). */
-  canApprove?: boolean;
-  /** Version 2, both admin roles: approving needs a risk and level for each thing protected, set beside it (What to protect, or Location). */
+  /** Both admin roles editing a nomination past its draft (`onSaveChanges`): a risk and level for each thing protected, set beside it (What to protect, or Location). */
   canRate?: boolean;
   onBack: () => void;
   onSaveDraft: (draft: NominationDraft) => void;
   onSubmit: (draft: NominationDraft) => void;
-  onApprove?: (draft: NominationDraft, ratings: Record<string, Rating>) => void;
   /** Version 2, BioData Admin and Super Admin editing a nomination past its draft: Save changes keeps its status, with the
    *  ratings the Super Admin set (required once it is accepted). */
   onSaveChanges?: (draft: NominationDraft, ratings: Record<string, Rating>) => void;
 }) {
   const kind = initial ? kindOf(initial) : newKind;
   const order = sectionOrderFor(kind);
-  const approves = canApprove && !!onApprove;
   const adminEdit = !!onSaveChanges;
   const [ratings, setRatings] = useState<Record<string, Rating>>(initial?.ratings ?? {});
   const [speciesId, setSpeciesId] = useState(initial?.speciesId ?? "");
@@ -292,10 +287,10 @@ export function NominationForm({
   const duplicateOf = kind === "species" && speciesId ? nominations.find((n) => n.id !== initial?.id && n.speciesId === speciesId && isOpenNomination(n)) : undefined;
   const baseMissing = missingForNomination(draft);
   const withDuplicate = duplicateOf ? { ...baseMissing, species: [...baseMissing.species, "Choose a species without an open nomination"] } : baseMissing;
-  // An admin's approval needs a risk for each thing protected; it is asked beside the thing it rates. Editing, the same fields
-  // show, required once the nomination is accepted.
-  const ratingKeys = canRate && (approves || adminEdit) ? nominationRatingKeys(draft) : [];
-  const ratingsRequired = approves || initial?.status === "accepted";
+  // An admin editing a nomination past its draft is asked a risk for each thing protected, beside the thing it rates; required once
+  // the nomination is accepted. A new nomination, an admin's included, has no rating fields: it is rated while it is reviewed.
+  const ratingKeys = canRate && adminEdit ? nominationRatingKeys(draft) : [];
+  const ratingsRequired = initial?.status === "accepted";
   const ratingName = (key: string) => ratingKeyLabel(draft, key);
   const unrated = (ratingsRequired ? ratingKeys : []).filter((k) => !ratings[k]).map((k) => `Set a data release risk for ${ratingName(k)}`);
   const missing = { ...withDuplicate, [ratingSection]: [...withDuplicate[ratingSection], ...unrated] };
@@ -329,8 +324,7 @@ export function NominationForm({
       return;
     }
     const rated = Object.fromEntries(ratingKeys.filter((k) => ratings[k]).map((k) => [k, ratings[k]]));
-    if (approves) onApprove!(draft, rated);
-    else if (adminEdit) onSaveChanges!(draft, rated);
+    if (adminEdit) onSaveChanges!(draft, rated);
     else onSubmit(draft);
   };
 
@@ -349,8 +343,6 @@ export function NominationForm({
   };
 
   const sectionMeta = (id: NominationSection) => {
-    // An admin approves their own nomination: it does not go to the panel.
-    if (approves && id === "review") return { title: "Review and approve", description: "Check the nomination, then approve it." };
     // An admin's edit saves the nomination where it stands: it does not go to the panel again.
     if (adminEdit && id === "review") return { title: "Review and save", description: "Check the nomination, then save your changes." };
     return nominationSections[id];
@@ -480,8 +472,7 @@ export function NominationForm({
         saveLabel={canDraft ? undefined : "Save changes"}
         onBack={index > 0 ? () => goTo(order[index - 1]) : undefined}
         problems={problems.length ? { items: problems } : undefined}
-        primaryLabel={isLast ? (approves ? "Approve nomination" : isEditingLive ? "Save changes" : isResubmit ? "Resubmit nomination" : "Submit nomination") : "Continue"}
-        primaryIcon={approves ? CheckCircle : undefined}
+        primaryLabel={isLast ? (isEditingLive ? "Save changes" : isResubmit ? "Resubmit nomination" : "Submit nomination") : "Continue"}
         primaryIsContinue={!isLast}
         onPrimary={isLast ? submit : () => proceed(order[index + 1])}
       >

@@ -613,3 +613,4 @@ Not imported into every session on purpose: read or grep it when a task needs hi
 - [2026-10-26] Project page: the Project tab is Overview, and Project at a glance is removed - `2026-10-26-03-project-page-the-project-tab-is-overview-and.md`
 - [2026-10-26] Sunset the other options: nominations, voucher, taxonomy and notification management - `2026-10-26-04-sunset-the-other-options-nominations-voucher-taxonomy-and.md`
 - [2026-10-26] Record pages: the section crumb is a switcher on notifications, taxonomy, vouchers and vocabulary - `2026-10-26-05-record-pages-the-section-crumb-is-a-switcher.md`
+- [2026-10-26] Nominations: an admin's nomination follows the same workflow as every role - `2026-10-26-06-nominations-an-admin-s-nomination-follows-the-same.md`

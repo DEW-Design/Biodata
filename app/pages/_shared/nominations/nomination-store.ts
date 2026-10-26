@@ -112,24 +112,6 @@ export function saveNomination(draft: NominationDraft, intent: "draft" | "submit
 }
 
 /**
- * Version 2: a BioData Admin or Super Admin who nominates can approve it at once (the designer, 12 Oct 2026). It is saved as
- * submitted, carries the ratings the Super Admin set (none for a BioData Admin), and is accepted by them.
- */
-export function approveNomination(draft: NominationDraft, ratings: Record<string, Rating>, existingId?: string): Nomination {
-  const saved = saveNomination(draft, "submit", existingId);
-  const now = todayIso();
-  const accepted: Nomination = {
-    ...saved,
-    ...(Object.keys(ratings).length ? { ratings } : {}),
-    status: "accepted",
-    updatedAt: now,
-    history: [...saved.history, { status: "accepted", at: now, by: CURRENT_USER_NAME }],
-  };
-  commit(useNominationStore.getState().nominations.map((n) => (n.id === accepted.id ? accepted : n)));
-  return accepted;
-}
-
-/**
  * Version 2: a BioData Admin or Super Admin edits a nomination past its draft (the designer, 12 Oct 2026). Its status stays as it
  * is, so the audit log (status moves only) gains nothing; the ratings are the Super Admin's (a BioData Admin's edit keeps them).
  */

@@ -6,13 +6,12 @@ import { toast } from "@/components/application/toast/toast";
 import { NOMINATION_ROOT } from "@/app/pages/_shared/nominations/nomination-data";
 import { NominationForm } from "@/app/pages/_shared/nominations/nomination-form";
 import { NominationShell } from "@/app/pages/_shared/nominations/nomination-shell";
-import { approveNomination, saveNomination } from "@/app/pages/_shared/nominations/nomination-store";
-import { useFeatureAccess } from "@/lib/use-feature-access";
+import { saveNomination } from "@/app/pages/_shared/nominations/nomination-store";
 import { useRoleHref } from "@/lib/use-role-href";
 
 // A new nomination (/pages/nominations/new). Saving lands on its record page, as a Draft or Submitted. ?kind=location nominates
-// a location in the same form and steps, and a BioData Admin or Super Admin approves their nomination at once (the Super Admin
-// rating it first).
+// a location in the same form and steps. Every role follows the same workflow: an admin's nomination is submitted to the panel too
+// (the designer, 26 Oct 2026), it is not approved at once.
 export default function NewNominationPage() {
   return (
     <Suspense fallback={null}>
@@ -25,8 +24,6 @@ function NewNomination() {
   const router = useRouter();
   const roleHref = useRoleHref();
   const params = useSearchParams();
-  const canReview = useFeatureAccess("nominationReview");
-  const canRate = useFeatureAccess("nominationRating");
   const kind = params.get("kind") === "location" ? "location" : "species";
 
   return (
@@ -34,8 +31,6 @@ function NewNomination() {
       <NominationForm
         key={kind}
         kind={kind}
-        canApprove={canReview}
-        canRate={canRate}
         onBack={() => router.push(roleHref(NOMINATION_ROOT))}
         onSaveDraft={(draft) => {
           const record = saveNomination(draft, "draft");
@@ -45,11 +40,6 @@ function NewNomination() {
         onSubmit={(draft) => {
           const record = saveNomination(draft, "submit");
           toast.success("Nomination submitted", { description: `${record.id} is with the sensitive species panel.` });
-          router.push(roleHref(`${NOMINATION_ROOT}/${record.id}`));
-        }}
-        onApprove={(draft, ratings) => {
-          const record = approveNomination(draft, ratings);
-          toast.success("Nomination approved", { description: record.id });
           router.push(roleHref(`${NOMINATION_ROOT}/${record.id}`));
         }}
       />
