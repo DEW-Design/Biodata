@@ -17,11 +17,12 @@ export type Area =
   | "Taxonomy Management"
   | "Notification Management"
   | "Template Finder"
+  | "Data ingestion"
   | "Reports"
   | "Unlinked"
   | "Voucher Management";
 
-export const AREAS: Area[] = ["Start", "Sign in", "Home", "Projects", "Explore", "Data licence (DLA)", "Data sharing (DSA)", "Nominations", "User management", "Taxonomy Management", "Notification Management", "Controlled Vocabulary", "Voucher Management", "Template Finder", "Reports", "Unlinked"];
+export const AREAS: Area[] = ["Start", "Sign in", "Home", "Projects", "Explore", "Data licence (DLA)", "Data sharing (DSA)", "Nominations", "User management", "Taxonomy Management", "Notification Management", "Controlled Vocabulary", "Voucher Management", "Template Finder", "Data ingestion", "Reports", "Unlinked"];
 
 export interface Screen {
   path: string;
@@ -89,6 +90,7 @@ export const SCREENS: Screen[] = [
   { area: "Voucher Management", name: "Batch to review", path: "/pages/vouchers/1012", access: "BioData Super Admin", description: "A row per record, its concepts as lines; set Your update, then push or ignore." },
   { area: "Voucher Management", name: "Record comparison", path: "/pages/vouchers/1012?record=ADH-2024-118", access: "BioData Super Admin", description: "One record's four concepts beside the Herbarium's, and its history across scans." },
   { area: "Template Finder", name: "Template Finder", path: "/pages/template-finder", access: "Signed in", description: "Standard dataset templates, with search and filters." },
+  { area: "Data ingestion", name: "Data ingestion stress test", path: "/pages/data-ingestion-stress-test", access: "Everyone", description: "Upload CSV, JSON, XLS or XLSX exports, or load the sample data, and see them read into the Project, Site, Visit, Occurrence and Observation tree with every check. Nothing leaves the browser." },
   { area: "Reports", name: "Reports", path: "/pages/reports", access: "Signed in", description: "The landing page: one card per report." },
   { area: "Reports", name: "Data Ingestion Report Pre-Flight Validation", path: "/pages/reports/data-ingestion", access: "Signed in", description: "Every dataset upload from validation to approval; a registered user sees theirs, BioData Admin sees all." },
   { area: "Reports", name: "Project Dataset Post Ingestion", path: "/pages/reports/post-ingestion", access: "Signed in", description: "Every dataset submission beside its project's facts; a registered user sees theirs, BioData Admin sees all." },

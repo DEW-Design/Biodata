@@ -54,9 +54,9 @@ or drifting from it. Sources:
   `lib/registered-user-nav.ts`'s Observations/Projects items, and it's a project-level flag, not a
   per-record toggle - worth keeping in mind if/when that gets real UI.
 
-### Data model ingestion research (`/proto/data-model-stress-test`, `/config/data-model`)
+### Data model ingestion research (`/pages/data-ingestion-stress-test`, `/config/data-model`)
 
-A real, working CSV/JSON/XLS/XLSX ingestion stress-test tool (`/proto/data-model-stress-test`) and
+A real, working CSV/JSON/XLS/XLSX ingestion stress-test tool (`/pages/data-ingestion-stress-test`) and
 a companion transparency page (`/config/data-model`) were built to validate the corrected Event/
 Occurrence/Observation model above against actual BDBSA legacy exports (real Site/Visit/Species
 Fauna/Species Flora files, survey SU1211) - not just the Figma wireframes the field schema was
@@ -78,7 +78,7 @@ data-model` is the canonical place to read the up-to-date gap list, not this fil
   anyway.** Occurrence → Visit → Site is joined by a composite natural key (Survey Number +
   Zone/Easting/Northing to find the Site, then the Occurrence's own date column matched against
   that Site's visit date) - confirmed by tracing real rows across all 4 files, not assumed.
-  `resolveNaturalKeyRelationships` in `/proto/data-model-stress-test` simulates that same traceback
+  `resolveNaturalKeyRelationships` in `/pages/data-ingestion-stress-test` simulates that same traceback
   automatically: real Site/Visit/Occurrence rows get a synthetic ID where the source has none (Site
   from CAMPMAP-QUADSITE-PATCHQUAD or its own coordinates; Occurrence/Observation from the row's NSX
   species code + row number, see the classification entry below), then a derived Parent ID via the
@@ -87,11 +87,11 @@ data-model` is the canonical place to read the up-to-date gap list, not this fil
   through 14 Sites, 14 Visits, 837 Occurrences, and 837 Observations (1702 total records once every
   species row is split into its Occurrence/Observation pair - see below). A record whose Kind is
   known but whose Type isn't is still placed correctly in the Resolved tree - `unresolved` in
-  `app/proto/data-model-stress-test/page.tsx` is deliberately keyed off Kind/Parent-shape validity
+  `app/pages/data-ingestion-stress-test/page.tsx` is deliberately keyed off Kind/Parent-shape validity
   only, not Type, since real placement doesn't depend on knowing the exact subtype.
 - **Occurrence is a real tree level between Visit and Observation - "each row on the species CSVs
   are occurrences," per the user directly.** Not just a label: `expandSpeciesOccurrences` in
-  `/proto/data-model-stress-test` splits every unclassified species row into two records before the
+  `/pages/data-ingestion-stress-test` splits every unclassified species row into two records before the
   rest of the pipeline ever runs - an Occurrence (the real-world "this species was recorded here")
   with exactly one Observation child (the ecological detail captured for it). This refines the
   earlier "Occurrences/Observations are always leaves" model rule - an Observation is still always
@@ -122,7 +122,7 @@ data-model` is the canonical place to read the up-to-date gap list, not this fil
   here (Crown Extent, DBH, Number Observed, Cover/Abundance) actually appear on every real species
   row regardless of type.
 - **The form a user sends is ingested too (the DEW Ramble survey form), not only what BDBSA's automation hands back.**
-  `template-ingest.ts` in `/proto/data-model-stress-test` reads the form (RAMBLE, FAUNA, OTHER COMMENTS tabs) into the same
+  `template-ingest.ts` in `/pages/data-ingestion-stress-test` reads the form (RAMBLE, FAUNA, OTHER COMMENTS tabs) into the same
   SITE / VISIT / SPECIES rows a real BDBSA tab carries, checked row for row against BDBSA's own tabs in a real submission
   (Heathfield Council Depot Ramble, Oct 2019). Survey # is assigned by BDBSA and is not on the form. BDBSA's output carries
   codes (datum, vegetation condition, method) where the form carries words; the words are kept. A hidden tab is a lookup

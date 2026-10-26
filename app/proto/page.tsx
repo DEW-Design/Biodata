@@ -45,10 +45,6 @@ const PROTO_LABS: ProtoEntry[] = [
     description: "How much more the registered-user dashboard should say beyond \"Hi, Olivia\" and three KPI numbers.",
   },
   {
-    route: "data-model-stress-test",
-    description: "A real CSV/JSON/XLS/XLSX ingestion tool - upload a BDBSA export and see it auto-map to the Project, Site, Visit, Occurrence tree.",
-  },
-  {
     route: "data-provenance",
     description: "Dataset as a tree axis alongside Site. Superseded - the confirmed data model doesn't need it.",
   },
