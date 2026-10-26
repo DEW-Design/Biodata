@@ -649,8 +649,7 @@ export function HomeDashboardContent() {
           </div>
           <div className="flex flex-wrap items-start gap-x-6 gap-y-4">
             <KpiStat value="15" label="Species observed" note="3 up from last week" trend onDark />
-            <KpiStat value="3" label="Datasets contributed" note="1 dataset under review" onDark />
-            <KpiStat value="2" label="Completed checklists" note="2 completed this month" last onDark />
+            <KpiStat value="3" label="Datasets contributed" note="1 dataset under review" last onDark />
           </div>
         </div>
       </div>

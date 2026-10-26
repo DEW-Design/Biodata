@@ -1,4 +1,4 @@
-// PROTOTYPE LAB - throwaway, imported only by `/proto/data-model-stress-test`. Turns the form a
+// Imported only by the Data ingestion stress test page (`/pages/data-ingestion-stress-test`, a lab until 27 Oct 2026). Turns the form a
 // person fills in and sends to BDBSA (the DEW Ramble survey form) into the 3-tier rows BDBSA's own
 // automation produces from it - a Site, a Visit, and one species row per plant or animal - so the
 // stress test can ingest what a user actually sends, not only what BDBSA's automation hands back.

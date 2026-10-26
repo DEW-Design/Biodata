@@ -1,4 +1,4 @@
-// PROTOTYPE LAB - throwaway, imported only by `/proto/data-model-stress-test`. The pure half of
+// Imported only by the Data ingestion stress test page (`/pages/data-ingestion-stress-test`, a lab until 27 Oct 2026). The pure half of
 // multi-tab ingestion: reading every sheet of a workbook, working out what each tab holds, and the
 // column-name conventions a tab uses to point at another tab's records. No React, no records - the
 // page owns `ParsedRecord` and the linking pass that uses these helpers.

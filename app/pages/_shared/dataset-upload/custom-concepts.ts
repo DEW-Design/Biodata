@@ -20,7 +20,7 @@ import { todayIso } from "@/app/pages/_shared/dla/dla-data";
 //
 // What counts as known. A heading is known when it is one of the data model's fields or their aliases
 // (`config/data-model-schema.ts`), a BDBSA column key the model maps (the crosswalk), one of the structural or
-// identity columns the ingestion reads (the stress-test lab's list, below), the name of a controlled vocabulary,
+// identity columns the ingestion reads (the Data ingestion stress test's list, below), the name of a controlled vocabulary,
 // or a custom concept an admin has already approved. Headings are compared the way the model compares them: case,
 // spaces, underscores, slashes and hyphens ignored. Anything else is custom, and is flagged for approval.
 //
@@ -83,9 +83,9 @@ export const conceptStatusMeta: Record<ConceptStatus, { label: string; color: "w
 export const conceptKey = (heading: string) => heading.toLowerCase().replace(/[\s_/-]/g, "");
 
 // The structural and identity columns the ingestion reads that are not a field of any one record type: the
-// stress-test lab's `IDENTITY_COLUMNS` and the columns it finds by name (kind, type, id, parent, label, survey,
-// the coordinates). Kept here because a product file cannot import from a lab (5.4). Open: the two lists should
-// be one, in `config/data-model-schema.ts`.
+// Data ingestion stress test's `IDENTITY_COLUMNS` and the columns it finds by name (kind, type, id, parent, label, survey,
+// the coordinates). Copied here when that tool was still a lab, which a product file cannot import from (5.4); it is a page
+// now and a page's file is no place to import from either. Open: the two lists should be one, in `config/data-model-schema.ts`.
 const STRUCTURAL_HEADINGS = [
   "Kind",
   "Type",

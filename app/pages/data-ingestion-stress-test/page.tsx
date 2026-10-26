@@ -1,6 +1,7 @@
 "use client";
 
-// PROTOTYPE LAB - throwaway, imported by nothing. "Data model stress test" - per the user's own
+// DATA INGESTION STRESS TEST - a page since 27 Oct 2026 (it was the lab `/proto/data-model-stress-test`, which is not deployed), so
+// the reviewers can see it on the production site. "Data model stress test" - per the user's own
 // lo-fi wireframe (upload a CSV/XLSX on the left, a parsed Field/Value list on the right) and
 // direct brief: "when data is uploaded, it auto-maps to site, auto-maps all observations,
 // occurrences, etc. and tags it accurately... we need to build in a way that siphons each data bit
@@ -122,7 +123,7 @@
 //   distinct level (this was a live scoping question, answered directly: not a proposal to flatten
 //   Visits straight onto Project).
 
-import { useMemo, useRef, useState } from "react";
+import { Suspense, useMemo, useRef, useState } from "react";
 import type { ChangeEvent, ReactNode } from "react";
 import type { Key, Selection } from "react-aria-components";
 import { utils as sheetUtils, write as writeWorkbook } from "xlsx";
@@ -163,6 +164,7 @@ import {
   type SourceClassification,
   type SourceRole,
 } from "./workbook-ingest";
+import { StressTestShell } from "./stress-test-shell";
 import { convertRambleTemplate, type TemplateConversion } from "./template-ingest";
 import { convertFlatReturns, convertSampleMatrix, isFlatReturn } from "./methodology-ingest";
 
@@ -1767,7 +1769,7 @@ function UploadPanel({
     <div className="flex flex-col gap-6 rounded-2xl bg-gradient-to-b from-brand-900 via-brand-800 via-[63.942%] to-brand-700 p-6">
       <div className="flex flex-col gap-1">
         <p className="text-2xl font-medium text-white">Upload one or more CSV, JSON, XLS, or XLSX files</p>
-        <p className="text-md text-white/80">
+        <p className="text-base text-white/80">
           Structured or unstructured data - real DEW project records, straight from a spreadsheet export. Select several files at once, or one workbook
           with a tab per record type (Sites, Visits, Species), to map them into one structure together.
         </p>
@@ -1935,7 +1937,7 @@ function StructureTree({
             ))}
           </TreeView>
           {remainingUnresolvedCount > 0 && (
-            <Button size="sm" color="secondary" className="mt-2" onClick={() => setVisibleUnresolvedCount((n) => n + UNRESOLVED_PAGE_SIZE)}>
+            <Button size="sm" color="secondary" iconLeading={ChevronDown} className="mt-2" onClick={() => setVisibleUnresolvedCount((n) => n + UNRESOLVED_PAGE_SIZE)}>
               Load {Math.min(remainingUnresolvedCount, UNRESOLVED_PAGE_SIZE)} more
             </Button>
           )}
@@ -2255,7 +2257,7 @@ function RecordsList({ records, onOpen }: { records: ParsedRecord[]; onOpen: (re
                     </Badge>
                   </Cell>
                   <Cell>{r.label || r.id || `Row ${r.rowNumber}`}</Cell>
-                  <Cell>{[r.kind, r.type].filter(Boolean).join(" · ") || <span className="text-quaternary">Not provided</span>}</Cell>
+                  <Cell>{[r.kind, r.type].filter(Boolean).join(", ") || <span className="text-quaternary">Not provided</span>}</Cell>
                   {showSource ? <Cell>{r.source ? sourceLabelOf(r.source) : <span className="text-quaternary">Not provided</span>}</Cell> : null}
                   <Cell>
                     {r.errors.length > 0 && (
@@ -2289,12 +2291,12 @@ function RecordCard({ record, nestedCounts }: { record: ParsedRecord; nestedCoun
   const kindLabel = isRecordKind(record.kind) ? record.kind : record.kind || "Unknown kind";
 
   return (
-    <div className={cx("flex flex-col gap-3 rounded-xl border p-4", isValid ? "border-secondary bg-primary" : "border-error-subtle bg-error-50")}>
+    <div className={cx("flex flex-col gap-3 rounded-xl border p-4", isValid ? "border-secondary bg-primary" : "border-error-300 bg-error-50")}>
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div className="flex flex-wrap items-center gap-2">
           <Badge size="sm" color={isValid ? "gray" : "error"}>
             {kindLabel}
-            {record.type ? ` · ${record.type}` : ""}
+            {record.type ? `, ${record.type}` : ""}
           </Badge>
           <span className="text-sm font-semibold text-primary">{record.label || record.id || `Row ${record.rowNumber}`}</span>
           {record.id && <span className="text-xs text-quaternary">ID: {record.id}</span>}
@@ -2382,7 +2384,7 @@ function ProjectSummaryCard({ counts, surveyNumber }: { counts: NestedCounts; su
   );
 }
 
-export default function DataModelStressTestProto() {
+function StressTest() {
   const [fileName, setFileName] = useState<string | null>(null);
   const [records, setRecords] = useState<ParsedRecord[]>([]);
   const [parseError, setParseError] = useState<string | null>(null);
@@ -2459,77 +2461,85 @@ export default function DataModelStressTestProto() {
   const nestedCountsByRow = useMemo(() => buildNestedCountsByRow(treeRoots), [treeRoots]);
 
   return (
-    <div className="font-barlow min-h-screen bg-primary p-8">
-      <div className="mx-auto flex max-w-6xl flex-col gap-8">
-        <div className="flex flex-col gap-1">
-          <h1 className="text-2xl font-semibold text-primary">Data model stress test</h1>
-          <p className="text-sm text-tertiary">
-            Upload one or more CSV, JSON, XLS, or XLSX exports and see them validated against the real Event/Occurrence/Observation model, before
-            that model is implemented for real. Structured or unstructured data - the checks are the same either way.
-          </p>
-        </div>
-
-        <UploadPanel onFiles={handleFiles} onSampleData={handleSampleData} onSampleWorkbook={handleSampleWorkbook} error={parseError} />
-
-        {records.length === 0 ? (
-          <div className="flex flex-1 flex-col items-center justify-center gap-2 rounded-xl border border-dashed border-secondary p-12 text-center">
-            <p className="text-sm font-medium text-primary">No file loaded yet</p>
-            <p className="text-sm text-tertiary">Upload a file or load the sample data to see records parsed and validated here.</p>
-          </div>
-        ) : (
-          <div className="flex flex-col gap-4">
-            <SummaryBar fileName={fileName ?? ""} records={records} />
-
-            <Tabs selectedKey={view} onSelectionChange={setView}>
-              <TabList aria-label="Ingestion views" type="underline" size="md">
-                <Tab id="structure" label="Structure" icon={Dataflow01} />
-                <Tab id="records" label="Records" icon={ClipboardCheck} />
-                {sourceReports.length > 1 && <Tab id="summary" label="Summary" icon={Grid01} />}
-              </TabList>
-
-              {/* Kept mounted while another tab is open, so the tree keeps what was expanded and loaded.
-                  It builds only what is open, so staying mounted costs almost nothing. */}
-              <TabPanel id="structure" shouldForceMount className="pt-6 data-[inert]:hidden">
-                <div className="flex flex-col gap-8 lg:flex-row lg:items-start">
-                  <StructureTree key={fileName} records={records} selectedKey={selectedKey} onSelectionChange={setSelectedKey} />
-
-                  <div className="flex flex-1 flex-col gap-4">
-                    {isProjectSelected ? (
-                      <ProjectSummaryCard counts={countChildrenByKind(treeRoots)} surveyNumber={findSurveyNumber(records)} />
-                    ) : selectedRecord ? (
-                      <RecordCard key={`${selectedRecord.id || "row"}-${selectedRecord.rowNumber}`} record={selectedRecord} nestedCounts={nestedCountsByRow.get(selectedRecord.rowNumber)} />
-                    ) : (
-                      <div className="flex flex-1 flex-col items-center justify-center gap-2 rounded-xl border border-dashed border-secondary p-12 text-center">
-                        <p className="text-sm font-medium text-primary">No record selected</p>
-                        <p className="text-sm text-tertiary">Select a record in the Structure tree on the left to see its details here.</p>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </TabPanel>
-
-              <TabPanel id="records" className="pt-6">
-                <RecordsList
-                  key={fileName}
-                  records={records}
-                  onOpen={(record) => {
-                    setSelectedKey(`row-${record.rowNumber}`);
-                    setView("structure");
-                  }}
-                />
-              </TabPanel>
-
-              {sourceReports.length > 1 && (
-                <TabPanel id="summary" className="pt-6">
-                  <SourceReportCard reports={sourceReports} records={records} keptApart={keptApart} templates={templates} />
-                </TabPanel>
-              )}
-            </Tabs>
-          </div>
-        )}
-
-        {records.length > 0 && <IngestedJsonGate key={fileName} records={records} onApply={handleApplyEditedJson} />}
+    <div className="mx-auto flex max-w-6xl flex-col gap-8">
+      <div className="flex flex-col gap-1">
+        <h1 className="text-2xl font-semibold text-primary">Data ingestion stress test</h1>
+        <p className="text-sm text-tertiary">
+          Upload one or more CSV, JSON, XLS, or XLSX exports and see them validated against the real Event/Occurrence/Observation model, before
+          that model is implemented for real. Structured or unstructured data - the checks are the same either way.
+        </p>
       </div>
+
+      <UploadPanel onFiles={handleFiles} onSampleData={handleSampleData} onSampleWorkbook={handleSampleWorkbook} error={parseError} />
+
+      {records.length === 0 ? (
+        <div className="flex flex-1 flex-col items-center justify-center gap-2 rounded-xl border border-dashed border-secondary p-12 text-center">
+          <p className="text-sm font-medium text-primary">No file loaded yet</p>
+          <p className="text-sm text-tertiary">Upload a file or load the sample data to see records parsed and validated here.</p>
+        </div>
+      ) : (
+        <div className="flex flex-col gap-4">
+          <SummaryBar fileName={fileName ?? ""} records={records} />
+
+          <Tabs selectedKey={view} onSelectionChange={setView}>
+            <TabList aria-label="Ingestion views" type="underline" size="md">
+              <Tab id="structure" label="Structure" icon={Dataflow01} />
+              <Tab id="records" label="Records" icon={ClipboardCheck} />
+              {sourceReports.length > 1 && <Tab id="summary" label="Summary" icon={Grid01} />}
+            </TabList>
+
+            {/* Kept mounted while another tab is open, so the tree keeps what was expanded and loaded.
+                It builds only what is open, so staying mounted costs almost nothing. */}
+            <TabPanel id="structure" shouldForceMount className="pt-6 data-[inert]:hidden">
+              <div className="flex flex-col gap-8 lg:flex-row lg:items-start">
+                <StructureTree key={fileName} records={records} selectedKey={selectedKey} onSelectionChange={setSelectedKey} />
+
+                <div className="flex flex-1 flex-col gap-4">
+                  {isProjectSelected ? (
+                    <ProjectSummaryCard counts={countChildrenByKind(treeRoots)} surveyNumber={findSurveyNumber(records)} />
+                  ) : selectedRecord ? (
+                    <RecordCard key={`${selectedRecord.id || "row"}-${selectedRecord.rowNumber}`} record={selectedRecord} nestedCounts={nestedCountsByRow.get(selectedRecord.rowNumber)} />
+                  ) : (
+                    <div className="flex flex-1 flex-col items-center justify-center gap-2 rounded-xl border border-dashed border-secondary p-12 text-center">
+                      <p className="text-sm font-medium text-primary">No record selected</p>
+                      <p className="text-sm text-tertiary">Select a record in the Structure tree on the left to see its details here.</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </TabPanel>
+
+            <TabPanel id="records" className="pt-6">
+              <RecordsList
+                key={fileName}
+                records={records}
+                onOpen={(record) => {
+                  setSelectedKey(`row-${record.rowNumber}`);
+                  setView("structure");
+                }}
+              />
+            </TabPanel>
+
+            {sourceReports.length > 1 && (
+              <TabPanel id="summary" className="pt-6">
+                <SourceReportCard reports={sourceReports} records={records} keptApart={keptApart} templates={templates} />
+              </TabPanel>
+            )}
+          </Tabs>
+        </div>
+      )}
+
+      {records.length > 0 && <IngestedJsonGate key={fileName} records={records} onApply={handleApplyEditedJson} />}
     </div>
+  );
+}
+
+export default function DataIngestionStressTestPage() {
+  return (
+    <Suspense fallback={null}>
+      <StressTestShell>
+        <StressTest />
+      </StressTestShell>
+    </Suspense>
   );
 }

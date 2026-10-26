@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { AlertTriangle, Download01 } from "@untitledui/icons";
+import { AlertTriangle, ArrowNarrowRight, Download01 } from "@untitledui/icons";
 import { utils as sheetUtils, writeFile as writeWorkbookFile } from "xlsx";
 import { PageHeader } from "@/components/PageHeader";
 import { Button } from "@/components/base/buttons/button";
@@ -19,7 +19,6 @@ import {
   type RecordKind,
   type ReportedCodes,
 } from "@/config/data-model-schema";
-import { labHref } from "@/lib/lab-href";
 
 // "This begs to be more visual... let's have another route /config/data-model - so everything is
 // visible and transparent. If any changes need to be made, they can sit here." Per the user
@@ -261,8 +260,8 @@ export default function DataModelConfigPage() {
     }),
   );
 
-  // The sandbox is a lab, so the link only exists in development (labs aren't deployed).
-  const sandboxHref = labHref("data-model-stress-test");
+  // The sandbox is a page (it was a lab until 27 Oct 2026), so the link is there on the deployed site too.
+  const sandboxHref = "/pages/data-ingestion-stress-test";
 
   return (
     <div className="prose-doc">
@@ -278,11 +277,9 @@ export default function DataModelConfigPage() {
           <Button size="sm" color="secondary" iconLeading={Download01} onClick={downloadDataModelWorkbook}>
             Download Excel template
           </Button>
-          {sandboxHref && (
-            <Button size="sm" color="secondary" href={sandboxHref}>
-              Open the ingestion sandbox
-            </Button>
-          )}
+          <Button size="sm" color="secondary" iconTrailing={ArrowNarrowRight} href={sandboxHref}>
+            Open the data ingestion stress test
+          </Button>
         </div>
       </div>
 

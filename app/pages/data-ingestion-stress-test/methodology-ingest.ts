@@ -1,4 +1,4 @@
-// PROTOTYPE LAB - throwaway, imported only by `/proto/data-model-stress-test`. Two more ways a record
+// Imported only by the Data ingestion stress test page (`/pages/data-ingestion-stress-test`, a lab until 27 Oct 2026). Two more ways a record
 // set reaches BDBSA, read into the same 3-tier rows (Site, Visit, species) the Ramble form becomes
 // (`template-ingest.ts`), so the rest of the pipeline - linking, the Occurrence and Observation
 // split, the tree - is the one that already exists:
