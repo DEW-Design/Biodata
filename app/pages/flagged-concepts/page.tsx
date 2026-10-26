@@ -6,6 +6,9 @@
 // queue, grouped by project, with a Projects picker above it; main is the form for the one in focus.
 // The project filter lives in the URL (`?project=BD-5039,BD-4988`), and `?item=` opens a given one.
 //
+// A second kind sits beside the questionable values (26 Oct 2026): custom concepts, columns an uploader added
+// to a data sheet that BioData does not have, waiting for approval (`?kind=custom`, custom-concepts-review.tsx).
+//
 // Who: BioData Admin and Privileged Admin, the roles that can resolve flagged concepts. Anyone else
 // gets the three-column shell with the restriction stated in main (CONTRACTS 3.7).
 
@@ -26,6 +29,8 @@ import { adelaideHillsSeed } from "../project-detail/project-seed";
 import { useCanReview } from "../project-detail/field-notes";
 import { usePortfolioEntries } from "../project-detail/flagged-portfolio";
 import { ReviewScreen, useLiveEntries } from "../project-detail/review-view";
+import { CustomConceptsReview, useOpenCustomConceptCount } from "../project-detail/custom-concepts-review";
+import { FlaggedKindNav, type FlaggedKind } from "../project-detail/flagged-kind-nav";
 
 export default function FlaggedConceptsPage() {
   return (
@@ -56,6 +61,12 @@ function FlaggedConcepts() {
   const entries = useMemo(() => [...live, ...portfolio], [live, portfolio]);
   const projectFilter = (searchParams.get("project") ?? "").split(",").filter(Boolean);
   const item = searchParams.get("item");
+  // Two kinds of flagged concept: values on records that are questionable, and columns an uploader added that
+  // BioData does not have (custom concepts). `?kind=custom` opens the second.
+  const kind: FlaggedKind = searchParams.get("kind") === "custom" ? "custom" : "values";
+  const customOpen = useOpenCustomConceptCount();
+  const setKind = (next: FlaggedKind) => router.replace(roleHref(`/pages/flagged-concepts${next === "custom" ? "?kind=custom" : ""}`));
+  const kindNav = <FlaggedKindNav kind={kind} onChange={setKind} valuesOpen={entries.filter((e) => e.status === "open").length} customOpen={customOpen} />;
 
   const goToSection = (section: NavNode) => {
     const link = section.key ? section : section.items?.find((i) => i.key);
@@ -85,8 +96,11 @@ function FlaggedConcepts() {
       />
       <div className="flex flex-1 overflow-hidden">
         <PrimaryRail sections={nav} activeSection="Home" onSelectSection={goToSection} />
-        {canReview ? (
+        {canReview && kind === "custom" ? (
+          <CustomConceptsReview key={item ?? "all"} kindNav={kindNav} initialItem={item} exitLabel="Back to Home" onExit={() => router.push(roleHref("/pages/dashboard"))} />
+        ) : canReview ? (
           <ReviewScreen
+            kindNav={kindNav}
             key={item ?? "all"}
             entries={entries}
             initialItem={item}

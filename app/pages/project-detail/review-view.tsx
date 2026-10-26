@@ -17,7 +17,7 @@
 //
 // Reads the persisted field-notes store, so it always agrees with the markers on the records.
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, type ReactNode } from "react";
 import {
   Focusable,
   Header,
@@ -242,7 +242,10 @@ export function ReviewScreen({
   exitLabel,
   onExit,
   onGoToRecord,
+  kindNav,
 }: {
+  /** The page's switch between its kinds of flagged concept (the all-projects page has two), drawn under the way back. */
+  kindNav?: ReactNode;
   entries: ReviewEntry[];
   initialItem?: string | null;
   showProjects?: boolean;
@@ -409,6 +412,7 @@ export function ReviewScreen({
             <ArrowNarrowLeft className="size-4" />
             {exitLabel}
           </button>
+          {kindNav}
           <div className="flex flex-col gap-2">
             <p className="text-xs font-semibold tracking-wide text-quaternary uppercase">
               Flagged concepts

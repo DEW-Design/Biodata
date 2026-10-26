@@ -593,3 +593,4 @@ Not imported into every session on purpose: read or grep it when a task needs hi
 - [2026-10-25] The end of a map-card list lands quietly: no jump, the button and the fade ease away - `2026-10-25-09-the-end-of-a-map-card-list-lands.md`
 - [2026-10-25] Carousel ingested into the design system; the species photo is a Carousel with its credit as an info icon - `2026-10-25-10-carousel-ingested-into-the-design-system-the-species.md`
 - [2026-10-25] The photo credit's tooltip stays inside the card and reads in two lines - `2026-10-25-11-the-photo-credit-s-tooltip-stays-inside-the.md`
+- [2026-10-26] Custom concepts: columns added to a sheet at upload are flagged for admin approval - `2026-10-26-01-custom-concepts-columns-added-to-a-sheet-at.md`
