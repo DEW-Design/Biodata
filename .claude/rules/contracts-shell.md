@@ -334,6 +334,22 @@ list, and 24px to the sides and bottom.
 - **Enforcement:** `AUTO §4.2g` (in a file with `<ToolbarSearch>`, no `div` between `</SectionHeader.Root>` and the
   first `<ToolbarSearch>` carries `p-6`, `pt-6` or `py-6`).
 
+**A table that fits one page is the basic table (§4.2h).** An embedded table (in a form, a review step, a record's tab, a
+popover) whose rows all fit on one page, 10 or fewer (the smallest page size `TableCard.PaginationNumbered` offers), is the
+basic Table primitive (`components/base/table/table.tsx`: `Table`, `TableHeader`, `Column`, `TableBody`, `Row`, `Cell`) in a
+bordered container (`overflow-hidden rounded-lg border border-secondary bg-primary`), with no pagination. Past 10 rows it is
+`TableCard.Root` with `TableCard.PaginationNumbered`, as above. The switch is made on the row count, so the same table moves
+between the two as rows come and go.
+
+- MUST NOT show "Rows per page", Previous, Next and "1 - 1 of 1" under a table that cannot have a second page.
+- A collection screen (a list page, a report) keeps `TableCard` and its pagination whatever its count: its rows grow, and its
+  toolbar and the fit-the-viewport rule depend on the card.
+- The basic table has no selection, sorting or card. A row action (Remove) is a link-style `Button` in a cell; a
+  bare `Checkbox` in a cell does not work, because the table's rows supply its checkbox context.
+- **Origin:** the nomination form's "Already restricted" table and the Review step's table showed a full pagination bar under a
+  single row; the designer: "use a basic table component if there is less results per page. add this to contract" (25 Oct 2026).
+- **Enforcement:** `REVIEW`. A first occurrence, so no `AUTO` check yet (§0.8): the row count is only known at run time.
+
 ### §4.3 Cognitive load
 
 More than five or six field groups needs tiering. A conditional field is conditional in the UI. One focal
@@ -466,8 +482,9 @@ behaves the same way, on every card and every page.
 1. **Entry:** a card's edit icon edits that card; a field's edit icon (on hover or focus) edits its card,
    scrolled to and focused on that field; "Edit record" (or the page's equivalent) edits every card. A new
    record opens the same way, every card in edit mode.
-2. **One treatment:** a card in edit mode has the brand border and brand-50 halo and says "Editing". The field
-   rows use the same label-left layout as when viewed.
+2. **One treatment:** a card in edit mode has the brand border and brand-50 halo, and no label: it MUST NOT say
+   "Editing" (designer, 23 Oct 2026: the status confused people). The field rows use the same label-left layout as
+   when viewed.
 3. **More than one card at a time:** while a card is in edit mode, the other cards stay at full strength and keep
    their edit icons; opening another adds it to the same edit. MUST NOT dim or lock the other cards.
 4. **Actions in one place:** Cancel and Save changes (or "Add <type>" for a new record) sit in one sticky footer
@@ -475,10 +492,19 @@ behaves the same way, on every card and every page.
    MUST NOT put them inside a card or repeat them per card.
 5. **Leaving:** Cancel or Exit with unsaved changes asks first. Save and Cancel return to the view the edit was
    started from (a side panel stays a side panel, a full view stays a full view).
-6. **Visibility:** where a record's concepts can be hidden, the right-hand column becomes the "Concepts shown"
-   checklist while a card is in edit mode, and for a new record.
+6. **Visibility, per section:** where a record's concepts can be hidden, each card in edit mode has a quiet "Manage concepts"
+   control in its header (with the count shown, e.g. 6/10) that opens a checklist of that section's concepts; and
+   under the cards, "Add section" puts back a section the record has that is not on screen (hidden, or empty).
+   Identifiers and required concepts stay shown. (Until 23 Oct 2026 the right-hand column became a record-wide
+   "Concepts shown" checklist; the designer replaced it with this. The word is "concept", not "field", wherever a
+   record's data item is named to a person: the rule of 2026-10-23-40, applied to this control on the merge of
+   `mohan-wips`, 26 Oct 2026.)
+7. **Where the edit is:** the right-hand column keeps the record's summary while editing, with where the record
+   sits from the project down: each step's shape, full name and ID, not IDs alone.
 
 - **Origin:** Project details kept Cancel and Save inside the card while record editing had them in a page
   footer; the designer caught the difference ("Consistency is the key"). Item 3 replaced "the other cards dim and
   hide their edit icons" on 29 Sept 2026, by designer decision, after locking the other cards got in the way.
+  Items 2, 6 and 7 changed on 23 Oct 2026, by designer decision: the "Editing" label confused people, fields are
+  managed per section, and the hierarchy was not prominent and showed IDs only.
 - **Enforcement:** `REVIEW`.

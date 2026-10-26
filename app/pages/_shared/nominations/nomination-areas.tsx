@@ -10,7 +10,7 @@ import { ExpandableMap } from "@/app/pages/_shared/map-search/expandable-map";
 import { areaMethodLabel, type NominationArea } from "@/app/pages/_shared/nominations/nomination-data";
 
 // The Location attribute's areas: the places whose records of this species are obscured. Adding
-// one reuses DLA's "Add a Location" modal (shapefile, draw on the map, national park, coordinates),
+// one reuses DLA's "Add a Location" modal (draw on the map, a named place, coordinates, shapefile),
 // which is the same four methods the lo-fi draws; the map preview reuses Explore's SAMap, with the shared Expand button (ExpandableMap). Nothing
 // here is a new component - it composes existing ones for this attribute.
 
@@ -104,7 +104,7 @@ export function AreasEditor({
       </div>
       {areas.length === 0 ? (
         <p className={invalid ? "text-sm text-error-primary" : "text-sm text-tertiary"}>
-          Add the places where records of this species should be obscured: draw them, upload a shapefile, pick a national park or enter coordinates.
+          Add the places where records of this species should be obscured: draw them, choose them from a list, enter coordinates or upload a shapefile.
         </p>
       ) : (
         <ul className="m-0 flex list-none flex-col gap-2 p-0">

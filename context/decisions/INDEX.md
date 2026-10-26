@@ -582,6 +582,8 @@ Not imported into every session on purpose: read or grep it when a task needs hi
 - [2026-10-23] One scrollbar for every scroller in the product: the drawn thumb, built once - `2026-10-23-68-one-scrollbar-for-every-scroller-in-the-product.md`
 - [2026-10-23] The report's dropdowns take the design system's label above them; Select inlineLabel removed - `2026-10-23-69-the-report-s-dropdowns-take-the-design-system.md`
 - [2026-10-23] Behaviour is a component: contract 1.10, and the behaviours built outside components today - `2026-10-23-70-behaviour-is-a-component-contract-1-10-and.md`
+- [2026-10-23] Project records tree: kind shapes, full type names, 38 percent resizable tree, visible Edit and Add, first... - `2026-10-23-71-project-records-tree-kind-shapes-full-type-names.md`
+- [2026-10-23] Edit screens: no Editing label, Fields per section, Add section, where the record sits - `2026-10-23-72-edit-screens-no-editing-label-fields-per-section.md`
 - [2026-10-25] Species tab cards: a restricted species' card has the same rhythm as every other - `2026-10-25-01-species-tab-cards-a-restricted-species-card-has.md`
 - [2026-10-25] No dot between pieces of text: contract 2.3c, ratcheted, the conversion waits on the replacement - `2026-10-25-02-no-dot-between-pieces-of-text-contract-2.md`
 - [2026-10-25] My BioData landing: the 5 Oct audit folded into the live Home, and Home options for the three roles in the lab - `2026-10-25-03-my-biodata-landing-the-5-oct-audit-folded.md`
@@ -593,4 +595,18 @@ Not imported into every session on purpose: read or grep it when a task needs hi
 - [2026-10-25] The end of a map-card list lands quietly: no jump, the button and the fade ease away - `2026-10-25-09-the-end-of-a-map-card-list-lands.md`
 - [2026-10-25] Carousel ingested into the design system; the species photo is a Carousel with its credit as an info icon - `2026-10-25-10-carousel-ingested-into-the-design-system-the-species.md`
 - [2026-10-25] The photo credit's tooltip stays inside the card and reads in two lines - `2026-10-25-11-the-photo-credit-s-tooltip-stays-inside-the.md`
+- [2026-10-25] Record actions in one place, labelled - `2026-10-25-12-record-actions-in-one-place-labelled.md`
+- [2026-10-25] MultiSelect lists its selections as dismissible badges - `2026-10-25-13-multiselect-lists-its-selections-as-dismissible-badges.md`
+- [2026-10-25] Add Project: no logo, primary contact by delete, draw on map first, Analysis/Reporting method - `2026-10-25-14-add-project-no-logo-primary-contact-by-delete.md`
+- [2026-10-25] Locations from a Named location vocabulary, Other method described, next steps without numbers - `2026-10-25-15-locations-from-a-named-location-vocabulary-other-method.md`
+- [2026-10-25] New project restriction kinds, expected restriction level, managers and admins can edit restrictions - `2026-10-25-16-new-project-restriction-kinds-expected-restriction-level-man.md`
+- [2026-10-25] Restrictions layout, location empty state, embargo justification, project access lab - `2026-10-25-17-restrictions-layout-location-empty-state-embargo-justificati.md`
+- [2026-10-25] Project access in Add Project and on the project page, survey type removed from the edit drawer - `2026-10-25-18-project-access-in-add-project-and-on-the.md`
+- [2026-10-25] Nominations: see what is already protected and suggest removals; Painted Dragon and more species - `2026-10-25-19-nominations-see-what-is-already-protected-and-suggest.md`
+- [2026-10-25] Nominations: existing restrictions as a table with status; a restriction is a whole nomination - `2026-10-25-20-nominations-existing-restrictions-as-a-table-with-status.md`
+- [2026-10-25] Nominations: challenge any user's restriction from the species step; basic table when rows fit one page (4.2h) - `2026-10-25-21-nominations-challenge-any-user-s-restriction-from-the.md`
+- [2026-10-25] Nominations: request a change to a restriction, not a challenge; a prominent already-restricted warning; more... - `2026-10-25-22-nominations-request-a-change-to-a-restriction-not.md`
+- [2026-10-25] Nominations: the existing restrictions table is read only - `2026-10-25-23-nominations-the-existing-restrictions-table-is-read-only.md`
+- [2026-10-25] Bulk upload of attachments and web links with a project template - `2026-10-25-24-bulk-upload-of-attachments-and-web-links-with.md`
 - [2026-10-26] Custom concepts: columns added to a sheet at upload are flagged for admin approval - `2026-10-26-01-custom-concepts-columns-added-to-a-sheet-at.md`
+- [2026-10-26] Merge of mohan-wips into sai-wips: what came in, what was renumbered, and the mismatches handled - `2026-10-26-02-merge-of-mohan-wips-into-sai-wips-what.md`

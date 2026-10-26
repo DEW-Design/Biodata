@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, type FC } from "react";
-import { Circle, MarkerPin02, Pentagon, Plus, UploadCloud02, XClose } from "@untitledui/icons";
+import { Circle, List as ListIcon, Map01, MarkerPin02, Pentagon, Plus, Target04, Upload01, XClose } from "@untitledui/icons";
 import { Button } from "@/components/base/buttons/button";
 import { Input } from "@/components/base/input/input";
 import { InputFile } from "@/components/base/input/input-file";
@@ -10,8 +10,9 @@ import { RadioButton, RadioGroup } from "@/components/base/radio-buttons/radio-b
 import { Select } from "@/components/base/select/select";
 import { Dialog, Modal, ModalFooter, ModalHeader, ModalOverlay } from "@/components/application/modals/modal";
 import { Tab, TabList, TabPanel, Tabs } from "@/components/application/tabs/tabs";
-import { SA_NATIONAL_PARKS, type Boundary } from "@/app/pages/_shared/map-search/geo";
+import type { Boundary } from "@/app/pages/_shared/map-search/geo";
 import { ExpandableMap } from "@/app/pages/_shared/map-search/expandable-map";
+import { useLocationList } from "@/app/pages/_shared/map-search/location-list";
 import { eastingNorthingToLatLon, parseLocationFile } from "@/app/pages/_shared/dla/dla-geo";
 import { newLocationId, type DlaLocation, type DlaLocationMethod } from "@/app/pages/_shared/dla/dla-data";
 
@@ -28,14 +29,14 @@ import { newLocationId, type DlaLocation, type DlaLocationMethod } from "@/app/p
 // not inside "Add a Location" itself, so this modal only ever produces a location's name/method/
 // geometry; the caller assigns a default level and lets the requester change it afterward.
 
+// The same icons as the shared picker (project-registration/geo-extent-picker.tsx), one per method (the designer, 25 Oct 2026).
 const methodTabs: { id: DlaLocationMethod; label: string; icon: FC<{ className?: string }> }[] = [
-    { id: "shapefile", label: "Upload Shapefile", icon: UploadCloud02 },
-    { id: "map", label: "Draw on the Map", icon: Pentagon },
-    { id: "list", label: "Choose from a List", icon: MarkerPin02 },
-    { id: "coordinates", label: "Coordinates", icon: Circle },
+    { id: "map", label: "Draw on the Map", icon: Map01 },
+    { id: "list", label: "Choose from a List", icon: ListIcon },
+    { id: "coordinates", label: "Coordinates", icon: Target04 },
+    { id: "shapefile", label: "Upload Shapefile", icon: Upload01 },
 ];
 
-const parkItems = SA_NATIONAL_PARKS.map((park) => ({ id: park.id, label: park.name }));
 
 // A single point (entered coordinates, or a park's own centroid) becomes a small fixed-radius
 // circle boundary, same shape as every other boundary this tool produces - there's nothing in the
@@ -54,15 +55,6 @@ export function AddLocationModal({ isOpen, onOpenChange, onAdd }: { isOpen: bool
     const drawButtons = (className?: string) => (
         <>
             <Button
-                color={activeDrawTool === "circle" ? "primary" : "secondary"}
-                size="sm"
-                iconLeading={Circle}
-                className={className}
-                onPress={() => setActiveDrawTool(activeDrawTool === "circle" ? null : "circle")}
-            >
-                {activeDrawTool === "circle" ? "Drawing…" : "Draw circle"}
-            </Button>
-            <Button
                 color={activeDrawTool === "polygon" ? "primary" : "secondary"}
                 size="sm"
                 iconLeading={Pentagon}
@@ -70,6 +62,15 @@ export function AddLocationModal({ isOpen, onOpenChange, onAdd }: { isOpen: bool
                 onPress={() => setActiveDrawTool(activeDrawTool === "polygon" ? null : "polygon")}
             >
                 {activeDrawTool === "polygon" ? "Drawing…" : "Draw polygon"}
+            </Button>
+            <Button
+                color={activeDrawTool === "circle" ? "primary" : "secondary"}
+                size="sm"
+                iconLeading={Circle}
+                className={className}
+                onPress={() => setActiveDrawTool(activeDrawTool === "circle" ? null : "circle")}
+            >
+                {activeDrawTool === "circle" ? "Drawing…" : "Draw circle"}
             </Button>
         </>
     );
@@ -87,13 +88,14 @@ export function AddLocationModal({ isOpen, onOpenChange, onAdd }: { isOpen: bool
     const [shapefileError, setShapefileError] = useState("");
     const [isParsing, setIsParsing] = useState(false);
 
-    const selectedPark = SA_NATIONAL_PARKS.find((park) => park.id === selectedParkId);
+    const locations = useLocationList();
+    const selectedPark = locations.find((place) => place.id === selectedParkId);
 
     const boundary: Boundary | null =
         method === "map"
             ? drawnBoundary
-            : method === "list" && selectedPark
-              ? { id: `list-${selectedPark.id}`, kind: "circle", center: [selectedPark.lat, selectedPark.lon], radiusKm: PARK_RADIUS_KM }
+            : method === "list" && selectedPark?.center
+              ? { id: `list-${selectedPark.id}`, kind: "circle", center: selectedPark.center, radiusKm: PARK_RADIUS_KM }
               : method === "coordinates"
                 ? coordinatesBoundary(coordSystem, lat, lon, easting, northing)
                 : method === "shapefile" && shapefilePoints
@@ -205,9 +207,10 @@ export function AddLocationModal({ isOpen, onOpenChange, onAdd }: { isOpen: bool
 
                             <TabPanel id="list" className="flex flex-col gap-4">
                                 <Select.ComboBox
-                                    label="Select Location"
+                                    label="Select a location"
                                     placeholder="Search and select from the list"
-                                    items={parkItems}
+                                    hint={selectedPark && !selectedPark.center ? "This place has no position on the map yet. Draw it on the map instead." : undefined}
+                                    items={locations.map((place) => ({ id: place.id, label: place.name }))}
                                     selectedKey={selectedParkId}
                                     onSelectionChange={(key) => setSelectedParkId(key as string | null)}
                                 >

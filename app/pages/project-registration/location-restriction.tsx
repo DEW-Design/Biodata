@@ -1,118 +1,122 @@
 "use client";
 
-// "Restrict data based on Locations" - same shape as the species sub-flow (empty state -> a panel
-// to define one entry -> a running list of cards, each removable), but simpler: no "already
-// nominated" check exists for a location the way it does for a species in this dataset.
+// "Restrict data based on Locations". The section is the location form itself, on the page (the designer, 25 Oct 2026: "instead
+// of doing the location in the side bar we will do it in the same page"): each location is a card with its name, its expected
+// restriction and its justification, then "Add location", which opens the location selector inline, in the card, only when it
+// is pressed. The place is optional (the designer, 25 Oct 2026: "allow the user to not provide location as well"): "Remove location"
+// closes the selector and clears what was chosen. A place chosen from the list names the card when the name is still empty. "Add another location" adds a card, as
+// Project contacts adds a person. With nothing stored yet, one empty card is shown, so the form is there from the start.
 
 import { useState } from "react";
-import { MarkerPin01, Plus, Save01, Trash01, XClose } from "@untitledui/icons";
+import { Plus, Trash01 } from "@untitledui/icons";
 import { Input } from "@/components/base/input/input";
-import { TextArea } from "@/components/base/textarea/textarea";
+import { Label } from "@/components/base/input/label";
 import { Button } from "@/components/base/buttons/button";
 import { BentoCard } from "@/app/pages/_shared/bento-card";
-import { SidePanel } from "@/app/pages/_shared/map-search/side-panel";
-import { GeoExtentPicker, geoExtentSummary } from "./geo-extent-picker";
+import { GeoExtentPicker } from "./geo-extent-picker";
+import { ExpectationSelect, JustificationField } from "./restriction-fields";
 import { emptyGeoExtent, isGeoExtentComplete, type LocationRestrictionEntry } from "./types";
 
-function LocationPickerPanel({
-    isOpen,
-    onOpenChange,
-    onSave,
+export function isLocationEntryValid(entry: LocationRestrictionEntry): boolean {
+    return entry.name.trim().length > 0 && entry.justification.trim().length > 0;
+}
+
+const blankEntry = (id: number): LocationRestrictionEntry => ({ id, name: "", extent: emptyGeoExtent(), justification: "", expectation: null });
+
+function LocationCard({
+    entry,
+    index,
+    canRemove,
+    showErrors,
+    onChange,
+    onRemove,
 }: {
-    isOpen: boolean;
-    onOpenChange: (open: boolean) => void;
-    onSave: (entry: LocationRestrictionEntry) => void;
+    entry: LocationRestrictionEntry;
+    index: number;
+    canRemove: boolean;
+    showErrors: boolean;
+    onChange: (patch: Partial<LocationRestrictionEntry>) => void;
+    onRemove: () => void;
 }) {
-    const [name, setName] = useState("");
-    const [extent, setExtent] = useState(emptyGeoExtent());
-    const [justification, setJustification] = useState("");
-
-    const reset = () => {
-        setName("");
-        setExtent(emptyGeoExtent());
-        setJustification("");
-    };
-
-    const canSave = name.trim().length > 0 && isGeoExtentComplete(extent) && justification.trim().length > 0;
+    // The selector stays open once a location is chosen, so it can be changed where it was set.
+    const [pickerOpen, setPickerOpen] = useState(() => isGeoExtentComplete(entry.extent));
+    const nameMissing = showErrors && !entry.name.trim();
 
     return (
-        <SidePanel
-            isOpen={isOpen}
-            onOpenChange={(open) => {
-                onOpenChange(open);
-                if (!open) reset();
-            }}
-            title="Nominate Sensitive Location"
-            widthClassName="max-w-2xl"
-        >
-            <div className="flex flex-col gap-5">
-                <Input label="Specify a Location Name" placeholder="E.g., Pygmy Bluetongue Lizard nesting site" isRequired value={name} onChange={setName} />
-                <GeoExtentPicker value={extent} onChange={setExtent} />
-                <TextArea
-                    label="Justification"
-                    placeholder="Enter a justification..."
-                    hint="Enter the reason for this restriction request."
-                    isRequired
-                    rows={3}
-                    value={justification}
-                    onChange={setJustification}
-                />
-                <div className="flex justify-end gap-3 border-t border-secondary pt-4">
-                    <Button iconLeading={XClose} color="secondary" onClick={() => onOpenChange(false)}>
-                        Cancel
-                    </Button>
-                    <Button iconLeading={Save01}
-                        color="primary"
-                        isDisabled={!canSave}
-                        onClick={() => {
-                            onSave({ id: Date.now(), name, extent, justification });
-                            onOpenChange(false);
-                        }}
-                    >
-                        Save
-                    </Button>
-                </div>
+        <BentoCard className="gap-4">
+            <div className="flex items-center justify-between gap-4">
+                <p className="text-sm font-medium text-primary">Location {index + 1}</p>
+                {canRemove && <Button color="secondary" size="sm" iconLeading={Trash01} aria-label={`Remove ${entry.name.trim() || `location ${index + 1}`}`} onClick={onRemove} />}
             </div>
-        </SidePanel>
+            <Input
+                label="Location name"
+                isRequired
+                placeholder="E.g., Pygmy Bluetongue Lizard nesting site"
+                value={entry.name}
+                onChange={(name) => onChange({ name })}
+                isInvalid={nameMissing}
+                hint={nameMissing ? "Enter a location name" : undefined}
+            />
+            <ExpectationSelect value={entry.expectation} onChange={(expectation) => onChange({ expectation })} />
+            <JustificationField value={entry.justification} onChange={(justification) => onChange({ justification })} showErrors={showErrors} />
+            {pickerOpen ? (
+                <div className="flex flex-col gap-1.5">
+                    <div className="flex items-center justify-between gap-3">
+                        <Label>Location</Label>
+                        <Button
+                            color="link-gray"
+                            size="sm"
+                            iconLeading={Trash01}
+                            onClick={() => {
+                                onChange({ extent: emptyGeoExtent() });
+                                setPickerOpen(false);
+                            }}
+                        >
+                            Remove location
+                        </Button>
+                    </div>
+                    <GeoExtentPicker
+                        value={entry.extent}
+                        onChange={(extent) => onChange({ extent, ...(extent.method === "list" && !entry.name.trim() && extent.listName ? { name: extent.listName } : {}) })}
+                    />
+                </div>
+            ) : (
+                <Button color="secondary" size="md" iconLeading={Plus} className="w-max" onClick={() => setPickerOpen(true)}>
+                    Add location
+                </Button>
+            )}
+        </BentoCard>
     );
 }
 
-export function LocationRestrictionSection({ entries, onChange }: { entries: LocationRestrictionEntry[]; onChange: (entries: LocationRestrictionEntry[]) => void }) {
-    const [pickerOpen, setPickerOpen] = useState(false);
+export function LocationRestrictionSection({
+    entries,
+    onChange,
+    showErrors = false,
+}: {
+    entries: LocationRestrictionEntry[];
+    onChange: (entries: LocationRestrictionEntry[]) => void;
+    showErrors?: boolean;
+}) {
+    const shown = entries.length > 0 ? entries : [blankEntry(1)];
+    const update = (id: number, patch: Partial<LocationRestrictionEntry>) => onChange(shown.map((e) => (e.id === id ? { ...e, ...patch } : e)));
 
     return (
         <div className="flex flex-col gap-4">
-            {entries.length === 0 ? (
-                <div className="flex flex-col items-start gap-3">
-                    <p className="text-sm text-tertiary">No sensitive locations added yet. Select locations and related metadata that should be treated as sensitive.</p>
-                    <Button color="primary" size="sm" iconLeading={Plus} onClick={() => setPickerOpen(true)}>
-                        Select Location
-                    </Button>
-                </div>
-            ) : (
-                <div className="flex flex-col gap-4">
-                    {entries.map((entry) => (
-                        <BentoCard key={entry.id} className="gap-3">
-                            <div className="flex items-start justify-between gap-3">
-                                <div className="flex items-start gap-2">
-                                    <MarkerPin01 className="mt-0.5 size-4 text-fg-quaternary" />
-                                    <div className="flex flex-col">
-                                        <p className="text-base font-medium text-primary">{entry.name}</p>
-                                        <p className="text-sm text-tertiary">{geoExtentSummary(entry.extent)}</p>
-                                    </div>
-                                </div>
-                                <Button color="secondary" size="sm" iconLeading={Trash01} aria-label={`Remove ${entry.name}`} onClick={() => onChange(entries.filter((e) => e.id !== entry.id))} />
-                            </div>
-                            {entry.justification && <p className="border-t border-secondary pt-3 text-sm text-tertiary">{entry.justification}</p>}
-                        </BentoCard>
-                    ))}
-                    <Button color="primary" size="sm" iconLeading={Plus} className="w-max" onClick={() => setPickerOpen(true)}>
-                        Add another Location
-                    </Button>
-                </div>
-            )}
-
-            <LocationPickerPanel isOpen={pickerOpen} onOpenChange={setPickerOpen} onSave={(entry) => onChange([...entries, entry])} />
+            {shown.map((entry, i) => (
+                <LocationCard
+                    key={entry.id}
+                    entry={entry}
+                    index={i}
+                    canRemove={shown.length > 1}
+                    showErrors={showErrors}
+                    onChange={(patch) => update(entry.id, patch)}
+                    onRemove={() => onChange(shown.filter((e) => e.id !== entry.id))}
+                />
+            ))}
+            <Button color="link-color" size="sm" iconLeading={Plus} className="w-max" onClick={() => onChange([...shown, blankEntry(Math.max(0, ...shown.map((e) => e.id)) + 1)])}>
+                Add another location
+            </Button>
         </div>
     );
 }

@@ -15,7 +15,7 @@ import { MAP_SURFACE_EDGE } from "@/app/pages/_shared/map-search/map-surface";
 import type { SAMapMarker } from "@/app/pages/_shared/map-search/sa-map";
 import { MapZoomButtons } from "@/app/pages/_shared/map-search/map-zoom-buttons";
 import type { Map as LeafletMap } from "leaflet";
-import { ArrowNarrowRight, Circle, Download01, File07, FileDownload01, FileLock01, Folder, Map02, MarkerPin02, Pentagon, Plus, Printer, RefreshCcw01, SearchLg, UploadCloud02, UserPlus01, XClose } from "@untitledui/icons";
+import { ArrowNarrowRight, Circle, Download01, File07, FileDownload01, FileLock01, Folder, Map02, MarkerPin02, Pentagon, Plus, Printer, RefreshCcw01, SearchLg, Upload01, UserPlus01, XClose } from "@untitledui/icons";
 import { Button } from "@/components/base/buttons/button";
 import { Dropdown } from "@/components/base/dropdown/dropdown";
 import { Badge, CountBadge } from "@/components/base/badges/badges";
@@ -767,7 +767,9 @@ function ObservationsSearch() {
 
   const locationBody = (
     <div className="flex items-start gap-3">
-      <MultiSelect size="sm" label="Parks" placeholder="Choose one or more parks" items={parkItems} selectedKeys={selectedParkIds} onSelectionChange={setSelectedParkIds} className="min-w-0 flex-1">
+      {/* No badges under this field (`showSelectedBadges`, on by default for every MultiSelect): each chosen park is already a removable chip under the search field, one place to read and take it off (4.3), and six
+          badges would fill the step and push the results off the card. */}
+      <MultiSelect size="sm" label="Parks" placeholder="Choose one or more parks" items={parkItems} selectedKeys={selectedParkIds} onSelectionChange={setSelectedParkIds} showSelectedBadges={false} className="min-w-0 flex-1">
         {(item) => <MultiSelect.Item {...item}>{item.label}</MultiSelect.Item>}
       </MultiSelect>
       <InputNumber size="sm" label="Radius (km)" defaultValue={parkRadius} minValue={5} maxValue={100} step={5} onChange={setParkRadius} className={radiusClass} />
@@ -1064,7 +1066,7 @@ function ObservationsSearch() {
           <Dropdown.Separator />
           <Dropdown.Item id="coordinates" label="Enter coordinates" icon={MarkerPin02} />
           <Dropdown.Item id="location" label="Choose national parks" icon={Map02} />
-          <Dropdown.Item id="shapefile" label="Upload a shapefile" icon={UploadCloud02} />
+          <Dropdown.Item id="shapefile" label="Upload a shapefile" icon={Upload01} />
         </Dropdown.Menu>
       </Dropdown.Popover>
     </Dropdown.Root>

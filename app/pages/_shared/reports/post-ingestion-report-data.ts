@@ -41,7 +41,9 @@ export interface PostIngestionRow extends IngestionRow {
 // its own column, so it is not repeated here.
 const SENSITIVE_LABELS: Partial<Record<RestrictionTypeKey, string>> = {
   species: "Species",
+  cultural: "Cultural sensitivities",
   locations: "Locations",
+  all: "All records",
   metadata: "Project metadata",
   other: "Other",
 };

@@ -14,11 +14,12 @@
 import { useMemo, useState } from "react";
 import { ChevronDown, Eye, Lock01, SearchMd } from "@untitledui/icons";
 import { Button } from "@/components/base/buttons/button";
+import { Dropdown } from "@/components/base/dropdown/dropdown";
 import { Checkbox } from "@/components/base/checkbox/checkbox";
 import { Input } from "@/components/base/input/input";
 import { cx } from "@/utils/cx";
-import type { SurveyRecord } from "./survey-data";
-import { recordFieldEntries } from "./field-visibility-store";
+import type { MetaSection, SurveyRecord } from "./survey-data";
+import { recordFieldEntries, sectionFieldEntries } from "./field-visibility-store";
 
 export function VisibilityPanel({
   record,
@@ -238,10 +239,74 @@ export function VisibilityPanel({
               ),
           ) && (
             <li className="px-3 py-6 text-center text-sm text-tertiary">
-              No field matches &quot;{query.trim()}&quot;.
+              No concept matches &quot;{query.trim()}&quot;.
             </li>
           )}
       </ul>
     </section>
+  );
+}
+
+/**
+ * A section's own "Manage concepts" control, in the header of a card being edited (designer, 23 Oct 2026: it replaces the
+ * "Editing" label, and the record-wide "Concepts shown" column): a quiet button with the count shown, opening a
+ * checklist of that section's fields. Ticking applies at once and closing keeps it (CONTRACTS 1.9); identifiers and
+ * required fields stay ticked. Changes belong to the edit session, saved with Save changes.
+ */
+export function SectionFieldsMenu({
+  section,
+  hidden,
+  onChange,
+}: {
+  section: MetaSection;
+  hidden: Set<string>;
+  onChange: (next: Set<string>) => void;
+}) {
+  const fields = sectionFieldEntries(section);
+  if (fields.length === 0) return null;
+  const shown = fields.filter((f) => f.locked || !hidden.has(f.key));
+  return (
+    <Dropdown.Root>
+      <Button
+        color="secondary"
+        size="sm"
+        iconLeading={Eye}
+        iconTrailing={ChevronDown}
+        aria-label={`Manage concepts in ${section.title}: ${shown.length} of ${fields.length} shown`}
+      >
+        Manage concepts
+        <span className="ml-1 font-normal text-tertiary tabular-nums">
+          {shown.length}/{fields.length}
+        </span>
+      </Button>
+      <Dropdown.Popover placement="bottom end" className="max-h-80 w-64">
+        <Dropdown.Menu
+          aria-label={`Concepts shown in ${section.title}`}
+          selectionMode="multiple"
+          selectedKeys={new Set(shown.map((f) => f.key))}
+          disabledKeys={fields.filter((f) => f.locked).map((f) => f.key)}
+          onSelectionChange={(keys) => {
+            if (keys === "all") return;
+            const next = new Set(hidden);
+            for (const f of fields) {
+              if (f.locked) continue;
+              if (keys.has(f.key)) next.delete(f.key);
+              else next.add(f.key);
+            }
+            onChange(next);
+          }}
+        >
+          {fields.map((f) => (
+            <Dropdown.Item
+              key={f.key}
+              id={f.key}
+              label={f.label}
+              selectionIndicator="checkbox"
+              addon={f.locked ? "Always shown" : undefined}
+            />
+          ))}
+        </Dropdown.Menu>
+      </Dropdown.Popover>
+    </Dropdown.Root>
   );
 }

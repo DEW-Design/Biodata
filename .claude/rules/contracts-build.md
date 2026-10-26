@@ -394,8 +394,13 @@ forward arrow on the right (`iconTrailing`) for a button that moves on. An actio
 
 - **Not action buttons.** An icon-only button (an `aria-label`, no text) and a link-style button (`link-color`,
   `link-gray`, `link-destructive`) are not covered; they may still carry an icon.
-- **One icon per action (§2.4).** The same action has the same icon on every screen. Workflow actions on a record
-  (`RecordAction`, whose `icon` is required) and the buttons in forms, modals and the auth flow use this set:
+- **One icon per action, everywhere (§2.4).** An action has exactly one icon, and it is the same wherever the action
+  appears: a labelled button, an icon-only button, a menu item, a `RecordAction`, a card's or a field's hover icon, a
+  doc page's example and a shared component's built-in menu (designer, 25 Oct 2026: "Icons must be same for the
+  corresponding actions across everywhere"). A near-twin glyph from the same family (`Edit01`-`Edit04` beside
+  `Edit05`, `UploadCloud02` beside `Upload01`, `DownloadCloud02` beside `Download01`) is a different icon and MUST NOT
+  stand in for the action's own. The reverse holds too: two different actions MUST NOT share an icon on one screen
+  (Rename and Edit are told apart). The set:
 
   | Action | Icon |
   | --- | --- |
@@ -416,6 +421,8 @@ forward arrow on the right (`iconTrailing`) for a button that moves on. An actio
   | Archive, restore | `Archive`, `FlipBackward` |
   | Cancel an agreement or request | `SlashCircle01` |
   | Edit, change | `Edit05` |
+  | Rename | `PencilLine` |
+  | Duplicate, copy | `Copy01` |
   | Download, export | `Download01` |
   | Upload, replace a file | `Upload01` |
   | Search | `SearchLg` |
@@ -429,6 +436,11 @@ forward arrow on the right (`iconTrailing`) for a button that moves on. An actio
   | Flag, add a link | `Flag01`, `Link01` |
 
   An action not in the set takes the icon Figma draws, or the closest existing one (§2.4), and is added here.
+- **One control per action.** An action appears once on a record: two controls that do the same thing (a header "..."
+  menu repeating the Add and Edit buttons under the title) are a defect. A record's actions sit together under its
+  title; the bar above it holds navigation only (the path, full screen).
+- **Not covered by the set.** An icon that names a concept rather than an action (a tab, a category tile, a resource
+  type, a record kind) follows §2.4 and §3.13, not this table: `UploadCloud02` is the Uploads tab, not the upload action.
 - **Modals and shared components.** A modal's buttons are action buttons. `ConfirmationModal`, `DestructiveModal` and
   `FormModal` require `confirmIcon` / `submitIcon` (an action is never the same twice, so there is no default) and
   default Cancel to `XClose`; "Keep editing" on a discard prompt takes `ArrowLeft` (`cancelIcon`). A button-style
@@ -439,7 +451,15 @@ forward arrow on the right (`iconTrailing`) for a button that moves on. An actio
   which did, and some 50 other filled and outlined buttons across the forms, the auth flow and the registration
   flow had none; the check then missed every modal, because their buttons live in a shared component (the Approve
   request modal's Cancel and Upload and Approve, the file field's Browse), so the same gap was found again
-  (designer, 1 Oct 2026, section 0.8).
+  (designer, 1 Oct 2026, section 0.8). One icon per action, everywhere: the project records panel had Edit and Add
+  both in its header "..." menu and under the title, Edit drawn with `Edit02` in one and `Edit05` in the other, and a
+  sweep found 22 more drifts (four pencils, `UploadCloud02` on four upload buttons, `DownloadCloud02`, Rename as
+  `Edit03` on the map and `PencilLine` in Taxonomy) (designer, 25 Oct 2026).
 - **Enforcement:** `AUTO §3.12` (an action button with no icon anywhere under `app/pages`, the auth flow and the
   home page included, or in `components/application`, `components/base` and `components/custom`; the two stale
-  unlinked drafts are exempt), and `tsc` for `RecordAction.icon` and the modals' required icon props.
+  unlinked drafts are exempt), and `tsc` for `RecordAction.icon` and the modals' required icon props. `AUTO §3.12b`
+  (under `app/pages`, the doc pages, the Prototype tools and `components/application`, `base` and `custom`: an import
+  of a pencil other than `Edit05`; or a labelled action, a `label` with its `icon` or a `Button`'s text with its
+  `iconLeading`, whose first word is in the table and whose icon is not that action's; "Add", "Cancel" and "Change"
+  are not keyed, because the table gives them more than one icon, and the marketing home's feature tiles are exempt).
+  `REVIEW` for icon-only controls and for one control per action.

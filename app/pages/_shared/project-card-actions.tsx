@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { BarChart01, Download01, Upload01 } from "@untitledui/icons";
+import { BarChart01, ChevronDown, Download01, Paperclip, Upload01 } from "@untitledui/icons";
 import { Button } from "@/components/base/buttons/button";
 import { Dropdown } from "@/components/base/dropdown/dropdown";
 import { toast } from "@/components/application/toast/toast";
@@ -24,11 +24,24 @@ import { useUserRole } from "@/lib/use-user-role";
 // signed-in roles only: a public user can't upload, so an upload's progress isn't theirs to see (and
 // with no chip, the Prototype tools bar has no "Upload result" tool for them either). They still see
 // "Upload dataset", which opens the sign-up prompt.
-export function ProjectCardActions({ projectId, projectCode }: { projectId: string; projectCode: string }) {
+//
+// Where the page can take attachments in bulk (the project page, `onUploadAttachments`), the button is "Upload" with a menu
+// of the two uploads (designer, 25 Oct 2026): Upload dataset, and Upload attachments (bulk-attach-modal.tsx). A guest gets
+// the sign-up prompt for either.
+export function ProjectCardActions({
+  projectId,
+  projectCode,
+  onUploadAttachments,
+}: {
+  projectId: string;
+  projectCode: string;
+  /** Opens the bulk attachments upload. When given, the button becomes an "Upload" menu holding it beside Upload dataset. */
+  onUploadAttachments?: () => void;
+}) {
   const router = useRouter();
   const roleHref = useRoleHref();
   const isGuest = useUserRole() === "public-user";
-  const [gate, setGate] = useState<"upload" | "export" | "report" | null>(null);
+  const [gate, setGate] = useState<"upload" | "attachments" | "export" | "report" | null>(null);
 
   const upload = () => (isGuest ? setGate("upload") : router.push(roleHref(`/pages/project-list/${projectId}/upload`)));
 
@@ -52,9 +65,26 @@ export function ProjectCardActions({ projectId, projectCode }: { projectId: stri
     <>
       <div className="flex shrink-0 items-center gap-2">
         {!isGuest && <ProjectIngestionChip projectId={projectId} />}
-        <Button color="secondary" size="sm" iconLeading={Upload01} onPress={upload}>
-          Upload dataset
-        </Button>
+        {onUploadAttachments ? (
+          <Dropdown.Root>
+            <Button color="secondary" size="sm" iconLeading={Upload01} iconTrailing={ChevronDown}>
+              Upload
+            </Button>
+            <Dropdown.Popover placement="bottom right" className="w-56">
+              <Dropdown.Menu
+                aria-label="Upload"
+                onAction={(key) => (key === "dataset" ? upload() : isGuest ? setGate("attachments") : onUploadAttachments())}
+              >
+                <Dropdown.Item id="dataset" label="Upload dataset" />
+                <Dropdown.Item id="attachments" label="Upload attachments" />
+              </Dropdown.Menu>
+            </Dropdown.Popover>
+          </Dropdown.Root>
+        ) : (
+          <Button color="secondary" size="sm" iconLeading={Upload01} onPress={upload}>
+            Upload dataset
+          </Button>
+        )}
         <Dropdown.Root>
           <Dropdown.DotsButton aria-label="More project actions" className="p-1 text-white/80 hover:text-white" />
           <Dropdown.Popover placement="bottom right">
@@ -71,6 +101,13 @@ export function ProjectCardActions({ projectId, projectCode }: { projectId: stri
         icon={Upload01}
         title="Sign up to upload a dataset"
         description="Create a free BioData SA account to start contributing datasets to South Australia's biodiversity record."
+      />
+      <SignUpPromptModal
+        isOpen={gate === "attachments"}
+        onOpenChange={(open) => !open && setGate(null)}
+        icon={Paperclip}
+        title="Sign up to upload attachments"
+        description="Create a free BioData SA account to add photos, documents, recordings and links to a project's records."
       />
       <SignUpPromptModal
         isOpen={gate === "export"}

@@ -14,7 +14,7 @@
 
 import { displayValue } from "./field-schema";
 import { createElement, useState, type ReactNode } from "react";
-import { ChevronDown, ChevronRight, Edit02, File06, Folder, InfoCircle, Maximize02, Plus, Trash01 } from "@untitledui/icons";
+import { ChevronDown, ChevronRight, Edit05, File06, Folder, InfoCircle, Maximize02, Plus, Trash01 } from "@untitledui/icons";
 import { Accordion } from "@/components/base/accordion/accordion";
 import { Badge } from "@/components/base/badges/badges";
 import { Button } from "@/components/base/buttons/button";
@@ -43,16 +43,15 @@ export const KIND_COLOR: Record<RecordKind, "brand" | "success" | "blue"> = { ev
 export { recordIcon };
 
 /**
- * The start of every record path: the project, as a folder icon and its ID (the same text identity
- * every other step shows, "SU00501"). It opens the project, like every other step opens its record.
+ * The start of every record path: the project, by its name (designer, 23 Oct 2026: names only in the path; the
+ * ID is in the tooltip). It opens the project, like every other step opens its record.
  */
 export function ProjectCrumb({ title, onPress }: { title: string; onPress: () => void }) {
   const { meta } = useEditStore();
   return (
-    <button type="button" onClick={onPress} title={`Project: ${title}`} className="flex shrink-0 items-center gap-1 rounded px-1 py-0.5 text-tertiary hover:bg-secondary hover:text-primary">
-      <Folder className="size-3.5 text-fg-quaternary" aria-hidden />
-      <span>{meta.code}</span>
-      <span className="sr-only">(project)</span>
+    <button type="button" onClick={onPress} title={`Project ${meta.code}: ${title}`} className="max-w-48 shrink-0 truncate rounded px-1 py-0.5 text-tertiary hover:bg-secondary hover:text-primary">
+      {title}
+      <span className="sr-only"> (project)</span>
     </button>
   );
 }
@@ -323,7 +322,7 @@ export function RecordInspector({
           title: section.title,
           content: <SectionBody record={record} section={section} />,
           action: store.canEdit ? (
-            <Button color="secondary" size="sm" iconLeading={Edit02} onClick={() => setEditing(section.id)} aria-label={`Edit ${section.title}`}>
+            <Button color="secondary" size="sm" iconLeading={Edit05} onClick={() => setEditing(section.id)} aria-label={`Edit ${section.title}`}>
               Edit
             </Button>
           ) : undefined,

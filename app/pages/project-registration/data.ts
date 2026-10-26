@@ -2,6 +2,7 @@
 // rather than inventing a second, disconnected dataset. See page.tsx's header comment for why.
 
 import { searchOccurrences, rootProjectForParentEventId, type SpeciesGroup } from "@/app/pages/_shared/map-search/search-data";
+import type { ProjectAccessLevel, ProjectContact, ProjectDetailsState } from "./types";
 
 export const ROLE_OF_WORK_OPTIONS = [
     { id: "field-survey", label: "Field Survey" },
@@ -21,6 +22,48 @@ export const ROLE_IN_PROJECT_OPTIONS = ROLE_IN_PROJECT_IDS.map((id) => ROLE_OF_W
 
 /** The role that makes a Project contact one of the project's managers. */
 export const PROJECT_MANAGER_ROLE = "project-manager";
+
+// What a project contact can do on the project (the designer, 25 Oct 2026, approving access set on each contact when the
+// project is created, and a Project access tab on the project page afterwards). The three levels and their lines were
+// drafted in the lab (`/proto/project-access`) and approved the same day; View only sees restricted records in full. A
+// Project Manager always has full control; anyone else starts as View only until someone gives them more.
+export const PROJECT_ACCESS_OPTIONS: { id: ProjectAccessLevel; label: string; supportingText: string }[] = [
+    { id: "full", label: "Full control", supportingText: "Edit details, restrictions, records and access" },
+    { id: "records", label: "Can upload and edit records", supportingText: "Upload datasets and edit records" },
+    { id: "view", label: "View only", supportingText: "See the project and all its records, restricted ones too" },
+];
+
+export const accessOf = (person: Pick<ProjectContact, "role" | "access">): ProjectAccessLevel => (person.role === PROJECT_MANAGER_ROLE ? "full" : (person.access ?? "view"));
+export const accessLabel = (level: ProjectAccessLevel) => PROJECT_ACCESS_OPTIONS.find((o) => o.id === level)!.label;
+
+/** The key a person's access is stored under (`ProjectDetailsState.projectAccess`). */
+export const accessKey = (p: { email: string }) => p.email.trim().toLowerCase();
+
+/** The people on a saved project, as the project page holds them: its project managers (always Project Manager, so Full control)
+ *  then the data owner's contacts who are not also managers, each with the access stored for them. A person with no email is left
+ *  out, as their access could not be kept. */
+export function projectPeople(d: Pick<ProjectDetailsState, "projectManagers" | "dataOwnerContacts" | "projectAccess" | "roleOfWork" | "roleOfWorkOther">): ProjectContact[] {
+    const seen = new Set<string>();
+    const out: ProjectContact[] = [];
+    const add = (p: Omit<ProjectContact, "isManager" | "access" | "organisation" | "isPrimary"> & { organisation?: string }, manager: boolean) => {
+        const key = accessKey(p);
+        if (!key || seen.has(key)) return;
+        seen.add(key);
+        out.push({
+            ...p,
+            organisation: p.organisation ?? "",
+            isPrimary: false,
+            isManager: manager,
+            role: manager ? PROJECT_MANAGER_ROLE : p.role,
+            roleOther: manager ? "" : p.roleOther,
+            access: d.projectAccess?.[key],
+        });
+    };
+    d.projectManagers.forEach((m) => add(m, true));
+    // The first contact's role may be kept on the project instead (`roleOfWork`), as the project page reads it.
+    d.dataOwnerContacts.forEach((c, i) => add({ ...c, role: c.role ?? (i === 0 ? d.roleOfWork : null), roleOther: c.roleOther ?? (i === 0 ? d.roleOfWorkOther : "") }, false));
+    return out;
+}
 
 // The same placeholder persona set this build already uses everywhere a "who's involved" list
 // needs real, recognisable-as-fake names - never invented fresh ones (see context/decisions/2026-09-00-avatar-build-known-gaps.md,
@@ -61,21 +104,35 @@ export const SURVEY_TYPE_OPTIONS: { id: "biological" | "native-vegetation"; labe
     { id: "native-vegetation", label: "Native Vegetation Survey" },
 ];
 
-export const COLLECTION_METHOD_OPTIONS: { id: "incidental" | "systematic" | "unknown" | "other"; label: string; description: string }[] = [
+export const COLLECTION_METHOD_OPTIONS: { id: "incidental" | "systematic" | "analysis" | "unknown" | "other"; label: string; description: string }[] = [
     { id: "incidental", label: "Incidental observations", description: "Data collected informally or opportunistically without a predefined sampling method." },
     { id: "systematic", label: "Systematic", description: "Data collected using a structured and repeatable method, often across set time intervals or locations." },
+    { id: "analysis", label: "Analysis/Reporting", description: "Data produced by analysing or reporting on data already collected." },
     { id: "unknown", label: "Unknown", description: "The method of data collection is not known or not recorded." },
     { id: "other", label: "Other", description: "Data will be collected using a method not listed here (e.g. media/images)." },
 ];
 
-// Version 2 of option 2 offers every method but Unknown (the designer, 9 Oct 2026: "Remove this option").
+// Version 2 of option 2 offers every method but Unknown (the designer, 9 Oct 2026: "Remove this option"). Unknown stays in the
+// list above so a project that holds it still reads.
 export const COLLECTION_METHOD_OPTIONS_V2 = COLLECTION_METHOD_OPTIONS.filter((o) => o.id !== "unknown");
+
+// What an Analysis/Reporting project adds, one or more, as a Systematic project adds its methodologies, Other included (the
+// designer, 25 Oct 2026).
+export const ANALYSIS_REPORTING_OPTIONS = ["Species Distribution Mapping", "Native Vegetation Mapping", "State of the Environment Reporting"];
 
 // `maxMonths` is this build's own system-provided ceiling per embargo type, not a fabricated real
 // BDBSA policy figure - a project completion or cultural/Indigenous embargo genuinely warrants a
 // longer maximum than a plain publication embargo, so the numbers differ by type rather than
 // sharing one flat cap, but the exact values are this exploratory build's own reasonable default,
 // logged here rather than presented as sourced policy.
+// "Expectations data restrictions" (the designer, 25 Oct 2026): what the person expects for restricted records. An expectation
+// only: a BioData Admin decides the level after an internal review.
+export const EXPECTED_RESTRICTION_OPTIONS: { id: "1km" | "10km" | "government"; label: string }[] = [
+    { id: "1km", label: "Obfuscate location to 1 km" },
+    { id: "10km", label: "Obfuscate location to 10 km" },
+    { id: "government", label: "Government access only" },
+];
+
 export const EMBARGO_TYPE_OPTIONS: { id: "publication" | "completion" | "cultural" | "other"; label: string; description: string; maxMonths: number }[] = [
     { id: "publication", label: "Publication embargo", description: "Data is withheld until related research or reports are officially published.", maxMonths: 24 },
     { id: "completion", label: "Project completion embargo", description: "Data remains private until all fieldwork, analysis, and QA are completed.", maxMonths: 36 },
@@ -246,10 +303,27 @@ function buildSpeciesList(): RegistrationSpecies[] {
             alreadySensitive: occ.licenceLevel === "Level 2",
         });
     }
-    return Array.from(seen.values()).sort((a, b) => a.commonName.localeCompare(b.commonName));
+    return Array.from(seen.values());
 }
 
-export const REGISTRATION_SPECIES: RegistrationSpecies[] = buildSpeciesList();
+// Real South Australian species that have no record in the shared dataset, so they can be picked
+// (nominated as sensitive, restricted in a project) without adding points to Explore's map (the
+// designer, 25 Oct 2026: "add painted dragon species to the list along with some more species").
+const SPECIES_WITHOUT_RECORDS: RegistrationSpecies[] = [
+    { id: "Ctenophorus pictus", commonName: "Painted Dragon", species: "Ctenophorus pictus", family: "Agamidae", group: "Reptile", alreadySensitive: false },
+    { id: "Aprasia pseudopulchella", commonName: "Flinders Ranges Worm-lizard", species: "Aprasia pseudopulchella", family: "Pygopodidae", group: "Reptile", alreadySensitive: false },
+    { id: "Burhinus grallarius", commonName: "Bush Stone-curlew", species: "Burhinus grallarius", family: "Burhinidae", group: "Bird", alreadySensitive: false },
+    { id: "Stipiturus mallee", commonName: "Mallee Emu-wren", species: "Stipiturus mallee", family: "Maluridae", group: "Bird", alreadySensitive: false },
+    { id: "Sminthopsis psammophila", commonName: "Sandhill Dunnart", species: "Sminthopsis psammophila", family: "Dasyuridae", group: "Mammal", alreadySensitive: false },
+    { id: "Macrotis lagotis", commonName: "Greater Bilby", species: "Macrotis lagotis", family: "Thylacomyidae", group: "Mammal", alreadySensitive: false },
+    { id: "Pseudophryne bibronii", commonName: "Brown Toadlet", species: "Pseudophryne bibronii", family: "Myobatrachidae", group: "Amphibian", alreadySensitive: false },
+    { id: "Caladenia behrii", commonName: "Pink-lipped Spider-orchid", species: "Caladenia behrii", family: "Orchidaceae", group: "Plant", alreadySensitive: false },
+    { id: "Thelymitra epipactoides", commonName: "Metallic Sun-orchid", species: "Thelymitra epipactoides", family: "Orchidaceae", group: "Plant", alreadySensitive: false },
+];
+
+export const REGISTRATION_SPECIES: RegistrationSpecies[] = [...buildSpeciesList(), ...SPECIES_WITHOUT_RECORDS.filter((s) => !searchOccurrences.some((o) => o.species === s.id))].sort((a, b) =>
+    a.commonName.localeCompare(b.commonName),
+);
 
 export const SPECIES_GROUP_OPTIONS: SpeciesGroup[] = ["Mammal", "Bird", "Reptile", "Amphibian", "Plant"];
 

@@ -6,7 +6,7 @@ import { formatShortDate, todayIso, type DlaLocationMethod } from "@/app/pages/_
 import { REGISTRATION_SPECIES, SPECIES_CONCEPTS, type ConceptOption, type RegistrationSpecies } from "@/app/pages/project-registration/data";
 import { emptyConceptRow, isGeoExtentComplete, type ConceptValueRow, type GeoExtentValue } from "@/app/pages/project-registration/types";
 import { SA_NATIONAL_PARKS } from "@/app/pages/_shared/map-search/geo";
-import { areaRatingKey, ratingsPerArea, type Rating } from "@/app/pages/_shared/nominations/nomination-rating";
+import { areaRatingKey, ratingsPerArea, ruleLabel, type Rating } from "@/app/pages/_shared/nominations/nomination-rating";
 
 // Sensitive species nominations (Master Flows lo-fi, Figma YMproGZfrFB5jUqPHPxMhk node 1401:10936):
 // one species per nomination, what should be protected (all of its data, or selected attributes),
@@ -59,6 +59,7 @@ export function nominationSubject(n: { kind?: NominationKind; speciesId: string;
  *  is drawn as a circle at its centre: the park list holds centres, not surveyed boundaries. */
 export function locationArea(location: NominationLocation, parkRadiusKm = 15): NominationArea | null {
   const { extent } = location;
+  // A choice saved with a national park's id and no boundary (the seeds); a Named location choice carries its own boundary.
   const park = extent.method === "list" ? SA_NATIONAL_PARKS.find((p) => p.id === extent.parkId) : undefined;
   const boundary: Boundary | null = extent.boundary ?? (park ? { id: `park-${park.id}`, kind: "circle", center: [park.lat, park.lon], radiusKm: parkRadiusKm, label: park.name } : null);
   if (!boundary || !extent.method) return null;
@@ -107,6 +108,17 @@ export interface NominationAttribute {
   justification?: string;
 }
 
+/** An accepted nomination of the same species that this one suggests should no longer apply (the designer, 25 Oct 2026:
+ *  nominators "can also see what is nominated already and then suggest adding or removing"). A restriction is the whole
+ *  nomination: the species where it is found (Location) and with every attribute it names, so it is removed whole. A snapshot of
+ *  what it restricted, so this record still reads as nominated after that nomination changes. The main reason covers it. */
+export interface NominationRemoval {
+  /** The accepted nomination's id. */
+  key: string;
+  /** Where and what it restricts, as `restrictionSummary` writes it. */
+  summary: string;
+}
+
 export interface NominationEvent {
   status: NominationStatus;
   at: string;
@@ -125,6 +137,8 @@ export interface Nomination {
   speciesId: string;
   scope: ProtectionScope;
   attributes: NominationAttribute[];
+  /** Accepted restrictions of the species that this nomination suggests removing. Absent or empty: it only adds. */
+  removals?: NominationRemoval[];
   /** The justification shared by everything protected; an attribute or area may carry its own instead (the designer, 14 Oct 2026). */
   justification: string;
   nominator: { name: string; organisation: string; email: string };
@@ -140,7 +154,7 @@ export interface Nomination {
   ratings?: Record<string, Rating>;
 }
 
-export type NominationDraft = Pick<Nomination, "speciesId" | "scope" | "attributes" | "justification" | "kind" | "location">;
+export type NominationDraft = Pick<Nomination, "speciesId" | "scope" | "attributes" | "justification" | "kind" | "location" | "removals">;
 
 export function emptyNominationDraft(): NominationDraft {
   return { speciesId: "", scope: "all", attributes: [], justification: "" };
@@ -225,6 +239,43 @@ export function protectedItems(attributes: NominationAttribute[]): ProtectedItem
   });
 }
 
+/** Where a species restriction applies (the designer, 25 Oct 2026: "the location is to define where this species [is] found"): the
+ *  Location attribute's areas, or anywhere. */
+export function restrictionWhere(n: Pick<Nomination, "scope" | "attributes">): string {
+  const areas = n.scope === "selected" ? n.attributes.filter((a) => a.attribute === "location").flatMap((a) => a.areas.map((ar) => ar.name)) : [];
+  return areas.length ? areas.join(", ") : "Anywhere";
+}
+
+/** What a species restriction covers there: every attribute it names, all of which a record must match ("Sex: Male"), or all data. */
+export function restrictionConditions(n: Pick<Nomination, "scope" | "attributes">): string[] {
+  if (n.scope === "all") return [protectionMeta.all.label];
+  const conditions = n.attributes.filter((a) => a.attribute && a.attribute !== "location").map((a) => ruleLabel(a));
+  return conditions.length ? conditions : ["Every record found there"];
+}
+
+export const restrictionSummary = (n: Pick<Nomination, "scope" | "attributes">) => [`Where: ${restrictionWhere(n)}`, ...restrictionConditions(n)].join("; ");
+
+/** Accepted nominations a later accepted nomination asked to remove: they no longer apply. */
+export function removedNominationIds(nominations: Pick<Nomination, "status" | "removals">[]): Set<string> {
+  return new Set(nominations.filter((n) => n.status === "accepted").flatMap((n) => (n.removals ?? []).map((r) => r.key)));
+}
+
+/**
+ * A species' restrictions, each a whole nomination, as a person choosing the species should see them: those in force (accepted,
+ * and not removed by a later accepted nomination) and those nominated and still with the panel or the nominator (open). Open
+ * first, then accepted, newest first. Drafts are private and are left out.
+ */
+export function existingRestrictions(nominations: Nomination[], speciesId: string, excludeId?: string): Nomination[] {
+  const removed = removedNominationIds(nominations);
+  return nominations
+    .filter((n) => n.id !== excludeId && kindOf(n) === "species" && n.speciesId === speciesId)
+    .filter((n) => isOpenNomination(n) || (n.status === "accepted" && !removed.has(n.id)))
+    .sort((a, b) => Number(b.status !== "accepted") - Number(a.status !== "accepted") || b.updatedAt.localeCompare(a.updatedAt));
+}
+
+/** The key a removal's row is shown under, beside `ProtectedItem.key`. */
+export const removalKey = (key: string) => `remove:${key}`;
+
 // ── Sections of the form and what each one needs to be complete. ──
 // Justification is no longer a step (the designer, 14 Oct 2026): it is asked beside what it justifies, on What to protect or
 // Location, once for everything with a way to give an attribute or area its own.
@@ -254,8 +305,9 @@ export function missingForNomination(draft: NominationDraft, mode: "draft" | "su
   }
   if (!draft.speciesId) missing.species.push("Choose a species");
   if (mode === "draft") return missing;
+  const removals = draft.removals ?? [];
   if (draft.scope === "selected") {
-    if (draft.attributes.length === 0) missing.protection.push("Add at least one attribute");
+    if (draft.attributes.length === 0 && removals.length === 0) missing.protection.push("Add at least one attribute");
     draft.attributes.forEach((a, i) => {
       const n = draft.attributes.length > 1 ? ` (attribute ${i + 1})` : "";
       if (!a.attribute) missing.protection.push(`Choose an attribute${n}`);
@@ -266,7 +318,7 @@ export function missingForNomination(draft: NominationDraft, mode: "draft" | "su
   }
   // The shared justification is needed once there is something to justify; an item that has its own needs it filled.
   const items = draft.scope === "selected" ? protectedItems(draft.attributes) : [];
-  const usesMain = draft.scope === "all" || items.length === 0 || items.some((item) => item.own === undefined);
+  const usesMain = draft.scope === "all" || items.length === 0 || items.some((item) => item.own === undefined) || removals.length > 0;
   if (usesMain && !draft.justification.trim()) missing.protection.push("Enter the main reason");
   items.forEach((item) => {
     if (item.own !== undefined && !item.own.trim()) missing.protection.push(`Enter a reason for ${item.label}`);
@@ -618,6 +670,149 @@ SEEDS.push(
       { status: "under_review", at: "2026-08-18", by: PANEL },
       { status: "accepted", at: "2026-09-02", by: PANEL, note: "Accepted. Roosts and the release site are withheld; the rest is generalised." },
     ],
+  },
+);
+
+// An accepted nomination for the Painted Dragon, so a new one for it shows what is already protected and can suggest adding to it
+// or removing from it (the designer, 25 Oct 2026). Illustrative, like the other seeds: not a real nomination.
+SEEDS.push({
+  id: "NSS-2026-00015",
+  speciesId: "Ctenophorus pictus",
+  scope: "selected",
+  attributes: [
+    attr(1, "location", {
+      areas: [area("area-seed-15a", "Gawler Ranges dune burrows", "map", { id: "b-seed-15a", kind: "polygon", points: [[-32.45, 135.4], [-32.45, 135.62], [-32.62, 135.62], [-32.62, 135.4]] })],
+    }),
+    attr(2, "activity", { value: "breeding" }),
+    attr(3, "animal-life-stage", { values: ["egg", "juvenile"] }),
+  ],
+  justification: "Breeding males are collected for the pet trade. Burrow locations in the breeding season point collectors to them.",
+  nominator: maya,
+  status: "accepted",
+  createdAt: "2026-07-02",
+  updatedAt: "2026-07-24",
+  decisionNote: "Accepted. Burrow locations are withheld and breeding records generalised.",
+  ratings: { "1": { risk: "high", access: "level-3" }, "2": { risk: "medium", access: "level-2" }, "3": { risk: "low", access: "level-2" } },
+  history: [
+    { status: "draft", at: "2026-07-02", by: maya.name },
+    { status: "submitted", at: "2026-07-03", by: maya.name },
+    { status: "under_review", at: "2026-07-10", by: PANEL },
+    { status: "accepted", at: "2026-07-24", by: PANEL, note: "Accepted. Burrow locations are withheld and breeding records generalised." },
+  ],
+});
+
+// More restricted species for the demo (the designer, 25 Oct 2026: "Add more examples for restricted species for demo purposes"):
+// a second Painted Dragon restriction, two for the Bush Stone-curlew, an accepted and an open one for the Greater Bilby (the open
+// one blocks a new nomination, as any open one does), All data for the Mallee Emu-wren and a flowering orchid. Illustrative, like
+// the other seeds: placeholder people, real parks, not real nominations.
+const parkArea = (id: string, name: string, center: [number, number], radiusKm = 15) =>
+  area(`area-seed-${id}`, name, "list", { id: `b-seed-${id}`, kind: "circle", center, radiusKm, label: name });
+const acceptedHistory = (by: string, from: string, submitted: string, review: string, decided: string, note: string): NominationEvent[] => [
+  { status: "draft", at: from, by },
+  { status: "submitted", at: submitted, by },
+  { status: "under_review", at: review, by: PANEL },
+  { status: "accepted", at: decided, by: PANEL, note },
+];
+SEEDS.push(
+  {
+    id: "NSS-2026-00016",
+    speciesId: "Ctenophorus pictus",
+    scope: "selected",
+    attributes: [attr(1, "location", { areas: [parkArea("16a", "Nullarbor National Park", [-31.43, 130.9], 25)] }), attr(2, "sex", { value: "male" })],
+    justification: "Brightly coloured males are taken from the Nullarbor dunes for the pet trade. Where males are recorded shows collectors where to look.",
+    nominator: lana,
+    status: "accepted",
+    createdAt: "2026-05-12",
+    updatedAt: "2026-06-03",
+    decisionNote: "Accepted. Male records in the park are withheld from public results.",
+    ratings: { "1": { risk: "high", access: "level-3" }, "2": { risk: "medium", access: "level-2" } },
+    history: acceptedHistory(lana.name, "2026-05-12", "2026-05-13", "2026-05-20", "2026-06-03", "Accepted. Male records in the park are withheld from public results."),
+  },
+  {
+    id: "NSS-2026-00017",
+    speciesId: "Burhinus grallarius",
+    scope: "selected",
+    attributes: [attr(1, "location", { areas: [parkArea("17a", "Murray River National Park", [-34.18, 140.63])] }), attr(2, "activity", { value: "nesting" })],
+    justification: "Ground nests on the river flats are trampled and robbed when their locations are known. Nesting records should be withheld.",
+    nominator: phoenix,
+    status: "accepted",
+    createdAt: "2026-04-08",
+    updatedAt: "2026-05-02",
+    decisionNote: "Accepted. Nesting records in the park are withheld.",
+    ratings: { "1": { risk: "high", access: "level-3" }, "2": { risk: "high", access: "level-3" } },
+    history: acceptedHistory(phoenix.name, "2026-04-08", "2026-04-09", "2026-04-15", "2026-05-02", "Accepted. Nesting records in the park are withheld."),
+  },
+  {
+    id: "NSS-2026-00018",
+    speciesId: "Burhinus grallarius",
+    scope: "selected",
+    attributes: [attr(1, "location", { areas: [parkArea("18a", "Onkaparinga River National Park", [-35.19, 138.46], 8)] })],
+    justification: "The last pairs near Adelaide roost in the gorge and are disturbed by visitors who find them through public records.",
+    nominator: lana,
+    status: "accepted",
+    createdAt: "2026-06-15",
+    updatedAt: "2026-07-06",
+    decisionNote: "Accepted. Every record in the park is withheld.",
+    ratings: { "1": { risk: "high", access: "level-3" } },
+    history: acceptedHistory(lana.name, "2026-06-15", "2026-06-16", "2026-06-22", "2026-07-06", "Accepted. Every record in the park is withheld."),
+  },
+  {
+    id: "NSS-2026-00019",
+    speciesId: "Macrotis lagotis",
+    scope: "selected",
+    attributes: [attr(1, "location", { areas: [parkArea("19a", "Witjira National Park", [-26.06, 135.72], 30)] }), attr(2, "micro-habitat", { value: "burrow" })],
+    justification: "Burrow locations guide feral cat and fox control, and show where the colony can be disturbed. They should not be public.",
+    nominator: maya,
+    status: "accepted",
+    createdAt: "2026-03-02",
+    updatedAt: "2026-03-30",
+    decisionNote: "Accepted. Burrow records in the park are withheld.",
+    ratings: { "1": { risk: "high", access: "level-3" }, "2": { risk: "medium", access: "level-2" } },
+    history: acceptedHistory(maya.name, "2026-03-02", "2026-03-03", "2026-03-10", "2026-03-30", "Accepted. Burrow records in the park are withheld."),
+  },
+  {
+    id: "NSS-2026-00020",
+    speciesId: "Macrotis lagotis",
+    scope: "selected",
+    attributes: [attr(1, "location", { areas: [parkArea("20a", "Lake Eyre National Park", [-28.9, 137.3], 30)] }), attr(2, "animal-life-stage", { values: ["juvenile"] })],
+    justification: "Juveniles dispersing from the release site are recorded close to tracks. Their locations should be withheld until the population is established.",
+    nominator: maya,
+    status: "under_review",
+    createdAt: "2026-10-06",
+    updatedAt: "2026-10-14",
+    history: [
+      { status: "draft", at: "2026-10-06", by: maya.name },
+      { status: "submitted", at: "2026-10-07", by: maya.name },
+      { status: "under_review", at: "2026-10-14", by: PANEL },
+    ],
+  },
+  {
+    id: "NSS-2026-00021",
+    speciesId: "Stipiturus mallee",
+    scope: "all",
+    attributes: [],
+    justification: "So few birds remain after the fires that any record points to a surviving group. Every record should be held back.",
+    nominator: phoenix,
+    status: "accepted",
+    createdAt: "2026-02-10",
+    updatedAt: "2026-03-05",
+    decisionNote: "Accepted. Every record of the species is licence-only.",
+    ratings: { species: { risk: "high", access: "level-3" } },
+    history: acceptedHistory(phoenix.name, "2026-02-10", "2026-02-11", "2026-02-17", "2026-03-05", "Accepted. Every record of the species is licence-only."),
+  },
+  {
+    id: "NSS-2026-00022",
+    speciesId: "Caladenia behrii",
+    scope: "selected",
+    attributes: [attr(1, "location", { areas: [parkArea("22a", "Belair National Park", [-35.02, 138.65], 5)] }), attr(2, "plant-life-stage", { values: ["flowering"] })],
+    justification: "Flowering plants are dug up for private collections. Where they flower each spring should not be public.",
+    nominator: maya,
+    status: "accepted",
+    createdAt: "2026-08-03",
+    updatedAt: "2026-08-25",
+    decisionNote: "Accepted. Flowering records in the park are withheld.",
+    ratings: { "1": { risk: "high", access: "level-3" }, "2": { risk: "medium", access: "level-2" } },
+    history: acceptedHistory(maya.name, "2026-08-03", "2026-08-04", "2026-08-10", "2026-08-25", "Accepted. Flowering records in the park are withheld."),
   },
 );
 

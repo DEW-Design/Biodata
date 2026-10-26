@@ -119,7 +119,7 @@ export function PermissionGroups({
 }
 
 /** Section header + search + table at a small table's own scale (CONTEXT.md): a count by the label, a real search, numbered pagination. */
-function EmbeddedTableFrame({ label, count, search, onSearch, placeholder, empty, children }: { label: string; count: number; search: string; onSearch: (v: string) => void; placeholder: string; empty: string | null; children: ReactNode }) {
+export function EmbeddedTableFrame({ label, count, search, onSearch, placeholder, empty, children }: { label: string; count: number; search: string; onSearch: (v: string) => void; placeholder: string; empty: string | null; children: ReactNode }) {
   return (
     <div className="flex flex-col gap-3">
       <div className="flex items-center gap-2">
@@ -134,7 +134,7 @@ function EmbeddedTableFrame({ label, count, search, onSearch, placeholder, empty
   );
 }
 
-function useEmbeddedPaging<T>(rows: T[]) {
+export function useEmbeddedPaging<T>(rows: T[]) {
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
   const pageCount = Math.max(1, Math.ceil(rows.length / pageSize));

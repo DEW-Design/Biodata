@@ -22,9 +22,9 @@ import { ChevronDown } from "@untitledui/icons";
 import { Tooltip, TooltipTrigger } from "@/components/base/tooltip/tooltip";
 import { cx } from "@/utils/cx";
 import { BadgeWithDot } from "@/components/base/badges/badges";
-import { ArtefactLightbox, type Artefact } from "@/app/pages/_shared/artefact-lightbox";
+import { ArtefactLightbox } from "@/app/pages/_shared/artefact-lightbox";
 import type { FilterSelection } from "@/app/pages/_shared/list-filter";
-import { ArtefactsView } from "@/app/pages/project-detail/artefacts-view";
+import { ArtefactsView, fieldArtefact } from "@/app/pages/project-detail/artefacts-view";
 import { useEditStore, EditStoreProvider } from "@/app/pages/project-detail/edit-store";
 import { allFiles, recordFieldKeys, useFieldNotes } from "@/app/pages/project-detail/field-notes-store";
 import { ProjectTab, formatDay } from "@/app/pages/project-detail/project-tab";
@@ -128,30 +128,7 @@ function useArtefacts() {
       allFiles(notes).flatMap(({ recordId, key, file }) => {
         const rec = recordById(recordId);
         if (!rec || !recordFieldKeys(rec).has(key)) return [];
-        const field = key.slice(key.indexOf(":") + 1);
-        const a: Artefact & { recordId: string; fieldKey: string } = {
-          fieldKey: key,
-          id: file.id,
-          recordId,
-          title: file.name,
-          type: file.kind,
-          size: file.size || "Link",
-          recordLabel: `${rec.name} · ${field}`,
-          metaTitle: file.name,
-          created: file.date,
-          creator: file.addedBy,
-          objectId: `${meta.objectPrefix}:${rec.code}:${file.id.toUpperCase()}`,
-          description: `Attached to "${field}" on ${rec.type} ${rec.code}, ${rec.name}.${file.review?.status === "rejected" ? ` Rejected by ${file.review.by}: ${file.review.reason}` : ""}`,
-          review: file.review,
-          format: { image: "image/jpeg", pdf: "application/pdf", spreadsheet: "application/vnd.ms-excel", video: "video/mp4", link: "text/uri-list" }[file.kind],
-          identifierUrl: file.url ?? "https://data.environment.sa.gov.au",
-          licenseUrl: "https://creativecommons.org/licenses/by/4.0/",
-          publisher: meta.publisher,
-          rightsHolder: meta.publisher,
-          dcType: { image: "StillImage", pdf: "Text", spreadsheet: "Dataset", video: "MovingImage", link: "InteractiveResource" }[file.kind],
-          bioDataId: `${meta.code.replace("-", "")}-${rec.code}`,
-        };
-        return [a];
+        return [fieldArtefact({ recordId, key, file }, rec, meta)];
       }),
     [notes, recordById, meta],
   );

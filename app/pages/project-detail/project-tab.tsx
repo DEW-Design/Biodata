@@ -13,10 +13,11 @@
 // CONTRACTS 4.6: each data owner contact carries its own role, shown with that contact. There is no
 // "Project team" card, and no separate role field for whoever registered the project.
 
-import { createContext, createElement, useContext, useEffect, useRef, useState, type Key, type ReactNode } from "react";
+import { createContext, createElement, useContext, useEffect, useRef, useState, type FC, type Key, type ReactNode } from "react";
 import { getLocalTimeZone } from "@internationalized/date";
 import type { DateValue } from "react-aria-components";
-import { Activity, ArrowLeft, ChevronRight, Edit02, Eye, Flag01, Mail01, Paperclip, Phone01, Plus, Target05, Trash01 } from "@untitledui/icons";
+import { ArrowLeft, ChevronRight, Edit05, Flag01, Mail01, Paperclip, Phone01, Plus, Trash01 } from "@untitledui/icons";
+import { EventShape, ObservationShape, OccurrenceShape } from "@/app/pages/_shared/record-shapes";
 import { Accordion } from "@/components/base/accordion/accordion";
 import { Badge, CountBadge } from "@/components/base/badges/badges";
 import { Button } from "@/components/base/buttons/button";
@@ -25,11 +26,12 @@ import { DestructiveModal } from "@/components/application/modals/modal";
 import { toast } from "@/components/application/toast/toast";
 import { LocationDetailsTable } from "@/app/pages/_shared/location-details-table";
 import { ExpandableMap } from "@/app/pages/_shared/map-search/expandable-map";
-import { COLLECTION_METHOD_OPTIONS, EMBARGO_TYPE_OPTIONS, FOCUS_AREA_OPTIONS, PERMIT_TYPE_OPTIONS, PROJECT_METADATA_CONCEPTS, REGISTRATION_SPECIES, SPECIES_CONCEPTS, SURVEY_TYPE_OPTIONS } from "@/app/pages/project-registration/data";
+import { COLLECTION_METHOD_OPTIONS, EMBARGO_TYPE_OPTIONS, FOCUS_AREA_OPTIONS, PERMIT_TYPE_OPTIONS, PROJECT_METADATA_CONCEPTS, REGISTRATION_SPECIES, SPECIES_CONCEPTS } from "@/app/pages/project-registration/data";
 import { conceptLabel, conceptValueLabel } from "@/app/pages/project-registration/concept-rows";
 import { geoExtentSummary } from "@/app/pages/project-registration/geo-extent-picker";
 import { OFFERED_RESTRICTION_TYPES, RESTRICTION_TYPE_META } from "@/app/pages/project-registration/step-3-privacy-restrictions";
-import type { RestrictionTypeKey } from "@/app/pages/project-registration/types";
+import { allRecordsOf, culturalOf, isGeoExtentComplete, type RestrictionTypeKey } from "@/app/pages/project-registration/types";
+import { expectationLabel } from "@/app/pages/project-registration/restriction-fields";
 import { cx } from "@/utils/cx";
 import { useEditStore } from "./edit-store";
 import { CARD_TITLES, InlineCardEditor, ProjectCardDrawer, cardMissing, contactRole, roleLabel, type ProjectCardId } from "./project-edit";
@@ -49,6 +51,8 @@ export function formatDay(d: DateValue | null): string {
 export const RESTRICTION_DESCRIPTIONS: Record<RestrictionTypeKey, string> = {
   embargo: "The whole dataset is withheld from public release until the end date.",
   species: "Records of these species are released with less detail than the rest.",
+  cultural: "Culturally sensitive data, released only as its Indigenous Information Authority agrees.",
+  all: "Every record in this project is restricted.",
   locations: "Records from these locations are protected.",
   metadata: "These project details are withheld from public view.",
   other: "Any other rule on how this project's data is shared.",
@@ -77,7 +81,7 @@ function FieldEditIcon({ label, onPress }: { label: string; onPress: () => void 
         onPress={onPress}
         className="-my-1 flex size-7 cursor-pointer items-center justify-center rounded-md text-fg-quaternary opacity-0 outline-focus-ring transition-opacity group-hover/field:opacity-100 hover:bg-secondary hover:text-fg-quaternary_hover focus-visible:opacity-100 focus-visible:outline-2"
       >
-        <Edit02 className="size-3.5" />
+        <Edit05 className="size-3.5" />
       </TooltipTrigger>
     </Tooltip>
   );
@@ -173,7 +177,7 @@ const CardIdContext = createContext<ProjectCardId | null>(null);
 /** With the `disclosure` prop: the sections after the first are collapsed under their headings (progressive disclosure). `mounted` holds the ones opened at least once: a section's cards are not drawn until then. */
 const DisclosureContext = createContext<{ openKeys: Set<Key>; mounted: Set<Key>; onOpenKeysChange: (keys: Set<Key>) => void } | null>(null);
 
-function CardIcon({ label, icon, onPress, always }: { label: string; icon: typeof Edit02; onPress: () => void; always?: boolean }) {
+function CardIcon({ label, icon, onPress, always }: { label: string; icon: typeof Edit05; onPress: () => void; always?: boolean }) {
   return (
     <Tooltip title={label}>
       <TooltipTrigger
@@ -221,22 +225,16 @@ function Card({ card, description, onEdit, onRemove, children }: { card: Project
           </h3>
           {description && <p className="text-sm text-balance text-tertiary">{description}</p>}
         </div>
-        {isEditing && (
-          <span className="inline-flex shrink-0 items-center gap-1 text-xs font-semibold text-brand-tertiary">
-            <Edit02 className="size-3.5" />
-            Editing
-          </span>
-        )}
         {canEdit && layout === "v3" && !anyEditing && (
           <div className="flex shrink-0 items-center gap-0.5">
             {onRemove && <CardIcon label={`Remove ${title.toLowerCase()}`} icon={Trash01} onPress={onRemove} />}
-            <CardIcon label={needs ? `Add details to ${title.toLowerCase()}` : `Edit ${title.toLowerCase()}`} icon={Edit02} onPress={() => onEdit(card)} always={needs} />
+            <CardIcon label={needs ? `Add details to ${title.toLowerCase()}` : `Edit ${title.toLowerCase()}`} icon={Edit05} onPress={() => onEdit(card)} always={needs} />
           </div>
         )}
         {canEdit && layout === "default" && (
           <div className="flex shrink-0 items-center gap-2">
             {onRemove && <Button color="tertiary" size="sm" iconLeading={Trash01} aria-label={`Remove ${title}`} onClick={onRemove} />}
-            <Button color="secondary" size="sm" iconLeading={Edit02} onClick={() => onEdit(card)} aria-label={`Edit ${title}`}>
+            <Button color="secondary" size="sm" iconLeading={Edit05} onClick={() => onEdit(card)} aria-label={`Edit ${title}`}>
               Edit
             </Button>
           </div>
@@ -405,10 +403,10 @@ export function OnThisPage({ items, onBeforeGo }: { items: TocItem[]; /** Called
   );
 }
 
-const KINDS: { kind: RecordKind; label: string; icon: typeof Edit02 }[] = [
-  { kind: "event", label: "Events", icon: Activity },
-  { kind: "occurrence", label: "Occurrences", icon: Target05 },
-  { kind: "observation", label: "Observations", icon: Eye },
+const KINDS: { kind: RecordKind; label: string; icon: FC<{ className?: string }> }[] = [
+  { kind: "event", label: "Events", icon: EventShape },
+  { kind: "occurrence", label: "Occurrences", icon: OccurrenceShape },
+  { kind: "observation", label: "Observations", icon: ObservationShape },
 ];
 
 const FILE_KIND_LABEL: Record<string, [string, string]> = {
@@ -531,7 +529,7 @@ function RecordsCard({
                 className="flex w-full flex-col items-start gap-1 rounded-md border border-secondary px-3 py-2 text-left outline-focus-ring transition-colors hover:bg-primary_hover focus-visible:outline-2"
               >
                 <span className="flex items-center gap-1.5 text-sm text-tertiary">
-                  <k.icon aria-hidden className="size-4 shrink-0 text-fg-quaternary" />
+                  <k.icon className="size-4" />
                   <span className="truncate">{k.label}</span>
                 </span>
                 <span className="text-lg font-medium text-primary tabular-nums">{counts[k.kind]}</span>
@@ -826,7 +824,6 @@ export function ProjectTab({
               </div>
               <Rows
                 rows={[
-                  { label: "Survey type", value: SURVEY_TYPE_OPTIONS.find((o) => o.id === c.surveyType)?.label },
                   { label: "Collection method", value: method?.label },
                   { label: "Methodology", value: c.methodDetails },
                   { label: "Limitations and biases", value: c.limitationsAndBiases },
@@ -870,8 +867,9 @@ export function ProjectTab({
                 <Rows
                   rows={[
                     { label: "Embargo type", value: r.embargo.types.map((t) => (t === "other" ? r.embargo.typeOther || "Other" : EMBARGO_TYPE_OPTIONS.find((o) => o.id === t)?.label)).join(", ") },
-                    { label: "Reason", value: r.embargo.reason },
+                    { label: "Justification", value: r.embargo.reason },
                     { label: "Ends", value: formatDay(r.embargo.endDate) },
+                    { label: "After the embargo ends", value: r.embargo.afterEmbargo ?? "" },
                   ]}
                 />
               )}
@@ -890,6 +888,7 @@ export function ProjectTab({
                             value: s.scope === "all" ? "All concepts" : s.concepts.filter((cr) => cr.concept).map((cr) => conceptLabel(cr, SPECIES_CONCEPTS)).join(", "),
                           },
                           ...(s.scope === "selected" ? [{ label: "Rule", value: s.concepts.filter((cr) => cr.concept).map((cr) => conceptValueLabel(cr, SPECIES_CONCEPTS) || "Withheld").join(", ") }] : []),
+                          { label: "Expectations data restrictions", value: expectationLabel(s.expectation) },
                           ...(s.scope === "all"
                             ? [{ label: "Justification", value: s.justification }]
                             : s.concepts.filter((cr) => cr.concept).map((cr) => ({ label: `Justification: ${conceptLabel(cr, SPECIES_CONCEPTS)}`, value: cr.justification }))),
@@ -908,7 +907,8 @@ export function ProjectTab({
                         key={l.id}
                         rows={[
                           { label: "Location", value: l.name },
-                          { label: "Extent", value: geoExtentSummary(l.extent) },
+                          { label: "Extent", value: isGeoExtentComplete(l.extent) ? geoExtentSummary(l.extent) : "" },
+                          { label: "Expectations data restrictions", value: expectationLabel(l.expectation) },
                           { label: "Justification", value: l.justification },
                         ]}
                       />
@@ -924,6 +924,24 @@ export function ProjectTab({
                         { label: conceptLabel(cr, PROJECT_METADATA_CONCEPTS), value: conceptValueLabel(cr, PROJECT_METADATA_CONCEPTS) },
                         { label: "Justification", value: cr.justification },
                       ]),
+                  ]}
+                />
+              )}
+              {m.key === "cultural" && (
+                <Rows
+                  rows={[
+                    { label: "Indigenous Information Authority", value: culturalOf(r).authority },
+                    { label: "IIA contact details", value: culturalOf(r).contact },
+                    { label: "Expectations data restrictions", value: expectationLabel(culturalOf(r).expectation) },
+                    { label: "Justification", value: culturalOf(r).justification },
+                  ]}
+                />
+              )}
+              {m.key === "all" && (
+                <Rows
+                  rows={[
+                    { label: "Expectations data restrictions", value: expectationLabel(allRecordsOf(r).expectation) },
+                    { label: "Justification", value: allRecordsOf(r).justification },
                   ]}
                 />
               )}

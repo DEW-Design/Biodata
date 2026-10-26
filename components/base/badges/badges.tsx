@@ -399,10 +399,16 @@ interface BadgeWithButtonProps<T extends BadgeTypes> {
      * The click event handler for the button.
      */
     onButtonClick?: MouseEventHandler<HTMLButtonElement>;
+    /**
+     * Shows the label as written instead of in capitals: a chip that names a chosen value (a person, a species), as
+     * `MultiSelect` lists its selections.
+     * @default true
+     */
+    uppercase?: boolean;
 }
 
 export const BadgeWithButton = <T extends BadgeTypes>(props: BadgeWithButtonProps<T>) => {
-    const { size = "md", color = "gray", type = "pill-color", icon: Icon = CloseX, buttonLabel, children } = props;
+    const { size = "md", color = "gray", type = "pill-color", icon: Icon = CloseX, buttonLabel, uppercase = true, children } = props;
 
     const colors = withPillTypes[type];
 
@@ -424,7 +430,7 @@ export const BadgeWithButton = <T extends BadgeTypes>(props: BadgeWithButtonProp
     };
 
     return (
-        <span className={cx(colors.common, sizes[type][size], colors.styles[color].root)}>
+        <span className={cx(colors.common, sizes[type][size], !uppercase && "normal-case tracking-normal", colors.styles[color].root)}>
             {children}
             <button
                 type="button"

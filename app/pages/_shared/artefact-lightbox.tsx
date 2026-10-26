@@ -1,7 +1,7 @@
 "use client";
 
 import type { FC, ReactNode } from "react";
-import { ChevronLeft, ChevronRight, DownloadCloud02, Image01, FileAttachment02, VideoRecorder, FileCheck02, Link02 } from "@untitledui/icons";
+import { ChevronLeft, ChevronRight, Download01, Image01, FileAttachment02, VideoRecorder, FileCheck02, Link02 } from "@untitledui/icons";
 import { Badge, CountBadge } from "@/components/base/badges/badges";
 import { Button } from "@/components/base/buttons/button";
 import { CloseButton } from "@/components/base/buttons/close-button";
@@ -244,7 +244,7 @@ export function ArtefactLightbox({
                 <MetaField label="Type">{artefact.dcType}</MetaField>
                 <MetaField label="BioDataID">{artefact.bioDataId}</MetaField>
               </div>
-              <Button color="primary" iconLeading={DownloadCloud02} className="mt-auto w-full">
+              <Button color="primary" iconLeading={Download01} className="mt-auto w-full">
                 Download
               </Button>
             </div>

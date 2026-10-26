@@ -1,5 +1,6 @@
 import { NSX_SPECIES } from "@/app/pages/project-detail/field-schema";
 import { formatShortDate, todayIso } from "@/app/pages/_shared/dsa/dsa-data";
+import { SA_NATIONAL_PARKS } from "@/app/pages/_shared/map-search/geo";
 import type { BadgeColors } from "@/components/base/badges/badge-types";
 
 // Controlled Vocabulary (BRD REQ-18.1 to 18.11): a controlled set of values that forms, projects,
@@ -839,6 +840,23 @@ export const seedCvs: Cv[] = [
         ["10", "Other"],
       ] as const
     ).map(([code, name]) => entry(code, name)),
+  }),
+  // The named places a location picker offers under "Choose from a List" (the designer, 25 Oct 2026: "the selection will be a
+  // list from control vocab and it is not just national parks"). Seeded with the real South Australian national parks the map
+  // already knows (map-search/geo.ts); the admins add the other places. Numbered: no published codes. Title says what kind of
+  // place it is.
+  base({
+    id: "BIODATA-118",
+    name: "Named location",
+    category: "Location",
+    type: "reference",
+    idKind: "number",
+    state: "published",
+    startDate: "2026-10-25",
+    createdAt: "2026-10-25",
+    description: "The named places a location can be chosen from.",
+    fields: ["title"],
+    entries: numbered(SA_NATIONAL_PARKS.map((park) => [park.name, { title: "National park" }])),
   }),
 ];
 

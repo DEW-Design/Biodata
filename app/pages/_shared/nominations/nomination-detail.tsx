@@ -317,7 +317,7 @@ export function NominationDetail({
               </RecordRow>
             )}
             {kind === "species" && n.scope === "selected" &&
-              (n.attributes.length === 0 ? (
+              (n.attributes.length === 0 && !n.removals?.length ? (
                 <RecordRow label="Attributes">
                   <span className="text-tertiary">No attributes chosen yet</span>
                 </RecordRow>
@@ -345,6 +345,18 @@ export function NominationDetail({
                     </div>
                   </RecordRow>
                 ))
+              ))}
+            {/* The accepted restrictions the nomination asks to change (25 Oct 2026), after what it sets. Not rated. */}
+            {kind === "species" &&
+              (n.removals ?? []).map((r) => (
+                <RecordRow key={r.key} label={r.key}>
+                  <div className="flex flex-col items-start gap-3">
+                    <Badge size="sm" color="blue">
+                      Change requested
+                    </Badge>
+                    <span>{r.summary}</span>
+                  </div>
+                </RecordRow>
               ))}
           </div>
         </TabPanel>

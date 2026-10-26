@@ -4,7 +4,7 @@ import { Edit05 } from "@untitledui/icons";
 import { getLocalTimeZone } from "@internationalized/date";
 import type { DateValue } from "react-aria-components";
 import { Button } from "@/components/base/buttons/button";
-import { COLLECTION_METHOD_OPTIONS, FOCUS_AREA_OPTIONS, ROLE_OF_WORK_OPTIONS, SURVEY_TYPE_OPTIONS } from "../data";
+import { accessLabel, accessOf, COLLECTION_METHOD_OPTIONS, FOCUS_AREA_OPTIONS, PROJECT_MANAGER_ROLE, ROLE_OF_WORK_OPTIONS, SURVEY_TYPE_OPTIONS } from "../data";
 import { geoExtentSummary } from "../geo-extent-picker";
 import { restrictionsSummaryRows } from "../step-3-privacy-restrictions";
 import { contactsOf, methodologySummary, STEP_TITLES, type FormState, type FormVersion, type SectionId } from "./sections";
@@ -93,7 +93,8 @@ function ReviewSectionV2({ state, onEdit }: { state: FormState; onEdit: (id: Sec
     .filter((p) => person(p))
     .map((p) => {
       // A project manager says so in their role (Project Manager), so only the primary contact is marked.
-      return [person(p), roleOf(p)].filter(Boolean).join(", ") + (p.isPrimary ? " (primary contact)" : "");
+      // A non-manager's access follows their role; a Project Manager is always Full control, so it is not repeated.
+      return [person(p), roleOf(p), p.role === PROJECT_MANAGER_ROLE ? "" : accessLabel(accessOf(p))].filter(Boolean).join(", ") + (p.isPrimary ? " (primary contact)" : "");
     })
     .join("; ");
   const focus = c.focusAreas.map((id) => (id === "other" && c.focusAreaOther ? c.focusAreaOther : (FOCUS_AREA_OPTIONS.find((o) => o.id === id)?.label ?? id))).join(", ");
@@ -116,7 +117,7 @@ function ReviewSectionV2({ state, onEdit }: { state: FormState; onEdit: (id: Sec
         <SummaryRow label="Geographic extent" value={c.geographicExtent.method ? geoExtentSummary(c.geographicExtent) : ""} onEdit={() => onEdit("extent")} />
         <SummaryRow label="Focus areas" value={focus} onEdit={() => onEdit("method")} />
         <SummaryRow label="Methodology" value={[method, names].filter(Boolean).join(": ")} onEdit={() => onEdit("method")} />
-        {c.collectionMethod === "systematic" && notes && <SummaryRow label="Variations, limitations and biases" value={notes} onEdit={() => onEdit("method")} />}
+        {(c.collectionMethod === "systematic" || c.collectionMethod === "analysis") && notes && <SummaryRow label="Variations, limitations and biases" value={notes} onEdit={() => onEdit("method")} />}
       </StepCard>
 
       <StepCard title={STEP_TITLES[3]}>

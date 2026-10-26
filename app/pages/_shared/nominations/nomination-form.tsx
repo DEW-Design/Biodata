@@ -17,12 +17,14 @@ import { SPECIES_GROUP_ICON } from "@/app/pages/_shared/map-search/species-group
 import { SpeciesField } from "@/app/pages/_shared/species-picker";
 import { AreasEditor } from "@/app/pages/_shared/nominations/nomination-areas";
 import { ProtectionView } from "@/app/pages/_shared/nominations/nomination-protection";
+import { ExistingRestrictionsTable } from "@/app/pages/_shared/nominations/nomination-restrictions";
 import { GeoExtentPicker } from "@/app/pages/project-registration/geo-extent-picker";
 import { emptyGeoExtent, type GeoExtentValue } from "@/app/pages/project-registration/types";
 import { AccessSelect, RiskSelect } from "@/app/pages/_shared/nominations/nomination-rating-fields";
 import { STANDARD_ACCESS, areaRatingKey, nominationRatingKeys, ratingKeyLabel, type Rating } from "@/app/pages/_shared/nominations/nomination-rating";
 import {
   NOMINATION_ATTRIBUTES,
+  existingRestrictions,
   kindOf,
   sectionOrderFor,
   type NominationKind,
@@ -38,6 +40,7 @@ import {
   type Nomination,
   type NominationArea,
   type NominationDraft,
+  type NominationRemoval,
   type NominationSection,
   type ProtectionScope,
 } from "@/app/pages/_shared/nominations/nomination-data";
@@ -78,10 +81,29 @@ import { useRoleHref } from "@/lib/use-role-href";
 //   nomination have one justification, on their step.
 // - An admin's edit opens on What to protect (a location's on Location), not on Review, and "Save changes" is in the footer of
 //   every step, so a change is saved where it is made.
+// - What is already restricted (the designer, 25 Oct 2026: nominators "can also see what is nominated already and then suggest
+//   adding or removing"; "a view like this [the Review table] to show what is already restricted ... along with the status"; "this
+//   restriction will show for the restrictions done by other users as well"). A restriction is a whole nomination, whoever made
+//   it: the species where it is found (Location) and with every attribute it names. The species list shows each species' status
+//   (the open nomination's, else Accepted, else Restricted in a project); choosing one shows a warning that it is already
+//   restricted (made prominent: "intuitively understood that the species is restricted already however a specialist user can
+//   decide to request to modify the restrictions") over its restrictions (`ExistingRestrictionsTable`), read only ("no need for
+//   any action button here. Just show the changes"). A change (a new location, another attribute) is nominated on the next step.
+//   A nomination saved with `removals` (25 Oct 2026, before this) keeps them and still shows them on Review and the record.
 
 // Species is the shared SpeciesField (app/pages/_shared/species-picker.tsx): a combo box grouped
 // by species group, then a summary card with Change. The notes under the card are this form's own.
-function SpeciesPicker({ value, onChange, excludeNominationId, isInvalid }: { value: string; onChange: (id: string) => void; excludeNominationId?: string; isInvalid?: boolean }) {
+function SpeciesPicker({
+  value,
+  onChange,
+  excludeNominationId,
+  isInvalid,
+}: {
+  value: string;
+  onChange: (id: string) => void;
+  excludeNominationId?: string;
+  isInvalid?: boolean;
+}) {
   const nominations = useNominations();
   const router = useRouter();
   const roleHref = useRoleHref();
@@ -91,16 +113,29 @@ function SpeciesPicker({ value, onChange, excludeNominationId, isInvalid }: { va
     for (const n of nominations) if (n.id !== excludeNominationId && isOpenNomination(n)) map.set(n.speciesId, n);
     return map;
   }, [nominations, excludeNominationId]);
+  // Each species' status in the list: its open nomination's, else Accepted when a restriction is in force, else Restricted when a
+  // project holds its records as licence-only.
+  const acceptedSpecies = useMemo(() => {
+    const ids = new Set<string>();
+    for (const n of nominations) if (n.status === "accepted" && kindOf(n) === "species") ids.add(n.speciesId);
+    return new Set([...ids].filter((id) => existingRestrictions(nominations, id, excludeNominationId).some((r) => r.status === "accepted")));
+  }, [nominations, excludeNominationId]);
 
   return (
     <SpeciesField
       value={speciesFor(value)}
       onChange={(s) => onChange(s?.id ?? "")}
       isInvalid={isInvalid}
-      statusFor={(s) => (openBySpecies.has(s.id) ? "Nominated" : s.alreadySensitive ? "Restricted" : undefined)}
+      statusFor={(s) => {
+        const open = openBySpecies.get(s.id);
+        if (open) return nominationStatusMeta[open.status].label;
+        if (acceptedSpecies.has(s.id)) return nominationStatusMeta.accepted.label;
+        return s.alreadySensitive ? "Restricted" : undefined;
+      }}
       notes={(selected) => {
         const restrictions = selected.alreadySensitive ? existingRestrictionsForSpecies(selected.id) : [];
         const open = openBySpecies.get(selected.id);
+        const restricted = existingRestrictions(nominations, selected.id, excludeNominationId);
         return (
           <>
             {selected.alreadySensitive && (
@@ -130,6 +165,24 @@ function SpeciesPicker({ value, onChange, excludeNominationId, isInvalid }: { va
                 contained
                 wrap
               />
+            )}
+            {/* What is restricted already, nominated or accepted, with its status, under a warning that says so first. */}
+            {restricted.length > 0 && (
+              <div className="mt-3 flex flex-col gap-3">
+                <AlertFullWidth
+                  color="warning"
+                  title={restricted.some((r) => r.status === "accepted") ? "This species is already restricted" : "This species is already nominated"}
+                  description={
+                    restricted.some((r) => r.status === "accepted")
+                      ? "The restrictions below are in force, whoever nominated them. Each applies where it says, to records that match all of its attributes. If one should change, such as a new location or another attribute, nominate the change on the next step."
+                      : "The nomination below is with the review panel. Each applies where it says, to records that match all of its attributes."
+                  }
+                  confirmLabel=""
+                  contained
+                  wrap
+                />
+                <ExistingRestrictionsTable restrictions={restricted} />
+              </div>
             )}
           </>
         );
@@ -191,6 +244,8 @@ export function NominationForm({
   const [rows, setRows] = useState<ConceptValueRow[]>(editor.rows);
   const [areas, setAreas] = useState<Record<number, NominationArea[]>>(editor.areas);
   const [justification, setJustification] = useState(initial?.justification ?? "");
+  // Restrictions an earlier nomination asked to change, by nomination id: kept as saved, no longer chosen on the form.
+  const [removals, setRemovals] = useState<Record<string, NominationRemoval>>(() => Object.fromEntries((initial?.removals ?? []).map((r) => [r.key, r])));
   // The items that have their own justification, by `ProtectedItem.key`. An item absent here uses the shared one.
   const [own, setOwn] = useState<Record<string, string>>(() =>
     Object.fromEntries(protectedItems(initial?.attributes ?? []).flatMap((item) => (item.own !== undefined ? [[item.key, item.own]] : []))),
@@ -206,6 +261,8 @@ export function NominationForm({
   const [confirmBack, setConfirmBack] = useState(false);
 
   const touch = () => setDirty(true);
+  const nominations = useNominations();
+  const chosenRemovals = Object.values(removals);
   // The chosen items in order; any of them may have its own justification instead of the main one.
   const items = scope === "selected" ? protectedItems(fromEditorRows(rows, areas)) : [];
   const ownFor = (key: string) => own[key];
@@ -227,9 +284,9 @@ export function NominationForm({
                   a.attribute === "location" ? { ...a, areas: a.areas.map((ar) => withOwn(ar, areaRatingKey(a.id, ar.id))) } : withOwn(a, `attr:${a.id}`),
                 )
               : [],
+          ...(chosenRemovals.length ? { removals: chosenRemovals } : {}),
           justification,
         };
-  const nominations = useNominations();
   // A species with an open nomination (other than this one) can't be nominated again: the species
   // section counts it as unresolved, so Continue, jumping ahead, Save draft and Submit all refuse.
   const duplicateOf = kind === "species" && speciesId ? nominations.find((n) => n.id !== initial?.id && n.speciesId === speciesId && isOpenNomination(n)) : undefined;
@@ -436,6 +493,8 @@ export function NominationForm({
               excludeNominationId={initial?.id}
               onChange={(id) => {
                 setSpeciesId(id);
+                // A change names what another species is protected by: it does not carry over.
+                setRemovals({});
                 touch();
               }}
             />
@@ -461,7 +520,7 @@ export function NominationForm({
             <FormRow
               title="Area"
               required
-              description="Upload a shapefile, draw it on the map, choose a national park or enter coordinates."
+              description="Draw it on the map, choose it from a list, enter coordinates or upload a shapefile."
               error={showErrors("location") && missing.location.includes("Define the location's area") ? "Define the location's area" : undefined}
             >
               <GeoExtentPicker
@@ -514,8 +573,12 @@ export function NominationForm({
             {scope === "selected" && (
               <FormRow
                 title="Main reason"
-                required={items.length === 0 || items.some((i) => own[i.key] === undefined)}
-                description="Why these records should be protected. It applies to every attribute and area you add below, unless you write a different one for it."
+                required={items.length === 0 || items.some((i) => own[i.key] === undefined) || chosenRemovals.length > 0}
+                description={
+                  chosenRemovals.length > 0
+                    ? "Why the restrictions should change. It applies to every change you request, and to every attribute and area below unless you write a different one for it."
+                    : "Why these records should be protected. It applies to every attribute and area you add below, unless you write a different one for it."
+                }
               >
                 {sharedJustification(5, undefined, true)}
               </FormRow>
@@ -523,11 +586,16 @@ export function NominationForm({
             {scope === "selected" && (
               <FormRow
                 title="Attributes"
-                required
-                description="Choose each attribute and its value. For Location, add the places whose records should be obscured."
+                required={chosenRemovals.length === 0}
+                description={
+                  chosenRemovals.length > 0
+                    ? "The restriction as it should be. A record must match every attribute. For Location, add the places where the species is found that this applies to."
+                    : "A record must match every attribute. For Location, add the places where the species is found that this applies to."
+                }
               >
                 <ConceptRows
                   noun="attribute"
+                  allowEmpty={chosenRemovals.length > 0}
                   rows={rows}
                   options={NOMINATION_ATTRIBUTES}
                   onChange={(next) => {

@@ -65,6 +65,10 @@ const PROTO_LABS: ProtoEntry[] = [
     description: "The layout locked at subtraction step 1: no header and no column 2, a quiet nested rail (account, search and Add at the top), open pages as tabs, one slim bar over an inset panel, views as tabs. Opens as the Super Admin, the largest scope.",
   },
   {
+    route: "project-access",
+    description: "What a Project Manager controls: access set on each person in Add Project's Project contacts, and a Project access tab on the project page to change it later.",
+  },
+  {
     route: "project-detail",
     description: "project-detail's Overview tab and records tree, before both were folded into the real page.",
   },

@@ -2,9 +2,8 @@
 
 import { useMemo, useState, type FC, type ReactNode } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { Activity, Eye, Target05, Calendar } from "@untitledui/icons";
+import { EventShape, ObservationShape, OccurrenceShape } from "@/app/pages/_shared/record-shapes";
 import { Tab, TabList, TabPanel, Tabs } from "@/components/application/tabs/tabs";
-import { recordIcon } from "@/app/pages/_shared/record-icons";
 import type { Attribute } from "@/app/pages/_shared/attribute-filter";
 import { useDatasets } from "@/app/pages/_shared/dataset-upload/dataset-store";
 import { optionsFromValues } from "@/app/pages/_shared/list-filter";
@@ -42,11 +41,11 @@ import { useUserRole } from "@/lib/use-user-role";
 
 const TAB_LABELS: Record<RecordTab, string> = { events: "Events", occurrences: "Occurrences", observations: "Observations" };
 const TABS: RecordTab[] = ["events", "occurrences", "observations"];
-// The same icons the records tree and Explore's results use for each kind.
+// The same shapes the records tree uses for each kind (record-shapes.tsx).
 const TAB_ICONS: Record<RecordTab, FC<{ className?: string }>> = {
-  events: Calendar,
-  occurrences: recordIcon({ kind: "occurrence", type: "Individual" }),
-  observations: recordIcon({ kind: "observation", type: "Individual" }),
+  events: EventShape,
+  occurrences: OccurrenceShape,
+  observations: ObservationShape,
 };
 
 const isTab = (value: string | null): value is RecordTab => value === "events" || value === "occurrences" || value === "observations";
@@ -290,7 +289,7 @@ export function RecordsReport() {
     report = (
       <DataReport<EventRow>
         {...common}
-        icon={Activity}
+        icon={EventShape}
         rows={events}
         rowId={(r) => r.id}
         columns={eventColumns}
@@ -310,7 +309,7 @@ export function RecordsReport() {
     report = (
       <DataReport<OccurrenceRow>
         {...common}
-        icon={Target05}
+        icon={OccurrenceShape}
         rows={occurrences}
         rowId={(r) => r.id}
         columns={occurrenceColumns}
@@ -330,7 +329,7 @@ export function RecordsReport() {
     report = (
       <DataReport<ObservationRow>
         {...common}
-        icon={Eye}
+        icon={ObservationShape}
         rows={observations}
         rowId={(r) => r.id}
         columns={observationColumns}

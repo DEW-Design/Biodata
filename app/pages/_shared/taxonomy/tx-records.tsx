@@ -3,7 +3,7 @@
 import { useState, type FC } from "react";
 import { useRouter } from "next/navigation";
 import { ListBox, ListBoxItem, ToggleButton, ToggleButtonGroup } from "react-aria-components";
-import { ChevronDown, Dataflow03, Edit02, GitBranch01, GitMerge, PencilLine, Plus, Table as TableIcon, Trash01, Feather, Flag01, ArrowLeft, Save01, XClose, File06, Type01, Map02, Globe01, MarkerPin04, BookClosed, List } from "@untitledui/icons";
+import { ChevronDown, Dataflow03, Edit05, GitBranch01, GitMerge, PencilLine, Plus, Table as TableIcon, Trash01, Feather, Flag01, ArrowLeft, Save01, XClose, File06, Type01, Map02, Globe01, MarkerPin04, BookClosed, List } from "@untitledui/icons";
 import { AlertFullWidth } from "@/components/application/alerts/alerts";
 import { ConfirmationModal, DestructiveModal } from "@/components/application/modals/modal";
 import { SectionHeader } from "@/components/application/section-headers/section-headers";
@@ -274,15 +274,14 @@ function ReadTable({ label, columns, rows }: { label: string; columns: FieldDef[
   );
 }
 
-/** A record card. Editing, it takes the one editing treatment (4.8): brand border, brand-50 halo, "Editing". */
+/** A record card. Editing, it takes the one editing treatment (4.8): brand border and brand-50 halo, with no label. */
 export function Card({ title, editing, actions, children }: { title?: React.ReactNode; editing?: boolean; actions?: React.ReactNode; children: React.ReactNode }) {
   return (
     <section className={editing ? "flex flex-col rounded-xl border border-[var(--color-brand-500)] bg-primary ring-4 ring-[var(--color-brand-50)]" : "flex flex-col rounded-xl border border-secondary bg-primary"}>
-      {(title || editing || actions) && (
+      {(title || actions) && (
         <div className="flex min-h-[3.25rem] items-center justify-between gap-3 border-b border-secondary px-5 py-3">
           {title && <div className="min-w-0 text-sm font-semibold text-primary">{title}</div>}
           <div className="flex shrink-0 items-center gap-2">
-            {editing && <p className="text-xs font-medium text-brand-secondary">Editing</p>}
             {actions}
           </div>
         </div>
@@ -417,7 +416,7 @@ function SynonymsView({
             title={<span className="italic">{open.name}</span>}
             actions={
               <>
-                <Button color="secondary" size="sm" iconLeading={Edit02} onClick={() => onDraft(open)}>
+                <Button color="secondary" size="sm" iconLeading={Edit05} onClick={() => onDraft(open)}>
                   Edit
                 </Button>
                 <Button color="tertiary" size="sm" iconLeading={Trash01} onClick={() => onRemove(open)}>
@@ -508,7 +507,7 @@ export function SpeciesRecord({ id, back = { href: TX_ROOT, label: "All species"
               primary={{
                 id: "edit",
                 label: "Edit species",
-                icon: Edit02,
+                icon: Edit05,
                 isDisabled: !!editing,
                 onPress: () => {
                   setView("details");

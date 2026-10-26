@@ -180,6 +180,7 @@ export function ConceptRows({
     renderBelow,
     justifyEach = false,
     showErrors = false,
+    allowEmpty = false,
 }: {
     rows: ConceptValueRow[];
     onChange: (rows: ConceptValueRow[]) => void;
@@ -192,6 +193,8 @@ export function ConceptRows({
     justifyEach?: boolean;
     /** Show what is missing on each row. Switched on once a person tries to save with something missing. */
     showErrors?: boolean;
+    /** The last row can be removed too, leaving only the Add button (a nomination that only suggests removals adds nothing). */
+    allowEmpty?: boolean;
 }) {
     const Noun = noun === "attribute" ? "Attribute" : "Concept";
     const article = noun === "attribute" ? "an" : "a";
@@ -217,7 +220,7 @@ export function ConceptRows({
                             <p className="text-sm font-semibold text-primary">
                                 {Noun} {index + 1}
                             </p>
-                            {rows.length > 1 && <Button color="tertiary" size="sm" iconLeading={Trash01} aria-label={`Remove ${noun} ${index + 1}`} onClick={() => remove(row.id)} />}
+                            {(allowEmpty || rows.length > 1) && <Button color="tertiary" size="sm" iconLeading={Trash01} aria-label={`Remove ${noun} ${index + 1}`} onClick={() => remove(row.id)} />}
                         </div>
                         {/* The card's heading names the field, so the select carries it as its accessible name only. */}
                         <Select
