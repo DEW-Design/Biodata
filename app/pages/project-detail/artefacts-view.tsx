@@ -16,8 +16,10 @@ import {
   ArrowNarrowRight,
   CheckCircle,
   LayoutGrid01,
+  Paperclip,
   Table as TableIcon,
   Tag01,
+  Upload01,
   XCircle,
 } from "@untitledui/icons";
 import { Badge } from "@/components/base/badges/badges";
@@ -42,6 +44,7 @@ import { type FilterSection, useListFilter } from "@/app/pages/_shared/list-filt
 import { AttributeFilterChips } from "@/app/pages/_shared/attribute-filter";
 import { FilterMenu } from "@/app/pages/_shared/filter-menu";
 import { ToolbarSearch } from "@/app/pages/_shared/toolbar-search";
+import { ListEmptyState } from "@/app/pages/_shared/list-empty-state";
 import { cx } from "@/utils/cx";
 import { segmentClass, segmentTrayClass } from "./segmented";
 
@@ -85,14 +88,18 @@ export function ArtefactsView({
   artefacts,
   onOpen,
   onOpenRecord,
+  onUploadAttachments,
 }: {
   artefacts: FieldArtefact[];
   onOpen: (index: number) => void;
   onOpenRecord: (recordId: string, fieldKey: string) => void;
+  /** The bulk attachments upload (the header's Upload menu has the same). Offered in the empty state to a signed-in person. */
+  onUploadAttachments?: () => void;
 }) {
   const [view, setView] = useState<"cards" | "table">("cards");
   // Audio and video from a Registered User or above wait for an admin (the designer, 20 Oct 2026): a BioData Admin or Super Admin approves or rejects them here, a rejection needing a reason.
-  const canReview = isBiodataAdmin(useUserRole());
+  const role = useUserRole();
+  const canReview = isBiodataAdmin(role);
   const me = useCurrentUserName();
   const [rejecting, setRejecting] = useState<FieldArtefact | null>(null);
   const approve = (a: FieldArtefact) => {
@@ -154,13 +161,32 @@ export function ArtefactsView({
   const indexOf = (a: FieldArtefact) =>
     artefacts.findIndex((x) => x.id === a.id);
 
+  // Nothing attached yet: said once, with where an artefact comes from, in place of a search, a Filter and a view switch with nothing to act on.
+  if (artefacts.length === 0)
+    return (
+      <div className="flex flex-col gap-4">
+        <div className="flex min-h-[560px] flex-col rounded-xl border border-secondary bg-primary">
+          <ListEmptyState
+            icon={Paperclip}
+            title="No artefacts yet"
+            description={
+              onUploadAttachments && role !== "public-user"
+                ? "Attach a file, photo, recording or link to a concept of a record in Project records, or upload attachments to this project in bulk."
+                : "Files, photos, recordings and links attached to this project's records appear here."
+            }
+          >
+            {onUploadAttachments && role !== "public-user" && (
+              <Button color="primary" size="md" iconLeading={Upload01} onPress={onUploadAttachments}>
+                Upload attachments
+              </Button>
+            )}
+          </ListEmptyState>
+        </div>
+      </div>
+    );
+
   return (
     <div className="flex flex-col gap-4">
-      <p className="text-sm text-balance text-tertiary">
-        Files, photos, recordings and links attached to the concepts of this
-        project&apos;s records, in Project records. Each one opens in the viewer;
-        &ldquo;Go to record&rdquo; shows the record it belongs to.
-      </p>
       <div className="flex flex-wrap items-center gap-3">
         <ToolbarSearch
           label="Search artefacts"
@@ -196,9 +222,20 @@ export function ArtefactsView({
       <AttributeFilterChips filter={filter} />
 
       {rows.length === 0 ? (
-        <div className="flex flex-col items-center gap-1 rounded-xl border border-secondary p-10 text-center">
-          <p className="text-sm font-medium text-primary">No artefacts match</p>
-          <p className="text-sm text-tertiary">Try another search or type.</p>
+        <div className="flex flex-col rounded-xl border border-secondary bg-primary">
+          <ListEmptyState
+            icon={Paperclip}
+            title="No artefacts match"
+            description="No artefact fits this search or type."
+            action={{
+              label: "Show all artefacts",
+              onPress: () => {
+                setQuery("");
+                filter.clear();
+                setPage(1);
+              },
+            }}
+          />
         </div>
       ) : view === "cards" ? (
         <div className="flex flex-wrap gap-4">

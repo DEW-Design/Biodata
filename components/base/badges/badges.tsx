@@ -2,6 +2,7 @@
 
 import type { MouseEventHandler, ReactNode } from "react";
 import { X as CloseX } from "@untitledui/icons";
+import { Classic } from "loading-dev";
 import { Dot } from "@/components/foundations/dot-icon";
 import { cx } from "@/utils/cx";
 import type { BadgeColors, BadgeTypeToColorMap, BadgeTypes, FlagTypes, IconComponentType, Sizes } from "./badge-types";
@@ -137,13 +138,28 @@ interface BadgeProps<T extends BadgeTypes> {
     type?: T;
     size?: Sizes;
     color?: BadgeColor<T>;
+    /** Something is being processed (a dataset checking, a run going on): a tiny loader leads the label, in the badge's own colour. It is for a status that is still changing, never for one
+     *  that is over, and it stands still with reduced motion. @default false */
+    isLoading?: boolean;
     children: ReactNode;
     className?: string;
 }
 
+/** The loader a badge shows while what it names is being processed: the Classic indicator from loading-dev at 12px, the size of every icon in a small badge (`size-3`), 1.58s a turn.
+ *  It takes the colour of the badge's icon slot (`currentColor`) and respects the reduced-motion setting by itself. */
+const LoadingIcon: IconComponentType = ({ className }) => <Classic size={12} duration={1580} className={className} />;
+
 export const Badge = <T extends BadgeTypes>(props: BadgeProps<T>) => {
-    const { type = "pill-color", size = "md", color = "gray", children } = props;
+    const { type = "pill-color", size = "md", color = "gray", isLoading = false, children } = props;
     const colors = withPillTypes[type];
+
+    // The same badge with its icon slot taken by the loader, so its spacing is the one every icon badge has.
+    if (isLoading)
+        return (
+            <BadgeWithIcon type={type} size={size} color={color as BadgeTypeToColorMap<typeof withBadgeTypes>[T]} iconLeading={LoadingIcon} className={props.className}>
+                {children}
+            </BadgeWithIcon>
+        );
 
     const pillSizes = {
         sm: "py-1.5 px-2 text-xs font-semibold uppercase tracking-wide leading-none",

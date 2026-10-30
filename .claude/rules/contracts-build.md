@@ -260,6 +260,12 @@ adds noise is a defect, the same as a bug, however correct the behaviour behind 
 - MUST look at every visible change in a live screenshot, at the size the designer works at, and judge
   it with `/emil-design-foundations` before presenting it (§0.6 item 4, §0.7 item 3). "It works" is not
   done; it is done when nothing on it looks accidental.
+- **A tab, a heading or a field does not carry a sentence that says what it is.** Its name says it. MUST NOT put a line under a tab bar or a
+  heading that restates what the tab holds or explains how its controls work ("Every species this project has recorded, from its occurrences in
+  Survey records. "Go to record" opens the occurrence."). A sentence there is for something the person could not otherwise know (a rule, a
+  consequence, a state), said once and plainly. Copy that reads as written to fill space is a defect like any other mark on screen.
+  **Origin:** the Species, Artefacts and Datasets tabs each opened with such a line; the designer, with a screenshot of one: "all these text -
+  read as AI generated, and looks distasteful" (30 Oct 2026), after the same reaction to a reader's log line shown as copy (the same day).
 - **Origin:** the Controlled Vocabulary Entries grid's Order field showed a large # icon in every row,
   with the field as wide as a text column; the designer: "the # in this is too big and ugly ... Make
   sure you do visually aesthetic" (30 Sept 2026).
@@ -447,6 +453,13 @@ forward arrow on the right (`iconTrailing`) for a button that moves on. An actio
   alert takes `confirmIcon` (`PageBanner` requires `actionIcon`). The file field's Browse, multi-select's Reset and
   Select all, and the table pagination's Previous and Next carry theirs. A component that renders a text button of
   its own carries an icon for it, required where the action varies.
+- **A destructive confirm is red (designer, 30 Oct 2026).** The primary button of a modal that confirms a loss (discard, delete, remove,
+  reject, cancel, archive) is `primary-destructive`, never the brand blue: the modal is `DestructiveModal` (its confirm button is red and
+  its header icon is the error one). `ConfirmationModal` is for confirming something that is not a loss (Accept, Approve, Combine).
+  "Discard your changes?" is a `DestructiveModal`, with "Keep editing" as the way back. MUST NOT put a Trash01, XCircle, SlashCircle01
+  or Archive on a `ConfirmationModal`'s confirm button. **This is about the modal's confirm button only:** the quiet remove controls that
+  take a row out of a form (a trash can on a measurement, a custom property, a trap type, a contact, a logo, the drawn shape's "Remove")
+  stay grey (`tertiary`, `secondary`); the designer decided that on 30 Oct 2026 and they are not recoloured.
 - **Origin:** the DLA record page's Approve, Reject and Start review buttons had no icon beside Edit and Download,
   which did, and some 50 other filled and outlined buttons across the forms, the auth flow and the registration
   flow had none; the check then missed every modal, because their buttons live in a shared component (the Approve
@@ -454,7 +467,11 @@ forward arrow on the right (`iconTrailing`) for a button that moves on. An actio
   (designer, 1 Oct 2026, section 0.8). One icon per action, everywhere: the project records panel had Edit and Add
   both in its header "..." menu and under the title, Edit drawn with `Edit02` in one and `Edit05` in the other, and a
   sweep found 22 more drifts (four pencils, `UploadCloud02` on four upload buttons, `DownloadCloud02`, Rename as
-  `Edit03` on the map and `PencilLine` in Taxonomy) (designer, 25 Oct 2026).
+  `Edit03` on the map and `PencilLine` in Taxonomy) (designer, 25 Oct 2026). A destructive confirm was blue: the "Discard your
+  changes?" prompts of the project page, the upload form and the taxonomy records, and "Leave this combine, append, split and
+  rename?", were `ConfirmationModal` with a trash can on a blue button, while every form's discard prompt and every delete was the red
+  `DestructiveModal`; 4.1 item 6 itself named `ConfirmationModal` for it (designer, 30 Oct 2026: "All destructive action buttons should
+  have the red button, why is that blue? inconsistency noted.").
 - **Enforcement:** `AUTO §3.12` (an action button with no icon anywhere under `app/pages`, the auth flow and the
   home page included, or in `components/application`, `components/base` and `components/custom`; the two stale
   unlinked drafts are exempt), and `tsc` for `RecordAction.icon` and the modals' required icon props. `AUTO §3.12b`
@@ -462,4 +479,5 @@ forward arrow on the right (`iconTrailing`) for a button that moves on. An actio
   of a pencil other than `Edit05`; or a labelled action, a `label` with its `icon` or a `Button`'s text with its
   `iconLeading`, whose first word is in the table and whose icon is not that action's; "Add", "Cancel" and "Change"
   are not keyed, because the table gives them more than one icon, and the marketing home's feature tiles are exempt).
-  `REVIEW` for icon-only controls and for one control per action.
+  `AUTO §3.12c` (under `app/pages`: a `ConfirmationModal` whose confirm icon is `Trash01`, `XCircle`, `SlashCircle01` or `Archive`).
+  `REVIEW` for icon-only controls, for one control per action, and for a destructive action that is not keyed by its icon.

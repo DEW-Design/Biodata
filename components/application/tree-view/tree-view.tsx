@@ -316,7 +316,8 @@ const TreeViewItemContent = ({ icon: Icon, action, weight = "semibold", children
                 return (
                     <div
                         className={cx(
-                            "flex w-full cursor-pointer items-center gap-2 rounded-sm -outline-offset-2 outline-focus-ring transition duration-100 ease-linear",
+                            // A row is at least 40px tall, the mouse target (CONTRACTS 2.16; the designer, 30 Oct 2026: rows are 40px, not exempt), so the chevron's extension below does not run into the next row's.
+                            "flex min-h-10 w-full cursor-pointer items-center gap-2 rounded-sm -outline-offset-2 outline-focus-ring transition duration-100 ease-linear",
                             size === "sm" ? "py-1.5 pr-2" : "py-2 pr-2",
                             isDropTarget && "bg-secondary_hover outline-2",
                             !isDropTarget && (isSelected || isIndeterminate) && "bg-secondary hover:bg-secondary_hover",
@@ -332,7 +333,7 @@ const TreeViewItemContent = ({ icon: Icon, action, weight = "semibold", children
                         {alignLeaves && !showConnectors && !hasChildItems && <div aria-hidden="true" className="size-4 shrink-0" />}
 
                         {hasChildItems && (
-                            <AriaButton slot="chevron" className="flex shrink-0 items-center justify-center outline-hidden">
+                            <AriaButton slot="chevron" className="hit-area flex shrink-0 items-center justify-center outline-hidden">
                                 {isExpanded ? <ChevronDown className="size-4 text-fg-quaternary" /> : <ChevronRight className="size-4 text-fg-quaternary" />}
                             </AriaButton>
                         )}

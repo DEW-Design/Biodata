@@ -28,6 +28,7 @@ import { formatShortDate } from "@/app/pages/_shared/dsa/dsa-data";
 import { searchEvents } from "@/app/pages/_shared/map-search/search-data";
 import { conceptStatusMeta, customConceptActions, describePlace, type ConceptStatus, type CustomConcept } from "@/app/pages/_shared/dataset-upload/custom-concepts";
 import { useConceptsToReview } from "@/app/pages/_shared/dataset-upload/custom-concepts-views";
+import { projectTabPath } from "@/app/pages/_shared/project-routes";
 import { useRoleHref } from "@/lib/use-role-href";
 import { cx } from "@/utils/cx";
 import { daysSince } from "./flagged-portfolio";
@@ -248,7 +249,7 @@ export function CustomConceptsReview({
                         Added by {r.uploadedBy}, {formatShortDate(r.uploadedAt)}
                       </p>
                     </div>
-                    <Button size="sm" color="link-color" href={roleHref(`/pages/project-list/${r.projectId}/project-details?view=datasets`)}>
+                    <Button size="sm" color="link-color" href={roleHref(projectTabPath(r.projectId, "datasets"))}>
                       Open datasets
                     </Button>
                   </li>

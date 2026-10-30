@@ -11,6 +11,7 @@ import { cx } from "@/utils/cx";
 import { Progress } from "@/components/application/progress-steps/progress-steps";
 import { STAGES, type Reason, type RunView } from "@/app/pages/_shared/dataset-upload/ingestion";
 import { CustomConceptsSection } from "@/app/pages/_shared/dataset-upload/custom-concepts-views";
+import { uploadPath } from "@/app/pages/_shared/project-routes";
 import { useRoleHref } from "@/lib/use-role-href";
 
 // The three ways to show an ingestion's progress on a project page, and the new records it adds to
@@ -91,7 +92,7 @@ function ReasonActions({ view, projectId, datasetId, onRetry }: { view: RunView;
           Try again
         </Button>
       ) : (
-        <Button color="primary" size="sm" iconLeading={Upload01} href={roleHref(`/pages/project-list/${projectId}/upload`)}>
+        <Button color="primary" size="sm" iconLeading={Upload01} href={roleHref(uploadPath(projectId))}>
           Upload a corrected file
         </Button>
       )}
@@ -104,12 +105,13 @@ function ReasonActions({ view, projectId, datasetId, onRetry }: { view: RunView;
   );
 }
 
-export function IngestionProblems({ view, projectId, datasetId, onRetry }: { view: RunView; projectId: string; datasetId?: string; onRetry: () => void }) {
+/** `actions={false}` (opt-in) leaves the buttons out where the screen carries the same next step in its own header, as a dataset's page does (one control per action, 3.12). */
+export function IngestionProblems({ view, projectId, datasetId, onRetry, actions = true }: { view: RunView; projectId: string; datasetId?: string; onRetry: () => void; actions?: boolean }) {
   if (view.reasons.length === 0) return null;
   return (
     <div className="flex flex-col gap-4">
       <ReasonList reasons={view.reasons} />
-      <ReasonActions view={view} projectId={projectId} datasetId={datasetId} onRetry={onRetry} />
+      {actions && <ReasonActions view={view} projectId={projectId} datasetId={datasetId} onRetry={onRetry} />}
     </div>
   );
 }
@@ -118,7 +120,7 @@ export function IngestionProblems({ view, projectId, datasetId, onRetry }: { vie
  *  the data model) and, once it ends badly, why and what to do. Shared by the chip's popover and the
  *  project's Datasets page, so both say the same thing the same way. When the dataset added columns the
  *  controlled vocabularies do not have, its custom concepts follow, each with where it stands (an admin approves them). */
-export function IngestionDetail({ view, projectId, datasetId, onRetry, split = false }: { view: RunView; projectId: string; datasetId?: string; onRetry: () => void; split?: boolean }) {
+export function IngestionDetail({ view, projectId, datasetId, onRetry, split = false, actions = true }: { view: RunView; projectId: string; datasetId?: string; onRetry: () => void; split?: boolean; actions?: boolean }) {
   const percent = Math.round(view.overall * 100);
   const run = (
     <>
@@ -142,7 +144,7 @@ export function IngestionDetail({ view, projectId, datasetId, onRetry, split = f
       />
     </>
   );
-  const problems = view.done && (view.failed || view.partial) ? <IngestionProblems view={view} projectId={projectId} datasetId={datasetId} onRetry={onRetry} /> : null;
+  const problems = view.done && (view.failed || view.partial) ? <IngestionProblems view={view} projectId={projectId} datasetId={datasetId} onRetry={onRetry} actions={actions} /> : null;
   const concepts = datasetId ? <CustomConceptsSection datasetId={datasetId} /> : null;
 
   // `split` (opt-in, for a page wide enough): the run on the left and what went wrong beside it, so the card is about half
@@ -181,9 +183,11 @@ export function IngestionDetail({ view, projectId, datasetId, onRetry, split = f
 const POPOVER_OFFSET = 2 * 4;
 
 // The leading spinner turns; the trailing chevron must not, so it is its own icon component
-// rather than a class on every icon in the button.
+// rather than a class on every icon in the button. It turns the way its arrow points: RefreshCcw01 is
+// the counter-clockwise glyph, and `animate-spin` turns clockwise, so the animation runs in reverse
+// (the designer, 30 Oct 2026: "icon should spin counterclockwise. Currently spinning the wrong way").
 function SpinningIcon(props: { className?: string }) {
-  return <RefreshCcw01 {...props} className={cx(props.className, "motion-safe:animate-spin")} />;
+  return <RefreshCcw01 {...props} className={cx(props.className, "motion-safe:animate-spin motion-safe:[animation-direction:reverse]")} />;
 }
 
 // ── Option C: a chip beside the card's actions, opening the detail ──
@@ -206,7 +210,7 @@ export function IngestionChip({
   /** The popover heading. */
   title?: string;
   /** The dataset's workflow status, when it has one: shown at the foot of the popover. */
-  datasetStatus?: { label: string; color: BadgeColor<"pill-color"> };
+  datasetStatus?: { label: string; color: BadgeColor<"pill-color">; /** The status is still going on: its badge shows the loader. */ processing?: boolean };
 }) {
   const status = statusOf(view);
   const percent = Math.round(view.overall * 100);
@@ -242,7 +246,7 @@ export function IngestionChip({
         <Dialog className="flex max-h-[80vh] flex-col gap-4 overflow-y-auto p-4 outline-hidden">
           <div className="flex items-center justify-between gap-2">
             <p className="text-sm font-semibold text-balance text-primary">{title}</p>
-            <Badge size="sm" color={status.color}>
+            <Badge size="sm" color={status.color} isLoading={!view.done}>
               {status.label}
             </Badge>
           </div>
@@ -259,7 +263,7 @@ export function IngestionChip({
           {datasetStatus && (
             <div className="flex items-center justify-between gap-3 text-xs text-tertiary">
               <span>Dataset status</span>
-              <Badge size="sm" color={datasetStatus.color}>
+              <Badge size="sm" color={datasetStatus.color} isLoading={datasetStatus.processing}>
                 {datasetStatus.label}
               </Badge>
             </div>

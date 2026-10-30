@@ -6,6 +6,7 @@ import type { DateValue } from "react-aria-components";
 import { Button } from "@/components/base/buttons/button";
 import { accessLabel, accessOf, COLLECTION_METHOD_OPTIONS, FOCUS_AREA_OPTIONS, PROJECT_MANAGER_ROLE, ROLE_OF_WORK_OPTIONS, SURVEY_TYPE_OPTIONS } from "../data";
 import { geoExtentSummary } from "../geo-extent-picker";
+import { isGeoExtentComplete } from "../types";
 import { restrictionsSummaryRows } from "../step-3-privacy-restrictions";
 import { contactsOf, methodologySummary, STEP_TITLES, type FormState, type FormVersion, type SectionId } from "./sections";
 
@@ -37,8 +38,14 @@ function StepCard({ title, children }: { title: string; children: React.ReactNod
   );
 }
 
-export function ReviewSection({ state, onEdit, version = 1 }: { state: FormState; onEdit: (id: SectionId) => void; version?: FormVersion }) {
-  if (version === 2) return <ReviewSectionV2 state={state} onEdit={onEdit} />;
+/** Option 2's Dataset step as rows of the review (its own card, after Project Identification). */
+export interface DatasetReview {
+  title: string;
+  rows: { label: string; value: string }[];
+}
+
+export function ReviewSection({ state, onEdit, version = 1, dataset }: { state: FormState; onEdit: (id: SectionId) => void; version?: FormVersion; dataset?: DatasetReview }) {
+  if (version === 2) return <ReviewSectionV2 state={state} onEdit={onEdit} dataset={dataset} />;
   const { details: d, collection: c, restrictions: r } = state;
   const contact = d.dataOwnerContacts[0];
   const person = (p: { firstName: string; lastName: string }) => `${p.firstName} ${p.lastName}`.trim();
@@ -62,7 +69,7 @@ export function ReviewSection({ state, onEdit, version = 1 }: { state: FormState
       </StepCard>
 
       <StepCard title={STEP_TITLES[2]}>
-        <SummaryRow label="Geographic extent" value={c.geographicExtent.method ? geoExtentSummary(c.geographicExtent) : ""} onEdit={() => onEdit("extent")} />
+        <SummaryRow label="Geographic extent" value={isGeoExtentComplete(c.geographicExtent) ? geoExtentSummary(c.geographicExtent) : ""} onEdit={() => onEdit("extent")} />
         <SummaryRow label="Focus areas" value={focus} onEdit={() => onEdit("extent")} />
         <SummaryRow label="Survey type" value={surveyType} onEdit={() => onEdit("method")} />
         <SummaryRow label="Method of data collection" value={method} onEdit={() => onEdit("method")} />
@@ -83,7 +90,7 @@ export function ReviewSection({ state, onEdit, version = 1 }: { state: FormState
 // Version 2: one Project contacts row (each person with their role, and which is the primary contact),
 // focus areas under Method and details, no survey type or your role, and one Methodology row (the method, then the
 // methodologies added) with their notes.
-function ReviewSectionV2({ state, onEdit }: { state: FormState; onEdit: (id: SectionId) => void }) {
+function ReviewSectionV2({ state, onEdit, dataset }: { state: FormState; onEdit: (id: SectionId) => void; dataset?: DatasetReview }) {
   const { details: d, collection: c, restrictions: r } = state;
   const person = (p: { firstName: string; lastName: string }) => `${p.firstName} ${p.lastName}`.trim();
   const roleOf = (p: { role: string | null; roleOther: string }) => (p.role === "other" ? p.roleOther : ROLE_OF_WORK_OPTIONS.find((o) => o.id === p.role)?.label);
@@ -102,6 +109,8 @@ function ReviewSectionV2({ state, onEdit }: { state: FormState; onEdit: (id: Sec
   const { names, notes } = methodologySummary(c);
   const dates = d.startDate ? `${formatDate(d.startDate)} to ${d.endDate ? formatDate(d.endDate) : "ongoing"}` : "";
   const restrictionRows = restrictionsSummaryRows(r);
+  // Where the data was collected is part of the project's identification at option 2 (before its Dataset step), and part of data collection at option 1.
+  const extentRow = <SummaryRow label="Geographic extent" value={isGeoExtentComplete(c.geographicExtent) ? geoExtentSummary(c.geographicExtent) : ""} onEdit={() => onEdit("extent")} />;
 
   return (
     <div className="flex max-w-[720px] flex-col gap-6">
@@ -111,10 +120,19 @@ function ReviewSectionV2({ state, onEdit }: { state: FormState; onEdit: (id: Sec
         <SummaryRow label="Dates" value={dates} onEdit={() => onEdit("basics")} />
         <SummaryRow label="Data owner" value={d.dataOwnerType === "organisation" ? d.dataOwnerOrgName : primary ? person(primary) : ""} onEdit={() => onEdit("owner")} />
         <SummaryRow label="Project contacts" value={contacts} onEdit={() => onEdit("owner")} />
+        {dataset && extentRow}
       </StepCard>
 
+      {dataset && (
+        <StepCard title={dataset.title}>
+          {dataset.rows.map((row) => (
+            <SummaryRow key={row.label} label={row.label} value={row.value} onEdit={() => onEdit("dataset")} />
+          ))}
+        </StepCard>
+      )}
+
       <StepCard title={STEP_TITLES[2]}>
-        <SummaryRow label="Geographic extent" value={c.geographicExtent.method ? geoExtentSummary(c.geographicExtent) : ""} onEdit={() => onEdit("extent")} />
+        {!dataset && extentRow}
         <SummaryRow label="Focus areas" value={focus} onEdit={() => onEdit("method")} />
         <SummaryRow label="Methodology" value={[method, names].filter(Boolean).join(": ")} onEdit={() => onEdit("method")} />
         {(c.collectionMethod === "systematic" || c.collectionMethod === "analysis") && notes && <SummaryRow label="Variations, limitations and biases" value={notes} onEdit={() => onEdit("method")} />}

@@ -22,7 +22,8 @@ export type FormVersion = 1 | 2;
 /** The longest project name version 2 accepts: short enough for a card, a breadcrumb and a table column. */
 export const PROJECT_NAME_MAX = 60;
 
-export type SectionId = "basics" | "owner" | "extent" | "method" | "restrictions" | RestrictionTypeKey | "review";
+// "dataset" is the Dataset step of option 2 (with-dataset/): option 1's `visibleSections` never lists it, and the project page's edit form never reads it.
+export type SectionId = "basics" | "owner" | "dataset" | "extent" | "method" | "restrictions" | RestrictionTypeKey | "review";
 
 export interface FormState {
   details: ProjectDetailsState;
@@ -48,6 +49,7 @@ const FIXED_SECTIONS: Record<Exclude<SectionId, RestrictionTypeKey>, Omit<Sectio
   // Project team was rolled into this section (the designer, 2 Oct 2026: "roll all step 3 into step 2"); your role
   // then moved to Step 2's Method and details (6 Oct 2026: "Role should be shown in Step 2").
   owner: { step: 1, title: "Data owner", description: "The organisation or person responsible for this project's data, who to contact about it, and who manages it day to day." },
+  dataset: { step: null, title: "Upload datasets", description: "Add datasets to this project now, or skip this step and add them later." },
   extent: { step: 2, title: "Extent and focus", description: "Where the data was collected and which domains the project covers." },
   method: { step: 2, title: "Method and details", description: "The kind of survey, how the data was collected and your role in it, plus any permits, identifiers or limitations." },
   restrictions: { step: 3, title: "Restrictions", description: "BDBSA data is open access by default. Choose which protections, if any, apply to this project." },
@@ -222,6 +224,8 @@ export function isSectionValid(id: SectionId, s: FormState, version: FormVersion
       return !!c.surveyType && !!c.collectionMethod && c.methodDetails.trim().length > 0 && (d.dataOwnerType === "individual" || roleValid(d));
     case "restrictions":
       return !s.restrictions.hasRestrictions || s.restrictions.enabledTypes.size > 0;
+    case "dataset":
+      return true; // option 2's step answers for itself (with-dataset/dataset-step.tsx); here it asks for nothing, so a flow without it is unchanged
     case "review":
       return visibleSections(s.restrictions)
         .filter((sec) => sec !== "review")

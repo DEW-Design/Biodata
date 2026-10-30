@@ -10,6 +10,7 @@ import { downloadCsv } from "@/app/pages/_shared/agreement-actions";
 import { SignUpPromptModal } from "@/app/pages/_shared/guest-action-gate";
 import { projects } from "@/app/pages/_shared/project-list-data";
 import { ProjectIngestionChip } from "@/app/pages/_shared/dataset-upload/project-ingestion";
+import { uploadPath } from "@/app/pages/_shared/project-routes";
 import { useRoleHref } from "@/lib/use-role-href";
 import { useUserRole } from "@/lib/use-user-role";
 
@@ -43,7 +44,7 @@ export function ProjectCardActions({
   const isGuest = useUserRole() === "public-user";
   const [gate, setGate] = useState<"upload" | "attachments" | "export" | "report" | null>(null);
 
-  const upload = () => (isGuest ? setGate("upload") : router.push(roleHref(`/pages/project-list/${projectId}/upload`)));
+  const upload = () => (isGuest ? setGate("upload") : router.push(roleHref(uploadPath(projectId))));
 
   const exportCsv = () => {
     if (isGuest) return setGate("export");
@@ -86,7 +87,7 @@ export function ProjectCardActions({
           </Button>
         )}
         <Dropdown.Root>
-          <Dropdown.DotsButton aria-label="More project actions" className="p-1 text-white/80 hover:text-white" />
+          <Dropdown.DotsButton aria-label="More project actions" onDark className="p-1" />
           <Dropdown.Popover placement="bottom right">
             <Dropdown.Menu aria-label="More project actions" onAction={(key) => (key === "export" ? exportCsv() : key === "report" && createReport())}>
               <Dropdown.Item id="export" label="Export CSV" icon={Download01} />

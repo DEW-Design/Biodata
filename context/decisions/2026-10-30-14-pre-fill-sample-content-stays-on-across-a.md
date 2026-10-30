@@ -1,0 +1,11 @@
+# 2026-10-30 - Pre-fill sample content stays on across a refresh
+
+- **Oct 30 2026: the Prototype tools bar's "Pre-fill sample content" switch is kept across a refresh.** The designer: "If prefill sample content is turned on, it should be on even if I refresh." It was held in the form's own state, so a refresh gave a blank form and an "Off" switch.
+  - **What changed (`app/_prototype-tools/sample-content.ts`, Scaffold, 1.5).**
+    1. **The choice is remembered** in localStorage (`biodata-prototype-sample-content`, "on" or "off"), where the bar already keeps its position and whether it is collapsed. Switching on or off writes it.
+    2. **A form that comes up while it is on is filled as it mounts**, one tick after, with the sample; the switch reads On. What the form held when it mounted is what switching off puts back (a blank form, after a refresh).
+    3. **It is one choice for the browser, not one per form.** Add Project is the only form that uses the switch today; going from option 1 to option 2 through the Layout tool keeps it on, and so will any form that takes the hook later.
+  - **Checked.** `npx tsc --noEmit`, `npx eslint` on the file and `npm run check:contracts` pass. Live (Playwright, 1716 x 1030, zero console errors), as Registered User: a fresh browser opens blank with the switch off; switching on fills the form ("Coorong Wetlands Bird Monitoring") and stores "on"; after a refresh the form is filled and the switch is on; a full load of a later section (Method and details) opens filled; Option 2, reached from the bar, is filled; switching off blanks the form and stores "off"; after a refresh it stays blank and off. The Public User, who cannot add a project, has no switch.
+  - **Not checked.** A browser with storage blocked (the switch works for the visit and is not kept; read from the code, not run).
+  - **Known, and left.** After a refresh the form is blank for the first tick and then fills, so a flash of the empty form can show. Filling it before the first paint would need the form's state to start from the sample, which is the form's own, not the bar's; not done.
+  - **Open, for the designer (0.4).** Creating a project with the switch on leaves it on, so the next Add Project opens filled with the same sample. Wanted, or should it go off after "Create project"?

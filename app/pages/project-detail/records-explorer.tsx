@@ -554,14 +554,19 @@ export function RecordsExplorer({
           )}
         >
           {matches.length === 0 && !(view === "table" && projectMatches) ? (
-            <div className="flex flex-1 flex-col items-center justify-center gap-1 p-8 text-center">
-              <p className="text-sm font-medium text-primary">
-                No records match
-              </p>
-              <p className="text-sm text-tertiary">
-                Try another search or record type.
-              </p>
-            </div>
+            <ListEmptyState
+              icon={Database01}
+              title="No records match"
+              description="No record fits this search or filter."
+              action={{
+                label: "Show all records",
+                onPress: () => {
+                  setQuery("");
+                  filterApi.clear();
+                  setPage(1);
+                },
+              }}
+            />
           ) : view === "tree" ? (
             <>
               <div className="flex min-h-10 shrink-0 items-center gap-2 border-b border-secondary py-1.5 pr-2 pl-4">

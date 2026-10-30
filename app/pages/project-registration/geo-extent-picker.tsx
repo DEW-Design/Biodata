@@ -9,7 +9,7 @@
 import { useState } from "react";
 import dynamic from "next/dynamic";
 import { Dialog, Modal, ModalOverlay } from "react-aria-components";
-import { Upload01, Map01, List as ListIcon, Target04, Circle, Pentagon, Maximize02, Minimize02 } from "@untitledui/icons";
+import { Upload01, Map01, List as ListIcon, Target04, Circle, Pentagon, Maximize02, Minimize02, CheckCircle, Trash01 } from "@untitledui/icons";
 import { Tabs, TabList, Tab, TabPanel } from "@/components/application/tabs/tabs";
 import { InputFile } from "@/components/base/input/input-file";
 import { InputNumber } from "@/components/base/input/input-number";
@@ -33,6 +33,40 @@ export function geoExtentSummary(extent: GeoExtentValue): string {
     if (extent.method === "shapefile") return extent.shapefileName ?? "Uploaded shapefile";
     if (extent.boundary) return boundarySummary(extent.boundary);
     return "Not yet defined";
+}
+
+/** What a drawn shape is, in a line: not every vertex (that is `boundarySummary`, for the review), just its kind and its size. */
+export function drawnShapeLine(boundary: Boundary): string {
+    if (boundary.kind === "polygon") return `Polygon, ${boundary.points.length} points`;
+    // A circle of a named place says where ("15 km radius around Coorong National Park"); one drawn by hand has no place, and its centre is on the map.
+    return boundary.label ? boundarySummary(boundary) : `Circle, ${boundary.radiusKm} km radius`;
+}
+
+/**
+ * The line above the drawing tools. Until a shape existed the tab read the same as when there was none: the same two buttons, the same line, and
+ * only the shape on the map to say it had worked (the designer, 30 Oct 2026: "no done state?"). Before a shape, it says what to do. Once one is drawn
+ * it says what was drawn and offers to take it away, as the other three ways of defining the area each show what was chosen (the list's value, the
+ * coordinates, the shapefile's name). It is one line either way, as tall as the button, so the tools and the map below do not move when it changes.
+ * Drawing again replaces the shape, so the line says nothing about that.
+ */
+function DrawStatus({ boundary, onRemove }: { boundary: Boundary | null | undefined; onRemove: () => void }) {
+    return (
+        <div role="status" className="flex min-h-9 items-center justify-between gap-3">
+            {boundary ? (
+                <>
+                    <p className="m-0 flex min-w-0 items-center gap-2 text-sm font-medium text-primary">
+                        <CheckCircle className="size-4 shrink-0 text-fg-success-primary" aria-hidden />
+                        <span className="min-w-0 truncate">{drawnShapeLine(boundary)}</span>
+                    </p>
+                    <Button color="tertiary" size="sm" iconLeading={Trash01} onClick={onRemove}>
+                        Remove
+                    </Button>
+                </>
+            ) : (
+                <p className="m-0 text-sm text-tertiary">Draw a polygon or circle on the map to define this area.</p>
+            )}
+        </div>
+    );
 }
 
 const SAMap = dynamic(() => import("@/app/pages/_shared/map-search/sa-map"), {
@@ -224,7 +258,7 @@ export function GeoExtentPicker({
                 </TabPanel>
 
                 <TabPanel id="map" className="flex flex-col gap-3 pt-2">
-                    <p className="text-sm text-tertiary">Draw a polygon or circle on the map to define this area.</p>
+                    <DrawStatus boundary={value.method === "map" ? value.boundary : null} onRemove={() => onChange({ ...value, method: "map", boundary: null })} />
                     <DrawToolButtons activeDrawTool={activeDrawTool} onDrawToolChange={setActiveDrawTool} />
                     {expand === "modal" ? (
                         <ExpandableMap
@@ -233,21 +267,21 @@ export function GeoExtentPicker({
                             boundaries={value.boundary ? [value.boundary] : []}
                             outlines={referenceBoundaries}
                             onBoundaryAdd={(boundary) => {
-                                onChange({ ...value, boundary });
+                                onChange({ ...value, method: "map", boundary });
                                 setActiveDrawTool(null);
                             }}
                             activeDrawTool={activeDrawTool}
                             onDrawToolChange={setActiveDrawTool}
-                            className="h-64 w-full"
+                            className="aspect-[5/4] w-full"
                         />
                     ) : (
                         <>
-                            <div className="relative h-64 w-full overflow-hidden rounded-lg border border-secondary">
+                            <div className="relative isolate aspect-[5/4] w-full overflow-hidden rounded-lg border border-secondary">
                                 <SAMap
                                     boundaries={value.boundary ? [value.boundary] : []}
                                     outlines={referenceBoundaries}
                                     onBoundaryAdd={(boundary) => {
-                                        onChange({ ...value, boundary });
+                                        onChange({ ...value, method: "map", boundary });
                                         setActiveDrawTool(null);
                                     }}
                                     activeDrawTool={activeDrawTool}
@@ -274,7 +308,7 @@ export function GeoExtentPicker({
                                 boundary={value.boundary}
                                 outlines={referenceBoundaries}
                                 onBoundaryAdd={(boundary) => {
-                                    onChange({ ...value, boundary });
+                                    onChange({ ...value, method: "map", boundary });
                                     setActiveDrawTool(null);
                                 }}
                                 activeDrawTool={activeDrawTool}

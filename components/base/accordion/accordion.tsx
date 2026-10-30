@@ -59,6 +59,13 @@ export interface AccordionProps {
      * @default "end"
      */
     actionPlacement?: "end" | "beforeChevron";
+    /**
+     * `compact` only. The panel clips its content while it opens and closes (the height spring needs it) and, with this on,
+     * stops clipping once it is fully open, so something inside it can stick to the window (a card's Cancel and Save changes
+     * pinned to the bottom) or draw past its edge (a focus ring, a menu). Closed and while moving it clips as before.
+     * @default false
+     */
+    visibleWhenOpen?: boolean;
     className?: string;
 }
 
@@ -73,13 +80,30 @@ const AccordionChevron = ({ isOpen }: { isOpen: boolean }) => (
     </span>
 );
 
+/** The compact variant's panel: clips while it moves and while it is closed, and with `visibleWhenOpen` not once it is open and still. */
+const CompactPanel = ({ isOpen, visibleWhenOpen, children }: { isOpen: boolean; visibleWhenOpen: boolean; children: ReactNode }) => {
+    const [moving, setMoving] = useState(false);
+    return (
+        <motion.div
+            className={cx(!(visibleWhenOpen && isOpen && !moving) && "overflow-hidden")}
+            initial={false}
+            animate={{ height: isOpen ? "auto" : 0, opacity: isOpen ? 1 : 0 }}
+            transition={{ type: "spring", damping: 24, stiffness: 240, bounce: 0.4 }}
+            onAnimationStart={() => setMoving(true)}
+            onAnimationComplete={() => setMoving(false)}
+        >
+            <div className="pb-3">{children}</div>
+        </motion.div>
+    );
+};
+
 /**
  * A vertical list of expand/collapse question/answer (or any title/content) pairs, animated with
  * a real spring (motion/react), not a CSS transition. Extracted from
  * components/marketing/faq/faq-accordion-01.tsx, which now composes this instead of hand-rolling
  * its own expand/collapse state - the reusable interaction pattern, not tied to FAQ copy.
  */
-export const Accordion = ({ items, defaultOpenKeys = [], openKeys: controlledOpenKeys, onOpenKeysChange, singleOpen = false, variant = "divided", actionPlacement = "end", className }: AccordionProps) => {
+export const Accordion = ({ items, defaultOpenKeys = [], openKeys: controlledOpenKeys, onOpenKeysChange, singleOpen = false, variant = "divided", actionPlacement = "end", visibleWhenOpen = false, className }: AccordionProps) => {
     const isControlled = controlledOpenKeys !== undefined;
     const [internalOpenKeys, setInternalOpenKeys] = useState(new Set(defaultOpenKeys));
     const openKeys = isControlled ? controlledOpenKeys : internalOpenKeys;
@@ -141,14 +165,9 @@ export const Accordion = ({ items, defaultOpenKeys = [], openKeys: controlledOpe
                                     {item.action && <div className="shrink-0">{item.action}</div>}
                                 </div>
                             )}
-                            <motion.div
-                                className="overflow-hidden"
-                                initial={false}
-                                animate={{ height: isOpen ? "auto" : 0, opacity: isOpen ? 1 : 0 }}
-                                transition={{ type: "spring", damping: 24, stiffness: 240, bounce: 0.4 }}
-                            >
-                                <div className="pb-3">{item.content}</div>
-                            </motion.div>
+                            <CompactPanel isOpen={isOpen} visibleWhenOpen={visibleWhenOpen}>
+                                {item.content}
+                            </CompactPanel>
                         </div>
                     );
                 })}

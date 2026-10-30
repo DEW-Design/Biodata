@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, GitBranch01, Plus, Trash01 } from "@untitledui/icons";
-import { ConfirmationModal } from "@/components/application/modals/modal";
+import { ConfirmationModal, DestructiveModal } from "@/components/application/modals/modal";
 import { toast } from "@/components/application/toast/toast";
 import { Badge } from "@/components/base/badges/badges";
 import { Button } from "@/components/base/buttons/button";
@@ -707,7 +707,7 @@ export function SplitTaxonForm({
           commit();
         }}
       />
-      <ConfirmationModal
+      <DestructiveModal
         confirmIcon={Trash01}
         cancelIcon={ArrowLeft}
         isOpen={confirmLeave}

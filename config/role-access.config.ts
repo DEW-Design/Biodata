@@ -23,7 +23,7 @@
 import { isBiodataAdmin, type UserRole } from "@/lib/user-role";
 
 /** One entry per gated product feature. Add a key as a feature is actually gated - don't pre-populate speculatively. */
-export type FeatureKey = "orgSwitcher" | "metricCardCustomization" | "dsaManagement" | "dlaAccess" | "dlaApproval" | "userManagement" | "restrictedData" | "nominationAccess" | "nominationReview" | "nominationAllView" | "datasetUpload" | "templateFinder" | "ctrlVocabManagement" | "taxonomyManagement" | "notificationManagement" | "voucherManagement" | "reports" | "projectAuditLog" | "specimenReports" | "dlaAllView" | "nominationRating";
+export type FeatureKey = "orgSwitcher" | "metricCardCustomization" | "dsaManagement" | "dlaAccess" | "dlaApproval" | "userManagement" | "restrictedData" | "nominationAccess" | "nominationReview" | "nominationAllView" | "datasetUpload" | "datasetReview" | "templateFinder" | "ctrlVocabManagement" | "taxonomyManagement" | "notificationManagement" | "voucherManagement" | "reports" | "projectAuditLog" | "specimenReports" | "dlaAllView" | "nominationRating" | "fieldNotes" | "ingestionStressTest";
 
 /** Feature -> the roles (besides biodata-admin, which always passes) allowed to see it. */
 export const roleAccessMatrix: Record<FeatureKey, UserRole[]> = {
@@ -79,6 +79,9 @@ export const roleAccessMatrix: Record<FeatureKey, UserRole[]> = {
   // project-level access check is not modelled in the preview). A guest sees the sign-up invite on
   // the project's "Upload dataset" button, and the restriction on a direct visit.
   datasetUpload: ["registered-user", "privileged-user", "privileged-admin", "biodata-user"],
+  // Approving a dataset that is under review (the dataset's own page, a hero action): BioData Admin and above, per the
+  // designer (30 Oct 2026: an admin approves it). The admin bypass passes BioData Admin and Super Admin; no other role is listed.
+  datasetReview: [],
   // Every signed-in role; a public user has no Template Finder section (context/decisions/2026-09-21-04).
   templateFinder: ["registered-user", "privileged-user", "privileged-admin", "biodata-user"],
   // Controlled Vocabulary (/pages/ctrl-vocab): create, edit, archive and reactivate vocabularies.
@@ -116,6 +119,13 @@ export const roleAccessMatrix: Record<FeatureKey, UserRole[]> = {
   // set while reviewing, approving or editing it. BioData Admin and Super Admin (the designer, 12 Oct 2026: "A biodata super admin
   // and admin must be able to set the data risk level and access level"; Super Admin only from 9 Oct). The admin bypass passes both.
   nominationRating: [],
+  // The notes on a record's fields: the flag on a questionable value (and its resolution) and the comments. They are a team's and a
+  // reviewer's working notes, so a signed-out visitor sees the values and none of them (the designer, 30 Oct 2026: "members and
+  // reviewers only"). The files attached to a field stay: they are the project's artefacts, which the Artefacts tab lists for everyone.
+  fieldNotes: ["registered-user", "privileged-user", "privileged-admin", "biodata-user"],
+  // The Data ingestion stress test (/pages/data-ingestion-stress-test): a tool that reads a file against the record model. Registered
+  // users and above (the designer, 30 Oct 2026); a signed-out visitor sees the section's restriction.
+  ingestionStressTest: ["registered-user", "privileged-user", "privileged-admin", "biodata-user"],
 };
 
 /**

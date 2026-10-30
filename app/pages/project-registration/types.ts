@@ -153,8 +153,10 @@ export interface GeoExtentValue {
     listName?: string;
 }
 
+/** A new extent starts on the first way of defining one, drawing on the map: the picker's first tab is selected in the value itself and not
+ *  only on screen (the designer, 30 Oct 2026). With no method in the value, a shape drawn on the tab that looked selected was not counted. */
 export function emptyGeoExtent(): GeoExtentValue {
-    return { method: null, boundary: null };
+    return { method: "map", boundary: null };
 }
 
 export function isGeoExtentComplete(extent: GeoExtentValue): boolean {

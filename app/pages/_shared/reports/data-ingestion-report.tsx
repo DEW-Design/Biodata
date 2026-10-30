@@ -172,7 +172,7 @@ const columns: ReportColumn<IngestionRow>[] = [
     sort: (r) => validationRank(r.validation),
     cell: (r) => (
       <ErrorsLink row={r}>
-        <Badge size="sm" color={validationColor[r.validation]}>
+        <Badge size="sm" color={validationColor[r.validation]} isLoading={r.validation === "Processing"}>
           {r.validation}
         </Badge>
       </ErrorsLink>
@@ -229,7 +229,7 @@ const columns: ReportColumn<IngestionRow>[] = [
     width: WIDTH.processing,
     sort: (r) => processingRank(r.processing),
     cell: (r) => (
-      <Badge size="sm" color={processingColor[r.processing]}>
+      <Badge size="sm" color={processingColor[r.processing]} isLoading={r.processing === "Processing"}>
         {r.processing}
       </Badge>
     ),

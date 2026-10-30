@@ -1,4 +1,5 @@
 import type { BadgeColor } from "@/components/base/badges/badges";
+import type { UserRole } from "@/lib/user-role";
 
 // Project list data, kept out of project-list-content.tsx (a "use client" file) so server code can
 // import it too - the DLA route's generateStaticParams reads it through dla-data.ts.
@@ -19,6 +20,15 @@ export interface Project {
   contributorName: string;
   updated: string;
   description: string;
+}
+
+/** A project is published once it is Active or Completed. A Draft and a project Under review are not: a signed-out visitor never sees them (the designer, 30 Oct 2026: "published only"). The header search and
+ *  Explore already used this rule for species (`global-search.tsx`, `observations-search.tsx`); this is the same rule for the project itself. */
+export const PUBLISHED_PROJECT_STATUSES = ["Active", "Completed"];
+
+/** Whether a role may see a project at all: everyone signed in may (their own Draft included); a public user only a published one. */
+export function isProjectVisibleTo(project: { status: string }, role: UserRole): boolean {
+  return role !== "public-user" || PUBLISHED_PROJECT_STATUSES.includes(project.status);
 }
 
 export const projects: Project[] = [
@@ -68,7 +78,8 @@ export const projects: Project[] = [
     name: "Kangaroo Island Recovery Monitoring",
     org: "Natural Resources KI",
     status: "Completed",
-    statusColor: "blue",
+    // Brand teal, from the design system: Completed was Untitled UI's blue, which is not in the Figma set (the designer, 30 Oct 2026), and teal is the one colour left that is not Draft's grey, Under review's amber or Active's green.
+    statusColor: "brand",
     contributorInitials: "MD",
     contributorName: "Maya Dewitt",
     updated: "3 weeks ago",

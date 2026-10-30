@@ -1,19 +1,13 @@
 "use client";
 
 import { Suspense } from "react";
-import { useParams, useRouter } from "next/navigation";
-import { toast } from "@/components/application/toast/toast";
+import { useParams } from "next/navigation";
 import { searchEvents } from "@/app/pages/_shared/map-search/search-data";
-import { addDataset } from "@/app/pages/_shared/dataset-upload/dataset-store";
-import { UploadForm } from "@/app/pages/_shared/dataset-upload/upload-form";
-import { UploadShell } from "@/app/pages/_shared/dataset-upload/upload-shell";
-import { projectDetailsPath } from "@/app/pages/_shared/project-routes";
-import { useFeatureAccess } from "@/lib/use-feature-access";
-import { useRoleHref } from "@/lib/use-role-href";
+import { UploadScreen } from "@/app/pages/_shared/dataset-upload/upload-screen";
 
-// /pages/project-list/[id]/upload - upload a dataset to a project. Confirming stages the files for
-// ingestion, shows a toast and returns to the project, where the ingestion chip shows its progress.
-// The toast carries a "View report" button that opens the Data Ingestion Report on this upload's row.
+// /pages/project-list/[id]/upload - upload a dataset to a built-in project (a project made in this browser is uploaded to at
+// /pages/project-detail/created/upload, because a static export has no page for an id that does not exist yet). The screen is
+// `UploadScreen`: confirming stages the files for ingestion and returns to the project, where the ingestion chip shows its progress.
 export default function UploadRoute() {
   return (
     <Suspense fallback={null}>
@@ -23,30 +17,7 @@ export default function UploadRoute() {
 }
 
 function Upload() {
-  const router = useRouter();
-  const roleHref = useRoleHref();
-  const canUpload = useFeatureAccess("datasetUpload");
   const { id } = useParams<{ id: string }>();
-  const project = searchEvents.find((e) => e.id === id && e.type === "Project");
-  const back = () => router.push(roleHref(projectDetailsPath(id)));
-
-  return (
-    <UploadShell project={project}>
-      {project && canUpload && (
-        <UploadForm
-          project={{ id: project.id, code: project.code, name: project.name }}
-          onCancel={back}
-          onSubmit={(draft) => {
-            const dataset = addDataset(project, draft);
-            toast.success("Your files are uploaded", {
-              description: `${dataset.id} is being added to the project. Follow it on the project page.`,
-              actionLabel: "View report",
-              onAction: () => router.push(roleHref(`/pages/reports/data-ingestion?q=${dataset.id}`)),
-            });
-            back();
-          }}
-        />
-      )}
-    </UploadShell>
-  );
+  const found = searchEvents.find((e) => e.id === id && e.type === "Project");
+  return <UploadScreen projectId={id} project={found ? { id: found.id, code: found.code, name: found.name } : undefined} />;
 }

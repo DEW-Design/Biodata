@@ -93,7 +93,7 @@ function DarkActions({ primary, rest }: { primary?: RecordAction; rest: RecordAc
       )}
       {items.length > 0 && (
         <Dropdown.Root>
-          <Dropdown.DotsButton aria-label="More actions" className="p-1 text-white/80 hover:text-white" />
+          <Dropdown.DotsButton aria-label="More actions" onDark className="p-1" />
           <Dropdown.Popover placement="bottom right">
             <Dropdown.Menu aria-label="More actions" onAction={(key) => items.find((a) => a.id === key)?.onPress()}>
               {items.flatMap((a, i) => [

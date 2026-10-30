@@ -616,3 +616,36 @@ Not imported into every session on purpose: read or grep it when a task needs hi
 - [2026-10-26] Nominations: an admin's nomination follows the same workflow as every role - `2026-10-26-06-nominations-an-admin-s-nomination-follows-the-same.md`
 - [2026-10-27] Home: the Completed checklists tile is removed - `2026-10-27-01-home-the-completed-checklists-tile-is-removed.md`
 - [2026-10-27] Data ingestion stress test: moved from the labs to a page so reviewers see it in production - `2026-10-27-02-data-ingestion-stress-test-moved-from-the-labs.md`
+- [2026-10-29] Consolidated report: a new report from the designer's sheet - `2026-10-29-01-consolidated-report-a-new-report-from-the-designer.md`
+- [2026-10-30] Tables: the ID is the first column on every list that has IDs - `2026-10-30-01-tables-the-id-is-the-first-column-on.md`
+- [2026-10-30] Audit Log is the one name: History and Audit history are renamed - `2026-10-30-02-audit-log-is-the-one-name-history-and.md`
+- [2026-10-30] Project page: Datasets is a tab - `2026-10-30-03-project-page-datasets-is-a-tab.md`
+- [2026-10-30] Dataset page: Overview first, the next step in the card, Approve for an admin - `2026-10-30-04-dataset-page-overview-first-the-next-step-in.md`
+- [2026-10-30] Dataset page: "Datasets" in the breadcrumb is a switcher, and a hand-drawn crumb now fails the check - `2026-10-30-05-dataset-page-datasets-in-the-breadcrumb-is-a.md`
+- [2026-10-30] Add Project option 2: a dataset step, slice 1 - `2026-10-30-06-add-project-option-2-a-dataset-step-slice.md`
+- [2026-10-30] Add Project option 2: the Dataset step follows the geographic extent and reads the real file, slice 2a - `2026-10-30-07-add-project-option-2-the-dataset-step-follows.md`
+- [2026-10-30] Datasets tab: a run is drawn once, not again in a card above the table - `2026-10-30-08-datasets-tab-a-run-is-drawn-once-not.md`
+- [2026-10-30] Upload chip: the spinner turns counterclockwise - `2026-10-30-09-upload-chip-the-spinner-turns-counterclockwise.md`
+- [2026-10-30] Geographic extent picker: Draw on the Map is the default, and the map is a square - `2026-10-30-10-geographic-extent-picker-draw-on-the-map-is.md`
+- [2026-10-30] Geographic extent picker: the map is 80 percent as tall as it is wide - `2026-10-30-11-geographic-extent-picker-the-map-is-80-percent.md`
+- [2026-10-30] Add Project option 2: the step is "Upload datasets", in the plural - `2026-10-30-12-add-project-option-2-the-step-is-upload.md`
+- [2026-10-30] From your file: plain words when a file has nothing to read, no log lines - `2026-10-30-13-from-your-file-plain-words-when-a-file.md`
+- [2026-10-30] Pre-fill sample content stays on across a refresh - `2026-10-30-14-pre-fill-sample-content-stays-on-across-a.md`
+- [2026-10-30] Upload dataset from a new project: no dead links - `2026-10-30-15-upload-dataset-from-a-new-project-no-dead.md`
+- [2026-10-30] Project Overview: Project details on the left, Published by and Project managers on the right - `2026-10-30-16-project-overview-project-details-on-the-left-published.md`
+- [2026-10-30] Empty states on the project page say what is missing and how to fill it - `2026-10-30-17-empty-states-on-the-project-page-say-what.md`
+- [2026-10-30] Badge: a tiny loader while something is being processed - `2026-10-30-18-badge-a-tiny-loader-while-something-is-being.md`
+- [2026-10-30] Submenus: a safe triangle, so a diagonal move does not lose the submenu - `2026-10-30-19-submenus-a-safe-triangle-so-a-diagonal-move.md`
+- [2026-10-30] Tabs do not explain themselves: the intro lines on Species, Artefacts and Datasets are gone - `2026-10-30-20-tabs-do-not-explain-themselves-the-intro-lines.md`
+- [2026-10-30] Privacy and restrictions: no restrictions is a state, not a dashed placeholder - `2026-10-30-21-privacy-and-restrictions-no-restrictions-is-a-state.md`
+- [2026-10-30] Draw on the Map: a done state, what was drawn and a way to remove it - `2026-10-30-22-draw-on-the-map-a-done-state-what.md`
+- [2026-10-30] Record cards: the three-dots hover no longer hides the dots - `2026-10-30-23-record-cards-the-three-dots-hover-no-longer.md`
+- [2026-10-30] Project page: Cancel and Save changes sit in the card being edited, and the Geographic extent card is one... - `2026-10-30-24-project-page-cancel-and-save-changes-sit-in.md`
+- [2026-10-30] Project Overview: one sheet, the Overview open and the other two sections closed under their headings - `2026-10-30-25-project-overview-one-sheet-the-overview-open-and.md`
+- [2026-10-30] Overview people: one type size down the person block, and a rule between stacked people - `2026-10-30-26-overview-people-one-type-size-down-the-person.md`
+- [2026-10-30] Pinned Cancel and Save changes: a map is its own layer, so it never paints over the bar - `2026-10-30-27-pinned-cancel-and-save-changes-a-map-is.md`
+- [2026-10-30] Project people: a lab of four ways to draw a person, from the name leading to a contact card each - `2026-10-30-28-project-people-a-lab-of-four-ways-to.md`
+- [2026-10-30] A destructive confirm is red: eleven blue discard and leave prompts become DestructiveModal - `2026-10-30-29-a-destructive-confirm-is-red-eleven-blue-discard.md`
+- [2026-10-30] Design consistency sweep phase 1: the public user, 26 findings and 8 decisions - `2026-10-30-30-design-consistency-sweep-phase-1-the-public-user.md`
+- [2026-10-30] Phase 1 decisions applied: published projects only, notes for members, 40px rows, a gated stress test - `2026-10-30-31-phase-1-decisions-applied-published-projects-only-notes.md`
+- [2026-10-30] Chips take their colours from the design system: Completed in brand teal, file types in gray - `2026-10-30-32-chips-take-their-colours-from-the-design-system.md`

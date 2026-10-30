@@ -1,46 +1,55 @@
 "use client";
 
-// The project's Datasets page (30 Sept 2026): a report of every dataset uploaded to this project,
-// opened by `?view=datasets` (same route so the session's edits stay, like the flagged concepts review). Its door was the Datasets box in
-// "Project at a glance" until the designer removed that section (26 Oct 2026); nothing on the project page opens it now (open: where it goes). It follows the collection pattern: a section header
-// with the count and Upload dataset, then search and a table whose rows open the dataset
-// (`&dataset=<id>`), laid out like every record page (back link, identity card, tabs).
+// The project's Datasets: a tab of the project page (26 Oct 2026, the designer: "can we bring in dataset as a tab? A list of all the associated
+// datasets?"), a table of every dataset uploaded to this project, and each dataset's own page (`?view=datasets&dataset=<id>`, same route so the session's
+// edits stay, like the flagged concepts review), laid out like every record page (back link, identity card with its next step, tabs: Overview, the
+// dataset's own facts, then Validation and Audit Log; 30 Oct 2026). It was a page of its own
+// (`?view=datasets`, 30 Sept 2026) opened from a Datasets box in "Project at a glance", which the designer removed; the old address now opens the tab.
+// The tab follows the collection pattern as the Artefacts tab does: search, then the table, whose rows open the dataset. It has no line of its own
+// on what it holds (the tab's name says it; the designer, 30 Oct 2026: such lines read as generated).
+// Uploading is the header's Upload menu, so the tab does not repeat it (one control per action, 3.12).
 //
-// The upload in progress sits above the table: the same progress, stages and problems as the
-// project card's upload chip (IngestionDetail), so pre-flight validation (checking against the data
-// model) can be followed here as well. Nothing reads a real file: ingestion is simulated
-// (dataset-upload/ingestion.ts).
+// A run is drawn in two places and not a third (4.3, never restate a fact in two treatments): the upload chip in the project's header, which is
+// there on every tab while it runs and has its problems to deal with, and the dataset's own Validation tab, its permanent record. The tab
+// is the list, so the dataset that is running is its row, with its status; it has no card of its own for the run (the designer, 30 Oct 2026:
+// "Why double up on the same info?"). Nothing reads a real file here: ingestion is simulated (dataset-upload/ingestion.ts).
 //
 // Datasets come from two places: the ones uploaded in this browser (the dataset store), and
 // SAMPLE_DATASETS below, three earlier uploads so the report has a history to show.
 
 import { useEffect, useMemo, useState } from "react";
-import { ChevronRight, Database01, RefreshCcw01, ClipboardCheck, File06, ClockRewind } from "@untitledui/icons";
-import { FeaturedIcon } from "@/components/foundations/featured-icon/featured-icon";
-import { Badge, CountBadge } from "@/components/base/badges/badges";
+import { useRouter } from "next/navigation";
+import { BarChart01, CheckCircle, ClipboardCheck, ClockRewind, Grid01, RefreshCcw01, SearchLg, Upload01, UploadCloud02 } from "@untitledui/icons";
+import { Badge } from "@/components/base/badges/badges";
 import { Button } from "@/components/base/buttons/button";
-import { SectionHeader } from "@/components/application/section-headers/section-headers";
 import { Table, TableCard } from "@/components/application/table/table";
 import { Tab, TabList, TabPanel, Tabs } from "@/components/application/tabs/tabs";
-import { cx } from "@/utils/cx";
 import { ToolbarSearch } from "@/app/pages/_shared/toolbar-search";
+import { ListEmptyState } from "@/app/pages/_shared/list-empty-state";
 import { UploadDatasetButton } from "@/app/pages/_shared/upload-dataset-button";
 import { HeroMeta, RecordBackLink, RecordHero, RecordRow } from "@/app/pages/_shared/record-hero";
+import { RecordActionBar, type RecordAction } from "@/app/pages/_shared/record-action-bar";
 import { formatShortDate } from "@/app/pages/_shared/dla/dla-data";
 import {
   classificationLabel,
   datasetStatusFor,
   datasetStatusMeta,
+  isProcessingStatus,
   firstNationsLabel,
   formatFileSize,
   licenceLabel,
   type Dataset,
   type DatasetStatus,
 } from "@/app/pages/_shared/dataset-upload/dataset-data";
-import { restartIngestion, useDatasets } from "@/app/pages/_shared/dataset-upload/dataset-store";
+import { approveDataset, restartIngestion, useDatasetApprovals, useDatasets } from "@/app/pages/_shared/dataset-upload/dataset-store";
 import { TOTAL_MS, rowsFromSize, viewAt, type RunView } from "@/app/pages/_shared/dataset-upload/ingestion";
 import { IngestionDetail, isSystemFault, placedRows } from "@/app/pages/_shared/dataset-upload/ingestion-views";
 import { AuditLog, milestones } from "@/app/pages/_shared/audit-log";
+import { AuditFeed } from "@/app/pages/_shared/audit-feed";
+import { BreadcrumbSwitcher } from "@/app/pages/_shared/breadcrumb-switcher";
+import { useFeatureAccess } from "@/lib/use-feature-access";
+import { uploadPath } from "@/app/pages/_shared/project-routes";
+import { useRoleHref } from "@/lib/use-role-href";
 import { useEditStore } from "./edit-store";
 
 // The project the sample uploads belong to. Every other project shows only its own uploads.
@@ -108,8 +117,6 @@ const SAMPLE_DATASETS: Dataset[] = [
   },
 ];
 
-const plural = (n: number, one: string, many: string) => `${n} ${n === 1 ? one : many}`;
-
 const SAMPLE_IDS = new Set(SAMPLE_DATASETS.map((d) => d.id));
 
 /** A dataset with its run worked out: where it is now, and its workflow status. */
@@ -133,18 +140,27 @@ function rowFor(dataset: Dataset, now: number): DatasetRow {
   return { dataset, view, status: sample ? dataset.status : datasetStatusFor(view) };
 }
 
+/** A dataset a BioData Admin approved reads as approved, with the approval in its history, whatever its run says. */
+function withApproval(row: DatasetRow, approval: { at: string; by: string } | undefined): DatasetRow {
+  if (!approval) return row;
+  const history = [...row.dataset.history, { status: "approved" as const, at: approval.at, by: approval.by }];
+  return { ...row, status: "approved", dataset: { ...row.dataset, status: "approved", history } };
+}
+
+/** A project's datasets, newest first: the sample uploads and the ones uploaded in this browser. */
+function datasetsOf(stored: Dataset[], projectId: string): Dataset[] {
+  return [...SAMPLE_DATASETS, ...stored].filter((d) => d.projectId === projectId).sort((a, b) =>
+    a.uploadedAt === b.uploadedAt ? b.id.localeCompare(a.id) : b.uploadedAt.localeCompare(a.uploadedAt),
+  );
+}
+
 /** Every dataset on this project, newest first, ticking while an upload runs. */
 export function useProjectDatasets(projectId: string): DatasetRow[] {
   const stored = useDatasets();
+  const approvals = useDatasetApprovals();
   const [now, setNow] = useState(() => Date.now());
-  const all = useMemo(
-    () =>
-      [...SAMPLE_DATASETS, ...stored].filter((d) => d.projectId === projectId).sort((a, b) =>
-        a.uploadedAt === b.uploadedAt ? b.id.localeCompare(a.id) : b.uploadedAt.localeCompare(a.uploadedAt),
-      ),
-    [stored, projectId],
-  );
-  const rows = all.map((d) => rowFor(d, now));
+  const all = useMemo(() => datasetsOf(stored, projectId), [stored, projectId]);
+  const rows = all.map((d) => withApproval(rowFor(d, now), approvals[d.id]));
   const running = rows.some((r) => r.view && !r.view.done);
   useEffect(() => {
     if (!running) return;
@@ -154,17 +170,10 @@ export function useProjectDatasets(projectId: string): DatasetRow[] {
   return rows;
 }
 
-/** The upload still in progress, or the latest one whose problems are not yet dealt with. */
-function currentUpload(rows: DatasetRow[]): DatasetRow | null {
-  const latest = rows.find((r) => !SAMPLE_IDS.has(r.dataset.id) && r.view);
-  if (!latest?.view) return null;
-  return !latest.view.done || latest.view.failed || latest.view.partial ? latest : null;
-}
-
 function StatusBadge({ status }: { status: DatasetStatus }) {
   const meta = datasetStatusMeta[status];
   return (
-    <Badge size="sm" color={meta.badgeColor}>
+    <Badge size="sm" color={meta.badgeColor} isLoading={isProcessingStatus(status)}>
       {meta.label}
     </Badge>
   );
@@ -181,34 +190,47 @@ function retry(id: string) {
   restartIngestion(id, "success");
 }
 
-// ── The list ──
+// ── The tab ──
 
-export function DatasetsScreen({
-  datasetId,
-  projectHref,
-  datasetsHref,
-  datasetHref,
-}: {
-  datasetId: string | null;
-  projectHref: string;
-  datasetsHref: string;
-  datasetHref: (id: string) => string;
-}) {
-  const { meta } = useEditStore();
-  const rows = useProjectDatasets(meta.id);
-  if (datasetId) {
-    const row = rows.find((r) => r.dataset.id === datasetId);
-    return <DatasetDetail row={row ?? null} datasetId={datasetId} backHref={datasetsHref} />;
-  }
-  return <DatasetsList rows={rows} projectHref={projectHref} datasetHref={datasetHref} />;
+/** How many datasets this project has, for the tab's count: no clock, so the page does not redraw while an upload runs. */
+export function useProjectDatasetCount(projectId: string): number {
+  const stored = useDatasets();
+  return useMemo(() => datasetsOf(stored, projectId).length, [stored, projectId]);
 }
 
-function DatasetsList({ rows, projectHref, datasetHref }: { rows: DatasetRow[]; projectHref: string; datasetHref: (id: string) => string }) {
+/** "Datasets" in the breadcrumb of a dataset's page: a searchable switcher over this project's datasets (A-Z by ID, the file beside it, the
+ *  same set the Datasets tab lists), the current one ticked and a "View all datasets" bar to the tab, as `ProjectSwitcher` is for the project
+ *  (4.6 item 5). Picking a dataset opens its page. No clock, so the header does not redraw while an upload runs. */
+export function DatasetSwitcher({ projectId, currentId, datasetHref, datasetsHref }: { projectId: string; currentId?: string; datasetHref: (id: string) => string; datasetsHref: string }) {
+  const router = useRouter();
+  const stored = useDatasets();
+  const items = useMemo(
+    () =>
+      datasetsOf(stored, projectId)
+        .sort((a, b) => a.id.localeCompare(b.id))
+        .map((d) => ({ id: d.id, label: d.id, addon: d.files[0]?.name })),
+    [stored, projectId],
+  );
+  return (
+    <BreadcrumbSwitcher
+      label="Datasets"
+      ariaLabel="Switch dataset"
+      placeholder="Search datasets"
+      items={items}
+      currentId={currentId}
+      onSelect={(id) => router.push(datasetHref(id))}
+      viewAllLabel="View all datasets"
+      onViewAll={() => router.push(datasetsHref)}
+    />
+  );
+}
+
+export function DatasetsTab({ datasetHref }: { datasetHref: (id: string) => string }) {
   const { meta } = useEditStore();
+  const rows = useProjectDatasets(meta.id);
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(50);
-  const current = currentUpload(rows);
 
   const query = search.trim().toLowerCase();
   const matches = query
@@ -219,119 +241,115 @@ function DatasetsList({ rows, projectHref, datasetHref }: { rows: DatasetRow[]; 
   const paged = matches.slice((currentPage - 1) * pageSize, currentPage * pageSize);
 
   return (
-    <div className="flex min-h-0 flex-1 flex-col">
-      <RecordBackLink href={projectHref}>Back to project</RecordBackLink>
-      <SectionHeader.Root className="shrink-0 p-6">
-        <SectionHeader.Group>
-          <div className="flex flex-1 flex-col gap-1">
-            <div className="flex items-center gap-2">
-              <SectionHeader.Heading>Datasets</SectionHeader.Heading>
-              <CountBadge count={rows.length} color="brand" />
-            </div>
-            <SectionHeader.Subheading>Every dataset uploaded to {meta.code}, the checks it went through and where it is now.</SectionHeader.Subheading>
-          </div>
-          <SectionHeader.Actions>
+    <div className="flex flex-col gap-4">
+      {rows.length === 0 ? (
+        // The same card and the same way forward as the Records tab's empty state: nothing has been uploaded, and uploading is what fills this tab.
+        <div className="flex min-h-[560px] flex-col rounded-xl border border-secondary bg-primary">
+          <ListEmptyState icon={UploadCloud02} title="No datasets yet" description="Upload a dataset and it appears here.">
             <UploadDatasetButton projectId={meta.id} color="primary" size="md" />
-          </SectionHeader.Actions>
-        </SectionHeader.Group>
-      </SectionHeader.Root>
-
-      {/* The area scrolls when the card above and the table together are taller than the window; the table keeps a floor of its own. */}
-      <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto p-6 [scrollbar-gutter:stable]">
-        {current?.view && (
-          <section aria-label="Current upload" className="flex shrink-0 flex-col gap-4 rounded-xl border border-secondary bg-primary p-5">
-            <div className="flex flex-wrap items-start justify-between gap-3">
-              <div className="flex min-w-0 flex-col gap-0.5">
-                <h3 className="text-sm font-semibold text-primary">{current.view.done ? "Latest upload" : "Uploading now"}</h3>
-                <p className="truncate text-sm text-tertiary" title={current.view.subject.fileName}>
-                  {current.dataset.id} - {current.view.subject.fileName}, {current.view.subject.rows} rows
-                </p>
-              </div>
-              <div className="flex items-center gap-3">
-                <StatusBadge status={current.status} />
-                <Button color="link-color" size="sm" href={datasetHref(current.dataset.id)}>
-                  View dataset
-                </Button>
-              </div>
-            </div>
-            <div className="flex flex-col gap-4">
-              <IngestionDetail split view={current.view} projectId={meta.id} datasetId={current.dataset.id} onRetry={() => retry(current.dataset.id)} />
-            </div>
-          </section>
-        )}
-
-        <ToolbarSearch
-          label="Search datasets"
-          placeholder="Search ID, file or uploader"
-          value={search}
-          onChange={(value) => {
-            setSearch(value);
-            setPage(1);
-          }}
-        />
-        {matches.length === 0 ? (
-          <p className="py-6 text-sm text-tertiary">No datasets match your search.</p>
-        ) : (
-          <TableCard.Root className="flex min-h-[24rem] flex-1 flex-col">
-            <Table layout="fixed" className="min-w-[1000px]" bodyScrollable aria-label="Datasets">
-              <Table.Header sticky>
-                <Table.Head id="id" label="Dataset" isRowHeader className="w-[14%]" />
-                <Table.Head id="file" label="File" className="w-[28%]" />
-                <Table.Head id="by" label="Uploaded by" className="w-[16%]" />
-                <Table.Head id="at" label="Uploaded" className="w-[12%]" />
-                <Table.Head id="added" label="Records added" className="w-[14%]" />
-                <Table.Head id="status" label="Status" className="w-[16%]" />
-              </Table.Header>
-              <Table.Body items={paged.map((r) => ({ ...r, id: r.dataset.id }))}>
-                {(r) => (
-                  <Table.Row id={r.id} href={datasetHref(r.id)} textValue={r.id} className="group data-[href]:cursor-pointer">
-                    <Table.Cell>
-                      <span className="text-sm font-medium whitespace-nowrap text-primary group-hover:text-brand-700 group-hover:underline">{r.id}</span>
-                    </Table.Cell>
-                    <Table.Cell>
-                      <span className="text-sm text-secondary">
-                        {r.dataset.files[0]?.name ?? "Not provided"}
-                        {r.dataset.files.length > 1 && <span className="text-tertiary"> and {r.dataset.files.length - 1} more</span>}
-                      </span>
-                    </Table.Cell>
-                    <Table.Cell>
-                      <span className="text-sm text-secondary">{r.dataset.uploadedBy}</span>
-                    </Table.Cell>
-                    <Table.Cell>
-                      <span className="text-sm whitespace-nowrap text-tertiary">{formatShortDate(r.dataset.uploadedAt)}</span>
-                    </Table.Cell>
-                    <Table.Cell>
-                      <span className="text-sm text-tertiary tabular-nums">{recordsAdded(r.view)}</span>
-                    </Table.Cell>
-                    <Table.Cell>
-                      <StatusBadge status={r.status} />
-                    </Table.Cell>
-                  </Table.Row>
-                )}
-              </Table.Body>
-            </Table>
-            <TableCard.PaginationNumbered
-              page={currentPage}
-              pageCount={pageCount}
-              onPageChange={setPage}
-              pageSize={pageSize}
-              onPageSizeChange={(size) => {
-                setPageSize(size);
+          </ListEmptyState>
+        </div>
+      ) : (
+        <>
+          <div className="flex flex-wrap items-center gap-3">
+            <ToolbarSearch
+              label="Search datasets"
+              placeholder="Search ID, file or uploader"
+              value={search}
+              onChange={(value) => {
+                setSearch(value);
                 setPage(1);
               }}
-              totalCount={matches.length}
             />
-          </TableCard.Root>
-        )}
-      </div>
+          </div>
+          {matches.length === 0 ? (
+            <div className="flex flex-col rounded-xl border border-secondary bg-primary">
+              <ListEmptyState
+                icon={SearchLg}
+                title="No datasets match"
+                description="No dataset fits this search."
+                action={{
+                  label: "Show all datasets",
+                  onPress: () => {
+                    setSearch("");
+                    setPage(1);
+                  },
+                }}
+              />
+            </div>
+          ) : (
+            <TableCard.Root className="flex max-h-[calc(100dvh-16rem)] min-h-48 flex-col">
+              <Table layout="fixed" className="min-w-[1200px]" bodyScrollable aria-label="Datasets">
+                <Table.Header sticky>
+                  <Table.Head id="id" label="Dataset" isRowHeader className="w-[12%]" />
+                  <Table.Head id="file" label="File" className="w-[24%]" />
+                  <Table.Head id="by" label="Uploaded by" className="w-[13%]" />
+                  <Table.Head id="at" label="Uploaded" className="w-[11%]" />
+                  <Table.Head id="added" label="Records added" className="w-[11%]" />
+                  <Table.Head id="status" label="Status" className="w-[29%]" />
+                </Table.Header>
+                <Table.Body items={paged.map((r) => ({ ...r, id: r.dataset.id }))}>
+                  {(r) => (
+                    <Table.Row id={r.id} href={datasetHref(r.id)} textValue={r.id} className="group data-[href]:cursor-pointer">
+                      <Table.Cell>
+                        <span className="text-sm font-medium whitespace-nowrap text-primary group-hover:text-brand-700 group-hover:underline">{r.id}</span>
+                      </Table.Cell>
+                      <Table.Cell>
+                        <span className="text-sm text-secondary">
+                          {r.dataset.files[0]?.name ?? "Not provided"}
+                          {r.dataset.files.length > 1 && <span className="text-tertiary"> and {r.dataset.files.length - 1} more</span>}
+                        </span>
+                      </Table.Cell>
+                      <Table.Cell>
+                        <span className="text-sm text-secondary">{r.dataset.uploadedBy}</span>
+                      </Table.Cell>
+                      <Table.Cell>
+                        <span className="text-sm whitespace-nowrap text-tertiary">{formatShortDate(r.dataset.uploadedAt)}</span>
+                      </Table.Cell>
+                      <Table.Cell>
+                        <span className="text-sm text-tertiary tabular-nums">{recordsAdded(r.view)}</span>
+                      </Table.Cell>
+                      <Table.Cell>
+                        <StatusBadge status={r.status} />
+                      </Table.Cell>
+                    </Table.Row>
+                  )}
+                </Table.Body>
+              </Table>
+              <TableCard.PaginationNumbered
+                page={currentPage}
+                pageCount={pageCount}
+                onPageChange={setPage}
+                pageSize={pageSize}
+                onPageSizeChange={(size) => {
+                  setPageSize(size);
+                  setPage(1);
+                }}
+                totalCount={matches.length}
+              />
+            </TableCard.Root>
+          )}
+        </>
+      )}
     </div>
   );
 }
 
+/** One dataset's own page, opened from the tab's rows (`?view=datasets&dataset=<id>`); its Back link returns to the tab. */
+export function DatasetScreen({ datasetId, datasetsHref, recordsHref }: { datasetId: string; datasetsHref: string; recordsHref: string }) {
+  const { meta } = useEditStore();
+  const rows = useProjectDatasets(meta.id);
+  const row = rows.find((r) => r.dataset.id === datasetId);
+  return <DatasetDetail row={row ?? null} datasetId={datasetId} backHref={datasetsHref} recordsHref={recordsHref} />;
+}
+
 // ── One dataset ──
 
-function DatasetDetail({ row, datasetId, backHref }: { row: DatasetRow | null; datasetId: string; backHref: string }) {
-  const [tab, setTab] = useState<string | number>("validation");
+function DatasetDetail({ row, datasetId, backHref, recordsHref }: { row: DatasetRow | null; datasetId: string; backHref: string; recordsHref: string }) {
+  const [tab, setTab] = useState<string | number>("overview");
+  const router = useRouter();
+  const roleHref = useRoleHref();
+  const canReview = useFeatureAccess("datasetReview");
   if (!row) {
     return (
       <div className="flex min-h-0 flex-1 flex-col">
@@ -344,10 +362,28 @@ function DatasetDetail({ row, datasetId, backHref }: { row: DatasetRow | null; d
     );
   }
   const { dataset: d, view, status } = row;
+
+  // The next step sits in the card, as on every record page (4.6 item 2), and not inside the Validation tab: a reviewer approves a dataset
+  // that is under review, and the uploader fixes one that did not go in (the same step the run's own problems used to offer).
+  const problem = !!view && view.done && (view.failed || view.partial);
+  const fix: RecordAction | undefined = !view || !problem
+    ? undefined
+    : isSystemFault(view)
+      ? { id: "retry", label: "Try again", icon: RefreshCcw01, onPress: () => retry(d.id) }
+      : { id: "upload", label: "Upload a corrected file", icon: Upload01, onPress: () => router.push(roleHref(uploadPath(d.projectId))) };
+  const approve: RecordAction | undefined = canReview && status === "under_review"
+    ? { id: "approve", label: "Approve", icon: CheckCircle, onPress: () => approveDataset(d.id) }
+    : undefined;
+  const reports: RecordAction | undefined = problem
+    ? { id: "reports", label: "View in Reports", icon: BarChart01, onPress: () => router.push(roleHref(`/pages/reports/data-ingestion?q=${d.id}`)) }
+    : undefined;
+  const menu = [approve ? fix : undefined, reports].filter((a): a is RecordAction => !!a);
+
   return (
     <div className="flex min-h-0 flex-1 flex-col">
       <RecordBackLink href={backHref}>Back to datasets</RecordBackLink>
-      <RecordHero eyebrow="Dataset" title={d.id}>
+      <RecordHero eyebrow="Dataset" title={d.id} actions={<RecordActionBar onDark primary={approve ?? fix} menu={menu} />}>
+        <HeroMeta label="File">{d.files.length === 0 ? "Not provided" : d.files.length === 1 ? d.files[0].name : `${d.files.length} files`}</HeroMeta>
         <HeroMeta label="Project">{d.projectCode}</HeroMeta>
         <HeroMeta label="Uploaded by">{d.uploadedBy}</HeroMeta>
         <HeroMeta label="Uploaded">{formatShortDate(d.uploadedAt)}</HeroMeta>
@@ -359,27 +395,16 @@ function DatasetDetail({ row, datasetId, backHref }: { row: DatasetRow | null; d
       <Tabs selectedKey={tab} onSelectionChange={setTab}>
         <div className="px-6 pt-4">
           <TabList aria-label="Dataset sections" type="underline" size="md">
+            <Tab id="overview" label="Overview" icon={Grid01} />
             <Tab id="validation" label="Validation" icon={ClipboardCheck} />
-            <Tab id="details" label="Details" icon={File06} />
-            <Tab id="history" label="History" icon={ClockRewind} />
+            <Tab id="history" label="Audit Log" icon={ClockRewind} />
           </TabList>
         </div>
 
-        <TabPanel id="validation" className="p-6">
-          {/* The same card as the Datasets list's latest upload: full width, the run beside what went wrong. The dataset's one status is the
-              hero's; the card does not say it again in a second vocabulary ("Not ingested" under "Validation failed"). */}
-          <section aria-label="Validation" className="flex flex-col gap-4 rounded-xl border border-secondary bg-primary p-5">
-            <h3 className="text-sm font-semibold text-primary">Pre-flight validation and ingestion</h3>
-            {view ? (
-              <IngestionDetail split view={view} projectId={d.projectId} datasetId={d.id} onRetry={() => retry(d.id)} />
-            ) : (
-              <p className="text-sm text-quaternary">Not provided</p>
-            )}
-          </section>
-        </TabPanel>
-
-        <TabPanel id="details" className="p-6">
-          <div className="max-w-3xl rounded-lg border border-secondary">
+        {/* The dataset's own facts: what it holds and what was agreed when it was uploaded. They are the dataset's, not the project's (the
+            designer, 30 Oct 2026: "Dataset has its own metadata"); what the card above already says (who, when, status) is not said again. */}
+        <TabPanel id="overview" className="p-6">
+          <div className="rounded-lg border border-secondary">
             <RecordRow label={d.files.length > 1 ? "Files" : "File"}>
               <ul className="m-0 flex list-none flex-col gap-1 p-0">
                 {d.files.map((f) => (
@@ -390,7 +415,16 @@ function DatasetDetail({ row, datasetId, backHref }: { row: DatasetRow | null; d
               </ul>
             </RecordRow>
             <RecordRow label="Rows">{view ? view.subject.rows : "Not provided"}</RecordRow>
-            <RecordRow label="Records added">{recordsAdded(view)}</RecordRow>
+            <RecordRow label="Records added">
+              <span className="flex flex-wrap items-center gap-x-4 gap-y-1">
+                {recordsAdded(view)}
+                {view?.done && !view.failed && (
+                  <Button color="link-color" size="sm" href={recordsHref}>
+                    Open project records
+                  </Button>
+                )}
+              </span>
+            </RecordRow>
             <RecordRow label="Data licence">{licenceLabel(d.licence)}</RecordRow>
             <RecordRow label="Security classification">{classificationLabel(d.classification)}</RecordRow>
             <RecordRow label="First Nations consideration">{firstNationsLabel(d.firstNations)}</RecordRow>
@@ -398,97 +432,26 @@ function DatasetDetail({ row, datasetId, backHref }: { row: DatasetRow | null; d
           </div>
         </TabPanel>
 
+        <TabPanel id="validation" className="p-6">
+          {/* The same card as the Datasets list's latest upload: full width, the run beside what went wrong. The dataset's one status is the
+              hero's; the card does not say it again in a second vocabulary ("Not ingested" under "Validation failed"), and the next step
+              is the hero's, so the card does not offer it a second time. */}
+          <section aria-label="Validation" className="flex flex-col gap-4 rounded-xl border border-secondary bg-primary p-5">
+            <h3 className="text-sm font-semibold text-primary">Pre-flight validation and ingestion</h3>
+            {view ? (
+              <IngestionDetail split actions={false} view={view} projectId={d.projectId} datasetId={d.id} onRetry={() => retry(d.id)} />
+            ) : (
+              <p className="text-sm text-quaternary">Not provided</p>
+            )}
+          </section>
+        </TabPanel>
+
         <TabPanel id="history" className="p-6">
           <AuditLog id={d.id} idLabel="Dataset ID" items={milestones(d.history, { label: "Approved", is: (e) => e.status === "approved" || e.status === "auto_approved" })} changeCount={d.history.length}>
-            <div className="max-w-3xl rounded-lg border border-secondary">
-              {[...d.history].reverse().map((e, i) => (
-                <RecordRow key={`${e.status}-${e.at}-${i}`} label={formatShortDate(e.at)}>
-                  <span className="flex flex-wrap items-center gap-2">
-                    <StatusBadge status={e.status} />
-                    <span className="text-tertiary">{e.by}</span>
-                  </span>
-                </RecordRow>
-              ))}
-            </div>
+            <AuditFeed events={d.history} statusMeta={datasetStatusMeta} noun="dataset" />
           </AuditLog>
         </TabPanel>
       </Tabs>
     </div>
-  );
-}
-
-
-// ── The Datasets card (drawn nowhere since 26 Oct 2026) ──
-// It was the first card of "Project at a glance", which the designer removed; it is kept, whole, for wherever the Datasets list gets its door.
-// Its own card above the records card, since datasets are the feed and not part of the records. The
-// header names it with its count and holds its actions (View all, Upload dataset); one row under it is
-// the last upload: the file and, in a few words, what is happening with it (live while it runs),
-// opening that dataset. The full journey (stages, problems, what to fix) is on the dataset's page.
-
-type Snapshot = { tone: "brand" | "success" | "warning" | "error" | "gray"; state: string; running: boolean };
-
-function snapshotOf({ view, status }: DatasetRow): Snapshot {
-  if (!view) return { tone: "gray", state: "Waiting for pre-flight validation", running: false };
-  if (!view.done) {
-    const validating = view.stageIndex === 0;
-    const pct = validating ? view.stagePercents[0] : Math.round(((view.stagePercents[1] + view.stagePercents[2]) / 200) * 100);
-    return { tone: "brand", state: `${validating ? "Pre-flight validation" : "Adding records"}, ${pct}%`, running: true };
-  }
-  if (view.failed) {
-    if (isSystemFault(view)) return { tone: "error", state: "Not added, something went wrong on our side", running: false };
-    const problems = plural(view.reasons.length, "problem", "problems");
-    return { tone: "error", state: view.failedStage === 0 ? `Failed pre-flight validation, ${problems}` : `Not added, ${problems} with the rows`, running: false };
-  }
-  const added = placedRows(view);
-  if (view.partial) return { tone: "warning", state: `${added} records added, ${view.unmapped} rows not placed`, running: false };
-  const approved = status === "approved" || status === "auto_approved";
-  return { tone: approved ? "success" : "brand", state: `${added} records added, ${approved ? "approved" : "in review"}`, running: false };
-}
-
-export function DatasetsCard({ onOpenDataset, onOpenDatasets }: { onOpenDataset: (id: string) => void; onOpenDatasets: () => void }) {
-  const { meta } = useEditStore();
-  const rows = useProjectDatasets(meta.id);
-  const last = rows[0];
-  const snap = last ? snapshotOf(last) : null;
-  return (
-    <section aria-label="Datasets" className="overflow-hidden rounded-xl border border-secondary bg-primary">
-      {/* The card's header: what it is, how many, and its two actions (the project-tab card heading). */}
-      <div className="flex items-center justify-between gap-3 px-5 py-3">
-        <h3 className="flex items-center gap-2 text-sm font-semibold text-primary">
-          Datasets
-          <CountBadge count={rows.length} color="brand" />
-        </h3>
-        <div className="flex items-center gap-3">
-          {rows.length > 0 && (
-            <Button color="link-color" size="sm" onClick={onOpenDatasets}>
-              View all
-            </Button>
-          )}
-          <UploadDatasetButton projectId={meta.id} />
-        </div>
-      </div>
-      {/* The last upload: one row, the same row as the records card's, opening that dataset. */}
-      {last && snap ? (
-        <button
-          type="button"
-          onClick={() => onOpenDataset(last.dataset.id)}
-          title={`${last.dataset.files[0]?.name ?? last.dataset.id}: ${snap.state}`}
-          className="group/row flex w-full items-center gap-3 border-t border-secondary px-5 py-3 text-left text-sm outline-focus-ring transition-colors hover:bg-primary_hover focus-visible:outline-2 focus-visible:-outline-offset-2"
-        >
-          <FeaturedIcon icon={Database01} color={snap.tone} theme="modern" size="sm" />
-          <span className="flex min-w-0 flex-1 flex-col">
-            <span className="text-tertiary">Last upload: {formatShortDate(last.dataset.uploadedAt)}</span>
-            <span className="flex min-w-0 items-center gap-1.5">
-              {snap.running && <RefreshCcw01 aria-hidden className="size-3.5 shrink-0 text-fg-brand-primary motion-safe:animate-spin" />}
-              <span className="truncate font-semibold text-primary">{last.dataset.files[0]?.name ?? last.dataset.id}</span>
-              <span className={cx("shrink-0 tabular-nums", snap.tone === "error" ? "text-error-primary" : snap.tone === "warning" ? "text-fg-warning-primary" : "text-tertiary")}>{snap.state}</span>
-            </span>
-          </span>
-          <ChevronRight aria-hidden className="size-4 shrink-0 text-fg-quaternary transition-transform group-hover/row:translate-x-0.5" />
-        </button>
-      ) : (
-        <p className="border-t border-secondary px-5 py-3 text-sm text-tertiary">No datasets yet. Uploading one adds its records to this project.</p>
-      )}
-    </section>
   );
 }

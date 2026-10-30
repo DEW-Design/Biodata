@@ -14,17 +14,23 @@ import { sectionIcons } from "@/app/pages/_shared/nav-icons";
 import { PrimaryRail } from "@/app/pages/_shared/primary-rail";
 import { PrototypeTools } from "@/app/_prototype-tools/prototype-tools";
 import { projectDetailsPath } from "@/app/pages/_shared/project-routes";
-import type { SearchEvent } from "@/app/pages/_shared/map-search/search-data";
 import { keyHref, navForRole, type NavNode } from "@/lib/registered-user-nav";
 import { useFeatureAccess } from "@/lib/use-feature-access";
 import { useRoleHref } from "@/lib/use-role-href";
 import { useUserRole } from "@/lib/use-user-role";
 
-// The shell for the upload-dataset route (/pages/project-list/<id>/upload): the rail with Projects
+// The shell for the upload-dataset route (/pages/project-list/<id>/upload, and /pages/project-detail/created/upload for a project made in this browser): the rail with Projects
 // active, column 2 holding the form's section list (portalled in by `FormSidebar`, CONTRACTS 4.1),
 // and main. A person who may not upload, or a project that does not exist, still gets all three
 // columns with the reason in main (CONTRACTS 3.7). Same shape as `NominationShell`.
-export function UploadShell({ project, children }: { project?: SearchEvent; children: ReactNode }) {
+/** The project a dataset is uploaded to: a built-in one or one made in this browser. */
+export interface UploadProject {
+  id: string;
+  code: string;
+  name: string;
+}
+
+export function UploadShell({ project, children }: { project?: UploadProject; children: ReactNode }) {
   const router = useRouter();
   const role = useUserRole();
   const roleHref = useRoleHref();

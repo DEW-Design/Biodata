@@ -4,8 +4,10 @@ import { useMemo } from "react";
 import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
 import { CURRENT_USER_NAME } from "@/app/pages/_shared/agreement-scope";
-import { projects, type Project } from "@/app/pages/_shared/project-list-data";
+import { isProjectVisibleTo, projects, type Project } from "@/app/pages/_shared/project-list-data";
+import { useUserRole } from "@/lib/use-user-role";
 import { logProjectCreated } from "@/app/pages/_shared/project-audit-log-store";
+import { CREATED_PROJECT_ID_PREFIX } from "@/app/pages/_shared/project-routes";
 import { browserStorage, useHydrated, useRehydrate } from "@/app/pages/_shared/zustand-persist";
 import { deserializeForm, serializeForm } from "@/app/pages/project-registration/form-storage";
 import type { FormState } from "@/app/pages/project-registration/option-2/sections";
@@ -53,7 +55,7 @@ export function saveCreatedProject(form: FormState, role: UserRole): CreatedProj
   const next = Math.max(0, ...projects.map((p) => numberOf(p.code)), ...existing.map((c) => numberOf(c.code))) + 1;
   const code = `BD-${next}`;
   const project: CreatedProject = {
-    id: `new-${code.toLowerCase()}`,
+    id: `${CREATED_PROJECT_ID_PREFIX}${code.toLowerCase()}`,
     code,
     createdAt: new Date().toISOString(),
     createdBy: CURRENT_USER_NAME,
@@ -114,8 +116,9 @@ export function createdProjectRow(c: CreatedProject): Project {
   };
 }
 
-/** The built-in projects followed by the ones created in this browser, newest last. */
+/** The built-in projects followed by the ones created in this browser, newest last: the ones the viewed role may see (a public user, only the published ones, `isProjectVisibleTo`). */
 export function useAllProjects(): Project[] {
   const created = useCreatedProjects();
-  return useMemo(() => [...projects, ...created.map(createdProjectRow)], [created]);
+  const role = useUserRole();
+  return useMemo(() => [...projects, ...created.map(createdProjectRow)].filter((p) => isProjectVisibleTo(p, role)), [created, role]);
 }

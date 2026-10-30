@@ -15,7 +15,7 @@
 import { useState, type ReactNode } from "react";
 import { Dialog, Modal, ModalOverlay } from "react-aria-components";
 import { ArrowLeft, Maximize02, Minimize02, Trash01 } from "@untitledui/icons";
-import { ConfirmationModal } from "@/components/application/modals/modal";
+import { DestructiveModal } from "@/components/application/modals/modal";
 import { Button } from "@/components/base/buttons/button";
 import { MODAL_Z_INDEX } from "@/lib/layers";
 import { cx } from "@/utils/cx";
@@ -77,7 +77,7 @@ export function EditDrawer({
           </Dialog>
         </Modal>
       </ModalOverlay>
-      <ConfirmationModal confirmIcon={Trash01} cancelIcon={ArrowLeft}
+      <DestructiveModal confirmIcon={Trash01} cancelIcon={ArrowLeft}
         isOpen={confirm}
         onOpenChange={setConfirm}
         title="Discard your changes?"

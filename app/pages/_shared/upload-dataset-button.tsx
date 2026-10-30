@@ -6,6 +6,7 @@ import { Upload01 } from "@untitledui/icons";
 import { Button } from "@/components/base/buttons/button";
 import { Tooltip } from "@/components/base/tooltip/tooltip";
 import { SignUpPromptModal } from "@/app/pages/_shared/guest-action-gate";
+import { uploadPath } from "@/app/pages/_shared/project-routes";
 import { useRoleHref } from "@/lib/use-role-href";
 import { useUserRole } from "@/lib/use-user-role";
 
@@ -29,7 +30,7 @@ export function UploadDatasetButton({
   const roleHref = useRoleHref();
   const isGuest = useUserRole() === "public-user";
   const [gate, setGate] = useState(false);
-  const onPress = () => (isGuest ? setGate(true) : router.push(roleHref(`/pages/project-list/${projectId}/upload`)));
+  const onPress = () => (isGuest ? setGate(true) : router.push(roleHref(uploadPath(projectId))));
   return (
     <>
       {iconOnly ? (

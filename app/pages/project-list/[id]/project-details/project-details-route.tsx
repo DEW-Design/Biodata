@@ -8,6 +8,7 @@ import { projectDetailsPath } from "@/app/pages/_shared/project-routes";
 import type { DetailRecord } from "@/app/pages/_shared/map-search/record-detail";
 import { recordAccess } from "@/app/pages/_shared/map-search/record-access";
 import { findObservation, findOccurrence, rootProjectForParentEventId, rootProjectOfEvent, searchEvents } from "@/app/pages/_shared/map-search/search-data";
+import { isProjectVisibleTo } from "@/app/pages/_shared/project-list-data";
 import { useUserRole } from "@/lib/use-user-role";
 import { ProjectNotFound, ProjectRecordView } from "./project-details-view";
 
@@ -30,7 +31,8 @@ function Route() {
   const role = useUserRole();
   const { id, kind, recordId } = useParams<{ id: string; kind?: string; recordId?: string }>();
   const project = searchEvents.find((e) => e.id === id && e.type === "Project");
-  if (!project) return <ProjectNotFound />;
+  // A project the viewed role may not see (a public user and a Draft or a project under review) is not available, as a wrong address is not.
+  if (!project || !isProjectVisibleTo(project, role)) return <ProjectNotFound />;
 
   // The followed record, only if it really belongs to this project.
   const decodedId = recordId ? decodeURIComponent(recordId) : undefined;

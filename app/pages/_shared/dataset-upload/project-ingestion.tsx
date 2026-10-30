@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { Database01 } from "@untitledui/icons";
 import { useRegisterTool } from "@/app/_prototype-tools/tools";
-import { datasetStatusFor, datasetStatusMeta } from "@/app/pages/_shared/dataset-upload/dataset-data";
+import { datasetStatusFor, datasetStatusMeta, isProcessingStatus } from "@/app/pages/_shared/dataset-upload/dataset-data";
 import { restartIngestion, setDatasetStatus, useDatasets } from "@/app/pages/_shared/dataset-upload/dataset-store";
 import { runLengthMs, rowsFromSize, viewAt, type Outcome } from "@/app/pages/_shared/dataset-upload/ingestion";
 import { IngestionChip } from "@/app/pages/_shared/dataset-upload/ingestion-views";
@@ -89,7 +89,7 @@ export function ProjectIngestionChip({ projectId }: { projectId: string }) {
       projectId={projectId}
       datasetId={dataset.id}
       title={`Uploading files against ${dataset.projectCode}`}
-      datasetStatus={{ label: statusMeta.label, color: statusMeta.badgeColor }}
+      datasetStatus={{ label: statusMeta.label, color: statusMeta.badgeColor, processing: isProcessingStatus(target ?? dataset.status) }}
       // A fault on our side is transient: the second attempt succeeds.
       onRetry={() => {
         restartIngestion(dataset.id, "success");

@@ -43,6 +43,7 @@ const props = [
   { name: "color",    type: "BadgeColors (12 options)",          default: '"gray"' },
   { name: "background", type: "boolean (BadgeWithDot pill-color)", default: "true" },
   { name: "uppercase", type: "boolean (BadgeWithButton)",         default: "true" },
+  { name: "isLoading", type: "boolean (Badge)",                   default: "false" },
   { name: "children", type: "ReactNode",                          default: "-" },
 ];
 
@@ -287,6 +288,11 @@ export default function BadgePage() {
             <BadgeWithIcon color="brand" iconLeading={Star01}>Featured</BadgeWithIcon>
             <BadgeWithIcon color="success" iconLeading={Check}>Verified</BadgeWithIcon>
             <BadgeWithIcon color="warning" iconTrailing={Zap}>Boosted</BadgeWithIcon>
+          </Section>
+          <Section label="Loading (isLoading)">
+            <Badge size="sm" color="warning" isLoading>Processing</Badge>
+            <Badge size="sm" color="brand" isLoading>Ingesting</Badge>
+            <Badge size="sm" color="gray" isLoading>Queued</Badge>
           </Section>
         </>
       )}

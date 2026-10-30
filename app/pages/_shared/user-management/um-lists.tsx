@@ -122,6 +122,7 @@ function ListFrame<R>({
 // ---------------------------------------------------------------- users
 
 const userSortKeys: Record<string, (u: UmUser) => SortValue> = {
+  id: (u) => u.id,
   name: (u) => fullName(u),
   position: (u) => u.position,
   organisation: (u) => organisationLabel(u),
@@ -184,18 +185,22 @@ export function UsersList() {
       empty={rows.length === 0}
     >
       <TableCard.Root className="flex min-h-48 flex-1 flex-col">
-        <Table layout="fixed" className="min-w-[880px]" bodyScrollable aria-label="Users" sortDescriptor={sort} onSortChange={(next) => { setSort(next); reset(); }}>
+        <Table layout="fixed" className="min-w-[1000px]" bodyScrollable aria-label="Users" sortDescriptor={sort} onSortChange={(next) => { setSort(next); reset(); }}>
           <Table.Header sticky>
-            <Table.Head id="name" label="User" isRowHeader allowsSorting className="w-[31%]" />
-            <Table.Head id="position" label="Position" allowsSorting className="w-[13%]" />
-            <Table.Head id="organisation" label="Organisation" allowsSorting className="w-[15%]" />
-            <Table.Head id="type" label="User type" allowsSorting className="w-[12%]" />
-            <Table.Head id="status" label="Status" allowsSorting className="w-[14%]" />
-            <Table.Head id="updated" label="Updated" allowsSorting className="w-[15%]" />
+            <Table.Head id="id" label="ID" isRowHeader allowsSorting className="w-[9%]" />
+            <Table.Head id="name" label="User" allowsSorting className="w-[24%]" />
+            <Table.Head id="position" label="Position" allowsSorting className="w-[12%]" />
+            <Table.Head id="organisation" label="Organisation" allowsSorting className="w-[17%]" />
+            <Table.Head id="type" label="User type" allowsSorting className="w-[11%]" />
+            <Table.Head id="status" label="Status" allowsSorting className="w-[13%]" />
+            <Table.Head id="updated" label="Updated" allowsSorting className="w-[14%]" />
           </Table.Header>
           <Table.Body items={paged}>
             {(u) => (
               <Table.Row id={u.id} href={roleHref(`/pages/user-management/users/${u.id}`)} textValue={fullName(u)} className="group data-[href]:cursor-pointer">
+                <Table.Cell>
+                  <span className="text-sm whitespace-nowrap text-tertiary tabular-nums">{u.id}</span>
+                </Table.Cell>
                 <Table.Cell>
                   <div className="flex items-center gap-3">
                     <Avatar size="sm" initials={initials(u)} />
@@ -243,6 +248,7 @@ export function RolesList() {
   const userCount = (r: UmRole) => users.filter((u) => u.roleIds.includes(r.id)).length;
 
   const sortKeys: Record<string, (r: UmRole) => SortValue> = {
+    id: (r) => r.id,
     name: (r) => r.name,
     // System roles first, then custom roles by organisation.
     kind: (r) => (r.kind === "system" ? `0 ${r.id}` : `1 ${r.department} ${r.roleType} ${r.name}`),
@@ -294,19 +300,23 @@ export function RolesList() {
       empty={rows.length === 0}
     >
       <TableCard.Root className="flex min-h-48 flex-1 flex-col">
-        <Table layout="fixed" className="min-w-[840px]" bodyScrollable aria-label="Roles" sortDescriptor={sort} onSortChange={(next) => { setSort(next); reset(); }}>
+        <Table layout="fixed" className="min-w-[960px]" bodyScrollable aria-label="Roles" sortDescriptor={sort} onSortChange={(next) => { setSort(next); reset(); }}>
           <Table.Header sticky>
-            <Table.Head id="name" label="Role" isRowHeader allowsSorting className="w-[14%]" />
-            <Table.Head id="kind" label="Type" allowsSorting className="w-[11%]" />
-            <Table.Head id="department" label="Department" allowsSorting className="w-[15%]" />
-            <Table.Head id="roleType" label="Role type" allowsSorting className="w-[16%]" />
-            <Table.Head id="permissions" label="Permissions" allowsSorting className="w-[15%]" />
-            <Table.Head id="users" label="Users" allowsSorting className="w-[11%]" />
-            <Table.Head id="status" label="Status" allowsSorting className="w-[18%]" />
+            <Table.Head id="id" label="ID" isRowHeader allowsSorting className="w-[10%]" />
+            <Table.Head id="name" label="Role" allowsSorting className="w-[14%]" />
+            <Table.Head id="kind" label="Type" allowsSorting className="w-[10%]" />
+            <Table.Head id="department" label="Department" allowsSorting className="w-[14%]" />
+            <Table.Head id="roleType" label="Role type" allowsSorting className="w-[15%]" />
+            <Table.Head id="permissions" label="Permissions" allowsSorting className="w-[13%]" />
+            <Table.Head id="users" label="Users" allowsSorting className="w-[9%]" />
+            <Table.Head id="status" label="Status" allowsSorting className="w-[15%]" />
           </Table.Header>
           <Table.Body items={paged}>
             {(r) => (
               <Table.Row id={r.id} href={roleHref(`/pages/user-management/roles/${r.id}`)} textValue={r.name} className="group data-[href]:cursor-pointer">
+                <Table.Cell>
+                  <span className="text-sm whitespace-nowrap text-tertiary tabular-nums">{r.id}</span>
+                </Table.Cell>
                 <Table.Cell>
                   <div className="flex flex-col">
                     <span className="text-sm font-medium text-primary group-hover:text-brand-700 group-hover:underline">{r.name}</span>
@@ -354,6 +364,7 @@ export function PermissionsList() {
   const roleCount = (p: UmPermission) => roles.filter((r) => r.permissionIds.includes(p.id)).length;
 
   const sortKeys: Record<string, (p: UmPermission) => SortValue> = {
+    id: (p) => p.id,
     name: (p) => p.name,
     code: (p) => p.code,
     category: (p) => `${p.category} ${p.id}`,
@@ -401,18 +412,22 @@ export function PermissionsList() {
       empty={rows.length === 0}
     >
       <TableCard.Root className="flex min-h-48 flex-1 flex-col">
-        <Table layout="fixed" className="min-w-[840px]" bodyScrollable aria-label="Permissions" sortDescriptor={sort} onSortChange={(next) => { setSort(next); reset(); }}>
+        <Table layout="fixed" className="min-w-[960px]" bodyScrollable aria-label="Permissions" sortDescriptor={sort} onSortChange={(next) => { setSort(next); reset(); }}>
           <Table.Header sticky>
-            <Table.Head id="name" label="Permission" isRowHeader allowsSorting className="w-[22%]" />
-            <Table.Head id="code" label="Code" allowsSorting className="w-[14%]" />
-            <Table.Head id="category" label="Category" allowsSorting className="w-[16%]" />
-            <Table.Head id="roles" label="Roles" allowsSorting className="w-[12%]" />
-            <Table.Head id="status" label="Status" allowsSorting className="w-[16%]" />
-            <Table.Head id="updated" label="Updated" allowsSorting className="w-[20%]" />
+            <Table.Head id="id" label="ID" isRowHeader allowsSorting className="w-[10%]" />
+            <Table.Head id="name" label="Permission" allowsSorting className="w-[20%]" />
+            <Table.Head id="code" label="Code" allowsSorting className="w-[13%]" />
+            <Table.Head id="category" label="Category" allowsSorting className="w-[15%]" />
+            <Table.Head id="roles" label="Roles" allowsSorting className="w-[10%]" />
+            <Table.Head id="status" label="Status" allowsSorting className="w-[14%]" />
+            <Table.Head id="updated" label="Updated" allowsSorting className="w-[18%]" />
           </Table.Header>
           <Table.Body items={paged}>
             {(p) => (
               <Table.Row id={p.id} href={roleHref(`/pages/user-management/permissions/${p.id}`)} textValue={p.name} className="group data-[href]:cursor-pointer">
+                <Table.Cell>
+                  <span className="text-sm whitespace-nowrap text-tertiary tabular-nums">{p.id}</span>
+                </Table.Cell>
                 <Table.Cell>
                   <div className="flex flex-col">
                     <span className="text-sm font-medium text-primary group-hover:text-brand-700 group-hover:underline">{p.name}</span>

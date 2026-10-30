@@ -7,12 +7,34 @@ import { rootProjectForParentEventId, rootProjectOfEvent, searchEvents, searchOb
 
 export type ProjectRecordKind = "occurrences" | "observations" | "events";
 
+/** A project made in this browser through Add Project has an id that starts with this (created-projects-store.ts: "new-bd-5103"). */
+export const CREATED_PROJECT_ID_PREFIX = "new-";
+export const isCreatedProjectId = (projectId: string) => projectId.startsWith(CREATED_PROJECT_ID_PREFIX);
+
+// A static export cannot build a page for an id that only exists once someone creates it, so a project made in this browser has no
+// /pages/project-list/<id>/... page. Each of its pages is one fixed route that takes the project in the query. Every address of a project
+// is built here, so no caller has to know that (a link built by hand to /pages/project-list/<id>/... is a dead link for a new project).
+
 export function projectDetailsPath(projectId: string): string {
+  if (isCreatedProjectId(projectId)) return `/pages/project-detail/created?project=${encodeURIComponent(projectId)}`;
   return `/pages/project-list/${projectId}/project-details`;
 }
 
+/** A project's page open on one of its tabs (`datasets`, `records` ...). */
+export function projectTabPath(projectId: string, tab: string): string {
+  const path = projectDetailsPath(projectId);
+  return `${path}${path.includes("?") ? "&" : "?"}tab=${tab}`;
+}
+
+/** The page that uploads a dataset to a project. */
+export function uploadPath(projectId: string): string {
+  if (isCreatedProjectId(projectId)) return `/pages/project-detail/created/upload?project=${encodeURIComponent(projectId)}`;
+  return `/pages/project-list/${projectId}/upload`;
+}
+
 export function projectRecordPath(projectId: string, kind: ProjectRecordKind, recordId: string): string {
-  return `${projectDetailsPath(projectId)}/${kind}/${encodeURIComponent(recordId)}`;
+  // Records live under the built-in projects only: a project made in this browser has none of its own.
+  return `/pages/project-list/${projectId}/project-details/${kind}/${encodeURIComponent(recordId)}`;
 }
 
 export function staticProjectIds(): string[] {

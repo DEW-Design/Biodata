@@ -43,19 +43,20 @@ export interface ColumnChoice<C extends ChooserColumn> {
   };
 }
 
-/** The chosen order and visibility of a report's columns. Starts with every column shown in its own order, and starts over
- *  when the set of columns changes (another tab of a report). */
-export function useColumnChoice<C extends ChooserColumn>(columns: C[]): ColumnChoice<C> {
+/** The chosen order and visibility of a report's columns. Starts with every column shown in its own order, except the ones the report
+ *  starts without (`hiddenAtStart`: the extras its wireframe offers under "Add columns"), and starts over when the set of columns
+ *  changes (another tab of a report). Reset puts the columns back to how they started. */
+export function useColumnChoice<C extends ChooserColumn>(columns: C[], hiddenAtStart: string[] = []): ColumnChoice<C> {
   const ids = useMemo(() => columns.map((c) => c.id), [columns]);
   const key = ids.join("|");
   const [order, setOrder] = useState<string[]>(ids);
-  const [hidden, setHidden] = useState<Set<string>>(() => new Set());
+  const [hidden, setHidden] = useState<Set<string>>(() => new Set(hiddenAtStart));
   const [seenKey, setSeenKey] = useState(key);
   if (seenKey !== key) {
     // Adjusting state while rendering for a changed input, the pattern React documents: one more render, no remount.
     setSeenKey(key);
     setOrder(ids);
-    setHidden(new Set());
+    setHidden(new Set(hiddenAtStart));
   }
 
   const visible = useMemo(() => {
@@ -75,7 +76,7 @@ export function useColumnChoice<C extends ChooserColumn>(columns: C[]): ColumnCh
       setHidden,
       reset: () => {
         setOrder(ids);
-        setHidden(new Set());
+        setHidden(new Set(hiddenAtStart));
       },
     },
   };

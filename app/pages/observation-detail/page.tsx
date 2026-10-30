@@ -388,7 +388,7 @@ function ChainBreadcrumb({ chain, onSelectCrumb, orgLabel }: { chain: ChainCrumb
           <DialogTrigger>
             <AriaButton
               aria-label={`${collapsed.length} more levels`}
-              className="shrink-0 rounded px-1 text-tertiary outline-brand hover:text-primary focus-visible:outline-2 focus-visible:outline-offset-2"
+              className="hit-area shrink-0 rounded px-1 text-tertiary outline-brand hover:text-primary focus-visible:outline-2 focus-visible:outline-offset-2"
             >
               …
             </AriaButton>

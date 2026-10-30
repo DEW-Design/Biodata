@@ -38,9 +38,9 @@ export function sampleProjectForm(): FormState {
     collection: {
       ...initialDataCollection(),
       geographicExtent: {
-        method: "list",
-        parkId: park.id,
-        // The same circle the picker draws when a park is chosen from the list (geo-extent-picker.tsx).
+        // Drawn on the map, the picker's first tab, so the form opens there with the area showing. The circle is the one the picker draws when a
+        // park is chosen from the list (geo-extent-picker.tsx).
+        method: "map",
         boundary: { id: `park-${park.id}`, kind: "circle", center: [park.lat, park.lon], radiusKm: 15, label: park.name },
       },
       focusAreas: ["biological", "water"],

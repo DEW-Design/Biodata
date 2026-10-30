@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, Edit05, Trash01 } from "@untitledui/icons";
-import { ConfirmationModal } from "@/components/application/modals/modal";
+import { ConfirmationModal, DestructiveModal } from "@/components/application/modals/modal";
 import { toast } from "@/components/application/toast/toast";
 import { Input } from "@/components/base/input/input";
 import {
@@ -583,7 +583,7 @@ export function RenameTaxonForm({
           commit();
         }}
       />
-      <ConfirmationModal
+      <DestructiveModal
         confirmIcon={Trash01}
         cancelIcon={ArrowLeft}
         isOpen={confirmLeave}

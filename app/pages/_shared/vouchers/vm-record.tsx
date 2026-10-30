@@ -31,7 +31,7 @@ import { useRoleHref } from "@/lib/use-role-href";
 
 // One record as a batch compared it (the "current records comparison"): laid out like the project page
 // (CONTRACTS 4.6). Comparison is the batch's own comparison table (vm-compare.tsx) for this one record,
-// with the same Your update; History is the shared audit summary, then every
+// with the same Your update; Audit Log is the shared audit summary, then every
 // decision on this record across scans. Reached from any record in a batch, at
 // /pages/vouchers/<batch>?record=<id> (one static route per batch; a batch's records are not each
 // their own page in the static export).
@@ -111,7 +111,7 @@ export function VmRecordPage({ batch, record }: { batch: VmBatch; record: VmReco
         <Tabs className="flex flex-col gap-4 px-6 py-6" selectedKey={tab} onSelectionChange={(k: Key) => setTab(k as "comparison" | "history")}>
           <TabList aria-label="Record" type="underline" size="sm">
             <Tab id="comparison" label="Comparison" icon={Columns03} />
-            <Tab id="history" label="History" icon={ClockRewind} />
+            <Tab id="history" label="Audit Log" icon={ClockRewind} />
           </TabList>
           <TabPanel id="comparison">
             {/* The batch's own comparison, for this one record, so it reads the same in both places. */}

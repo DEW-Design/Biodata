@@ -1,5 +1,5 @@
 import type { FC } from "react";
-import { AlertTriangle, Bell01, ClockRewind, Database01, FileCheck02, Folder, Key01, Key02, Lock01, Microscope, RefreshCw01, Rows01, Share07, Tag01, UploadCloud02, UserCheck01, Users01, UsersCheck } from "@untitledui/icons";
+import { AlertTriangle, Bell01, ClockRewind, Database01, FileCheck02, Folder, LayersThree01, Key01, Key02, Lock01, Microscope, RefreshCw01, Rows01, Share07, Tag01, UploadCloud02, UserCheck01, Users01, UsersCheck } from "@untitledui/icons";
 import { sectionIcons } from "@/app/pages/_shared/nav-icons";
 import { TAXONOMY_SECTION_LABEL } from "@/lib/registered-user-nav";
 import { hasFeatureAccess, type FeatureKey } from "@/config/role-access.config";
@@ -111,6 +111,15 @@ export const REPORTS: ReportEntry[] = [
     description: "Every species record with its class, codes, voucher and field measurements, across the projects you can report on.",
     icon: Microscope,
     path: "/pages/reports/species-detail",
+    scoped: true,
+  },
+  {
+    id: "consolidated",
+    category: "project-data",
+    title: "Consolidated report",
+    description: "Every species sighting with the visit, the site and the project it was made in: the species and its codes, when and where it was seen, and how reliably.",
+    icon: LayersThree01,
+    path: "/pages/reports/consolidated",
     scoped: true,
   },
   {

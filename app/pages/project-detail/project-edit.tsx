@@ -22,7 +22,7 @@ import { MultiSelect } from "@/components/base/select/multi-select";
 import { Select } from "@/components/base/select/select";
 import { toast } from "@/components/application/toast/toast";
 import { AlertFullWidth } from "@/components/application/alerts/alerts";
-import { ConfirmationModal } from "@/components/application/modals/modal";
+import { DestructiveModal } from "@/components/application/modals/modal";
 import { FormPage } from "@/app/pages/_shared/form-page";
 import { FormRow } from "@/app/pages/_shared/form-row";
 import { FOCUS_AREA_OPTIONS, PERMIT_TYPE_OPTIONS, REGISTRATION_SPECIES, ROLE_OF_WORK_OPTIONS } from "@/app/pages/project-registration/data";
@@ -438,12 +438,14 @@ export function ProjectCardDrawer({ card, onChange }: { card: ProjectCardId | nu
 
 /**
  * Version 3: the same card form, edited inline in the card itself instead of the drawer. The fields,
- * rules and "Details missing" alert are exactly the drawer's; Cancel and Save changes sit in the page's
- * sticky footer. Cancel asks before discarding changes.
+ * rules and "Details missing" alert are exactly the drawer's; Cancel and Save changes sit at the foot of
+ * the card being edited, pinned to the bottom of the window while the card runs past it. Cancel asks
+ * before discarding changes.
  *
  * Designer override of CONTRACTS 4.1, logged in CONTEXT.md: an edit form that does not render
  * FormPage, because the designer asked for inline editing on the project's own cards (as on records).
- * Cancel and Save changes sit in the page's sticky footer, like record editing (CONTRACTS 4.7).
+ * Designer override of CONTRACTS 4.8 item 4 (30 Oct 2026): Cancel and Save changes are in each editing card,
+ * not in a page footer a person has to look for ("easy to miss, bad UX").
  */
 export function InlineCardEditor({
   id,
@@ -455,7 +457,7 @@ export function InlineCardEditor({
   id: ProjectCardId;
   /** The field whose edit icon was pressed: scrolled to and focused. */
   focusLabel?: string;
-  /** Where Cancel and Save go: the page's sticky footer, the same bar record editing uses. */
+  /** Where Cancel and Save go: the foot of the card being edited. */
   footer: HTMLElement | null;
   onClose: () => void;
   onOpenNext: (next: ProjectCardId) => void;
@@ -509,22 +511,16 @@ export function InlineCardEditor({
     if (added.length > 0) onOpenNext(added[0]);
   };
 
+  // The card's own corner is 12px with a 1px border, so the bar's is 11px (concentric, CONTRACTS 2.13).
   const bar = (
-    <div className="border-t border-secondary bg-primary">
-      <div className="flex items-center justify-between gap-3 px-6 py-4">
-        <p className="text-sm text-tertiary">
-          Editing <span className="font-semibold text-primary">{title}</span>
-          {dirty && <span className="text-quaternary">, unsaved changes</span>}
-        </p>
-        <div className="flex items-center gap-3">
-          <Button iconLeading={XClose} color="secondary" onClick={() => (dirty ? setConfirm(true) : onClose())}>
-            Cancel
-          </Button>
-          <Button iconLeading={Save01} color="primary" onClick={save}>
-            {id === "add-restriction" ? "Add restrictions" : "Save changes"}
-          </Button>
-        </div>
-      </div>
+    <div className="flex items-center justify-end gap-3 rounded-b-[calc(var(--radius-xl)-1px)] border-t border-secondary bg-primary px-5 py-4">
+      {dirty && <p className="mr-auto text-sm text-tertiary">Unsaved changes</p>}
+      <Button iconLeading={XClose} color="secondary" onClick={() => (dirty ? setConfirm(true) : onClose())}>
+        Cancel
+      </Button>
+      <Button iconLeading={Save01} color="primary" onClick={save}>
+        {id === "add-restriction" ? "Add restrictions" : "Save changes"}
+      </Button>
     </div>
   );
 
@@ -537,7 +533,7 @@ export function InlineCardEditor({
       )}
       <CardForm id={id} draft={draft} update={update} showErrors={attempted} />
       {footer && createPortal(bar, footer)}
-      <ConfirmationModal confirmIcon={Trash01} cancelIcon={ArrowLeft}
+      <DestructiveModal confirmIcon={Trash01} cancelIcon={ArrowLeft}
         isOpen={confirm}
         onOpenChange={setConfirm}
         title="Discard your changes?"

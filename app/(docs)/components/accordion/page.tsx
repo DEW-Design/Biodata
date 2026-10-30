@@ -35,6 +35,7 @@ const accordionProps = [
   { name: "singleOpen", type: "boolean", default: "false" },
   { name: "variant", type: '"divided" | "boxed" | "compact"', default: '"divided"' },
   { name: "actionPlacement", type: '"end" | "beforeChevron"', default: '"end"' },
+  { name: "visibleWhenOpen", type: "boolean", default: "false" },
   { name: "className", type: "string", default: "-" },
 ];
 

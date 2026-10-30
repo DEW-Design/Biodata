@@ -69,11 +69,13 @@ export function ReviewTag({ review }: { review: NonNullable<Artefact["review"]> 
   );
 }
 
-export const artefactTypeMeta: Record<ArtefactType, { icon: FC<{ className?: string }>; badgeColor: "error" | "blue" | "success" | "gray" }> = {
+// A file's type is a label, not a status: every type chip is the design system's gray (the designer, 30 Oct 2026: the chips borrow their colours from the design system).
+// It had been red for a PDF and green for a spreadsheet, the error and success colours, and Untitled UI's blue for a video, which is not in the Figma set.
+export const artefactTypeMeta: Record<ArtefactType, { icon: FC<{ className?: string }>; badgeColor: "gray" }> = {
   image: { icon: Image01, badgeColor: "gray" },
-  pdf: { icon: FileAttachment02, badgeColor: "error" },
-  video: { icon: VideoRecorder, badgeColor: "blue" },
-  spreadsheet: { icon: FileCheck02, badgeColor: "success" },
+  pdf: { icon: FileAttachment02, badgeColor: "gray" },
+  video: { icon: VideoRecorder, badgeColor: "gray" },
+  spreadsheet: { icon: FileCheck02, badgeColor: "gray" },
   // Added for the map search results page's own Reference Link resources - a real DCMI
   // "InteractiveResource" (see `dcType`), not a file to preview, so it gets the same real link
   // icon `resourceTypeIcon` already uses for this resource type in results-table.tsx's own
