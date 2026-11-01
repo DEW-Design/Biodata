@@ -9,7 +9,6 @@ export default function OverviewPage() {
 
   return (
     <div>
-      {/* Hero */}
       <div className="mb-16 pt-4">
         <p className="text-xs font-semibold uppercase tracking-widest mb-3 text-balance"
           style={{ color: "var(--color-gray-400)" }}
@@ -24,12 +23,10 @@ export default function OverviewPage() {
         <p className="text-base mb-8 text-balance"
           style={{ color: "var(--color-gray-500)", maxWidth: "520px", lineHeight: "1.75" }}
         >
-          A living documentation of design decisions - tokens, components, and
-          patterns that compose the DEW product experience. Built on Untitled UI
-          conventions, styled to be DEW.
+          The tokens, components and patterns of the DEW product. Token naming, scale
+          and component APIs follow Untitled UI.
         </p>
 
-        {/* Stat row */}
         <div className="flex gap-8 mb-8">
           {stats.map((s) => (
             <div key={s.label}>
@@ -45,7 +42,6 @@ export default function OverviewPage() {
           ))}
         </div>
 
-        {/* Quick links - resources, not docs pages */}
         <div className="flex flex-wrap gap-2">
           <a
             href="/llms.txt"
@@ -67,10 +63,8 @@ export default function OverviewPage() {
         </div>
       </div>
 
-      {/* Divider */}
       <hr style={{ borderColor: "var(--color-gray-200)" }} className="mb-12" />
 
-      {/* Section cards */}
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
         {nav.map((section) => (
           <div
@@ -119,33 +113,6 @@ export default function OverviewPage() {
             </ul>
           </div>
         ))}
-      </div>
-
-      {/* Foundation note */}
-      <div className="mt-12 rounded-xl p-5 flex gap-4 items-start"
-        style={{
-          background: "var(--color-brand-50)",
-          border: "1px solid var(--color-brand-100)",
-        }}
-      >
-        <div className="w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5"
-          style={{ background: "var(--color-brand-600)" }}
-        >
-          <svg width="10" height="10" viewBox="0 0 12 12" fill="none">
-            <path d="M6 1v5M6 8.5v.5" stroke="white" strokeWidth="1.5" strokeLinecap="round" />
-          </svg>
-        </div>
-        <div>
-          <p className="text-sm font-medium mb-0.5 text-balance" style={{ color: "var(--color-brand-700)" }}>
-            Foundation: Untitled UI
-          </p>
-          <p className="text-sm text-balance" style={{ color: "var(--color-brand-600)", lineHeight: "1.65" }}>
-            Token naming, scale, and component API conventions follow Untitled UI.
-            Replace brand color tokens in <code className="text-xs px-1 py-0.5 rounded"
-              style={{ background: "var(--color-brand-100)", color: "var(--color-brand-700)" }}
-            >globals.css</code> to make it DEW.
-          </p>
-        </div>
       </div>
     </div>
   );

@@ -88,15 +88,13 @@ export default function TextareaPage() {
       <PageHeader
         section="Components"
         title="Textarea"
-        description="Multi-line text input built on React Aria's TextField/TextArea, sharing Input's own Label and HintText. Two sizes, an optional tooltip, and invalid/disabled states - driven from config/design-system.config.ts."
+        description="Multi-line text input built on React Aria's TextField and TextArea, sharing Input's Label and HintText. Two sizes, an optional tooltip, and invalid and disabled states."
         actions={<ContextualConfigPanel slug="textarea" title="Textarea" sections={sectionToggles} />}
       />
 
-      {/* ── Component Playground ── */}
       {isFeatureEnabled(config, "playground") && (
         <>
           <h2 className="text-balance">Component Playground</h2>
-          <p className="text-balance">Live instance - the controls read their options from the same config that drives the Variants section below.</p>
           <div className="overflow-hidden rounded-2xl border border-secondary shadow-xs">
             <div className="grid md:grid-cols-[1fr_300px]">
               <div
@@ -158,7 +156,6 @@ export default function TextareaPage() {
         </>
       )}
 
-      {/* ── Sizes ── */}
       {sizes.length > 0 && (
         <>
           <h2 className="text-balance">Sizes</h2>
@@ -174,7 +171,6 @@ export default function TextareaPage() {
         </>
       )}
 
-      {/* ── With hint text ── */}
       {isFeatureEnabled(config, "withHint") && (
         <>
           <h2 className="text-balance">With hint text</h2>
@@ -192,11 +188,10 @@ export default function TextareaPage() {
         </>
       )}
 
-      {/* ── With tooltip ── */}
       {isFeatureEnabled(config, "tooltip") && (
         <>
           <h2 className="text-balance">With tooltip</h2>
-          <p className="text-balance">Use the <code>tooltip</code> prop to show a help tooltip next to the label - the same <code>Label</code>/<code>Tooltip</code> pairing <code>Input</code> uses.</p>
+          <p className="text-balance">Use the <code>tooltip</code> prop to show a help tooltip next to the label, the same <code>Label</code>/<code>Tooltip</code> pairing <code>Input</code> uses.</p>
           <Section label="Tooltip">
             <div className="w-full max-w-sm">
               <TextArea
@@ -210,7 +205,6 @@ export default function TextareaPage() {
         </>
       )}
 
-      {/* ── Disabled ── */}
       {isFeatureEnabled(config, "disabled") && (
         <>
           <h2 className="text-balance">Disabled</h2>
@@ -223,11 +217,10 @@ export default function TextareaPage() {
         </>
       )}
 
-      {/* ── Invalid ── */}
       {isFeatureEnabled(config, "invalid") && (
         <>
           <h2 className="text-balance">Invalid</h2>
-          <p className="text-balance">Pass <code>isInvalid</code> to switch the ring to the error token - typically paired with a validation-error <code>hint</code>.</p>
+          <p className="text-balance">Pass <code>isInvalid</code> to switch the ring to the error token. Pair it with a validation-error <code>hint</code>.</p>
           <Section label="Invalid">
             <div className="w-full max-w-sm">
               <TextArea label="Rejection reason" hint="A reason is required." isInvalid rows={3} />
@@ -236,7 +229,6 @@ export default function TextareaPage() {
         </>
       )}
 
-      {/* ── API ── */}
       <h2 className="text-balance">API</h2>
       <p className="text-balance"><code>TextArea</code> pairs a <code>Label</code>/<code>HintText</code> (shared with <code>Input</code>) around the underlying <code>TextAreaBase</code> field.</p>
       <table className="token-table mt-4">
@@ -258,7 +250,6 @@ export default function TextareaPage() {
         </tbody>
       </table>
 
-      {/* ── Usage ── */}
       {isFeatureEnabled(config, "usage") && (
         <>
           <h2 className="text-balance">Usage</h2>
@@ -276,11 +267,10 @@ export default function TextareaPage() {
         </>
       )}
 
-      {/* ── Figma ── */}
       {isFeatureEnabled(config, "figma") && (
         <>
           <h2 className="text-balance">Figma</h2>
-          <p className="text-balance">No linked Figma file yet - this component was pulled in via the Untitled UI CLI, not designed in Figma first.</p>
+          <p className="text-balance">No linked Figma file yet. This component came from the Untitled UI CLI, not from a Figma design.</p>
         </>
       )}
     </div>

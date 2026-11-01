@@ -118,17 +118,13 @@ export default function TabsPage() {
       <PageHeader
         section="Components"
         title="Tabs"
-        description="React Aria Tabs, composed with Badge - 4 shared button types plus an orientation-specific underline/line type, two sizes, optional icon and count badge - driven from config/design-system.config.ts."
+        description="React Aria Tabs with Badge. Four button types plus an underline or line type that depends on orientation, two sizes, and an optional icon and count badge."
         actions={<ContextualConfigPanel slug="tabs" title="Tabs" sections={sectionToggles} />}
       />
 
-      {/* ── Component Playground ── */}
       {isFeatureEnabled(config, "playground") && (
         <>
           <h2 className="text-balance">Component Playground</h2>
-          <p className="text-balance">
-            Live instance - the controls read their options from the same config that drives the Types section below.
-          </p>
           <div className="overflow-hidden rounded-2xl border border-secondary shadow-xs">
             <div className="grid md:grid-cols-[1fr_300px]">
               <div
@@ -222,7 +218,6 @@ export default function TabsPage() {
         </>
       )}
 
-      {/* ── Types ── */}
       {allTypes.length > 0 && (
         <>
           <h2 className="text-balance">Types</h2>
@@ -269,7 +264,6 @@ export default function TabsPage() {
         </>
       )}
 
-      {/* ── Sizes ── */}
       {sizes.length > 0 && (
         <>
           <h2 className="text-balance">Sizes</h2>
@@ -289,13 +283,11 @@ export default function TabsPage() {
         </>
       )}
 
-      {/* ── Full width ── */}
       {isFeatureEnabled(config, "fullWidth") && (
         <>
           <h2 className="text-balance">Full width</h2>
           <p className="text-balance">
-            Pass <code>fullWidth</code> on <code>Tabs.List</code> to stretch tabs across the available width -
-            common for the <code>underline</code> type on a page-level tab bar.
+            Pass <code>fullWidth</code> on <code>Tabs.List</code> to stretch tabs across the available width, as on the <code>underline</code> type on a page-level tab bar.
           </p>
           <Section label="Full width, underline">
             <Tabs orientation="horizontal" className="w-full">
@@ -310,7 +302,6 @@ export default function TabsPage() {
         </>
       )}
 
-      {/* ── API ── */}
       <h2 className="text-balance">API</h2>
       <p className="text-balance">
         <code>Tabs</code> holds selection state; <code>Tabs.List</code> (alias <code>TabList</code>) renders the
@@ -352,7 +343,6 @@ export default function TabsPage() {
         </div>
       ))}
 
-      {/* ── Usage ── */}
       {isFeatureEnabled(config, "usage") && (
         <>
           <h2 className="text-balance">Usage</h2>
@@ -377,11 +367,10 @@ import { Users01 } from "@untitledui/icons";
         </>
       )}
 
-      {/* ── Figma ── */}
       {isFeatureEnabled(config, "figma") && (
         <>
           <h2 className="text-balance">Figma</h2>
-          <p className="text-balance">No linked Figma file yet - this component was pulled in via the Untitled UI CLI, not designed in Figma first.</p>
+          <p className="text-balance">No linked Figma file yet. This component came from the Untitled UI CLI, not from a Figma design.</p>
         </>
       )}
     </div>

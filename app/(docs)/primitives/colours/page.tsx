@@ -23,7 +23,7 @@ const palettes: { name: string; description: string; swatches: Swatch[] }[] = [
   },
   {
     name: "Brand",
-    description: "Primary brand colour - DEW Marine Teal.",
+    description: "Primary brand colour, DEW Marine Teal.",
     swatches: [
       { step: "25",  hex: "#F6FBFC", textDark: true },
       { step: "50",  hex: "#EDF7F9", textDark: true },
@@ -41,7 +41,7 @@ const palettes: { name: string; description: string; swatches: Swatch[] }[] = [
   },
   {
     name: "Secondary",
-    description: "Secondary brand colour - DEW Seagrass Green. Used sparingly, as an accent to Brand - pills, alerts, and labels. Coded as \"accent\" (--color-accent-*) to avoid colliding with the neutral bg-secondary/text-secondary hierarchy tokens below.",
+    description: "Secondary brand colour, DEW Seagrass Green. An accent to Brand for pills, alerts and labels; use it sparingly. Coded as \"accent\" (--color-accent-*) so it does not collide with the neutral bg-secondary and text-secondary tokens below.",
     swatches: [
       { step: "25",  hex: "#F7FBFB", textDark: true },
       { step: "50",  hex: "#EEF6F6", textDark: true },
@@ -130,10 +130,9 @@ export default function ColorsPage() {
       <PageHeader
         section="Primitives"
         title="Colours"
-        description="A 12-step scale for each semantic role. Token names follow Untitled UI conventions - swap the CSS custom property values to establish DEW's colour identity."
+        description="A 12-step scale for each semantic role. Token names follow Untitled UI conventions; the values are checked against the DS - Foundations Figma file."
       />
 
-      {/* Palette grid */}
       {palettes.map((palette) => (
         <div key={palette.name} className="mb-12">
           <h2 className="text-balance">{palette.name}</h2>
@@ -157,9 +156,8 @@ export default function ColorsPage() {
         </div>
       ))}
 
-      {/* Semantic tokens */}
       <h2 className="text-balance">Semantic tokens</h2>
-      <p className="text-balance">Aliases that map raw palette steps to UI roles. Use these in components - never raw palette values.</p>
+      <p className="text-balance">Aliases that map raw palette steps to UI roles. Components use these, not raw palette values.</p>
       <table className="token-table mt-4">
         <thead>
           <tr>

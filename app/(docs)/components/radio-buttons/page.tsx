@@ -102,15 +102,13 @@ export default function RadioButtonsPage() {
       <PageHeader
         section="Components"
         title="Radio buttons"
-        description="Single-choice selection within a group, built on React Aria. Supports an optional hint per option, horizontal/vertical orientation, and two sizes - driven from config/design-system.config.ts."
+        description="Single-choice selection within a group, built on React Aria, with an optional hint per option, horizontal or vertical layout, and two sizes."
         actions={<ContextualConfigPanel slug="radio-buttons" title="Radio buttons" sections={sectionToggles} />}
       />
 
-      {/* ── Component Playground ── */}
       {isFeatureEnabled(config, "playground") && (
         <>
           <h2 className="text-balance">Component Playground</h2>
-          <p className="text-balance">Live instance - the controls read their options from the same config that drives the Variants section below.</p>
           <div className="overflow-hidden rounded-2xl border border-secondary shadow-xs">
             <div className="grid md:grid-cols-[1fr_300px]">
               <div
@@ -184,7 +182,6 @@ export default function RadioButtonsPage() {
         </>
       )}
 
-      {/* ── Sizes ── */}
       {sizes.length > 0 && (
         <>
           <h2 className="text-balance">Sizes</h2>
@@ -202,7 +199,6 @@ export default function RadioButtonsPage() {
         </>
       )}
 
-      {/* ── With hint text ── */}
       {isFeatureEnabled(config, "withHint") && (
         <>
           <h2 className="text-balance">With hint text</h2>
@@ -217,7 +213,6 @@ export default function RadioButtonsPage() {
         </>
       )}
 
-      {/* ── Disabled ── */}
       {isFeatureEnabled(config, "disabled") && (
         <>
           <h2 className="text-balance">Disabled</h2>
@@ -232,11 +227,10 @@ export default function RadioButtonsPage() {
         </>
       )}
 
-      {/* ── Orientation ── */}
       {isFeatureEnabled(config, "orientation") && (
         <>
           <h2 className="text-balance">Orientation</h2>
-          <p className="text-balance">Groups stack vertically by default - pass <code>orientation=&quot;horizontal&quot;</code> to lay options out in a row.</p>
+          <p className="text-balance">Groups stack vertically by default. Pass <code>orientation=&quot;horizontal&quot;</code> to lay options out in a row.</p>
           <Section label="Vertical / horizontal">
             <RadioGroup size="sm" defaultValue="a" aria-label="Vertical example">
               <RadioButton value="a" label="Option one" />
@@ -252,11 +246,10 @@ export default function RadioButtonsPage() {
         </>
       )}
 
-      {/* ── Group ── */}
       {isFeatureEnabled(config, "group") && (
         <>
           <h2 className="text-balance">Group</h2>
-          <p className="text-balance">A real-world plan selector - the common pattern for pricing and settings pages.</p>
+          <p className="text-balance">A plan selector, a common pattern on pricing and settings pages.</p>
           <Section label="Plan selector">
             <RadioGroup size="md" defaultValue="growth" aria-label="Choose a plan">
               <RadioButton value="starter" label="Starter" hint="1 user, community support." />
@@ -267,7 +260,6 @@ export default function RadioButtonsPage() {
         </>
       )}
 
-      {/* ── API ── */}
       <h2 className="text-balance">API</h2>
       <p className="text-balance"><code>RadioGroup</code> holds the selected value and orientation; each <code>RadioButton</code> inside it is one option.</p>
       <h3 className="text-balance">RadioGroup</h3>
@@ -310,7 +302,6 @@ export default function RadioButtonsPage() {
         </tbody>
       </table>
 
-      {/* ── Usage ── */}
       {isFeatureEnabled(config, "usage") && (
         <>
           <h2 className="text-balance">Usage</h2>
@@ -328,11 +319,10 @@ export default function RadioButtonsPage() {
         </>
       )}
 
-      {/* ── Figma ── */}
       {isFeatureEnabled(config, "figma") && (
         <>
           <h2 className="text-balance">Figma</h2>
-          <p className="text-balance">No linked Figma file yet - this component was pulled in via the Untitled UI CLI, not designed in Figma first.</p>
+          <p className="text-balance">No linked Figma file yet. This component came from the Untitled UI CLI, not from a Figma design.</p>
         </>
       )}
     </div>

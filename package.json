@@ -18,6 +18,7 @@
   },
   "dependencies": {
     "@highcharts/map-collection": "^2.3.3",
+    "@internationalized/date": "^3.12.4",
     "@react-stately/utils": "^3.12.1",
     "@tailwindcss/typography": "^0.5.20",
     "@tiptap/core": "^3.31.4",
@@ -44,8 +45,8 @@
     "motion": "^12.43.0",
     "next": "16.3.3",
     "react": "19.2.8",
-    "react-aria": "^3.52.1",
-    "react-aria-components": "^1.21.1",
+    "react-aria": "^3.53.1",
+    "react-aria-components": "^1.22.1",
     "react-dom": "19.2.8",
     "react-leaflet": "^5.0.0",
     "shpjs": "^6.2.0",

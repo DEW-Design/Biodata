@@ -82,18 +82,16 @@ export default function ToastPage() {
       <PageHeader
         section="Components"
         title="Toast"
-        description="A transient, self-dismissing notification that appears in the bottom-right corner of the viewport, on every screen. Built on sonner for stacking, swipe-to-dismiss, and timing - DEW only supplies the card, reusing Button, CloseButton, and FeaturedIcon from Alert. Colours and demo sections are driven from config/design-system.config.ts."
+        description="A self-dismissing notification in the bottom-right corner of the viewport, on every screen. Sonner handles stacking, swipe-to-dismiss and timing; DEW supplies the card, reusing Button, CloseButton and FeaturedIcon from Alert."
         actions={<ContextualConfigPanel slug="toast" title="Toast" sections={sectionToggles} />}
       />
 
-      {/* ── Component Playground ── */}
       {isFeatureEnabled(config, "playground") && (
         <>
           <h2 className="text-balance">Component Playground</h2>
           <p className="text-balance">
             The canvas shows a static preview of <code>ToastCard</code> so the visual is always visible. Use{" "}
-            <code>Fire toast</code> to trigger the real imperative <code>toast.*()</code> call and see the actual
-            corner-notification behaviour, stacking, and auto-dismiss timing.
+            <code>Fire toast</code> to trigger the imperative <code>toast.*()</code> call and see the corner-notification behaviour, stacking and auto-dismiss timing.
           </p>
           <div className="overflow-hidden rounded-2xl border border-secondary shadow-xs">
             <div className="grid md:grid-cols-[1fr_300px]">
@@ -152,11 +150,10 @@ export default function ToastPage() {
         </>
       )}
 
-      {/* ── Colours ── */}
       {colors.length > 0 && (
         <>
           <h2 className="text-balance">Colours</h2>
-          <p className="text-balance">Same six colours as Alert - each pairs a <code>FeaturedIcon</code> tint with a matching icon (info/alert/check).</p>
+          <p className="text-balance">Same six colours as Alert. Each pairs a <code>FeaturedIcon</code> tint with a matching icon (info/alert/check).</p>
           <Section label="Colours">
             <div className="flex flex-wrap gap-3">
               {colors.map((c) => (
@@ -176,11 +173,10 @@ export default function ToastPage() {
         </>
       )}
 
-      {/* ── With action ── */}
       {isFeatureEnabled(config, "withAction") && (
         <>
           <h2 className="text-balance">With action</h2>
-          <p className="text-balance">Pass <code>actionLabel</code> and <code>onAction</code> for an inline follow-up - rendered as a <code>link-color</code> Button, same as Alert&apos;s confirm action.</p>
+          <p className="text-balance">Pass <code>actionLabel</code> and <code>onAction</code> for an inline follow-up, rendered as a <code>link-color</code> Button, same as Alert&apos;s confirm action.</p>
           <Section label="With action">
             <div className="flex flex-wrap gap-3">
               <ScaffoldButton
@@ -199,7 +195,6 @@ export default function ToastPage() {
         </>
       )}
 
-      {/* ── Dismiss ── */}
       {isFeatureEnabled(config, "dismiss") && (
         <>
           <h2 className="text-balance">Manual dismiss</h2>
@@ -221,8 +216,7 @@ export default function ToastPage() {
         </>
       )}
 
-      {/* ── API ── */}
-      <h2 className="text-balance">API - toast.*(title, options)</h2>
+      <h2 className="text-balance">API: toast.*(title, options)</h2>
       <p className="text-balance">
         <code>toast</code> exposes one function per colour - <code>toast.default</code>, <code>toast.brand</code>, <code>toast.gray</code>, <code>toast.error</code>, <code>toast.warning</code>, <code>toast.success</code> - plus <code>toast.dismiss(id)</code>. Each takes a <code>title</code> and an options bag:
       </p>
@@ -239,14 +233,13 @@ export default function ToastPage() {
         </tbody>
       </table>
 
-      {/* ── Composition ── */}
       <h2 className="text-balance">Composition</h2>
       <p className="text-balance">
-        Toast doesn&apos;t introduce a new card shape - it reuses <code>Button</code>, <code>CloseButton</code>, and <code>FeaturedIcon</code>, the same primitives <code>AlertFloating</code> composes. The only new dependency is <code>sonner</code>, which owns stacking order, swipe gestures, and auto-dismiss timing; DEW supplies <code>toast.custom()</code> a plain React card (<code>ToastCard</code>) instead of sonner&apos;s default styling, so every toast matches the rest of the system. Position is part of the component too: <code>Toaster</code> always stacks toasts in the bottom-right corner (<code>TOAST_POSITION</code>), lifted 88px from the bottom (<code>TOAST_OFFSET</code>) so a toast never covers a form&apos;s footer buttons, and takes no position prop, so every screen shows them in the same place.
+        Toast does not introduce a new card shape. It reuses <code>Button</code>, <code>CloseButton</code>, and <code>FeaturedIcon</code>, the same primitives <code>AlertFloating</code> composes. The only new dependency is <code>sonner</code>, which owns stacking order, swipe gestures, and auto-dismiss timing; DEW supplies <code>toast.custom()</code> a plain React card (<code>ToastCard</code>) instead of sonner&apos;s default styling, so every toast matches the rest of the system. Position is part of the component too: <code>Toaster</code> always stacks toasts in the bottom-right corner (<code>TOAST_POSITION</code>), lifted 88px from the bottom (<code>TOAST_OFFSET</code>) so a toast never covers a form&apos;s footer buttons, and takes no position prop, so every screen shows them in the same place.
       </p>
 
       <h2 className="text-balance">Token anatomy</h2>
-      <p className="text-balance">Identical colour → icon → theme mapping to Alert.</p>
+      <p className="text-balance">The same colour, icon and theme mapping as Alert.</p>
       <table className="token-table mt-4">
         <thead>
           <tr><th>Colour</th><th>Icon</th><th>FeaturedIcon theme</th><th>Icon colour token</th></tr>
@@ -270,7 +263,6 @@ export default function ToastPage() {
         </tbody>
       </table>
 
-      {/* ── Usage ── */}
       {isFeatureEnabled(config, "usage") && (
         <>
           <h2 className="text-balance">Usage</h2>
@@ -286,11 +278,10 @@ toast.success("Saved to drafts", {
         </>
       )}
 
-      {/* ── Figma ── */}
       {isFeatureEnabled(config, "figma") && (
         <>
           <h2 className="text-balance">Figma</h2>
-          <p className="text-balance">No linked Figma file yet - this component was pulled in via the Untitled UI CLI, not designed in Figma first.</p>
+          <p className="text-balance">No linked Figma file yet. This component came from the Untitled UI CLI, not from a Figma design.</p>
         </>
       )}
     </div>

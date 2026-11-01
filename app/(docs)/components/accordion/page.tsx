@@ -47,9 +47,9 @@ const itemTypeProps = [
 ];
 
 const playgroundItems: AccordionItemType[] = [
-  { id: "trial", title: "Is there a free trial available?", content: <p className="text-base text-tertiary">Yes - 30 days, no card required.</p> },
+  { id: "trial", title: "Is there a free trial available?", content: <p className="text-base text-tertiary">Yes. 30 days, no card required.</p> },
   { id: "plan", title: "Can I change my plan later?", content: <p className="text-base text-tertiary">Any time, from account settings.</p> },
-  { id: "cancel", title: "What is your cancellation policy?", content: <p className="text-base text-tertiary">Cancel any time - we refund the unused balance.</p> },
+  { id: "cancel", title: "What is your cancellation policy?", content: <p className="text-base text-tertiary">Cancel any time and we refund the unused balance.</p> },
 ];
 
 export default function AccordionPage() {
@@ -66,15 +66,14 @@ export default function AccordionPage() {
       <PageHeader
         section="Components"
         title="Accordion"
-        description="An expand/collapse title/content list, animated with a real spring (motion/react) rather than a CSS transition. Extracted from the FAQ marketing section into its own reusable component."
+        description="An expand and collapse list of titles and content, animated with a spring (motion/react) instead of a CSS transition. Extracted from the FAQ section."
         actions={<ContextualConfigPanel slug="accordion" title="Accordion" sections={sectionToggles} />}
       />
 
-      {/* ── Component Playground ── */}
       {isFeatureEnabled(config, "playground") && (
         <>
           <h2 className="text-balance">Component Playground</h2>
-          <p className="text-balance">Live instance - click a title to expand it.</p>
+          <p className="text-balance">Live instance. Click a title to expand it.</p>
           <div className="overflow-hidden rounded-2xl border border-secondary shadow-xs">
             <div className="grid md:grid-cols-[1fr_300px]">
               <div
@@ -114,13 +113,11 @@ export default function AccordionPage() {
         </>
       )}
 
-      {/* ── Variants ── */}
       {isFeatureEnabled(config, "variants") && (
         <>
           <h2 className="text-balance">Variants</h2>
           <p className="text-balance">
-            <code>divided</code> is the default - a borderless stacked list with a thin rule between items and large
-            semibold titles, as used by the FAQ section. <code>boxed</code> gives each item its own bordered, rounded
+            <code>divided</code> is the default: a borderless stacked list with a thin rule between items and large semibold titles, as the FAQ section uses it. <code>boxed</code> gives each item its own bordered, rounded
             card with a smaller brand-coloured title and a divider between header and body, for dense detail panels
             such as the record-detail sidebar on Observations. Interaction and state logic are identical.
           </p>
@@ -137,14 +134,12 @@ export default function AccordionPage() {
         </>
       )}
 
-      {/* ── Single open ── */}
       {isFeatureEnabled(config, "singleOpen") && (
         <>
           <h2 className="text-balance">Single open</h2>
           <p className="text-balance">
             By default any number of items can be open at once. Pass <code>singleOpen</code> to close the
-            previously-open item whenever a new one opens - useful when items are long enough that having several
-            open at once gets hard to scan.
+            open item whenever a new one opens. Use it when items are long enough that several open at once are hard to scan.
           </p>
           <Section label="singleOpen">
             <div className="w-full max-w-md">
@@ -154,7 +149,6 @@ export default function AccordionPage() {
         </>
       )}
 
-      {/* ── API ── */}
       <h2 className="text-balance">API</h2>
       <h3 className="text-balance">Accordion</h3>
       <table className="token-table mt-4">
@@ -196,7 +190,6 @@ export default function AccordionPage() {
         </tbody>
       </table>
 
-      {/* ── Usage ── */}
       {isFeatureEnabled(config, "usage") && (
         <>
           <h2 className="text-balance">Usage</h2>
@@ -216,7 +209,6 @@ export default function AccordionPage() {
         </>
       )}
 
-      {/* ── Where it's used ── */}
       <h2 className="text-balance">Where it&apos;s used</h2>
       <p className="text-balance">
         <Link href="/marketing/faq-accordion">Marketing / FAQ accordion</Link> composes this component for its
@@ -225,11 +217,10 @@ export default function AccordionPage() {
         <Link href="/pages/observations">Observations</Link>.
       </p>
 
-      {/* ── Figma ── */}
       {isFeatureEnabled(config, "figma") && (
         <>
           <h2 className="text-balance">Figma</h2>
-          <p className="text-balance">No linked Figma file yet - this component was pulled in via the Untitled UI CLI, not designed in Figma first.</p>
+          <p className="text-balance">No linked Figma file yet. This component came from the Untitled UI CLI, not from a Figma design.</p>
         </>
       )}
     </div>

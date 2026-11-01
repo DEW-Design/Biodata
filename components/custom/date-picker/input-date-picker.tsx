@@ -2,15 +2,13 @@
 
 // Custom component - not yet in components/base|application/**. See .claude/rules/ref-ingest.md, "Custom
 // components" section: this lives here until a stakeholder decides it belongs in the design
-// system proper, at which point it moves to components/base (and this directory entry goes away),
-// same lifecycle as components/custom/date-range/date-range-control.tsx.
+// system proper, at which point it moves to components/base (and this directory entry goes away).
 //
 // A real single-date picker: the same segmented DD/MM/YYYY DateField/DateSegment primitives
 // components/base/input/input-date.tsx already styles, plus a real calendar-icon trigger button
 // that opens a real Calendar popover - built on react-aria-components' own `DatePicker`
 // composition (DateField + Button + Popover + Calendar) and the real DEW Popover
-// (components/base/select/popover.tsx), the same combination date-range-control.tsx already
-// proved out for a date *range*. `input-date.tsx` itself is untouched - it's a real, already-
+// (components/base/select/popover.tsx). `input-date.tsx` itself is untouched - it's a real, already-
 // documented DEW component (see /components/input) whose segmented-only behaviour matches its own
 // Figma reference, so this is an additive control for contexts that specifically need a clickable
 // calendar, not a change to that component's contract. First real consumer: the Add Project
@@ -115,8 +113,7 @@ export function InputDatePicker<T extends DateValue = DateValue>({ label, hint, 
                     </AriaGroup>
 
                     {/* size="md" then an explicit w-auto override - same "cap the height, opt out
-                        of the width-matches-trigger default" pattern date-range-control.tsx
-                        already uses for its own Popover, since a calendar's natural width has
+                        of the width-matches-trigger default" pattern, since a calendar's natural width has
                         nothing to do with this field's own (often narrow) input width. */}
                     <Popover size="md" className="w-auto p-3">
                         <Dialog className="outline-hidden">

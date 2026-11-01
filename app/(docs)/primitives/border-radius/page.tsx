@@ -19,7 +19,7 @@ export default function BorderRadiusPage() {
       <PageHeader
         section="Primitives"
         title="Border radius"
-        description="10 steps from flat to pill. Use CSS custom properties - never hardcode radius values in components."
+        description="10 steps from flat to pill. Use the CSS custom properties, not hard-coded radius values."
       />
 
       <h2 className="text-balance">Scale</h2>

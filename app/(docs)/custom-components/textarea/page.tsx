@@ -31,18 +31,16 @@ export default function CustomTextareaPage() {
       <PageHeader
         section="Custom Components"
         title="Textarea"
-        description="A multi-line text field, styled exactly like Input. Not yet part of the design system - documented here until a stakeholder decides where (or whether) it belongs."
+        description="A multi-line text field, styled like Input. Not yet part of the design system: documented here until a stakeholder decides where, or whether, it belongs."
       />
 
       <div className="mb-2 flex gap-3 rounded-xl border border-secondary bg-secondary p-5">
         <div className="flex flex-col gap-1">
-          <p className="text-sm font-semibold text-secondary text-balance">What lives in this section</p>
           <p className="text-sm text-tertiary text-balance" style={{ lineHeight: "1.7" }}>
-            Components built for a specific screen because nothing in <code>components/base/**</code> or{" "}
-            <code>components/application/**</code> covers the pattern - real and working, not a{" "}
-            <code>?</code> placeholder, but not yet reviewed or adopted as part of the design system either.
-            Once a stakeholder picks a direction, it moves into <code>components/base</code> (with a real
-            entry in the Components section) - or gets replaced if the direction changes.
+            Components built for one screen because nothing in <code>components/base/**</code> or{" "}
+            <code>components/application/**</code> covers the pattern. They work, but the design system has not
+            reviewed or adopted them. Once a stakeholder picks a direction, a component moves into{" "}
+            <code>components/base</code> with an entry under Components, or is replaced.
           </p>
         </div>
       </div>
@@ -67,14 +65,14 @@ export default function CustomTextareaPage() {
         <Textarea label="Reasons for restrictions" placeholder="Provide reasons why this restriction is needed..." isDisabled className="w-full max-w-md" />
       </Section>
 
-      <h2 className="text-balance">Why this is custom, not real DEW</h2>
+      <h2 className="text-balance">Status</h2>
       <p className="text-balance">
-        No file under <code>components/base/input/**</code> (or anywhere else in this repo) exports a
-        multi-line field - confirmed by grep before writing this, not assumed. Built by reusing{" "}
-        <code>Input</code>&apos;s own <code>TextField</code>/<code>Label</code>/<code>HintText</code>{" "}
-        primitives and copying its exact wrapper tokens (<code>rounded-lg bg-primary shadow-xs ring-1
-        ring-primary</code>, a 2px brand ring on focus, an error ring when invalid) so a textarea and a
-        text input sitting side by side in the same form read as one consistent field language.
+        <code>TextArea</code> in <code>components/base/textarea</code> (see <code>/components/textarea</code>) does this
+        job now, and nothing imports this component. It borrows <code>Input</code>&apos;s{" "}
+        <code>TextField</code>, <code>Label</code> and <code>HintText</code> and copies its wrapper tokens
+        (<code>rounded-lg bg-primary shadow-xs ring-1 ring-primary</code>, a 2px brand ring on focus, an error ring when
+        invalid). Two components with one job are a defect (CONTRACTS 1.7); whether this one is removed is the
+        designer&apos;s call.
       </p>
 
       <h2 className="text-balance">API</h2>
@@ -108,8 +106,8 @@ export default function CustomTextareaPage() {
 
       <h2 className="text-balance">Where it&apos;s used</h2>
       <p className="text-balance">
-        <code>app/pages/project-registration/**</code> - the 3-step Add Project wizard (Abstract, embargo
-        reason, and every restriction type&apos;s justification field).
+        No screen uses it. Add Project&apos;s text areas (the concept rows and the restriction justifications) use the
+        base <code>TextArea</code>.
       </p>
     </div>
   );

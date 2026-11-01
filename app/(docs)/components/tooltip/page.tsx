@@ -16,10 +16,7 @@ import { HelpCircle, InfoCircle } from "@untitledui/icons";
 import { enabledVariants, isFeatureEnabled } from "@/config/design-system.config";
 import { useConfig } from "@/lib/config-context";
 
-// Scaffold-styled trigger content for Tooltip demos - reuses the real `TooltipTrigger`
-// (needed for correct hover/focus wiring per react-aria) but with Scaffold's own visual
-// classes, not a real DEW `Button`, per .claude/rules/ref-ingest.md, "DEW vs. Scaffold" rule: a trigger
-// used to operate a demo is Scaffold even though a real Button component exists.
+// A Scaffold trigger around the real `TooltipTrigger`, not a DEW `Button` (CONTRACTS 1.5).
 const scaffoldTriggerClass =
   "inline-flex h-max w-max cursor-pointer items-center gap-1.5 rounded-lg border border-secondary bg-primary px-3 py-2 text-sm font-medium text-secondary shadow-xs transition-colors active:scale-[0.98] hover:bg-secondary";
 
@@ -96,15 +93,13 @@ export default function TooltipPage() {
       <PageHeader
         section="Components"
         title="Tooltip"
-        description="A hover/focus-triggered overlay for supplementary context. Built on React Aria's TooltipTrigger for correct keyboard and hover-intent behaviour. Placements and demo sections are driven from config/design-system.config.ts."
+        description="A hover and focus overlay for supplementary context, built on React Aria's TooltipTrigger for keyboard and hover-intent behaviour."
         actions={<ContextualConfigPanel slug="tooltip" title="Tooltip" sections={sectionToggles} />}
       />
 
-      {/* ── Component Playground ── */}
       {isFeatureEnabled(config, "playground") && (
         <>
           <h2 className="text-balance">Component Playground</h2>
-          <p className="text-balance">Live instance - the controls read their options from the same config that drives the Variants section below.</p>
           <div className="overflow-hidden rounded-2xl border border-secondary shadow-xs">
             <div className="grid md:grid-cols-[1fr_300px]">
               <div
@@ -169,16 +164,14 @@ export default function TooltipPage() {
         </>
       )}
 
-      {/* ── Default ── */}
       <h2 className="text-balance">Default</h2>
-      <p className="text-balance">Wrap any focusable trigger - a button, an icon, a piece of text - in <code>&lt;Tooltip&gt;</code>.</p>
+      <p className="text-balance">Wrap any focusable trigger, such as a button, an icon or a piece of text, in <code>&lt;Tooltip&gt;</code>.</p>
       <Section label="Hover or focus the button">
         <Tooltip title="Save changes">
           <TooltipTrigger className={scaffoldTriggerClass}>Hover me</TooltipTrigger>
         </Tooltip>
       </Section>
 
-      {/* ── Placements ── */}
       {placements.length > 0 && (
         <>
           <h2 className="text-balance">Placements</h2>
@@ -193,11 +186,10 @@ export default function TooltipPage() {
         </>
       )}
 
-      {/* ── With description ── */}
       {isFeatureEnabled(config, "description") && (
         <>
           <h2 className="text-balance">With description</h2>
-          <p className="text-balance">Add a <code>description</code> for a two-line tooltip - a bold title plus supporting detail.</p>
+          <p className="text-balance">Add a <code>description</code> for a two-line tooltip: a bold title and supporting detail.</p>
           <Section label="Title + description">
             <Tooltip title="Keyboard shortcut" description="Press ⌘K to open the command palette.">
               <TooltipTrigger className={scaffoldTriggerClass}>Command palette</TooltipTrigger>
@@ -206,7 +198,6 @@ export default function TooltipPage() {
         </>
       )}
 
-      {/* ── With arrow ── */}
       {isFeatureEnabled(config, "arrow") && (
         <>
           <h2 className="text-balance">With arrow</h2>
@@ -219,9 +210,8 @@ export default function TooltipPage() {
         </>
       )}
 
-      {/* ── Icon trigger ── */}
       <h2 className="text-balance">Icon trigger</h2>
-      <p className="text-balance">Use <code>TooltipTrigger</code> to wrap a bare icon - this is exactly how the <code>Input</code> and <code>Label</code> components show their help/tooltip icons.</p>
+      <p className="text-balance">Use <code>TooltipTrigger</code> to wrap a bare icon. This is how the <code>Input</code> and <code>Label</code> components show their help/tooltip icons.</p>
       <Section label="Help icon">
         <Tooltip title="Your API key is only shown once." arrow>
           <TooltipTrigger className="cursor-pointer text-fg-quaternary">
@@ -235,7 +225,6 @@ export default function TooltipPage() {
         </Tooltip>
       </Section>
 
-      {/* ── Delay ── */}
       {isFeatureEnabled(config, "delay") && (
         <>
           <h2 className="text-balance">Delay</h2>
@@ -254,11 +243,10 @@ export default function TooltipPage() {
         </>
       )}
 
-      {/* ── Disabled ── */}
       {isFeatureEnabled(config, "disabled") && (
         <>
           <h2 className="text-balance">Disabled</h2>
-          <p className="text-balance">Set <code>isDisabled</code> on the tooltip to suppress it entirely - useful when the tip only applies conditionally.</p>
+          <p className="text-balance">Set <code>isDisabled</code> on the tooltip to suppress it entirely, for a tip that only applies sometimes.</p>
           <Section label="isDisabled={true}">
             <Tooltip title="You will never see this" isDisabled>
               <TooltipTrigger className={scaffoldTriggerClass}>Nothing happens on hover</TooltipTrigger>
@@ -267,7 +255,6 @@ export default function TooltipPage() {
         </>
       )}
 
-      {/* ── API ── */}
       <h2 className="text-balance">API</h2>
       <table className="token-table mt-4">
         <thead>
@@ -288,9 +275,8 @@ export default function TooltipPage() {
         </tbody>
       </table>
 
-      {/* ── Token anatomy ── */}
       <h2 className="text-balance">Token anatomy</h2>
-      <p className="text-balance">The tooltip surface is always the dark, high-contrast solid - the one place in the system where the background inverts regardless of light/dark mode.</p>
+      <p className="text-balance">The tooltip surface is always the dark, high-contrast solid. It is the one place in the system where the background inverts whatever the colour mode.</p>
       <table className="token-table mt-4">
         <thead>
           <tr>
@@ -322,7 +308,6 @@ export default function TooltipPage() {
         <code>globals.css</code>. React Aria sets <code>data-placement</code> on the tooltip&apos;s overlay wrapper; the inner content slides in from the edge opposite its placement using the <code>in-placement-*</code> ancestor variant.
       </p>
 
-      {/* ── Usage ── */}
       {isFeatureEnabled(config, "usage") && (
         <>
           <h2 className="text-balance">Usage</h2>
@@ -339,11 +324,10 @@ import { Button } from "@/components/base/buttons/button";
         </>
       )}
 
-      {/* ── Figma ── */}
       {isFeatureEnabled(config, "figma") && (
         <>
           <h2 className="text-balance">Figma</h2>
-          <p className="text-balance">No linked Figma file yet - this component was pulled in via the Untitled UI CLI, not designed in Figma first.</p>
+          <p className="text-balance">No linked Figma file yet. This component came from the Untitled UI CLI, not from a Figma design.</p>
         </>
       )}
     </div>

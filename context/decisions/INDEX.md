@@ -649,3 +649,7 @@ Not imported into every session on purpose: read or grep it when a task needs hi
 - [2026-10-30] Design consistency sweep phase 1: the public user, 26 findings and 8 decisions - `2026-10-30-30-design-consistency-sweep-phase-1-the-public-user.md`
 - [2026-10-30] Phase 1 decisions applied: published projects only, notes for members, 40px rows, a gated stress test - `2026-10-30-31-phase-1-decisions-applied-published-projects-only-notes.md`
 - [2026-10-30] Chips take their colours from the design system: Completed in brand teal, file types in gray - `2026-10-30-32-chips-take-their-colours-from-the-design-system.md`
+- [2026-11-02] Removed the custom Date range component and its docs page - `2026-11-02-01-removed-the-custom-date-range-component-and-its.md`
+- [2026-11-02] Date picker ingested: DatePicker and DateRangePicker, with the pick held in a draft - `2026-11-02-02-date-picker-ingested-datepicker-and-daterangepicker-with-the.md`
+- [2026-11-02] Unslop pass on the design system documentation pages: comments, copy and stale claims - `2026-11-02-03-unslop-pass-on-the-design-system-documentation-pages.md`
+- [2026-11-02] Unslopped the copy on the design system pages, first pass - `2026-11-02-04-unslopped-the-copy-on-the-design-system-pages.md`

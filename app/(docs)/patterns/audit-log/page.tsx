@@ -118,7 +118,7 @@ export default function AuditLogPatternPage() {
       </p>
 
       <h2 className="text-balance">Figma</h2>
-      <p className="text-balance">No linked Figma file yet - chosen from Mobbin research (Vercel&apos;s activity feed), not designed in Figma first.</p>
+      <p className="text-balance">No linked Figma file yet. The pattern comes from Mobbin research (Vercel&apos;s activity feed), not from a Figma design.</p>
     </div>
   );
 }

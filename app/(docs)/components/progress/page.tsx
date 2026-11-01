@@ -87,11 +87,10 @@ export default function ProgressPage() {
       <PageHeader
         section="Components"
         title="Progress"
-        description="Linear progress bars (4 label layouts) and circular/half-circle indicators (5 sizes) - components/base/progress-indicators/progress-indicators.tsx and progress-circles.tsx."
+        description="Linear progress bars in 4 label layouts, and circular and half-circle indicators in 5 sizes. Source: components/base/progress-indicators/progress-indicators.tsx and progress-circles.tsx."
         actions={<ContextualConfigPanel slug="progress" title="Progress" sections={sectionToggles} />}
       />
 
-      {/* ── Component Playground ── */}
       {isFeatureEnabled(config, "playground") && (
         <>
           <h2 className="text-balance">Component Playground</h2>
@@ -171,12 +170,11 @@ export default function ProgressPage() {
         </>
       )}
 
-      {/* ── Linear ── */}
       {isFeatureEnabled(config, "linear") && (
         <>
           <h2 className="text-balance">Linear</h2>
           <p className="text-balance">
-            <code>ProgressBarBase</code> is the bare track - no label. <code>ProgressBar</code> wraps it with a{" "}
+            <code>ProgressBarBase</code> is the bare track with no label. <code>ProgressBar</code> wraps it with a{" "}
             <code>labelPosition</code>: inline to the right, below the bar, or a floating tooltip above/below the
             fill.
           </p>
@@ -200,7 +198,6 @@ export default function ProgressPage() {
         </>
       )}
 
-      {/* ── Circle ── */}
       {isFeatureEnabled(config, "circle") && sizes.length > 0 && (
         <>
           <h2 className="text-balance">Circle</h2>
@@ -217,7 +214,6 @@ export default function ProgressPage() {
         </>
       )}
 
-      {/* ── Half circle ── */}
       {isFeatureEnabled(config, "halfCircle") && sizes.length > 0 && (
         <>
           <h2 className="text-balance">Half circle</h2>
@@ -230,7 +226,6 @@ export default function ProgressPage() {
         </>
       )}
 
-      {/* ── API ── */}
       <h2 className="text-balance">API</h2>
       <h3 className="text-balance">ProgressBarBase / ProgressBar</h3>
       <p className="text-balance"><code>ProgressBar</code> extends <code>ProgressBarBase</code>&apos;s props with <code>labelPosition</code>.</p>
@@ -273,7 +268,6 @@ export default function ProgressPage() {
         </tbody>
       </table>
 
-      {/* ── Usage ── */}
       {isFeatureEnabled(config, "usage") && (
         <>
           <h2 className="text-balance">Usage</h2>
@@ -292,11 +286,10 @@ import { ProgressBarCircle, ProgressBarHalfCircle } from "@/components/base/prog
         </>
       )}
 
-      {/* ── Figma ── */}
       {isFeatureEnabled(config, "figma") && (
         <>
           <h2 className="text-balance">Figma</h2>
-          <p className="text-balance">No linked Figma file yet - this component was pulled in via the Untitled UI CLI, not designed in Figma first.</p>
+          <p className="text-balance">No linked Figma file yet. This component came from the Untitled UI CLI, not from a Figma design.</p>
         </>
       )}
     </div>

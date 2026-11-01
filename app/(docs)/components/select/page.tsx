@@ -90,8 +90,7 @@ const avatarDataUri = (initials: string, hex: string) =>
     `<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32"><rect width="32" height="32" rx="16" fill="${hex}"/><text x="16" y="21" font-family="sans-serif" font-size="12" font-weight="600" fill="white" text-anchor="middle">${initials}</text></svg>`,
   );
 
-// Olivia Wyatt is this site's standing placeholder person (see CONTEXT.md); Phoenix Baker and
-// Lana Steiner are Untitled UI's own established placeholder personas - fictional, never a real identity.
+// Placeholder people (CONTRACTS 0.3).
 const teamItems: SelectItemType[] = [
   { id: "olivia", label: "Olivia Wyatt", supportingText: "olivia@dew.design", avatarUrl: avatarDataUri("OW", "#185E74") },
   { id: "phoenix", label: "Phoenix Baker", supportingText: "phoenix@dew.design", avatarUrl: avatarDataUri("PB", "#568F8F") },
@@ -142,15 +141,13 @@ export default function SelectPage() {
       <PageHeader
         section="Components"
         title="Select"
-        description="Dropdown selection built on React Aria - a base Select plus ComboBox, MultiSelect, TagSelect, and NativeSelect variants - driven from config/design-system.config.ts."
+        description="Dropdown selection built on React Aria: a base Select plus ComboBox, MultiSelect, TagSelect and NativeSelect."
         actions={<ContextualConfigPanel slug="select" title="Select" sections={sectionToggles} />}
       />
 
-      {/* ── Component Playground ── */}
       {isFeatureEnabled(config, "playground") && (
         <>
           <h2 className="text-balance">Component Playground</h2>
-          <p className="text-balance">Live instance - the controls read their options from the same config that drives the Variants section below.</p>
           <div className="overflow-hidden rounded-2xl border border-secondary shadow-xs">
             <div className="grid md:grid-cols-[1fr_300px]">
               <div
@@ -211,11 +208,10 @@ export default function SelectPage() {
         </>
       )}
 
-      {/* ── Sizes ── */}
       {sizes.length > 0 && (
         <>
           <h2 className="text-balance">Sizes</h2>
-          <p className="text-balance">Two sizes - <code>sm</code> and <code>md</code> (default). <code>lg</code> exists on the type (Untitled UI ships it) but isn&rsquo;t a documented Figma variant for the base Select, so it isn&rsquo;t demonstrated here - see Multi-select below, which does define <code>lg</code>.</p>
+          <p className="text-balance">Two sizes: <code>sm</code> and <code>md</code> (default). <code>lg</code> exists on the type (Untitled UI ships it) but isn&rsquo;t a documented Figma variant for the base Select, so it isn&rsquo;t demonstrated here. Multi-select below does define <code>lg</code>.</p>
           <Section label={sizes.map((s) => s.label).join(" / ")}>
             {sizes.map((s) => (
               <div key={s.key} className="flex w-56 flex-col items-center gap-2">
@@ -229,7 +225,6 @@ export default function SelectPage() {
         </>
       )}
 
-      {/* ── With icon ── */}
       {isFeatureEnabled(config, "withIcon") && (
         <>
           <h2 className="text-balance">With icon</h2>
@@ -244,11 +239,10 @@ export default function SelectPage() {
         </>
       )}
 
-      {/* ── With avatar ── */}
       {isFeatureEnabled(config, "withAvatar") && (
         <>
           <h2 className="text-balance">With avatar</h2>
-          <p className="text-balance">Pass <code>avatarUrl</code> on an item - it replaces the icon slot with a real <code>Avatar</code>.</p>
+          <p className="text-balance">Pass <code>avatarUrl</code> on an item. It replaces the icon slot with an <code>Avatar</code>.</p>
           <Section label="avatarUrl">
             <div className="w-64">
               <Select label="Assign to" placeholder="Assign to" items={teamItems} className="w-full">
@@ -259,11 +253,10 @@ export default function SelectPage() {
         </>
       )}
 
-      {/* ── Supporting text ── */}
       {isFeatureEnabled(config, "supportingText") && (
         <>
           <h2 className="text-balance">Supporting text</h2>
-          <p className="text-balance">Add <code>supportingText</code> to an item for secondary detail next to the label - here, an email address.</p>
+          <p className="text-balance">Add <code>supportingText</code> to an item for secondary detail next to the label, here an email address.</p>
           <Section label="supportingText">
             <div className="w-72">
               <Select label="Assign to" placeholder="Assign to" items={teamItems} className="w-full">
@@ -274,11 +267,10 @@ export default function SelectPage() {
         </>
       )}
 
-      {/* ── Disabled ── */}
       {isFeatureEnabled(config, "disabled") && (
         <>
           <h2 className="text-balance">Disabled</h2>
-          <p className="text-balance">Disable the whole control with <code>isDisabled</code>, or a single item with <code>isDisabled</code> on that item - see &ldquo;Frontend Engineer&rdquo; above.</p>
+          <p className="text-balance">Disable the whole control with <code>isDisabled</code>, or a single item with <code>isDisabled</code> on that item, as with &ldquo;Frontend Engineer&rdquo; above.</p>
           <Section label="isDisabled">
             <div className="w-64">
               <Select label="Role" placeholder="Select a role" isDisabled items={roleItems} className="w-full">
@@ -289,15 +281,13 @@ export default function SelectPage() {
         </>
       )}
 
-      {/* ── Combobox ── */}
       {isFeatureEnabled(config, "comboBox") && (
         <>
           <h2 className="text-balance">Combobox</h2>
-          <p className="text-balance"><code>Select.ComboBox</code> - a searchable variant with a text input instead of a static trigger.</p>
+          <p className="text-balance"><code>Select.ComboBox</code> is a searchable variant with a text input instead of a static trigger.</p>
           <p className="text-balance">
             The list floats in its own card under the field by default. Pass <code>listbox=&quot;inline&quot;</code> to draw it in place, straight under the field and
-            scrolling inside itself (<code>popoverSize</code> sets its height), for a ComboBox that already sits in a card or popup of its own - the
-            breadcrumb project switcher is one: a search box at the top of a popup, the list beneath, and a fixed bar below.
+            scrolling inside itself (<code>popoverSize</code> sets its height), for a ComboBox that already sits in a card or popup of its own. The breadcrumb project switcher is one: a search box at the top of a popup, the list beneath, and a fixed bar below.
             A <code>listboxFooter</code> in inline mode sits under the scrolling list, not inside it, so it stays on screen; it is
             part of the ComboBox&apos;s own region, so a screen reader still hears the list and its buttons while the list is open
             (a ComboBox hides everything outside its field and list), and a button in it is an ordinary button in the tab order.
@@ -312,11 +302,10 @@ export default function SelectPage() {
         </>
       )}
 
-      {/* ── Multi-select ── */}
       {isFeatureEnabled(config, "multiSelect") && (
         <>
           <h2 className="text-balance">Multi-select</h2>
-          <p className="text-balance"><code>MultiSelect</code> - checkbox-style multiple selection, with a search field and a Reset/Select all footer. Each selection is listed under the field as a dismissible badge (<code>showSelectedBadges</code>, on by default); removing one keeps focus on the badges. With no visible label, <code>aria-label</code> names the field.</p>
+          <p className="text-balance"><code>MultiSelect</code> is checkbox-style multiple selection with a search field and a Reset and Select all footer. Each selection is listed under the field as a dismissible badge (<code>showSelectedBadges</code>, on by default); removing one keeps focus on the badges. With no visible label, <code>aria-label</code> names the field.</p>
           <Section label="MultiSelect">
             <div className="w-72">
               <MultiSelect
@@ -335,7 +324,6 @@ export default function SelectPage() {
         </>
       )}
 
-      {/* ── Tag select ── */}
       {isFeatureEnabled(config, "tagSelect") && (
         <>
           <h2 className="text-balance">Tag select</h2>
@@ -350,11 +338,10 @@ export default function SelectPage() {
         </>
       )}
 
-      {/* ── Native select ── */}
       {isFeatureEnabled(config, "nativeSelect") && (
         <>
           <h2 className="text-balance">Native select</h2>
-          <p className="text-balance"><code>NativeSelect</code> - renders a real <code>&lt;select&gt;</code>, for contexts (e.g. inside an <code>InputGroup</code>) that need native form behaviour over React Aria&rsquo;s.</p>
+          <p className="text-balance"><code>NativeSelect</code> renders a real <code>&lt;select&gt;</code>, for contexts (an <code>InputGroup</code>, say) that need native form behaviour instead of React Aria&rsquo;s.</p>
           <Section label="NativeSelect">
             <div className="w-64">
               <NativeSelect label="Role" options={nativeOptions} />
@@ -363,9 +350,8 @@ export default function SelectPage() {
         </>
       )}
 
-      {/* ── API ── */}
       <h2 className="text-balance">API</h2>
-      <p className="text-balance">Props for the base <code>Select</code>. <code>Select.ComboBox</code>, <code>MultiSelect</code>, and <code>TagSelect</code> share the same <code>size</code>/<code>label</code>/<code>hint</code>/<code>tooltip</code>/<code>placeholder</code> shape, each with its own selection model on top - see the sections above for the exact API each one adds.</p>
+      <p className="text-balance">Props for the base <code>Select</code>. <code>Select.ComboBox</code>, <code>MultiSelect</code>, and <code>TagSelect</code> share the same <code>size</code>/<code>label</code>/<code>hint</code>/<code>tooltip</code>/<code>placeholder</code> shape, each with its own selection model on top. The sections above give the exact API each one adds.</p>
       <table className="token-table mt-4">
         <thead>
           <tr>
@@ -406,7 +392,6 @@ export default function SelectPage() {
         </tbody>
       </table>
 
-      {/* ── Usage ── */}
       {isFeatureEnabled(config, "usage") && (
         <>
           <h2 className="text-balance">Usage</h2>
@@ -427,11 +412,10 @@ const roles = [
         </>
       )}
 
-      {/* ── Figma ── */}
       {isFeatureEnabled(config, "figma") && (
         <>
           <h2 className="text-balance">Figma</h2>
-          <p className="text-balance">No linked Figma file yet - this component was pulled in via the Untitled UI CLI, not designed in Figma first.</p>
+          <p className="text-balance">No linked Figma file yet. This component came from the Untitled UI CLI, not from a Figma design.</p>
         </>
       )}
     </div>

@@ -90,15 +90,13 @@ export default function TogglePage() {
       <PageHeader
         section="Components"
         title="Toggle"
-        description="A binary switch control built on React Aria. Supports an optional label/hint, a slim track variant, and two sizes - driven from config/design-system.config.ts."
+        description="A binary switch built on React Aria, with an optional label and hint, a slim track, and two sizes."
         actions={<ContextualConfigPanel slug="toggle" title="Toggle" sections={sectionToggles} />}
       />
 
-      {/* ── Component Playground ── */}
       {isFeatureEnabled(config, "playground") && (
         <>
           <h2 className="text-balance">Component Playground</h2>
-          <p className="text-balance">Live instance - the controls read their options from the same config that drives the Variants section below.</p>
           <div className="overflow-hidden rounded-2xl border border-secondary shadow-xs">
             <div className="grid md:grid-cols-[1fr_300px]">
               <div
@@ -162,7 +160,6 @@ export default function TogglePage() {
         </>
       )}
 
-      {/* ── Sizes ── */}
       {sizes.length > 0 && (
         <>
           <h2 className="text-balance">Sizes</h2>
@@ -178,11 +175,10 @@ export default function TogglePage() {
         </>
       )}
 
-      {/* ── Slim ── */}
       {isFeatureEnabled(config, "slim") && (
         <>
           <h2 className="text-balance">Slim</h2>
-          <p className="text-balance">A thinner track with a bordered knob, for denser settings lists - pass <code>slim</code>.</p>
+          <p className="text-balance">A thinner track with a bordered knob, for denser settings lists. Pass <code>slim</code>.</p>
           <Section label="Default / slim - off / on">
             <div className="flex flex-col items-center gap-2">
               <Toggle aria-label="Default off" />
@@ -204,7 +200,6 @@ export default function TogglePage() {
         </>
       )}
 
-      {/* ── With label ── */}
       {isFeatureEnabled(config, "withLabel") && (
         <>
           <h2 className="text-balance">With label</h2>
@@ -219,7 +214,6 @@ export default function TogglePage() {
         </>
       )}
 
-      {/* ── With hint text ── */}
       {isFeatureEnabled(config, "withHint") && (
         <>
           <h2 className="text-balance">With hint text</h2>
@@ -235,7 +229,6 @@ export default function TogglePage() {
         </>
       )}
 
-      {/* ── Disabled ── */}
       {isFeatureEnabled(config, "disabled") && (
         <>
           <h2 className="text-balance">Disabled</h2>
@@ -247,11 +240,10 @@ export default function TogglePage() {
         </>
       )}
 
-      {/* ── Group ── */}
       {isFeatureEnabled(config, "group") && (
         <>
           <h2 className="text-balance">Group</h2>
-          <p className="text-balance">A stacked list of toggles - the common pattern for a settings page.</p>
+          <p className="text-balance">A stacked list of toggles, as on a settings page.</p>
           <Section label="Settings list">
             <div className="flex flex-col gap-4">
               <Toggle size="md" label="Desktop notifications" hint="Get notified when someone messages you." defaultSelected />
@@ -263,7 +255,6 @@ export default function TogglePage() {
         </>
       )}
 
-      {/* ── API ── */}
       <h2 className="text-balance">API</h2>
       <table className="token-table mt-4">
         <thead>
@@ -284,7 +275,6 @@ export default function TogglePage() {
         </tbody>
       </table>
 
-      {/* ── Token anatomy ── */}
       <h2 className="text-balance">Token anatomy</h2>
       <p className="text-balance">Swap <code>--ui-bg-brand-solid</code> to rebrand every selected track at once.</p>
       <table className="token-table mt-4">
@@ -313,7 +303,6 @@ export default function TogglePage() {
         </tbody>
       </table>
 
-      {/* ── Usage ── */}
       {isFeatureEnabled(config, "usage") && (
         <>
           <h2 className="text-balance">Usage</h2>
@@ -327,11 +316,10 @@ export default function TogglePage() {
         </>
       )}
 
-      {/* ── Figma ── */}
       {isFeatureEnabled(config, "figma") && (
         <>
           <h2 className="text-balance">Figma</h2>
-          <p className="text-balance">No linked Figma file yet - this component was pulled in via the Untitled UI CLI, not designed in Figma first.</p>
+          <p className="text-balance">No linked Figma file yet. This component came from the Untitled UI CLI, not from a Figma design.</p>
         </>
       )}
     </div>

@@ -125,13 +125,12 @@ export default function TablePage() {
       <PageHeader
         section="Components"
         title="Table"
-        description="Two layers on React Aria's Table: a plain Table primitive for a simple list, and TableCard - the batteries-included data table with row selection, sortable columns, a tooltip'd header, and row-actions dropdown."
+        description="Two layers on React Aria's Table: a plain Table primitive for a simple list, and TableCard, the data table with row selection, sortable columns, a header tooltip and a row-actions dropdown."
       />
 
       <h2 className="text-balance">Component Playground</h2>
       <p className="text-balance">
-        Build a table from the pieces below - size, row count, selection, sorting, which columns show, and row
-        actions - all wired to the real <code>TableCard</code>/<code>Table</code> from
+        Build a table from the pieces below: size, row count, selection, sorting, which columns show, and row actions. All are wired to the <code>TableCard</code>/<code>Table</code> from
         <code> components/application/table/table.tsx</code>.
       </p>
       <div className="overflow-hidden rounded-2xl border border-secondary shadow-xs">
@@ -263,9 +262,9 @@ export default function TablePage() {
 
       <h2 className="text-balance">Table (primitive)</h2>
       <p className="text-balance">
-        <code>components/base/table/table.tsx</code> - just <code>Table</code>/<code>TableHeader</code>/
-        <code>Column</code>/<code>TableBody</code>/<code>Row</code>/<code>Cell</code>, styled with this system&apos;s
-        tokens. Use it when you don&apos;t need selection, sorting, or a card wrapper - a <code>Row</code> can take{" "}
+        <code>components/base/table/table.tsx</code>: <code>Table</code>, <code>TableHeader</code>,
+        <code>Column</code>, <code>TableBody</code>, <code>Row</code> and <code>Cell</code>, styled with this system&apos;s
+        tokens. Use it when you don&apos;t need selection, sorting or a card wrapper. A <code>Row</code> can take{" "}
         <code>href</code> to make the whole row a link.
       </p>
       <Section label="Basic table">
@@ -295,16 +294,15 @@ export default function TablePage() {
 
       <h2 className="text-balance">Data table (TableCard)</h2>
       <p className="text-balance">
-        <code>components/application/table/table.tsx</code> - wrap rows in <code>TableCard.Root</code> for the card
-        chrome, add a <code>TableCard.Header</code>, and use <code>Table</code>/<code>Table.Header</code>/
-        <code>Table.Head</code>/<code>Table.Row</code>/<code>Table.Cell</code> for the grid itself. Set{" "}
-        <code>selectionMode=&quot;multiple&quot;</code> on <code>Table</code> to get a selection checkbox column for
-        free - it composes the same <code>Checkbox</code> used everywhere else. The Name column below is clickable
-        (<code>allowsSorting</code>) but this specific example doesn&apos;t actually reorder rows - React Aria&apos;s
-        Table has no idea how to compare your data, so <code>allowsSorting</code> alone only renders the chevron and
-        makes the header interactive. Sorting only works once you also supply <code>sortDescriptor</code>/
-        <code>onSortChange</code> and re-order <code>items</code> yourself - see the Playground above for a real,
-        working example.
+        <code>components/application/table/table.tsx</code>. Wrap rows in <code>TableCard.Root</code> for the card
+        chrome, add a <code>TableCard.Header</code>, and build the grid from <code>Table</code>, <code>Table.Header</code>,
+        <code>Table.Head</code>, <code>Table.Row</code> and <code>Table.Cell</code>. Set{" "}
+        <code>selectionMode=&quot;multiple&quot;</code> on <code>Table</code> for a selection checkbox column, which
+        composes the same <code>Checkbox</code> used everywhere else. The Name column below is clickable
+        (<code>allowsSorting</code>), but this example does not reorder rows: React Aria&apos;s Table cannot compare your
+        data, so <code>allowsSorting</code> alone only draws the chevron and makes the header interactive. To sort, supply{" "}
+        <code>sortDescriptor</code> and <code>onSortChange</code> and re-order <code>items</code> yourself, as the
+        Playground above does.
       </p>
       <Section label="Team members">
         <TableCard.Root>
@@ -347,21 +345,19 @@ export default function TablePage() {
         </TableCard.Root>
       </Section>
       <p className="text-balance">
-        <code>TableRowActionsDropdown</code> is a ready-made Edit/Copy link/Delete menu built on{" "}
-        <Link href="/components/dropdown">Dropdown</Link> - see that page for building a custom one. Figma&apos;s own
-        &quot;Team members&quot; reference documents two other row-action treatments this system doesn&apos;t have a
-        ready-made component for yet - bare &quot;Action icons&quot; (a row of icon-only buttons, no dropdown) and
-        &quot;Action buttons&quot; (text links). Both are real, valid Untitled UI patterns; only the dropdown one
-        has been built here so far.
+        <code>TableRowActionsDropdown</code> is a ready-made Edit, Copy link and Delete menu built on{" "}
+        <Link href="/components/dropdown">Dropdown</Link>; see that page for a custom one. Figma&apos;s &quot;Team
+        members&quot; reference has two other row-action treatments this system has no component for yet: bare
+        &quot;Action icons&quot; (a row of icon-only buttons) and &quot;Action buttons&quot; (text links).
       </p>
 
       <h2 className="text-balance">Numbered pagination</h2>
       <p className="text-balance">
-        <code>TableCard.PaginationNumbered</code> is the richer footer Figma&apos;s Sales example shows: a Rows per
-        page control, Previous/Next, a page list that always keeps the first and last three pages (1 2 3 … 8 9 10), and
-        a &quot;1-50 of 250&quot; summary. It sits alongside <code>TableCard.Pagination</code> rather than replacing it,
-        so every table using the simple &quot;Page X of Y&quot; footer is unaffected. The row slicing is the caller&apos;s
-        job - it only reports the page and page size.
+        <code>TableCard.PaginationNumbered</code> is the footer Figma&apos;s Sales example shows: a Rows per
+        page control, Previous and Next, a page list that always keeps the first and last three pages (1 2 3 … 8 9 10),
+        and a &quot;1-50 of 250&quot; summary. It sits beside <code>TableCard.Pagination</code>, so tables with the simple
+        &quot;Page X of Y&quot; footer are unaffected. Slicing the rows is the caller&apos;s job: the footer only reports
+        the page and page size.
       </p>
       <p className="text-balance">
         The footer does not move as its numbers change. Every figure in it (the page numbers, the rows-per-page value,
@@ -388,10 +384,10 @@ export default function TablePage() {
 
       <h2 className="text-balance">Status badges</h2>
       <p className="text-balance">
-        Figma&apos;s table examples use two different status treatments depending on what the status actually
-        means - <code>BadgeWithDot</code> for a simple on/off state (Active/Inactive), <code>BadgeWithIcon</code> for
-        an outcome (Paid/Refunded/Cancelled). Both are real, already-shipped <Link href="/components/badge">Badge</Link>{" "}
-        variants - picking the wrong one for the context is the mismatch to avoid, not a missing component.
+        Figma&apos;s table examples use two status treatments. <code>BadgeWithDot</code> is for a simple on or off state
+        (Active, Inactive); <code>BadgeWithIcon</code> is for an outcome (Paid, Refunded, Cancelled). Both are{" "}
+        <Link href="/components/badge">Badge</Link> variants that already exist. The mistake to avoid is picking the
+        wrong one.
       </p>
       <Section label="BadgeWithDot (on/off) / BadgeWithIcon (outcome)">
         <div className="flex flex-col gap-2">
@@ -497,34 +493,33 @@ import { Table, TableCard, TableRowActionsDropdown } from "@/components/applicat
         <a href="https://www.figma.com/design/R6eV90XaudweMGqPEfTbwk/Application-Components?node-id=1-84599" target="_blank" rel="noreferrer">
           full table examples
         </a>{" "}
-        (Team members, Sales, Companies, Files - both divider-line and alternating-fill row styles, desktop and
-        mobile). This page&apos;s &quot;Data table&quot; example mirrors Figma&apos;s own &quot;Team members&quot;
+        (Team members, Sales, Companies, Files, in divider-line and alternating-fill row styles, desktop and mobile). This page&apos;s &quot;Data table&quot; example mirrors Figma&apos;s own &quot;Team members&quot;
         reference; <code>TableCard.Pagination</code> mirrors the Previous/Next footer every one of those examples
         ships with.
       </p>
       <p className="text-balance">
-        Not yet built, found auditing against the fuller examples above - real, valuable, and each a separate
-        piece of work rather than a style fix, so logged here instead of built speculatively:
+        Not built yet. Each is a separate piece of work rather than a style fix, so they are logged here instead of built
+        on speculation:
       </p>
       <ul className="w-full list-disc pl-5 text-sm text-secondary" style={{ lineHeight: "1.9" }}>
         <li>
-          <strong>A filters bar</strong> (segmented view tabs + search input + a &quot;Filters&quot; button, sitting
-          between the card header and the grid) - achievable today by composing{" "}
-          <Link href="/components/tabs">Tabs</Link>, <Link href="/components/input">Input</Link>, and{" "}
-          <Link href="/components/button">Button</Link> directly rather than a new bespoke component.
+          <strong>A filters bar</strong> (segmented view tabs, a search input and a &quot;Filters&quot; button between the card header and the grid) is
+          a composition of <Link href="/components/tabs">Tabs</Link>, <Link href="/components/input">Input</Link> and{" "}
+          <Link href="/components/button">Button</Link>, not a new component. The product&apos;s tables use the{" "}
+          <Link href="/patterns/filters">Filter pattern</Link> instead.
         </li>
         <li>
-          <strong>An avatar-group cell</strong> (4-5 overlapping avatars + a &quot;+N&quot; overflow badge, seen in
-          the Companies example&apos;s &quot;Users&quot; column) - <code>AvatarLabelGroup</code> is one avatar plus a
-          title/subtitle, not a stacked multi-avatar group; no component renders this shape yet.
+          <strong>An avatar-group cell</strong> (four or five overlapping avatars and a &quot;+N&quot; badge, as in the Companies example&apos;s
+          &quot;Users&quot; column). <code>AvatarLabelGroup</code> is one avatar with a title and subtitle, and the stack
+          on the Avatar page is a demo, not a component.
         </li>
         <li>
-          <strong>A progress-bar cell</strong> (a track + fill + percentage, the Companies example&apos;s
-          &quot;License use&quot; column) - no DEW progress bar component exists yet.
+          <strong>A progress-bar cell</strong> (a track, fill and percentage, as in the Companies example&apos;s &quot;License use&quot; column).{" "}
+          <Link href="/components/progress">ProgressBar</Link> exists, but no table example uses it yet.
         </li>
         <li>
-          <strong>A file-type-icon cell</strong> (a coloured PDF/JPG/MP4/etc. badge next to a filename, the Files
-          example) - would need a small file-type icon set; none exists yet.
+          <strong>A file-type-icon cell</strong> (a coloured PDF, JPG or MP4 badge next to a filename, as in the Files example) needs a small
+          file-type icon set, and none exists yet.
         </li>
       </ul>
     </div>

@@ -210,7 +210,7 @@ export default function MapListCardPatternPage() {
       </ul>
 
       <h2 className="text-balance">Figma</h2>
-      <p className="text-balance">No linked Figma file yet - the pattern was designed in the browser, from the Explore and Map visualise screens, not in Figma first.</p>
+      <p className="text-balance">No linked Figma file yet. The pattern was designed in the browser, from the Explore and Map visualise screens.</p>
     </div>
   );
 }

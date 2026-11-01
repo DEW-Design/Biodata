@@ -51,7 +51,7 @@ export default function ShadowsPage() {
       <PageHeader
         section="Primitives"
         title="Shadows"
-        description="Seven elevation levels. Shadows use a single consistent light source at top-centre, matching how Untitled UI models physical depth."
+        description="Seven elevation levels, lit from one source at top-centre, as in Untitled UI."
       />
 
       <h2 className="text-balance">Scale</h2>
@@ -98,7 +98,7 @@ export default function ShadowsPage() {
 
       <h2 className="text-balance">Usage principles</h2>
       <p className="text-balance">
-        Elevation implies interactivity and hierarchy. Higher shadows signal more modal or overlay-like behaviour. Don&apos;t stack shadows - pick one level per surface.
+        A higher shadow reads as more modal or overlay-like. Pick one level per surface and don&apos;t stack shadows.
       </p>
     </div>
   );

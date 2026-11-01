@@ -19,14 +19,14 @@ const easings = [
     name: "In",
     token: "--ease-in",
     value: "cubic-bezier(0.4, 0, 1, 1)",
-    note: "Accelerating. Use for exits - elements leaving the screen.",
+    note: "Accelerating. Use for exits, when elements leave the screen.",
     curve: "M0,100 C40,100 100,0 100,0",
   },
   {
     name: "Out",
     token: "--ease-out",
     value: "cubic-bezier(0, 0, 0.2, 1)",
-    note: "Decelerating. Use for entrances - elements entering the screen.",
+    note: "Decelerating. Use for entrances, when elements enter the screen.",
     curve: "M0,100 C0,100 20,0 100,0",
   },
   {
@@ -52,11 +52,11 @@ const principles = [
   },
   {
     title: "Enter slowly, exit fast",
-    body: "Elements entering the viewport should ease-out and take a little longer. Exits should be quick - users have already made a decision.",
+    body: "Elements entering the viewport should ease-out and take a little longer. Exits should be quick, because the user has already decided.",
   },
   {
     title: "Reduce for accessibility",
-    body: "Wrap non-essential animations in @media (prefers-reduced-motion: reduce). Motion should never obstruct usability.",
+    body: "Wrap non-essential animations in @media (prefers-reduced-motion: reduce). Motion must not get in the way.",
   },
 ];
 
@@ -66,7 +66,7 @@ export default function MotionPage() {
       <PageHeader
         section="Primitives"
         title="Motion"
-        description="Duration and easing tokens that define how DEW components move. Purposeful, fast, and respectful of accessibility preferences."
+        description="Duration and easing tokens for how DEW components move."
       />
 
       <h2 className="text-balance">Duration</h2>
@@ -99,7 +99,6 @@ export default function MotionPage() {
           <div key={e.name} className="rounded-xl p-4"
             style={{ border: "1px solid var(--color-gray-200)", background: "var(--color-gray-25)" }}
           >
-            {/* Curve visualization */}
             <svg viewBox="0 0 100 100" className="w-full h-16 mb-3">
               <path
                 d={e.curve}

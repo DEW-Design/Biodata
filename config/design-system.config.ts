@@ -240,6 +240,20 @@ export const designSystemConfig: DesignSystemConfig = {
     },
   },
 
+  "date-picker": {
+    title: "Date picker",
+    enabled: true,
+    features: {
+      playground: true,
+      single: true,
+      range: true,
+      calendars: true,
+      states: true,
+      usage: true,
+      figma: true,
+    },
+  },
+
   input: {
     title: "Input",
     enabled: true,

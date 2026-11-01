@@ -1,8 +1,8 @@
 "use client";
 
 // Real, working multi-line text field - graduated straight to a real component rather than a `?`
-// gap marker, since a plain textarea has none of the complexity that earned `DateRangeControl` its
-// "custom" staging first (see .claude/rules/ref-ingest.md, "Custom components" section for that precedent). No
+// gap marker, since a plain textarea has none of the complexity that earns a "custom" staging first
+// (see .claude/rules/ref-ingest.md, "Custom components" section). No
 // `components/base/input/**` file (or anywhere else in this repo) exports one - confirmed by grep
 // before writing this - so this borrows `Input`'s exact wrapper tokens (rounded-lg bg-primary
 // shadow-xs ring-1 ring-primary, focus ring-2 ring-brand, invalid ring-error_subtle) rather than

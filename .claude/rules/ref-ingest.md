@@ -119,12 +119,12 @@ A reconstruction of one Figma product frame, proving it maps onto the library (�
 
 ## Custom components (`components/custom/**`)
 
-The tier for a real, working component that has no decided home yet (§1.4): today `date-range`,
-`date-picker` and `textarea`.
+The tier for a real, working component that has no decided home yet (§1.4): today `date-picker` and
+`textarea`.
 
 - **Built from real primitives** (react-aria, existing DEW components), to the same bar as `base/`.
 - **Documented under "Custom Components"** (`/custom-components/<name>`, e.g.
-  `app/(docs)/custom-components/date-range/page.tsx`): header, API table and usage, but no config entry or
+  `app/(docs)/custom-components/date-picker/page.tsx`): header, API table and usage, but no config entry or
   variant playground until its API settles.
 - **Promotion is a move, not a rebuild:** the file moves to `base/` or `application/`, the doc page moves to
   "Components" (with a config entry if it has variants), and every caller is repointed. A custom component

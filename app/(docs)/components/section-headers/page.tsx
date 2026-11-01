@@ -53,11 +53,10 @@ export default function SectionHeadersPage() {
       <PageHeader
         section="Components"
         title="Section headers"
-        description="A title/subheading/actions row with a bottom border, for the top of a page or a card - replaces the hand-rolled title+border-b pattern repeated across several /pages/* screens."
+        description="A title, subheading and actions row with a bottom border, for the top of a page or a card. It replaces the hand-rolled title and border-b markup repeated across several /pages/* screens."
         actions={<ContextualConfigPanel slug="section-headers" title="Section headers" sections={sectionToggles} />}
       />
 
-      {/* ── Component Playground ── */}
       {isFeatureEnabled(config, "playground") && (
         <>
           <h2 className="text-balance">Component Playground</h2>
@@ -106,13 +105,12 @@ export default function SectionHeadersPage() {
         </>
       )}
 
-      {/* ── Actions ── */}
       {isFeatureEnabled(config, "actions") && (
         <>
           <h2 className="text-balance">With trailing info instead of buttons</h2>
           <p className="text-balance">
-            <code>Actions</code> is a plain slot - it doesn&apos;t have to hold buttons. A timestamp, a badge, or
-            anything else trailing the title works the same way.
+            <code>Actions</code> is a plain slot and doesn&apos;t have to hold buttons. A timestamp or a badge trailing the
+            title works the same way.
           </p>
           <Section label="Trailing info">
             <SectionHeader.Root className="w-full">
@@ -129,9 +127,8 @@ export default function SectionHeadersPage() {
         </>
       )}
 
-      {/* ── API ── */}
       <h2 className="text-balance">API</h2>
-      <p className="text-balance">A compound component - each part is a plain HTML element with a fixed className, so any native prop (id, onClick, etc.) passes through.</p>
+      <p className="text-balance">A compound component. Each part is a plain HTML element with a fixed className, so native props (id, onClick and the rest) pass through.</p>
       <table className="token-table mt-4">
         <thead>
           <tr>
@@ -149,7 +146,6 @@ export default function SectionHeadersPage() {
         </tbody>
       </table>
 
-      {/* ── Usage ── */}
       {isFeatureEnabled(config, "usage") && (
         <>
           <h2 className="text-balance">Usage</h2>
@@ -175,18 +171,16 @@ import { Button } from "@/components/base/buttons/button";
         </>
       )}
 
-      {/* ── Where it's used ── */}
       <h2 className="text-balance">Where it&apos;s used</h2>
       <p className="text-balance">
         Replaced hand-rolled title+border-b markup in <code>app/pages/_shared/project-list-content.tsx</code>{" "}
         and <code>app/pages/_shared/data-overview.tsx</code>.
       </p>
 
-      {/* ── Figma ── */}
       {isFeatureEnabled(config, "figma") && (
         <>
           <h2 className="text-balance">Figma</h2>
-          <p className="text-balance">No linked Figma file yet - this component was pulled in via the Untitled UI CLI, not designed in Figma first.</p>
+          <p className="text-balance">No linked Figma file yet. This component came from the Untitled UI CLI, not from a Figma design.</p>
         </>
       )}
     </div>

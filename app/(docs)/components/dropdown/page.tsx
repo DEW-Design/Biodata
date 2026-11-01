@@ -21,12 +21,12 @@ export default function DropdownPage() {
       <PageHeader
         section="Components"
         title="Dropdown"
-        description="Menu built on React Aria's Menu/Popover - icon items, sections with a separator, and a swappable selection indicator (checkmark, checkbox, radio, or toggle) for multi/single-select menus."
+        description="A menu built on React Aria's Menu and Popover. It has icon items, sections with a separator, and a swappable selection indicator (checkmark, checkbox, radio or toggle) for single and multiple selection."
       />
 
       <h2 className="text-balance">Actions menu</h2>
       <p className="text-balance">
-        The default shape - an icon, a label, nothing selectable. This is exactly what{" "}
+        The default shape: an icon, a label, nothing selectable. This is what{" "}
         <code>TableRowActionsDropdown</code> on the <Link href="/components/table">Table</Link> page is built from.
       </p>
       <Section label="Actions">
@@ -45,8 +45,7 @@ export default function DropdownPage() {
 
       <h2 className="text-balance">Sections</h2>
       <p className="text-balance">
-        <code>Dropdown.Section</code> plus <code>Dropdown.SectionHeader</code> groups related items - e.g. account
-        actions separated from a sign-out action.
+        <code>Dropdown.Section</code> plus <code>Dropdown.SectionHeader</code> groups related items, for example account actions apart from a sign-out action.
       </p>
       <Section label="Grouped">
         <Dropdown.Root>
@@ -118,8 +117,7 @@ export default function DropdownPage() {
 
       <h2 className="text-balance">With avatar</h2>
       <p className="text-balance">
-        Pass <code>avatarUrl</code> instead of <code>icon</code> for a people-picker style menu - the selection
-        indicator moves to the trailing edge automatically. The avatar falls back to initials when the image 404s,
+        Pass <code>avatarUrl</code> instead of <code>icon</code> for a people-picker menu. The selection indicator moves to the trailing edge. The avatar falls back to initials when the image 404s,
         same as the base <Link href="/components/avatar">Avatar</Link> component.
       </p>
       <Section label="Assignee picker">

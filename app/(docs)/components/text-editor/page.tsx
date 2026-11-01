@@ -44,7 +44,6 @@ const rootProps = [
   { name: "children",       type: "ReactNode",               default: "-" },
 ];
 
-// TextEditorToolbarProps
 const toolbarProps = [
   { name: "type",         type: '"simple" | "advanced"', default: '"simple"' },
   { name: "floating",     type: "boolean",              default: "false" },
@@ -53,7 +52,6 @@ const toolbarProps = [
   { name: "className",    type: "string",               default: "-" },
 ];
 
-// TextEditorTooltipProps
 const tooltipProps = [{ name: "className", type: "string", default: "-" }];
 
 const parts = [
@@ -121,15 +119,13 @@ export default function TextEditorPage() {
       <PageHeader
         section="Components"
         title="Text editor"
-        description="Rich text field built on Tiptap, sharing Input's own Label and HintText. A simple or advanced toolbar, a bubble menu on selection, an optional character limit, and invalid and disabled states - driven from config/design-system.config.ts."
+        description="Rich text field built on Tiptap, sharing Input's Label and HintText. It has a simple or advanced toolbar, a bubble menu on selection, an optional character limit, and invalid and disabled states."
         actions={<ContextualConfigPanel slug="text-editor" title="Text editor" sections={sectionToggles} />}
       />
 
-      {/* ── Component Playground ── */}
       {isFeatureEnabled(config, "playground") && (
         <>
           <h2 className="text-balance">Component Playground</h2>
-          <p className="text-balance">Live instance - the controls read their options from the same config that drives the Variants section below.</p>
           <div className="overflow-hidden rounded-2xl border border-secondary shadow-xs">
             <div className="grid md:grid-cols-[minmax(0,1fr)_300px]">
               <div
@@ -192,7 +188,6 @@ export default function TextEditorPage() {
         </>
       )}
 
-      {/* ── Toolbar types ── */}
       {types.length > 0 && (
         <>
           <h2 className="text-balance">Toolbar types</h2>
@@ -214,7 +209,6 @@ export default function TextEditorPage() {
         </>
       )}
 
-      {/* ── Bubble menu ── */}
       {isFeatureEnabled(config, "bubbleMenu") && (
         <>
           <h2 className="text-balance">Bubble menu</h2>
@@ -233,7 +227,6 @@ export default function TextEditorPage() {
         </>
       )}
 
-      {/* ── Character limit ── */}
       {isFeatureEnabled(config, "characterLimit") && (
         <>
           <h2 className="text-balance">Character limit</h2>
@@ -254,7 +247,6 @@ export default function TextEditorPage() {
         </>
       )}
 
-      {/* ── Disabled ── */}
       {isFeatureEnabled(config, "disabled") && (
         <>
           <h2 className="text-balance">Disabled</h2>
@@ -271,12 +263,11 @@ export default function TextEditorPage() {
         </>
       )}
 
-      {/* ── Invalid ── */}
       {isFeatureEnabled(config, "invalid") && (
         <>
           <h2 className="text-balance">Invalid</h2>
           <p className="text-balance">
-            Pass <code>isInvalid</code> to switch the ring to the error token - typically paired with a validation-error hint.
+            Pass <code>isInvalid</code> to switch the ring to the error token. Pair it with a validation-error hint.
           </p>
           <Section label="Invalid">
             <div className="w-full max-w-2xl">
@@ -291,7 +282,6 @@ export default function TextEditorPage() {
         </>
       )}
 
-      {/* ── API ── */}
       <h2 className="text-balance">API</h2>
       <p className="text-balance">
         <code>TextEditor</code> is a set of parts that share one editor through context. Every part must sit inside <code>TextEditor.Root</code>.
@@ -385,7 +375,6 @@ export default function TextEditorPage() {
         <code>TextEditorGenerate</code> takes a required <code>onPress</code>.
       </p>
 
-      {/* ── Usage ── */}
       {isFeatureEnabled(config, "usage") && (
         <>
           <h2 className="text-balance">Usage</h2>
@@ -404,11 +393,10 @@ export default function TextEditorPage() {
         </>
       )}
 
-      {/* ── Figma ── */}
       {isFeatureEnabled(config, "figma") && (
         <>
           <h2 className="text-balance">Figma</h2>
-          <p className="text-balance">No linked Figma file yet - this component was pulled in via the Untitled UI CLI, not designed in Figma first.</p>
+          <p className="text-balance">No linked Figma file yet. This component came from the Untitled UI CLI, not from a Figma design.</p>
         </>
       )}
     </div>

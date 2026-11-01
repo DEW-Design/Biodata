@@ -116,15 +116,13 @@ export default function InputPage() {
       <PageHeader
         section="Components"
         title="Input"
-        description="Single-line text field built on React Aria for full accessibility. Sizes and demo sections are driven from config/design-system.config.ts."
+        description="Single-line text field built on React Aria."
         actions={<ContextualConfigPanel slug="input" title="Input" sections={sectionToggles} />}
       />
 
-      {/* ── Component Playground ── */}
       {isFeatureEnabled(config, "playground") && (
         <>
           <h2 className="text-balance">Component Playground</h2>
-          <p className="text-balance">Live instance - the controls read their options from the same config that drives the Variants section below.</p>
           <div className="overflow-hidden rounded-2xl border border-secondary shadow-xs">
             <div className="grid md:grid-cols-[1fr_300px]">
               <div
@@ -193,9 +191,8 @@ export default function InputPage() {
         </>
       )}
 
-      {/* ── Default ── */}
       <h2 className="text-balance">Default</h2>
-      <p className="text-balance">Label, placeholder, and hint text - the anatomy of a complete input field.</p>
+      <p className="text-balance">Label, placeholder and hint text: the anatomy of a complete input field.</p>
       <Section label="Default">
         <div className="max-w-sm flex-1">
           <Input
@@ -206,7 +203,6 @@ export default function InputPage() {
         </div>
       </Section>
 
-      {/* ── States ── */}
       {isFeatureEnabled(config, "states") && (
         <>
           <h2 className="text-balance">States</h2>
@@ -227,7 +223,6 @@ export default function InputPage() {
         </>
       )}
 
-      {/* ── With icons ── */}
       {isFeatureEnabled(config, "icons") && (
         <>
           <h2 className="text-balance">With icons</h2>
@@ -242,11 +237,10 @@ export default function InputPage() {
         </>
       )}
 
-      {/* ── Password ── */}
       {isFeatureEnabled(config, "password") && (
         <>
           <h2 className="text-balance">Password</h2>
-          <p className="text-balance">Pass <code>type=&quot;password&quot;</code> and a built-in show/hide toggle appears automatically - no extra prop needed.</p>
+          <p className="text-balance">Pass <code>type=&quot;password&quot;</code> and a show/hide toggle appears. No extra prop is needed.</p>
           <Section label="Password">
             <div className="max-w-sm flex-1">
               <Input
@@ -261,7 +255,6 @@ export default function InputPage() {
         </>
       )}
 
-      {/* ── With tooltip ── */}
       {isFeatureEnabled(config, "tooltip") && (
         <>
           <h2 className="text-balance">With tooltip</h2>
@@ -278,7 +271,6 @@ export default function InputPage() {
         </>
       )}
 
-      {/* ── With shortcut ── */}
       {isFeatureEnabled(config, "shortcut") && (
         <>
           <h2 className="text-balance">With shortcut</h2>
@@ -295,11 +287,10 @@ export default function InputPage() {
         </>
       )}
 
-      {/* ── Sizes ── */}
       {sizes.length > 0 && (
         <>
           <h2 className="text-balance">Sizes</h2>
-          <p className="text-balance">Size affects padding, font-size, and icon sizing.</p>
+          <p className="text-balance">Size sets the padding, font size and icon size.</p>
           <Section label={sizes.map((s) => s.label).join(" / ")}>
             <div className="flex max-w-sm flex-1 flex-col gap-5">
               {sizes.map((s) => (
@@ -310,7 +301,6 @@ export default function InputPage() {
         </>
       )}
 
-      {/* ── Input Group ── */}
       {isFeatureEnabled(config, "group") && (
         <>
           <h2 className="text-balance">Input group</h2>
@@ -335,11 +325,10 @@ export default function InputPage() {
         </>
       )}
 
-      {/* ── Date input ── */}
       {isFeatureEnabled(config, "date") && (
         <>
           <h2 className="text-balance">Date input</h2>
-          <p className="text-balance">A segmented date field - each part (day/month/year) is independently focusable and typeable, built on React Aria&apos;s <code>DateField</code>.</p>
+          <p className="text-balance">A segmented date field. Day, month and year are each focusable and typeable. Built on React Aria&apos;s <code>DateField</code>.</p>
           <Section label="Date field">
             <div className="max-w-sm flex-1">
               <InputDate label="Date of birth" hint="DD / MM / YYYY" />
@@ -348,7 +337,6 @@ export default function InputPage() {
         </>
       )}
 
-      {/* ── Number input ── */}
       {isFeatureEnabled(config, "number") && (
         <>
           <h2 className="text-balance">Number input</h2>
@@ -362,7 +350,6 @@ export default function InputPage() {
         </>
       )}
 
-      {/* ── Payment input ── */}
       {isFeatureEnabled(config, "payment") && (
         <>
           <h2 className="text-balance">Payment input</h2>
@@ -375,7 +362,6 @@ export default function InputPage() {
         </>
       )}
 
-      {/* ── Tag input ── */}
       {isFeatureEnabled(config, "tags") && (
         <>
           <h2 className="text-balance">Tag input</h2>
@@ -389,7 +375,6 @@ export default function InputPage() {
         </>
       )}
 
-      {/* ── File upload ── */}
       {isFeatureEnabled(config, "fileUpload") && (
         <>
           <h2 className="text-balance">File upload</h2>
@@ -402,11 +387,10 @@ export default function InputPage() {
         </>
       )}
 
-      {/* ── PIN input ── */}
       {isFeatureEnabled(config, "pin") && (
         <>
           <h2 className="text-balance">PIN input</h2>
-          <p className="text-balance">One-time-passcode style entry - each digit is its own slot, auto-advancing focus as the user types.</p>
+          <p className="text-balance">One-time-passcode entry. Each digit has its own slot, and focus moves on as the user types.</p>
           <Section label="4-digit code">
             <PinInput size="xs">
               <PinInput.Label>Verification code</PinInput.Label>
@@ -422,7 +406,6 @@ export default function InputPage() {
         </>
       )}
 
-      {/* ── API ── */}
       <h2 className="text-balance">API</h2>
       <table className="token-table mt-4">
         <thead>
@@ -443,7 +426,6 @@ export default function InputPage() {
         </tbody>
       </table>
 
-      {/* ── Token anatomy ── */}
       <h2 className="text-balance">Token anatomy</h2>
       <p className="text-balance">The visual decisions Untitled UI encodes into the input. All values come from DEW tokens in <code>globals.css</code>.</p>
       <table className="token-table mt-4">
@@ -471,7 +453,6 @@ export default function InputPage() {
         </tbody>
       </table>
 
-      {/* ── Usage ── */}
       {isFeatureEnabled(config, "usage") && (
         <>
           <h2 className="text-balance">Usage</h2>
@@ -489,11 +470,10 @@ export default function InputPage() {
         </>
       )}
 
-      {/* ── Figma ── */}
       {isFeatureEnabled(config, "figma") && (
         <>
           <h2 className="text-balance">Figma</h2>
-          <p className="text-balance">No linked Figma file yet - this component was pulled in via the Untitled UI CLI, not designed in Figma first.</p>
+          <p className="text-balance">No linked Figma file yet. This component came from the Untitled UI CLI, not from a Figma design.</p>
         </>
       )}
     </div>
