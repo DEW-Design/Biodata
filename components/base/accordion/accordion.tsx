@@ -134,9 +134,10 @@ export const Accordion = ({ items, defaultOpenKeys = [], openKeys: controlledOpe
                     const isOpen = openKeys.has(item.id);
                     return (
                         <div key={item.id} className={cx(index !== 0 && "border-t border-secondary")}>
-                            {item.action && actionPlacement === "beforeChevron" ? (
+                            {actionPlacement === "beforeChevron" ? (
                                 // The action sits between the title and the chevron. The chevron is a
                                 // second, pointer-only way to toggle; keyboard users toggle with the title.
+                                // An item with no action keeps this layout, so every chevron in a list sits in the same column.
                                 <div className="group/accordion-item flex items-center gap-1">
                                     <button
                                         type="button"
@@ -146,7 +147,7 @@ export const Accordion = ({ items, defaultOpenKeys = [], openKeys: controlledOpe
                                     >
                                         <span className="text-sm font-semibold text-primary">{item.title}</span>
                                     </button>
-                                    <div className="shrink-0">{item.action}</div>
+                                    {item.action && <div className="shrink-0">{item.action}</div>}
                                     <button type="button" tabIndex={-1} aria-hidden="true" onClick={() => toggle(item.id)} className="flex size-7 shrink-0 cursor-pointer items-center justify-center">
                                         <ChevronDown className={cx("size-4 text-brand-600 transition-transform duration-150", isOpen && "rotate-180")} />
                                     </button>

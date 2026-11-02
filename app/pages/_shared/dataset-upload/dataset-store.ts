@@ -63,6 +63,7 @@ export function addDataset(project: { id: string; code: string }, draft: UploadD
     projectId: project.id,
     projectCode: project.code,
     files: draft.files,
+    ...(draft.kind ? { kind: draft.kind } : {}),
     licence: draft.licence as Dataset["licence"],
     classification: draft.classification as Dataset["classification"],
     firstNations: draft.firstNations as Dataset["firstNations"],

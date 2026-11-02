@@ -33,6 +33,7 @@ import { formatShortDate } from "@/app/pages/_shared/dla/dla-data";
 import {
   classificationLabel,
   datasetStatusFor,
+  subjectOf,
   datasetStatusMeta,
   isProcessingStatus,
   firstNationsLabel,
@@ -42,7 +43,7 @@ import {
   type DatasetStatus,
 } from "@/app/pages/_shared/dataset-upload/dataset-data";
 import { approveDataset, restartIngestion, useDatasetApprovals, useDatasets } from "@/app/pages/_shared/dataset-upload/dataset-store";
-import { TOTAL_MS, rowsFromSize, viewAt, type RunView } from "@/app/pages/_shared/dataset-upload/ingestion";
+import { TOTAL_MS, viewAt, type RunView } from "@/app/pages/_shared/dataset-upload/ingestion";
 import { IngestionDetail, isSystemFault, placedRows } from "@/app/pages/_shared/dataset-upload/ingestion-views";
 import { AuditLog, milestones } from "@/app/pages/_shared/audit-log";
 import { AuditFeed } from "@/app/pages/_shared/audit-feed";
@@ -128,11 +129,7 @@ export interface DatasetRow {
 
 function rowFor(dataset: Dataset, now: number): DatasetRow {
   if (!dataset.ingestion) return { dataset, view: null, status: dataset.status };
-  const subject = {
-    fileName: dataset.files[0]?.name ?? dataset.id,
-    rows: rowsFromSize(dataset.files.reduce((n, f) => n + f.size, 0)),
-    projectCode: dataset.projectCode,
-  };
+  const subject = subjectOf(dataset);
   // A sample finished long ago; an upload from this browser is where its clock says it is.
   const sample = SAMPLE_IDS.has(dataset.id);
   const elapsed = sample ? TOTAL_MS * 2 : Math.max(0, now - dataset.ingestion.startedAt);
@@ -414,11 +411,11 @@ function DatasetDetail({ row, datasetId, backHref, recordsHref }: { row: Dataset
                 ))}
               </ul>
             </RecordRow>
-            <RecordRow label="Rows">{view ? view.subject.rows : "Not provided"}</RecordRow>
-            <RecordRow label="Records added">
+            {d.kind !== "unstructured" && <RecordRow label="Rows">{view ? view.subject.rows : "Not provided"}</RecordRow>}
+            <RecordRow label={d.kind === "unstructured" ? "Files added" : "Records added"}>
               <span className="flex flex-wrap items-center gap-x-4 gap-y-1">
                 {recordsAdded(view)}
-                {view?.done && !view.failed && (
+                {view?.done && !view.failed && d.kind !== "unstructured" && (
                   <Button color="link-color" size="sm" href={recordsHref}>
                     Open project records
                   </Button>

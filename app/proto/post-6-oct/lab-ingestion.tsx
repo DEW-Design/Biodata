@@ -15,9 +15,9 @@ import { Database01, File06 } from "@untitledui/icons";
 import { useRegisterTool } from "@/app/_prototype-tools/tools";
 import { Badge } from "@/components/base/badges/badges";
 import { Popover } from "@/components/base/select/popover";
-import { datasetStatusFor, datasetStatusMeta } from "@/app/pages/_shared/dataset-upload/dataset-data";
+import { datasetStatusFor, datasetStatusMeta, subjectOf } from "@/app/pages/_shared/dataset-upload/dataset-data";
 import { restartIngestion, setDatasetStatus, useDatasets } from "@/app/pages/_shared/dataset-upload/dataset-store";
-import { rowsFromSize, runLengthMs, viewAt, type Outcome } from "@/app/pages/_shared/dataset-upload/ingestion";
+import { runLengthMs, viewAt, type Outcome } from "@/app/pages/_shared/dataset-upload/ingestion";
 import { IngestionDetail, statusOf } from "@/app/pages/_shared/dataset-upload/ingestion-views";
 import { UploadStatusButton } from "./upload-status-button";
 
@@ -41,7 +41,7 @@ export function ProjectUploadStatus({ projectId }: { projectId: string }) {
   const outcome = dataset?.ingestion?.outcome ?? "success";
 
   const [now, setNow] = useState(() => Date.now());
-  const endsAt = startedAt + runLengthMs(outcome);
+  const endsAt = startedAt + runLengthMs(outcome, dataset?.kind);
   // Tick while it runs, and while a finished run is still on screen waiting to go.
   const ticking = !!dataset && now < endsAt + VISIBLE_AFTER_MS;
   useEffect(() => {
@@ -50,10 +50,7 @@ export function ProjectUploadStatus({ projectId }: { projectId: string }) {
     return () => clearInterval(id);
   }, [ticking]);
 
-  const file = dataset?.files[0];
-  const subject = dataset
-    ? { fileName: file?.name ?? dataset.id, rows: rowsFromSize(dataset.files.reduce((n, f) => n + f.size, 0)), projectCode: dataset.projectCode }
-    : null;
+  const subject = dataset ? subjectOf(dataset) : null;
   // `now` can lag a fresh restart by a tick; never read a negative elapsed time.
   const view = subject ? viewAt(outcome, Math.max(0, now - startedAt), subject) : null;
   const target = view ? datasetStatusFor(view) : null;

@@ -2,7 +2,7 @@
 
 import type { ReactNode, RefAttributes } from "react";
 import { useCallback, useRef, useState } from "react";
-import { CheckDone01, ChevronDown, Plus, RefreshCcw01, SearchLg, XClose } from "@untitledui/icons";
+import { Check, CheckDone01, ChevronDown, Plus, RefreshCcw01, SearchLg, XClose } from "@untitledui/icons";
 import { useFilter } from "react-aria";
 import type { Selection } from "react-aria-components";
 import {
@@ -43,6 +43,35 @@ const popoverMaxHeights = {
     lg: "max-h-92",
 };
 
+// The field's height with nothing chosen, so the first pill does not move the rows below it.
+const triggerSizes = {
+    sm: { height: "min-h-9", padding: "pl-3", chevron: "h-9 pr-2.5", pills: "py-1" },
+    md: { height: "min-h-10", padding: "pl-3", chevron: "h-10 pr-3", pills: "py-1" },
+    lg: { height: "min-h-11", padding: "pl-3.5", chevron: "h-11 pr-3.5", pills: "py-1.5" },
+};
+
+interface MultiSelectHeaderProps {
+    /** The size of the popover's text and button. */
+    size?: "sm" | "md" | "lg";
+    /** How many items are selected. */
+    count: number;
+    /** Custom formatter for the count text. */
+    countFormatter?: (count: number) => ReactNode;
+    /** Handler that is called when the select all button is clicked. */
+    onSelectAll?: () => void;
+}
+
+const MultiSelectHeader = ({ size = "sm", count, countFormatter, onSelectAll }: MultiSelectHeaderProps) => (
+    <div className="flex items-center justify-between gap-2 border-b border-secondary px-3 py-1">
+        <p aria-live="polite" className={cx("text-tertiary tabular-nums", sizes[size].text)}>
+            {countFormatter ? countFormatter(count) : `${count} selected`}
+        </p>
+        <Button size={footerButtonSize[size]} color="tertiary" iconLeading={CheckDone01} onClick={onSelectAll}>
+            Select all
+        </Button>
+    </div>
+);
+
 interface MultiSelectFooterProps {
     /**
      * The size of the footer buttons.
@@ -51,13 +80,13 @@ interface MultiSelectFooterProps {
     size?: "sm" | "md" | "lg";
     /** Handler that is called when the reset button is clicked. */
     onReset?: () => void;
-    /** Handler that is called when the select all button is clicked. */
-    onSelectAll?: () => void;
+    /** Handler that is called when the done button is clicked. */
+    onDone?: () => void;
     /** Additional class name. */
     className?: string;
 }
 
-const MultiSelectFooter = ({ size = "sm", onReset, onSelectAll, className }: MultiSelectFooterProps) => {
+const MultiSelectFooter = ({ size = "sm", onReset, onDone, className }: MultiSelectFooterProps) => {
     const btnSize = footerButtonSize[size];
 
     return (
@@ -65,8 +94,8 @@ const MultiSelectFooter = ({ size = "sm", onReset, onSelectAll, className }: Mul
             <Button size={btnSize} color="secondary" iconLeading={RefreshCcw01} onClick={onReset}>
                 Reset
             </Button>
-            <Button size={btnSize} color="secondary" iconLeading={CheckDone01} onClick={onSelectAll}>
-                Select all
+            <Button size={btnSize} color="primary" iconLeading={Check} onClick={onDone}>
+                Done
             </Button>
         </div>
     );
@@ -137,7 +166,7 @@ interface MultiSelectProps extends RefAttributes<HTMLDivElement>, CommonProps {
     /** Handler that is called when the select all button is clicked. */
     onSelectAll?: () => void;
     /**
-     * Whether to show the footer with reset and select all buttons.
+     * Whether to show the count and Select all row under the search field, and the footer with Reset and Done.
      * @default true
      */
     showFooter?: boolean;
@@ -150,9 +179,9 @@ interface MultiSelectProps extends RefAttributes<HTMLDivElement>, CommonProps {
     emptyStateTitle?: string;
     /** The description to display when no items match the search. */
     emptyStateDescription?: string;
-    /** Custom formatter for the selected count text in the trigger. */
+    /** Custom formatter for the selected count: the line at the top of the popover, and the trigger's text when `showSelectedBadges` is false. */
     selectedCountFormatter?: (count: number) => ReactNode;
-    /** Supporting text displayed next to the selected count in the trigger. */
+    /** Supporting text displayed next to the selected count in the trigger, which shows the count only when `showSelectedBadges` is false. */
     supportingText?: ReactNode;
     /**
      * "single" makes it a searchable single select: the trigger shows the chosen item (its label and
@@ -180,8 +209,10 @@ interface MultiSelectProps extends RefAttributes<HTMLDivElement>, CommonProps {
     /** The label of that row, from the typed text. @default `Add "<typed>"` */
     createLabel?: (value: string) => string;
     /**
-     * Lists each selection under the field as a badge with a remove button (multiple mode only), so what is chosen
-     * can be read and taken off without opening the list (designer, 25 Oct 2026: on every MultiSelect).
+     * Shows each selection as a removable pill inside the field (multiple mode only), so what is chosen can be read
+     * and taken off while the list is open (designer, 2 Nov 2026; 25 Oct 2026: on every MultiSelect). The field then
+     * does not say how many are chosen: the popover does. False for a field whose selection is listed elsewhere, which
+     * keeps the count as the trigger's text.
      * @default true
      */
     showSelectedBadges?: boolean;
@@ -290,29 +321,28 @@ const MultiSelectRoot = ({
                 )}
 
                 <AriaDialogTrigger isOpen={isOpen} onOpenChange={setOpen}>
-                    <AriaButton
-                        ref={triggerRef}
-                        // With no visible label, the name and what is chosen are read together ("Observers, 2 selected").
-                        aria-label={
-                            label || !ariaLabel
-                                ? undefined
-                                : `${ariaLabel}, ${single ? (selectedItem?.label ?? placeholder) : hasSelection ? `${selectedCount} selected` : placeholder}`
-                        }
-                        isDisabled={isDisabled}
-                        onClick={onResize}
-                        className={(state) =>
-                            cx(
-                                "relative flex w-full cursor-pointer items-center rounded-lg bg-primary shadow-xs ring-1 ring-primary outline-hidden transition duration-100 ease-linear ring-inset",
-                                (state.isFocusVisible || state.isPressed) && "ring-2 ring-brand",
-                                state.isDisabled && "cursor-not-allowed opacity-50",
-                            )
-                        }
+                    {/* The field is a box, not the button: a pill's remove button cannot sit inside another button. The trigger
+                        covers the box, and the pills sit over it with only their remove buttons catching a press. */}
+                    <div
+                        className={cx(
+                            "relative flex w-full items-start rounded-lg bg-primary shadow-xs ring-1 ring-primary outline-hidden transition duration-100 ease-linear ring-inset",
+                            "has-[[data-focus-visible]]:ring-2 has-[[data-focus-visible]]:ring-brand has-[[data-pressed]]:ring-2 has-[[data-pressed]]:ring-brand",
+                            isDisabled && "cursor-not-allowed opacity-50",
+                        )}
                     >
-                        <span
+                        <AriaButton
+                            ref={triggerRef}
+                            // The pills are outside the button, so its name says what is chosen ("Observers, 2 selected").
+                            aria-label={`${name ?? "Select"}, ${single ? (selectedItem?.label ?? placeholder) : hasSelection ? `${selectedCount} selected` : placeholder}`}
+                            isDisabled={isDisabled}
+                            onClick={onResize}
+                            className="absolute inset-0 cursor-pointer rounded-lg outline-hidden data-disabled:cursor-not-allowed"
+                        />
+                        <div
                             className={cx(
-                                "flex w-full items-center truncate text-left",
-                                sizes[size].root,
-                                "*:data-icon:shrink-0 *:data-icon:text-fg-quaternary",
+                                "pointer-events-none relative flex min-w-0 flex-1 items-center truncate text-left",
+                                triggerSizes[size].height,
+                                triggerSizes[size].padding,
                             )}
                         >
                             {single && selectedItem ? (
@@ -322,6 +352,33 @@ const MultiSelectRoot = ({
                                         <span className={cx("truncate text-tertiary", sizes[size].text)}>{selectedItem.supportingText}</span>
                                     )}
                                 </span>
+                            ) : !single && hasSelection && showSelectedBadges ? (
+                                <ul
+                                    ref={badgesRef}
+                                    inert={isDisabled}
+                                    aria-label={name ? `${name}, selected` : "Selected"}
+                                    className={cx(
+                                        "m-0 flex min-w-0 list-none flex-wrap gap-x-1.5 gap-y-1 p-0 [&_button]:pointer-events-auto",
+                                        triggerSizes[size].pills,
+                                    )}
+                                >
+                                    {selectedIds.map((id, index) => {
+                                        const itemLabel = labels[id] ?? id;
+                                        return (
+                                            <li key={id} className="flex max-w-full min-w-0 *:min-w-0 *:max-w-full">
+                                                <BadgeWithButton
+                                                    size={size === "sm" ? "sm" : "md"}
+                                                    color="gray"
+                                                    uppercase={false}
+                                                    buttonLabel={`Remove ${itemLabel}`}
+                                                    onButtonClick={() => removeSelected(id, index)}
+                                                >
+                                                    <span className="truncate">{itemLabel}</span>
+                                                </BadgeWithButton>
+                                            </li>
+                                        );
+                                    })}
+                                </ul>
                             ) : !single && hasSelection ? (
                                 <span className={cx("flex min-w-0 items-center", sizes[size].textContainer)}>
                                     <span className={cx("truncate font-medium text-primary", sizes[size].text)}>
@@ -332,13 +389,11 @@ const MultiSelectRoot = ({
                             ) : (
                                 <span className={cx("text-placeholder", sizes[size].text)}>{placeholder}</span>
                             )}
-
-                            <ChevronDown
-                                aria-hidden="true"
-                                className={cx("ml-auto shrink-0 text-fg-quaternary", size === "lg" ? "size-5" : "size-4 stroke-[2.25px]")}
-                            />
-                        </span>
-                    </AriaButton>
+                        </div>
+                        <div className={cx("pointer-events-none flex shrink-0 items-center pl-2", triggerSizes[size].chevron)}>
+                            <ChevronDown aria-hidden="true" className={cx("text-fg-quaternary", size === "lg" ? "size-5" : "size-4 stroke-[2.25px]")} />
+                        </div>
+                    </div>
 
                     <AriaPopover
                         placement="bottom"
@@ -381,6 +436,10 @@ const MultiSelectRoot = ({
                                             </div>
                                         </AriaSearchField>
                                     </div>
+                                )}
+
+                                {showFooter && !single && (
+                                    <MultiSelectHeader size={size} count={selectedCount} countFormatter={selectedCountFormatter} onSelectAll={onSelectAll} />
                                 )}
 
                                 {isLoading && (
@@ -455,31 +514,10 @@ const MultiSelectRoot = ({
                                 </div>
                             )}
 
-                            {showFooter && !single && <MultiSelectFooter size={size} onReset={onReset} onSelectAll={onSelectAll} />}
+                            {showFooter && !single && <MultiSelectFooter size={size} onReset={onReset} onDone={() => setOpen(false)} />}
                         </AriaDialog>
                     </AriaPopover>
                 </AriaDialogTrigger>
-
-                {showSelectedBadges && !single && hasSelection && (
-                    <ul ref={badgesRef} aria-label={name ? `${name}, selected` : "Selected"} className="m-0 flex list-none flex-wrap gap-1.5 p-0 pt-0.5">
-                        {selectedIds.map((id, index) => {
-                            const itemLabel = labels[id] ?? id;
-                            return (
-                                <li key={id}>
-                                    <BadgeWithButton
-                                        size={size === "sm" ? "sm" : "md"}
-                                        color="gray"
-                                        uppercase={false}
-                                        buttonLabel={`Remove ${itemLabel}`}
-                                        onButtonClick={isDisabled ? undefined : () => removeSelected(id, index)}
-                                    >
-                                        {itemLabel}
-                                    </BadgeWithButton>
-                                </li>
-                            );
-                        })}
-                    </ul>
-                )}
 
                 {/* MultiSelect is not a react-aria field, so its hint would otherwise pick up the text slots
                     of whatever surrounds it: inside a Dialog (a FormModal) that offers only "description",

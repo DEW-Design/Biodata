@@ -20,7 +20,7 @@ import {
 // a dataset added while a project is being created asks exactly the same questions in exactly the same words (0.9). The line
 // under the privacy confirmation says where the project's own restrictions are, which is different in each place, so the caller gives it.
 
-export type Acknowledgement = Omit<UploadDraft, "files">;
+export type Acknowledgement = Omit<UploadDraft, "files" | "kind">;
 
 export const emptyAcknowledgement: Acknowledgement = { licence: "", classification: "", firstNations: "", iiaReference: "", privacyConfirmed: false };
 

@@ -554,6 +554,23 @@
   transition-duration: inherit;
 }
 
+/* ── Pill text: the label inside a pill is trimmed to its capitals, so it sits in the middle of the pill ──
+   A line box is taller than the letters in it, and a font's room above the capitals is not its room below the baseline, so text centred
+   in a pill by its line box sits a pixel off the middle (Barlow's capitals sat 18px from the top of a pill and 16px from the bottom at
+   2x). `text-box: trim-both cap alphabetic` cuts the line box to the capitals' top and the baseline; the padding then gives back
+   the half of (line height - cap height) that was cut, on each side, so the pill is the same height it always was. Where the browser
+   cannot trim, both are left off and the pill is as it was. Used inside the Badge, around its label; where the whole pill is
+   centred (the lone number of a CountBadge) it trims the number the same way. */
+@utility pill-text {
+  /* A pill can be capped in width: its label shrinks with it, and a label that truncates (`truncate` on a span inside it) still does. */
+  min-width: 0;
+  & > .truncate { display: block; }
+  @supports (text-box: trim-both cap alphabetic) {
+    text-box: trim-both cap alphabetic;
+    padding-block: calc((1lh - 1cap) / 2);
+  }
+}
+
 /* ── Hit area: a control is as easy to hit as its smallest allowed size, whatever it draws as ──
    A control that draws smaller than `--hit-min` gets an invisible, centred box of that size (an `::after` of the control, so a
    press on it is a press on the control): 40px with a mouse, 44px on a touch screen. It never changes how the control looks or

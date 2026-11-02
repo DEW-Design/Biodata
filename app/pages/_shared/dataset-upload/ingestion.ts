@@ -14,6 +14,15 @@ export const STAGES = [
   { id: "tree", label: "Building the records tree", weight: 0.3 },
 ] as const;
 
+/** Unstructured data (PDFs, images, Word, audio, video) skips pre-flight validation: its one stage is the post-flight validation on Fluree
+ *  (the designer, 2 Nov 2026). A structured dataset (a spreadsheet) has the three stages above. */
+export const UNSTRUCTURED_STAGES = [{ id: "fluree", label: "Post-flight validation on Fluree", weight: 1 }] as const;
+
+export type DataKind = "structured" | "unstructured";
+
+/** The stages a run goes through, by what is being ingested. */
+export const stagesFor = (kind: DataKind = "structured"): readonly { id: string; label: string; weight: number }[] => (kind === "unstructured" ? UNSTRUCTURED_STAGES : STAGES);
+
 /** How long the whole ingestion takes, at normal speed. */
 export const TOTAL_MS = 30_000;
 
@@ -32,9 +41,11 @@ const FAILURES: Record<Extract<Outcome, `fail-${string}`>, { stage: number; at: 
 /** What is being ingested: the file, its size in rows, and the project it goes into. */
 export interface IngestionSubject {
   fileName: string;
-  /** Rows in the file. The real files are not read, so this is simulated from their size. */
+  /** Rows in the file. The real files are not read, so this is simulated from their size. For unstructured data it is the number of files. */
   rows: number;
   projectCode: string;
+  /** Absent means structured (a spreadsheet). */
+  kind?: DataKind;
 }
 
 /** A believable row count from a file's size in bytes (a spreadsheet row is roughly 64 bytes). */
@@ -60,6 +71,9 @@ export interface Reason {
 // model and the BDBSA export research (Survey Number, Zone, Easting and Northing, visit dates, species
 // codes) so the states can be judged, and must be replaced by what the real checks produce.
 export function reasonsFor(outcome: Exclude<Outcome, "success">, subject: IngestionSubject): Reason[] {
+  // Fluree's own findings are not known here, so an unstructured run that stops says only what is true: it stopped on our side of the check.
+  if (subject.kind === "unstructured")
+    return [{ id: "fluree", kind: "system", title: "We couldn't finish validating your files", where: "", fix: "Nothing was added to this project. Try again; if it keeps failing, contact BioData support." }];
   const { fileName, rows, projectCode } = subject;
   const unmapped = unmappedRowsFor(rows);
   switch (outcome) {
@@ -121,14 +135,16 @@ export function reasonsFor(outcome: Exclude<Outcome, "success">, subject: Ingest
 }
 
 /** Where on the 0 to 1 line the run stops: the end, or the point in a stage where it fails. */
-export function endOf(outcome: Outcome): number {
+export function endOf(outcome: Outcome, kind: DataKind = "structured"): number {
   if (outcome === "success" || outcome === "partial") return 1;
-  const { stage, at } = FAILURES[outcome];
-  return STAGES.slice(0, stage).reduce((n, st) => n + st.weight, 0) + STAGES[stage].weight * at;
+  // One stage: whatever stopped it, it stopped in that one.
+  const { stage, at } = kind === "unstructured" ? { stage: 0, at: FAILURES["fail-model"].at } : FAILURES[outcome];
+  const stages = stagesFor(kind);
+  return stages.slice(0, stage).reduce((n, st) => n + st.weight, 0) + stages[stage].weight * at;
 }
 
 /** Milliseconds of ingestion done by the time the run stops (the cap on elapsed time). */
-export const runLengthMs = (outcome: Outcome) => endOf(outcome) * TOTAL_MS;
+export const runLengthMs = (outcome: Outcome, kind: DataKind = "structured") => endOf(outcome, kind) * TOTAL_MS;
 
 export interface RunView {
   subject: IngestionSubject;
@@ -158,17 +174,21 @@ export interface RunView {
 }
 
 /** The state of a run `elapsedMs` of ingestion in (already capped by the caller or not; it is capped here). */
-export function viewAt(outcome: Outcome, elapsedMs: number, subject: IngestionSubject, speed = 1): RunView {
-  const end = endOf(outcome);
+export function viewAt(requested: Outcome, elapsedMs: number, subject: IngestionSubject, speed = 1): RunView {
+  const kind = subject.kind ?? "structured";
+  // A file is either validated or it is not: there are no rows to place, so "partial" does not exist for unstructured data.
+  const outcome: Outcome = kind === "unstructured" && requested === "partial" ? "success" : requested;
+  const stages = stagesFor(kind);
+  const end = endOf(outcome, kind);
   const overall = Math.min(end * TOTAL_MS, elapsedMs) / TOTAL_MS;
   // Compared with a little slack: summing stage weights in floating point can land a hair under the
   // cap and leave a finished run "in progress".
   const done = overall >= end - 1e-9;
   const failing = outcome.startsWith("fail-");
-  const failedStage = failing && done ? FAILURES[outcome as keyof typeof FAILURES].stage : null;
+  const failedStage = failing && done ? (kind === "unstructured" ? 0 : FAILURES[outcome as keyof typeof FAILURES].stage) : null;
   let start = 0;
-  let stageIndex = STAGES.length - 1;
-  const stagePercents = STAGES.map((stage, i) => {
+  let stageIndex = stages.length - 1;
+  const stagePercents = stages.map((stage, i) => {
     const stageEnd = start + stage.weight;
     const fraction = Math.min(1, Math.max(0, (overall - start) / stage.weight));
     if (overall >= start && overall < stageEnd) stageIndex = i;
@@ -177,18 +197,18 @@ export function viewAt(outcome: Outcome, elapsedMs: number, subject: IngestionSu
     if (fraction <= 0) return 0;
     return Math.min(99, Math.max(1, Math.round(fraction * 100)));
   });
-  const mappingDone = stagePercents[1] === 100;
+  const mappingDone = kind === "structured" && stagePercents[1] === 100;
   return {
     subject,
     overall,
     stageIndex,
     stagePercents,
     done,
-    rowsMapped: Math.round(subject.rows * (stagePercents[1] / 100)),
+    rowsMapped: Math.round(subject.rows * ((stagePercents[1] ?? 0) / 100)),
     unmapped: outcome === "partial" && mappingDone ? unmappedRowsFor(subject.rows) : 0,
-    treeProgress: stagePercents[2] / 100,
+    treeProgress: (stagePercents[2] ?? stagePercents[0]) / 100,
     outcome,
-    partial: outcome === "partial",
+    partial: outcome === "partial" && kind === "structured",
     failed: failedStage !== null,
     failedStage,
     secondsLeft: done ? 0 : Math.max(0, (end * TOTAL_MS - overall * TOTAL_MS) / speed / 1000),

@@ -1,4 +1,4 @@
-import type { Outcome, RunView } from "@/app/pages/_shared/dataset-upload/ingestion";
+import { rowsFromSize, type DataKind, type IngestionSubject, type Outcome, type RunView } from "@/app/pages/_shared/dataset-upload/ingestion";
 import type { SheetColumns } from "@/app/pages/_shared/dataset-upload/custom-concepts";
 import type { BadgeColor } from "@/components/base/badges/badges";
 import { datasetTemplates, type DatasetTemplate } from "@/app/pages/_shared/template-finder/template-data";
@@ -94,6 +94,54 @@ export const licenceLabel = (id: DataLicence) => dataLicenceOptions.find((o) => 
 export const classificationLabel = (id: SecurityClassification) => securityClassificationOptions.find((o) => o.id === id)?.label ?? id;
 export const firstNationsLabel = (id: FirstNationsConsideration) => firstNationsOptions.find((o) => o.id === id)?.label ?? id;
 
+// ── What is uploaded: structured or unstructured ──
+// Structured data is a spreadsheet, checked before it is uploaded (pre-flight) and again after (post-flight). Unstructured data (PDFs, images, Word,
+// audio, video) skips pre-flight validation and goes straight to post-flight validation on Fluree (the designer, 2 Nov 2026). Both are added with
+// the same upload component, `UploadDropzone` and its queue.
+export type { DataKind };
+
+/** 10 MB, for each unstructured file (the designer, 2 Nov 2026). */
+export const UNSTRUCTURED_MAX_BYTES = 10 * 1024 * 1024;
+
+export const dataKindOptions: { id: DataKind; label: string; hint: string }[] = [
+  { id: "structured", label: "Structured data", hint: "A spreadsheet in a BioData SA template (.XLS or .XLSX)." },
+  { id: "unstructured", label: "Unstructured data", hint: "Documents, images, audio and video." },
+];
+
+// RAW is every camera's own raw format; the common ones are listed so the file picker offers them. Audio and video formats are the usual
+// container formats; the designer named the groups, not the extensions, so this list is for the designer to confirm.
+const UNSTRUCTURED_EXTENSIONS = [
+  ".pdf",
+  ".jpg",
+  ".jpeg",
+  ".png",
+  ".gif",
+  ".raw",
+  ".dng",
+  ".cr2",
+  ".nef",
+  ".arw",
+  ".doc",
+  ".docx",
+  ".mp3",
+  ".wav",
+  ".m4a",
+  ".mp4",
+  ".mov",
+] as const;
+
+export const fileRulesFor = (kind: DataKind) =>
+  kind === "unstructured"
+    ? {
+        extensions: [...UNSTRUCTURED_EXTENSIONS] as string[],
+        maxBytes: UNSTRUCTURED_MAX_BYTES as number | undefined,
+        /** The line under "Click to upload". */
+        formats: "PDF, images (JPG, PNG, GIF, RAW), Word, audio or video. Up to 10 MB each",
+        /** The format list inside a sentence ("Only X files can be uploaded"). */
+        only: "PDF, image, Word, audio and video",
+      }
+    : { extensions: ACCEPTED_EXTENSIONS, maxBytes: undefined as number | undefined, formats: "XLS or XLSX", only: ".XLS and .XLSX" };
+
 // ── Records ──
 export interface DatasetFile {
   name: string;
@@ -113,6 +161,8 @@ export interface Dataset {
   firstNations: FirstNationsConsideration;
   /** The approving authority, only when First Nations is Authorised or Restricted. */
   iiaReference?: string;
+  /** Absent means structured. */
+  kind?: DataKind;
   status: DatasetStatus;
   uploadedBy: string;
   /** ISO date. */
@@ -123,8 +173,20 @@ export interface Dataset {
   ingestion?: { outcome: Outcome; startedAt: number };
 }
 
+/** What an ingestion run is about, for a stored dataset: its first file, its size in rows (the number of files, for unstructured data), its project. */
+export function subjectOf(d: Dataset): IngestionSubject {
+  const unstructured = d.kind === "unstructured";
+  return {
+    fileName: d.files[0]?.name ?? d.id,
+    rows: unstructured ? d.files.length : rowsFromSize(d.files.reduce((n, f) => n + f.size, 0)),
+    projectCode: d.projectCode,
+    ...(unstructured ? { kind: d.kind } : {}),
+  };
+}
+
 /** What the upload form collects. */
 export interface UploadDraft {
+  kind?: DataKind;
   files: DatasetFile[];
   licence: DataLicence | "";
   classification: SecurityClassification | "";
@@ -181,7 +243,7 @@ export function formatFileSize(bytes: number): string {
 }
 
 export const ACCEPTED_EXTENSIONS = [".xls", ".xlsx"];
-export const isAcceptedFile = (name: string) => ACCEPTED_EXTENSIONS.some((ext) => name.toLowerCase().endsWith(ext));
+export const isAcceptedFile = (name: string, kind: DataKind = "structured") => fileRulesFor(kind).extensions.some((ext) => name.toLowerCase().endsWith(ext));
 
 // How a dataset's workflow status moves with its ingestion. PROPOSED mapping onto the statuses of the
 // business sheet "DataSet - users Workflow Status" (none is invented), for the designer to confirm:
@@ -192,6 +254,12 @@ export const isAcceptedFile = (name: string) => ACCEPTED_EXTENSIONS.some((ext) =
 //   stopped while checking, or while mapping (the file or its rows are the problem) ... Validation failed
 //   stopped while saving (our side) ... stays Processing, since nothing about the data was rejected
 export function datasetStatusFor(view: RunView): DatasetStatus {
+  // Unstructured data has no pre-flight: it is uploaded, then processed (post-flight, on Fluree), then reviewed. A failed validation is a failed validation.
+  if (view.subject.kind === "unstructured") {
+    if (view.failed) return "validation_failed";
+    if (view.done) return "under_review";
+    return view.overall <= 0 ? "file_uploaded" : "processing";
+  }
   if (view.failedStage === 0 || view.failedStage === 1) return "validation_failed";
   if (view.failedStage === 2) return "processing";
   if (view.done) return "under_review";

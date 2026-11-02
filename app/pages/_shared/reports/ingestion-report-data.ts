@@ -14,8 +14,8 @@
 // real review are not built (see context/decisions/2026-09-28-38).
 
 import { REVIEWING_ADMIN_NAME, CURRENT_USER_NAME } from "@/app/pages/_shared/agreement-scope";
-import { datasetStatusFor, type Dataset, type DatasetStatus } from "@/app/pages/_shared/dataset-upload/dataset-data";
-import { reasonsFor, rowsFromSize, viewAt, unmappedRowsFor, type IngestionSubject, type Outcome, type Reason } from "@/app/pages/_shared/dataset-upload/ingestion";
+import { datasetStatusFor, subjectOf, type Dataset, type DatasetStatus } from "@/app/pages/_shared/dataset-upload/dataset-data";
+import { reasonsFor, viewAt, unmappedRowsFor, type IngestionSubject, type Outcome, type Reason } from "@/app/pages/_shared/dataset-upload/ingestion";
 import { projects } from "@/app/pages/_shared/project-list-data";
 import { datasetTemplates } from "@/app/pages/_shared/template-finder/template-data";
 import type { BadgeColor } from "@/components/base/badges/badges";
@@ -222,10 +222,10 @@ function describe(input: {
 /** A real upload as a row, as it stands `now`. Its status is read off the simulated ingestion's clock, not from
  *  the stored status, which only moves while the project page is open. */
 export function rowFromDataset(d: Dataset, now: number): IngestionRow {
-  const rows = rowsFromSize(d.files.reduce((n, f) => n + f.size, 0));
+  const subject: IngestionSubject = subjectOf(d);
+  const rows = subject.rows;
   const outcome: Outcome = d.ingestion?.outcome ?? "success";
   const startedAt = d.ingestion?.startedAt ?? Date.parse(d.uploadedAt);
-  const subject: IngestionSubject = { fileName: d.files[0]?.name ?? d.id, rows, projectCode: d.projectCode };
   const view = d.ingestion ? viewAt(outcome, Math.max(0, now - startedAt), subject) : null;
   const status: DatasetStatus = view ? datasetStatusFor(view) : d.status;
   const done = view ? view.done : true;

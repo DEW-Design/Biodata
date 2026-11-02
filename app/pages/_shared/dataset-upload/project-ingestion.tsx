@@ -3,9 +3,9 @@
 import { useEffect, useState } from "react";
 import { Database01 } from "@untitledui/icons";
 import { useRegisterTool } from "@/app/_prototype-tools/tools";
-import { datasetStatusFor, datasetStatusMeta, isProcessingStatus } from "@/app/pages/_shared/dataset-upload/dataset-data";
+import { datasetStatusFor, datasetStatusMeta, isProcessingStatus, subjectOf } from "@/app/pages/_shared/dataset-upload/dataset-data";
 import { restartIngestion, setDatasetStatus, useDatasets } from "@/app/pages/_shared/dataset-upload/dataset-store";
-import { runLengthMs, rowsFromSize, viewAt, type Outcome } from "@/app/pages/_shared/dataset-upload/ingestion";
+import { runLengthMs, viewAt, type Outcome } from "@/app/pages/_shared/dataset-upload/ingestion";
 import { IngestionChip } from "@/app/pages/_shared/dataset-upload/ingestion-views";
 
 // A project's dataset ingestion, on the project page: one chip in the identity card's actions while a
@@ -34,7 +34,7 @@ export function ProjectIngestionChip({ projectId }: { projectId: string }) {
   const outcome = dataset?.ingestion?.outcome ?? "success";
 
   const [now, setNow] = useState(() => Date.now());
-  const endsAt = startedAt + runLengthMs(outcome);
+  const endsAt = startedAt + runLengthMs(outcome, dataset?.kind);
   // Tick while it runs, and while a finished success is still on screen waiting to go.
   const ticking = !!dataset && (now < endsAt || (outcome === "success" && now < endsAt + SUCCESS_VISIBLE_MS));
   useEffect(() => {
@@ -43,10 +43,7 @@ export function ProjectIngestionChip({ projectId }: { projectId: string }) {
     return () => clearInterval(id);
   }, [ticking]);
 
-  const file = dataset?.files[0];
-  const subject = dataset
-    ? { fileName: file?.name ?? dataset.id, rows: rowsFromSize(dataset.files.reduce((n, f) => n + f.size, 0)), projectCode: dataset.projectCode }
-    : null;
+  const subject = dataset ? subjectOf(dataset) : null;
   // `now` can lag a fresh restart by a tick; never read a negative elapsed time.
   const view = subject ? viewAt(outcome, Math.max(0, now - startedAt), subject) : null;
   const target = view ? datasetStatusFor(view) : null;
