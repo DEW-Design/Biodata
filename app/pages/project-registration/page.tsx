@@ -7,11 +7,13 @@
 
 import { Suspense } from "react";
 import { RegistrationFlow } from "./option-2/registration-flow";
+import { RegistrationLayoutSwitcher } from "./layout-switcher";
 
 export default function ProjectRegistrationPage() {
   return (
     <Suspense fallback={null}>
       <RegistrationFlow />
+      <RegistrationLayoutSwitcher current="option-1" />
     </Suspense>
   );
 }

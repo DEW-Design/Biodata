@@ -412,6 +412,7 @@ const ACCESS_CONSEQUENCE = (kind: "role" | "permission", to: AccessStatus) =>
   })[to];
 
 const userSortKeys: Record<string, (u: UmUser) => SortValue> = {
+  id: (u) => u.id,
   name: (u) => fullName(u),
   organisation: (u) => organisationLabel(u),
   status: (u) => userStatusOrder.indexOf(u.status),
@@ -497,13 +498,17 @@ export function RoleDetail({ role }: { role: UmRole }) {
             <TableCard.Root size="sm">
               <Table aria-label="Users with this role" sortDescriptor={sort} onSortChange={(next) => { setSort(next); reset(); }}>
                 <Table.Header>
-                  <Table.Head id="name" label="User" isRowHeader allowsSorting />
+                  <Table.Head id="id" label="ID" isRowHeader allowsSorting />
+                  <Table.Head id="name" label="User" allowsSorting />
                   <Table.Head id="organisation" label="Organisation" allowsSorting />
                   <Table.Head id="status" label="Status" allowsSorting />
                 </Table.Header>
                 <Table.Body items={paged}>
                   {(u) => (
                     <Table.Row id={u.id} href={roleHref(`/pages/user-management/users/${u.id}`)} textValue={fullName(u)} className="group data-[href]:cursor-pointer">
+                      <Table.Cell>
+                        <span className="text-sm whitespace-nowrap text-tertiary tabular-nums">{u.id}</span>
+                      </Table.Cell>
                       <Table.Cell>
                         <div className="flex items-center gap-3">
                           <Avatar size="sm" initials={initials(u)} />
@@ -548,6 +553,7 @@ export function RoleDetail({ role }: { role: UmRole }) {
 // ---------------------------------------------------------------- permission
 
 const roleSortKeys: Record<string, (r: UmRole) => SortValue> = {
+  id: (r) => r.id,
   name: (r) => r.name,
   kind: (r) => r.kind,
   department: (r) => r.department ?? null,
@@ -621,7 +627,8 @@ export function PermissionDetail({ permission }: { permission: UmPermission }) {
           <TableCard.Root size="sm">
             <Table aria-label="Roles with access" sortDescriptor={sort} onSortChange={(next) => { setSort(next); reset(); }}>
               <Table.Header>
-                <Table.Head id="name" label="Role" isRowHeader allowsSorting />
+                <Table.Head id="id" label="ID" isRowHeader allowsSorting />
+                <Table.Head id="name" label="Role" allowsSorting />
                 <Table.Head id="kind" label="Type" allowsSorting />
                 <Table.Head id="department" label="Department" allowsSorting />
                 <Table.Head id="status" label="Status" allowsSorting />
@@ -630,10 +637,10 @@ export function PermissionDetail({ permission }: { permission: UmPermission }) {
                 {(r) => (
                   <Table.Row id={r.id} href={roleHref(`/pages/user-management/roles/${r.id}`)} textValue={r.name} className="group data-[href]:cursor-pointer">
                     <Table.Cell>
-                      <div className="flex flex-col">
-                        <span className="text-sm font-medium text-primary group-hover:text-brand-700 group-hover:underline">{r.name}</span>
-                        <span className="text-sm text-tertiary">{r.id}</span>
-                      </div>
+                      <span className="text-sm whitespace-nowrap text-tertiary tabular-nums">{r.id}</span>
+                    </Table.Cell>
+                    <Table.Cell>
+                      <span className="text-sm font-medium text-primary group-hover:text-brand-700 group-hover:underline">{r.name}</span>
                     </Table.Cell>
                     <Table.Cell>
                       <span className="text-sm text-secondary">{r.kind === "system" ? "System" : "Custom"}</span>

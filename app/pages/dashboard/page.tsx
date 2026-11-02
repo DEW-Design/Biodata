@@ -48,10 +48,7 @@ import { cx } from "@/utils/cx";
 // breadcrumb - is still undecided, so that chrome is built as simplified structural placeholder
 // from real tokens rather than pixel-matched or ?-blocked. Every contained widget (search,
 // buttons, avatar, alert) still goes through the same "real DEW or honest ? gap" rule as a
-// /test-* screen - except the date range control, which graduated from a `?` gap marker to a
-// real custom component (components/custom/date-range/date-range-control.tsx, documented under
-// "Custom components") once its shape was clear enough to build, ahead of a stakeholder decision
-// on where it belongs long-term. Figma's yellow "GENERAL NOTES" sticky note (a designer's comment
+// /test-* screen. Figma's yellow "GENERAL NOTES" sticky note (a designer's comment
 // layer, not product UI) is excluded entirely.
 
 // ─────────────────────────────────────────────────────────────────────────

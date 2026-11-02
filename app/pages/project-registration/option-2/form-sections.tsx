@@ -799,7 +799,7 @@ function RestrictionTypeSection({ typeKey, state, onChange, showErrors }: { type
 }
 
 /** The fields for one section (everything except Review, which the page renders itself). */
-export function SectionFields({ id, ...props }: SectionProps & { id: Exclude<SectionId, "review"> }) {
+export function SectionFields({ id, ...props }: SectionProps & { id: Exclude<SectionId, "review" | "dataset"> }) {
   switch (id) {
     case "basics":
       return <BasicsSection {...props} />;

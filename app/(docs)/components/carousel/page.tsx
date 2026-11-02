@@ -140,7 +140,6 @@ export default function CarouselPage() {
         actions={<ContextualConfigPanel slug="carousel" title="Carousel" sections={sectionToggles} />}
       />
 
-      {/* ── Component Playground ── */}
       {isFeatureEnabled(config, "playground") && (
         <>
           <h2 className="text-balance">Component Playground</h2>
@@ -189,7 +188,6 @@ export default function CarouselPage() {
         </>
       )}
 
-      {/* ── Arrows ── */}
       {isFeatureEnabled(config, "arrows") && (
         <>
           <h2 className="text-balance">Arrows</h2>
@@ -205,7 +203,6 @@ export default function CarouselPage() {
         </>
       )}
 
-      {/* ── Indicators ── */}
       {isFeatureEnabled(config, "indicators") && (
         <>
           <h2 className="text-balance">Indicators</h2>
@@ -222,7 +219,6 @@ export default function CarouselPage() {
         </>
       )}
 
-      {/* ── Vertical ── */}
       {isFeatureEnabled(config, "vertical") && (
         <>
           <h2 className="text-balance">Vertical</h2>
@@ -237,7 +233,6 @@ export default function CarouselPage() {
         </>
       )}
 
-      {/* ── On a photo ── */}
       {isFeatureEnabled(config, "onPhoto") && (
         <>
           <h2 className="text-balance">On a photo</h2>
@@ -253,7 +248,6 @@ export default function CarouselPage() {
         </>
       )}
 
-      {/* ── API ── */}
       <h2 className="text-balance">API</h2>
       <p className="text-balance">
         <code>Carousel.Root</code> holds the state and the keyboard; it is a <code>region</code> with <code>aria-roledescription=&quot;carousel&quot;</code> and gives each slide <code>role=&quot;group&quot;</code> and{" "}
@@ -316,7 +310,6 @@ export default function CarouselPage() {
         </li>
       </ul>
 
-      {/* ── Usage ── */}
       {isFeatureEnabled(config, "usage") && (
         <>
           <h2 className="text-balance">Usage</h2>
@@ -346,11 +339,10 @@ import { ButtonUtility } from "@/components/base/buttons/button-utility";
         </>
       )}
 
-      {/* ── Figma ── */}
       {isFeatureEnabled(config, "figma") && (
         <>
           <h2 className="text-balance">Figma</h2>
-          <p className="text-balance">No linked Figma file yet - this component was pulled in via the Untitled UI CLI, not designed in Figma first.</p>
+          <p className="text-balance">No linked Figma file yet. This component came from the Untitled UI CLI, not from a Figma design.</p>
         </>
       )}
     </div>

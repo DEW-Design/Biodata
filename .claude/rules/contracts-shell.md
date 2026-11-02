@@ -141,9 +141,9 @@ scans by shape as well as by word and the same section has the same icon on ever
 
 - **Which icon.** The one the app already uses for the same thing (§2.4): Overview `Grid01`, Locations `MarkerPin04`,
   Species `Feather`, Survey records and Data Collection Scope `Database01`, Artefacts and attachments `Paperclip`,
-  Project and Projects `Folder`, Permit and Agreement `FileCheck02`, Audit log and history `ClockRewind`, Privacy and
+  Project and Projects `Folder`, Permit and Agreement `FileCheck02`, Audit Log `ClockRewind`, Privacy and
   Restrictions `Lock01`, What to protect `Shield01`, Data Sharing `Share07`, Comments `MessageSquare01`, URI/DOI `Link01`,
-  Roles `UserCheck01`, Permissions `Key01`, Users `Users01`, Details `File06`, Favourites `Star01`, Uploads
+  Roles `UserCheck01`, Permissions `Key01`, Users `Users01`, Details `File06`, Favourites `Star01`, Uploads and Datasets
   `UploadCloud02`; Flora and Fauna take the species group icons, and the record kinds the records tree's icons
   (`record-icons.ts`). A new tab takes an icon not already another concept's, and is added here.
 - **Counts** (`badge`) stay after the label; the icon does not replace them.
@@ -186,7 +186,7 @@ Every create or edit form (Add Project, DSA, DLA, and any new one) MUST render `
    **Continue** (right arrow icon) to move on, or the final action (**Submit**, **Create project**, **Save
    changes**) on the last section. Save draft is omitted when a draft makes no sense (editing a live record).
    Toasts are lifted clear of this footer everywhere (`TOAST_OFFSET`), so they never cover its buttons.
-6. **Leaving:** the close button asks before discarding unsaved changes (`ConfirmationModal`), and says
+6. **Leaving:** the close button asks before discarding unsaved changes (`DestructiveModal`: discarding is a destructive action, so the confirm button is red, 3.12), and says
    what will be lost.
 7. **Controls:** real DEW components only (`Input`, `TextArea`, `Select`, `MultiSelect`, `RadioGroup`,
    `Checkbox`, `Accordion`). No bespoke choice tiles.
@@ -350,6 +350,25 @@ between the two as rows come and go.
   single row; the designer: "use a basic table component if there is less results per page. add this to contract" (25 Oct 2026).
 - **Enforcement:** `REVIEW`. A first occurrence, so no `AUTO` check yet (§0.8): the row count is only known at run time.
 
+**The ID is the first column (§4.2i).** A table that lists records which have an ID of their own (a user, a role, a permission, a
+vocabulary, a notification, a project, a request, an agreement, a nomination, a batch, a dataset, a project record) shows that ID in its
+first column and the record's name and the rest after it, so a person finds a record by its ID in the same place on every list.
+
+- MUST put the ID first, as the table's row header, in the project list's treatment (`text-sm text-tertiary tabular-nums`, one line)
+  where the record also has a name; the name is then the second column and the link. Where the ID is the record's only name (a request,
+  an agreement, a nomination) the ID is the link, as it is. The heading is "ID" ("Project ID" on the project list; the request,
+  agreement, nomination, batch and dataset lists name the column for what it identifies: open, for the designer).
+- MUST NOT put the ID in a later column, or repeat it under the name once it has a column of its own.
+- **Applies to** collection lists and to the embedded tables of related records (a role's users, a permission's roles).
+- **Exceptions:** Reports (their columns are the report's own, `DataReport`); a table whose rows have no ID of their own (the Template
+  Finder, a project's species, artefacts, people); and Taxonomy Management's list, whose identifier, the NSX code, the higher taxa do not
+  have (open, for the designer).
+- **Origin:** the Users, Roles and Permissions lists showed a name first and no ID, the Vocabulary list had its ID second and the
+  Notifications list had none, while the project, request, agreement, nomination, batch and dataset lists led with theirs; the designer:
+  "All users, roles and permissions have IDs. Let's have ID as the first column. Keep the tables across the webapp consistent. Except
+  Reports." (30 Oct 2026).
+- **Enforcement:** `REVIEW`. A first occurrence, so no `AUTO` check yet (§0.8): which column is the ID is a judgement per table.
+
 ### §4.3 Cognitive load
 
 More than five or six field groups needs tiering. A conditional field is conditional in the UI. One focal
@@ -430,13 +449,16 @@ record) is laid out like the project page (`/pages/project-detail`):
    tab and in the order the data rolls up: a user's **Roles**, then the **Permissions** those roles add up to; a role's
    Permissions, then its Users. A tab is one thing; a tab MUST NOT hold a list that picks between sections of itself (a
    master and detail), and a fact or count shown in the card or on the tab MUST NOT be repeated inside it. A permission
-   that comes from more than one role names each (the user's Permissions tab). Controlled Vocabulary
-   (Entries, Details, History) and dataset records (Validation, Details, History) have not been brought in line yet:
-   open for the designer (§0.4).
+   that comes from more than one role names each (the user's Permissions tab). A dataset record is Overview (the
+   dataset's own facts, not the project's), Validation, then Audit Log, and its next step (Upload a corrected file,
+   Approve) is in its card (designer, 30 Oct 2026). Controlled Vocabulary (Entries, Details, Audit Log) has not been
+   brought in line yet: open for the designer (§0.4).
 
 - MUST NOT put a record's actions in a bar above the card, or stack its content without tabs.
 - MUST NOT build a second switcher: a collection's record pages reuse `BreadcrumbSwitcher`.
-- MUST give every collection that has a record page the switcher on it: a shell that hides column 2 for a record (`recordPage`) draws its section crumb as that collection's switcher (a thin wrapper over `BreadcrumbSwitcher`, like `DlaSwitcher`). The new and edit forms keep the plain crumb that links back to the list.
+- MUST give every collection that has a record page the switcher on it: a shell that hides column 2 for a record (`recordPage`) draws its section crumb as that collection's switcher (a thin wrapper over `BreadcrumbSwitcher`, like `DlaSwitcher`). The new and edit forms keep the plain crumb that links back to the list. A record page that is a view inside another page draws it too: a dataset's page, inside the project page, has `DatasetSwitcher` for "Datasets" (A-Z by ID, the file beside it, the project's own datasets) beside the project's `ProjectSwitcher`.
+- MUST draw every other crumb as a `Link` (`className="hit-area hover:text-primary"`, as "Home" is), never a `<button>` in the crumb's own styling: the link gets the 40px target (2.16).
+- MUST build a project's address with `projectDetailsPath`, `projectTabPath` and `uploadPath` (`app/pages/_shared/project-routes.ts`), never by hand. A project made in this browser through Add Project has no `/pages/project-list/<id>/...` page in the static export (it is one fixed route, `/pages/project-detail/created`, with its id in the query), so a link built by hand to one is a dead link for every new project.
 - MUST NOT build a second audit log: a record page's Audit Log tab reuses `AuditLog` and `AuditFeed`.
 - **Origin:** the nomination record page shipped with its actions above the card and no tabs, after
   the designer had already asked for every record page to follow the project page. The reports were first built
@@ -453,9 +475,11 @@ record) is laid out like the project page (`/pages/project-detail`):
   Filter; the designer: "doesn't make sense to have two different search bars ... I feel like parameters are doubling up" (15 Oct 2026).
   The switcher gap came back: a notification's record page, and the taxon, voucher batch and vocabulary pages with it, still drew the section crumb as a
   plain link ("Notification Management" with no up-down caret); the designer, with a screenshot: "missing chevron up and down treatment. Please make sure
-  breadcrumbs are consistent." (26 Oct 2026).
+  breadcrumbs are consistent." (26 Oct 2026). It came back a third time on a dataset's page, inside the project page (a view, not a shell with `recordPage`, so 4.6b could not see it): "Datasets" was a
+  plain button between the project and the dataset's ID; the designer, with a screenshot: "edge case noted. The switcher should be on datasets as well?" (30 Oct 2026).
 - **Enforcement:** `REVIEW`; `tsc` for the removed `scopeControl`. `AUTO §4.6b` (a shell that defines `recordPage` and renders no `*Switcher`), added on the second
-  occurrence of the switcher gap (§0.8).
+  occurrence of the switcher gap (§0.8); `AUTO §4.6c` (a page that draws the trail with a crumb drawn by hand: a button in the
+  crumb's own styling, or a collection's name as a bare button or link), added on the third (§0.8). `AUTO §4.6d` (a project's address built by hand under `app/pages`, outside `project-routes.ts`: the upload page, the custom concepts link and the corrected-file link all went nowhere for a new project, 30 Oct 2026).
 
 ### §4.7 Roles belong to the data owner's contacts; show only what is approved
 
@@ -491,9 +515,14 @@ behaves the same way, on every card and every page.
    when viewed.
 3. **More than one card at a time:** while a card is in edit mode, the other cards stay at full strength and keep
    their edit icons; opening another adds it to the same edit. MUST NOT dim or lock the other cards.
-4. **Actions in one place:** Cancel and Save changes (or "Add <type>" for a new record) sit in one sticky footer
-   across the bottom of the page, reading "Editing <cards> · Unsaved changes", and cover every card in edit mode.
-   MUST NOT put them inside a card or repeat them per card.
+4. **Actions where the edit is.** Cancel and Save changes (or "Add <type>" for a new record) are one pair, on screen once.
+   - **A page that edits one card at a time (the project page's cards, designer, 30 Oct 2026):** the pair sits at the foot of the
+     card being edited, inside its own border, and stays at the bottom of the window while the card runs past it (a card with a
+     map is taller than a short window). "Unsaved changes" appears beside it once there are any; the card's own title is not
+     repeated ("Editing <title>").
+   - **A page that edits every card at once (a record, "Edit record"):** the pair sits in one sticky footer across the bottom of
+     the page, reading "Editing <cards>, unsaved changes", and covers every card in edit mode.
+   - MUST NOT draw both on one page, or put a one-card edit's pair in a page footer, where a person has to look for it.
 5. **Leaving:** Cancel or Exit with unsaved changes asks first. Save and Cancel return to the view the edit was
    started from (a side panel stays a side panel, a full view stays a full view).
 6. **Visibility, per section:** where a record's concepts can be hidden, each card in edit mode has a quiet "Manage concepts"
@@ -510,5 +539,9 @@ behaves the same way, on every card and every page.
   footer; the designer caught the difference ("Consistency is the key"). Item 3 replaced "the other cards dim and
   hide their edit icons" on 29 Sept 2026, by designer decision, after locking the other cards got in the way.
   Items 2, 6 and 7 changed on 23 Oct 2026, by designer decision: the "Editing" label confused people, fields are
-  managed per section, and the hierarchy was not prominent and showed IDs only.
+  managed per section, and the hierarchy was not prominent and showed IDs only. Item 4 changed on 30 Oct 2026, by
+  designer decision, for the project page: the page footer put "Editing Geographic extent" at the far left of the window and
+  Cancel and Save changes at the far right, a long way from a card with a map in it (the designer, with a screenshot:
+  "easy to miss, bad UX", "add these back into each editing section, please and thank you"). Whether a record's edit
+  should move the same way is open for the designer (0.4).
 - **Enforcement:** `REVIEW`.

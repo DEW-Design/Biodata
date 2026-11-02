@@ -33,18 +33,16 @@ export default function CustomDatePickerPage() {
       <PageHeader
         section="Custom Components"
         title="Date picker"
-        description="A segmented DD/MM/YYYY field plus a real calendar-icon trigger that opens a Calendar popover. Today is marked in the calendar (bold brand text and a brand ring) and a Today button under it picks it. Not yet part of the design system - documented here until a stakeholder decides where (or whether) it belongs."
+        description="A segmented DD/MM/YYYY field with a calendar button that opens a Calendar popover. Today is marked in the calendar (bold brand text and a brand ring), and a Today button under it picks it. Not yet part of the design system: documented here until a stakeholder decides where, or whether, it belongs."
       />
 
       <div className="mb-2 flex gap-3 rounded-xl border border-secondary bg-secondary p-5">
         <div className="flex flex-col gap-1">
-          <p className="text-sm font-semibold text-secondary text-balance">What lives in this section</p>
           <p className="text-sm text-tertiary text-balance" style={{ lineHeight: "1.7" }}>
-            Components built for a specific screen because nothing in <code>components/base/**</code> or{" "}
-            <code>components/application/**</code> covers the pattern - real and working, not a{" "}
-            <code>?</code> placeholder, but not yet reviewed or adopted as part of the design system either.
-            Once a stakeholder picks a direction, it moves into <code>components/base</code> (with a real
-            entry in the Components section) - or gets replaced if the direction changes.
+            Components built for one screen because nothing in <code>components/base/**</code> or{" "}
+            <code>components/application/**</code> covers the pattern. They work, but the design system has not
+            reviewed or adopted them. Once a stakeholder picks a direction, a component moves into{" "}
+            <code>components/base</code> with an entry under Components, or is replaced.
           </p>
         </div>
       </div>
@@ -66,20 +64,15 @@ export default function CustomDatePickerPage() {
         <InputDatePicker label="Start date" isDisabled className="w-full max-w-xs" />
       </Section>
 
-      <h2 className="text-balance">Why this is custom, not real DEW</h2>
+      <h2 className="text-balance">Why this is custom</h2>
       <p className="text-balance">
-        <code>components/base/input/input-date.tsx</code> is a real, already-documented DEW component (see{" "}
-        <code>/components/input</code>) - a segmented DD/MM/YYYY <code>DateField</code>, typed entry only,
-        with no calendar popover at all. That&apos;s correct for that component&apos;s own Figma reference,
-        so it was left untouched rather than changed sitewide. This is a different, additive control for
-        contexts that specifically need a clickable calendar - built on react-aria-components&apos; own{" "}
-        <code>DatePicker</code> composition (a <code>DateField</code> plus a trigger <code>Button</code> plus
-        a <code>Calendar</code> popover) and the real DEW <code>Popover</code>{" "}
-        (<code>components/base/select/popover.tsx</code>), the same combination{" "}
-        <code>components/custom/date-range/date-range-control.tsx</code> already proved out for a date{" "}
-        <em>range</em>. The segmented field itself still uses the exact same tokens{" "}
-        <code>input-date.tsx</code> does, so the two read as one consistent field language wherever they
-        appear side by side.
+        <code>components/base/input/input-date.tsx</code> is the segmented DD/MM/YYYY <code>DateField</code>
+        documented at <code>/components/input</code>: typed entry only, no calendar. That matches its Figma reference,
+        so it was left alone. This control is additive, for places that need a clickable calendar. It uses
+        react-aria-components&apos; <code>DatePicker</code> composition (a <code>DateField</code>, a trigger{" "}
+        <code>Button</code> and a <code>Calendar</code> popover) and the DEW <code>Popover</code>{" "}
+        (<code>components/base/select/popover.tsx</code>). The segmented field uses the same tokens as{" "}
+        <code>input-date.tsx</code>, so the two read as one field language side by side.
       </p>
 
       <h2 className="text-balance">API</h2>
@@ -113,9 +106,8 @@ export default function CustomDatePickerPage() {
 
       <h2 className="text-balance">Where it&apos;s used</h2>
       <p className="text-balance">
-        <code>app/pages/project-registration/**</code> - the 3-step Add Project wizard&apos;s Start
-        Date, End Date, and Embargo End Date fields, per direct request that every date field across
-        all three steps be a real date selector, not a type-the-digits-only field.
+        The product&apos;s date field (CONTRACTS 2.11). Add Project&apos;s Start date, End date and Embargo end date
+        use it, among others.
       </p>
     </div>
   );

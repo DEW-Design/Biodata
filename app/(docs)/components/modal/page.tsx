@@ -62,7 +62,7 @@ export default function ModalPage() {
 
       <h2 className="text-balance">Destructive</h2>
       <p className="text-balance">
-        For irreversible actions - delete, remove, revoke, discard. Same shape as Confirmation, with an error icon and the
+        For irreversible actions: delete, remove, revoke, discard. Same shape as Confirmation, with an error icon and the
         primary button in the error colour, so the stakes read at a glance. A discard prompt
         can offer a way to keep the work (<code>secondaryLabel</code>, <code>onSecondary</code>): every form&apos;s
         discard prompt offers <strong>Save draft</strong> where a draft is possible. Three actions don&apos;t fit the two-column
@@ -97,7 +97,7 @@ export default function ModalPage() {
 
       <h2 className="text-balance">Form (configurable)</h2>
       <p className="text-balance">
-        A general-purpose shell - header, scrollable body, footer - that takes arbitrary <code>children</code> instead
+        A general-purpose shell with a header, a scrollable body and a footer. It takes arbitrary <code>children</code> instead
         of a fixed title and description. Wraps content in React Aria&apos;s <code>Form</code>, so a submit button with{" "}
         <code>type=&quot;submit&quot;</code> triggers native validation before <code>onSubmit</code> fires.
       </p>

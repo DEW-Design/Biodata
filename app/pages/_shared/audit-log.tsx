@@ -4,7 +4,7 @@ import { useState, type ReactNode } from "react";
 import { Button } from "@/components/base/buttons/button";
 import { formatShortDate } from "@/app/pages/_shared/dsa/dsa-data";
 
-// The audit log every record's History (or Audit Log) tab opens with, from the Figma "Notification
+// The audit log every record's Audit Log tab opens with, from the Figma "Notification
 // Management" audit log (YMproGZfrFB5jUqPHPxMhk, node 1584:22819): who created the record and when, who
 // made it live and when, and who changed it last and when, as "on" and "by" pairs side by side. The
 // designer, 1 Oct 2026: "do the same everywhere we show the history tab", with the full list of

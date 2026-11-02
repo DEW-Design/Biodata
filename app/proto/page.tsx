@@ -89,6 +89,10 @@ const PROTO_LABS: ProtoEntry[] = [
     description: "A Pages map for the Prototype tools bar: every screen laid out to jump to, as columns by area, a tree, or a search-first list. Shows which screens the viewed role can open.",
   },
   {
+    route: "project-people",
+    description: "How a person on the project Overview is drawn: as it is, the name leading, an avatar leading, or a card per person. The real Overview, with the number of people and the role as controls.",
+  },
+  {
     route: "tab-icons",
     description: "Icons on the underline tabs: text only, an icon on every tab, or an icon on the selected tab.",
   },

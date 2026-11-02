@@ -31,6 +31,7 @@ import { useRoleHref } from "@/lib/use-role-href";
 //   - "Last updated" names what the date is.
 
 const sortKeys: Record<string, (n: Notification) => SortValue> = {
+  id: (n) => n.id,
   name: (n) => n.name,
   trigger: (n) => triggerSummary(n.trigger),
   category: (n) => n.category,
@@ -179,10 +180,11 @@ export function NtList({ category, initialStatus }: { category: string; initialS
               }}
             >
               <Table.Header sticky>
-                <Table.Head id="name" label="Notification" isRowHeader allowsSorting className="w-[30%]" />
-                <Table.Head id="trigger" label="Trigger" allowsSorting className="w-[22%]" />
-                <Table.Head id="to" label="Recipients" className="w-[16%]" />
-                {!category ? <Table.Head id="category" label="Category" allowsSorting className="w-[12%]" /> : null}
+                <Table.Head id="id" label="ID" isRowHeader allowsSorting className="w-[9%]" />
+                <Table.Head id="name" label="Notification" allowsSorting className="w-[25%]" />
+                <Table.Head id="trigger" label="Trigger" allowsSorting className="w-[20%]" />
+                <Table.Head id="to" label="Recipients" className="w-[15%]" />
+                {!category ? <Table.Head id="category" label="Category" allowsSorting className="w-[11%]" /> : null}
                 {status === "all" ? <Table.Head id="status" label="Status" allowsSorting className="w-[10%]" /> : null}
                 <Table.Head id="updated" label="Last updated" allowsSorting className="w-[10%]" />
               </Table.Header>
@@ -191,6 +193,9 @@ export function NtList({ category, initialStatus }: { category: string; initialS
                   const KindIcon = n.trigger.kind === "event" ? Zap : Clock;
                   return (
                     <Table.Row id={n.id} href={roleHref(`${NT_ROOT}/${n.id}`)} textValue={n.name} className="group data-[href]:cursor-pointer">
+                      <Table.Cell>
+                        <span className="text-sm whitespace-nowrap text-tertiary tabular-nums">{n.id}</span>
+                      </Table.Cell>
                       <Table.Cell>
                         <div className="flex flex-col">
                           <p className="text-sm font-medium whitespace-nowrap text-primary group-hover:text-brand-700 group-hover:underline">{n.name}</p>

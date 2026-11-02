@@ -2,27 +2,20 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { Checkbox } from "@/components/base/checkbox/checkbox";
-import { Input } from "@/components/base/input/input";
-import { RadioButton, RadioGroup } from "@/components/base/radio-buttons/radio-buttons";
-import { ConfirmationModal } from "@/components/application/modals/modal";
+import { DestructiveModal } from "@/components/application/modals/modal";
 import { FormPage } from "@/app/pages/_shared/form-page";
 import { TemplateDownloads } from "@/app/pages/_shared/template-finder/template-downloads";
 import { FormRow } from "@/app/pages/_shared/form-row";
 import { FormSectionList, FormSidebar, deriveSectionStatus } from "@/app/pages/_shared/form-section-list";
 import { FileQueue, UploadDropzone, useFileQueue } from "@/app/pages/_shared/dataset-upload/upload-dropzone";
+import { AcknowledgementRows, emptyAcknowledgement, type Acknowledgement } from "@/app/pages/_shared/dataset-upload/acknowledgement-rows";
 import {
-  dataLicenceOptions,
   emptyUploadDraft,
-  firstNationsOptions,
   missingForUpload,
-  needsIiaReference,
   recommendedTemplates,
-  securityClassificationOptions,
   uploadSectionOrder,
   uploadSections,
   type DatasetTemplate,
-  type FirstNationsConsideration,
   type UploadDraft,
   type UploadSection,
 } from "@/app/pages/_shared/dataset-upload/dataset-data";
@@ -80,7 +73,7 @@ export function UploadForm({
   useDatasets(); // loads the saved datasets before this one is added
   const roleHref = useRoleHref();
   const queue = useFileQueue();
-  const [answers, setAnswers] = useState<Omit<UploadDraft, "files">>({ licence: "", classification: "", firstNations: "", iiaReference: "", privacyConfirmed: false });
+  const [answers, setAnswers] = useState<Acknowledgement>(emptyAcknowledgement);
   const [section, setSection] = useState<UploadSection>("files");
   const [visited, setVisited] = useState<Set<UploadSection>>(new Set());
   const [blocked, setBlocked] = useState<Set<UploadSection>>(new Set());
@@ -197,53 +190,11 @@ export function UploadForm({
         )}
 
         {section === "acknowledgement" && (
-          <>
-            <FormRow title="Data licence" required description="Select one." error={ack && !answers.licence ? "Select a data licence" : undefined}>
-              <RadioGroup aria-label="Data licence" value={answers.licence} onChange={(v) => update({ licence: v as UploadDraft["licence"] })}>
-                {dataLicenceOptions.map((o) => (
-                  <RadioButton key={o.id} value={o.id} label={o.label} />
-                ))}
-              </RadioGroup>
-            </FormRow>
-            <FormRow title="Security classification" required description="Select one." error={ack && !answers.classification ? "Select a security classification" : undefined}>
-              <RadioGroup aria-label="Security classification" value={answers.classification} onChange={(v) => update({ classification: v as UploadDraft["classification"] })}>
-                {securityClassificationOptions.map((o) => (
-                  <RadioButton key={o.id} value={o.id} label={o.label} />
-                ))}
-              </RadioGroup>
-            </FormRow>
-            <FormRow title="First Nations considerations" required description="Select one." error={ack && !answers.firstNations ? "Select a First Nations consideration" : undefined}>
-              <RadioGroup
-                aria-label="First Nations considerations"
-                value={answers.firstNations}
-                onChange={(v) => update({ firstNations: v as FirstNationsConsideration, ...(needsIiaReference(v as FirstNationsConsideration) ? {} : { iiaReference: "" }) })}
-              >
-                {firstNationsOptions.map((o) => (
-                  <RadioButton key={o.id} value={o.id} label={o.label} />
-                ))}
-              </RadioGroup>
-              {needsIiaReference(answers.firstNations) && (
-                <div className="flex flex-col gap-3 pl-6">
-                  <p className="text-sm text-balance text-tertiary">
-                    <span className="font-medium text-secondary">Authorised or Restricted is selected.</span> Please specify the approving authority.
-                  </p>
-                  <Input
-                    label="IIA reference / authority name"
-                    isRequired
-                    value={answers.iiaReference}
-                    isInvalid={ack && !answers.iiaReference.trim()}
-                    hint={ack && !answers.iiaReference.trim() ? "Enter the IIA reference or authority name" : undefined}
-                    onChange={(v) => update({ iiaReference: v })}
-                  />
-                </div>
-              )}
-            </FormRow>
-            <FormRow title="Privacy and restriction" required error={ack && !answers.privacyConfirmed ? "Confirm you have reviewed the privacy and restriction settings" : undefined}>
-              <Checkbox
-                isSelected={answers.privacyConfirmed}
-                onChange={(v) => update({ privacyConfirmed: v })}
-                label="I confirm that I have reviewed the privacy and restriction settings for this dataset."
-              />
+          <AcknowledgementRows
+            answers={answers}
+            update={update}
+            showErrors={ack}
+            privacyNote={
               <p className="text-sm text-balance text-tertiary">
                 Project-level privacy controls are already applied. If this dataset needs additional or different restrictions,{" "}
                 <Link
@@ -256,12 +207,12 @@ export function UploadForm({
                 </Link>{" "}
                 before uploading.
               </p>
-            </FormRow>
-          </>
+            }
+          />
         )}
       </FormPage>
 
-      <ConfirmationModal confirmIcon={Trash01} cancelIcon={ArrowLeft}
+      <DestructiveModal confirmIcon={Trash01} cancelIcon={ArrowLeft}
         isOpen={confirmDiscard}
         onOpenChange={setConfirmDiscard}
         title="Discard this upload?"

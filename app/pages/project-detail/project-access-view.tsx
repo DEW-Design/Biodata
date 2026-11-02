@@ -9,7 +9,7 @@
 import { useState } from "react";
 import { ArrowLeft, Edit05, Save01, Trash01, User01, XClose } from "@untitledui/icons";
 import { AlertFullWidth } from "@/components/application/alerts/alerts";
-import { ConfirmationModal } from "@/components/application/modals/modal";
+import { DestructiveModal } from "@/components/application/modals/modal";
 import { Table, TableCard } from "@/components/application/table/table";
 import { toast } from "@/components/application/toast/toast";
 import { Avatar } from "@/components/base/avatar/avatar";
@@ -167,7 +167,7 @@ export function ProjectAccessView({ people, onChange, canManage }: { people: Pro
         </div>
       )}
 
-      <ConfirmationModal
+      <DestructiveModal
         confirmIcon={Trash01}
         cancelIcon={ArrowLeft}
         isOpen={confirm}

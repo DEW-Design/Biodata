@@ -21,12 +21,12 @@ export default function DropdownPage() {
       <PageHeader
         section="Components"
         title="Dropdown"
-        description="Menu built on React Aria's Menu/Popover - icon items, sections with a separator, and a swappable selection indicator (checkmark, checkbox, radio, or toggle) for multi/single-select menus."
+        description="A menu built on React Aria's Menu and Popover. It has icon items, sections with a separator, and a swappable selection indicator (checkmark, checkbox, radio or toggle) for single and multiple selection."
       />
 
       <h2 className="text-balance">Actions menu</h2>
       <p className="text-balance">
-        The default shape - an icon, a label, nothing selectable. This is exactly what{" "}
+        The default shape: an icon, a label, nothing selectable. This is what{" "}
         <code>TableRowActionsDropdown</code> on the <Link href="/components/table">Table</Link> page is built from.
       </p>
       <Section label="Actions">
@@ -45,8 +45,7 @@ export default function DropdownPage() {
 
       <h2 className="text-balance">Sections</h2>
       <p className="text-balance">
-        <code>Dropdown.Section</code> plus <code>Dropdown.SectionHeader</code> groups related items - e.g. account
-        actions separated from a sign-out action.
+        <code>Dropdown.Section</code> plus <code>Dropdown.SectionHeader</code> groups related items, for example account actions apart from a sign-out action.
       </p>
       <Section label="Grouped">
         <Dropdown.Root>
@@ -118,8 +117,7 @@ export default function DropdownPage() {
 
       <h2 className="text-balance">With avatar</h2>
       <p className="text-balance">
-        Pass <code>avatarUrl</code> instead of <code>icon</code> for a people-picker style menu - the selection
-        indicator moves to the trailing edge automatically. The avatar falls back to initials when the image 404s,
+        Pass <code>avatarUrl</code> instead of <code>icon</code> for a people-picker menu. The selection indicator moves to the trailing edge. The avatar falls back to initials when the image 404s,
         same as the base <Link href="/components/avatar">Avatar</Link> component.
       </p>
       <Section label="Assignee picker">
@@ -165,10 +163,10 @@ import { Dropdown } from "@/components/base/dropdown/dropdown";
         <tbody>
           {[
             { name: "Dropdown.Root", notes: "React Aria MenuTrigger - wraps a trigger element and the Popover." },
-            { name: "Dropdown.DotsButton", notes: "Ready-made vertical-dots trigger button. Use any AriaButton-compatible element instead if you need a different trigger." },
+            { name: "Dropdown.DotsButton", notes: "Ready-made vertical-dots trigger button. Use any AriaButton-compatible element instead if you need a different trigger. onDark (opt-in) is for a dark surface such as a record's gradient card: white dots, a white wash on hover and press, a white focus ring; the default hover fill is near-white and would hide white dots." },
             { name: "Dropdown.Popover", notes: "React Aria PopoverProps. className sets width, e.g. \"w-56\"." },
             { name: "Dropdown.SubmenuPopover", notes: "The popover of a submenu (inside a React Aria SubmenuTrigger). It tucks against the parent menu and lines its first row up with the row that opened it, as a macOS or iOS menu does (offset -2, crossOffset -5, placement \"end top\"); the row that opened it stays highlighted while the submenu is open. Same props as Dropdown.Popover; className sets width." },
-            { name: "Dropdown.Menu", notes: "React Aria MenuProps - selectionMode, selectedKeys/defaultSelectedKeys, onSelectionChange." },
+            { name: "Dropdown.Menu", notes: "React Aria MenuProps - selectionMode, selectedKeys/defaultSelectedKeys, onSelectionChange. A menu with submenus has a safe triangle: from the last point the pointer was on the row that opened a submenu to the submenu's near edge, cutting the corner across the next rows does not change submenu, and a pointer that stops inside the triangle hands over to the row under it after a short beat (220ms). A mouse only; the keyboard and touch are unchanged." },
             { name: "Dropdown.Item", notes: "label, icon, avatarUrl, addon (trailing text), selectionIndicator (\"checkmark\" reserves a left column for the tick | \"checkmark-end\" ticks after the label, only on what is on, reserving nothing | \"checkbox\" | \"radio\" | \"toggle\" | \"none\"), unstyled (opt out of default styling for a fully custom row), destructive (error-coloured label, icon and hover, for delete or remove; put it last, after a Dropdown.Separator)." },
             { name: "Dropdown.Section / SectionHeader", notes: "React Aria MenuSection/Header - groups items under a label." },
             { name: "Dropdown.Separator", notes: "Hairline divider between items or sections." },

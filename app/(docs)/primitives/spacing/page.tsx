@@ -31,11 +31,11 @@ export default function SpacingPage() {
       <PageHeader
         section="Primitives"
         title="Spacing"
-        description="A 4px base grid. All padding, margin, and gap values should align to this scale. Tailwind utility classes map directly to these steps."
+        description="A 4px base grid. Padding, margin and gap values come from this scale, and the Tailwind spacing utilities map to its steps."
       />
 
       <h2 className="text-balance">Scale</h2>
-      <p className="text-balance">Each step is a multiple of 4px. Decimals (0.5, 1.5, 2.5, 3.5) fill in the gaps for fine-grained component internals.</p>
+      <p className="text-balance">Each step is a multiple of 4px. The half steps (0.5, 1.5, 2.5, 3.5) are for fine adjustments inside components.</p>
 
       <div className="flex flex-col gap-0 mt-6">
         {spacingScale.map((s) => (

@@ -85,15 +85,13 @@ export default function ButtonUtilityPage() {
       <PageHeader
         section="Components"
         title="Button utility"
-        description="Icon-only button for toolbars and row actions. Two colours, two sizes, an optional tooltip that doubles as the accessible name, and a link variant when given an href - driven from config/design-system.config.ts."
+        description="Icon-only button for toolbars and row actions. Two colours, two sizes, an optional tooltip that doubles as the accessible name, and a link variant when given an href."
         actions={<ContextualConfigPanel slug="button-utility" title="Button utility" sections={sectionToggles} />}
       />
 
-      {/* ── Component Playground ── */}
       {isFeatureEnabled(config, "playground") && (
         <>
           <h2 className="text-balance">Component Playground</h2>
-          <p className="text-balance">Live instance - the controls read their options from the same config that drives the Variants section below.</p>
           <div className="overflow-hidden rounded-2xl border border-secondary shadow-xs">
             <div className="grid md:grid-cols-[minmax(0,1fr)_300px]">
               <div
@@ -169,7 +167,6 @@ export default function ButtonUtilityPage() {
         </>
       )}
 
-      {/* ── Colours ── */}
       {colors.length > 0 && (
         <>
           <h2 className="text-balance">Colours</h2>
@@ -185,7 +182,6 @@ export default function ButtonUtilityPage() {
         </>
       )}
 
-      {/* ── Sizes ── */}
       {sizes.length > 0 && (
         <>
           <h2 className="text-balance">Sizes</h2>
@@ -201,7 +197,6 @@ export default function ButtonUtilityPage() {
         </>
       )}
 
-      {/* ── With tooltip ── */}
       {isFeatureEnabled(config, "withTooltip") && (
         <>
           <h2 className="text-balance">With tooltip</h2>
@@ -219,7 +214,6 @@ export default function ButtonUtilityPage() {
         </>
       )}
 
-      {/* ── As link ── */}
       {isFeatureEnabled(config, "asLink") && (
         <>
           <h2 className="text-balance">As link</h2>
@@ -230,7 +224,6 @@ export default function ButtonUtilityPage() {
         </>
       )}
 
-      {/* ── Disabled ── */}
       {isFeatureEnabled(config, "disabled") && (
         <>
           <h2 className="text-balance">Disabled</h2>
@@ -243,7 +236,6 @@ export default function ButtonUtilityPage() {
         </>
       )}
 
-      {/* ── API ── */}
       <h2 className="text-balance">API</h2>
       <p className="text-balance">
         <code>ButtonUtility</code> renders a React Aria <code>Button</code>, or a <code>Link</code> when <code>href</code> is set, so the props of either apply.
@@ -267,7 +259,6 @@ export default function ButtonUtilityPage() {
         </tbody>
       </table>
 
-      {/* ── Usage ── */}
       {isFeatureEnabled(config, "usage") && (
         <>
           <h2 className="text-balance">Usage</h2>
@@ -282,11 +273,10 @@ import { ButtonUtility } from "@/components/base/buttons/button-utility";
         </>
       )}
 
-      {/* ── Figma ── */}
       {isFeatureEnabled(config, "figma") && (
         <>
           <h2 className="text-balance">Figma</h2>
-          <p className="text-balance">No linked Figma file yet - this component was pulled in via the Untitled UI CLI, not designed in Figma first.</p>
+          <p className="text-balance">No linked Figma file yet. This component came from the Untitled UI CLI, not from a Figma design.</p>
         </>
       )}
     </div>

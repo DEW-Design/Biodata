@@ -119,6 +119,56 @@
       "reviewBy": "2027-03-25",
       "reason": "Designer ingested the Untitled UI Carousel (Embla, headless: Root, Content, Item, PrevTrigger, NextTrigger, IndicatorGroup, Indicator) and asked for it to be brought through the ingestion workflow and into the Explore record summary card (25 Oct 2026). Checked: no carousel in components/base, application, custom or foundations; the only carousel is SpeciesPhotoCarousel, a scroll-snap one hand-built in app/pages/_shared/map-search, which is a behaviour built outside components (1.10) and is replaced by this one, not kept beside it (1.7). Not a twin of Tabs (tabs name sections; a carousel pages through one kind of thing). Shipped in components/application/carousel/ as ingested; adds the embla-carousel-react dependency.",
       "status": "active"
+    },
+    {
+      "id": "OVR-013",
+      "component": "components/application/date-picker/calendar.tsx",
+      "designer": "Sai Maniganahalli",
+      "approvedBy": "Sai Maniganahalli",
+      "date": "2026-11-02",
+      "reviewBy": "2027-03-25",
+      "reason": "Designer ingested the Untitled UI Date picker (a single-date picker and a date-range picker with presets, built on react-aria-components, with their calendar, range calendar and cell: 5 files, plus hooks/use-breakpoint.ts) via the ingestion workflow (2 Nov 2026). Checked: components/custom/date-picker (InputDatePicker, a typed segmented field with a calendar, the form field of 2.11) does part of the same job; the other overlap, components/custom/date-range (DateRangeControl), was removed by the designer on 2 Nov 2026 (2026-11-02-01). These are button-triggered pickers with Apply and presets, so not an exact twin of the form field, but the overlap is a 1.7 question left open for the designer, and no caller was migrated. Shipped in components/application/ as ingested, matching the carousel precedent (OVR-012). After ingest: icons on Cancel, Apply and Today (3.12), the dead text-md removed (2.1), font-barlow on the popovers (2.2), doc-site heading overrides (2.7), 40px preset rows (2.16), and the pick held in a draft so Cancel, Escape and a press outside keep the date (1.9). The ingest also raised react-aria to 3.53.1 and react-aria-components to 1.22.1 and made @internationalized/date a direct dependency.",
+      "status": "active"
+    },
+    {
+      "id": "OVR-014",
+      "component": "components/application/date-picker/cell.tsx",
+      "designer": "Sai Maniganahalli",
+      "approvedBy": "Sai Maniganahalli",
+      "date": "2026-11-02",
+      "reviewBy": "2027-03-25",
+      "reason": "Designer ingested the Untitled UI Date picker (a single-date picker and a date-range picker with presets, built on react-aria-components, with their calendar, range calendar and cell: 5 files, plus hooks/use-breakpoint.ts) via the ingestion workflow (2 Nov 2026). Checked: components/custom/date-picker (InputDatePicker, a typed segmented field with a calendar, the form field of 2.11) does part of the same job; the other overlap, components/custom/date-range (DateRangeControl), was removed by the designer on 2 Nov 2026 (2026-11-02-01). These are button-triggered pickers with Apply and presets, so not an exact twin of the form field, but the overlap is a 1.7 question left open for the designer, and no caller was migrated. Shipped in components/application/ as ingested, matching the carousel precedent (OVR-012). After ingest: icons on Cancel, Apply and Today (3.12), the dead text-md removed (2.1), font-barlow on the popovers (2.2), doc-site heading overrides (2.7), 40px preset rows (2.16), and the pick held in a draft so Cancel, Escape and a press outside keep the date (1.9). The ingest also raised react-aria to 3.53.1 and react-aria-components to 1.22.1 and made @internationalized/date a direct dependency.",
+      "status": "active"
+    },
+    {
+      "id": "OVR-015",
+      "component": "components/application/date-picker/date-picker.tsx",
+      "designer": "Sai Maniganahalli",
+      "approvedBy": "Sai Maniganahalli",
+      "date": "2026-11-02",
+      "reviewBy": "2027-03-25",
+      "reason": "Designer ingested the Untitled UI Date picker (a single-date picker and a date-range picker with presets, built on react-aria-components, with their calendar, range calendar and cell: 5 files, plus hooks/use-breakpoint.ts) via the ingestion workflow (2 Nov 2026). Checked: components/custom/date-picker (InputDatePicker, a typed segmented field with a calendar, the form field of 2.11) does part of the same job; the other overlap, components/custom/date-range (DateRangeControl), was removed by the designer on 2 Nov 2026 (2026-11-02-01). These are button-triggered pickers with Apply and presets, so not an exact twin of the form field, but the overlap is a 1.7 question left open for the designer, and no caller was migrated. Shipped in components/application/ as ingested, matching the carousel precedent (OVR-012). After ingest: icons on Cancel, Apply and Today (3.12), the dead text-md removed (2.1), font-barlow on the popovers (2.2), doc-site heading overrides (2.7), 40px preset rows (2.16), and the pick held in a draft so Cancel, Escape and a press outside keep the date (1.9). The ingest also raised react-aria to 3.53.1 and react-aria-components to 1.22.1 and made @internationalized/date a direct dependency.",
+      "status": "active"
+    },
+    {
+      "id": "OVR-016",
+      "component": "components/application/date-picker/date-range-picker.tsx",
+      "designer": "Sai Maniganahalli",
+      "approvedBy": "Sai Maniganahalli",
+      "date": "2026-11-02",
+      "reviewBy": "2027-03-25",
+      "reason": "Designer ingested the Untitled UI Date picker (a single-date picker and a date-range picker with presets, built on react-aria-components, with their calendar, range calendar and cell: 5 files, plus hooks/use-breakpoint.ts) via the ingestion workflow (2 Nov 2026). Checked: components/custom/date-picker (InputDatePicker, a typed segmented field with a calendar, the form field of 2.11) does part of the same job; the other overlap, components/custom/date-range (DateRangeControl), was removed by the designer on 2 Nov 2026 (2026-11-02-01). These are button-triggered pickers with Apply and presets, so not an exact twin of the form field, but the overlap is a 1.7 question left open for the designer, and no caller was migrated. Shipped in components/application/ as ingested, matching the carousel precedent (OVR-012). After ingest: icons on Cancel, Apply and Today (3.12), the dead text-md removed (2.1), font-barlow on the popovers (2.2), doc-site heading overrides (2.7), 40px preset rows (2.16), and the pick held in a draft so Cancel, Escape and a press outside keep the date (1.9). The ingest also raised react-aria to 3.53.1 and react-aria-components to 1.22.1 and made @internationalized/date a direct dependency.",
+      "status": "active"
+    },
+    {
+      "id": "OVR-017",
+      "component": "components/application/date-picker/range-calendar.tsx",
+      "designer": "Sai Maniganahalli",
+      "approvedBy": "Sai Maniganahalli",
+      "date": "2026-11-02",
+      "reviewBy": "2027-03-25",
+      "reason": "Designer ingested the Untitled UI Date picker (a single-date picker and a date-range picker with presets, built on react-aria-components, with their calendar, range calendar and cell: 5 files, plus hooks/use-breakpoint.ts) via the ingestion workflow (2 Nov 2026). Checked: components/custom/date-picker (InputDatePicker, a typed segmented field with a calendar, the form field of 2.11) does part of the same job; the other overlap, components/custom/date-range (DateRangeControl), was removed by the designer on 2 Nov 2026 (2026-11-02-01). These are button-triggered pickers with Apply and presets, so not an exact twin of the form field, but the overlap is a 1.7 question left open for the designer, and no caller was migrated. Shipped in components/application/ as ingested, matching the carousel precedent (OVR-012). After ingest: icons on Cancel, Apply and Today (3.12), the dead text-md removed (2.1), font-barlow on the popovers (2.2), doc-site heading overrides (2.7), 40px preset rows (2.16), and the pick held in a draft so Cancel, Escape and a press outside keep the date (1.9). The ingest also raised react-aria to 3.53.1 and react-aria-components to 1.22.1 and made @internationalized/date a direct dependency.",
+      "status": "active"
     }
   ]
 }

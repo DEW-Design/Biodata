@@ -59,6 +59,9 @@ export const datasetStatusMeta: Record<DatasetStatus, { label: string; stage: st
   rejected: { label: "Rejected", stage: "Record review", badgeColor: "error" },
 };
 
+/** The statuses that are going on right now, not waiting for a person: a badge that names one shows the loader (Badge `isLoading`). A finished or waiting status does not. */
+export const isProcessingStatus = (status: DatasetStatus) => status === "validation_requested" || status === "validation_in_progress" || status === "processing";
+
 // ── The acknowledgement ──
 export type DataLicence = "cc0" | "ccby";
 export type SecurityClassification = "official" | "official_sensitive";

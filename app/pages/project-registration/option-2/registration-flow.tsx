@@ -47,6 +47,8 @@ import { sampleProjectForm } from "../sample-content";
 import { SuccessScreen } from "../success-screen";
 import { initialDataCollection, initialProjectDetails, initialRestrictions } from "../types";
 import { SectionFields } from "./form-sections";
+import type { DatasetStep } from "../with-dataset/dataset-step";
+import { DATASET_FLOW_STEP_TITLES, datasetFlowStep, withDatasetSection } from "../with-dataset/steps";
 import { RegistrationProgress } from "./registration-progress";
 import { RegistrationShell } from "./registration-shell";
 import { ReviewSection } from "./review-section";
@@ -76,7 +78,8 @@ function GuestPrompt() {
   );
 }
 
-export function RegistrationFlow() {
+/** `datasetStep` (opt-in, option 2: a Datasets step after the geographic extent) and the route it lives at (`basePath`) are the only differences between the two flows; without them this is option 1, unchanged. */
+export function RegistrationFlow({ datasetStep, basePath = BASE_PATH }: { datasetStep?: DatasetStep; basePath?: string } = {}) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const roleHref = useRoleHref();
@@ -89,11 +92,22 @@ export function RegistrationFlow() {
   const [created, setCreated] = useState<CreatedProject | null>(null);
   const [confirmCancel, setConfirmCancel] = useState(false);
 
-  const sections = visibleSections(state.restrictions);
+  const sections = datasetStep ? withDatasetSection(visibleSections(state.restrictions)) : visibleSections(state.restrictions);
   const requested = searchParams.get("section") as SectionId | null;
   const current: SectionId = requested && sections.includes(requested) ? requested : "basics";
   const index = sections.indexOf(current);
   const meta = sectionMeta(current, version);
+  // The Dataset step answers for itself; every other section is option 1's rules, and the closing review also needs the dataset step.
+  const validOf = (id: SectionId) => (id === "dataset" ? (datasetStep?.valid ?? true) : id === "review" && datasetStep ? isFormValid(state, version) && datasetStep.valid : isSectionValid(id, state, version));
+  const missingOf = (id: SectionId) =>
+    id === "dataset"
+      ? (datasetStep?.missing ?? [])
+      : id === "review" && datasetStep
+        ? sections.filter((sec) => sec !== "review" && !validOf(sec)).map((sec) => sectionMeta(sec, version).title)
+        : missingFields(id, state, version);
+  const stepNumber = datasetStep ? datasetFlowStep(current) : meta.step;
+  const stepCount = datasetStep ? DATASET_FLOW_STEP_TITLES.length : 3;
+  const stepTitle = stepNumber ? (datasetStep ? DATASET_FLOW_STEP_TITLES[stepNumber - 1] : STEP_TITLES[stepNumber as 1 | 2 | 3]) : undefined;
 
   const update = (next: FormState) => {
     setState(next);
@@ -104,17 +118,17 @@ export function RegistrationFlow() {
   const goTo = (id: SectionId) => {
     // Moving forward past a section with mandatory details missing is not allowed: the section is
     // marked, its "Details missing" alert appears, and the form stays put. Going back is always free.
-    if (sections.indexOf(id) > index && current !== "review" && !isSectionValid(current, state, version)) {
+    if (sections.indexOf(id) > index && current !== "review" && !validOf(current)) {
       setAttempted((a) => mark(a, current));
       return;
     }
     // Leaving a section counts it as visited, so column 2 can show it as complete.
     setVisited((v) => mark(v, current));
-    router.push(roleHref(`${BASE_PATH}?section=${id}`));
+    router.push(roleHref(`${basePath}?section=${id}`));
   };
 
   const showErrors = attempted.has(current);
-  const currentValid = isSectionValid(current, state, version);
+  const currentValid = validOf(current);
 
   const handleContinue = () => {
     if (!currentValid) {
@@ -122,20 +136,22 @@ export function RegistrationFlow() {
       return;
     }
     setVisited((v) => mark(v, current));
-    router.push(roleHref(`${BASE_PATH}?section=${sections[index + 1]}`));
+    router.push(roleHref(`${basePath}?section=${sections[index + 1]}`));
   };
 
   const handleCreate = () => {
-    if (!isFormValid(state, version)) {
-      const missing = sections.filter((id) => id !== "review" && !isSectionValid(id, state, version));
+    if (!validOf("review")) {
+      const missing = sections.filter((id) => id !== "review" && !validOf(id));
       setAttempted((a) => new Set([...a, ...missing]));
-      router.push(roleHref(`${BASE_PATH}?section=${missing[0]}`));
+      router.push(roleHref(`${basePath}?section=${missing[0]}`));
       return;
     }
-    setCreated(saveCreatedProject(toSavedForm(state, version), role));
+    const project = saveCreatedProject(toSavedForm(state, version), role);
+    datasetStep?.create(project); // the dataset goes onto the project that was just made
+    setCreated(project);
   };
 
-  const handleCancel = () => (dirty ? setConfirmCancel(true) : router.push(roleHref("/pages/project-list")));
+  const handleCancel = () => (dirty || datasetStep?.dirty ? setConfirmCancel(true) : router.push(roleHref("/pages/project-list")));
   const handleSaveDraft = () => toast.brand("Draft saved", { description: "This is a demo build with no real backend - nothing is actually persisted." });
 
   const role = useUserRole();
@@ -167,6 +183,8 @@ export function RegistrationFlow() {
         visited={created ? new Set(sections) : visited}
         attempted={attempted}
         version={version}
+        steps={datasetStep ? DATASET_FLOW_STEP_TITLES.map((title, i) => ({ title, of: (id: SectionId) => datasetFlowStep(id) === i + 1 })) : undefined}
+        validOf={datasetStep ? validOf : undefined}
         onSelect={(id) => {
           close();
           if (!created) goTo(id);
@@ -180,13 +198,13 @@ export function RegistrationFlow() {
   else if (created) {
     main = (
       <div className="min-h-0 flex-1 overflow-y-auto px-6 py-6">
-        <SuccessScreen projectName={state.details.shortTitle || "Untitled project"} onGoToProject={() => router.push(roleHref(createdProjectHref(created.id)))} />
+        <SuccessScreen projectName={state.details.shortTitle || "Untitled project"} onGoToProject={() => router.push(roleHref(`${createdProjectHref(created.id)}${datasetStep?.hasFiles ? "&tab=datasets" : ""}`))} />
       </div>
     );
   } else {
     main = (
       <FormPage
-        eyebrow={meta.step ? `Step ${meta.step} of 3 - ${STEP_TITLES[meta.step]}` : undefined}
+        eyebrow={stepNumber && stepTitle ? `Step ${stepNumber} of ${stepCount} - ${stepTitle}` : undefined}
         title={meta.title}
         subtitle={meta.description}
         onCancel={handleCancel}
@@ -194,16 +212,22 @@ export function RegistrationFlow() {
         onBack={index > 0 ? () => goTo(sections[index - 1]) : undefined}
         problems={
           current === "review"
-            ? { items: missingFields("review", state, version), extra: "Use Edit on a row below to fix them." }
+            ? { items: missingOf("review"), extra: "Use Edit on a row below to fix them." }
             : showErrors && !currentValid
-              ? { items: missingFields(current, state, version) }
+              ? { items: missingOf(current) }
               : undefined
         }
-        primaryLabel={current === "review" ? "Create project" : "Continue"}
+        primaryLabel={current === "review" ? "Create project" : current === "dataset" && datasetStep ? datasetStep.primaryLabel : "Continue"}
         primaryIsContinue={current !== "review"}
         onPrimary={current === "review" ? handleCreate : handleContinue}
       >
-        {current === "review" ? <ReviewSection state={state} onEdit={goTo} version={version} /> : <SectionFields key={sampleKey} id={current} state={state} onChange={update} showErrors={showErrors} version={version} />}
+        {current === "review" ? (
+          <ReviewSection state={state} onEdit={goTo} version={version} dataset={datasetStep ? { title: "Datasets", rows: datasetStep.reviewRows } : undefined} />
+        ) : current === "dataset" ? (
+          datasetStep?.fields(showErrors)
+        ) : (
+          <SectionFields key={sampleKey} id={current} state={state} onChange={update} showErrors={showErrors} version={version} />
+        )}
       </FormPage>
     );
   }

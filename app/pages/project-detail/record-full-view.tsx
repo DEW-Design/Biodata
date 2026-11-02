@@ -29,7 +29,7 @@ import {
 } from "react";
 import { ArrowLeft, ChevronDown, EyeOff, InfoCircle, Plus, Save01, Trash01, XClose } from "@untitledui/icons";
 import { AlertFullWidth } from "@/components/application/alerts/alerts";
-import { ConfirmationModal } from "@/components/application/modals/modal";
+import { DestructiveModal } from "@/components/application/modals/modal";
 import { toast } from "@/components/application/toast/toast";
 import { Button } from "@/components/base/buttons/button";
 import { Tooltip, TooltipTrigger } from "@/components/base/tooltip/tooltip";
@@ -906,7 +906,7 @@ export function RecordFullView({
         </div>
       )}
 
-      <ConfirmationModal confirmIcon={Trash01} cancelIcon={ArrowLeft}
+      <DestructiveModal confirmIcon={Trash01} cancelIcon={ArrowLeft}
         isOpen={confirm !== null}
         onOpenChange={(open) => !open && setConfirm(null)}
         title="Discard your changes?"

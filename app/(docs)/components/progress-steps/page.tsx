@@ -137,7 +137,6 @@ export default function ProgressStepsPage() {
         show a fixed, short sequence. The sections of a form are shown by this same component, vertically, in column 2: see the <a href="/patterns/forms">form pattern</a>.
       </p>
 
-      {/* ── Component Playground ── */}
       {isFeatureEnabled(config, "playground") && (
         <>
           <h2 className="text-balance">Component Playground</h2>
@@ -200,7 +199,6 @@ export default function ProgressStepsPage() {
         </>
       )}
 
-      {/* ── Icons with text ── */}
       {isFeatureEnabled(config, "iconsWithText") && (
         <>
           <h2 className="text-balance">Icons with text</h2>
@@ -227,7 +225,6 @@ export default function ProgressStepsPage() {
         </>
       )}
 
-      {/* ── Minimal icons ── */}
       {isFeatureEnabled(config, "minimalIcons") && (
         <>
           <h2 className="text-balance">Minimal icons</h2>
@@ -243,7 +240,6 @@ export default function ProgressStepsPage() {
         </>
       )}
 
-      {/* ── Text with line ── */}
       {isFeatureEnabled(config, "textWithLine") && (
         <>
           <h2 className="text-balance">Text with line</h2>
@@ -256,7 +252,6 @@ export default function ProgressStepsPage() {
         </>
       )}
 
-      {/* ── API ── */}
       <h2 className="text-balance">API</h2>
       <h3 className="text-balance">Progress.IconsWithText</h3>
       <PropTable rows={iconsWithTextProps} />
@@ -265,7 +260,6 @@ export default function ProgressStepsPage() {
       <h3 className="mt-8 text-balance">Step (each item)</h3>
       <PropTable rows={stepShape} />
 
-      {/* ── Usage ── */}
       {isFeatureEnabled(config, "usage") && (
         <>
           <h2 className="text-balance">Usage</h2>
@@ -287,7 +281,6 @@ const items = [
         </>
       )}
 
-      {/* ── Figma ── */}
       {isFeatureEnabled(config, "figma") && (
         <>
           <h2 className="text-balance">Figma</h2>

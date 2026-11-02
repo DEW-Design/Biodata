@@ -33,6 +33,8 @@ import { optionsFromValues, type FilterSection, useListFilter } from "@/app/page
 import { AttributeFilterChips } from "@/app/pages/_shared/attribute-filter";
 import { FilterMenu } from "@/app/pages/_shared/filter-menu";
 import { ToolbarSearch } from "@/app/pages/_shared/toolbar-search";
+import { ListEmptyState } from "@/app/pages/_shared/list-empty-state";
+import { UploadDatasetButton } from "@/app/pages/_shared/upload-dataset-button";
 import { FittedText } from "@/app/pages/_shared/fitted-text";
 import { MetricTile } from "@/app/pages/_shared/map-search/metric-tile";
 import { SPECIES_GROUP_ICON } from "@/app/pages/_shared/map-search/species-group-icons";
@@ -161,6 +163,7 @@ export function SpeciesView({
 }: {
   onOpenRecord: (recordId: string) => void;
 }) {
+  const { meta, canEdit } = useEditStore();
   const all = useProjectSpecies();
   const [view, setView] = useState<"cards" | "table">("cards");
   const [group, setGroup] = useState<SpeciesGroup | null>(null);
@@ -255,13 +258,25 @@ export function SpeciesView({
     </Badge>
   );
 
+  // A project with no species has no use for the tiles, the search or the Filter: they would count zeros and filter nothing. It is said once,
+  // with where a species comes from (the same card and the same way forward as the Records tab, which is what brings a species in).
+  if (all.length === 0)
+    return (
+      <div className="flex flex-col gap-4">
+        <div className="flex min-h-[560px] flex-col rounded-xl border border-secondary bg-primary">
+          <ListEmptyState
+            icon={Feather}
+            title="No species yet"
+            description={canEdit ? "A species appears here once an occurrence of it is in Project records. Upload a dataset to bring them in." : "Species appear here once a dataset is uploaded to this project."}
+          >
+            <UploadDatasetButton projectId={meta.id} color="primary" size="md" />
+          </ListEmptyState>
+        </div>
+      </div>
+    );
+
   return (
     <div className="flex flex-col gap-4">
-      <p className="text-sm text-balance text-tertiary">
-        Every species this project has recorded, from its occurrences in Survey
-        records. &ldquo;Go to record&rdquo; opens the occurrence.
-      </p>
-
       <div className="flex items-stretch gap-2">
         {GROUPS.map((g) => (
           <MetricTile
@@ -313,11 +328,21 @@ export function SpeciesView({
       <AttributeFilterChips filter={filter} />
 
       {rows.length === 0 ? (
-        <div className="flex flex-col items-center gap-1 rounded-xl border border-secondary p-10 text-center">
-          <p className="text-sm font-medium text-primary">No species match</p>
-          <p className="text-sm text-tertiary">
-            Try another search, filter or group.
-          </p>
+        <div className="flex flex-col rounded-xl border border-secondary bg-primary">
+          <ListEmptyState
+            icon={Feather}
+            title="No species match"
+            description="No species fit this search, filter or group."
+            action={{
+              label: "Show all species",
+              onPress: () => {
+                setQuery("");
+                setGroup(null);
+                filter.clear();
+                reset();
+              },
+            }}
+          />
         </div>
       ) : view === "cards" ? (
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2 2xl:grid-cols-3">

@@ -29,9 +29,7 @@ const Section = ({ label, children }: { label: string; children: React.ReactNode
 
 type RgType = "icon-simple" | "icon-card" | "avatar" | "payment-icon" | "radio-button" | "checkbox";
 
-// Demo data - the fictional Olivia Wyatt / Phoenix Baker / Lana Steiner personas per CONTEXT.md's
-// placeholder-person convention, plan-selector copy reused from the Radio buttons page for
-// consistency across the two related components.
+// Placeholder people (CONTRACTS 0.3); the plan copy is the Radio buttons page's.
 const planItems = [
   { value: "starter", title: "Starter", secondaryTitle: "Free", description: "1 user, community support.", icon: Zap },
   { value: "growth", title: "Growth", secondaryTitle: "$29/mo", description: "Up to 10 users, priority support.", icon: Rocket02 },
@@ -79,8 +77,7 @@ function RgPreview({ type, size, disabled }: { type: RgType; size: "sm" | "md"; 
   }
 }
 
-// Pulled from RadioGroupProps (react-aria-components AriaRadioGroupProps, minus `children`
-// which every variant replaces with a typed `items` array instead).
+// RadioGroupProps without `children`: every variant takes a typed `items` array instead.
 const commonProps = [
   { name: "items",        type: "ItemType[]",                default: "-  (see item shape per type below)" },
   { name: "size",         type: '"sm" | "md"',               default: '"sm"' },
@@ -211,15 +208,13 @@ export default function RadioGroupsPage() {
       <PageHeader
         section="Components"
         title="Radio groups"
-        description="Card-style single-choice selection, built on React Aria. Six layouts - icon, icon card, avatar, payment icon, radio button, and checkbox - each driven by a typed items array, in two sizes."
+        description="Card-style single-choice selection built on React Aria, in six layouts (icon, icon card, avatar, payment icon, radio button and checkbox) and two sizes. Each takes a typed items array."
         actions={<ContextualConfigPanel slug="radio-groups" title="Radio groups" sections={sectionToggles} />}
       />
 
-      {/* ── Component Playground ── */}
       {isFeatureEnabled(config, "playground") && (
         <>
           <h2 className="text-balance">Component Playground</h2>
-          <p className="text-balance">Live instance - the controls read their options from the same config that drives the Types/Sizes sections below.</p>
           <div className="overflow-hidden rounded-2xl border border-secondary shadow-xs">
             <div className="grid md:grid-cols-[1fr_300px]">
               <div
@@ -273,13 +268,11 @@ export default function RadioGroupsPage() {
         </>
       )}
 
-      {/* ── Types ── */}
       {types.length > 0 && (
         <>
           <h2 className="text-balance">Types</h2>
           <p className="text-balance">
-            Six layouts, all driven by the same <code>items</code>/<code>size</code>/<code>isDisabled</code> shape - swap the component to change
-            the card content, not the group behaviour.
+            Six layouts, all driven by the same <code>items</code>/<code>size</code>/<code>isDisabled</code> shape. Swap the component to change the card content, not the group behaviour.
           </p>
           <div className="mt-4 grid gap-4 sm:grid-cols-2">
             <Section label="Icon simple">
@@ -304,7 +297,6 @@ export default function RadioGroupsPage() {
         </>
       )}
 
-      {/* ── Sizes ── */}
       {sizes.length > 0 && (
         <>
           <h2 className="text-balance">Sizes</h2>
@@ -324,7 +316,6 @@ export default function RadioGroupsPage() {
         </>
       )}
 
-      {/* ── Disabled ── */}
       {isFeatureEnabled(config, "disabled") && (
         <>
           <h2 className="text-balance">Disabled</h2>
@@ -338,9 +329,8 @@ export default function RadioGroupsPage() {
         </>
       )}
 
-      {/* ── API ── */}
       <h2 className="text-balance">API</h2>
-      <p className="text-balance">Every variant shares the same group-level props - only the shape of each <code>items</code> entry differs.</p>
+      <p className="text-balance">Every variant shares the same group-level props. Only the shape of each <code>items</code> entry differs.</p>
       <h3 className="text-balance">Common props</h3>
       <table className="token-table mt-4">
         <thead>
@@ -382,14 +372,13 @@ export default function RadioGroupsPage() {
           </table>
           {(shape.type === "radio-button" || shape.type === "checkbox") && (
             <p className="mt-2 text-xs text-tertiary">
-              <code>icon</code> is declared on this item type but never rendered by the component - same as{" "}
+              <code>icon</code> is declared on this item type but never rendered by the component, like{" "}
               <code>Avatar</code>&apos;s dead <code>contrastBorder</code> prop, documented here for accuracy rather than silently dropped.
             </p>
           )}
         </div>
       ))}
 
-      {/* ── Usage ── */}
       {isFeatureEnabled(config, "usage") && (
         <>
           <h2 className="text-balance">Usage</h2>
@@ -410,11 +399,10 @@ export default function RadioGroupsPage() {
         </>
       )}
 
-      {/* ── Figma ── */}
       {isFeatureEnabled(config, "figma") && (
         <>
           <h2 className="text-balance">Figma</h2>
-          <p className="text-balance">No linked Figma file yet - this component was pulled in via the Untitled UI CLI, not designed in Figma first.</p>
+          <p className="text-balance">No linked Figma file yet. This component came from the Untitled UI CLI, not from a Figma design.</p>
         </>
       )}
     </div>

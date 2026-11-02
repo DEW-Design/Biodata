@@ -135,15 +135,13 @@ export default function AvatarPage() {
       <PageHeader
         section="Components"
         title="Avatar"
-        description="User representation. Supports an image, initials fallback, and an icon fallback. Sizes and demo sections are driven from config/design-system.config.ts."
+        description="A user's picture, with initials or an icon when there is no image."
         actions={<ContextualConfigPanel slug="avatar" title="Avatar" sections={sectionToggles} />}
       />
 
-      {/* ── Component Playground ── */}
       {isFeatureEnabled(config, "playground") && (
         <>
           <h2 className="text-balance">Component Playground</h2>
-          <p className="text-balance">Live instance - the controls read their options from the same config that drives the Variants section below.</p>
           <div className="overflow-hidden rounded-2xl border border-secondary shadow-xs">
             <div className="grid md:grid-cols-[1fr_300px]">
               <div
@@ -207,7 +205,7 @@ export default function AvatarPage() {
                 </div>
 
                 <p className="text-xs leading-normal text-quaternary text-balance">
-                  Badge priority: status › verified › count - only one shows at a time.
+                  Badge priority is status, then verified, then count. Only one shows at a time.
                 </p>
               </div>
             </div>
@@ -215,7 +213,6 @@ export default function AvatarPage() {
         </>
       )}
 
-      {/* ── Sizes ── */}
       {sizes.length > 0 && (
         <>
           <h2 className="text-balance">Sizes</h2>
@@ -230,13 +227,12 @@ export default function AvatarPage() {
         </>
       )}
 
-      {/* ── Fallback content ── */}
       {isFeatureEnabled(config, "fallback") && (
         <>
           <h2 className="text-balance">Fallback content</h2>
           <p className="text-balance">
-            Falls back in order: <code>src</code> image → <code>initials</code> → <code>placeholderIcon</code> →{" "}
-            <code>placeholder</code> → default <code>User01</code> icon.
+            Falls back in order: the <code>src</code> image, <code>initials</code>, <code>placeholderIcon</code>,{" "}
+            <code>placeholder</code>, then the default <code>User01</code> icon.
           </p>
           <Section label="Initials / custom icon / default">
             <div className="flex flex-col items-center gap-2">
@@ -255,18 +251,16 @@ export default function AvatarPage() {
         </>
       )}
 
-      {/* ── Border ── */}
       {isFeatureEnabled(config, "border") && (
         <>
           <h2 className="text-balance">Border</h2>
-          <p className="text-balance">An inner contrast ring around the avatar - used when the background behind the avatar is unpredictable.</p>
+          <p className="text-balance">An inner contrast ring around the avatar, for when the background behind it is unpredictable.</p>
           <Section label="border">
             <Avatar size="lg" initials="OW" border />
           </Section>
         </>
       )}
 
-      {/* ── Status ── */}
       {isFeatureEnabled(config, "status") && (
         <>
           <h2 className="text-balance">Status indicator</h2>
@@ -283,7 +277,6 @@ export default function AvatarPage() {
         </>
       )}
 
-      {/* ── Verified ── */}
       {isFeatureEnabled(config, "verified") && (
         <>
           <h2 className="text-balance">Verified</h2>
@@ -293,55 +286,50 @@ export default function AvatarPage() {
         </>
       )}
 
-      {/* ── Count ── */}
       {isFeatureEnabled(config, "count") && (
         <>
           <h2 className="text-balance">Count badge</h2>
-          <p className="text-balance">Displays an unread/notification count on the badge corner.</p>
+          <p className="text-balance">Shows an unread or notification count on the badge corner.</p>
           <Section label="count">
             <Avatar size="lg" initials="OW" count={4} />
           </Section>
         </>
       )}
 
-      {/* ── Company icon ── */}
       {isFeatureEnabled(config, "companyIcon") && (
         <>
           <h2 className="text-balance">Company icon</h2>
-          <p className="text-balance">Pass a custom <code>badge</code> node - e.g. a company logo - when status/verified/count aren&apos;t in use.</p>
+          <p className="text-balance">Pass a custom <code>badge</code> node, such as a company logo, when status, verified and count are not in use.</p>
           <Section label="badge">
             <Avatar size="lg" initials="OW" badge={<AvatarCompanyIcon size="lg" src={companyLogo} alt="Company" />} />
           </Section>
         </>
       )}
 
-      {/* ── Add button ── */}
       {isFeatureEnabled(config, "addButton") && (
         <>
           <h2 className="text-balance">Add button</h2>
-          <p className="text-balance">A dashed placeholder used at the end of an avatar stack to add another user.</p>
+          <p className="text-balance">A dashed placeholder at the end of an avatar stack, for adding another user.</p>
           <Section label="AvatarAddButton">
             <AvatarAddButton size="md" />
           </Section>
         </>
       )}
 
-      {/* ── Label group ── */}
       {isFeatureEnabled(config, "labelGroup") && (
         <>
           <h2 className="text-balance">Avatar label group</h2>
-          <p className="text-balance">An avatar paired with a title and subtitle - used in lists, tables, and comments.</p>
+          <p className="text-balance">An avatar with a title and subtitle, for lists, tables and comments.</p>
           <Section label="AvatarLabelGroup">
             <AvatarLabelGroup size="md" initials="OW" title="Olivia Wyatt" subtitle="olivia@dew.design" status="online" />
           </Section>
         </>
       )}
 
-      {/* ── Profile photo ── */}
       {isFeatureEnabled(config, "profilePhoto") && (
         <>
           <h2 className="text-balance">Profile photo</h2>
-          <p className="text-balance">A larger presentation used on profile headers and settings pages.</p>
+          <p className="text-balance">A larger avatar for profile headers and settings pages.</p>
           <Section label="sm / md / lg">
             {(["sm", "md", "lg"] as const).map((s) => (
               <div key={s} className="flex flex-col items-center gap-2">
@@ -353,11 +341,10 @@ export default function AvatarPage() {
         </>
       )}
 
-      {/* ── Group ── */}
       {isFeatureEnabled(config, "group") && (
         <>
           <h2 className="text-balance">Avatar group</h2>
-          <p className="text-balance">Stack avatars with border and a –8px overlap, ending in an <code>AvatarAddButton</code> or a count avatar when the list exceeds the max.</p>
+          <p className="text-balance">Stack avatars with a border and an 8px overlap, ending in an <code>AvatarAddButton</code> or a count avatar when the list exceeds the max.</p>
           <Section label="stack">
             <div className="flex">
               {stack.map((a, i) => (
@@ -375,7 +362,6 @@ export default function AvatarPage() {
         </>
       )}
 
-      {/* ── API ── */}
       <h2 className="text-balance">API</h2>
       <table className="token-table mt-4">
         <thead>
@@ -396,7 +382,6 @@ export default function AvatarPage() {
         </tbody>
       </table>
 
-      {/* ── Usage ── */}
       {isFeatureEnabled(config, "usage") && (
         <>
           <h2 className="text-balance">Usage</h2>
@@ -410,11 +395,10 @@ export default function AvatarPage() {
         </>
       )}
 
-      {/* ── Figma ── */}
       {isFeatureEnabled(config, "figma") && (
         <>
           <h2 className="text-balance">Figma</h2>
-          <p className="text-balance">No linked Figma file yet - this component was pulled in via the Untitled UI CLI, not designed in Figma first.</p>
+          <p className="text-balance">No linked Figma file yet. This component came from the Untitled UI CLI, not from a Figma design.</p>
         </>
       )}
     </div>

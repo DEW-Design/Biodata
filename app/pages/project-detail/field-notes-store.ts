@@ -16,6 +16,7 @@
 // existing artefacts re-attached to the property each one documents. The files are metadata only:
 // there is no real upload in this preview. Key: `${sectionId}:${field label or measurement type}`.
 
+import { useMemo } from "react";
 import { create } from "zustand";
 import { createJSONStorage, persist } from "zustand/middleware";
 import {
@@ -26,6 +27,7 @@ import { trapLabels } from "./field-schema";
 import type { SurveyRecord } from "./survey-data";
 import { FACTOR_TITLES } from "./landscape";
 import { isBiodataAdmin, type UserRole } from "@/lib/user-role";
+import { useFeatureAccess } from "@/lib/use-feature-access";
 import type { DataLicence } from "@/app/pages/_shared/dataset-upload/dataset-data";
 
 export type FieldFileKind = "image" | "pdf" | "spreadsheet" | "video" | "link";
@@ -602,10 +604,23 @@ export const fieldNotesActions = {
 
 export { today as noteDate, newId as noteId, EMPTY_NOTES as EMPTY_NOTES_VALUE };
 
-/** Every field note, kept in step with localStorage. */
+/** What a role without the `fieldNotes` feature may see of the notes: the files (the project's artefacts) and nothing else, so no flag, resolution or comment, and no marker for one. */
+function filesOnly(all: NotesMap): NotesMap {
+  const out: NotesMap = {};
+  for (const [recordId, fields] of Object.entries(all)) {
+    const kept: Record<string, FieldNotes> = {};
+    for (const [field, n] of Object.entries(fields)) if (n.files.length > 0) kept[field] = { comments: [], files: n.files };
+    if (Object.keys(kept).length > 0) out[recordId] = kept;
+  }
+  return out;
+}
+
+/** Every field note, kept in step with localStorage, as the viewed role may see them: a flag and a comment are for members and reviewers (the `fieldNotes` feature), so a signed-out visitor gets the files alone. */
 export function useFieldNotes(): NotesMap {
   useRehydrate(useNotesStore);
-  return useNotesStore((s) => s.notes);
+  const notes = useNotesStore((s) => s.notes);
+  const canSeeNotes = useFeatureAccess("fieldNotes");
+  return useMemo(() => (canSeeNotes ? notes : filesOnly(notes)), [notes, canSeeNotes]);
 }
 
 export function hasNotes(n: FieldNotes | undefined): n is FieldNotes {

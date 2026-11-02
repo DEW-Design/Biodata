@@ -47,7 +47,7 @@ import { cx } from "@/utils/cx";
 //             values read live from its source table through the mapping (REQ-18.4).
 //   Details   the definition: name, category, dates, columns, and for a Descriptive vocabulary its
 //             table and mapping.
-//   History   every change, who and when, with the before and after values (REQ-18.11). The Figma's
+//   Audit Log every change, who and when, with the before and after values (REQ-18.11). The Figma's
 //             "View Logs" link becomes this tab.
 //
 // A numbered vocabulary (Code or ID) shows its identifier column as "ID". Its template
@@ -55,7 +55,7 @@ import { cx } from "@/utils/cx";
 //
 // Actions: Edit is the next step; Archive sits below the divider in "..." (a live vocabulary is never
 // deleted, REQ-18.6); a draft, never live, can be deleted instead (the designer, 30 Sept 2026). An archived vocabulary's next step is Reactivate, which asks for the new end date and runs
-// the creation checks first (REQ-18.5). Export history downloads this vocabulary's audit log (REQ-18.11).
+// the creation checks first (REQ-18.5). Export audit log downloads this vocabulary's audit log (REQ-18.11).
 
 const NotProvided = () => <span className="text-quaternary">Not provided</span>;
 
@@ -188,13 +188,13 @@ export function CvDetail({
 
   const exportHistory = () =>
     downloadCsv(
-      `${cv.id}-history.csv`,
+      `${cv.id}-audit-log.csv`,
       ["Date and time", "By", "Action", "Field", "Previous value", "Updated value"],
       cv.history.flatMap((e) => (e.changes?.length ? e.changes.map((c) => [formatDateTime(e.at), e.by, e.action, c.field, c.from, c.to]) : [[formatDateTime(e.at), e.by, e.action, "", "", ""]])),
     );
 
   const edit: RecordAction = { id: "edit", label: status === "draft" ? "Edit draft" : "Edit vocabulary", icon: Edit05, onPress: onEdit };
-  const exportAction: RecordAction = { id: "export", label: "Export history", icon: Download01, onPress: exportHistory };
+  const exportAction: RecordAction = { id: "export", label: "Export audit log", icon: Download01, onPress: exportHistory };
   const actions: { primary?: RecordAction; secondary: RecordAction[]; menu: RecordAction[] } =
     status === "archived"
       ? {
@@ -279,7 +279,7 @@ export function CvDetail({
           <TabList aria-label="Vocabulary sections" type="underline" size="md">
             <Tab id="entries" label="Entries" icon={Rows01} badge={activeCount} />
             <Tab id="details" label="Details" icon={File06} />
-            <Tab id="history" label="History" icon={ClockRewind} />
+            <Tab id="history" label="Audit Log" icon={ClockRewind} />
           </TabList>
         </div>
 

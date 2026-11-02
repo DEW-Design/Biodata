@@ -86,6 +86,9 @@ designer owns. It is data, separate from `design-system.config.ts` (which doc va
     Report (`projectAuditLog`, BioData Admin only), the three Specimens and restrictions reports (`specimenReports`, every role with
     Reports except the Registered User) and the Flora and Fauna Taxonomy Reports (`taxonomyManagement`, BioData Admin and Super Admin only, as Taxonomy Management). The landing, the switcher, Create a report and My reports do not offer them, and opening the
     address shows "This report is not available to your role" (`ReportPage`).
+- **A public user sees published projects only** (the designer, 30 Oct 2026). A project is published when it is Active or Completed; a Draft and a project Under review are not. One rule, `isProjectVisibleTo` (`project-list-data.ts`), read by the Projects list, the project switcher, the header search and the project's own address (a hidden one is "This project isn't available"). Explore and Home already filtered by the same statuses. Every signed-in role still sees all four; what a registered user sees of other people's drafts is for phase 2 of the consistency sweep to decide.
+- **Field notes are for members and reviewers:** the `fieldNotes` feature (every signed-in role). A role without it sees a record's values and the files attached to a field, but no flag, no flag marker and no comment (`useFieldNotes()` in `field-notes-store.ts` is the one place).
+- **The Data ingestion stress test is registered users and above:** the `ingestionStressTest` feature and a `wholePageGates` entry; a signed-out visitor sees the section's restriction (`RestrictedState`) with all three columns.
 - **Record access levels** live in one place, `app/pages/_shared/map-search/record-access.ts`: `biodata-admin`
   (`restrictedData`) sees Level 1 to 4 in full; other signed-in roles see restricted records with the location
   shown only as a block (see below) and can request a DLA; `public-user` sees Level 1 only.

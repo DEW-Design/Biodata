@@ -29,13 +29,13 @@ import { useRoleHref } from "@/lib/use-role-href";
 // - The card: what it is and its status. Its actions are the record's own (edit, delete); the review decisions are below.
 // - Where it stands was a panel under the card (steps, the panel's note, the three decisions). Removed on 14 Oct 2026 (the
 //   designer: "the status card and the species card and the image on the right is not needed"): the status is the card's badge,
-//   the timeline is History, and the decisions are the card's actions again as 4.6 has them (Start review, or Accept with Return
+//   the timeline is the Audit Log, and the decisions are the card's actions again as 4.6 has them (Start review, or Accept with Return
 //   and Reject in "..."). Only a note the panel wrote is shown, as one notice under the card. Pressing Accept with ratings
 //   missing shows "Ratings missing" over the table, as the earlier layout did.
-// - Two tabs, Nomination and History. Nomination: "Already protected" (what earlier accepted nominations of the species
+// - Two tabs, Nomination and Audit Log. Nomination: "Already protected" (what earlier accepted nominations of the species
 //   protect, for both admin roles, only when there is something), then what this nomination protects (`ProtectionView`,
 //   nomination-protection.tsx, 14 Oct 2026: a summary, then one card per reason listing the items it covers, each with its
-//   rating, set in place by an admin while under review), and no nominator's email (removed 14 Oct 2026). Audit history is the shared audit summary (14 Oct 2026). The old
+//   rating, set in place by an admin while under review), and no nominator's email (removed 14 Oct 2026). The Audit Log is the shared audit summary (14 Oct 2026). The old
 //   Overview went: the card already holds its facts.
 // - One name, Protection: no "What to protect", "Data release" or "Current rating" headings, and no form helper text.
 
@@ -139,7 +139,7 @@ export function NominationRecord({
         </HeroMeta>
       </RecordHero>
 
-      {/* Where it stands is the card's status badge; the History tab has the timeline. Only words the panel wrote are shown here. */}
+      {/* Where it stands is the card's status badge; the Audit Log tab has the timeline. Only words the panel wrote are shown here. */}
       {n.decisionNote && (n.status === "returned" || n.status === "accepted" || n.status === "rejected") && (
         <div className="shrink-0 px-6 pt-4">
           <AlertFullWidth
@@ -157,7 +157,7 @@ export function NominationRecord({
         <div className="shrink-0 px-6 pt-4">
           <TabList aria-label="Nomination sections" type="underline" size="md">
             <Tab id="nomination" label="Nomination" icon={File06} />
-            <Tab id="history" label="Audit history" icon={ClockRewind} />
+            <Tab id="history" label="Audit Log" icon={ClockRewind} />
           </TabList>
         </div>
 

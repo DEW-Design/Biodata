@@ -88,7 +88,7 @@ export default function IconsPage() {
       <PageHeader
         section="Primitives"
         title="Icons"
-        description="DEW uses Untitled UI Icons - the same set every pulled component (Button, Badge, Checkbox, Input) draws from. All icons share the same geometric foundation, stroke weight, and optical sizing."
+        description="DEW uses Untitled UI Icons, the same set Button, Badge, Checkbox and Input draw from. They share one geometry, stroke weight and optical size."
       />
 
       <h2 className="text-balance">Sizes</h2>
@@ -122,11 +122,10 @@ export default function IconsPage() {
         ))}
       </div>
 
-      {/* ── Featured icons ── */}
       <h2 className="text-balance">Featured icons</h2>
       <p className="text-balance">
-        A glyph in a styled container - used for empty states, alerts, and onboarding. Real DEW component: <code>FeaturedIcon</code> from{" "}
-        <code>components/foundations/featured-icon/featured-icon.tsx</code>. Matches Figma&apos;s &quot;Featured icon&quot; frame exactly.
+        A glyph in a styled container, used for empty states, alerts and onboarding. The DEW component is <code>FeaturedIcon</code> from{" "}
+        <code>components/foundations/featured-icon/featured-icon.tsx</code>. It matches Figma&apos;s &quot;Featured icon&quot; frame.
       </p>
 
       <div className="mt-6 flex flex-col gap-4 rounded-xl border border-secondary bg-primary_alt p-6">
@@ -160,7 +159,7 @@ export default function IconsPage() {
         ))}
       </div>
 
-      <p className="mt-6 text-balance">The <code>outline</code> theme is its own frame in Figma (&quot;Featured icon outline&quot;) - no background, just a soft double ring.</p>
+      <p className="mt-6 text-balance">The <code>outline</code> theme is its own frame in Figma (&quot;Featured icon outline&quot;): no background, a soft double ring.</p>
       <div className="mt-4 flex flex-wrap items-end gap-6 rounded-xl border border-secondary bg-primary_alt p-6">
         {featuredIconColors.map((color) => (
           <div key={color.key} className="flex flex-col items-center gap-2">
@@ -175,7 +174,6 @@ export default function IconsPage() {
         All {allIcons.length.toLocaleString()} icons from <code>@untitledui/icons</code>. Search by name, click any icon to copy its import statement.
       </p>
 
-      {/* Search */}
       <div className="sticky top-0 z-10 mt-4 mb-4 bg-primary_alt py-3">
         <div className="relative max-w-sm">
           <SearchLg size={16} className="pointer-events-none absolute top-1/2 left-3 -translate-y-1/2 text-quaternary" />
@@ -193,7 +191,6 @@ export default function IconsPage() {
         </p>
       </div>
 
-      {/* Grid */}
       {visible.length > 0 ? (
         <div className="grid gap-2" style={{ gridTemplateColumns: "repeat(auto-fill, minmax(84px, 1fr))" }}>
           {visible.map(({ name, Icon }) => (

@@ -31,7 +31,7 @@ export default function TypographyPage() {
       />
 
       <h2 className="text-balance">Type scale</h2>
-      <p className="text-balance">Sizes follow a modular scale. Display sizes are used for headings; text sizes for body and UI copy.</p>
+      <p className="text-balance">Sizes follow a modular scale. Display sizes are for headings, text sizes for body and UI copy.</p>
 
       <div className="flex flex-col gap-1 mt-6">
         {typeScale.map((t) => (
@@ -104,30 +104,28 @@ export default function TypographyPage() {
 
       <h2 className="text-balance">Text wrapping</h2>
       <p className="text-balance">
-        Any real component copy that can wrap to two or more lines - a Modal/Alert/Toast/Tooltip title or
-        description, a SectionHeader heading/subheading, an Accordion item title, a Checkbox/RadioButton/Toggle
-        label or hint, a RadioGroup card&apos;s title or description - carries Tailwind&apos;s{" "}
+        Any component copy that can wrap to two or more lines (a Modal, Alert, Toast or Tooltip title or
+        description, a SectionHeader heading or subheading, an Accordion item title, a Checkbox, RadioButton or Toggle
+        label or hint, a RadioGroup card&apos;s title or description) carries Tailwind&apos;s{" "}
         <code>text-balance</code> utility (<code>text-wrap: balance</code>). It evens out the line lengths of a
-        wrapped heading or short paragraph instead of leaving a single short orphan word on the last line.
-        Single-line, intentionally-clipped text (a Badge/Tag label, a Button label, a Table header cell) doesn&apos;t
-        need it - <code>text-balance</code> only matters once text is actually allowed to wrap.
+        wrapped heading or short paragraph, so the last line is never a single orphan word. Text that never wraps (a
+        Badge or Tag label, a Button label, a Table header cell) doesn&apos;t need it.
       </p>
       <p className="text-balance">
-        This documentation site&apos;s own prose (every heading and paragraph inside <code>.prose-doc</code>) has used
-        the same utility from the start - this section makes that existing, previously-unstated convention explicit
-        and extends it to the real component layer (<code>components/base/**</code>/<code>components/application/
-        **</code>) as well, not just doc-page copy.
+        This documentation site&apos;s own prose (every heading and paragraph inside <code>.prose-doc</code>) already
+        used the utility. This section states the convention and extends it to <code>components/base/**</code> and{" "}
+        <code>components/application/**</code>.
       </p>
 
       <h2 className="text-balance">Font family</h2>
       <p className="text-balance">
-        <code>--font-barlow</code> is set to <strong>Barlow</strong> - the primary typeface of the DEW design system. The type scale above previews
-        in Barlow, and it&apos;s applied directly on every component&apos;s root element (Button, Input, Badge, Checkbox, Tag, Tooltip…), so components
-        inherit it wherever they&apos;re used, regardless of the surrounding page font.
+        <code>--font-barlow</code> is set to <strong>Barlow</strong>, the primary typeface of the DEW design system. The type
+        scale above previews in Barlow, and every component&apos;s root element sets it (Button, Input, Badge, Checkbox, Tag,
+        Tooltip…), so components keep it wherever they&apos;re used, whatever the surrounding page font.
       </p>
       <p className="text-balance">
-        <code>--font-sans</code> is set to <strong>Geist</strong> and is scoped to this documentation site&apos;s own UI - sidebar, headings, body
-        copy - not the design system itself.
+        <code>--font-sans</code> is set to <strong>Geist</strong> and is scoped to this documentation site&apos;s own UI (sidebar, headings, body
+        copy), not the design system.
       </p>
       <p className="text-balance">
         <code>--font-mono</code> is set to <strong>Geist Mono</strong> for code snippets and token values across the documentation UI.

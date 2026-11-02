@@ -170,8 +170,8 @@ export function CvList( { category, initialStatuses = [] }: { category: string; 
               }}
             >
               <Table.Header sticky>
-                <Table.Head id="name" label="Vocabulary" isRowHeader allowsSorting className="w-[20%]" />
-                <Table.Head id="id" label="ID" className="w-[13%]" />
+                <Table.Head id="id" label="ID" isRowHeader className="w-[13%]" />
+                <Table.Head id="name" label="Vocabulary" allowsSorting className="w-[20%]" />
                 {!category ? <Table.Head id="category" label="Category" allowsSorting className="w-[14%]" /> : null}
                 <Table.Head id="type" label="Type" allowsSorting className="w-[11%]" />
                 <Table.Head id="values" label="Values" allowsSorting className="w-[16%]" />
@@ -186,13 +186,13 @@ export function CvList( { category, initialStatuses = [] }: { category: string; 
                   return (
                     <Table.Row id={cv.id} href={roleHref(`${base}/${cv.id}`)} textValue={cv.name} className="group data-[href]:cursor-pointer">
                       <Table.Cell>
+                        <span className="text-sm whitespace-nowrap text-tertiary tabular-nums">{cv.id}</span>
+                      </Table.Cell>
+                      <Table.Cell>
                         <div className="flex flex-col">
                           <p className="text-sm font-medium whitespace-nowrap text-primary group-hover:text-brand-700 group-hover:underline">{cv.name}</p>
                           {hits && <p className="max-w-md truncate text-xs text-tertiary">{matchLine(cv, hits)}</p>}
                         </div>
-                      </Table.Cell>
-                      <Table.Cell>
-                        <span className="text-sm whitespace-nowrap text-tertiary tabular-nums">{cv.id}</span>
                       </Table.Cell>
                       {!category ? (
                         <Table.Cell>

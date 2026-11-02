@@ -17,11 +17,12 @@
 //    inspector that shows the selected record's metadata grouped by Darwin Core class
 //    (records-explorer.tsx, record-inspector.tsx).
 //  - Species: every species recorded in the project, with where and when.
+//  - Datasets (30 Oct 2026): every upload to this project, the one in progress with its pre-flight validation, and each dataset's own page
+//    (`?view=datasets&dataset=<id>`, datasets-view.tsx), whose Back link returns here (`?tab=datasets`).
 //  - Artefacts and attachments: every file attached to a record, each linked back to its record.
 //
 // The Overview tab (called Project until 26 Oct 2026) opens with the project's own cards. It had a "Project at a glance" section above them (a Datasets card over a records card);
-// the designer removed it as a double-up of the tabs' counts and the header. The project's Datasets page (`?view=datasets`, datasets-view.tsx: every upload to this project, the one
-// in progress with its pre-flight validation, and each dataset's own page, `&dataset=<id>`) still exists, and nothing on the project page opens it now: its door is open.
+// the designer removed it as a double-up of the tabs' counts and the header.
 //
 // Everyone but public users can edit: project metadata on the Overview tab and each record's metadata
 // in the inspector, through one shared card and edit flow (editable-section.tsx). Edits are kept for
@@ -29,13 +30,14 @@
 
 import { Suspense, useMemo, useState, type ReactNode } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import Link from "next/link";
 import {
   TabList,
   Tab,
   TabPanel,
   Tabs as ContentTabs,
 } from "@/components/application/tabs/tabs";
-import { ArrowNarrowRight, Database01, Feather, Grid01, Key01, Paperclip } from "@untitledui/icons";
+import { ArrowNarrowRight, Database01, Feather, Grid01, Key01, Paperclip, UploadCloud02 } from "@untitledui/icons";
 import { Button } from "@/components/base/buttons/button";
 import { BadgeWithDot } from "@/components/base/badges/badges";
 import { AlertFullWidth } from "@/components/application/alerts/alerts";
@@ -49,10 +51,11 @@ import { ProjectCardActions } from "@/app/pages/_shared/project-card-actions";
 import { ArtefactLightbox } from "@/app/pages/_shared/artefact-lightbox";
 import { ArtefactsView, fieldArtefact } from "./artefacts-view";
 import { BulkAttachModal } from "./bulk-attach-modal";
-import { DatasetsScreen } from "./datasets-view";
+import { DatasetScreen, DatasetSwitcher, DatasetsTab, useProjectDatasetCount } from "./datasets-view";
 import { ReviewScreen, useLiveEntries, useReviewItems } from "./review-view";
 import { useCanReview } from "./field-notes";
 import { allFiles, recordFieldKeys, useFieldNotes } from "./field-notes-store";
+import { useFeatureAccess } from "@/lib/use-feature-access";
 import { useUserRole } from "@/lib/use-user-role";
 import { ProjectAccessTab } from "./project-access-view";
 import { useRoleHref } from "@/lib/use-role-href";
@@ -69,9 +72,10 @@ import {
 } from "./records-explorer";
 import type { FilterSelection } from "@/app/pages/_shared/list-filter";
 
-type DetailTab = "project" | "records" | "species" | "artefacts" | "access";
+type DetailTab = "project" | "records" | "species" | "datasets" | "artefacts" | "access";
+const isDetailTab = (v: string | null): v is DetailTab => v === "project" || v === "records" || v === "species" || v === "datasets" || v === "artefacts" || v === "access";
 
-function ProjectHero() {
+function ProjectHero({ onUploadAttachments }: { onUploadAttachments: () => void }) {
   const { project, meta } = useEditStore();
   const d = project.details;
   const status = project.status;
@@ -81,15 +85,12 @@ function ProjectHero() {
       : status === "Under review"
         ? "warning"
         : "gray";
-  const [bulkAttach, setBulkAttach] = useState(false);
   // The shared record hero, so the title, eyebrow and facts are set exactly as on every other record page.
   return (
-    <>
-    <BulkAttachModal isOpen={bulkAttach} onClose={() => setBulkAttach(false)} />
     <RecordHero
       eyebrow="Project"
       title={d.shortTitle}
-      actions={<ProjectCardActions projectId={meta.id} projectCode={meta.code} onUploadAttachments={() => setBulkAttach(true)} />}
+      actions={<ProjectCardActions projectId={meta.id} projectCode={meta.code} onUploadAttachments={onUploadAttachments} />}
     >
       <HeroMeta label="Project ID">{meta.code}</HeroMeta>
       <HeroMeta label="Start Date">{formatDay(d.startDate) || "Not provided"}</HeroMeta>
@@ -105,7 +106,6 @@ function ProjectHero() {
           : `${d.dataOwnerContacts[0]?.firstName ?? ""} ${d.dataOwnerContacts[0]?.lastName ?? ""}`.trim()}
       </HeroMeta>
     </RecordHero>
-    </>
   );
 }
 
@@ -181,9 +181,24 @@ function ProjectDetail({ basePath, notice }: ProjectDetailTemplateProps) {
   const roleHref = useRoleHref();
   const [activeSection, setActiveSection] = useState("Projects");
   const { project, records, recordById, meta } = useEditStore();
+  // Datasets are the uploaders' and the admins' (the roles that can upload a dataset): a visitor who is not signed in does not see them, as the Datasets card never showed for them.
+  const canSeeDatasets = useFeatureAccess("datasetUpload");
+  const searchParams = useSearchParams();
+  const datasetParam = searchParams.get("dataset");
+  // A tab can be asked for by address (`?tab=datasets`), and the old address of the Datasets page (`?view=datasets`) is the Datasets tab.
+  const requestedTab = searchParams.get("tab") ?? (searchParams.get("view") === "datasets" && !datasetParam ? "datasets" : null);
+  const askedFor = (v: string | null): v is DetailTab => isDetailTab(v) && (v !== "datasets" || canSeeDatasets);
   // A project with no records yet (one just created through Add Project) opens on Project records, whose empty state offers
-  // the two ways to start: upload a dataset or add a record (the designer, 16 Oct 2026). Every other project opens on Project.
-  const [detailTab, setDetailTab] = useState<DetailTab>(() => (records.length === 0 ? "records" : "project"));
+  // the two ways to start: upload a dataset or add a record (the designer, 16 Oct 2026). Every other project opens on Overview.
+  const [bulkAttach, setBulkAttach] = useState(false);
+  const [detailTab, setDetailTab] = useState<DetailTab>(() => (askedFor(requestedTab) ? requestedTab : records.length === 0 ? "records" : "project"));
+  // A page that is already open follows a new address (a dataset's Back link returns to the Datasets tab): adjusted during render.
+  const [seenTab, setSeenTab] = useState(requestedTab);
+  if (seenTab !== requestedTab) {
+    setSeenTab(requestedTab);
+    if (askedFor(requestedTab)) setDetailTab(requestedTab);
+  }
+  const datasetCount = useProjectDatasetCount(meta.id);
   // Adelaide Hills opens on its first site; another project opens on the project's own summary.
   const [selectedId, setSelectedId] = useState<string | null>(meta.id === ADELAIDE_HILLS_ID ? "su1" : null);
   const [recordFilter, setRecordFilter] = useState<FilterSelection>({});
@@ -196,13 +211,11 @@ function ProjectDetail({ basePath, notice }: ProjectDetailTemplateProps) {
   const canReview = useCanReview();
   const openReviews = useReviewItems().open.length;
   const liveEntries = useLiveEntries();
-  const searchParams = useSearchParams();
   const reviewing = canReview && searchParams.get("view") === "review";
   const reviewItem = searchParams.get("item");
-  // The project's Datasets page (datasets-view.tsx): its own view on the same route, like review.
-  const viewingDatasets = !reviewing && searchParams.get("view") === "datasets";
-  const datasetParam = searchParams.get("dataset");
-  const datasetsHref = roleHref(withQuery(basePath, "view=datasets"));
+  // One dataset's own page (datasets-view.tsx): its own view on the same route, like review. Its Back link returns to the Datasets tab.
+  const viewingDataset = !reviewing && canSeeDatasets && searchParams.get("view") === "datasets" && !!datasetParam;
+  const datasetsHref = roleHref(withQuery(basePath, "tab=datasets"));
   const datasetHref = (id: string) => roleHref(withQuery(basePath, `view=datasets&dataset=${encodeURIComponent(id)}`));
   // The review returns to where it was opened from (`&from=`): the Overview tab (the lab's
   // flagged concepts link), or Project records' banner. Anything else (an old link) goes back to Project records.
@@ -288,34 +301,28 @@ function ProjectDetail({ basePath, notice }: ProjectDetailTemplateProps) {
                 <span className="flex items-center gap-2">
                   <ProjectSwitcher currentProjectId={meta.id} />
                   <span className="text-quaternary">/</span>
-                  <button
-                    type="button"
-                    onClick={closeReview}
-                    className="text-tertiary hover:text-primary"
-                  >
+                  <Link href={roleHref(basePath)} onClick={() => setDetailTab(reviewFrom)} className="hit-area hover:text-primary">
                     {projectTitle}
-                  </button>
+                  </Link>
                 </span>
               }
               current="Flagged concepts"
               orgLabel={orgLabel}
             />
-          ) : activeSection === "Projects" && viewingDatasets ? (
+          ) : activeSection === "Projects" && viewingDataset ? (
             <Breadcrumb
               section={
                 <span className="flex items-center gap-2">
                   <ProjectSwitcher currentProjectId={meta.id} />
                   <span className="text-quaternary">/</span>
-                  <button
-                    type="button"
-                    onClick={() => router.push(roleHref(basePath))}
-                    className="text-tertiary hover:text-primary"
-                  >
+                  <Link href={roleHref(basePath)} className="hit-area hover:text-primary">
                     {projectTitle}
-                  </button>
+                  </Link>
+                  <span className="text-quaternary">/</span>
+                  <DatasetSwitcher projectId={meta.id} currentId={datasetParam ?? undefined} datasetHref={datasetHref} datasetsHref={datasetsHref} />
                 </span>
               }
-              current="Datasets"
+              current={datasetParam ?? undefined}
               orgLabel={orgLabel}
             />
           ) : activeSection === "Projects" ? (
@@ -359,18 +366,14 @@ function ProjectDetail({ basePath, notice }: ProjectDetailTemplateProps) {
             {/* No column 2 on the project page (designer, 30 Sept 2026, CONTRACTS 3.7): the project's actions
                 are in the hero's "..." menu, its records are on the Project records tab. */}
             <main className="flex min-w-0 flex-1 flex-col overflow-y-auto [scrollbar-gutter:stable]">
-              {activeSection === "Projects" && viewingDatasets ? (
-                <DatasetsScreen
-                  datasetId={datasetParam}
-                  projectHref={roleHref(basePath)}
-                  datasetsHref={datasetsHref}
-                  datasetHref={datasetHref}
-                />
+              {activeSection === "Projects" && viewingDataset ? (
+                <DatasetScreen datasetId={datasetParam ?? ""} datasetsHref={datasetsHref} recordsHref={roleHref(withQuery(basePath, "tab=records"))} />
               ) : activeSection === "Projects" ? (
                 <div className="flex flex-col pb-6">
                   <RecordBackLink href={roleHref("/pages/project-list")}>Back to projects</RecordBackLink>
 
-                  <ProjectHero />
+                  <BulkAttachModal isOpen={bulkAttach} onClose={() => setBulkAttach(false)} />
+                  <ProjectHero onUploadAttachments={() => setBulkAttach(true)} />
 
                   {notice && <div className="px-6 pt-4">{notice}</div>}
 
@@ -398,6 +401,7 @@ function ProjectDetail({ basePath, notice }: ProjectDetailTemplateProps) {
                         icon={Feather}
                         badge={species.length}
                       />
+                      {canSeeDatasets && <Tab id="datasets" label="Datasets" icon={UploadCloud02} badge={datasetCount} />}
                       <Tab
                         id="artefacts"
                         label="Artefacts and attachments"
@@ -408,8 +412,9 @@ function ProjectDetail({ basePath, notice }: ProjectDetailTemplateProps) {
                     </TabList>
 
                     <TabPanel id="project" className="pt-6">
-                      {/* The tab is called Overview, so the section inside it does not repeat the word as a heading. */}
-                      <ProjectTab layout="v3" overviewHeading={false} />
+                      {/* One sheet, as the designer's frame (30 Oct 2026): the Overview open, "Data collection and methodology" and "Privacy and restrictions" closed under their headings, each opening in place.
+                          The header already shows the status and the dates, so the details card does not repeat them (4.3). */}
+                      <ProjectTab layout="v3" sheet repeatHeaderFacts={false} disclosure />
                     </TabPanel>
 
                     <TabPanel id="records" className="flex flex-col gap-4 pt-4">
@@ -440,11 +445,18 @@ function ProjectDetail({ basePath, notice }: ProjectDetailTemplateProps) {
                       <SpeciesView onOpenRecord={(id) => openRecord(id)} />
                     </TabPanel>
 
+                    {canSeeDatasets && (
+                      <TabPanel id="datasets" className="pt-6">
+                        <DatasetsTab datasetHref={datasetHref} />
+                      </TabPanel>
+                    )}
+
                     <TabPanel id="artefacts" className="pt-6">
                       <ArtefactsView
                         artefacts={artefacts}
                         onOpen={setLightboxIndex}
                         onOpenRecord={openRecord}
+                        onUploadAttachments={() => setBulkAttach(true)}
                       />
                     </TabPanel>
 

@@ -1,0 +1,8 @@
+# 2026-10-30 - Geographic extent picker: the map is 80 percent as tall as it is wide
+
+- **Oct 30 2026: the picker's map is 80 percent as tall as it is wide, not a square.** The designer, with a screenshot of the square map running off the bottom of the window: "maybe height should be 80% of the width." It replaces the square asked for in `2026-10-30-10`, which stays as it was written.
+  - **What changed.** `aspect-square` is `aspect-[5/4]` on the picker's two maps (the inline map and the Expand-dialog variant), so the height follows the width at 0.8 wherever the picker sits. Nothing else in the picker moved.
+  - **Measured.** At Add Project's width (option 1 and option 2) the map is 718 x 574px (0.799 of its width; the square was 718, the first map 254). On a 1030px-tall window the whole map sits above the footer (its bottom is at 925px), so it, the tabs and the draw buttons are in view together, which the square was not. On a 900px-tall window the bottom is about 25px under the fold, so the page scrolls a little. In a location restriction's narrower card the same ratio applies (about 534px tall at the 668px it measured as a square).
+  - **Checked.** `npx tsc --noEmit` and `npx eslint` on the file pass. Live (Playwright, zero console errors): the map and its box measure the same at 1716 x 1030 and 1440 x 900, tiles drawn (12), Add Project option 1 and option 2.
+  - **Not checked.** The nomination form, the project page's edit form and the record location picker, which use the same component.
+  - **Open, for the designer (0.4).** The map still opens on the whole of South Australia, so a first circle is very large; a closer opening view would make the bigger map easier to draw on. Not asked, not changed.

@@ -17,10 +17,13 @@ import { customConceptActions } from "@/app/pages/_shared/dataset-upload/custom-
 
 interface DatasetStoreState {
   datasets: Dataset[];
+  /** Datasets a BioData Admin has approved, by dataset id. Kept beside the datasets, not in them, because the project's sample uploads
+   *  are not stored and a stored upload's status is read from its run: an approval has to win over both. */
+  approvals: Record<string, { at: string; by: string }>;
 }
 
 const useDatasetStore = create<DatasetStoreState>()(
-  persist(() => ({ datasets: [] as Dataset[] }), {
+  persist(() => ({ datasets: [] as Dataset[], approvals: {} as DatasetStoreState["approvals"] }), {
     name: "biodata-datasets",
     storage: createJSONStorage(browserStorage),
     skipHydration: true,
@@ -32,6 +35,16 @@ const useDatasetStore = create<DatasetStoreState>()(
 export function useDatasets(): Dataset[] {
   useRehydrate(useDatasetStore);
   return useDatasetStore((s) => s.datasets);
+}
+
+/** Who approved which datasets, so a dataset's page and its list read the same status. */
+export function useDatasetApprovals(): DatasetStoreState["approvals"] {
+  return useDatasetStore((s) => s.approvals);
+}
+
+/** A BioData Admin approves a dataset that is under review. Recorded as the person who did it, on today's date. */
+export function approveDataset(id: string): void {
+  useDatasetStore.setState((s) => ({ approvals: { ...s.approvals, [id]: { at: todayIso(), by: CURRENT_USER_NAME } } }));
 }
 
 function nextDatasetId(existing: Dataset[]): string {

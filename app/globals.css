@@ -757,6 +757,13 @@ body {
 body .leaflet-container {
   font-family: inherit;
 }
+/* A map is one layer. Leaflet gives its panes and controls z-index values of 400 to 1000, and without a stacking context of its
+   own those compete with the rest of the page: a card's Cancel and Save changes, pinned to the bottom of the window while the card
+   runs past it, were painted under the map's tiles and the drawn shape (30 Oct 2026). Isolated, everything inside a map stays
+   inside it, and a floating panel or a pinned bar is above or below the whole map, never between its layers. */
+body .leaflet-container {
+  isolation: isolate;
+}
 body .leaflet-container .leaflet-control-attribution,
 body .leaflet-container .leaflet-control-scale-line {
   color: var(--ui-text-tertiary);

@@ -8,7 +8,7 @@ import { Badge } from "@/components/base/badges/badges";
 import { SectionHeader } from "@/components/application/section-headers/section-headers";
 import { Table, TableCard } from "@/components/application/table/table";
 import { sortRows, type SortValue } from "@/app/pages/_shared/agreement-scope";
-import { AttributeFilterChips, useAttributeFilter, type Attribute, type AttributeFilterApi } from "@/app/pages/_shared/attribute-filter";
+import { AttributeFilterChips, useAttributeFilter, type AppliedFilter, type Attribute, type AttributeFilterApi } from "@/app/pages/_shared/attribute-filter";
 import { FilterMenu } from "@/app/pages/_shared/filter-menu";
 import { ListEmptyState } from "@/app/pages/_shared/list-empty-state";
 import { RecordActionBar, type RecordAction } from "@/app/pages/_shared/record-action-bar";
@@ -199,8 +199,13 @@ export interface DataReportProps<R> {
   parameters?: ReportParameters;
   /** Between the hero and the toolbar: tiles, a project scope, tabs. A function gets the rows in view, so tiles can count them. */
   belowHeader?: RowsSlot<R>;
-  /** The file name, without its extension, of the report's Export CSV and Export XLSX: the rows in view, every column. */
+  /** The file name, without its extension, of the report's Export CSV and Export XLSX: the rows in view, every column, the hidden ones too. */
   exportName: string;
+  /** Columns that start hidden: the extras a report's wireframe offers under "Add columns". They are in the Columns chooser, which says how many are hidden,
+   *  and in the export. Reset in the chooser puts them back out of sight. */
+  hiddenColumns?: string[];
+  /** Filters that are on when the report opens (a generated report opens on the project it was made for). They are the report's own chips, removable like any other. */
+  initialFilters?: AppliedFilter[];
   /** The rows the sheet carries above its column headings (title, metadata): written above the columns in Export CSV and Export XLSX.
    *  A function gets the search and the filters in view, for a sheet whose metadata is the table's own search and Filter. */
   exportPreamble?: string[][] | ((state: { search: string; filter: AttributeFilterApi<R> }) => string[][]);
@@ -247,6 +252,8 @@ export function DataReport<R>({
   belowHeader,
   exportName,
   exportPreamble,
+  hiddenColumns,
+  initialFilters,
   extraActions,
   resetKey,
   keepSearch,
@@ -259,10 +266,10 @@ export function DataReport<R>({
   const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE);
   const [sort, setSort] = useState<SortDescriptor | undefined>(initialSort);
 
-  const { visible: shownColumns, chooser } = useColumnChoice(columns);
+  const { visible: shownColumns, chooser } = useColumnChoice(columns, hiddenColumns);
 
   const resetPage = useCallback(() => setPage(1), []);
-  const filter = useAttributeFilter(attributes, resetPage);
+  const filter = useAttributeFilter(attributes, resetPage, initialFilters);
 
   // Starting over when the key changes (another tab) is adjusting state while rendering, the pattern React documents
   // for a prop that resets state: it renders once more at once and nothing is remounted.

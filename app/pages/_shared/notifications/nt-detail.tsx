@@ -5,7 +5,7 @@ import type { Key } from "react-aria-components";
 import { useRouter } from "next/navigation";
 import { Archive, ArrowNarrowLeft, Clock, Copy01, Download01, Edit05, Mail01, PauseCircle, PlayCircle, Send01, Trash01, Users01, Zap, Grid01, ClockRewind } from "@untitledui/icons";
 import { AlertFullWidth } from "@/components/application/alerts/alerts";
-import { ConfirmationModal, DestructiveModal } from "@/components/application/modals/modal";
+import { DestructiveModal } from "@/components/application/modals/modal";
 import { Tab, TabList, TabPanel, Tabs } from "@/components/application/tabs/tabs";
 import { toast } from "@/components/application/toast/toast";
 import { Badge } from "@/components/base/badges/badges";
@@ -38,13 +38,13 @@ import { useRoleHref } from "@/lib/use-role-href";
 // identity card with the actions at its top right, at most one notice, then underline tabs.
 //
 //   Overview  How it works beside the email as it lands, with sample values or the variables themselves.
-//   History   every change, who and when, with before and after (the Figma's "View Logs").
+//   Audit Log every change, who and when, with before and after (the Figma's "View Logs").
 //
 // The first layout (Preview and Settings tabs, label/value cards of the trigger, recipients and template)
 // was retired on 26 Oct 2026, when the designer kept this one.
 //
 // Actions: Edit is the next step. In "...": Duplicate (a new draft from this one, the fastest way to
-// make a similar notification), Send a test, Enable or Disable, Export history; Delete draft only for
+// make a similar notification), Send a test, Enable or Disable, Export audit log; Delete draft only for
 // a draft, which never sent anything. An active notification is disabled, never deleted, so its
 // history stays.
 
@@ -106,7 +106,7 @@ export function NtDetail({
 
   const exportHistory = () =>
     downloadCsv(
-      `${n.id}-history.csv`,
+      `${n.id}-audit-log.csv`,
       ["Date and time", "By", "Action", "Field", "Previous value", "Updated value"],
       n.history.flatMap((e) => (e.changes?.length ? e.changes.map((c) => [formatDateTime(e.at), e.by, e.action, c.field, c.from, c.to]) : [[formatDateTime(e.at), e.by, e.action, "", "", ""]])),
     );
@@ -117,7 +117,7 @@ export function NtDetail({
     // No mail is sent from this preview build: the toast says so rather than pretending.
     { id: "test", label: "Send me a test", icon: Send01, onPress: () => toast.brand("Test emails aren't wired up yet", { description: "In the live service this sends the email, with sample values, to your own address." }) },
     ...(n.state === "disabled" ? [{ id: "enable", label: "Enable", icon: PlayCircle, onPress: onEnable }] : []),
-    { id: "export", label: "Export history", icon: Download01, onPress: exportHistory },
+    { id: "export", label: "Export audit log", icon: Download01, onPress: exportHistory },
     ...(n.state === "active" ? [{ id: "disable", label: "Disable", icon: PauseCircle, destructive: true, onPress: () => setConfirmDisable(true) }] : []),
     ...(n.state === "draft" ? [{ id: "delete", label: "Delete draft", icon: Trash01, destructive: true, onPress: () => setConfirmDelete(true) }] : []),
   ];
@@ -157,7 +157,7 @@ export function NtDetail({
         <div className="px-6 pt-4">
           <TabList aria-label="Notification sections" type="underline" size="md">
             <Tab id="overview" label="Overview" icon={Grid01} />
-            <Tab id="history" label="History" icon={ClockRewind} />
+            <Tab id="history" label="Audit Log" icon={ClockRewind} />
           </TabList>
         </div>
 
@@ -222,11 +222,10 @@ export function NtDetail({
         </TabPanel>
       </Tabs>
 
-      <ConfirmationModal
+      <DestructiveModal
         confirmIcon={PauseCircle}
         isOpen={confirmDisable}
         onOpenChange={setConfirmDisable}
-        icon={PauseCircle}
         title={`Disable ${n.name}?`}
         description="It stops sending straight away. Emails already sent aren't affected. You can enable it again at any time."
         confirmLabel="Disable"

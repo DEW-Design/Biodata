@@ -126,7 +126,7 @@ const columns: ReportColumn<PostIngestionRow>[] = [
     width: WIDTH.processing,
     sort: (r) => processingRank(r.processing),
     cell: (r) => (
-      <Badge size="sm" color={processingColor[r.processing]}>
+      <Badge size="sm" color={processingColor[r.processing]} isLoading={r.processing === "Processing"}>
         {r.processing}
       </Badge>
     ),

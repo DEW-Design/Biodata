@@ -121,15 +121,13 @@ export default function AlertPage() {
       <PageHeader
         section="Components"
         title="Alert"
-        description="A dismissible, actionable banner for system-level messages. Two layouts - floating and full-width - composed from Button, CloseButton, and FeaturedIcon. Colours and demo sections are driven from config/design-system.config.ts."
+        description="A dismissible, actionable banner for system-level messages, in a floating and a full-width layout. Composed from Button, CloseButton and FeaturedIcon."
         actions={<ContextualConfigPanel slug="alert" title="Alert" sections={sectionToggles} />}
       />
 
-      {/* ── Component Playground ── */}
       {isFeatureEnabled(config, "playground") && (
         <>
           <h2 className="text-balance">Component Playground</h2>
-          <p className="text-balance">Live instance - the controls read their options from the same config that drives the Variants section below.</p>
           <div className="overflow-hidden rounded-2xl border border-secondary shadow-xs">
             <div className="grid md:grid-cols-[1fr_300px]">
               <div
@@ -226,11 +224,10 @@ export default function AlertPage() {
         </>
       )}
 
-      {/* ── Floating ── */}
       {types.some((t) => t.key === "floating") && (
         <>
           <h2 className="text-balance">Floating</h2>
-          <p className="text-balance">A self-contained card - for toasts, in-page notices, or anywhere the alert sits among other content rather than spanning the viewport.</p>
+          <p className="text-balance">A self-contained card, for toasts, in-page notices, or anywhere the alert sits among other content rather than spanning the viewport.</p>
           <Section label="Default">
             <AlertFloating
               title="Update available"
@@ -244,7 +241,6 @@ export default function AlertPage() {
         </>
       )}
 
-      {/* ── Colours ── */}
       {colors.length > 0 && (
         <>
           <h2 className="text-balance">Colours</h2>
@@ -266,11 +262,10 @@ export default function AlertPage() {
         </>
       )}
 
-      {/* ── Full width ── */}
       {types.some((t) => t.key === "full-width") && (
         <>
           <h2 className="text-balance">Full width</h2>
-          <p className="text-balance">Spans its container edge-to-edge - for top-of-page announcement bars. Shown here inside a clipped preview frame.</p>
+          <p className="text-balance">Spans its container edge to edge, for top-of-page announcement bars. Shown here inside a clipped preview frame.</p>
           <div className="rounded-xl overflow-hidden border border-secondary">
             <AlertFullWidth
               title="Scheduled maintenance"
@@ -285,7 +280,7 @@ export default function AlertPage() {
 
           {isFeatureEnabled(config, "linkActions") && (
             <>
-              <p className="mt-4 text-balance">Set <code>actionType=&quot;link&quot;</code> for text-link actions instead of buttons - lower visual weight for less urgent banners.</p>
+              <p className="mt-4 text-balance">Set <code>actionType=&quot;link&quot;</code> for text-link actions instead of buttons. They weigh less, so use them on less urgent banners.</p>
               <div className="rounded-xl overflow-hidden border border-secondary">
                 <AlertFullWidth
                   title="New feature: Dark mode"
@@ -340,16 +335,15 @@ export default function AlertPage() {
         </>
       )}
 
-      {/* ── Dismiss / confirm combinations ── */}
       {(isFeatureEnabled(config, "withDismiss") || isFeatureEnabled(config, "withConfirm")) && (
         <>
           <h2 className="text-balance">Action combinations</h2>
-          <p className="text-balance">Both action handlers are optional - the button row only renders for whichever ones you pass.</p>
+          <p className="text-balance">Both action handlers are optional. The button row renders only for the ones you pass.</p>
           <div className="flex flex-col gap-4 mt-2">
             {isFeatureEnabled(config, "withConfirm") && (
               <AlertFloating
                 title="Confirm only"
-                description="No onClose handler passed - no dismiss button, no close X."
+                description="No onClose handler: no dismiss button, no close X."
                 confirmLabel="Got it"
                 color="success"
                 onConfirm={() => {}}
@@ -358,7 +352,7 @@ export default function AlertPage() {
             {isFeatureEnabled(config, "withDismiss") && (
               <AlertFloating
                 title="Dismiss only"
-                description="No onConfirm handler passed - no confirm action, just a close X."
+                description="No onConfirm handler: no confirm action, just a close X."
                 confirmLabel="Confirm"
                 color="gray"
                 onClose={() => {}}
@@ -368,7 +362,6 @@ export default function AlertPage() {
         </>
       )}
 
-      {/* ── API ── */}
       <h2 className="text-balance">API - AlertFloating</h2>
       <table className="token-table mt-4">
         <thead><tr><th>Prop</th><th>Type</th><th>Default</th></tr></thead>
@@ -397,10 +390,9 @@ export default function AlertPage() {
         </tbody>
       </table>
 
-      {/* ── Composition ── */}
       <h2 className="text-balance">Composition</h2>
       <p className="text-balance">
-        Alert doesn&apos;t define its own visual primitives - it composes three components that already exist in this design system: <code>Button</code> for its actions, <code>CloseButton</code> for dismissal, and <code>FeaturedIcon</code> for the coloured icon badge. Components inherit from other components, not just from primitives - this is why Alert took no new base-level styling work, only the tokens <code>FeaturedIcon</code> needed.
+        Alert draws nothing of its own. <code>Button</code> makes the actions, <code>CloseButton</code> the dismiss control and <code>FeaturedIcon</code> the coloured icon badge, so the only styling work was the tokens <code>FeaturedIcon</code> needed.
       </p>
 
       <h2 className="text-balance">Token anatomy</h2>
@@ -428,7 +420,6 @@ export default function AlertPage() {
         </tbody>
       </table>
 
-      {/* ── Usage ── */}
       {isFeatureEnabled(config, "usage") && (
         <>
           <h2 className="text-balance">Usage</h2>
@@ -448,11 +439,10 @@ export default function AlertPage() {
         </>
       )}
 
-      {/* ── Figma ── */}
       {isFeatureEnabled(config, "figma") && (
         <>
           <h2 className="text-balance">Figma</h2>
-          <p className="text-balance">No linked Figma file yet - this component was pulled in via the Untitled UI CLI, not designed in Figma first.</p>
+          <p className="text-balance">No linked Figma file yet. This component came from the Untitled UI CLI, not from a Figma design.</p>
         </>
       )}
     </div>

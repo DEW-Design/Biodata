@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { ListBox, ListBoxItem, ToggleButton, ToggleButtonGroup } from "react-aria-components";
 import { ChevronDown, Edit05, GitBranch01, GitMerge, PencilLine, Plus, Trash01, Flag01, ArrowLeft, Save01, XClose, File06, Type01, Map02, Globe01, MarkerPin04, BookClosed, List } from "@untitledui/icons";
 import { AlertFullWidth } from "@/components/application/alerts/alerts";
-import { ConfirmationModal, DestructiveModal } from "@/components/application/modals/modal";
+import { DestructiveModal } from "@/components/application/modals/modal";
 import { Table } from "@/components/application/table/table";
 import { Tab, TabList, TabPanel, Tabs } from "@/components/application/tabs/tabs";
 import { toast } from "@/components/application/toast/toast";
@@ -480,7 +480,7 @@ export function SpeciesRecord({ id }: { id: string }) {
           </div>
         </div>
       )}
-      <ConfirmationModal
+      <DestructiveModal
         confirmIcon={Trash01}
         cancelIcon={ArrowLeft}
         isOpen={confirm === "cancel"}

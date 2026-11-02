@@ -99,15 +99,13 @@ export default function ButtonPage() {
       <PageHeader
         section="Components"
         title="Button"
-        description="The primary action trigger. Built on React Aria for full keyboard and screen-reader support. Colour, size, icon, and state variants are all driven from config/design-system.config.ts."
+        description="The primary action trigger, built on React Aria for keyboard and screen-reader support. Colour, size, icon and state variants."
         actions={<ContextualConfigPanel slug="button" title="Button" sections={sectionToggles} />}
       />
 
-      {/* ── Component Playground ── */}
       {isFeatureEnabled(config, "playground") && (
         <>
           <h2 className="text-balance">Component Playground</h2>
-          <p className="text-balance">Live instance - the controls read their options from the same config that drives the Variants section below.</p>
           <div className="overflow-hidden rounded-2xl border border-secondary shadow-xs">
             <div className="grid md:grid-cols-[1fr_300px]">
               <div
@@ -192,7 +190,6 @@ export default function ButtonPage() {
         </>
       )}
 
-      {/* ── Colour variants ── */}
       {colors.length > 0 && (
         <>
           <h2 className="text-balance">Variants</h2>
@@ -218,11 +215,10 @@ export default function ButtonPage() {
         </>
       )}
 
-      {/* ── Sizes ── */}
       {sizes.length > 0 && (
         <>
           <h2 className="text-balance">Sizes</h2>
-          <p className="text-balance">Size affects padding, font-size, and icon dimensions.</p>
+          <p className="text-balance">Size sets the padding, font size and icon size.</p>
 
           <Section label="All sizes - primary">
             {sizes.map((s) => (
@@ -232,7 +228,6 @@ export default function ButtonPage() {
         </>
       )}
 
-      {/* ── With icons ── */}
       {(isFeatureEnabled(config, "iconLeading") || isFeatureEnabled(config, "iconTrailing") || isFeatureEnabled(config, "iconBoth") || isFeatureEnabled(config, "iconOnly")) && (
         <>
           <h2 className="text-balance">With icons</h2>
@@ -279,7 +274,6 @@ export default function ButtonPage() {
         </>
       )}
 
-      {/* ── States ── */}
       {(isFeatureEnabled(config, "disabled") || isFeatureEnabled(config, "loading") || isFeatureEnabled(config, "loadingWithText")) && (
         <>
           <h2 className="text-balance">States</h2>
@@ -317,7 +311,6 @@ export default function ButtonPage() {
         </>
       )}
 
-      {/* ── As link ── */}
       {isFeatureEnabled(config, "asLink") && (
         <>
           <h2 className="text-balance">As link</h2>
@@ -331,7 +324,6 @@ export default function ButtonPage() {
         </>
       )}
 
-      {/* ── API ── */}
       <h2 className="text-balance">API</h2>
       <table className="token-table mt-4">
         <thead>
@@ -352,7 +344,6 @@ export default function ButtonPage() {
         </tbody>
       </table>
 
-      {/* ── Token anatomy ── */}
       <h2 className="text-balance">Token anatomy</h2>
       <p className="text-balance">Each colour variant maps directly to Untitled UI semantic tokens defined in <code>globals.css</code>. Swap the <code>--ui-bg-brand-*</code> variables to make every primary button DEW-branded.</p>
 
@@ -386,7 +377,6 @@ export default function ButtonPage() {
         </tbody>
       </table>
 
-      {/* ── Usage ── */}
       {isFeatureEnabled(config, "usage") && (
         <>
           <h2 className="text-balance">Usage</h2>
@@ -402,11 +392,10 @@ export default function ButtonPage() {
         </>
       )}
 
-      {/* ── Figma ── */}
       {isFeatureEnabled(config, "figma") && (
         <>
           <h2 className="text-balance">Figma</h2>
-          <p className="text-balance">No linked Figma file yet - this component was pulled in via the Untitled UI CLI, not designed in Figma first.</p>
+          <p className="text-balance">No linked Figma file yet. This component came from the Untitled UI CLI, not from a Figma design.</p>
         </>
       )}
     </div>

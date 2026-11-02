@@ -66,8 +66,6 @@
       "components/application/tree-view/tree-view.tsx": 3
     },
     "2.3b": {
-      "app/(docs)/components/avatar/page.tsx": 2,
-      "app/(docs)/components/toast/page.tsx": 1,
       "app/(docs)/test-page/page.tsx": 13,
       "app/(docs)/test-site-details/page.tsx": 13,
       "app/pages/_shared/home-dashboard.tsx": 1,

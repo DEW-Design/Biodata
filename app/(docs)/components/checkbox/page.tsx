@@ -90,15 +90,13 @@ export default function CheckboxPage() {
       <PageHeader
         section="Components"
         title="Checkbox"
-        description="A binary selection control built on React Aria. Supports an indeterminate state, optional label/hint text, and two sizes - driven from config/design-system.config.ts."
+        description="A binary selection control built on React Aria, with an indeterminate state, an optional label and hint, and two sizes."
         actions={<ContextualConfigPanel slug="checkbox" title="Checkbox" sections={sectionToggles} />}
       />
 
-      {/* ── Component Playground ── */}
       {isFeatureEnabled(config, "playground") && (
         <>
           <h2 className="text-balance">Component Playground</h2>
-          <p className="text-balance">Live instance - the controls read their options from the same config that drives the Variants section below.</p>
           <div className="overflow-hidden rounded-2xl border border-secondary shadow-xs">
             <div className="grid md:grid-cols-[1fr_300px]">
               <div
@@ -158,7 +156,7 @@ export default function CheckboxPage() {
                 </div>
                 {previewIndeterminate && previewSelected && (
                   <p className="text-xs leading-relaxed text-quaternary text-balance">
-                    Both set - the real component always renders the indeterminate dash over the checkmark while <code>isIndeterminate</code> is true.
+                    Both set: the component always renders the indeterminate dash over the checkmark while <code>isIndeterminate</code> is true.
                   </p>
                 )}
               </div>
@@ -167,11 +165,10 @@ export default function CheckboxPage() {
         </>
       )}
 
-      {/* ── States ── */}
       {isFeatureEnabled(config, "states") && (
         <>
           <h2 className="text-balance">States</h2>
-          <p className="text-balance">Unchecked, checked, and indeterminate - used for a parent checkbox representing a partially-selected group.</p>
+          <p className="text-balance">Unchecked, checked and indeterminate. Indeterminate is for a parent checkbox over a partly selected group.</p>
           <Section label="Unchecked / checked / indeterminate">
             <Checkbox aria-label="Unchecked" />
             <Checkbox aria-label="Checked" defaultSelected />
@@ -180,7 +177,6 @@ export default function CheckboxPage() {
         </>
       )}
 
-      {/* ── Sizes ── */}
       {sizes.length > 0 && (
         <>
           <h2 className="text-balance">Sizes</h2>
@@ -193,7 +189,6 @@ export default function CheckboxPage() {
         </>
       )}
 
-      {/* ── Disabled ── */}
       {isFeatureEnabled(config, "disabled") && (
         <>
           <h2 className="text-balance">Disabled</h2>
@@ -206,7 +201,6 @@ export default function CheckboxPage() {
         </>
       )}
 
-      {/* ── With label ── */}
       {isFeatureEnabled(config, "withLabel") && (
         <>
           <h2 className="text-balance">With label</h2>
@@ -221,7 +215,6 @@ export default function CheckboxPage() {
         </>
       )}
 
-      {/* ── With hint text ── */}
       {isFeatureEnabled(config, "withHint") && (
         <>
           <h2 className="text-balance">With hint text</h2>
@@ -237,11 +230,10 @@ export default function CheckboxPage() {
         </>
       )}
 
-      {/* ── Group ── */}
       {isFeatureEnabled(config, "group") && (
         <>
           <h2 className="text-balance">Group</h2>
-          <p className="text-balance">A stacked list of checkboxes - the common pattern for multi-select filters and settings lists.</p>
+          <p className="text-balance">A stacked list of checkboxes, as in multi-select filters and settings lists.</p>
           <Section label="Checkbox list">
             <div className="flex flex-col gap-4">
               <Checkbox size="md" label="Design" hint="12 open tasks" defaultSelected />
@@ -253,7 +245,6 @@ export default function CheckboxPage() {
         </>
       )}
 
-      {/* ── API ── */}
       <h2 className="text-balance">API</h2>
       <table className="token-table mt-4">
         <thead>
@@ -274,7 +265,6 @@ export default function CheckboxPage() {
         </tbody>
       </table>
 
-      {/* ── Token anatomy ── */}
       <h2 className="text-balance">Token anatomy</h2>
       <p className="text-balance">Checked and indeterminate share the same brand-filled treatment. Swap <code>--ui-bg-brand-solid</code> to rebrand every checked control at once.</p>
       <table className="token-table mt-4">
@@ -301,7 +291,6 @@ export default function CheckboxPage() {
         </tbody>
       </table>
 
-      {/* ── Usage ── */}
       {isFeatureEnabled(config, "usage") && (
         <>
           <h2 className="text-balance">Usage</h2>
@@ -315,11 +304,10 @@ export default function CheckboxPage() {
         </>
       )}
 
-      {/* ── Figma ── */}
       {isFeatureEnabled(config, "figma") && (
         <>
           <h2 className="text-balance">Figma</h2>
-          <p className="text-balance">No linked Figma file yet - this component was pulled in via the Untitled UI CLI, not designed in Figma first.</p>
+          <p className="text-balance">No linked Figma file yet. This component came from the Untitled UI CLI, not from a Figma design.</p>
         </>
       )}
     </div>

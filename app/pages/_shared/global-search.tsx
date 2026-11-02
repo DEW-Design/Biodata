@@ -7,6 +7,7 @@ import { Folder, SearchLg, SearchMd } from "@untitledui/icons";
 import { ComboBox } from "@/components/base/select/combobox";
 import { SelectItem, SelectSection } from "@/components/base/select/select-item";
 import { projects } from "@/app/pages/_shared/project-list-content";
+import { isProjectVisibleTo } from "@/app/pages/_shared/project-list-data";
 import { rootProjectForParentEventId, searchOccurrences, type SpeciesGroup } from "@/app/pages/_shared/map-search/search-data";
 import { SPECIES_GROUP_ICON } from "@/app/pages/_shared/map-search/species-group-icons";
 import { useRoleHref } from "@/lib/use-role-href";
@@ -174,9 +175,10 @@ export function GlobalSearch() {
     const relatedTo = new Map<string, string>();
     for (const s of speciesMatches.slice(0, GROUP_LIMIT)) for (const id of s.projectIds) if (!relatedTo.has(id)) relatedTo.set(id, s.commonName);
     return projects
+      .filter((p) => isProjectVisibleTo(p, role))
       .filter((p) => p.name.toLowerCase().includes(q) || p.org.toLowerCase().includes(q) || relatedTo.has(p.id))
       .map((p) => ({ project: p, viaSpecies: p.name.toLowerCase().includes(q) || p.org.toLowerCase().includes(q) ? undefined : relatedTo.get(p.id) }));
-  }, [q, speciesMatches]);
+  }, [q, speciesMatches, role]);
 
   const shownSpecies = showAll ? speciesMatches : speciesMatches.slice(0, GROUP_LIMIT);
   const shownProjects = showAll ? projectMatches : projectMatches.slice(0, GROUP_LIMIT);

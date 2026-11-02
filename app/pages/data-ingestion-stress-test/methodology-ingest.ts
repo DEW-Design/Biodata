@@ -1,4 +1,4 @@
-// Imported only by the Data ingestion stress test page (`/pages/data-ingestion-stress-test`, a lab until 27 Oct 2026). Two more ways a record
+// Imported by `_shared/dataset-upload/file-facts.ts` (Add Project option 2's Dataset step) and by the Data ingestion stress test page (`/pages/data-ingestion-stress-test`, a lab until 27 Oct 2026). Two more ways a record
 // set reaches BDBSA, read into the same 3-tier rows (Site, Visit, species) the Ramble form becomes
 // (`template-ingest.ts`), so the rest of the pipeline - linking, the Occurrence and Observation
 // split, the tree - is the one that already exists:

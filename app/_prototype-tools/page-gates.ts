@@ -15,6 +15,7 @@ const wholePageGates: { prefix?: string; pattern?: RegExp; feature: FeatureKey }
   { prefix: "/pages/notifications", feature: "notificationManagement" },
   { prefix: "/pages/vouchers", feature: "voucherManagement" },
   { prefix: "/pages/reports", feature: "reports" },
+  { prefix: "/pages/data-ingestion-stress-test", feature: "ingestionStressTest" },
   { pattern: /^\/pages\/project-list\/[^/]+\/upload$/, feature: "datasetUpload" },
 ];
 

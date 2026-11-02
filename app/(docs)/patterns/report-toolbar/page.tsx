@@ -196,6 +196,11 @@ export default function ReportToolbarPatternPage() {
           leaves the usual &quot;nothing matches&quot; state.
         </li>
         <li>
+          <strong>Columns that start hidden</strong> (<code>DataReport</code>&apos;s <code>hiddenColumns</code>) are the extras a report&apos;s sheet offers under
+          &quot;Add columns&quot;: they are in the Columns chooser, the button says how many are hidden, Reset puts them back out of sight, and the export still writes
+          every column.
+        </li>
+        <li>
           <strong>The export</strong> still carries the report&apos;s title and its parameters above the columns, where the sheet has them
           (<code>exportPreamble</code>), so a file says what it was run on.
         </li>
@@ -239,7 +244,8 @@ export default function ReportToolbarPatternPage() {
       <p className="text-balance">
         Every report on the Reports page. Data Validation Error (project and dataset), Species Detail and Events, Occurrences and Observations (project)
         have Parameters. The others have none and show no button, and so do the sheets of the Flora and Fauna Taxonomy Reports: a sheet&apos;s metadata (a code, a name, a
-        family, a date) is the table&apos;s own search and Filter, and the export still writes it above the columns. So are the seven administration reports (User, Role, User - Role, Permission, Role - Permission, Notification Config and Control Vocab Detail): a name or an ID is the search, a list or a date is the Filter.
+        family, a date) is the table&apos;s own search and Filter, and the export still writes it above the columns; so is the Consolidated report&apos;s, which is
+        a sheet too (ten metadata lines, and Add filters and Add columns), with its project as one more filter. So are the seven administration reports (User, Role, User - Role, Permission, Role - Permission, Notification Config and Control Vocab Detail): a name or an ID is the search, a list or a date is the Filter.
       </p>
     </div>
   );

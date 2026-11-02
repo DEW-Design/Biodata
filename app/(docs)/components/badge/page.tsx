@@ -43,6 +43,7 @@ const props = [
   { name: "color",    type: "BadgeColors (12 options)",          default: '"gray"' },
   { name: "background", type: "boolean (BadgeWithDot pill-color)", default: "true" },
   { name: "uppercase", type: "boolean (BadgeWithButton)",         default: "true" },
+  { name: "isLoading", type: "boolean (Badge)",                   default: "false" },
   { name: "children", type: "ReactNode",                          default: "-" },
 ];
 
@@ -93,15 +94,13 @@ export default function BadgePage() {
       <PageHeader
         section="Components"
         title="Badge"
-        description="A compact, non-interactive status label. Types, colours, sizes, and demo sections are all driven from config/design-system.config.ts."
+        description="A compact, non-interactive status label."
         actions={<ContextualConfigPanel slug="badge" title="Badge" sections={sectionToggles} />}
       />
 
-      {/* ── Component Playground ── */}
       {isFeatureEnabled(config, "playground") && (
         <>
           <h2 className="text-balance">Component Playground</h2>
-          <p className="text-balance">Live instance - the controls read their options from the same config that drives the Variants section below.</p>
           <div className="overflow-hidden rounded-2xl border border-secondary shadow-xs">
             <div className="grid md:grid-cols-[1fr_300px]">
               <div
@@ -206,7 +205,6 @@ export default function BadgePage() {
         </>
       )}
 
-      {/* ── Types ── */}
       {types.length > 0 && (
         <>
           <h2 className="text-balance">Types</h2>
@@ -224,13 +222,12 @@ export default function BadgePage() {
         </>
       )}
 
-      {/* ── Colours ── */}
       {colors.length > 0 && (
         <>
           <h2 className="text-balance">Colours</h2>
           <p className="text-balance">Use <code>gray</code> for neutral status, <code>brand</code> for informational, and <code>error</code>/<code>warning</code>/<code>success</code> for outcome status.</p>
 
-          <Section label="All colours - pill-color">
+          <Section label="All colours, pill-color">
             {colors.map((c) => (
               <Badge key={c.key} type="pill-color" color={c.key as BadgeColors}>{c.label}</Badge>
             ))}
@@ -238,7 +235,6 @@ export default function BadgePage() {
         </>
       )}
 
-      {/* ── Sizes ── */}
       {sizes.length > 0 && (
         <>
           <h2 className="text-balance">Sizes</h2>
@@ -250,11 +246,10 @@ export default function BadgePage() {
         </>
       )}
 
-      {/* ── With dot ── */}
       {isFeatureEnabled(config, "withDot") && (
         <>
           <h2 className="text-balance">With dot</h2>
-          <p className="text-balance">A leading status dot - most common for live/active states. Figma defines filled, backgroundless, and square badge-colour dot styles.</p>
+          <p className="text-balance">A leading status dot, most common for live and active states. Figma defines filled, backgroundless and square badge-colour dot styles.</p>
           <div className="flex flex-col gap-4 mt-4">
             <Section label="Filled pill">
               <BadgeWithDot color="success">Online</BadgeWithDot>
@@ -278,7 +273,6 @@ export default function BadgePage() {
         </>
       )}
 
-      {/* ── With icon ── */}
       {isFeatureEnabled(config, "withIcon") && (
         <>
           <h2 className="text-balance">With icon</h2>
@@ -288,10 +282,14 @@ export default function BadgePage() {
             <BadgeWithIcon color="success" iconLeading={Check}>Verified</BadgeWithIcon>
             <BadgeWithIcon color="warning" iconTrailing={Zap}>Boosted</BadgeWithIcon>
           </Section>
+          <Section label="Loading (isLoading)">
+            <Badge size="sm" color="warning" isLoading>Processing</Badge>
+            <Badge size="sm" color="brand" isLoading>Ingesting</Badge>
+            <Badge size="sm" color="gray" isLoading>Queued</Badge>
+          </Section>
         </>
       )}
 
-      {/* ── Icon only ── */}
       {isFeatureEnabled(config, "iconOnly") && (
         <>
           <h2 className="text-balance">Icon only</h2>
@@ -303,11 +301,10 @@ export default function BadgePage() {
         </>
       )}
 
-      {/* ── With dismiss button ── */}
       {isFeatureEnabled(config, "withButton") && (
         <>
           <h2 className="text-balance">With dismiss button</h2>
-          <p className="text-balance">An inline close button - used for removable filters and selected tags.</p>
+          <p className="text-balance">An inline close button, for removable filters and selected tags.</p>
           <Section label="Dismissible">
             <BadgeWithButton color="brand" buttonLabel="Remove">Design</BadgeWithButton>
             <BadgeWithButton color="gray" buttonLabel="Remove">Engineering</BadgeWithButton>
@@ -321,11 +318,10 @@ export default function BadgePage() {
         </>
       )}
 
-      {/* ── Badge group ── */}
       {isFeatureEnabled(config, "group") && (
         <>
           <h2 className="text-balance">Badge group</h2>
-          <p className="text-balance">A badge with an attached addon label - used to pair a metric with its context, e.g. a trend value next to a description.</p>
+          <p className="text-balance">A badge with an attached addon label, for pairing a metric with its context, such as a trend value next to a description.</p>
           <Section label="Leading / trailing addon">
             <BadgeGroup addonText="New" color="brand">12 updates</BadgeGroup>
             <BadgeGroup addonText="+40%" color="success" align="trailing">Conversion rate</BadgeGroup>
@@ -334,7 +330,6 @@ export default function BadgePage() {
         </>
       )}
 
-      {/* ── API ── */}
       <h2 className="text-balance">API</h2>
       <table className="token-table mt-4">
         <thead>
@@ -355,9 +350,8 @@ export default function BadgePage() {
         </tbody>
       </table>
 
-      {/* ── Token anatomy ── */}
       <h2 className="text-balance">Token anatomy</h2>
-      <p className="text-balance">Badge colours pull from a separate <strong>utility colour</strong> scale (distinct from the primitive Brand/Error/Warning/Success palette) - a wider set of 50/100/200/500/700 steps built for badges, tags, and avatars.</p>
+      <p className="text-balance">Badge colours pull from a separate <strong>utility colour</strong> scale, separate from the primitive Brand, Error, Warning and Success palette. It has a wider set of 50, 100, 200, 500 and 700 steps, built for badges, tags and avatars.</p>
       <table className="token-table mt-4">
         <thead>
           <tr>
@@ -385,7 +379,6 @@ export default function BadgePage() {
         </tbody>
       </table>
 
-      {/* ── Usage ── */}
       {isFeatureEnabled(config, "usage") && (
         <>
           <h2 className="text-balance">Usage</h2>
@@ -399,7 +392,6 @@ export default function BadgePage() {
         </>
       )}
 
-      {/* ── Figma ── */}
       {isFeatureEnabled(config, "figma") && (
         <>
           <h2 className="text-balance">Figma</h2>

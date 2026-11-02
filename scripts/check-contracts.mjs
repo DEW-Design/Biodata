@@ -95,7 +95,7 @@ const hardRules = [
     id: "4.1",
     name: "form pattern",
     test: (s) => /<FormRow[\s>]/.test(s) && !/from "@\/app\/pages\/_shared\/form-page"/.test(s),
-    allow: ["_shared/form-row.tsx", "_shared/form-page.tsx", "project-registration/option-2/form-sections.tsx"], // form-sections holds the field rows that the Add Project form renders inside FormPage
+    allow: ["_shared/form-row.tsx", "_shared/form-page.tsx", "project-registration/option-2/form-sections.tsx", "_shared/dataset-upload/acknowledgement-rows.tsx", "project-registration/with-dataset/dataset-step.tsx"], // these hold field rows that a FormPage renders: the Add Project form (form-sections), the upload form and option 2's Dataset step (acknowledgement-rows, dataset-step)
     message: "Uses <FormRow> without <FormPage>. Every form renders FormPage (see /patterns/forms).",
   },
   {
@@ -137,6 +137,40 @@ const hardRules = [
     test: (s) => /\bconst recordPage\b/.test(s) && !/<(?!\w*(?:Option|Version)Switcher)\w*Switcher\b/.test(s), // the layout and version tools on the Prototype bar are not a record switcher
     allow: [],
     message: "A shell that has a record page (recordPage) but draws no switcher for its section crumb. The crumb of a record page is that collection's switcher over BreadcrumbSwitcher (see DlaSwitcher), not a plain link (CONTRACTS.md 4.6 item 5).",
+  },
+  {
+    // 4.6c: the third time a record page's section crumb was drawn by hand (notifications, taxonomy, vouchers and vocabulary on 26 Oct 2026,
+    // then a dataset's page inside the project page on 30 Oct 2026, which 4.6b cannot see because it is not a shell with `recordPage`).
+    // A crumb in a page that draws the trail is a link (the header gives a link its 40px target) or, for a collection's own name, that
+    // collection's switcher over BreadcrumbSwitcher. Never a button in the crumb's own styling, and never a collection's name as a bare link.
+    id: "4.6c",
+    name: "breadcrumb crumbs are links or switchers, not drawn by hand",
+    test: (s) =>
+      /components\/scaffold\/breadcrumb"/.test(s) &&
+      (/<button\b(?:(?!<\/button>)[\s\S])*?text-tertiary hover:text-primary/.test(s) ||
+        /<(?:button|Link|a)\b(?:(?!<\/(?:button|Link|a)>)[\s\S])*?>\s*(?:Datasets|Projects|Requests|Agreements|Nominations|Users|Roles|Permissions|Reports|Notifications|Vouchers|Vocabularies|Taxa|Species|Records|Artefacts)\s*<\/(?:button|Link|a)>/.test(s)),
+    allow: ["_shared/dataset-upload/upload-shell.tsx"], // a form's crumb is the plain link back to the list (4.6: the new and edit forms keep it)
+    message: "A breadcrumb crumb drawn by hand: a <button> in the crumb's own styling, or a collection's name (Datasets, Projects, ...) as a bare button or link. A crumb is a <Link className=\"hit-area hover:text-primary\">; a collection's section crumb is that collection's switcher, a thin wrapper over BreadcrumbSwitcher (CONTRACTS.md 4.6 item 5; see DatasetSwitcher, DlaSwitcher).",
+  },
+  {
+    // 4.6d: a project's address is built by project-routes.ts. A project made in this browser has no /pages/project-list/<id>/... page in
+    // the static export (it is one fixed route with the id in the query), so a link built by hand to one is a dead link for every new project
+    // (30 Oct 2026: "Upload dataset" from a new project, its "Upload a corrected file" and the custom concepts link all went nowhere).
+    id: "4.6d",
+    name: "a project's address comes from project-routes",
+    test: (s) => /\/pages\/project-list\/\$\{/.test(s),
+    allow: ["_shared/project-routes.ts"],
+    message: "A project's address built by hand (`/pages/project-list/${id}/...`). Use projectDetailsPath, projectTabPath or uploadPath from @/app/pages/_shared/project-routes: a project made in this browser has no page there, and those helpers send it to its own fixed route (CONTRACTS.md 4.6).",
+  },
+  {
+    // 3.12c: a confirm that discards, deletes or removes is red. Eleven prompts (Discard your changes on the project page, the upload form and the taxonomy
+    // records, and "Leave this ..." in the four taxonomy changes) were the blue ConfirmationModal with a Trash01 on its button, while every form's discard
+    // prompt and every delete was the red DestructiveModal (the designer, 30 Oct 2026: "All destructive action buttons should have the red button, why is that blue?").
+    id: "3.12c",
+    name: "a destructive confirm is a DestructiveModal",
+    test: (s) => /<ConfirmationModal\b(?:(?!\/>)[\s\S])*?confirmIcon=\{(?:Trash01|XCircle|SlashCircle01|Archive)\}/.test(s),
+    allow: [],
+    message: "A ConfirmationModal whose confirm button is a destructive action (Trash01, XCircle, SlashCircle01 or Archive: discard, delete, remove, reject, cancel, archive). It is a <DestructiveModal>: the same props, the confirm button red (CONTRACTS.md 3.12).",
   },
   {
     id: "4.2d",
