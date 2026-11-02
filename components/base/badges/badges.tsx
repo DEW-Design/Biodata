@@ -178,7 +178,11 @@ export const Badge = <T extends BadgeTypes>(props: BadgeProps<T>) => {
         [badgeTypes.badgeModern]: badgeSizes,
     };
 
-    return <span className={cx(colors.common, sizes[type][size], colors.styles[color].root, props.className)}>{children}</span>;
+    return (
+        <span className={cx(colors.common, sizes[type][size], colors.styles[color].root, props.className)}>
+            <span className="pill-text">{children}</span>
+        </span>
+    );
 };
 
 interface CountBadgeProps {
@@ -211,7 +215,7 @@ export const CountBadge = ({ count, color = "gray", className }: CountBadgeProps
             className,
         )}
     >
-        {count}
+        <span className="pill-text">{count}</span>
     </span>
 );
 
@@ -259,7 +263,7 @@ export const BadgeWithDot = <T extends BadgeTypes>(props: BadgeWithDotProps<T>) 
             )}
         >
             <Dot className={isBackgroundless ? backgroundlessColors.addon : colors.styles[color].addon} size="sm" />
-            {children}
+            <span className="pill-text">{children}</span>
         </span>
     );
 };
@@ -319,7 +323,7 @@ export const BadgeWithIcon = <T extends BadgeTypes>(props: BadgeWithIconProps<T>
     return (
         <span className={cx(colors.common, sizes[type][size][icon], colors.styles[color].root, className)}>
             {IconLeading && <IconLeading className={cx(colors.styles[color].addon, "size-3 stroke-3")} />}
-            {children}
+            <span className="pill-text">{children}</span>
             {IconTrailing && <IconTrailing className={cx(colors.styles[color].addon, "size-3 stroke-3")} />}
         </span>
     );
@@ -358,7 +362,7 @@ export const BadgeWithFlag = <T extends BadgeTypes>(props: BadgeWithFlagProps<T>
     return (
         <span className={cx(colors.common, sizes[type][size], colors.styles[color].root)}>
             <img src={`https://www.untitledui.com/images/flags/${flag}.svg`} className="size-4 max-w-none rounded-full" alt={`${flag} flag`} />
-            {children}
+            <span className="pill-text">{children}</span>
         </span>
     );
 };
@@ -396,7 +400,7 @@ export const BadgeWithImage = <T extends BadgeTypes>(props: BadgeWithImageProps<
     return (
         <span className={cx(colors.common, sizes[type][size], colors.styles[color].root)}>
             <img src={imgSrc} className="size-4 max-w-none rounded-full" alt="Badge image" />
-            {children}
+            <span className="pill-text">{children}</span>
         </span>
     );
 };
@@ -447,7 +451,7 @@ export const BadgeWithButton = <T extends BadgeTypes>(props: BadgeWithButtonProp
 
     return (
         <span className={cx(colors.common, sizes[type][size], !uppercase && "normal-case tracking-normal", colors.styles[color].root)}>
-            {children}
+            <span className="pill-text">{children}</span>
             <button
                 type="button"
                 aria-label={buttonLabel}

@@ -1,6 +1,6 @@
 "use client";
 
-// Add Project, option 2 (30 Oct 2026): the form as option 1 has it, with a Datasets step after the geographic extent. The business is
+// Add Project, option 2 (30 Oct 2026): the form as option 1 has it, with a Datasets step after Method and details. The business is
 // considering a dataset upload while a project is being created ("Project is the container, the dataset informs what the project
 // holds"). Built in slices; this is the first: the step and its place in the flow, with nothing yet filled in from the file.
 // Option 1 (../page.tsx) is not changed by it. The flow itself is `RegistrationFlow` with its opt-in `datasetStep`; the modules

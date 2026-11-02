@@ -99,8 +99,6 @@ function ValueControl({ row, option, update, showErrors }: { row: ConceptValueRo
                     placeholder={option.placeholder}
                     isInvalid={valueMissing}
                     hint={valueMissing ? "Select at least one" : undefined}
-                    // The trigger names what is chosen, in the order the list shows them, rather than counting them.
-                    selectedCountFormatter={() => items.filter((o) => row.values.includes(o.id)).map((o) => o.label).join(", ")}
                     items={items}
                     selectedKeys={new Set(row.values)}
                     onSelectionChange={(keys) => update({ values: Array.from(keys as Set<string>) })}

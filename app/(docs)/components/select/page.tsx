@@ -305,7 +305,7 @@ export default function SelectPage() {
       {isFeatureEnabled(config, "multiSelect") && (
         <>
           <h2 className="text-balance">Multi-select</h2>
-          <p className="text-balance"><code>MultiSelect</code> is checkbox-style multiple selection with a search field and a Reset and Select all footer. Each selection is listed under the field as a dismissible badge (<code>showSelectedBadges</code>, on by default); removing one keeps focus on the badges. With no visible label, <code>aria-label</code> names the field.</p>
+          <p className="text-balance"><code>MultiSelect</code> is checkbox-style multiple selection with a search field. Each selection is a removable pill inside the field (<code>showSelectedBadges</code>, on by default), so what is chosen can be read while the list is open; the field wraps to more rows as pills are added and the list follows it. The count and Select all sit at the top of the list, and Reset and Done at the foot. Done only closes the list: a choice applies as it is made. A field whose selection is listed somewhere else sets <code>showSelectedBadges</code> to false and keeps the count as its text. With no visible label, <code>aria-label</code> names the field.</p>
           <Section label="MultiSelect">
             <div className="w-72">
               <MultiSelect

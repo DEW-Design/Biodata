@@ -653,3 +653,8 @@ Not imported into every session on purpose: read or grep it when a task needs hi
 - [2026-11-02] Date picker ingested: DatePicker and DateRangePicker, with the pick held in a draft - `2026-11-02-02-date-picker-ingested-datepicker-and-daterangepicker-with-the.md`
 - [2026-11-02] Unslop pass on the design system documentation pages: comments, copy and stale claims - `2026-11-02-03-unslop-pass-on-the-design-system-documentation-pages.md`
 - [2026-11-02] Unslopped the copy on the design system pages, first pass - `2026-11-02-04-unslopped-the-copy-on-the-design-system-pages.md`
+- [2026-11-02] Add Project option 2: Method and details comes before Upload datasets - `2026-11-02-05-add-project-option-2-method-and-details-comes.md`
+- [2026-11-02] Accordion: a header with no action keeps the chevron in the same column - `2026-11-02-06-accordion-a-header-with-no-action-keeps-the.md`
+- [2026-11-02] Unstructured data uploads: one upload component, no pre-flight, post-flight validation on Fluree - `2026-11-02-07-unstructured-data-uploads-one-upload-component-no-pre.md`
+- [2026-11-02] Badge: the label is trimmed to its capitals so it sits in the middle of the pill - `2026-11-02-08-badge-the-label-is-trimmed-to-its-capitals.md`
+- [2026-11-02] MultiSelect: selections as pills inside the field, the count and Select all in the popover, Done in the footer - `2026-11-02-09-multiselect-selections-as-pills-inside-the-field-the.md`

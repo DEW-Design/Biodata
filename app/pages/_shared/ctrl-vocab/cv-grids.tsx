@@ -14,7 +14,6 @@ import { MultiSelect } from "@/components/base/select/multi-select";
 import { SelectItem } from "@/components/base/select/select-item";
 import { Toggle } from "@/components/base/toggle/toggle";
 import {
-  columnLabel,
   identifierLabel,
   mappedValue,
   resolveEntry,
@@ -653,11 +652,6 @@ export function MappingTable({
                       )
                     }
                     onReset={() => onMap(row.id, [])}
-                    selectedCountFormatter={() =>
-                      selected
-                        .map((c) => columnLabel(draft.sourceTable, c))
-                        .join(" + ")
-                    }
                     isInvalid={!!error}
                     hint={
                       error ??

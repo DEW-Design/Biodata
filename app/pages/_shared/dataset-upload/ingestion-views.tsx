@@ -9,7 +9,7 @@ import { ProgressBarBase } from "@/components/base/progress-indicators/progress-
 import { Popover } from "@/components/base/select/popover";
 import { cx } from "@/utils/cx";
 import { Progress } from "@/components/application/progress-steps/progress-steps";
-import { STAGES, type Reason, type RunView } from "@/app/pages/_shared/dataset-upload/ingestion";
+import { stagesFor, type Reason, type RunView } from "@/app/pages/_shared/dataset-upload/ingestion";
 import { CustomConceptsSection } from "@/app/pages/_shared/dataset-upload/custom-concepts-views";
 import { uploadPath } from "@/app/pages/_shared/project-routes";
 import { useRoleHref } from "@/lib/use-role-href";
@@ -36,7 +36,12 @@ export function statusOf(view: RunView): { label: string; color: "brand" | "succ
   return view.partial ? { label: "Needs attention", color: "warning" } : { label: "Added", color: "success" };
 }
 
+export const isUnstructured = (view: RunView) => view.subject.kind === "unstructured";
+const filesIn = (n: number) => `${n} ${n === 1 ? "file" : "files"}`;
+
 export function stageDetail(index: number, view: RunView): string {
+  // The one stage of unstructured data: its files, checked on Fluree after they are uploaded.
+  if (isUnstructured(view)) return view.failed ? "Stopped here" : view.done ? `${filesIn(view.subject.rows)} validated` : filesIn(view.subject.rows);
   if (view.failedStage !== null) {
     if (index === view.failedStage) return "Stopped here";
     if (index > view.failedStage) return "Not started";
@@ -51,8 +56,13 @@ export function stageDetail(index: number, view: RunView): string {
 
 /** One line on what happened and what it means for the project. */
 export function headline(view: RunView): string {
-  if (!view.done) return `Step ${view.stageIndex + 1}: ${STAGES[view.stageIndex].label}`;
-  if (view.failed) return `Stopped at step ${(view.failedStage ?? 0) + 1}: ${STAGES[view.failedStage ?? 0].label}. Nothing was added to this project.`;
+  const stages = stagesFor(view.subject.kind);
+  if (isUnstructured(view)) {
+    if (!view.done) return stages[0].label;
+    return view.failed ? `Stopped at ${stages[0].label.toLowerCase()}. Nothing was added to this project.` : `${filesIn(view.subject.rows)} added to this project`;
+  }
+  if (!view.done) return `Step ${view.stageIndex + 1}: ${stages[view.stageIndex].label}`;
+  if (view.failed) return `Stopped at step ${(view.failedStage ?? 0) + 1}: ${stages[view.failedStage ?? 0].label}. Nothing was added to this project.`;
   return view.partial ? `${placedRows(view)} of ${view.subject.rows} rows were added; ${view.unmapped} need attention` : `${placedRows(view)} records added to this project`;
 }
 
@@ -135,7 +145,7 @@ export function IngestionDetail({ view, projectId, datasetId, onRetry, split = f
         type="number"
         orientation="vertical"
         size="sm"
-        items={STAGES.map((stage, i) => ({
+        items={stagesFor(view.subject.kind).map((stage, i) => ({
           title: stage.label,
           description: stageDetail(i, view),
           status: view.stagePercents[i] === 100 && view.failedStage !== i ? ("complete" as const) : view.stagePercents[i] > 0 ? ("current" as const) : ("incomplete" as const),
@@ -257,7 +267,7 @@ export function IngestionChip({
               <span className="min-w-0 flex-1 truncate" title={view.subject.fileName}>
                 {view.subject.fileName}
               </span>
-              <span className="shrink-0">{view.subject.rows} rows</span>
+              <span className="shrink-0">{isUnstructured(view) ? filesIn(view.subject.rows) : `${view.subject.rows} rows`}</span>
             </li>
           </ul>
           {datasetStatus && (

@@ -9,9 +9,9 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { AlertCircle, AlertTriangle, CheckCircle } from "@untitledui/icons";
-import type { Dataset } from "@/app/pages/_shared/dataset-upload/dataset-data";
+import { subjectOf, type Dataset } from "@/app/pages/_shared/dataset-upload/dataset-data";
 import { useDatasets } from "@/app/pages/_shared/dataset-upload/dataset-store";
-import { rowsFromSize, runLengthMs, viewAt, type RunView } from "@/app/pages/_shared/dataset-upload/ingestion";
+import { runLengthMs, viewAt, type RunView } from "@/app/pages/_shared/dataset-upload/ingestion";
 import { projectDetailsPath } from "@/app/pages/_shared/project-routes";
 import { useProjectDatasets } from "@/app/pages/project-detail/datasets-view";
 import { ADELAIDE_HILLS_ID } from "@/app/pages/project-detail/project-seed";
@@ -25,7 +25,7 @@ function taskFor(dataset: Dataset, view: RunView | null): AttentionTask | null {
   const { startedAt, outcome } = dataset.ingestion;
   const file = dataset.files[0]?.name ?? dataset.id;
   // A sample upload finished long ago and has only a date; one made here ended when its run did.
-  const at = startedAt === 0 ? dataset.uploadedAt : new Date(startedAt + runLengthMs(outcome)).toISOString();
+  const at = startedAt === 0 ? dataset.uploadedAt : new Date(startedAt + runLengthMs(outcome, dataset.kind)).toISOString();
   const state = view.failed ? "failed" : view.partial ? "partial" : "added";
   const common = {
     id: `upload:${dataset.id}:${startedAt}:${outcome}`,
@@ -56,7 +56,7 @@ export function useUploadActivity(): AttentionTask[] {
 
   // Uploads to other projects are not ticked by `useProjectDatasets`, so their runs are followed here until they end.
   const [now, setNow] = useState(() => Date.now());
-  const running = others.some((d) => d.ingestion && now < d.ingestion.startedAt + runLengthMs(d.ingestion.outcome));
+  const running = others.some((d) => d.ingestion && now < d.ingestion.startedAt + runLengthMs(d.ingestion.outcome, d.kind));
   useEffect(() => {
     if (!running) return;
     const id = setInterval(() => setNow(Date.now()), 500);
@@ -69,7 +69,7 @@ export function useUploadActivity(): AttentionTask[] {
       ...adelaide.map((r) => ({ dataset: r.dataset, view: r.view })),
       ...others.map((d) => {
         const ingestion = d.ingestion!;
-        const subject = { fileName: d.files[0]?.name ?? d.id, rows: rowsFromSize(d.files.reduce((n, f) => n + f.size, 0)), projectCode: d.projectCode };
+        const subject = subjectOf(d);
         return { dataset: d, view: viewAt(ingestion.outcome, Math.max(0, now - ingestion.startedAt), subject) };
       }),
     ];

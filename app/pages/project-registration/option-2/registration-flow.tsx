@@ -78,7 +78,7 @@ function GuestPrompt() {
   );
 }
 
-/** `datasetStep` (opt-in, option 2: a Datasets step after the geographic extent) and the route it lives at (`basePath`) are the only differences between the two flows; without them this is option 1, unchanged. */
+/** `datasetStep` (opt-in, option 2: a Datasets step after Method and details) and the route it lives at (`basePath`) are the only differences between the two flows; without them this is option 1, unchanged. */
 export function RegistrationFlow({ datasetStep, basePath = BASE_PATH }: { datasetStep?: DatasetStep; basePath?: string } = {}) {
   const router = useRouter();
   const searchParams = useSearchParams();

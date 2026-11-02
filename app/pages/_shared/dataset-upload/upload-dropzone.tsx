@@ -6,7 +6,7 @@ import { CheckCircle, File05, Trash01, Upload01 } from "@untitledui/icons";
 import { Button } from "@/components/base/buttons/button";
 import { ProgressBarBase } from "@/components/base/progress-indicators/progress-indicators";
 import { FeaturedIcon } from "@/components/foundations/featured-icon/featured-icon";
-import { ACCEPTED_EXTENSIONS, formatFileSize, isAcceptedFile } from "@/app/pages/_shared/dataset-upload/dataset-data";
+import { fileRulesFor, formatFileSize, isAcceptedFile, type DataKind } from "@/app/pages/_shared/dataset-upload/dataset-data";
 import { readWorkbookColumns, type SheetColumns } from "@/app/pages/_shared/dataset-upload/custom-concepts";
 import { cx } from "@/utils/cx";
 
@@ -23,6 +23,9 @@ import { cx } from "@/utils/cx";
 // `progress` events. Nothing leaves the browser (there is no server here), and the contents are not
 // kept, only the name, the size and the headings of each visible sheet (`sheets`, read from the same
 // bytes once the file is in: they say which columns are custom concepts, see custom-concepts.ts).
+//
+// The same component adds structured data (spreadsheets) and unstructured data (PDFs, images, Word, audio, video, 10 MB each): `kind` sets
+// what is accepted and the size limit (`fileRulesFor`), and a file that is not a workbook is not read for headings.
 
 export interface QueuedFile {
   id: string;
@@ -35,17 +38,19 @@ export interface QueuedFile {
 }
 
 /** The queue's state and the reading of each file. */
-export function useFileQueue() {
+export function useFileQueue(kind: DataKind = "structured") {
   const [files, setFiles] = useState<QueuedFile[]>([]);
-  const [rejected, setRejected] = useState<string[]>([]);
+  const [rejection, setRejection] = useState<{ type: string[]; size: string[] }>({ type: [], size: [] });
   const counter = useRef(0);
 
   const patch = useCallback((id: string, change: Partial<QueuedFile>) => setFiles((prev) => prev.map((f) => (f.id === id ? { ...f, ...change } : f))), []);
 
   const add = useCallback(
     (incoming: File[]) => {
-      const accepted = incoming.filter((f) => isAcceptedFile(f.name));
-      setRejected(incoming.filter((f) => !isAcceptedFile(f.name)).map((f) => f.name));
+      const rules = fileRulesFor(kind);
+      const ofType = incoming.filter((f) => isAcceptedFile(f.name, kind));
+      const accepted = ofType.filter((f) => !rules.maxBytes || f.size <= rules.maxBytes);
+      setRejection({ type: incoming.filter((f) => !isAcceptedFile(f.name, kind)).map((f) => f.name), size: ofType.filter((f) => !accepted.includes(f)).map((f) => f.name) });
       if (accepted.length === 0) return;
       const entries = accepted.map((file) => ({ file, entry: { id: `file-${(counter.current += 1)}`, name: file.name, size: file.size, loaded: 0, status: "uploading" as const } }));
       setFiles((prev) => [...prev, ...entries.map((e) => e.entry)]);
@@ -54,6 +59,7 @@ export function useFileQueue() {
         reader.onprogress = (e) => e.lengthComputable && patch(entry.id, { loaded: e.loaded });
         reader.onload = () => {
           patch(entry.id, { loaded: file.size, status: "complete" });
+          if (kind === "unstructured") return;
           // A file that is not a readable workbook is still uploaded; it just has no headings to check.
           readWorkbookColumns(reader.result as ArrayBuffer)
             .then((sheets) => patch(entry.id, { sheets }))
@@ -63,21 +69,43 @@ export function useFileQueue() {
         reader.readAsArrayBuffer(file);
       }
     },
-    [patch],
+    [patch, kind],
   );
 
   const remove = useCallback((id: string) => setFiles((prev) => prev.filter((f) => f.id !== id)), []);
-  return { files, rejected, add, remove, uploading: files.some((f) => f.status === "uploading") };
+  const rules = fileRulesFor(kind);
+  const rejected = [...rejection.type, ...rejection.size];
+  // What to tell the person about the files that were not added, in the form's error line. A file of the wrong type and a file that is too big are
+  // different things to fix, so each is named with its own reason.
+  const rejectedMessage = [
+    rejection.type.length ? `Only ${rules.only} files can be uploaded. Not added: ${rejection.type.join(", ")}.` : "",
+    rejection.size.length && rules.maxBytes ? `Each file can be up to ${rules.maxBytes / (1024 * 1024)} MB. Too big: ${rejection.size.join(", ")}.` : "",
+  ]
+    .filter(Boolean)
+    .join(" ");
+  return {
+    files,
+    rejected,
+    rejectedMessage: rejectedMessage || undefined,
+    add,
+    remove,
+    /** Forget the files that were turned away (the person has moved on, for example to another kind of data). */
+    clearRejected: () => setRejection({ type: [], size: [] }),
+    uploading: files.some((f) => f.status === "uploading"),
+  };
 }
 
 export function UploadDropzone({
   onAdd,
   isInvalid,
-  acceptedFileTypes = ACCEPTED_EXTENSIONS,
-  formats = "XLS or XLSX",
+  kind = "structured",
+  acceptedFileTypes = fileRulesFor(kind).extensions,
+  formats = fileRulesFor(kind).formats,
 }: {
   onAdd: (files: File[]) => void;
   isInvalid?: boolean;
+  /** What is being added: sets what the picker offers and the line under "Click to upload". */
+  kind?: DataKind;
   /** What the file picker offers. Dropped files are not filtered here: the caller checks them. */
   acceptedFileTypes?: string[];
   /** The line under "Click to upload", naming what can be added. */

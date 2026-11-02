@@ -109,7 +109,7 @@ function ReviewSectionV2({ state, onEdit, dataset }: { state: FormState; onEdit:
   const { names, notes } = methodologySummary(c);
   const dates = d.startDate ? `${formatDate(d.startDate)} to ${d.endDate ? formatDate(d.endDate) : "ongoing"}` : "";
   const restrictionRows = restrictionsSummaryRows(r);
-  // Where the data was collected is part of the project's identification at option 2 (before its Dataset step), and part of data collection at option 1.
+  // Where the data was collected is part of the project's identification at option 2, and part of data collection at option 1.
   const extentRow = <SummaryRow label="Geographic extent" value={isGeoExtentComplete(c.geographicExtent) ? geoExtentSummary(c.geographicExtent) : ""} onEdit={() => onEdit("extent")} />;
 
   return (
@@ -123,6 +123,13 @@ function ReviewSectionV2({ state, onEdit, dataset }: { state: FormState; onEdit:
         {dataset && extentRow}
       </StepCard>
 
+      <StepCard title={STEP_TITLES[2]}>
+        {!dataset && extentRow}
+        <SummaryRow label="Focus areas" value={focus} onEdit={() => onEdit("method")} />
+        <SummaryRow label="Methodology" value={[method, names].filter(Boolean).join(": ")} onEdit={() => onEdit("method")} />
+        {(c.collectionMethod === "systematic" || c.collectionMethod === "analysis") && notes && <SummaryRow label="Variations, limitations and biases" value={notes} onEdit={() => onEdit("method")} />}
+      </StepCard>
+
       {dataset && (
         <StepCard title={dataset.title}>
           {dataset.rows.map((row) => (
@@ -130,13 +137,6 @@ function ReviewSectionV2({ state, onEdit, dataset }: { state: FormState; onEdit:
           ))}
         </StepCard>
       )}
-
-      <StepCard title={STEP_TITLES[2]}>
-        {!dataset && extentRow}
-        <SummaryRow label="Focus areas" value={focus} onEdit={() => onEdit("method")} />
-        <SummaryRow label="Methodology" value={[method, names].filter(Boolean).join(": ")} onEdit={() => onEdit("method")} />
-        {(c.collectionMethod === "systematic" || c.collectionMethod === "analysis") && notes && <SummaryRow label="Variations, limitations and biases" value={notes} onEdit={() => onEdit("method")} />}
-      </StepCard>
 
       <StepCard title={STEP_TITLES[3]}>
         <SummaryRow label="Restrictions" value={r.hasRestrictions ? "Yes, apply restrictions" : "No restrictions - openly available to every BioData SA user"} onEdit={() => onEdit("restrictions")} />
