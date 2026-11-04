@@ -616,3 +616,7 @@ Not imported into every session on purpose: read or grep it when a task needs hi
 - [2026-10-26] Nominations: an admin's nomination follows the same workflow as every role - `2026-10-26-06-nominations-an-admin-s-nomination-follows-the-same.md`
 - [2026-10-27] Home: the Completed checklists tile is removed - `2026-10-27-01-home-the-completed-checklists-tile-is-removed.md`
 - [2026-10-27] Data ingestion stress test: moved from the labs to a page so reviewers see it in production - `2026-10-27-02-data-ingestion-stress-test-moved-from-the-labs.md`
+- [2026-10-28] Site scores lab: vegetation condition score - `2026-10-28-01-site-scores-lab-vegetation-condition-score.md`
+- [2026-11-02] Site scores lab: total row on the attribute tables - `2026-11-02-01-site-scores-lab-total-row-on-the-attribute.md`
+- [2026-11-02] Site scores folded into the site record on the project page - `2026-11-02-02-site-scores-folded-into-the-site-record-on.md`
+- [2026-11-04] Site scores lab: one read-only section, the vegetation score opens the scoresheet - `2026-11-04-01-site-scores-lab-one-read-only-section-the.md`

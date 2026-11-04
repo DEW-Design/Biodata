@@ -89,6 +89,10 @@ const PROTO_LABS: ProtoEntry[] = [
     description: "A Pages map for the Prototype tools bar: every screen laid out to jump to, as columns by area, a tree, or a search-first list. Shows which screens the viewed role can open.",
   },
   {
+    route: "site-scores",
+    description: "A BAM site's scores as one section on its record: the summary, then the vegetation condition score (opens its scoresheet, read only) and the conservation significance score (opens its scoresheet to edit).",
+  },
+  {
     route: "tab-icons",
     description: "Icons on the underline tabs: text only, an icon on every tab, or an icon on the selected tab.",
   },
