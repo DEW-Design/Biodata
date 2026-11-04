@@ -616,6 +616,7 @@ Not imported into every session on purpose: read or grep it when a task needs hi
 - [2026-10-26] Nominations: an admin's nomination follows the same workflow as every role - `2026-10-26-06-nominations-an-admin-s-nomination-follows-the-same.md`
 - [2026-10-27] Home: the Completed checklists tile is removed - `2026-10-27-01-home-the-completed-checklists-tile-is-removed.md`
 - [2026-10-27] Data ingestion stress test: moved from the labs to a page so reviewers see it in production - `2026-10-27-02-data-ingestion-stress-test-moved-from-the-labs.md`
+- [2026-10-28] Site scores lab: vegetation condition score - `2026-10-28-01-site-scores-lab-vegetation-condition-score.md`
 - [2026-10-29] Consolidated report: a new report from the designer's sheet - `2026-10-29-01-consolidated-report-a-new-report-from-the-designer.md`
 - [2026-10-30] Tables: the ID is the first column on every list that has IDs - `2026-10-30-01-tables-the-id-is-the-first-column-on.md`
 - [2026-10-30] Audit Log is the one name: History and Audit history are renamed - `2026-10-30-02-audit-log-is-the-one-name-history-and.md`
@@ -658,3 +659,7 @@ Not imported into every session on purpose: read or grep it when a task needs hi
 - [2026-11-02] Unstructured data uploads: one upload component, no pre-flight, post-flight validation on Fluree - `2026-11-02-07-unstructured-data-uploads-one-upload-component-no-pre.md`
 - [2026-11-02] Badge: the label is trimmed to its capitals so it sits in the middle of the pill - `2026-11-02-08-badge-the-label-is-trimmed-to-its-capitals.md`
 - [2026-11-02] MultiSelect: selections as pills inside the field, the count and Select all in the popover, Done in the footer - `2026-11-02-09-multiselect-selections-as-pills-inside-the-field-the.md`
+- [2026-11-02] Site scores lab: total row on the attribute tables - `2026-11-02-12-site-scores-lab-total-row-on-the-attribute.md`
+- [2026-11-02] Site scores folded into the site record on the project page - `2026-11-02-13-site-scores-folded-into-the-site-record-on.md`
+- [2026-11-04] Site scores lab: one read-only section, the vegetation score opens the scoresheet - `2026-11-04-05-site-scores-lab-one-read-only-section-the.md`
+- [2026-11-04] Merge mohan-wips into this branch: site scores lab - `2026-11-04-06-merge-mohan-wips-into-this-branch-site-scores.md`
