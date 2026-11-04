@@ -8,12 +8,12 @@ paths:
 ---
 
 <!-- Hand-maintained: edit in place, current practice only. Written 23 Oct 2026. DRAFT: the principles are read out of the decision log (552 entries) and the designer's own words, and the wording is the agent's;
-     each is for the designer to confirm or correct. The same text, with the quotes and the clauses, is at /principles (app/(docs)/principles/page.tsx). -->
+     each is for the designer to confirm or correct. The same text, with the clauses, is at /principles (app/(docs)/principles/page.tsx). -->
 
 # Reference: design principles, and exploring design-first
 
 CONTRACTS.md says what is binding. This says why, and where an exploration starts. A contract is a rule that a failure produced; a principle is the thing the rules keep protecting. When a clause does not
-cover a case, a principle decides it, and when two principles pull apart the designer decides (§0.4). The quotes and the clauses behind each are at `/principles`; the craft that follows from them is at
+cover a case, a principle decides it, and when two principles pull apart the designer decides (§0.4). The clauses behind each are at `/principles`; the craft that follows from them is at
 `/principles/craft`.
 
 ## The nine principles

@@ -659,7 +659,14 @@ Not imported into every session on purpose: read or grep it when a task needs hi
 - [2026-11-02] Unstructured data uploads: one upload component, no pre-flight, post-flight validation on Fluree - `2026-11-02-07-unstructured-data-uploads-one-upload-component-no-pre.md`
 - [2026-11-02] Badge: the label is trimmed to its capitals so it sits in the middle of the pill - `2026-11-02-08-badge-the-label-is-trimmed-to-its-capitals.md`
 - [2026-11-02] MultiSelect: selections as pills inside the field, the count and Select all in the popover, Done in the footer - `2026-11-02-09-multiselect-selections-as-pills-inside-the-field-the.md`
+- [2026-11-02] Upload form instructions: numbered steps in a primary-fill circle (CountBadge brand-solid) - `2026-11-02-10-upload-form-instructions-numbered-steps-in-a-primary.md`
+- [2026-11-02] Dataset upload takes the unstructured types beside spreadsheets: one queue, no type choice - `2026-11-02-11-dataset-upload-takes-the-unstructured-types-beside-spreadshe.md`
 - [2026-11-02] Site scores lab: total row on the attribute tables - `2026-11-02-12-site-scores-lab-total-row-on-the-attribute.md`
 - [2026-11-02] Site scores folded into the site record on the project page - `2026-11-02-13-site-scores-folded-into-the-site-record-on.md`
+- [2026-11-03] Workflows config page: the DLA flow drawn, a sandbox to run it, and the gaps it shows - `2026-11-03-01-workflows-config-page-the-dla-flow-drawn-a.md`
+- [2026-11-04] Principles and Craft details copy: unslop pass - `2026-11-04-01-principles-and-craft-details-copy-unslop-pass.md`
+- [2026-11-04] Principles and Craft details: designer quotes and decision ids moved out of the reading - `2026-11-04-02-principles-and-craft-details-designer-quotes-and-decision.md`
+- [2026-11-04] Principles and Craft details: designer words and decision ids removed from the pages - `2026-11-04-03-principles-and-craft-details-designer-words-and-decision.md`
+- [2026-11-04] Principles and Craft details: spacing, callouts and lists tidied - `2026-11-04-04-principles-and-craft-details-spacing-callouts-and-lists.md`
 - [2026-11-04] Site scores lab: one read-only section, the vegetation score opens the scoresheet - `2026-11-04-05-site-scores-lab-one-read-only-section-the.md`
 - [2026-11-04] Merge mohan-wips into this branch: site scores lab - `2026-11-04-06-merge-mohan-wips-into-this-branch-site-scores.md`

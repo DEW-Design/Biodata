@@ -2,22 +2,21 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { AlertFullWidth } from "@/components/application/alerts/alerts";
 import { DestructiveModal } from "@/components/application/modals/modal";
 import { FormPage } from "@/app/pages/_shared/form-page";
 import { TemplateDownloads } from "@/app/pages/_shared/template-finder/template-downloads";
-import { RadioButton, RadioGroup } from "@/components/base/radio-buttons/radio-buttons";
 import { FormRow } from "@/app/pages/_shared/form-row";
 import { FormSectionList, FormSidebar, deriveSectionStatus } from "@/app/pages/_shared/form-section-list";
 import { FileQueue, UploadDropzone, useFileQueue } from "@/app/pages/_shared/dataset-upload/upload-dropzone";
 import { AcknowledgementRows, emptyAcknowledgement, type Acknowledgement } from "@/app/pages/_shared/dataset-upload/acknowledgement-rows";
 import {
-  dataKindOptions,
   emptyUploadDraft,
+  kindOfFiles,
   missingForUpload,
   recommendedTemplates,
   uploadSectionOrder,
   uploadSections,
-  type DataKind,
   type DatasetTemplate,
   type UploadDraft,
   type UploadSection,
@@ -27,6 +26,7 @@ import { describePlace, useDetectedConcepts } from "@/app/pages/_shared/dataset-
 import { CustomConceptRows } from "@/app/pages/_shared/dataset-upload/custom-concepts-views";
 import { projectDetailsPath } from "@/app/pages/_shared/project-routes";
 import { useRoleHref } from "@/lib/use-role-href";
+import { NumberedSteps } from "@/app/pages/_shared/numbered-steps";
 import { ArrowLeft, Trash01 } from "@untitledui/icons";
 
 // The upload-dataset form, fitted from the wireframe (Figma YMproGZfrFB5jUqPHPxMhk node 67:33213)
@@ -38,9 +38,16 @@ import { ArrowLeft, Trash01 } from "@untitledui/icons";
 //   - there is no Save draft: a draft has nothing to save before validation (the workflow sheet's
 //     "Save draft" comes after validation passes);
 //   - the templates have no images or downloads, because there are no template files yet.
-// Unstructured data (PDFs, images, Word, audio, video: 10 MB each) is added in the same form, with the same upload component. It has no templates and
-// no custom concepts, and it is not checked before upload: it goes straight to post-flight validation on Fluree (the designer, 2 Nov 2026).
+// Unstructured data (PDFs, images, Word, audio, video: 10 MB each) is added in the same queue as the spreadsheets, with the same upload component, so one
+// upload can hold both. Those files have no custom concepts and are not checked before upload: they go straight to post-flight validation on Fluree
+// (the designer, 2 Nov 2026). A dataset with no spreadsheet in it is stored as unstructured.
 // Mandatory details block Continue for the section being left, never ahead of it.
+
+const uploadInstructions = [
+  "Supported file formats for data: .XLS and .XLSX",
+  "Please use the standard BioData SA templates recommended for this project when preparing and uploading data.",
+  "PDF, images (JPG, PNG, GIF, RAW), Word, audio and video can be added too. Each file can be up to 10 MB.",
+];
 
 function TemplateCard({ template }: { template: DatasetTemplate }) {
   return (
@@ -77,8 +84,7 @@ export function UploadForm({
 }) {
   useDatasets(); // loads the saved datasets before this one is added
   const roleHref = useRoleHref();
-  const [kind, setKind] = useState<DataKind>("structured");
-  const queue = useFileQueue(kind);
+  const queue = useFileQueue("everything");
   const [answers, setAnswers] = useState<Acknowledgement>(emptyAcknowledgement);
   const [section, setSection] = useState<UploadSection>("files");
   const [visited, setVisited] = useState<Set<UploadSection>>(new Set());
@@ -87,7 +93,7 @@ export function UploadForm({
   const [confirmDiscard, setConfirmDiscard] = useState(false);
 
   const update = (change: Partial<typeof answers>) => setAnswers((a) => ({ ...a, ...change }));
-  const draft: UploadDraft = { ...emptyUploadDraft, ...answers, ...(kind === "unstructured" ? { kind } : {}), files: queue.files.filter((f) => f.status === "complete").map((f) => ({ name: f.name, size: f.size, ...(f.sheets ? { sheets: f.sheets } : {}) })) };
+  const draft: UploadDraft = { ...emptyUploadDraft, ...answers, ...(kindOfFiles(queue.files) === "unstructured" ? { kind: "unstructured" as const } : {}), files: queue.files.filter((f) => f.status === "complete").map((f) => ({ name: f.name, size: f.size, ...(f.sheets ? { sheets: f.sheets } : {}) })) };
   const missing = missingForUpload(draft, queue.uploading);
   // Columns the controlled vocabularies do not have: a section of their own while there are some, and none when there are not.
   const detected = useDetectedConcepts(draft.files);
@@ -144,7 +150,7 @@ export function UploadForm({
       <FormPage
         eyebrow={`${project.name} - Step ${index + 1} of ${order.length}`}
         title={uploadSections[section].title}
-        subtitle={section === "files" && kind === "unstructured" ? "Add the documents, images, audio or video for this project." : uploadSections[section].description}
+        subtitle={uploadSections[section].description}
         onCancel={() => (dirty ? setConfirmDiscard(true) : onCancel())}
         onBack={index > 0 ? () => goTo(order[index - 1]) : undefined}
         problems={problems.length ? { items: problems } : undefined}
@@ -154,65 +160,40 @@ export function UploadForm({
       >
         {section === "files" && (
           <>
-            <FormRow title="Type of data" required description={queue.files.length > 0 ? "Remove the files you added to change the type." : "Select one."}>
-              <RadioGroup
-                aria-label="Type of data"
-                value={kind}
-                isDisabled={queue.files.length > 0}
-                onChange={(v) => {
-                  setKind(v as DataKind);
-                  queue.clearRejected();
-                }}
-              >
-                {dataKindOptions.map((o) => (
-                  <RadioButton key={o.id} value={o.id} label={o.label} hint={o.hint} />
-                ))}
-              </RadioGroup>
-            </FormRow>
             <FormRow title="Data upload instructions">
-              <ol className="m-0 flex list-decimal flex-col gap-1 pl-5 text-sm text-secondary">
-                {kind === "structured" ? (
-                  <>
-                    <li>Supported file formats: .XLS and .XLSX</li>
-                    <li>Please use the standard BioData SA templates recommended for this project when preparing and uploading data.</li>
-                  </>
-                ) : (
-                  <>
-                    <li>Supported file formats: PDF, images (JPG, PNG, GIF, RAW), Word, audio and video.</li>
-                    <li>Each file can be up to 10 MB.</li>
-                    <li>These files skip pre-flight validation and go straight to post-flight validation on Fluree.</li>
-                  </>
-                )}
-              </ol>
+              <NumberedSteps steps={uploadInstructions} />
             </FormRow>
-            <FormRow title={kind === "structured" ? "Dataset files" : "Files"} required description="Add one or more files." error={queue.rejectedMessage}>
-              <UploadDropzone kind={kind} onAdd={queue.add} isInvalid={showErrors("files") && queue.files.length === 0} />
+            <FormRow title="Dataset files" required description="Add one or more files." error={queue.rejectedMessage}>
+              <UploadDropzone accepts="everything" onAdd={queue.add} isInvalid={showErrors("files") && queue.files.length === 0} />
               <FileQueue files={queue.files} onRemove={queue.remove} />
             </FormRow>
-            {kind === "structured" && (
-              <FormRow title="Recommended templates" description="Standard templates recommended for this project.">
-                <div className="flex flex-col gap-3">
-                  {recommendedTemplates.map((template) => (
-                    <TemplateCard key={template.id} template={template} />
-                  ))}
-                </div>
-              </FormRow>
-            )}
+            <FormRow title="Recommended templates" description="Standard templates recommended for this project.">
+              <div className="flex flex-col gap-3">
+                {recommendedTemplates.map((template) => (
+                  <TemplateCard key={template.id} template={template} />
+                ))}
+              </div>
+            </FormRow>
           </>
         )}
 
         {section === "custom" && (
           <>
+            <div className="mb-6">
+              <AlertFullWidth
+                contained
+                wrap
+                color="brand"
+                title="What happens next"
+                description="Your data uploads as usual. A BioData admin approves or declines each concept. Until then it shows as Awaiting approval under the upload on the project's Datasets page."
+                confirmLabel=""
+              />
+            </div>
             <FormRow title="Columns to approve">
               <CustomConceptRows
                 label="Custom concepts in your files"
                 rows={detected.map((d) => ({ key: d.key, name: d.name, where: describePlace(d.places, draft.files.length > 1) }))}
               />
-            </FormRow>
-            <FormRow title="What happens next">
-              <p className="text-sm text-balance text-tertiary">
-                Your data uploads as usual. A BioData admin approves or declines each concept. Until then it shows as Awaiting approval under the upload on the project&apos;s Datasets page.
-              </p>
             </FormRow>
           </>
         )}

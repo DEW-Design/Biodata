@@ -12,13 +12,14 @@ import {
   emptyUploadDraft,
   firstNationsLabel,
   formatFileSize,
-  isAcceptedFile,
+  isSpreadsheet,
+  kindOfFiles,
   licenceLabel,
   missingForUpload,
   type UploadDraft,
 } from "@/app/pages/_shared/dataset-upload/dataset-data";
 
-// The Datasets step of Add Project option 2: the files of the dataset being added and what the person agrees to for it, the same
+// The Datasets step of Add Project option 2: the files (spreadsheets, and the unstructured types beside them) of the dataset being added and what the person agrees to for it, the same
 // questions in the same words as the upload form (`AcknowledgementRows`, the file area and its queue), asked while the project is
 // being made. The step is optional: with no file added it is skipped, and the primary button says so. What is added is created
 // as the project's dataset when the project is created, and runs the same ingestion as any upload.
@@ -52,7 +53,7 @@ export interface DatasetStep {
 
 export function useDatasetStep(): DatasetStep {
   useDatasets(); // loads the saved datasets before this one is added, as the upload form does
-  const queue = useFileQueue();
+  const queue = useFileQueue("everything");
   const [answers, setAnswers] = useState<Acknowledgement>(emptyAcknowledgement);
   const update = (change: Partial<Acknowledgement>) => setAnswers((a) => ({ ...a, ...change }));
 
@@ -61,7 +62,7 @@ export function useDatasetStep(): DatasetStep {
   const keyOf = (f: { name: string; size: number }) => `${f.name}:${f.size}`;
   const addFiles = (incoming: File[]) => {
     queue.add(incoming);
-    for (const file of incoming.filter((f) => isAcceptedFile(f.name))) {
+    for (const file of incoming.filter((f) => isSpreadsheet(f.name))) {
       const key = keyOf(file);
       setReads((r) => ({ ...r, [key]: { state: "reading" } }));
       readFileFacts(file).then(
@@ -82,7 +83,7 @@ export function useDatasetStep(): DatasetStep {
   };
 
   const files = queue.files.filter((f) => f.status === "complete").map((f) => ({ name: f.name, size: f.size, ...(f.sheets ? { sheets: f.sheets } : {}) }));
-  const draft: UploadDraft = { ...emptyUploadDraft, ...answers, files };
+  const draft: UploadDraft = { ...emptyUploadDraft, ...answers, ...(kindOfFiles(files) === "unstructured" ? { kind: "unstructured" as const } : {}), files };
   const hasFiles = queue.files.length > 0;
   const needed = missingForUpload(draft, queue.uploading);
   // A file that could not be read is not a dataset: with only those in the queue there is nothing to create.
@@ -110,12 +111,12 @@ export function useDatasetStep(): DatasetStep {
         <FormRow
           title="Dataset files"
           description="Optional. Add one or more files now, or skip this step and add datasets later from the project's Upload menu."
-          error={queue.rejected.length ? `Only .XLS and .XLSX files can be uploaded. Not added: ${queue.rejected.join(", ")}.` : undefined}
+          error={queue.rejectedMessage}
         >
-          <UploadDropzone onAdd={addFiles} />
+          <UploadDropzone accepts="everything" onAdd={addFiles} />
           <FileQueue files={queue.files} onRemove={removeFile} />
         </FormRow>
-        {hasFiles && (
+        {queue.files.some((f) => isSpreadsheet(f.name)) && (
           <FormRow title="From your file" description="What the file itself states about the project's data.">
             <FileFactsCard reads={queue.files.flatMap((f) => (reads[keyOf(f)] ? [reads[keyOf(f)]] : []))} />
           </FormRow>

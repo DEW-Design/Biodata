@@ -187,7 +187,7 @@ export const Badge = <T extends BadgeTypes>(props: BadgeProps<T>) => {
 
 interface CountBadgeProps {
     count: number;
-    color?: "gray" | "brand" | "error";
+    color?: "gray" | "brand" | "brand-solid" | "error";
     className?: string;
 }
 
@@ -204,12 +204,16 @@ interface CountBadgeProps {
  * `color="error"` reuses the icon rail's exact `bg-error-solid text-white` treatment (same
  * component, same source data - dashboardTasks.length) - flagged directly by the user as too
  * low-contrast in gray for a count that's meant to draw attention, not just report a total.
+ *
+ * `color="brand-solid"` is the primary fill (the primary button's `bg-brand-solid`), for a number that
+ * marks a step in a list rather than counts anything (designer, 2 Nov 2026).
  */
 export const CountBadge = ({ count, color = "gray", className }: CountBadgeProps) => (
     <span
         className={cx(
             "flex size-5 shrink-0 items-center justify-center rounded-full text-xs font-semibold tabular-nums",
             color === "brand" && "bg-utility-brand-50 text-utility-brand-700",
+            color === "brand-solid" && "bg-brand-solid text-fg-white",
             color === "error" && "bg-error-solid text-white",
             color === "gray" && "bg-utility-neutral-50 text-utility-neutral-700",
             className,
