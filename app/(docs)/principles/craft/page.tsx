@@ -16,7 +16,7 @@ import { Edit05, Star01, Feather } from "@untitledui/icons";
 import { cx } from "@/utils/cx";
 
 // The details that make the interface feel finished, with their values and where each lives. The principle behind each is on /principles; the rule, where there is one, is in CONTRACTS.md. Every value here
-// was read from the code or measured in a browser (the decision named beside it has the numbers); none is a target.
+// was read from the code or measured in a browser; none is a target.
 
 const Section = ({ label, children }: { label: string; children: ReactNode }) => (
   <div className="not-prose my-6 flex flex-col gap-3">
@@ -25,13 +25,19 @@ const Section = ({ label, children }: { label: string; children: ReactNode }) =>
   </div>
 );
 
-function Detail({ title, children, values, held }: { title: string; children: ReactNode; values?: string; held: string }) {
+function Detail({ title, children, values, note }: { title: string; children: ReactNode; values?: string; note: string }) {
   return (
-    <div className="not-prose font-barlow flex flex-col gap-2 border-t border-secondary py-5 [font-variant-ligatures:none] first:border-t-0">
-      <h3 className="m-0 text-base font-semibold text-primary text-balance">{title}</h3>
+    <div className="font-barlow flex flex-col gap-3 border-t border-secondary py-6 [font-variant-ligatures:none] first:border-t-0">
+      {/* .prose-doc h3 is the doc site's small grey eyebrow and is unlayered, so it wins over the utilities: the title takes the card-title treatment (16/600, primary) with the important form, as Accordion's title does. */}
+      <h3 className="m-0! text-base! font-semibold! tracking-normal! text-primary! normal-case! text-balance">{title}</h3>
       <div className="m-0 max-w-[70ch] text-sm text-secondary text-balance">{children}</div>
-      {values && <p className="m-0 text-sm text-primary tabular-nums">{values}</p>}
-      <p className="m-0 text-xs text-tertiary">{held}</p>
+      {values && (
+        <div className="max-w-[70ch] rounded-lg border border-secondary bg-secondary px-3 py-2.5">
+          <p className="m-0 mb-1 text-xs font-semibold tracking-wide text-quaternary uppercase">Values</p>
+          <p className="m-0 text-sm text-primary tabular-nums text-balance">{values}</p>
+        </div>
+      )}
+      <p className="m-0 max-w-[70ch] text-xs text-tertiary text-balance">{note}</p>
     </div>
   );
 }
@@ -42,13 +48,13 @@ export default function CraftDetailsPage() {
       <PageHeader
         section="Principles"
         title="Craft details"
-        description="The small things that make the interface feel finished: what each is, the values, where it lives, and the decision that has the measurements. The principle behind them is Craft shows."
+        description="The small things that make the interface feel finished. Each has what it is, its values and where it lives. The principle behind them is Craft shows."
       />
 
       <p className="text-balance">
-        A detail is made once, in a component or a token, and every screen gets it (<Link href="/principles">One system</Link>). Where it is a rule it is a clause in CONTRACTS.md, and where it can be checked by a
-        machine it is. The rest is judged with a live measurement, not by eye. The sections below are in the order a person meets them: the edge of a surface, the type on it, the space between, what moves, what
-        is under a finger, and the words.
+        A detail is made once, in a component or a token, and every screen gets it (<Link href="/principles">One system</Link>). If it&apos;s a rule, it&apos;s a clause in CONTRACTS.md, and a script checks it
+        where a script can. The rest is judged by live measurement, not by eye. The sections follow the order a person meets them: the edge of a surface, the type on it, the space between, what moves, what&apos;s
+        under a finger, and the words.
       </p>
 
       <h2 className="text-balance">Surfaces</h2>
@@ -56,9 +62,9 @@ export default function CraftDetailsPage() {
       <Detail
         title="An edge that reads on any background"
         values="1px, gray-950 at 12 per cent, bg-clip-padding (MAP_SURFACE_EDGE); inner lines the same alpha (MAP_SURFACE_RULE)"
-        held="Floating cards, the key and the zoom buttons on the map: 2026-10-23-18. A solid grey line is one colour, so it is pale on the sea and dark on a road; 12 per cent of the same dark is always a little darker than what is behind."
+        note="Used on the map's floating cards, key and zoom buttons. A solid grey line is one colour, so it is pale on the sea and dark on a road. 12 per cent of the same dark is always a little darker than what is behind."
       >
-        A floating surface has an alpha edge, and its dividers use the same alpha, so on white they are the line they always were and at the card&apos;s outer edge they follow the map.
+        A floating surface has an alpha edge, and its dividers use the same alpha. On white they look as they always did. At the card&apos;s outer edge they follow the map.
       </Detail>
       <Section label="The same box on three backgrounds: the alpha edge above, a solid grey below">
         <div className="grid grid-cols-3 gap-4">
@@ -79,9 +85,9 @@ export default function CraftDetailsPage() {
       <Detail
         title="Corners are concentric"
         values="inner radius = outer radius - padding, never below 0; radius scale lg 8, xl 12, 2xl 16, 3xl 20, 4xl 24"
-        held="CONTRACTS 2.13; 2026-10-19-16. Pairs that land on the scale: 2xl with 4px gives xl; 2xl with 8px gives lg; xl with 4px gives lg."
+        note="CONTRACTS 2.13. Pairs that land on the scale: 2xl with 4px gives xl, 2xl with 8px gives lg, xl with 4px gives lg."
       >
-        Where a rounded box sits inside another and their corners meet, the two curves share a centre. A component keeps its radius; the outer box changes.
+        Where a rounded box sits inside another and their corners meet, the two curves share a centre. A component keeps its radius. The outer box changes.
       </Detail>
       <Section label="Concentric (left three) and pinched (right): the same radius on the inside as the outside">
         <div className="flex flex-wrap items-center gap-6">
@@ -104,9 +110,9 @@ export default function CraftDetailsPage() {
       <Detail
         title="Lift is a shadow; separation is a line"
         values="the floating card shadow-lg; a control lifted off a list shadow-2xl; dividers hairline"
-        held="The shadow scale is in Primitives. A border says where one thing ends; a shadow says one thing is above another (2026-10-23-36, -37)."
+        note="The shadow scale is in Primitives. A border says where one thing ends. A shadow says one thing is above another."
       >
-        Show N more is lifted on the largest shadow so it reads over the rows; a row divider is a line, never a shadow.
+        Show N more is lifted on the largest shadow so it reads over the rows. A row divider is a line, never a shadow.
       </Detail>
 
       <h2 className="text-balance">Type</h2>
@@ -114,7 +120,7 @@ export default function CraftDetailsPage() {
       <Detail
         title="One ladder, and each role has one treatment everywhere"
         values="row title 14/500 primary; supporting lines 14/400 tertiary; eyebrow 12/600 uppercase wide tracking, quaternary; card title 16/600; counts tabular-nums"
-        held="CONTRACTS 2.9; 2026-09-29-01, 2026-10-23-26. Italic is for scientific names and nothing else; sentence case; text-balance on copy that can wrap; no em dashes."
+        note="CONTRACTS 2.9. Italic is for scientific names and nothing else. Sentence case. text-balance on copy that can wrap. No em dashes."
       >
         A level is one step from the next, and hierarchy comes from what recedes. The same role is never medium in one place and semibold in another.
       </Detail>
@@ -149,32 +155,32 @@ export default function CraftDetailsPage() {
       <Detail
         title="Space is a token, on a 4px grid"
         values="card padding 16; header gaps 16 / 6 / 2 / 16; tabs to first row 8; row 76 (three lines); the foot 16 and the pinned button 16 up"
-        held="Primitives: Spacing. 2026-09-28-50 (apply a spacing token), 2026-10-23-25, -37. A gap that is 5px or 13px was eyeballed."
+        note="Primitives: Spacing. A gap that is 5px or 13px was eyeballed."
       >
-        Space inside a surface is read off the card&apos;s own padding (16), so a thing at the edge of a card is 16 from it, and the list&apos;s last row is 16 above the button that is 16 above the foot.
+        Space inside a surface comes from the card&apos;s own padding (16). A thing at the card&apos;s edge is 16 from it, and the list&apos;s last row is 16 above the button, which is 16 above the foot.
       </Detail>
 
       <h2 className="text-balance">Scroll and fade</h2>
 
       <Detail
-        title="One scrollbar for every scroller: a drawn thumb and no track, and a fade that says there is more"
+        title="One scrollbar for every scroller, and a fade that says there is more"
         values="thumb 6px wide, 2px in from the edge, 8px short of each end, gray-400 (gray-500 held); shown while it scrolls and 0.9s after, while pointed at, and while dragged; no thumb in a box under 64px; tabs fade over 64px at the right edge, a list over 120px at its foot"
-        held="app/_scrollbars (DrawnScrollbars, mounted once in the layout), ScrollFade, MAP_SURFACE_SCROLL; CONTRACTS 2.17; 2026-10-23-31, -36, -37, -38, -50, -53, -68. A classic scrollbar took 15px from the right of the rows and left them lopsided on Windows."
+        note="Code: app/_scrollbars (DrawnScrollbars, mounted once in the layout), ScrollFade, MAP_SURFACE_SCROLL. Rule: CONTRACTS 2.17. A classic scrollbar took 15px from the right of the rows and left them lopsided on Windows."
       >
-        The browser&apos;s scrollbar is off everywhere and every element that scrolls (a page, a table, a menu, a modal, a list in a card) has the same thin thumb drawn over its edge: it takes no width, so nothing moves when it
-        appears, shows while the scroller scrolls and while it is pointed at, and drags. A new scroller needs nothing. A scroll that reaches the end of a list in a floating card does not carry on into the map. The fade is a{" "}
-        <code>mask-image</code>, so it works on any background, and it goes at the end of the list: the fade says there is more, the thumb says where and how much. A page&apos;s <code>main</code> still reserves the gutter
+        The browser&apos;s scrollbar is off everywhere. Every element that scrolls (a page, a table, a menu, a modal, a list in a card) has the same thin thumb drawn over its edge. It takes no width, so nothing moves
+        when it appears. It shows while the scroller scrolls and while it&apos;s pointed at, and it drags. A new scroller needs nothing. A scroll that reaches the end of a list in a floating card doesn&apos;t carry on
+        into the map. The fade is a <code>mask-image</code>, so it works on any background, and it sits at the end of the list. The fade says there is more. The thumb says where and how much. A page&apos;s <code>main</code> still reserves the gutter
         (<code>scrollbar-gutter: stable</code>, CONTRACTS 4.2f), which now costs nothing. <Link href="/patterns/map-list-card">Map list card</Link> has the live list.
       </Detail>
 
       <Detail
         title="The end of a list lands quietly"
         values="the last row rests 12 above the foot; the room kept for the button 68 to 12 over 200ms; the button 150ms (ease-in as it goes, ease-out as it returns); the fade 200ms ease-out; nothing animates a layout property the person can see move"
-        held="app/pages/_shared/map-search/result-list.tsx (MapResultList), scroll-fade.tsx, globals.css (scroll-fade-ease); 2026-10-25-09. A press at the end, and a wheel that overshoots it, both threw the rows 40 to 56px in one frame."
+        note="Code: app/pages/_shared/map-search/result-list.tsx (MapResultList), scroll-fade.tsx, globals.css (scroll-fade-ease). A press at the end, and a wheel that overshoots it, both threw the rows 40 to 56px in one frame."
       >
-        Where a pinned button needs room under the last row, the room goes with the button and must not move the rows when it does: the end is where the last row has its 12px, not where the extra room has been scrolled
-        through as well, so a press never scrolls past it and a wheel that does glides back over 200ms instead of being cut back in a frame. The button and the fade ease away and come back if the list is scrolled up. Read
-        the end from the rows and the padding as it is this frame, never from a state that the easing is still catching up with, or the two flip each other every frame.
+        Where a pinned button needs room under the last row, the room goes with the button, and it must not move the rows when it goes. The end of the list is where the last row has its 12px, not where the extra room has
+        been scrolled through as well. So a press never scrolls past the end, and a wheel that overshoots it glides back over 200ms instead of being cut back in one frame. The button and the fade ease away, and come
+        back if the list is scrolled up. Read the end from the rows and the padding as they are this frame, never from a state the easing is still catching up with, or the two flip each other every frame.
       </Detail>
 
       <h2 className="text-balance">Text over a photo</h2>
@@ -182,7 +188,7 @@ export default function CraftDetailsPage() {
       <Detail
         title="A credit in a tooltip: two lines, one licence, inside the card"
         values="creator 12/600 white, then licence and source 12/500 in the supporting colour; opens above the icon with its right edge on the icon's; about 200px wide in a card of 320"
-        held="Tooltip (components/base/tooltip), SpeciesPhotoCarousel; 2026-10-25-10, -11. A credit in one bold run broke 'CC BY-NC' at its hyphen and spilled off the card onto the map."
+        note="Code: Tooltip (components/base/tooltip), SpeciesPhotoCarousel. A credit in one bold run broke 'CC BY-NC' at its hyphen and spilled off the card onto the map."
       >
         Use the tooltip&apos;s own two-line form (a bold title and the supporting line under it), not one sentence in one weight. Keep a licence name on one line (<code>whitespace-nowrap</code>), open the tooltip over the photo
         and not beside it, and align its end with the icon&apos;s, so the longest credit still fits inside the card. Measure the tooltip&apos;s box against the card&apos;s for every species that has a photo, not for one.
@@ -193,11 +199,11 @@ export default function CraftDetailsPage() {
       <Detail
         title="Quiet, specific, and never on layout"
         values="hover 100ms ease-linear on named properties; press scale(0.96); focus ring 2px, offset 2px; enter 150 to 200ms, motion-safe"
-        held="Primitives: Motion. 2026-10-23-17 (no animated width, height, top or left), 2026-09-29-08 (reduce the amount of animation). Never transition: all."
+        note="Primitives: Motion. No animated width, height, top or left. Reduce the amount of animation. Never transition: all."
       >
-        State is shown by colour and fill, not by weight or size (a hovered tab does not get bolder, so nothing reflows). The ghost button (Link grey) has nothing around it until it is pointed at, then a gray-50
-        fill. The fill is 32px high with 6px of padding all round, and an equal negative margin takes the room back so the text does not move (<code>ghost-fill</code>, <code>2026-10-23-44</code>, <code>-47</code>, <code>-59</code>);
-        the target is still 40px, by the hit area, invisibly. Its corners are 6px, so at a card&apos;s corner they are concentric with the card&apos;s 12px (2.13).
+        Colour and fill show state, not weight or size (a hovered tab does not get bolder, so nothing reflows). The ghost button (Link grey) has nothing around it until it is pointed at, then a gray-50
+        fill. The fill is 32px high with 6px of padding all round, and an equal negative margin takes the room back so the text does not move (<code>ghost-fill</code>).
+        The target is still 40px, from the hit area, which doesn&apos;t show. Its corners are 6px, so at a card&apos;s corner they are concentric with the card&apos;s 12px (2.13).
       </Detail>
       <Section label="Ghost controls: point at each">
         <div className="flex flex-wrap items-center gap-6">
@@ -213,7 +219,7 @@ export default function CraftDetailsPage() {
       <Detail
         title="A target as big as a finger, built into the component"
         values="40px with a mouse, 44px with touch (--hit-min); capped with [--hit-min:32px] or removed with after:content-none where controls touch; room in a scrolling strip, pb-1.5 -mb-1.5"
-        held="CONTRACTS 2.16; 2026-10-23-41, -42. Every control is also reachable and operable from the keyboard, and Escape closes and changes nothing (1.9)."
+        note="CONTRACTS 2.16. Every control is also reachable and operable from the keyboard, and Escape closes and changes nothing (1.9)."
       >
         A control that draws smaller than the target gets an invisible box of the target&apos;s size, centred on it. It changes nothing about how the control looks or where it sits. The dashed boxes show it.
       </Detail>
@@ -237,23 +243,21 @@ export default function CraftDetailsPage() {
       <Detail
         title="The source's words, in the source's order"
         values="scientific name first, in italics, then the common name; a field is called what the table calls it; Not provided, never a dash; placeholder people are Olivia Wyatt, Phoenix Baker, Lana Steiner, Maya Dewitt"
-        held="CONTRACTS 2.15, 0.3, 2.3; 2026-10-23-33, -35, -40. One icon per concept (2.4); every action button carries an icon (3.12)."
+        note="CONTRACTS 2.15, 0.3, 2.3. One icon per concept (2.4). Every action button carries an icon (3.12)."
       >
-        A view that comes from a table is the table&apos;s own fields: it does not rename one, reorder it or compute one the table does not have. A data item of a record is a concept, not a field
-        (<code>2026-10-23-40</code>).
+        A view that comes from a table is the table&apos;s own fields. It does not rename one, reorder it or compute one the table does not have. A data item of a record is a concept, not a field.
       </Detail>
 
       <Detail
         title="A cut has a strategy, by what the text is"
         values="a code or id is never cut; a title is cut at a word (Flinders Ranges ...); a file name is cut in the middle and keeps its version and extension (flinders_bush...01.xlsx); the full text is the tooltip, and the open list is as wide as its longest row"
-        held="CONTRACTS 4.6 (the report's dropdowns), Select truncateAtWords and labelEnd; 2026-10-23-66. Cutting at the character the line runs out on is a strategy for nothing: it hides the version that tells two files apart, and cuts a word in half."
+        note="CONTRACTS 4.6 (the report's dropdowns), Select truncateAtWords and labelEnd. Cutting at the character the line runs out on is a strategy for nothing. It hides the version that tells two files apart, and cuts a word in half."
       >
-        Where text is too long for its line, what to keep depends on what it is. A name that is told from its neighbours by its end (a file) keeps its end; a title that is told by its start is cut at a word; an identifier is
-        not cut. Anything cut says its full text on hover.
+        Where text is too long for its line, what to keep depends on what it is. A name told from its neighbours by its end (a file) keeps its end. A title told by its start is cut at a word. An identifier isn&apos;t cut. Anything cut shows its full text on hover.
       </Detail>
 
       <h2 className="text-balance">How a detail is checked</h2>
-      <ul className="text-balance">
+      <ul className="m-0 max-w-[640px] list-none space-y-3 p-0 text-sm leading-[1.7] text-secondary text-balance [&_strong]:font-semibold [&_strong]:text-primary">
         <li>
           <strong>Measure it.</strong> Read the computed style and the box (<code>getComputedStyle</code>, <code>getBoundingClientRect</code>) and say the numbers: the radius and the gap of every nested pair, the
           hit area just inside and just outside, the gap above and below a pinned button, the scroller&apos;s <code>scrollHeight</code>.

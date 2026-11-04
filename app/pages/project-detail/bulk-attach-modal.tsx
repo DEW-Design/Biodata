@@ -19,6 +19,7 @@ import { toast } from "@/components/application/toast/toast";
 import { UploadDropzone } from "@/app/pages/_shared/dataset-upload/upload-dropzone";
 import { formatFileSize } from "@/app/pages/_shared/dataset-upload/dataset-data";
 import { EmbeddedTable } from "@/app/pages/_shared/embedded-table";
+import { NumberedSteps } from "@/app/pages/_shared/numbered-steps";
 import { useUserRole } from "@/lib/use-user-role";
 import { useEditStore } from "./edit-store";
 import { useCurrentUserName } from "./field-notes";
@@ -159,18 +160,18 @@ export function BulkAttachModal({ isOpen, onClose }: { isOpen: boolean; onClose:
       isSubmitLoading={reading}
       onSubmit={submit}
     >
-      <ol className="m-0 flex list-decimal flex-col gap-3 pl-5 text-sm text-secondary">
-        <li className="text-balance">
-          <span className="flex flex-col items-start gap-2">
+      <NumberedSteps
+        steps={[
+          <span key="template" className="flex flex-col items-start gap-2">
             Download this project&apos;s template. It lists every record and its concepts, with the IDs to use.
             <Button color="secondary" size="sm" iconLeading={Download01} onPress={downloadTemplate}>
               Download template
             </Button>
-          </span>
-        </li>
-        <li className="text-balance">Add one row for each file or link: the record, the concept it documents, and its details.</li>
-        <li className="text-balance">Zip the files with the filled-in template and add the zip here. For web links only, add the template on its own.</li>
-      </ol>
+          </span>,
+          "Add one row for each file or link: the record, the concept it documents, and its details.",
+          "Zip the files with the filled-in template and add the zip here. For web links only, add the template on its own.",
+        ]}
+      />
 
       {upload ? (
         <div className="flex items-center gap-3 rounded-xl border border-secondary bg-primary p-4">

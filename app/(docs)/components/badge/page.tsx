@@ -3,7 +3,7 @@
 import { useState } from "react";
 import type React from "react";
 import { PageHeader } from "@/components/PageHeader";
-import { Badge, BadgeWithDot, BadgeWithIcon, BadgeWithButton, BadgeIcon } from "@/components/base/badges/badges";
+import { Badge, BadgeWithDot, BadgeWithIcon, BadgeWithButton, BadgeIcon, CountBadge } from "@/components/base/badges/badges";
 import { BadgeGroup } from "@/components/base/badges/badge-groups";
 import { ContextualConfigPanel } from "@/components/ContextualConfigPanel";
 import { Star01, Check, Zap } from "@untitledui/icons";
@@ -33,6 +33,7 @@ const sectionToggles = [
   { key: "iconOnly", label: "Icon only" },
   { key: "withButton", label: "With dismiss button" },
   { key: "group", label: "Badge group" },
+  { key: "count", label: "Count" },
   { key: "usage", label: "Usage" },
   { key: "figma", label: "Figma" },
 ];
@@ -326,6 +327,23 @@ export default function BadgePage() {
             <BadgeGroup addonText="New" color="brand">12 updates</BadgeGroup>
             <BadgeGroup addonText="+40%" color="success" align="trailing">Conversion rate</BadgeGroup>
             <BadgeGroup addonText="Live" color="error" theme="modern">3 issues</BadgeGroup>
+          </Section>
+        </>
+      )}
+
+      {isFeatureEnabled(config, "count") && (
+        <>
+          <h2 className="text-balance">Count</h2>
+          <p className="text-balance">
+            <code>CountBadge</code> is a true circle for a short number, 20px across, with <code>count</code> and a{" "}
+            <code>color</code> of <code>gray</code>, <code>brand</code>, <code>brand-solid</code> or <code>error</code>. It counts what sits beside a
+            heading. In <code>brand-solid</code>, the primary fill, it numbers the steps of a list, as in the upload form&apos;s instructions.
+          </p>
+          <Section label="Gray / brand / brand-solid / error">
+            <CountBadge count={3} color="gray" />
+            <CountBadge count={3} color="brand" />
+            <CountBadge count={3} color="brand-solid" />
+            <CountBadge count={3} color="error" />
           </Section>
         </>
       )}

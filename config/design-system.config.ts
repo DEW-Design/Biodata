@@ -140,6 +140,7 @@ export const designSystemConfig: DesignSystemConfig = {
       iconOnly: true,
       withButton: true,
       group: true,
+      count: true,
       usage: true,
       figma: true,
     },

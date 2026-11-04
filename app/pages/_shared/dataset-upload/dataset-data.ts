@@ -97,16 +97,15 @@ export const firstNationsLabel = (id: FirstNationsConsideration) => firstNations
 // ── What is uploaded: structured or unstructured ──
 // Structured data is a spreadsheet, checked before it is uploaded (pre-flight) and again after (post-flight). Unstructured data (PDFs, images, Word,
 // audio, video) skips pre-flight validation and goes straight to post-flight validation on Fluree (the designer, 2 Nov 2026). Both are added with
-// the same upload component, `UploadDropzone` and its queue.
+// the same upload component, `UploadDropzone` and its queue, in one upload: the upload form takes spreadsheets and the unstructured types together
+// (the designer, 2 Nov 2026: a dataset upload can have a few unstructured types). A dataset with no spreadsheet in it is unstructured.
 export type { DataKind };
+
+/** What a file queue takes: spreadsheets only (the project-creation step), or spreadsheets and the unstructured types (the upload form). */
+export type Accepts = "spreadsheets" | "everything";
 
 /** 10 MB, for each unstructured file (the designer, 2 Nov 2026). */
 export const UNSTRUCTURED_MAX_BYTES = 10 * 1024 * 1024;
-
-export const dataKindOptions: { id: DataKind; label: string; hint: string }[] = [
-  { id: "structured", label: "Structured data", hint: "A spreadsheet in a BioData SA template (.XLS or .XLSX)." },
-  { id: "unstructured", label: "Unstructured data", hint: "Documents, images, audio and video." },
-];
 
 // RAW is every camera's own raw format; the common ones are listed so the file picker offers them. Audio and video formats are the usual
 // container formats; the designer named the groups, not the extensions, so this list is for the designer to confirm.
@@ -130,17 +129,16 @@ const UNSTRUCTURED_EXTENSIONS = [
   ".mov",
 ] as const;
 
-export const fileRulesFor = (kind: DataKind) =>
-  kind === "unstructured"
+export const fileRulesFor = (accepts: Accepts = "spreadsheets") =>
+  accepts === "everything"
     ? {
-        extensions: [...UNSTRUCTURED_EXTENSIONS] as string[],
-        maxBytes: UNSTRUCTURED_MAX_BYTES as number | undefined,
+        extensions: [...ACCEPTED_EXTENSIONS, ...UNSTRUCTURED_EXTENSIONS] as string[],
         /** The line under "Click to upload". */
-        formats: "PDF, images (JPG, PNG, GIF, RAW), Word, audio or video. Up to 10 MB each",
+        formats: "XLS or XLSX, or PDF, images (JPG, PNG, GIF, RAW), Word, audio or video up to 10 MB each",
         /** The format list inside a sentence ("Only X files can be uploaded"). */
-        only: "PDF, image, Word, audio and video",
+        only: ".XLS, .XLSX, PDF, image, Word, audio and video",
       }
-    : { extensions: ACCEPTED_EXTENSIONS, maxBytes: undefined as number | undefined, formats: "XLS or XLSX", only: ".XLS and .XLSX" };
+    : { extensions: ACCEPTED_EXTENSIONS, formats: "XLS or XLSX", only: ".XLS and .XLSX" };
 
 // ── Records ──
 export interface DatasetFile {
@@ -173,12 +171,12 @@ export interface Dataset {
   ingestion?: { outcome: Outcome; startedAt: number };
 }
 
-/** What an ingestion run is about, for a stored dataset: its first file, its size in rows (the number of files, for unstructured data), its project. */
+/** What an ingestion run is about, for a stored dataset: its first file, its size in rows (the number of files, for unstructured data; the spreadsheets' size, where a PDF or an image came with them), its project. */
 export function subjectOf(d: Dataset): IngestionSubject {
   const unstructured = d.kind === "unstructured";
   return {
     fileName: d.files[0]?.name ?? d.id,
-    rows: unstructured ? d.files.length : rowsFromSize(d.files.reduce((n, f) => n + f.size, 0)),
+    rows: unstructured ? d.files.length : rowsFromSize(d.files.filter((f) => isSpreadsheet(f.name)).reduce((n, f) => n + f.size, 0)),
     projectCode: d.projectCode,
     ...(unstructured ? { kind: d.kind } : {}),
   };
@@ -243,7 +241,13 @@ export function formatFileSize(bytes: number): string {
 }
 
 export const ACCEPTED_EXTENSIONS = [".xls", ".xlsx"];
-export const isAcceptedFile = (name: string, kind: DataKind = "structured") => fileRulesFor(kind).extensions.some((ext) => name.toLowerCase().endsWith(ext));
+export const isAcceptedFile = (name: string, accepts: Accepts = "spreadsheets") => fileRulesFor(accepts).extensions.some((ext) => name.toLowerCase().endsWith(ext));
+
+/** A workbook: the one structured file type. Anything else the upload takes is unstructured. */
+export const isSpreadsheet = (name: string) => ACCEPTED_EXTENSIONS.some((ext) => name.toLowerCase().endsWith(ext));
+
+/** What a set of files makes: unstructured when there are files and none is a spreadsheet, structured otherwise (a spreadsheet with a PDF beside it is structured). */
+export const kindOfFiles = (files: { name: string }[]): DataKind => (files.length > 0 && !files.some((f) => isSpreadsheet(f.name)) ? "unstructured" : "structured");
 
 // How a dataset's workflow status moves with its ingestion. PROPOSED mapping onto the statuses of the
 // business sheet "DataSet - users Workflow Status" (none is invented), for the designer to confirm:
