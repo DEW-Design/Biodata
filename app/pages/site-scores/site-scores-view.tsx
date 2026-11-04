@@ -1,29 +1,33 @@
 "use client";
 
-// LAB: site scores on a site's record (the details panel of the project page). A Bushland Assessment (BAM) site carries the
-// scores of DEW's scoresheet: landscape context, vegetation condition and conservation significance, and the unit and total
-// biodiversity scores worked out from them.
+// SITE SCORES - a page since 4 Nov 2026 (it was the lab `/proto/site-scores`, which is not deployed), so the business team can see
+// it on the production site. A Bushland Assessment (BAM) site carries the scores of DEW's scoresheet: landscape context, vegetation
+// condition and conservation significance, and the unit and total biodiversity scores worked out from them.
 //
 // The direction (designer, 4 Nov 2026, for the business team): the scores had "become very distracting ... taking the first
 // place", so they are one section after the site's own sections, the summary first and then the scores. The vegetation
 // condition score is worked out from the site's other records, so it is read only, and opens the scoresheet's own block
 // (scoresheet.tsx) "on click of the score". The conservation significance score opens its block too, with editable fields
-// ("lets work on the conservation score but this will be editable fields"). Options A to C (the working inline, in a
-// popover, in a modal, with a section per score and an edit mode) were retired the same day; the designer confirms this
-// version here before it goes to the project page, whose own changes were reverted.
+// ("lets work on the conservation score but this will be editable fields"). Folding the section into the project page itself
+// waits for the business team: this page is where it is confirmed first.
 //
-// The record is the project page's real site, Cleland Stringybark Woodland, with its real sections (SectionFields). Its
+// Marked "For internal business consideration" (designer, 4 Nov 2026), as the Data ingestion stress test is marked a sandbox, and
+// open to every role, signed out included, so there is no matrix entry and no whole-page gate (a feature with no entry is visible
+// to everyone). The shell is the stress test's (site-scores-shell.tsx); the store is mounted as Flagged concepts mounts it.
+//
+// The record is the project page's real site, Cleland Stringybark Woodland, with its real sections (SectionFields), read only. Its
 // scores are the scoresheet's own worked example, Site 4 of "BAM Site 42" (EP 2 community, Northern Agricultural & Yorke
 // Peninsula), so every number can be checked against the PDF: 25.01, 1.00, 1.17, 29.26, 585.20. They do not describe
-// Cleland. The landscape context score is the block's (Block!H57), fixed here.
+// Cleland, and the page says so (CONTRACTS 0.3). The landscape context score is the block's (Block!H57), fixed here. The
+// conservation score is edited for this visit only: there is no backend.
 
-import { Suspense, useState, type Key } from "react";
+import { useState, type Key } from "react";
 import { Save01 } from "@untitledui/icons";
 import { Accordion } from "@/components/base/accordion/accordion";
+import { Badge } from "@/components/base/badges/badges";
 import { Button } from "@/components/base/buttons/button";
 import { Dialog, FormModal, Modal, ModalHeader, ModalOverlay } from "@/components/application/modals/modal";
 import { toast } from "@/components/application/toast/toast";
-import { PrototypeTools } from "@/app/_prototype-tools/prototype-tools";
 import { typeLabel } from "@/app/pages/_shared/record-shapes";
 import { EditStoreProvider } from "@/app/pages/project-detail/edit-store";
 import { adelaideHillsSeed } from "@/app/pages/project-detail/project-seed";
@@ -31,6 +35,7 @@ import { RecordIcon } from "@/app/pages/project-detail/record-inspector";
 import { SectionFields, SectionTitle } from "@/app/pages/project-detail/record-panel";
 import { FieldRow } from "@/app/pages/project-detail/field-notes";
 import { formatDate } from "@/app/pages/project-detail/survey-data";
+import { useUserRole } from "@/lib/use-user-role";
 import { fixed2, scoreVegetation, type SpeciesCounts, type VegetationInputs } from "./vegetation-condition";
 import { scoreConservation, type SpeciesCountsByStatus } from "./conservation-significance";
 import { SiteScoreFigures, TotalsBreakdown, type SiteTotals } from "./summary";
@@ -120,7 +125,7 @@ function ScoresSection({
   );
 }
 
-function Lab() {
+function SiteScoresView() {
   const record = adelaideHillsSeed.records.find((r) => r.code === "SU00501")!;
   const [conservation, setConservation] = useState<ConservationSheet>(SITE_4_CONSERVATION);
   const [vegetationOpen, setVegetationOpen] = useState(false);
@@ -132,14 +137,18 @@ function Lab() {
   const sections = record.sections.filter((s) => (s.rows ?? []).length > 0 && s.id !== "custom");
 
   return (
-    <div className="font-barlow min-h-screen bg-secondary p-8">
-      <PrototypeTools />
-      <div className="mx-auto flex max-w-[960px] flex-col gap-6">
+    <div className="flex flex-col">
+      <div className="mx-auto flex w-full max-w-[960px] flex-col gap-8">
         <div className="flex flex-col gap-1">
-          <h1 className="m-0 text-lg font-semibold text-primary">Site scores</h1>
-          <p className="m-0 max-w-prose text-sm text-balance text-tertiary">
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+            <h1 className="text-2xl font-semibold text-primary">Site scores</h1>
+            <Badge size="sm" color="warning">
+              For internal business consideration
+            </Badge>
+          </div>
+          <p className="max-w-prose text-sm text-balance text-tertiary">
             {
-              "A site's scores on its record, as one section after the site's own: the summary, then the two scores. Each opens its block of the scoresheet; the conservation significance score can be edited there. The values are the scoresheet's own Site 4, so every number can be checked against the PDF."
+              "The values are the scoresheet's worked example, Site 4, not this site's, so every number can be checked against the PDF."
             }
           </p>
         </div>
@@ -215,7 +224,7 @@ function Lab() {
           if (!draft) return;
           setConservation(draft);
           setDraft(null);
-          toast.success("Conservation significance score saved", { description: "Changes are kept for this session only. This preview has no backend." });
+          toast.success("Conservation significance score saved", { description: "Changes are kept for this visit only. This page has no backend." });
         }}
       >
         {draft && <ConservationScoresheet sheet={draft} set={setDraft} />}
@@ -224,12 +233,11 @@ function Lab() {
   );
 }
 
-export default function Page() {
+export function SiteScores() {
+  const role = useUserRole();
   return (
-    <Suspense>
-      <EditStoreProvider canEdit role="biodata-admin" seed={adelaideHillsSeed}>
-        <Lab />
-      </EditStoreProvider>
-    </Suspense>
+    <EditStoreProvider canEdit={false} role={role} seed={adelaideHillsSeed}>
+      <SiteScoresView />
+    </EditStoreProvider>
   );
 }
