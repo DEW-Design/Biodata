@@ -93,10 +93,6 @@ const PROTO_LABS: ProtoEntry[] = [
     description: "How a person on the project Overview is drawn: as it is, the name leading, an avatar leading, or a card per person. The real Overview, with the number of people and the role as controls.",
   },
   {
-    route: "site-scores",
-    description: "A BAM site's scores as one section on its record: the summary, then the vegetation condition score (opens its scoresheet, read only) and the conservation significance score (opens its scoresheet to edit).",
-  },
-  {
     route: "tab-icons",
     description: "Icons on the underline tabs: text only, an icon on every tab, or an icon on the selected tab.",
   },

@@ -670,3 +670,4 @@ Not imported into every session on purpose: read or grep it when a task needs hi
 - [2026-11-04] Principles and Craft details: spacing, callouts and lists tidied - `2026-11-04-04-principles-and-craft-details-spacing-callouts-and-lists.md`
 - [2026-11-04] Site scores lab: one read-only section, the vegetation score opens the scoresheet - `2026-11-04-05-site-scores-lab-one-read-only-section-the.md`
 - [2026-11-04] Merge mohan-wips into this branch: site scores lab - `2026-11-04-06-merge-mohan-wips-into-this-branch-site-scores.md`
+- [2026-11-04] Site scores moved from /proto to /pages, for internal business consideration - `2026-11-04-07-site-scores-moved-from-proto-to-pages-for.md`
