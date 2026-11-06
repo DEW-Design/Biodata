@@ -31,6 +31,7 @@ export function AppHeader({
   section,
   current,
   renderBreadcrumb,
+  activity,
 }: {
   /** The screen's `MobileNavTrigger` (its contextual content is screen-specific). Omit on a screen with no rail. */
   mobileNav?: ReactNode;
@@ -40,6 +41,8 @@ export function AppHeader({
   current?: string;
   /** For a screen whose breadcrumb is a longer chain: build it here, given the org pill text to pass on. Overrides `section`/`current`. */
   renderBreadcrumb?: (orgLabel: string | undefined) => ReactNode;
+  /** A slot after the Add menu for the Activity bell, while where Activity shows is being explored (`/proto/activity-notifications`). Nothing in the product passes it, so no header changes until the designer decides. */
+  activity?: ReactNode;
 }) {
   const role = useUserRole();
   const isPublicUser = role === "public-user";
@@ -72,7 +75,11 @@ export function AppHeader({
           </div>
           <CreateMenu />
         </div>
-        {isPublicUser ? <GuestAuthActions /> : <ProfileMenu />}
+        {/* The bell, when a screen passes one, sits with the account control, not with the Add menu: they are both about the person. */}
+        <div className="flex shrink-0 items-center gap-2">
+          {activity}
+          {isPublicUser ? <GuestAuthActions /> : <ProfileMenu />}
+        </div>
       </div>
     </header>
   );

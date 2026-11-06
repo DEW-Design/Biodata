@@ -43,7 +43,7 @@ function parse(iso: string): Date {
 }
 
 /** Today and Yesterday for the last two days, the date otherwise (only dates are stored, not times). */
-function whenLabel(iso: string): string {
+export function whenLabel(iso: string): string {
   const today = localIsoDate();
   if (iso === today) return "Today";
   if (iso === localIsoDate(new Date(parse(today).getTime() - 24 * 60 * 60 * 1000))) return "Yesterday";

@@ -13,7 +13,7 @@ import { AuditFeed } from "@/app/pages/_shared/audit-feed";
 import { AuditLog, milestones } from "@/app/pages/_shared/audit-log";
 import { RecordActionBar, type RecordAction } from "@/app/pages/_shared/record-action-bar";
 import { HeroMeta, RecordBackLink, RecordHero, RecordRow } from "@/app/pages/_shared/record-hero";
-import { ProtectionView } from "@/app/pages/_shared/nominations/nomination-protection";
+import { AssessmentView, ProtectionView } from "@/app/pages/_shared/nominations/nomination-protection";
 import { AlertFullWidth } from "@/components/application/alerts/alerts";
 import { NOMINATION_ROOT, formatShortDate, kindOf, nominationStatusMeta, nominationSubject, speciesFor, type Nomination } from "@/app/pages/_shared/nominations/nomination-data";
 import { RiskBadge } from "@/app/pages/_shared/nominations/nomination-rating-fields";
@@ -203,6 +203,7 @@ export function NominationRecord({
               showRatings={showRatings}
               rate={ratingInPlace ? { onChange: (key, rating) => setNominationRating(n.id, key, rating), showErrors: tried } : undefined}
             />
+            <AssessmentView nomination={n} />
           </div>
         </TabPanel>
 

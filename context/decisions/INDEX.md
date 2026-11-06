@@ -671,3 +671,6 @@ Not imported into every session on purpose: read or grep it when a task needs hi
 - [2026-11-04] Site scores lab: one read-only section, the vegetation score opens the scoresheet - `2026-11-04-05-site-scores-lab-one-read-only-section-the.md`
 - [2026-11-04] Merge mohan-wips into this branch: site scores lab - `2026-11-04-06-merge-mohan-wips-into-this-branch-site-scores.md`
 - [2026-11-04] Site scores moved from /proto to /pages, for internal business consideration - `2026-11-04-07-site-scores-moved-from-proto-to-pages-for.md`
+- [2026-11-05] Activity lab: where Activity shows, emulated from a dataset submitted for approval - `2026-11-05-01-activity-lab-where-activity-shows-emulated-from-a.md`
+- [2026-11-06] Data model: disturbance impact has two BDBSA columns, DSTBIMPACTCODE and DSTBIMPACTDESC - `2026-11-06-01-data-model-disturbance-impact-has-two-bdbsa-columns.md`
+- [2026-11-06] Nominate sensitive species form: the business's Word document applied - `2026-11-06-02-nominate-sensitive-species-form-the-business-s-word.md`

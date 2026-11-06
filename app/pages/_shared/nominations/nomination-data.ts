@@ -34,9 +34,11 @@ export const nominationStatusMeta: Record<NominationStatus, { label: string; bad
 
 export type ProtectionScope = "all" | "selected";
 
+// The words are the business's own, from the nomination form's Word document (the designer, 6 Nov 2026): "What data should be restricted?",
+// "All occurrence records" and "Subset of occurrence records". They were "All data" and "Specific attributes".
 export const protectionMeta: Record<ProtectionScope, { label: string; description: string }> = {
-  all: { label: "All data", description: "Protect every record of this species, and everything recorded with it." },
-  selected: { label: "Specific attributes", description: "Protect only the attributes you choose, such as where it was found." },
+  all: { label: "All occurrence records", description: "Location information should be restricted for all South Australian occurrence records of the species." },
+  selected: { label: "Subset of occurrence records", description: "Some occurrence records should be restricted based on the attributes indicated." },
 };
 
 /** What is nominated (Nominations version 2, the designer, 12 Oct 2026): a species (the existing flow), or a location, in the
@@ -94,6 +96,9 @@ export function areaMethodLabel(area: NominationArea): string {
  */
 export const NOMINATION_ATTRIBUTES: ConceptOption[] = [
   { id: "location", label: "Location", valueType: "areas" },
+  // New (the designer, 6 Nov 2026, from the Word document): "Observation type / evidence of presence (e.g. nests)". The document gives no
+  // list of values, so it is typed, not chosen from a list invented here.
+  { id: "evidence-of-presence", label: "Observation type / evidence of presence", valueType: "text", placeholder: "E.g., nests" },
   ...SPECIES_CONCEPTS.filter((c) => c.id !== "location"),
 ];
 
@@ -109,6 +114,12 @@ export interface NominationAttribute {
   areas: NominationArea[];
   /** This attribute's own justification (not used by Location, whose areas carry theirs). Absent: the nomination's applies. */
   justification?: string;
+}
+
+/** A file attached as supporting evidence: its name and size only, as an upload's files are kept (their contents are never stored). */
+export interface NominationAttachment {
+  name: string;
+  size: number;
 }
 
 /** An accepted nomination of the same species that this one suggests should no longer apply (the designer, 25 Oct 2026:
@@ -142,8 +153,18 @@ export interface Nomination {
   attributes: NominationAttribute[];
   /** Accepted restrictions of the species that this nomination suggests removing. Absent or empty: it only adds. */
   removals?: NominationRemoval[];
-  /** The justification shared by everything protected; an attribute or area may carry its own instead (the designer, 14 Oct 2026). */
+  /** The justification shared by everything protected; an attribute or area may carry its own instead (the designer, 14 Oct 2026). On a species
+   *  nomination made since 6 Nov 2026 it is the answer to "Likelihood and consequences" (the main reason, split in three by the Word document);
+   *  the next three fields are the other two answers. A nomination saved before then has none of them. */
   justification: string;
+  /** "What are the risks created by not releasing the data as held, and how can these be minimised?" */
+  risksOfNotReleasing?: string;
+  /** "Is the data already in the public domain?" */
+  publicDomain?: "yes" | "no";
+  /** Where it is already public, asked only when it is. */
+  publicDomainWhere?: string;
+  /** Files that support the nomination. */
+  attachments?: NominationAttachment[];
   nominator: { name: string; organisation: string; email: string };
   status: NominationStatus;
   createdAt: string;
@@ -157,7 +178,10 @@ export interface Nomination {
   ratings?: Record<string, Rating>;
 }
 
-export type NominationDraft = Pick<Nomination, "speciesId" | "scope" | "attributes" | "justification" | "kind" | "location" | "removals">;
+export type NominationDraft = Pick<
+  Nomination,
+  "speciesId" | "scope" | "attributes" | "justification" | "kind" | "location" | "removals" | "risksOfNotReleasing" | "publicDomain" | "publicDomainWhere" | "attachments"
+>;
 
 export function emptyNominationDraft(): NominationDraft {
   return { speciesId: "", scope: "all", attributes: [], justification: "" };
@@ -287,7 +311,7 @@ export type NominationSection = "species" | "protection" | "location" | "review"
 
 export const nominationSections: Record<NominationSection, { title: string; description: string }> = {
   species: { title: "Species", description: "Choose the species you want treated as sensitive." },
-  protection: { title: "What to protect", description: "Protect all of its data, or only the attributes you choose, and tell the panel why." },
+  protection: { title: "What to protect", description: "Choose which occurrence records should be restricted, and tell the panel why." },
   location: { title: "Location", description: "Name the place, choose its area and tell the panel why. Everything recorded in it is protected." },
   review: { title: "Review and submit", description: "Check the nomination before it goes to the sensitive species panel." },
 };
@@ -297,7 +321,12 @@ export const LOCATION_SECTION_ORDER: NominationSection[] = ["location", "review"
 export const sectionOrderFor = (kind: NominationKind) => (kind === "location" ? LOCATION_SECTION_ORDER : NOMINATION_SECTION_ORDER);
 
 /** Missing mandatory details, by section. A draft only needs what identifies it: the species, or the location's name. */
-export function missingForNomination(draft: NominationDraft, mode: "draft" | "submit" = "submit"): Record<NominationSection, string[]> {
+export function missingForNomination(
+  draft: NominationDraft,
+  mode: "draft" | "submit" = "submit",
+  /** `assessment: false` for a nomination already past its draft that was made before the three questions: it is not held to them when edited. */
+  options: { assessment?: boolean } = {},
+): Record<NominationSection, string[]> {
   const missing: Record<NominationSection, string[]> = { species: [], protection: [], location: [], review: [] };
   if (kindOf(draft) === "location") {
     if (!draft.location?.name.trim()) missing.location.push("Name the location");
@@ -322,7 +351,12 @@ export function missingForNomination(draft: NominationDraft, mode: "draft" | "su
   // The shared justification is needed once there is something to justify; an item that has its own needs it filled.
   const items = draft.scope === "selected" ? protectedItems(draft.attributes) : [];
   const usesMain = draft.scope === "all" || items.length === 0 || items.some((item) => item.own === undefined) || removals.length > 0;
-  if (usesMain && !draft.justification.trim()) missing.protection.push("Enter the main reason");
+  if (usesMain && !draft.justification.trim()) missing.protection.push("Describe the likelihood and consequences of misuse");
+  if (options.assessment !== false) {
+    if (!draft.risksOfNotReleasing?.trim()) missing.protection.push("Describe the risks of not releasing the data");
+    if (!draft.publicDomain) missing.protection.push("Say whether the data is already in the public domain");
+    else if (draft.publicDomain === "yes" && !draft.publicDomainWhere?.trim()) missing.protection.push("Say where the data is already public");
+  }
   items.forEach((item) => {
     if (item.own !== undefined && !item.own.trim()) missing.protection.push(`Enter a reason for ${item.label}`);
   });

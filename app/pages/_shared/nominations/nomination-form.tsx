@@ -7,6 +7,7 @@ import { Button } from "@/components/base/buttons/button";
 import { RadioButton, RadioGroup } from "@/components/base/radio-buttons/radio-buttons";
 import { TextArea } from "@/components/base/textarea/textarea";
 import { Input } from "@/components/base/input/input";
+import { Label } from "@/components/base/input/label";
 import { AlertFullWidth } from "@/components/application/alerts/alerts";
 import { DestructiveModal } from "@/components/application/modals/modal";
 import { FormPage } from "@/app/pages/_shared/form-page";
@@ -16,7 +17,8 @@ import { SpeciesPhoto } from "@/app/pages/_shared/map-search/species-photo";
 import { SPECIES_GROUP_ICON } from "@/app/pages/_shared/map-search/species-group-icons";
 import { SpeciesField } from "@/app/pages/_shared/species-picker";
 import { AreasEditor } from "@/app/pages/_shared/nominations/nomination-areas";
-import { ProtectionView } from "@/app/pages/_shared/nominations/nomination-protection";
+import { AssessmentView, ProtectionView } from "@/app/pages/_shared/nominations/nomination-protection";
+import { FileQueue, UploadDropzone, useFileQueue, type QueuedFile } from "@/app/pages/_shared/dataset-upload/upload-dropzone";
 import { ExistingRestrictionsTable } from "@/app/pages/_shared/nominations/nomination-restrictions";
 import { GeoExtentPicker } from "@/app/pages/project-registration/geo-extent-picker";
 import { emptyGeoExtent, type GeoExtentValue } from "@/app/pages/project-registration/types";
@@ -39,6 +41,7 @@ import {
   toEditorRows,
   type Nomination,
   type NominationArea,
+  type NominationAttachment,
   type NominationDraft,
   type NominationRemoval,
   type NominationSection,
@@ -91,6 +94,12 @@ import { useRoleHref } from "@/lib/use-role-href";
 //   decide to request to modify the restrictions") over its restrictions (`ExistingRestrictionsTable`), read only ("no need for
 //   any action button here. Just show the changes"). A change (a new location, another attribute) is nominated on the next step.
 //   A nomination saved with `removals` (25 Oct 2026, before this) keeps them and still shows them on Review and the record.
+// - The business's Word document (the designer, 6 Nov 2026, "make these tweaks"): the choice is "What data should be restricted?", All
+//   occurrence records or a Subset of them; "Observation type / evidence of presence" is one more attribute; and the Main reason moved below the
+//   attributes and became three mandatory answers: Likelihood and consequences (the old main reason, kept in `justification`, which an item can
+//   still override), Risks of not releasing the data, and whether the data is already in the public domain (Yes or No, then where when Yes).
+//   Supporting evidence (optional files, names and sizes kept) and the FYI note on events follow. Not asked of a nomination past its draft that was
+//   made before them (`legacyLive`), so an admin can still edit it. A location nomination is unchanged: the document is the species form.
 
 // Species is the shared SpeciesField (app/pages/_shared/species-picker.tsx): a combo box grouped
 // by species group, then a summary card with Change. The notes under the card are this form's own.
@@ -239,6 +248,13 @@ export function NominationForm({
   const [rows, setRows] = useState<ConceptValueRow[]>(editor.rows);
   const [areas, setAreas] = useState<Record<number, NominationArea[]>>(editor.areas);
   const [justification, setJustification] = useState(initial?.justification ?? "");
+  // The other two answers of the Word document's three questions, and the supporting files (6 Nov 2026). New files are read by the same queue an
+  // upload uses; the ones already saved on the nomination are kept as they are, shown in the same list.
+  const [risks, setRisks] = useState(initial?.risksOfNotReleasing ?? "");
+  const [publicDomain, setPublicDomain] = useState<"yes" | "no" | undefined>(initial?.publicDomain);
+  const [publicWhere, setPublicWhere] = useState(initial?.publicDomainWhere ?? "");
+  const [keptFiles, setKeptFiles] = useState<NominationAttachment[]>(initial?.attachments ?? []);
+  const queue = useFileQueue("everything");
   // Restrictions an earlier nomination asked to change, by nomination id: kept as saved, no longer chosen on the form.
   const [removals, setRemovals] = useState<Record<string, NominationRemoval>>(() => Object.fromEntries((initial?.removals ?? []).map((r) => [r.key, r])));
   // The items that have their own justification, by `ProtectedItem.key`. An item absent here uses the shared one.
@@ -267,6 +283,9 @@ export function NominationForm({
     const text = ownFor(key);
     return (text !== undefined ? { ...rest, justification: text } : rest) as T;
   };
+  const attachments: NominationAttachment[] = [...keptFiles, ...queue.files.filter((f) => f.status === "complete").map((f) => ({ name: f.name, size: f.size }))];
+  // A nomination past its draft that was made before the three questions existed is not held to them when it is edited; every other one is.
+  const legacyLive = !!initial && initial.status !== "draft" && initial.status !== "returned" && initial.risksOfNotReleasing === undefined && initial.publicDomain === undefined;
   const draft: NominationDraft =
     kind === "location"
       ? { kind, speciesId: "", scope: "all", attributes: [], justification, location: { name: locationName, extent } }
@@ -281,11 +300,14 @@ export function NominationForm({
               : [],
           ...(chosenRemovals.length ? { removals: chosenRemovals } : {}),
           justification,
+          ...(risks.trim() ? { risksOfNotReleasing: risks } : {}),
+          ...(publicDomain ? { publicDomain, ...(publicDomain === "yes" && publicWhere.trim() ? { publicDomainWhere: publicWhere } : {}) } : {}),
+          ...(publicDomain === "yes" && attachments.length ? { attachments } : {}),
         };
   // A species with an open nomination (other than this one) can't be nominated again: the species
   // section counts it as unresolved, so Continue, jumping ahead, Save draft and Submit all refuse.
   const duplicateOf = kind === "species" && speciesId ? nominations.find((n) => n.id !== initial?.id && n.speciesId === speciesId && isOpenNomination(n)) : undefined;
-  const baseMissing = missingForNomination(draft);
+  const baseMissing = missingForNomination(draft, "submit", { assessment: !legacyLive });
   const withDuplicate = duplicateOf ? { ...baseMissing, species: [...baseMissing.species, "Choose a species without an open nomination"] } : baseMissing;
   // An admin editing a nomination past its draft is asked a risk for each thing protected, beside the thing it rates; required once
   // the nomination is accepted. A new nomination, an admin's included, has no rating fields: it is rated while it is reviewed.
@@ -398,7 +420,7 @@ export function NominationForm({
     if (text === undefined)
       return (
         <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm">
-          <span className="text-tertiary">Uses the main reason</span>
+          <span className="text-tertiary">Uses the likelihood and consequences below</span>
           <Button color="link-color" size="sm" onPress={() => setOwnFor(key, "")}>
             Write a different one
           </Button>
@@ -451,6 +473,118 @@ export function NominationForm({
       </div>
     );
   };
+  // The questions below what is protected (the designer, 6 Nov 2026, from the business's Word document): the main reason moved down and became
+  // three mandatory answers, then the supporting evidence and a note on events. The first answer is the old main reason, kept in `justification`.
+  const needsAnswers = !legacyLive;
+  const likelihoodRequired = scope === "all" || items.length === 0 || items.some((i) => own[i.key] === undefined) || chosenRemovals.length > 0;
+  const answerErrors = showErrors("protection");
+  const likelihoodMissing = answerErrors && likelihoodRequired && !justification.trim();
+  const risksMissing = answerErrors && needsAnswers && !risks.trim();
+  const whereMissing = answerErrors && needsAnswers && publicDomain === "yes" && !publicWhere.trim();
+  const keptAsQueued: QueuedFile[] = keptFiles.map((f, i) => ({ id: `kept-${i}`, name: f.name, size: f.size, loaded: f.size, status: "complete" }));
+  const removeFile = (id: string) => {
+    if (id.startsWith("kept-")) setKeptFiles((k) => k.filter((_, i) => `kept-${i}` !== id));
+    else queue.remove(id);
+    touch();
+  };
+  const assessment = (
+    <>
+      <FormRow
+        title="Likelihood and consequences"
+        required={likelihoodRequired}
+        description="The likelihood of the species data being misused to threaten or disturb the species population and/or environment, and the consequences if it is. Consider, for example, site specificity of the species, poaching threat, sensitivities to disturbance and social media interest."
+      >
+        <TextArea
+          aria-label="Likelihood and consequences"
+          isRequired={likelihoodRequired}
+          rows={5}
+          value={justification}
+          isInvalid={likelihoodMissing}
+          hint={likelihoodMissing ? "Describe the likelihood and consequences of misuse" : undefined}
+          onChange={(v) => {
+            setJustification(v);
+            touch();
+          }}
+        />
+      </FormRow>
+      <FormRow
+        title="Risks of not releasing the data"
+        required={needsAnswers}
+        description="The risks created by not releasing the data as held, and how they can be minimised. For example, accidental destruction of habitat due to lack of data access."
+      >
+        <TextArea
+          aria-label="Risks of not releasing the data"
+          isRequired={needsAnswers}
+          rows={4}
+          value={risks}
+          isInvalid={risksMissing}
+          hint={risksMissing ? "Describe the risks of not releasing the data" : undefined}
+          onChange={(v) => {
+            setRisks(v);
+            touch();
+          }}
+        />
+      </FormRow>
+      <FormRow
+        title="Already in the public domain"
+        required={needsAnswers}
+        description="Is the data already in the public domain?"
+        error={answerErrors && needsAnswers && !publicDomain ? "Say whether the data is already in the public domain" : undefined}
+      >
+        <RadioGroup
+          aria-label="Already in the public domain"
+          orientation="horizontal"
+          value={publicDomain ?? ""}
+          onChange={(v) => {
+            setPublicDomain(v as "yes" | "no");
+            touch();
+          }}
+        >
+          <RadioButton value="yes" label="Yes" />
+          <RadioButton value="no" label="No" />
+        </RadioGroup>
+        {publicDomain === "yes" && (
+          <TextArea
+            label="Where is it public?"
+            isRequired
+            rows={3}
+            value={publicWhere}
+            isInvalid={whereMissing}
+            hint={whereMissing ? "Say where the data is already public" : "For example, in academic publications that cannot be redacted."}
+            onChange={(v) => {
+              setPublicWhere(v);
+              touch();
+            }}
+          />
+        )}
+        {/* Where it is already public is shown by the files that show it (the designer, 6 Nov 2026): asked on Yes only. */}
+        {publicDomain === "yes" && (
+          <div className="flex flex-col gap-1.5">
+            <Label>Supporting evidence (optional)</Label>
+            <UploadDropzone
+              accepts="everything"
+              onAdd={(added) => {
+                queue.add(added);
+                touch();
+              }}
+            />
+            <FileQueue files={[...keptAsQueued, ...queue.files]} onRemove={removeFile} />
+            {queue.rejectedMessage && <p className="text-sm text-error-primary">{queue.rejectedMessage}</p>}
+          </div>
+        )}
+      </FormRow>
+      <div className="pt-6">
+        <AlertFullWidth
+          color="brand"
+          title="Important information"
+          description="Where a sensitive species is observed at an event, the event location information will be restricted. This will restrict the location information associated with other non-sensitive species observed at the event."
+          confirmLabel=""
+          contained
+          wrap
+        />
+      </div>
+    </>
+  );
   const rates = ratingKeys.length > 0;
   return (
     <div className="flex min-h-0 flex-1 flex-col">
@@ -536,9 +670,9 @@ export function NominationForm({
 
         {section === "protection" && (
           <>
-            <FormRow title="What should be protected?" required>
+            <FormRow title="What data should be restricted?" required>
               <RadioGroup
-                aria-label="What should be protected"
+                aria-label="What data should be restricted"
                 value={scope}
                 onChange={(v) => {
                   setScope(v as ProtectionScope);
@@ -549,29 +683,9 @@ export function NominationForm({
                 <RadioButton value="selected" label={protectionMeta.selected.label} hint={protectionMeta.selected.description} />
               </RadioGroup>
             </FormRow>
-            {scope === "all" && (
-              <FormRow title="Reason" required description="What puts this species at risk if its records stay public, and what protecting them would prevent.">
-                {sharedJustification(5, undefined, true)}
-              </FormRow>
-            )}
             {scope === "all" && rates && (
               <FormRow title="Data release" required={ratingsRequired} description="How records of this species are released, and who sees them as held.">
                 {ratingFields("species")}
-              </FormRow>
-            )}
-            {/* The reason is asked before the attributes (the designer, 14 Oct 2026): it applies to every attribute and area added
-                below, each of which can be given a different one. */}
-            {scope === "selected" && (
-              <FormRow
-                title="Main reason"
-                required={items.length === 0 || items.some((i) => own[i.key] === undefined) || chosenRemovals.length > 0}
-                description={
-                  chosenRemovals.length > 0
-                    ? "Why the restrictions should change. It applies to every change you request, and to every attribute and area below unless you write a different one for it."
-                    : "Why these records should be protected. It applies to every attribute and area you add below, unless you write a different one for it."
-                }
-              >
-                {sharedJustification(5, undefined, true)}
               </FormRow>
             )}
             {scope === "selected" && (
@@ -620,6 +734,7 @@ export function NominationForm({
                 />
               </FormRow>
             )}
+            {assessment}
           </>
         )}
 
@@ -650,6 +765,11 @@ export function NominationForm({
                 <SummaryRow title="What to protect" onEdit={() => setSection("protection")}>
                   <ProtectionView nomination={{ ...draft, ratings }} showRatings={rates} />
                 </SummaryRow>
+                {(draft.risksOfNotReleasing || draft.publicDomain || (draft.attachments?.length ?? 0) > 0) && (
+                  <SummaryRow title="Risks and evidence" onEdit={() => setSection("protection")}>
+                    <AssessmentView nomination={draft} />
+                  </SummaryRow>
+                )}
               </>
             )}
           </div>

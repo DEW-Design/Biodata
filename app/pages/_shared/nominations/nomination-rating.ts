@@ -1,5 +1,5 @@
 import type { BadgeColors } from "@/components/base/badges/badge-types";
-import { attributeLabel, attributeValueLabel, type NominationAttribute } from "@/app/pages/_shared/nominations/nomination-data";
+import { attributeLabel, attributeValueLabel, protectionMeta, type NominationAttribute } from "@/app/pages/_shared/nominations/nomination-data";
 
 // A nomination's rating (Nominations version 2): the data release risk and user access level the BioData Super Admin sets for
 // what a nomination protects, when reviewing or approving it, or later by editing it. Both scales come from the DEW "Risk
@@ -98,9 +98,9 @@ export function nominationRatingKeys(n: RatedShape): string[] {
   return n.attributes.flatMap((a) => (a.attribute === "location" ? a.areas.map((area) => areaRatingKey(a.id, area.id)) : [String(a.id)]));
 }
 
-/** What a rating key names, for messages and lists: "All data", "Location: Coorong National Park", "Activity: Nesting". */
+/** What a rating key names, for messages and lists: "All occurrence records", "Location: Coorong National Park", "Activity: Nesting". */
 export function ratingKeyLabel(n: { kind?: string; attributes: NominationAttribute[] }, key: string): string {
-  if (key === "species") return "All data";
+  if (key === "species") return protectionMeta.all.label;
   if (key === "location") return "Location";
   const [, attributeId, areaId] = key.startsWith("area:") ? key.split(":") : [];
   if (areaId) {
