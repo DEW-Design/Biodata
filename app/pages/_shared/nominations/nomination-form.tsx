@@ -96,8 +96,8 @@ import { useRoleHref } from "@/lib/use-role-href";
 //   A nomination saved with `removals` (25 Oct 2026, before this) keeps them and still shows them on Review and the record.
 // - The business's Word document (the designer, 6 Nov 2026, "make these tweaks"): the choice is "What data should be restricted?", All
 //   occurrence records or a Subset of them; "Observation type / evidence of presence" is one more attribute; and the Main reason moved below the
-//   attributes and became three mandatory answers: Likelihood and consequences (the old main reason, kept in `justification`, which an item can
-//   still override), Risks of not releasing the data, and whether the data is already in the public domain (Yes or No, then where when Yes).
+//   attributes and became three mandatory answers: Likelihood and consequences (the old main reason, kept in `justification`; an attribute or
+//   area no longer takes a reason of its own, "Write a different one" having been removed the same day), Risks of not releasing the data, and whether the data is already in the public domain (Yes or No, then where when Yes).
 //   Supporting evidence (optional files, names and sizes kept) and the FYI note on events follow. Not asked of a nomination past its draft that was
 //   made before them (`legacyLive`), so an admin can still edit it. A location nomination is unchanged: the document is the species form.
 
@@ -257,8 +257,9 @@ export function NominationForm({
   const queue = useFileQueue("everything");
   // Restrictions an earlier nomination asked to change, by nomination id: kept as saved, no longer chosen on the form.
   const [removals, setRemovals] = useState<Record<string, NominationRemoval>>(() => Object.fromEntries((initial?.removals ?? []).map((r) => [r.key, r])));
-  // The items that have their own justification, by `ProtectedItem.key`. An item absent here uses the shared one.
-  const [own, setOwn] = useState<Record<string, string>>(() =>
+  // The items that have their own justification, by `ProtectedItem.key`: only on a nomination saved before 6 Nov 2026, when the form stopped offering
+  // one ("Write a different one", removed by the designer). It is kept as it was saved, and not shown here, so an edit does not lose it.
+  const [own] = useState<Record<string, string>>(() =>
     Object.fromEntries(protectedItems(initial?.attributes ?? []).flatMap((item) => (item.own !== undefined ? [[item.key, item.own]] : []))),
   );
   // The step the rating fields sit on: where the thing rated is chosen.
@@ -386,8 +387,7 @@ export function NominationForm({
   const title = initial ? (isResubmit ? `Update ${initial.id}` : isEditingLive ? `Edit ${initial.id}` : `Edit draft ${initial.id}`) : kind === "location" ? "New location nomination" : "New nomination";
   const species = speciesFor(speciesId);
 
-  // Why: the shared justification, or an item's own. Shown where the item is chosen (an attribute's card, an area's row).
-  const justificationError = (text: string) => showErrors("protection") && !text.trim();
+  // A location nomination's one reason (a species nomination asks the three questions instead, `assessment` below).
   const sharedJustification = (rows: number, hint?: string, inRow = false) => (
     <TextArea
       label={inRow ? undefined : "Reason"}
@@ -404,48 +404,6 @@ export function NominationForm({
       }}
     />
   );
-  const setOwnFor = (key: string, text: string | undefined) => {
-    setOwn((o) => {
-      const next = { ...o };
-      if (text === undefined) delete next[key];
-      else next[key] = text;
-      return next;
-    });
-    touch();
-  };
-  // An item's reason: a quiet line saying it uses the main justification, or its own field once "Write a different one" is pressed.
-  const justificationFor = (key: string) => {
-    const label = items.find((i) => i.key === key)?.label ?? "this attribute";
-    const text = own[key];
-    if (text === undefined)
-      return (
-        <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm">
-          <span className="text-tertiary">Uses the likelihood and consequences below</span>
-          <Button color="link-color" size="sm" onPress={() => setOwnFor(key, "")}>
-            Write a different one
-          </Button>
-        </div>
-      );
-    return (
-      <div className="flex flex-col gap-1.5">
-        <TextArea
-          label={`Different reason for ${label}`}
-          isRequired
-          rows={3}
-          value={text}
-          isInvalid={justificationError(text)}
-          hint={justificationError(text) ? "Enter a reason" : undefined}
-          onChange={(v) => setOwnFor(key, v)}
-        />
-        <div>
-          <Button color="link-gray" size="sm" onPress={() => setOwnFor(key, undefined)}>
-            Use the main one instead
-          </Button>
-        </div>
-      </div>
-    );
-  };
-
   // The pair of rating fields, set beside the thing it rates.
   const ratingFields = (key: string) => {
     const value = ratings[key];
@@ -713,12 +671,7 @@ export function NominationForm({
                         <AreasEditor
                           areas={areas[row.id] ?? []}
                           invalid={showErrors("protection") && (areas[row.id] ?? []).length === 0}
-                          renderArea={(area) => (
-                            <>
-                              {justificationFor(areaRatingKey(row.id, area.id))}
-                              {rates && ratingFields(areaRatingKey(row.id, area.id))}
-                            </>
-                          )}
+                          renderArea={(area) => <>{rates && ratingFields(areaRatingKey(row.id, area.id))}</>}
                           onChange={(next) => {
                             setAreas((prev) => ({ ...prev, [row.id]: next }));
                             update({ values: next.map((a) => a.id) });
@@ -726,8 +679,7 @@ export function NominationForm({
                           }}
                         />
                       )}
-                      {/* Why, then this attribute's rating, once the attribute is chosen. A Location's areas carry their own why. */}
-                      {row.concept && row.concept !== "location" && justificationFor(`attr:${row.id}`)}
+                      {/* This attribute's rating, once the attribute is chosen. */}
                       {rates && row.concept && row.concept !== "location" && ratingFields(String(row.id))}
                     </>
                   )}
