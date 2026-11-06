@@ -10,7 +10,7 @@ import { ActionsGroup, downloadCsv } from "@/app/pages/_shared/agreement-actions
 import { AgreementScopeNav } from "@/app/pages/_shared/agreement-scope";
 import { inNominationScope, useNominationScope } from "@/app/pages/_shared/nominations/nomination-scope";
 import { geoExtentSummary } from "@/app/pages/project-registration/geo-extent-picker";
-import { NOMINATION_ROOT, kindOf, nominationStatusMeta, nominationSubject } from "@/app/pages/_shared/nominations/nomination-data";
+import { NOMINATION_ROOT, kindOf, nominationStatusMeta, nominationSubject, protectionMeta } from "@/app/pages/_shared/nominations/nomination-data";
 import { useNominations } from "@/app/pages/_shared/nominations/nomination-store";
 import { NominationSwitcher } from "@/app/pages/_shared/nominations/nomination-switcher";
 import { PrimaryRail } from "@/app/pages/_shared/primary-rail";
@@ -78,7 +78,7 @@ function ScopeNav() {
             visible.map((n) => {
               const isLocation = kindOf(n) === "location";
               const detail = isLocation ? (n.location ? geoExtentSummary(n.location.extent) : "") : n.speciesId;
-              const protection = isLocation ? "Everything in the area" : n.scope === "all" ? "All data" : "Specific attributes";
+              const protection = isLocation ? "Everything in the area" : protectionMeta[n.scope].label;
               return [n.id, isLocation ? "Location" : "Species", nominationSubject(n), detail, protection, n.nominator.name, nominationStatusMeta[n.status].label, n.updatedAt];
             }),
           )

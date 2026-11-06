@@ -808,6 +808,15 @@ export interface ReportedCodes {
 const unseen = (code: string): ReportedCode => ({ code, seenIn: [] });
 const seen = (code: string, ...where: string[]): ReportedCode => ({ code, seenIn: where });
 
+// The designer, 6 Nov 2026, with a screenshot of the code table's sheet (a header row, DSTBIMPACTCODE and DSTBIMPACTDESC, and 20 codes from PL "Power
+// Lines" to CA "Campsite"): BDBSA's two columns for a disturbance impact. The frames draw one field, "Disturbance Impact (Code & Desc)", on Non-biotic and
+// Community, so the two columns are the code half and the description half of that one field, as for Life Form. No file we hold shows either header, so
+// both are unseen: reported, not confirmed.
+const DISTURBANCE_IMPACT: ReportedCodes = {
+  codes: [unseen("DSTBIMPACTCODE"), unseen("DSTBIMPACTDESC")],
+  note: "Two columns for the one field: DSTBIMPACTCODE is the code and DSTBIMPACTDESC its description. Reported from a code table's header row, not seen in an export we hold.",
+};
+
 export const BDBSA_REPORTED_CODES: Record<string, Record<string, ReportedCodes>> = {
   "Event:Site": {
     Description: { codes: [unseen("DESCRIPTION")] },
@@ -821,6 +830,12 @@ export const BDBSA_REPORTED_CODES: Record<string, Record<string, ReportedCodes>>
     },
     "Photopoint Marker Present": { codes: [seen("ISPHOTOPOINT", SEEN_SITE)], note: "Seen on the SITE export, not on the VISIT export." },
     "Photopoint Disc Number": { codes: [seen("PHOTODISCNR", SEEN_SITE)], note: "Seen on the SITE export, not on the VISIT export." },
+  },
+  "Observation:Non-biotic": {
+    "Disturbance Impact (Code & Desc)": DISTURBANCE_IMPACT,
+  },
+  "Observation:Community": {
+    "Disturbance Impact (Code & Desc)": DISTURBANCE_IMPACT,
   },
   "Observation:Individual": {
     Description: { codes: [unseen("DESCRIPTION")] },

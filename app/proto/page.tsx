@@ -29,6 +29,10 @@ interface ProtoEntry {
 
 const PROTO_LABS: ProtoEntry[] = [
   {
+    route: "activity-notifications",
+    description: "Where a person is told something needs them or has happened to their request (Activity): a panel on Home, a page, or a bell in the header. A dataset submitted for approval tells the admin; its approval tells the uploader. Emulated.",
+  },
+  {
     route: "admin-dashboard-options",
     description: "What biodata-admin should see on Home, instead of the registered-user dashboard it gets by default.",
   },

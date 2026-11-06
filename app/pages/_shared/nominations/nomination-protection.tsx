@@ -6,7 +6,9 @@ import { Badge } from "@/components/base/badges/badges";
 import { Button } from "@/components/base/buttons/button";
 import { EmbeddedTable } from "@/app/pages/_shared/embedded-table";
 import { AreasMap } from "@/app/pages/_shared/nominations/nomination-areas";
-import { areaMethodLabel, attributeLabel, attributeValueLabel, kindOf, locationArea, removalKey, type Nomination, type NominationArea } from "@/app/pages/_shared/nominations/nomination-data";
+import { areaMethodLabel, attributeLabel, attributeValueLabel, kindOf, locationArea, protectionMeta, removalKey, type Nomination, type NominationArea } from "@/app/pages/_shared/nominations/nomination-data";
+import { RecordRow } from "@/app/pages/_shared/record-hero";
+import { formatFileSize } from "@/app/pages/_shared/dataset-upload/dataset-data";
 import { AccessSelect, RiskBadge, RiskSelect } from "@/app/pages/_shared/nominations/nomination-rating-fields";
 import { STANDARD_ACCESS, accessLevelMeta, areaRatingKey, releaseRiskMeta, type Rating } from "@/app/pages/_shared/nominations/nomination-rating";
 import { geoExtentSummary } from "@/app/pages/project-registration/geo-extent-picker";
@@ -21,7 +23,11 @@ import { geoExtentSummary } from "@/app/pages/project-registration/geo-extent-pi
 // The accepted restrictions the nomination asks to change (25 Oct 2026) follow what it sets, one row each: the restriction's
 // nomination id marked "Change requested", then where and what it restricts now. The main reason covers it; it is not rated.
 
-type Subject = Pick<Nomination, "kind" | "speciesId" | "scope" | "attributes" | "justification" | "location" | "ratings" | "removals">;
+type Subject = Pick<Nomination, "kind" | "speciesId" | "scope" | "attributes" | "justification" | "location" | "ratings" | "removals"> & Partial<Pick<Nomination, "risksOfNotReleasing" | "publicDomain">>;
+
+/** A nomination made on the form that asks the three questions (6 Nov 2026) has its reason as the answer to the first of them. */
+const hasAssessment = (n: Partial<Pick<Nomination, "risksOfNotReleasing" | "publicDomain" | "publicDomainWhere" | "attachments">>) =>
+  n.risksOfNotReleasing !== undefined || n.publicDomain !== undefined || (n.attachments?.length ?? 0) > 0;
 
 interface Entry {
   /** The rating key (`nominationRatingKeys`): "species", "location", an attribute's id, or an area's key. */
@@ -53,7 +59,8 @@ export function protectionEntries(n: Subject): Entry[] {
     ];
   }
   const removed = (n.removals ?? []).map((r): Entry => ({ key: removalKey(r.key), title: r.key, value: r.summary, reason: main, removeFrom: r.key }));
-  if (n.scope === "all") return [{ key: "species", title: "All data", value: "Every record of the species, and everything recorded with it", reason: main }, ...removed];
+  if (n.scope === "all")
+    return [{ key: "species", title: protectionMeta.all.label, value: "Location information, for all South Australian occurrence records of the species", reason: main }, ...removed];
   const added = n.attributes.flatMap((a): Entry[] => {
     if (!a.attribute) return [];
     if (a.attribute === "location")
@@ -158,7 +165,7 @@ export function ProtectionView({
       columns={[
         { id: "item", label: "Attribute", className: w.item, isRowHeader: true },
         { id: "value", label: "Protected", className: w.value },
-        { id: "reason", label: "Reason", className: w.reason },
+        { id: "reason", label: hasAssessment(n) ? "Likelihood and consequences" : "Reason", className: w.reason },
         ...(showRatings
           ? [
               { id: "risk", label: "Data release risk", className: w.risk },
@@ -185,5 +192,42 @@ export function ProtectionView({
         return access(row);
       }}
     />
+  );
+}
+
+/**
+ * The answers the table does not hold, as read (6 Nov 2026, the Word document's three questions): the risks of not releasing the data, whether it is
+ * already public and where, and the files attached as supporting evidence. The first question, likelihood and consequences, is the table's Reason
+ * column, so it is not repeated here. A nomination made before the questions existed has none of this, and the view is empty then.
+ */
+export function AssessmentView({ nomination: n }: { nomination: Pick<Nomination, "kind" | "risksOfNotReleasing" | "publicDomain" | "publicDomainWhere" | "attachments"> }) {
+  if (kindOf(n) === "location" || !hasAssessment(n)) return null;
+  const files = n.attachments ?? [];
+  const text = (value?: string) => (value?.trim() ? <p className="m-0 whitespace-pre-line">{value}</p> : <p className="m-0 text-quaternary">Not provided</p>);
+  return (
+    <div className="rounded-lg border border-secondary">
+      <RecordRow label="Risks of not releasing the data">{text(n.risksOfNotReleasing)}</RecordRow>
+      <RecordRow label="Already in the public domain">
+        {n.publicDomain ? (
+          <>
+            <p className="m-0">{n.publicDomain === "yes" ? "Yes" : "No"}</p>
+            {n.publicDomain === "yes" && <div className="mt-1 text-secondary">{text(n.publicDomainWhere)}</div>}
+          </>
+        ) : (
+          text()
+        )}
+      </RecordRow>
+      {files.length > 0 && (
+        <RecordRow label="Supporting evidence">
+          <ul className="m-0 flex list-none flex-col gap-1 p-0">
+            {files.map((f) => (
+              <li key={f.name}>
+                {f.name} <span className="text-tertiary">({formatFileSize(f.size)})</span>
+              </li>
+            ))}
+          </ul>
+        </RecordRow>
+      )}
+    </div>
   );
 }
