@@ -31,7 +31,7 @@ export function FileFactsCard({ reads }: { reads: FileRead[] }) {
       ))}
       {merged && nothing && <p className="m-0 text-sm text-balance text-tertiary">Nothing in {read.length === 1 ? "this file" : "these files"} could be read as sites, visits or species, so nothing is filled in from {read.length === 1 ? "it" : "them"}.</p>}
       {merged && !nothing && (
-        <div className="rounded-lg border border-secondary">
+        <div className="rounded-xl border border-secondary">
           <RecordRow label="Dates surveyed">{dates}</RecordRow>
           <RecordRow label="Sites">{count(merged.sites, "site", "sites")}</RecordRow>
           <RecordRow label="Visits">{count(merged.visits, "visit", "visits")}</RecordRow>

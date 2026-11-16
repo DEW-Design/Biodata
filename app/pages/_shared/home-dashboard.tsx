@@ -38,6 +38,7 @@ import { useRoleHref } from "@/lib/use-role-href";
 import { FlaggedConceptsHomeQueue } from "@/app/pages/project-detail/flagged-home-queue";
 import { useUserRole } from "@/lib/use-user-role";
 import { useFeatureAccess } from "@/lib/use-feature-access";
+import { useCanOpen } from "@/lib/use-can-open";
 import { isBiodataAdmin } from "@/lib/user-role";
 
 // The real Home/BioData Dashboard content - the single source every sidebar shell
@@ -614,6 +615,8 @@ export function HomeDashboardContent() {
   // lib/use-role-href.ts). Flagged directly by the user as a dead end: navigating away as
   // `public-user` silently landed back on `registered-user`'s view.
   const roleHref = useRoleHref();
+  // A button or link to a screen the role cannot open is not drawn (3.15).
+  const canOpen = useCanOpen();
 
   // biodata-admin gets entirely different content (see AdminHomeDashboardContent above) - a
   // registered user's own species-observed/DLA-request activity means nothing to an admin managing
@@ -631,6 +634,7 @@ export function HomeDashboardContent() {
   // Only something the user can pick up and continue (a draft), not a link to something they are waiting on.
   const continueTask = dashboardTasks.find((task) => task.actionHref && task.actionLabel === "Continue");
   const otherTasks = dashboardTasks.filter((task) => task !== continueTask);
+  const link = (path: string) => (canOpen(path) ? roleHref(path) : undefined);
 
   return (
     <>
@@ -664,18 +668,22 @@ export function HomeDashboardContent() {
           <Button color="secondary" iconTrailing={ArrowNarrowRight} href={roleHref("/pages/project-list")}>
             Your projects and datasets
           </Button>
-          <Button color="secondary" iconTrailing={ArrowNarrowRight} href={roleHref("/pages/dla/new")}>
-            Data licence request
-          </Button>
-          <Button color="secondary" iconTrailing={ArrowNarrowRight} href={roleHref("/pages/nominations/new")}>
-            Sensitive species nomination
-          </Button>
+          {canOpen("/pages/dla/new") && (
+            <Button color="secondary" iconTrailing={ArrowNarrowRight} href={roleHref("/pages/dla/new")}>
+              Data licence request
+            </Button>
+          )}
+          {canOpen("/pages/nominations/new") && (
+            <Button color="secondary" iconTrailing={ArrowNarrowRight} href={roleHref("/pages/nominations/new")}>
+              Sensitive species nomination
+            </Button>
+          )}
         </div>
       </div>
 
       <div className="flex flex-col gap-8 px-6 pb-6">
-        {continueTask?.actionHref && continueTask.actionLabel && (
-          <ContinueStrip title={continueTask.title} actionLabel={continueTask.actionLabel} actionHref={roleHref(continueTask.actionHref)} />
+        {continueTask?.actionHref && continueTask.actionLabel && link(continueTask.actionHref) && (
+          <ContinueStrip title={continueTask.title} actionLabel={continueTask.actionLabel} actionHref={link(continueTask.actionHref)!} />
         )}
         <div className="flex flex-col gap-3">
           {/* What the person has put in and where it has got to: a request they are waiting on is not something that "needs your attention", so the heading says what it is, and there is no red count
@@ -683,7 +691,7 @@ export function HomeDashboardContent() {
           <h2 className="text-lg font-semibold text-primary">Your requests</h2>
           <div className="flex flex-col gap-3">
             {otherTasks.map((task) => (
-              <TaskItem key={task.title} {...task} detail={task.progress ? undefined : task.detail} actionHref={task.actionHref ? roleHref(task.actionHref) : undefined} />
+              <TaskItem key={task.title} {...task} detail={task.progress ? undefined : task.detail} actionHref={task.actionHref ? link(task.actionHref) : undefined} />
             ))}
           </div>
         </div>

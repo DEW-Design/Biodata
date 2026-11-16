@@ -9,8 +9,10 @@ import {
     DateInput as AriaDateInput,
     DateSegment as AriaDateSegment,
     Group as AriaGroup,
+    I18nProvider,
     type DateValue,
 } from "react-aria-components";
+import { DATE_ENTRY_LOCALE } from "@/utils/date-entry-locale";
 import { cx, sortCx } from "@/utils/cx";
 import { Tooltip, TooltipTrigger } from "../tooltip/tooltip";
 import { HintText } from "./hint-text";
@@ -80,13 +82,13 @@ export const InputDateBase = ({
             shortcut: "pr-2.5",
         },
         md: {
-            root: cx("px-3 py-2 text-md", hasTrailingIcon && "pr-9", hasLeadingIcon && "pl-10"),
+            root: cx("px-3 py-2 text-md leading-6", hasTrailingIcon && "pr-9", hasLeadingIcon && "pl-10"),
             iconLeading: "left-3 size-5",
             iconTrailing: "right-3",
             shortcut: "pr-2.5",
         },
         lg: {
-            root: cx("px-3.5 py-2.5 text-md", hasTrailingIcon && "pr-9.5", hasLeadingIcon && "pl-10.5"),
+            root: cx("px-3.5 py-2.5 text-md leading-6", hasTrailingIcon && "pr-9.5", hasLeadingIcon && "pl-10.5"),
             iconLeading: "left-3.5 size-5",
             iconTrailing: "right-3.5",
             shortcut: "pr-3",
@@ -204,7 +206,14 @@ interface InputProps
     inputClassName?: string;
 }
 
-export const InputDate = ({
+// Dates are entered DD/MM/YYYY, always (designer, 11 Nov 2026): the locale is fixed (`DATE_ENTRY_LOCALE`), not read from the browser.
+export const InputDate = (props: InputProps) => (
+    <I18nProvider locale={DATE_ENTRY_LOCALE}>
+        <DateFieldRoot {...props} />
+    </I18nProvider>
+);
+
+const DateFieldRoot = ({
     size = "md",
     placeholder,
     icon: Icon,

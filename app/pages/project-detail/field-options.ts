@@ -115,17 +115,39 @@ export const CODE_VOCABS: Record<string, VocabTerm[]> = {
     { code: "i", description: "Sparse" },
     { code: "r", description: "Very sparse" },
   ],
+  // BDBSA's disturbance impact code table (DSTBIMPACTCODE, DSTBIMPACTDESC), the designer's sheet of 16 Nov 2026, in its order and its words (the three
+  // "not valid from 07/94" notes are part of the description as the sheet writes them, with no space before the bracket). It replaced a five-code placeholder
+  // (FI, GZ, WE, TR, CL) that the sheet did not agree with.
   "Disturbance code": [
-    { code: "FI", description: "Fire" },
-    { code: "GZ", description: "Grazing" },
-    { code: "WE", description: "Weeds" },
-    { code: "TR", description: "Tracks and roads" },
-    { code: "CL", description: "Clearing" },
+    { code: "PL", description: "Power Lines" },
+    { code: "BH", description: "Bee Hives" },
+    { code: "WP", description: "Watering Points" },
+    { code: "FB", description: "Fire Breaks" },
+    { code: "RV", description: "Remnant Vegetation adjoins roadside native vegetation" },
+    { code: "RD", description: "Rubbish Dumping" },
+    { code: "HO", description: "Hollows(not valid from 07/94)" },
+    { code: "FL", description: "Fence Lines" },
+    { code: "BR", description: "Borrow/ Rubbish/ Quarry Pit(not valid from 07/94)" },
+    { code: "AT", description: "Access Tracks" },
+    { code: "AC", description: "Active(not valid from 07/94)" },
+    { code: "DR", description: "Drains" },
+    { code: "CR", description: "Coppice Regrowth" },
+    { code: "CL", description: "Cleared Land within 30m radius of quadrat" },
+    { code: "EA", description: "Earthmoving/earthworks" },
+    { code: "SR", description: "Sprays (weed or plant growth control)" },
+    { code: "OR", description: "Off-road Vehicles" },
+    { code: "BQ", description: "Borrow/Quarry Pit" },
+    { code: "SL", description: "Slashing" },
+    { code: "CA", description: "Campsite" },
   ],
+  // The designer's list, 16 Nov 2026 ("SE - seedling, SA - sapling, MA - mature, SN - senescing, HO - hollow"); it replaced three eucalypt species
+  // codes (EOB, ELE, ECA). The descriptions are written in sentence case, as every other list here is.
   "Upper stratum code": [
-    { code: "EOB", description: "Eucalyptus obliqua" },
-    { code: "ELE", description: "Eucalyptus leucoxylon" },
-    { code: "ECA", description: "Eucalyptus camaldulensis" },
+    { code: "SE", description: "Seedling" },
+    { code: "SA", description: "Sapling" },
+    { code: "MA", description: "Mature" },
+    { code: "SN", description: "Senescing" },
+    { code: "HO", description: "Hollow" },
   ],
 };
 

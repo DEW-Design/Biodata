@@ -23,7 +23,7 @@ first when starting a new file in that area (a scoped rule triggers on reading, 
 
 - `.claude/rules/contracts-build.md`: Tokens, type, copy, icons, Figma, components in use, behaviour patterns. Paths: `/app/**`, `/components/**`
 - `.claude/rules/contracts-components.md`: Creating or changing a component: override, duplicates, ingest hygiene, ambient leaks. Paths: `/components/**`
-- `.claude/rules/contracts-shell.md`: The persona shell and page patterns: header, rail, columns, forms, lists, record pages, floating panels. Paths: `app/pages/**`, `lib/create-menu.ts`, `lib/registered-user-nav.ts`, `config/role-access.config.ts`
+- `.claude/rules/contracts-shell.md`: The persona shell and page patterns: header, rail, columns, forms, lists, record pages, floating panels. Paths: `app/pages/**`, `lib/create-menu.ts`, `lib/create-context.ts`, `lib/registered-user-nav.ts`, `lib/page-access.ts`, `lib/use-can-open.ts`, `config/role-access.config.ts`
 - `.claude/rules/contracts-prototyping.md`: Prototype tools bar and competing layout options: what previews on a screen, and how options are presented and retired. Paths: `app/pages/**`, `app/proto/**`, `app/_prototype-tools/**`, `lib/layers.ts`
 - `.claude/rules/contracts-docs.md`: Doc pages, generated /test-* screens, navigation order. Paths: `app/*docs*/**`, `lib/nav.ts`, `config/design-system.config.ts`, `/README.md`
 - `.claude/rules/contracts-governance.md`: Changing the contracts, overrides, audit and the checks themselves. Paths: `/CONTRACTS.md`, `/contracts/**`, `/scripts/**`, `/.github/**`, `.claude/settings.json`
@@ -65,6 +65,7 @@ first when starting a new file in that area (a scoped rule triggers on reading, 
 - §2.15 A derived view shows the source's fields as the source does (contracts-build.md)
 - §2.16 A control's hit area is built into its component (contracts-build.md)
 - §2.17 One scrollbar, drawn once, for every scroller (contracts-build.md)
+- §2.18 A field a person writes in shows an example (contracts-build.md)
 - §3.1 One header (contracts-shell.md)
 - §3.2 One rail, one icon map, legal links in the rail (contracts-shell.md)
 - §3.3 Account controls live in the header (contracts-shell.md)
@@ -78,6 +79,8 @@ first when starting a new file in that area (a scoped rule triggers on reading, 
 - §3.11 Every item in column 2 has an icon (contracts-shell.md)
 - §3.12 Every action button carries an icon (contracts-build.md)
 - §3.13 Underline tabs carry icons (contracts-shell.md)
+- §3.14 Every form has the Pre-fill sample content switch (contracts-prototyping.md)
+- §3.15 A role is never offered a screen it cannot open (contracts-shell.md)
 - §4.1 The form pattern (contracts-shell.md)
 - §4.2 Lists and tables (contracts-shell.md)
 - §4.3 Cognitive load (contracts-shell.md)

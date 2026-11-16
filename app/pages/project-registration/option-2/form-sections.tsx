@@ -4,6 +4,7 @@ import { Fragment, useState, type Key } from "react";
 import { Plus, Trash01 } from "@untitledui/icons";
 import { Accordion } from "@/components/base/accordion/accordion";
 import { Button } from "@/components/base/buttons/button";
+import { ButtonUtility } from "@/components/base/buttons/button-utility";
 import { Checkbox } from "@/components/base/checkbox/checkbox";
 import { Input } from "@/components/base/input/input";
 import { RadioButton, RadioGroup } from "@/components/base/radio-buttons/radio-buttons";
@@ -241,16 +242,16 @@ function OwnerRows(props: SectionProps) {
       <DataOwnerRow {...props} />
       <FormRow title="Primary contact" required description="Who people should contact about this data.">
         <div className="grid gap-4 sm:grid-cols-2">
-          <Input label="First name" isRequired placeholder="John" value={contact.firstName} onChange={(v) => updateContact(contact.id, { firstName: v })} isInvalid={missing(contact.firstName)} hint={missing(contact.firstName) ? REQUIRED : undefined} />
-          <Input label="Last name" isRequired placeholder="Doe" value={contact.lastName} onChange={(v) => updateContact(contact.id, { lastName: v })} isInvalid={missing(contact.lastName)} hint={missing(contact.lastName) ? REQUIRED : undefined} />
+          <Input label="First name" isRequired placeholder="E.g., Olivia" value={contact.firstName} onChange={(v) => updateContact(contact.id, { firstName: v })} isInvalid={missing(contact.firstName)} hint={missing(contact.firstName) ? REQUIRED : undefined} />
+          <Input label="Last name" isRequired placeholder="E.g., Wyatt" value={contact.lastName} onChange={(v) => updateContact(contact.id, { lastName: v })} isInvalid={missing(contact.lastName)} hint={missing(contact.lastName) ? REQUIRED : undefined} />
         </div>
-        <Input label="Email" type="email" isRequired placeholder="john.doe@sa.gov.au" value={contact.email} onChange={(v) => updateContact(contact.id, { email: v })} isInvalid={missing(contact.email)} hint={missing(contact.email) ? REQUIRED : undefined} />
-        <Input label="Phone number" placeholder="Enter contact number" value={contact.phone} onChange={(v) => updateContact(contact.id, { phone: v })} />
+        <Input label="Email" type="email" isRequired placeholder="E.g., olivia.wyatt@example.com" value={contact.email} onChange={(v) => updateContact(contact.id, { email: v })} isInvalid={missing(contact.email)} hint={missing(contact.email) ? REQUIRED : undefined} />
+        <Input label="Phone number" value={contact.phone} onChange={(v) => updateContact(contact.id, { phone: v })} />
         {d.dataOwnerContacts.slice(1).map((c, i) => (
           <div key={c.id} className="flex flex-col gap-4 border-t border-secondary pt-4">
             <div className="flex items-center justify-between">
               <p className="text-sm font-medium text-primary">Contact {i + 2}</p>
-              <Button color="secondary" size="sm" iconLeading={Trash01} aria-label={`Remove contact ${i + 2}`} onClick={() => patchDetails({ dataOwnerContacts: d.dataOwnerContacts.filter((x) => x.id !== c.id) })} />
+              <ButtonUtility color="tertiary" size="xs" icon={Trash01} tooltip="Remove contact" aria-label={`Remove contact ${i + 2}`} onClick={() => patchDetails({ dataOwnerContacts: d.dataOwnerContacts.filter((x) => x.id !== c.id) })} />
             </div>
             <div className="grid gap-4 sm:grid-cols-2">
               <Input label="First name" value={c.firstName} onChange={(v) => updateContact(c.id, { firstName: v })} />
@@ -364,14 +365,14 @@ function ContactCard({
         <p className="text-sm font-medium text-primary">Contact {index + 1}</p>
         <div className="flex items-center gap-4">
           <Checkbox size="sm" label="Primary contact" isSelected={person.isPrimary} isDisabled={!canChoosePrimary} onChange={(on) => (on ? onSetPrimary() : onChange({ isPrimary: false }))} />
-          {canRemove && <Button color="secondary" size="sm" iconLeading={Trash01} aria-label={`Remove contact ${index + 1}`} onClick={onRemove} />}
+          {canRemove && <ButtonUtility color="tertiary" size="xs" icon={Trash01} tooltip="Remove contact" aria-label={`Remove contact ${index + 1}`} onClick={onRemove} />}
         </div>
       </div>
       <div className="grid gap-4 sm:grid-cols-2">
-        <Input label="First name" isRequired placeholder="John" value={person.firstName} onChange={(v) => onChange({ firstName: v })} isInvalid={missing(person.firstName)} hint={missing(person.firstName) ? REQUIRED : undefined} />
-        <Input label="Last name" isRequired placeholder="Doe" value={person.lastName} onChange={(v) => onChange({ lastName: v })} isInvalid={missing(person.lastName)} hint={missing(person.lastName) ? REQUIRED : undefined} />
-        <Input label="Email" type="email" isRequired placeholder="john.doe@sa.gov.au" value={person.email} onChange={(v) => onChange({ email: v })} isInvalid={missing(person.email)} hint={missing(person.email) ? REQUIRED : undefined} />
-        <Input label="Phone number" placeholder="Enter contact number" value={person.phone} onChange={(v) => onChange({ phone: v })} />
+        <Input label="First name" isRequired placeholder="E.g., Olivia" value={person.firstName} onChange={(v) => onChange({ firstName: v })} isInvalid={missing(person.firstName)} hint={missing(person.firstName) ? REQUIRED : undefined} />
+        <Input label="Last name" isRequired placeholder="E.g., Wyatt" value={person.lastName} onChange={(v) => onChange({ lastName: v })} isInvalid={missing(person.lastName)} hint={missing(person.lastName) ? REQUIRED : undefined} />
+        <Input label="Email" type="email" isRequired placeholder="E.g., olivia.wyatt@example.com" value={person.email} onChange={(v) => onChange({ email: v })} isInvalid={missing(person.email)} hint={missing(person.email) ? REQUIRED : undefined} />
+        <Input label="Phone number" value={person.phone} onChange={(v) => onChange({ phone: v })} />
       </div>
       <Select
         label="Role in project"
@@ -527,7 +528,7 @@ function OptionalMethodDetails({ state, onChange, withLimitations = true }: Pick
                     {(item) => <Select.Item {...item}>{item.label}</Select.Item>}
                   </Select>
                   <Input label="Permit no." placeholder="Enter permit number" value={permit.number} onChange={(v) => updatePermit(permit.id, { number: v })} className="flex-1" />
-                  <Button color="secondary" size="md" iconLeading={Trash01} aria-label={`Remove permit ${i + 1}`} isDisabled={c.permits.length === 1} onClick={() => patchCollection({ permits: c.permits.filter((x) => x.id !== permit.id) })} />
+                  <ButtonUtility color="tertiary" size="xs" icon={Trash01} tooltip="Remove permit" aria-label={`Remove permit ${i + 1}`} isDisabled={c.permits.length === 1} onClick={() => patchCollection({ permits: c.permits.filter((x) => x.id !== permit.id) })} />
                 </div>
               ))}
               <Button color="link-color" size="sm" iconLeading={Plus} className="w-max" onClick={() => patchCollection({ permits: [...c.permits, emptyPermitRow(Math.max(0, ...c.permits.map((p) => p.id)) + 1)] })}>
@@ -565,8 +566,8 @@ function OptionalMethodDetails({ state, onChange, withLimitations = true }: Pick
 // time, each with its own field for any variation, limitation or bias, as trap types are on the trap effort editor
 // (project-detail/trap-effort.tsx). The list grows as the admins add to the vocabulary, so the picker is the searchable
 // single select (MultiSelect selectionMode="single", as the Observers field) instead of a menu: it lists only what is not added
-// yet (Other can be added more than once, each with its own name), and clears after each pick. A row's remove icon shows on
-// hover or keyboard focus, as a trap type's does. An Analysis/Reporting project adds its kinds of analysis or reporting the same
+// yet (Other can be added more than once, each with its own name), and clears after each pick. A row's remove icon is always
+// shown, as every other remove in the form is (11 Nov 2026; it showed on hover or focus only). An Analysis/Reporting project adds its kinds of analysis or reporting the same
 // way (the designer, 25 Oct 2026), from a fixed list plus Other, kept apart so switching between the two loses neither.
 function MethodologyList({ state, onChange, showErrors, kind }: SectionProps & { kind: "systematic" | "analysis" }) {
   const { patchCollection } = useSectionPatches(state, onChange);
@@ -608,14 +609,7 @@ function MethodologyList({ state, onChange, showErrors, kind }: SectionProps & {
                 onChange={(note) => update(m.rid, { note })}
               />
             </div>
-            <Button
-              color="tertiary"
-              size="sm"
-              iconLeading={Trash01}
-              aria-label={`Remove ${name}`}
-              onClick={() => set(chosen.filter((x) => x.rid !== m.rid))}
-              className="mt-6 opacity-0 transition-opacity group-focus-within/methodology:opacity-100 group-hover/methodology:opacity-100 focus-visible:opacity-100"
-            />
+            <ButtonUtility color="tertiary" size="xs" icon={Trash01} tooltip="Remove" aria-label={`Remove ${name}`} onClick={() => set(chosen.filter((x) => x.rid !== m.rid))} className="mt-6" />
           </div>
         );
       })}
@@ -748,6 +742,35 @@ function MethodSection({ state, onChange, showErrors }: SectionProps) {
 
 // ── Step 3 ──
 
+type RestrictionKind = (typeof RESTRICTION_TYPE_META)[number]["key"];
+
+/** The "Kinds of restriction" list: every kind that can be switched on, as a checkbox with what it does under it. One list for Add Project's
+ *  Restrictions section and the project page's "Add a restriction" card, so the two cannot drift (the designer, 11 Nov 2026: "the same lift and
+ *  shift from the restriction list"). `locked` (opt-in) are kinds that stay ticked and cannot be changed here. */
+export function RestrictionKindsRow({
+  enabled,
+  onToggle,
+  description,
+  required,
+  error,
+  locked,
+}: {
+  enabled: Set<RestrictionKind>;
+  onToggle: (key: RestrictionKind, on: boolean) => void;
+  description: string;
+  required?: boolean;
+  error?: string;
+  locked?: Set<RestrictionKind>;
+}) {
+  return (
+    <FormRow title="Kinds of restriction" required={required} description={description} error={error}>
+      {OFFERED_RESTRICTION_TYPES.map(({ key, title, description: hint }) => (
+        <Checkbox key={key} size="sm" label={title} hint={hint} isSelected={enabled.has(key)} isDisabled={locked?.has(key)} onChange={(on) => onToggle(key, on)} />
+      ))}
+    </FormRow>
+  );
+}
+
 function RestrictionsSection({ state, onChange, showErrors }: SectionProps) {
   const { patchRestrictions } = useSectionPatches(state, onChange);
   const r = state.restrictions;
@@ -780,21 +803,33 @@ function RestrictionsSection({ state, onChange, showErrors }: SectionProps) {
         )}
       </FormRow>
       {r.hasRestrictions && (
-        <FormRow title="Kinds of restriction" required description="Each one you tick gets its own section in the list on the left." error={showErrors && r.enabledTypes.size === 0 ? "Select at least one kind of restriction" : undefined}>
-          {OFFERED_RESTRICTION_TYPES.map(({ key, title, description }) => (
-            <Checkbox key={key} size="sm" label={title} hint={description} isSelected={r.enabledTypes.has(key)} onChange={(on) => toggleType(key, on)} />
-          ))}
-        </FormRow>
+        <RestrictionKindsRow
+          required
+          description="Each one you tick gets its own section in the list on the left."
+          error={showErrors && r.enabledTypes.size === 0 ? "Select at least one kind of restriction" : undefined}
+          enabled={r.enabledTypes}
+          onToggle={toggleType}
+        />
       )}
     </>
   );
 }
 
+// One kind of restriction, laid out as every other section is: a form row per field group, the label and help on the left and the field on the
+// right (CONTRACTS 4.1 item 3). Until 11 Nov 2026 these five sections were a flat stack with the labels above. The row's title is the field's own label.
 function RestrictionTypeSection({ typeKey, state, onChange, showErrors }: { typeKey: (typeof RESTRICTION_TYPE_META)[number]["key"] } & Pick<SectionProps, "state" | "onChange" | "showErrors">) {
   return (
-    <div className="max-w-[720px]">
-      <RestrictionTypeFields typeKey={typeKey} value={state.restrictions} onChange={(restrictions) => onChange({ ...state, restrictions })} showErrors={showErrors} />
-    </div>
+    <RestrictionTypeFields
+      typeKey={typeKey}
+      value={state.restrictions}
+      onChange={(restrictions) => onChange({ ...state, restrictions })}
+      showErrors={showErrors}
+      row={({ title, required, children }) => (
+        <FormRow key={title} title={title} required={required}>
+          {children}
+        </FormRow>
+      )}
+    />
   );
 }
 

@@ -23,7 +23,7 @@ export const InputPrefix = ({ children, ...props }: InputPrefixProps) => (
             "in-data-input-wrapper:in-data-leading:-mr-px in-data-input-wrapper:in-data-leading:rounded-l-lg",
             "in-data-input-wrapper:in-data-trailing:-ml-px in-data-input-wrapper:in-data-trailing:rounded-r-lg",
             // Default size styles
-            "px-3 py-2 text-md",
+            "px-3 py-2 text-md leading-6",
             // Small size styles
             "in-data-input-wrapper:in-data-[input-size=sm]:px-3 in-data-input-wrapper:in-data-[input-size=sm]:py-2 in-data-input-wrapper:in-data-[input-size=sm]:text-sm",
             // Large size styles

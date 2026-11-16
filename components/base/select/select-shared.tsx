@@ -47,8 +47,10 @@ export const sizes = {
         textContainer: "gap-x-1.5",
         shortcut: "pr-2.5",
     },
-    md: { root: "py-2 px-3 gap-2 *:data-icon:size-5", withIcon: "", text: "text-md", textContainer: "gap-x-1.5", shortcut: "pr-2.5" },
-    lg: { root: "py-2.5 px-3.5 gap-2 *:data-icon:size-5", withIcon: "", text: "text-md", textContainer: "gap-x-1.5", shortcut: "pr-3" },
+    // The 24px line (`leading-6`) makes a medium field 40px and a large one 44px, the same as Input and MultiSelect (`text-md` is not defined, so the
+    // line fell back to 21px: 37px and 41px).
+    md: { root: "py-2 px-3 gap-2 *:data-icon:size-5", withIcon: "", text: "text-md leading-6", textContainer: "gap-x-1.5", shortcut: "pr-2.5" },
+    lg: { root: "py-2.5 px-3.5 gap-2 *:data-icon:size-5", withIcon: "", text: "text-md leading-6", textContainer: "gap-x-1.5", shortcut: "pr-3" },
 };
 
 export const SelectContext = createContext<{ size: "sm" | "md" | "lg"; truncateAtWords?: boolean }>({ size: "md" });

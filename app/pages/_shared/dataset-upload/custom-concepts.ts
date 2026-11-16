@@ -3,7 +3,7 @@
 import { useMemo } from "react";
 import { create } from "zustand";
 import { createJSONStorage, persist } from "zustand/middleware";
-import { ALL_SCHEMA_FIELD_NAMES_WITH_ALIASES, BDBSA_KEY_CROSSWALK } from "@/config/data-model-schema";
+import { ALL_SCHEMA_FIELD_NAMES_WITH_ALIASES, BDBSA_COLUMN_ALIASES, BDBSA_KEY_CROSSWALK } from "@/config/data-model-schema";
 import { browserStorage, useRehydrate } from "@/app/pages/_shared/zustand-persist";
 import { CURRENT_USER_NAME } from "@/app/pages/_shared/agreement-scope";
 import { allCvs } from "@/app/pages/_shared/ctrl-vocab/cv-store";
@@ -131,6 +131,8 @@ function dataModelKeys(): Set<string> {
       ...ALL_SCHEMA_FIELD_NAMES_WITH_ALIASES.map(conceptKey),
       ...STRUCTURAL_HEADINGS.map(conceptKey),
       ...Object.values(BDBSA_KEY_CROSSWALK).flatMap((m) => Object.values(m).filter(isBdbsaKey).map(conceptKey)),
+      // The columns the ingestion now reads as a concept (VISITDATE, OBSDATE, the voucher columns): known, so never offered as custom.
+      ...Object.values(BDBSA_COLUMN_ALIASES).flatMap((m) => Object.values(m).flat().map(conceptKey)),
     ]);
   }
   return modelKeys;

@@ -147,7 +147,7 @@ export function ChoiceTile({
             aria-disabled={isDisabled}
             className={cx(
                 "flex flex-1 flex-col items-start gap-2 rounded-xl border p-5 text-left transition-colors",
-                isSelected ? "border-[var(--color-brand-500)] bg-brand-50" : "border-secondary bg-primary hover:bg-secondary",
+                isSelected ? "border-brand bg-brand-50" : "border-secondary bg-primary hover:bg-secondary",
                 isDisabled && "cursor-not-allowed",
             )}
         >

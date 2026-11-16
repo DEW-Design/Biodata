@@ -84,14 +84,17 @@ export const InputBase = ({
             iconTrailing: "right-3",
             shortcut: "pr-1.5",
         },
+        // One field height per size, the design system's: 36px small, 40px medium, 44px large (as MultiSelect's `min-h-9/10/11` and Button already are).
+        // `text-md` is not a defined utility here, so a medium or large field fell back to the inherited 21px line and came out 37px and 41px; the 24px
+        // line (`leading-6`) gives 40px and 44px. The type stays 14px, as it rendered.
         md: {
-            root: cx("px-3 py-2 text-md", hasLeadingIcon && "pl-10", hasTrailingIcon && "pr-9"),
+            root: cx("px-3 py-2 text-md leading-6", hasLeadingIcon && "pl-10", hasTrailingIcon && "pr-9"),
             iconLeading: "left-3 size-5",
             iconTrailing: "right-3",
             shortcut: "pr-2",
         },
         lg: {
-            root: cx("px-3.5 py-2.5 text-md", hasLeadingIcon && "pl-10.5", hasTrailingIcon && "pr-9.5"),
+            root: cx("px-3.5 py-2.5 text-md leading-6", hasLeadingIcon && "pl-10.5", hasTrailingIcon && "pr-9.5"),
             iconLeading: "left-3.5 size-5",
             iconTrailing: "right-3.5",
             shortcut: "pr-2.5",

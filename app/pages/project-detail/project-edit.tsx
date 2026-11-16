@@ -27,13 +27,15 @@ import { FormPage } from "@/app/pages/_shared/form-page";
 import { FormRow } from "@/app/pages/_shared/form-row";
 import { FOCUS_AREA_OPTIONS, PERMIT_TYPE_OPTIONS, REGISTRATION_SPECIES, ROLE_OF_WORK_OPTIONS } from "@/app/pages/project-registration/data";
 import { GeoExtentPicker } from "@/app/pages/project-registration/geo-extent-picker";
-import { MethodologyRow, SectionFields } from "@/app/pages/project-registration/option-2/form-sections";
+import { MethodologyRow, RestrictionKindsRow, SectionFields } from "@/app/pages/project-registration/option-2/form-sections";
 import { isSectionValid, methodologySummary, missingFields, missingMethodFieldsV2, missingOwnerFields, withLegacyMethodologies } from "@/app/pages/project-registration/option-2/sections";
 import { ManagerCard } from "@/app/pages/project-registration/step-1-project-details";
-import { OFFERED_RESTRICTION_TYPES, RESTRICTION_TYPE_META } from "@/app/pages/project-registration/step-3-privacy-restrictions";
+import { RESTRICTION_TYPE_META } from "@/app/pages/project-registration/step-3-privacy-restrictions";
 import { emptyContact, emptyPermitRow, emptyProjectManager, isGeoExtentComplete, type ContactPerson, type ProjectDetailsState, type ProjectManager, type RestrictionTypeKey } from "@/app/pages/project-registration/types";
+import { useSampleContent } from "@/app/_prototype-tools/sample-content";
 import { EditDrawer } from "./edit-drawer";
 import { PROJECT_STATUSES, useEditStore, type ProjectState, type ProjectStatus } from "./edit-store";
+import { sampleProjectCard } from "./project-edit-sample";
 
 /** The cards of the Overview tab. Restriction cards use the registration's restriction keys. */
 export type ProjectCardId = "details" | "owner" | "managers" | "extent" | "collection" | "permits" | "add-restriction" | RestrictionTypeKey;
@@ -333,31 +335,26 @@ function PermitsForm({ draft, update }: FormProps) {
   );
 }
 
+// The same "Kinds of restriction" list Add Project's Restrictions section shows (`RestrictionKindsRow`): every kind, each a checkbox with what it
+// does. Until 11 Nov 2026 this card listed only the kinds not yet ticked, read from the draft, so a kind vanished the moment it was ticked and, with
+// all of them ticked, the card read "Every kind of restriction is already on" over an "Add restrictions" button. A kind the project already has stays
+// ticked and locked here: it is taken off from its own card, which asks first.
 function AddRestrictionForm({ draft, update }: FormProps) {
+  const { project } = useEditStore();
   const r = draft.restrictions;
-  const available = OFFERED_RESTRICTION_TYPES.filter((m) => !(r.hasRestrictions && r.enabledTypes.has(m.key)));
+  const saved = new Set(project.restrictions.hasRestrictions ? project.restrictions.enabledTypes : []);
   return (
-    <FormRow title="Kinds of restriction" description="Tick the ones to add. Each one gets its own card, and you fill in its details next.">
-      {available.length === 0 ? (
-        <p className="text-sm text-tertiary">Every kind of restriction is already on.</p>
-      ) : (
-        available.map(({ key, title, description }) => (
-          <Checkbox
-            key={key}
-            size="sm"
-            label={title}
-            hint={description}
-            isSelected={r.hasRestrictions && r.enabledTypes.has(key)}
-            onChange={(on) => {
-              const enabledTypes = new Set(r.hasRestrictions ? r.enabledTypes : []);
-              if (on) enabledTypes.add(key);
-              else enabledTypes.delete(key);
-              update({ ...draft, restrictions: { ...r, enabledTypes, hasRestrictions: enabledTypes.size > 0 } });
-            }}
-          />
-        ))
-      )}
-    </FormRow>
+    <RestrictionKindsRow
+      description="Tick the ones to add. Each one gets its own card, and you fill in its details next."
+      enabled={new Set(r.hasRestrictions ? r.enabledTypes : [])}
+      locked={saved}
+      onToggle={(key, on) => {
+        const enabledTypes = new Set(r.hasRestrictions ? r.enabledTypes : []);
+        if (on) enabledTypes.add(key);
+        else enabledTypes.delete(key);
+        update({ ...draft, restrictions: { ...r, enabledTypes, hasRestrictions: enabledTypes.size > 0 } });
+      }}
+    />
   );
 }
 
@@ -378,11 +375,9 @@ function CardForm({ id, ...props }: FormProps & { id: ProjectCardId }) {
     case "add-restriction":
       return <AddRestrictionForm {...props} />;
     default:
-      return (
-        <div className="max-w-[720px]">
-          <SectionFields id={id} state={props.draft} onChange={(next) => props.update({ ...props.draft, ...next })} showErrors={props.showErrors} />
-        </div>
-      );
+      // A kind of restriction. Its fields are form rows now (label left, field right), like this page's other cards, so they take the card's width
+      // as those do: the 720px wrapper that held the old flat stack squeezed each row's field into about 460px (the species table lost its actions).
+      return <SectionFields id={id} state={props.draft} onChange={(next) => props.update({ ...props.draft, ...next })} showErrors={props.showErrors} />;
   }
 }
 
@@ -398,6 +393,15 @@ function CardDrawer({ id, onClose, onOpenNext }: { id: ProjectCardId; onClose: (
     setDraft(next);
     setDirty(true);
   };
+  // The Pre-fill sample content switch (Prototype tools): the card's answers, down the fullest branch. Off puts the project's own values back.
+  const sampleKey = useSampleContent({
+    value: draft,
+    onChange: (next) => {
+      setDraft(next);
+      setDirty(next !== project);
+    },
+    sample: () => sampleProjectCard(id, draft),
+  });
   const save = () => {
     if (missing.length > 0) {
       setAttempted(true);
@@ -422,7 +426,7 @@ function CardDrawer({ id, onClose, onOpenNext }: { id: ProjectCardId; onClose: (
           primaryLabel={id === "add-restriction" ? "Add restrictions" : "Save changes"}
           onPrimary={save}
         >
-          <CardForm id={id} draft={draft} update={update} showErrors={attempted} />
+          <CardForm key={sampleKey} id={id} draft={draft} update={update} showErrors={attempted} />
         </FormPage>
       )}
     </EditDrawer>
@@ -498,6 +502,15 @@ export function InlineCardEditor({
     setDraft(next);
     setDirty(true);
   };
+  // The Pre-fill sample content switch (Prototype tools), as in the drawer: the card's answers, and the project's own values back when it is off.
+  const sampleKey = useSampleContent({
+    value: draft,
+    onChange: (next) => {
+      setDraft(next);
+      setDirty(next !== project);
+    },
+    sample: () => sampleProjectCard(id, draft),
+  });
   const save = () => {
     if (missing.length > 0) {
       setAttempted(true);
@@ -531,7 +544,7 @@ export function InlineCardEditor({
           <AlertFullWidth contained tintedBackground wrap color="error" className="max-w-none rounded-lg border border-error-300 bg-error-50" title="Details missing" description={`Complete these to save: ${missing.join(", ")}.`} confirmLabel="OK" />
         </div>
       )}
-      <CardForm id={id} draft={draft} update={update} showErrors={attempted} />
+      <CardForm key={sampleKey} id={id} draft={draft} update={update} showErrors={attempted} />
       {footer && createPortal(bar, footer)}
       <DestructiveModal confirmIcon={Trash01} cancelIcon={ArrowLeft}
         isOpen={confirm}

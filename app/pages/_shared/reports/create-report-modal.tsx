@@ -11,6 +11,8 @@ import { generateReport } from "@/app/pages/_shared/reports/generated-reports-st
 import { reportBundlesFor } from "@/app/pages/_shared/reports/report-records";
 import { ALL_PROJECTS } from "@/app/pages/_shared/reports/report-scope-select";
 import { reportsFor } from "@/app/pages/_shared/reports/reports-data";
+import { useSampleContent } from "@/app/_prototype-tools/sample-content";
+import { sampleReport } from "@/app/pages/_shared/reports/create-report-sample";
 import { useRoleHref } from "@/lib/use-role-href";
 import { useUserRole } from "@/lib/use-user-role";
 
@@ -25,6 +27,19 @@ export function useCreateReportDialog() {
 }
 
 export function CreateReportModal() {
+  const open = useDialog((s) => s.open);
+  // The dialog is built afresh each time it opens, so the Pre-fill sample content switch (which keeps what it replaced) starts from an empty form each time
+  // and, if it was left on, fills the form as it opens. A modal covers the Prototype tools bar (3.8), so the switch is on the bar while the dialog is closed.
+  const [wasOpen, setWasOpen] = useState(open);
+  const [session, setSession] = useState(0);
+  if (open !== wasOpen) {
+    setWasOpen(open);
+    if (open) setSession((n) => n + 1);
+  }
+  return <CreateReportDialog key={session} />;
+}
+
+function CreateReportDialog() {
   const router = useRouter();
   const roleHref = useRoleHref();
   const role = useUserRole();
@@ -32,11 +47,20 @@ export function CreateReportModal() {
   const setOpen = useDialog((s) => s.setOpen);
   const [reportId, setReportId] = useState<string | null>(null);
   const [projectId, setProjectId] = useState(ALL_PROJECTS);
-
   const reports = useMemo(() => [...reportsFor(role)].sort((a, b) => a.title.localeCompare(b.title)), [role]);
   const report = reports.find((r) => r.id === reportId);
   const projects = useMemo(() => reportBundlesFor(role).map((b) => b.project), [role]);
   const projectItems = useMemo(() => [{ id: ALL_PROJECTS, label: "All projects" }, ...projects.map((p) => ({ id: p.id, label: p.name, supportingText: p.code }))], [projects]);
+
+  const sampleKey = useSampleContent({
+    value: { reportId, projectId },
+    onChange: (next) => {
+      setReportId(next.reportId);
+      setProjectId(next.projectId);
+    },
+    sample: () => sampleReport(reports, projects.map((p) => p.id)),
+    enabled: reports.length > 0,
+  });
 
   const close = (next: boolean) => {
     setOpen(next);
@@ -66,6 +90,7 @@ export function CreateReportModal() {
       }}
     >
       <Select
+        key={sampleKey}
         label="Report"
         isRequired
         placeholder="Choose a report"

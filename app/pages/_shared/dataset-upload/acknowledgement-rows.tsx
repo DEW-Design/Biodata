@@ -9,12 +9,11 @@ import {
   dataLicenceOptions,
   firstNationsOptions,
   needsIiaReference,
-  securityClassificationOptions,
   type FirstNationsConsideration,
   type UploadDraft,
 } from "@/app/pages/_shared/dataset-upload/dataset-data";
 
-// What a person agrees to when they upload a dataset: its licence, its security classification, the First Nations
+// What a person agrees to when they upload a dataset: its licence, the First Nations
 // considerations (with the approving authority when there are some) and the privacy and restriction confirmation. The rows of
 // the upload form's "Data upload acknowledgement" section (Figma YMproGZfrFB5jUqPHPxMhk node 67:33213), taken out of it so that
 // a dataset added while a project is being created asks exactly the same questions in exactly the same words (0.9). The line
@@ -22,7 +21,7 @@ import {
 
 export type Acknowledgement = Omit<UploadDraft, "files" | "kind">;
 
-export const emptyAcknowledgement: Acknowledgement = { licence: "", classification: "", firstNations: "", iiaReference: "", privacyConfirmed: false };
+export const emptyAcknowledgement: Acknowledgement = { licence: "", firstNations: "", iiaReference: "", privacyConfirmed: false };
 
 export function AcknowledgementRows({
   answers,
@@ -41,13 +40,6 @@ export function AcknowledgementRows({
       <FormRow title="Data licence" required description="Select one." error={showErrors && !answers.licence ? "Select a data licence" : undefined}>
         <RadioGroup aria-label="Data licence" value={answers.licence} onChange={(v) => update({ licence: v as UploadDraft["licence"] })}>
           {dataLicenceOptions.map((o) => (
-            <RadioButton key={o.id} value={o.id} label={o.label} />
-          ))}
-        </RadioGroup>
-      </FormRow>
-      <FormRow title="Security classification" required description="Select one." error={showErrors && !answers.classification ? "Select a security classification" : undefined}>
-        <RadioGroup aria-label="Security classification" value={answers.classification} onChange={(v) => update({ classification: v as UploadDraft["classification"] })}>
-          {securityClassificationOptions.map((o) => (
             <RadioButton key={o.id} value={o.id} label={o.label} />
           ))}
         </RadioGroup>

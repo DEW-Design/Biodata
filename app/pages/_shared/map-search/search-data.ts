@@ -1,5 +1,5 @@
 import type { FC } from "react";
-import { Folder, MarkerPin04, Send01, GridDotsBottom, LayoutGrid02, Scan, Shuffle01, CursorClick01, Circle } from "@untitledui/icons";
+import { Folder, MarkerPin04, Send01, GridDotsBottom, LayoutGrid02, Scan, Shuffle01, CursorClick01, Circle, Car01, Target02 } from "@untitledui/icons";
 import type { BadgeColor } from "@/components/base/badges/badges";
 // From the plain data module, not project-list-content.tsx: that file is "use client", so a server
 // module importing through it (a route's generateStaticParams) would get a client reference, not the array.
@@ -19,7 +19,7 @@ import { projects as myProjects } from "@/app/pages/_shared/project-list-data";
 // several of them - the same "reuse the real Projects data, extend rather than fork" approach the
 // previous round already established.
 
-export type EventType = "Project" | "Site" | "Visit" | "Transect" | "Quadrat" | "Block" | "Ramble" | "Trap" | "Custom event";
+export type EventType = "Project" | "Site" | "Visit" | "Transect" | "Quadrat" | "Block" | "Ramble" | "Trap" | "Opportune" | "Point intercept" | "Custom event";
 
 export interface SearchEvent {
     id: string;
@@ -180,6 +180,8 @@ export const eventTypeIcon: Record<EventType, FC<{ className?: string }>> = {
     Block: Scan,
     Ramble: Shuffle01,
     Trap: CursorClick01,
+    Opportune: Car01,
+    "Point intercept": Target02,
     "Custom event": Circle,
 };
 

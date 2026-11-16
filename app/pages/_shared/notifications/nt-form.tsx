@@ -67,6 +67,8 @@ import { EmailPreview } from "@/app/pages/_shared/notifications/nt-email";
 import { useRecipientDirectory } from "@/app/pages/_shared/notifications/nt-directory";
 import { RecipientField } from "@/app/pages/_shared/notifications/nt-recipients";
 import { useCategories, useNotifications } from "@/app/pages/_shared/notifications/nt-store";
+import { useSampleContent } from "@/app/_prototype-tools/sample-content";
+import { sampleNotification, sampleNotificationFiles, type NtFormState } from "@/app/pages/_shared/notifications/nt-sample";
 
 // Add or edit a notification (Figma "Add Notification - Message / Templates / Settings / Sender and
 // Recipients", nodes 1584:22842, 1584:23207, 1584:23376, 1584:23575), re-fitted to the form pattern
@@ -232,6 +234,30 @@ export function NtForm({
       ...(!draft.subject.trim() ? { subject: next.label } : {}),
     });
   };
+
+  // The Pre-fill sample content switch (Prototype tools): every answer, down the fullest branch (a schedule, CC and BCC, a kept log, attachments). Only a
+  // new notification has it, not an edit and not a duplicate. The attachments are added and taken out by name, so the person's own stay.
+  const sampleKey = useSampleContent<NtFormState>({
+    value: { draft, autoName, autoCategory, showCc, showBcc },
+    onChange: (s) => {
+      setDraft(s.draft);
+      setAutoName(s.autoName);
+      setAutoCategory(s.autoCategory);
+      setShowCc(s.showCc);
+      setShowBcc(s.showBcc);
+      setDirty(true);
+    },
+    sample: () => sampleNotification(all, draft),
+    enabled: !initial && !duplicatedFrom && savedPool === null,
+    files: {
+      sample: sampleNotificationFiles,
+      add: (files) => {
+        setDraft((d) => ({ ...d, attachments: [...d.attachments, ...files.map((f) => ({ id: newAttachmentId(), name: f.name, size: f.size }))] }));
+        setDirty(true);
+      },
+      remove: (names) => setDraft((d) => ({ ...d, attachments: d.attachments.filter((a) => !names.includes(a.name)) })),
+    },
+  });
 
   const insertVariable = (field: TextField, key: string) => {
     const token = `{{${key}}}`;
@@ -657,6 +683,7 @@ export function NtForm({
                 <Input label="Heading" placeholder="Leave empty to repeat the subject" ref={headingRef} {...textField("heading")} hint={hintFor("heading", "Heading") ?? "The large line at the top of the email."} />
               </div>
               <TextEditor.Root
+                key={sampleKey}
                 content={bodyHtml(draft.body)}
                 placeholder="What the email says"
                 isInvalid={!!errors.body}

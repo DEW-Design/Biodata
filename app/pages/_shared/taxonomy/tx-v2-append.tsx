@@ -47,6 +47,8 @@ import {
   italicRank,
 } from "@/app/pages/_shared/taxonomy/tx-v2-list";
 import { ValueGrid } from "@/app/pages/_shared/taxonomy/tx-v2-record";
+import { sampleAppend } from "@/app/pages/_shared/taxonomy/tx-sample";
+import { useSampleContent } from "@/app/_prototype-tools/sample-content";
 import { useRoleHref } from "@/lib/use-role-href";
 
 // Version 2's Append (the designer, 14 Oct 2026): version 1's three steps on one page, and a taxon of any of Order, Family,
@@ -222,6 +224,19 @@ export function AppendTaxonForm({
     setInfra([{ rank: "", name: "" }]);
     setAttempted(false);
   };
+  // The Pre-fill sample content switch (Prototype tools): an infraspecies with two infraspecific ranks and names, under a species the taxonomy holds.
+  const sampleKey = useSampleContent({
+    value: { kingdom, rank, parentId, name, infra },
+    onChange: (s) => {
+      setKingdom(s.kingdom);
+      setRank(s.rank);
+      setParentId(s.parentId);
+      setName(s.name);
+      setInfra(s.infra);
+      setAttempted(false);
+    },
+    sample: () => sampleAppend(nodes),
+  });
 
   const parentRank = rank ? RANKS[rankIndex(rank) - 1] : null;
   const kingdomId = kingdom ? KINGDOM_NAME[kingdom] : null;
@@ -388,7 +403,7 @@ export function AppendTaxonForm({
               <FieldCard title="Hierarchy">
                 {tree && (
                   <NodeTree
-                    key={`${parentId}:${target?.id ?? ""}`}
+                    key={`${sampleKey}:${parentId}:${target?.id ?? ""}`}
                     label={`Where the new ${rankLabel} sits`}
                     nodes={tree.list}
                     expanded={tree.expanded}
@@ -455,7 +470,7 @@ export function AppendTaxonForm({
                   }))}
                 />
                 <TaxonPicker
-                  key={`${kingdom}:${parentRank}`}
+                  key={`${sampleKey}:${kingdom}:${parentRank}`}
                   rank={parentRank}
                   kingdom={kingdom}
                   nodes={nodes}

@@ -96,9 +96,10 @@ export function areaMethodLabel(area: NominationArea): string {
  */
 export const NOMINATION_ATTRIBUTES: ConceptOption[] = [
   { id: "location", label: "Location", valueType: "areas" },
-  // New (the designer, 6 Nov 2026, from the Word document): "Observation type / evidence of presence (e.g. nests)". The document gives no
-  // list of values, so it is typed, not chosen from a list invented here.
-  { id: "evidence-of-presence", label: "Observation type / evidence of presence", valueType: "text", placeholder: "E.g., nests" },
+  // New (the designer, 6 Nov 2026, from the Word document: "Observation type / evidence of presence (e.g. nests)"); named "Evidence of presence" on
+  // 9 Nov 2026 ("remove the text 'observation type /' ... only keep 'Evidence of presence'"). The document gives no list of values, so it is
+  // typed, not chosen from a list invented here.
+  { id: "evidence-of-presence", label: "Evidence of presence", valueType: "text", placeholder: "E.g., nests" },
   ...SPECIES_CONCEPTS.filter((c) => c.id !== "location"),
 ];
 

@@ -8,6 +8,7 @@ import { todayIso } from "@/app/pages/_shared/dla/dla-data";
 import type { Outcome } from "@/app/pages/_shared/dataset-upload/ingestion";
 import type { Dataset, DatasetStatus, UploadDraft } from "@/app/pages/_shared/dataset-upload/dataset-data";
 import { customConceptActions } from "@/app/pages/_shared/dataset-upload/custom-concepts";
+import { SAMPLE_DATASETS } from "@/app/pages/_shared/dataset-upload/sample-datasets";
 
 // Datasets (uploads to a project) in a zustand store persisted to localStorage, the same client-only
 // persistence as DSA, DLA and nominations (see zustand-persist.ts). Only the files' names and sizes
@@ -47,10 +48,11 @@ export function approveDataset(id: string): void {
   useDatasetStore.setState((s) => ({ approvals: { ...s.approvals, [id]: { at: todayIso(), by: CURRENT_USER_NAME } } }));
 }
 
+/** The next id, after every one in use: the uploads in this browser and the project's sample datasets, which are listed beside them. */
 function nextDatasetId(existing: Dataset[]): string {
   const year = new Date().getFullYear();
   const prefix = `DS-${year}-`;
-  const max = existing.reduce((n, d) => (d.id.startsWith(prefix) ? Math.max(n, Number(d.id.slice(prefix.length)) || 0) : n), 0);
+  const max = [...SAMPLE_DATASETS, ...existing].reduce((n, d) => (d.id.startsWith(prefix) ? Math.max(n, Number(d.id.slice(prefix.length)) || 0) : n), 0);
   return `${prefix}${String(max + 1).padStart(5, "0")}`;
 }
 
@@ -65,7 +67,6 @@ export function addDataset(project: { id: string; code: string }, draft: UploadD
     files: draft.files,
     ...(draft.kind ? { kind: draft.kind } : {}),
     licence: draft.licence as Dataset["licence"],
-    classification: draft.classification as Dataset["classification"],
     firstNations: draft.firstNations as Dataset["firstNations"],
     ...(draft.iiaReference.trim() ? { iiaReference: draft.iiaReference.trim() } : {}),
     status: "file_uploaded",

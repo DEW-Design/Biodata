@@ -149,7 +149,7 @@ export function CvShell({
   useRegisterTool(
     canManage
       ? {
-          id: "sample",
+          id: "sample-size",
           label: "How many vocabularies to show",
           barLabel: "Sample size",
           icon: Database01,

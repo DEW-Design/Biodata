@@ -784,6 +784,7 @@ export function RecordPanel({
             record={record}
             onAdd={(o) => onAdd(record, o)}
             onEdit={() => onEdit()}
+            onDuplicate={onAdd}
             onDelete={del.ask}
             sections={record.sections.filter((x) => !shownSections.includes(x))}
             onAddSection={(id) => onEdit(id, undefined, true)}

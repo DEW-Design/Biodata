@@ -35,11 +35,13 @@ import { RecordIcon } from "@/app/pages/project-detail/record-inspector";
 import { SectionFields, SectionTitle } from "@/app/pages/project-detail/record-panel";
 import { FieldRow } from "@/app/pages/project-detail/field-notes";
 import { formatDate } from "@/app/pages/project-detail/survey-data";
+import { useSampleContent } from "@/app/_prototype-tools/sample-content";
 import { useUserRole } from "@/lib/use-user-role";
 import { fixed2, scoreVegetation, type SpeciesCounts, type VegetationInputs } from "./vegetation-condition";
 import { scoreConservation, type SpeciesCountsByStatus } from "./conservation-significance";
 import { SiteScoreFigures, TotalsBreakdown, type SiteTotals } from "./summary";
 import { ConservationScoresheet, VegetationScoresheet, type ConservationSheet } from "./scoresheet";
+import { sampleConservation } from "./conservation-sample";
 
 // The scoresheet's Site 4. What is entered on the sheet, and what it is worked out with that is held elsewhere: the species
 // counts (from the site's plant species list), the block's BCM region (a weed's threat rating is looked up by it) and the
@@ -131,6 +133,9 @@ function SiteScoresView() {
   const [vegetationOpen, setVegetationOpen] = useState(false);
   const [draft, setDraft] = useState<ConservationSheet | null>(null);
   const [open, setOpen] = useState<Set<Key>>(new Set(["scores"]));
+  // The Pre-fill sample content switch (Prototype tools): fills the conservation score's ticks and counts, so the page's scores change and the scoresheet
+  // opens filled. A modal covers the Prototype tools bar, so the switch is on the bar while the scoresheet is closed.
+  useSampleContent({ value: conservation, onChange: setConservation, sample: sampleConservation });
   const veg = scoreVegetation(SITE_4, COUNTS, REGION);
   const cons = scoreConservation(conservation.inputs, conservation.flora, conservation.fauna);
   const totals: SiteTotals = { landscape: LANDSCAPE, vegetation: veg.score, conservation: cons.score, sizeHa: SITE_4.sizeHa };

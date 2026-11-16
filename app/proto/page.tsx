@@ -101,6 +101,10 @@ const PROTO_LABS: ProtoEntry[] = [
     description: "Icons on the underline tabs: text only, an icon on every tab, or an icon on the selected tab.",
   },
   {
+    route: "typography",
+    description: "Typography, before and after: Barlow throughout against Barlow headings with Aptos for the body and Aptos Mono (slashed zero) for numbers, on the real project page, Projects list and Add project, and as a specimen of real components side by side.",
+  },
+  {
     route: "tools",
     description: "One home for the preview tools (role, layout options, upload result). The status bar was chosen and is now on every screen; the dock and launcher stay for the record.",
   },

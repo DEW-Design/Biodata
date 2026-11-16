@@ -42,6 +42,8 @@ import {
   italicRank,
 } from "@/app/pages/_shared/taxonomy/tx-v2-list";
 import { ValueGrid } from "@/app/pages/_shared/taxonomy/tx-v2-record";
+import { sampleRename } from "@/app/pages/_shared/taxonomy/tx-sample";
+import { useSampleContent } from "@/app/_prototype-tools/sample-content";
 import { useRoleHref } from "@/lib/use-role-href";
 
 // Version 2's Rename Taxon (the designer, 14 Oct 2026), agreed in wireframes, built as Append, Split and Combine are (0.9):
@@ -94,6 +96,19 @@ export function RenameTaxonForm({
     setFields({ parentId: null, name: "", infraRank: "" });
     setAttempted(false);
   };
+
+  // The Pre-fill sample content switch (Prototype tools): a species moved to another genus of its family and given a new epithet.
+  const sampleKey = useSampleContent({
+    value: { kingdom, rank, targetId, fields },
+    onChange: (s) => {
+      setKingdom(s.kingdom);
+      setRank(s.rank);
+      setTargetId(s.targetId);
+      setFields(s.fields);
+      setAttempted(false);
+    },
+    sample: () => sampleRename(nodes),
+  });
 
   const kingdomId = kingdom ? KINGDOM_NAME[kingdom] : null;
   const path = lineage(nodes, targetId);
@@ -274,7 +289,7 @@ export function RenameTaxonForm({
               <FieldCard title="Hierarchy">
                 {tree && (
                   <NodeTree
-                    key={`${targetId}:${newParent?.id ?? ""}`}
+                    key={`${sampleKey}:${targetId}:${newParent?.id ?? ""}`}
                     label={`The ${rankLabel} being renamed`}
                     nodes={tree.list}
                     expanded={tree.expanded}
@@ -341,7 +356,7 @@ export function RenameTaxonForm({
                   }))}
                 />
                 <TaxonPicker
-                  key={`${kingdom}:${rank}`}
+                  key={`${sampleKey}:${kingdom}:${rank}`}
                   rank={rank}
                   kingdom={kingdom}
                   nodes={nodes}
@@ -389,7 +404,7 @@ export function RenameTaxonForm({
               <div className="flex max-w-[560px] flex-col gap-4">
                 {nameHoldsParent && (
                   <TaxonPicker
-                    key={`parent:${targetId}`}
+                    key={`${sampleKey}:parent:${targetId}`}
                     rank={parentRank}
                     kingdom={kingdom}
                     nodes={nodes}

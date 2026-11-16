@@ -53,9 +53,40 @@ export function downloadExcel(filename: string, headers: string[], rows: string[
     triggerDownload(filename, html, "application/vnd.ms-excel");
 }
 
+// The print window is a blank document, so the product's stylesheet is not in it. Its type and colours are read from the page that opens it: the token values
+// (`--ui-*`), and Barlow's own @font-face rules copied across so the PDF is set in the product's face (it was Arial, with the colours typed in as hex, until 11 Nov 2026).
+function printTheme() {
+    const root = getComputedStyle(document.documentElement);
+    const token = (name: string) => root.getPropertyValue(name).trim();
+    const product = document.querySelector(".font-barlow") ?? document.body;
+    const fontFaces: string[] = [];
+    for (const sheet of Array.from(document.styleSheets)) {
+        let rules: CSSRuleList;
+        try {
+            rules = sheet.cssRules;
+        } catch {
+            continue; // a stylesheet from another origin cannot be read
+        }
+        // A face's file is addressed from its own stylesheet; the print window has no stylesheet address, so each address is made whole here.
+        const base = sheet.href ?? document.baseURI;
+        for (const rule of Array.from(rules)) {
+            if (rule instanceof CSSFontFaceRule) fontFaces.push(rule.cssText.replace(/url\((["']?)([^"')]+)\1\)/g, (_, quote: string, address: string) => `url("${new URL(address, base).href}")`));
+        }
+    }
+    return {
+        fontFamily: getComputedStyle(product).fontFamily,
+        fontFaces: fontFaces.join("\n"),
+        text: token("--ui-text-primary"),
+        muted: token("--ui-text-tertiary"),
+        border: token("--ui-border-primary"),
+        headFill: token("--ui-bg-secondary"),
+    };
+}
+
 export function printAsPdf(title: string, headers: string[], rows: string[][]) {
     const win = window.open("", "_blank", "width=1000,height=800");
     if (!win) return;
+    const theme = printTheme();
     const headerRow = `<tr>${headers.map((h) => `<th>${escapeHtml(h)}</th>`).join("")}</tr>`;
     const bodyRows = rows.map((row) => `<tr>${row.map((cell) => `<td>${escapeHtml(cell)}</td>`).join("")}</tr>`).join("");
     win.document.write(`<!DOCTYPE html>
@@ -64,12 +95,13 @@ export function printAsPdf(title: string, headers: string[], rows: string[][]) {
 <title>${escapeHtml(title)}</title>
 <meta charset="UTF-8">
 <style>
-  body { font-family: Arial, Helvetica, sans-serif; padding: 24px; color: #2e2925; }
+  ${theme.fontFaces}
+  body { font-family: ${theme.fontFamily}; padding: 24px; color: ${theme.text}; }
   h1 { font-size: 16px; margin: 0 0 4px; }
-  p { font-size: 11px; color: #706b68; margin: 0 0 16px; }
+  p { font-size: 11px; color: ${theme.muted}; margin: 0 0 16px; }
   table { border-collapse: collapse; width: 100%; }
-  th, td { border: 1px solid #d2d0ce; padding: 6px 8px; font-size: 11px; text-align: left; vertical-align: top; }
-  th { background: #f2f2f1; font-weight: 600; }
+  th, td { border: 1px solid ${theme.border}; padding: 6px 8px; font-size: 11px; text-align: left; vertical-align: top; }
+  th { background: ${theme.headFill}; font-weight: 600; }
 </style>
 </head>
 <body>
@@ -80,5 +112,8 @@ export function printAsPdf(title: string, headers: string[], rows: string[][]) {
 </html>`);
     win.document.close();
     win.focus();
-    win.print();
+    // Print once the copied faces have loaded, so the PDF is not set in the fallback.
+    const print = () => win.print();
+    if (win.document.fonts?.ready) win.document.fonts.ready.then(print, print);
+    else print();
 }

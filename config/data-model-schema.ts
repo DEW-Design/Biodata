@@ -13,10 +13,19 @@
 export type RecordKind = "Event" | "Occurrence" | "Observation";
 
 export const VALID_TYPES_BY_KIND: Record<RecordKind, string[]> = {
-  Event: ["Block", "Site", "Transect", "Ramble", "Quadrat", "Visit"],
+  Event: ["Block", "Site", "Transect", "Ramble", "Quadrat", "Visit", "Opportune", "Point intercept"],
   Occurrence: ["Individual", "Population"],
   Observation: ["Individual", "Non-biotic", "Community", "Population"],
 };
+
+// Where an Event may sit (the business, 10 Nov 2026): "Any event can have any event. Business rule: Block can't have Ramble." Any Event
+// may be the child of any other Event (a sub-event), whatever the two types; these pairs are the only exceptions. An Observation sits
+// under an Event or a sub-event. (Until this date a Site could not sit under a Visit; the business rule replaces that one.)
+export const EVENT_NESTING_EXCLUSIONS: { parent: string; child: string }[] = [{ parent: "Block", child: "Ramble" }];
+
+export function isEventNestingBlocked(parentType: string, childType: string): boolean {
+  return EVENT_NESTING_EXCLUSIONS.some((rule) => rule.parent === parentType && rule.child === childType);
+}
 
 export function isRecordKind(value: string): value is RecordKind {
   return value === "Event" || value === "Occurrence" || value === "Observation";
@@ -135,6 +144,36 @@ function eventFields(type: string, opts: { coordinates?: boolean } = {}): string
     ...(opts.coordinates ? COORDINATE_FIELDS : []),
     ...LOCATION_FIELDS,
     ...PHOTOPOINT_FIELDS,
+  ];
+}
+
+// Opportune and Point intercept have a frame of their own (the business, 10 Nov 2026), so they do not take `eventFields`: Details (name, description,
+// source id, record status, and ONE "Observers" field, which the frame marks a new column), Geometry and Location (the frame's Geometry is the coordinate
+// fields; Opportune also has Location Details, where a polygon or shapefile goes, as the Ramble and Block frames do it; Point intercept is coordinates
+// only), Location Method with its name (one "X & Desc" field, as the Observation frames do for a code and its description), Datum, Reliability,
+// Sample Site Dimensions (Opportune only), and a Location Comment kept apart because it is compulsory, Temporal ("if not specified, inherit from the
+// parent": see `INHERITS_START_DATE`), then a Comment Type and the comment. No IBRA or Photopoint fields: neither frame has them.
+function frameEventFields(type: string, opts: { polygon: boolean; dimensions: boolean }): string[] {
+  return [
+    `${type} Name`,
+    "Description",
+    "Source ID",
+    "Record Status",
+    "Observers",
+    ...(opts.polygon ? ["Location Details"] : []),
+    ...COORDINATE_FIELDS,
+    "Location Method & Desc",
+    "Datum",
+    "Reliability",
+    ...(opts.dimensions ? ["Sample Site Dimensions"] : []),
+    "Location Comment",
+    "Start Date",
+    "End Date",
+    "Date Accuracy",
+    "Duration",
+    "Observation Time",
+    "Comment Type",
+    `${type} Comment`,
   ];
 }
 
@@ -308,6 +347,7 @@ const NON_BIOTIC_FIELDS = [
 // written before the frames merged code and description keeps mapping. Matched like the field itself
 // (case, spacing and punctuation ignored).
 export const FIELD_ALIASES: Record<string, string[]> = {
+  "Location Method & Desc": ["Location Method"],
   "Life Form & Desc": ["Life Form"],
   "Collection Method & Desc": ["Collection Method"],
   "Strata & Desc": ["Strata"],
@@ -323,6 +363,10 @@ export const FIELD_SCHEMA: Record<string, string[]> = {
   "Event:Transect": eventFields("Transect"),
   "Event:Ramble": eventFields("Ramble", { coordinates: true }),
   "Event:Quadrat": eventFields("Quadrat"),
+  // The business's two new event types (10 Nov 2026): Opportune, a one-time visit (road kill, say), and Point intercept, from their own frames.
+  // They first took the shared sampling event sections (no frame had been received); replaced the same day.
+  "Event:Opportune": frameEventFields("Opportune", { polygon: true, dimensions: true }),
+  "Event:Point intercept": frameEventFields("Point intercept", { polygon: false, dimensions: false }),
   "Occurrence:Individual": [...OCCURRENCE_DETAILS, ...TEMPORAL_FIELDS, ...OBSERVER_FIELDS, ...VOUCHER_FIELDS, "Location Details", ...LOCATION_FIELDS],
   "Occurrence:Population": [...OCCURRENCE_DETAILS, ...TEMPORAL_FIELDS, ...OBSERVER_FIELDS, "Location Details", ...LOCATION_FIELDS],
   "Event:Site": [
@@ -349,6 +393,8 @@ export const FIELD_SCHEMA: Record<string, string[]> = {
     "Photopoint Marker Present",
     "Photopoint Disc Number",
     "Photopoint Direction",
+    // Temporal (Date) on a Site: optional, not on by default (the business, 10 Nov 2026: it "can sit under manage concepts"). See `OPTIONAL_FIELDS`.
+    ...TEMPORAL_FIELDS,
   ],
   "Event:Visit": [
     "Legacy Visit ID",
@@ -372,6 +418,34 @@ export const FIELD_SCHEMA: Record<string, string[]> = {
   "Observation:Community": COMMUNITY_FIELDS,
   "Observation:Individual": INDIVIDUAL_FIELDS,
   "Observation:Population": POPULATION_FIELDS,
+};
+
+// Fields a record of this type must carry a value for (the business, 10 Nov 2026): the Opportune and Point intercept frames keep Location Comment as
+// its own field because it is compulsory, "unlike any other comment". Nothing else in the schema is required; this is the only place the schema says so.
+export const REQUIRED_FIELDS: Record<string, string[]> = {
+  "Event:Opportune": ["Location Comment"],
+  "Event:Point intercept": ["Location Comment"],
+};
+
+// Where a record's Start Date is not given it takes its parent event's ("if not specified inherit from parent", the frames' Temporal note).
+export const FRAME_EVENT_KINDTYPES = ["Event:Opportune", "Event:Point intercept"];
+export const INHERITS_START_DATE = new Set(FRAME_EVENT_KINDTYPES);
+
+// Every name in the schema except those only the two frame types use ("Observers", "Record Status", "Observation Time", "Comment Type", "Opportune Name"...).
+// A column of another record type with one of those names is not reported as "a different record type's field": a real file's "Observers" column
+// was only ever flagged for review, and the new types must not turn it into an error.
+export const CROSS_TYPE_FIELD_NAMES = Array.from(
+  new Set([
+    ...Object.entries(FIELD_SCHEMA)
+      .filter(([kindType]) => !FRAME_EVENT_KINDTYPES.includes(kindType))
+      .flatMap(([, fields]) => fields),
+    ...Object.values(FIELD_ALIASES).flat(),
+  ]),
+);
+
+// Concepts a record may carry but does not show by default: they sit under Manage concepts until someone adds them. Nothing here is required.
+export const OPTIONAL_FIELDS: Record<string, string[]> = {
+  "Event:Site": [...TEMPORAL_FIELDS],
 };
 
 export const ALL_SCHEMA_FIELD_NAMES = Array.from(new Set(Object.values(FIELD_SCHEMA).flat()));
@@ -448,12 +522,12 @@ export const KNOWN_GAPS: KnownGap[] = [
   {
     title: "Site has no coordinate fields in our schema, but every real Site row has them",
     description:
-      "Event:Site's own field list has no Zone/Easting/Northing - yet the real SITE export carries OLDZONE/OLDEASTING/OLDNORTHING (plus a second EAST/NORTH pair, purpose unconfirmed) on every row, and the sandbox already reads them internally for its own natural-key traceback. They're just never shown or validated as real Site fields.",
+      "Event:Site's own field list has no Zone/Easting/Northing - yet the real SITE export carries OLDZONE/OLDEASTING/OLDNORTHING (plus a second EAST/NORTH pair, purpose unconfirmed) on every row, and the sandbox already reads them internally for its own natural-key traceback. They're just never shown or validated as real Site fields. Since 10 Nov 2026 the sandbox uses them for the placement (a Visit goes under the Site, and a species row under its Visit, by Survey Number, Zone, Easting and Northing) and no longer lists them on the record; the tab report names them. Whether a Site should have Zone, Easting and Northing concepts is still open.",
   },
   {
     title: "Non-biotic's landform/geology/soil fields actually live on the real Site record",
     description:
-      'Site Slope, Site Aspect, Land Form Pattern/Element, Geological Surface, Outcrop Cover/Lithology, Surface Strew Size/Cover/Lithology, and Soil Texture Class - modelled here as an Observation:Non-biotic field - are all real columns on the SITE export (SITESLOPE, SITEASPECT, LANDFORMPATNCODE, ...), not a separate Observation row captured per visit.',
+      'Site Slope, Site Aspect, Land Form Pattern/Element, Geological Surface, Outcrop Cover/Lithology, Surface Strew Size/Cover/Lithology, and Soil Texture Class - modelled here as an Observation:Non-biotic field - are all real columns on the SITE export (SITESLOPE, SITEASPECT, LANDFORMPATNCODE, ...), not a separate Observation row captured per visit. Since 10 Nov 2026 the sandbox keeps them on the Site row under the Non-biotic concept names, flagged for review, instead of reporting them as errors; the same is done for the fire, bare earth, litter, climate and vegetation condition columns on a VISIT row. Whether they become a Non-biotic Observation of their own is still open.',
   },
   {
     title: "Visit's real observer model is per-taxonomic-group, not 3 generic Observer fields",
@@ -473,7 +547,7 @@ export const KNOWN_GAPS: KnownGap[] = [
   {
     title: 'Start Date: the Visit export Heathfield sent has VISITDATE, not EDITED_VISIT',
     description:
-      'The crosswalk maps Visit "Start Date" to EDITED_VISIT, read off the SU1211 export. The 2019 Heathfield VISIT tab carries VISITDATE instead, and no EDITED_VISIT; its species rows carry VISITDATE as well. It is the only existing crosswalk code that the files we now hold do not show (41 of 42 do). Two names for one date, or a rename between exports - to confirm with BDBSA.',
+      'The crosswalk maps Visit "Start Date" to EDITED_VISIT, read off the SU1211 export. The 2019 Heathfield VISIT tab carries VISITDATE instead, and no EDITED_VISIT; its species rows carry VISITDATE as well, and so does the 2022 Electronic Load Tool template. It is the only existing crosswalk code that the files we now hold do not show (41 of 42 do). Two names for one date, or a rename between exports - to confirm with BDBSA. The sandbox now reads either as Start Date (10 Nov 2026).',
   },
   {
     title: "Exports and code tables spell the same location columns differently",
@@ -504,6 +578,11 @@ export const KNOWN_GAPS: KnownGap[] = [
     title: "Tables in the frames, and typos",
     description:
       'The Individual frame draws Measurements as a table of Type, Value and Unit (Weight 400 gms, Height 15 cm, Tail Length 2 cm, Left Arm Length 5 cm): an open list of measurement types. Weight and Height stay as fixed fields because BDBSA\'s WEIGHT column is real; Tail Length and Left Arm Length have no field. The Community frame\'s Assemblage Information (Muir and Canopy) and Overstorey Measurements tables are open lists too; only Overstorey\'s calculated averages are fields. Also in the frames: "Association Dominace" is read as Association Dominance, and the Individual frame draws Datum and Reliability twice under Location Information (one of each here).',
+  },
+  {
+    title: "Opportune and Point intercept: the frames arrived, and the nesting rule replaced the Site-in-Visit one",
+    description:
+      'The business (10 Nov 2026) added two event types: Opportune (one-time visits, such as road kill) and Point intercept. They were first built on the sections the other sampling events share, because no frame had been received; the frames came the same day and replaced that. Each has Name, Description, Source ID, Record Status, Observers (one field, marked a new column), the coordinate fields (Opportune also Location Details for a polygon), Location Method with its name, Datum, Reliability, Sample Site Dimensions (Opportune only), a Location Comment that is compulsory, Start Date, End Date, Date Accuracy, Duration, Observation Time, Comment Type and the comment; neither has IBRA or Photopoint fields. A Point intercept must sit inside another event, and a start date left out is the parent event\'s. The last part of the Point intercept frame\'s Geometry note is cut off in the copy we hold ("Must be a child event, Optiona...") and is not read. No legacy BDBSA column is known for either, so the crosswalk is empty for them. The same note: any event can have any event, a Block cannot have a Ramble, and an Observation sits under an event or a sub-event. That replaces the earlier rule that a Site cannot sit under a Visit, so a Site under a Visit is no longer an error. Site also gets the temporal fields (Start Date, End Date, Duration, Date Accuracy) as optional concepts, under Manage concepts.',
   },
   {
     title: "Block is a record type now, and nothing says where it sits",
@@ -771,6 +850,122 @@ export const BDBSA_KEY_CROSSWALK: Record<string, Record<string, string | null>> 
   },
 };
 
+// ── BDBSA columns that mean one of our concepts (10 Nov 2026) ──
+//
+// The crosswalk above says which real BDBSA column holds each concept, but the sandbox only used it to annotate the JSON: a column was
+// matched to a field by its own text, so CAMPNAME never reached "Site Name", nor LOCMETHODNR "Location Method" (the "Real column names
+// rarely match" gap). The designer, loading the BDBSA Electronic Load Tool template (SITE, VISIT and SPECIES tabs): "a few concepts are
+// not getting mapped correctly". A column now reads as a field when its name is a BDBSA column the crosswalk gives for that field, on that
+// record type. The field is still stored and shown under our own name (the earlier decision), and a column the crosswalk does not give is
+// still flagged for review.
+//
+// Derived, not retyped: a crosswalk value that is one column ("CAMPNAME"), or a Fauna column and its Flora spelling ("DBH", "CROWN_EXTENT_PERC
+// (Fauna) / Crown Extent Percent (Flora)"). A composite ("CAMPMAP + QUADSITE + PATCHQUAD") or a note is not a column and gives nothing.
+const BDBSA_COLUMN = /^[A-Z][A-Z0-9_]*$/;
+
+function bdbsaColumnsIn(value: string | null | undefined): string[] {
+  if (!value) return [];
+  if (BDBSA_COLUMN.test(value)) return [value];
+  const pair = /^([A-Z][A-Z0-9_]*) \(Fauna\) \/ (.+) \(Flora\)$/.exec(value);
+  return pair ? [pair[1], pair[2]] : [];
+}
+
+// What the crosswalk does not say but a file we hold does. Each is a claim, so each says why (0.3).
+const OBSERVATION_KINDTYPES = ["Observation:Individual", "Observation:Population", "Observation:Community", "Observation:Non-biotic"];
+const BDBSA_EXTRA_ALIASES: Record<string, Record<string, string[]>> = {
+  // The Known Gap on Start Date: the Heathfield VISIT tab, and the 2022 Electronic Load Tool template, carry VISITDATE and no EDITED_VISIT.
+  "Event:Visit": { "Start Date": ["VISITDATE"] },
+  // OBSDATE is the observation's date (the Known Gap on duplicate headers names it "Observation Date"): the species row's own date.
+  ...Object.fromEntries(OBSERVATION_KINDTYPES.map((key) => [key, { "Start Date": ["OBSDATE"] }])),
+  // The crosswalk's Easting and Northing are composites ("OLDEASTING (Site/Species files) / easting (Visit)"); the species and Site rows carry the OLD names.
+  "Observation:Community": { "Start Date": ["OBSDATE"], Easting: ["OLDEASTING"], Northing: ["OLDNORTHING"] },
+  "Observation:Non-biotic": { "Start Date": ["OBSDATE"], Easting: ["OLDEASTING"], Northing: ["OLDNORTHING"] },
+  // The Voucher section is the Individual Occurrence frame's. The columns are matched by their names (VOUCHERTYPE is Voucher Type); no code table
+  // or export confirms them, so they are not in the crosswalk. MUSEUMHERBMNR, PREFIX, ACCURACYCODE, VOUCHERCOMM and COLLECTORNR have no field of
+  // that name, so they stay unmapped rather than guessed at.
+  "Occurrence:Individual": {
+    "Voucher Type": ["VOUCHERTYPE"],
+    "Voucher Series": ["VOUCHERSERIESNR"],
+    "Voucher Number": ["VOUCHERNR"],
+    "Determination Date": ["DETERMINEDATE"],
+    "Determiner 1": ["DETERMINERNR1"],
+    "Determiner 2": ["DETERMINERNR2"],
+    "Transfer Date": ["VOUCHERTRANSDATE"],
+  },
+};
+
+export const BDBSA_COLUMN_ALIASES: Record<string, Record<string, string[]>> = (() => {
+  const out: Record<string, Record<string, string[]>> = {};
+  const add = (kindType: string, field: string, columns: string[]) => {
+    if (columns.length === 0) return;
+    out[kindType] ??= {};
+    out[kindType][field] = Array.from(new Set([...(out[kindType][field] ?? []), ...columns]));
+  };
+  for (const [kindType, fields] of Object.entries(BDBSA_KEY_CROSSWALK)) {
+    for (const [field, value] of Object.entries(fields)) add(kindType, field, bdbsaColumnsIn(value));
+  }
+  for (const [kindType, fields] of Object.entries(BDBSA_EXTRA_ALIASES)) {
+    for (const [field, columns] of Object.entries(fields)) add(kindType, field, columns);
+  }
+  // Zone, Easting and Northing on every record type whose schema has them (Ramble, Opportune, Point intercept, Community, Non-biotic): the exports write
+  // them with an OLD prefix (OLDZONE, OLDEASTING, OLDNORTHING), the Known Gap on spellings. A type with no such concept (Site, Visit) has nothing to alias.
+  for (const [kindType, fields] of Object.entries(FIELD_SCHEMA)) {
+    if (fields.includes("Zone")) add(kindType, "Zone", ["OLDZONE"]);
+    if (fields.includes("Easting")) add(kindType, "Easting", ["OLDEASTING"]);
+    if (fields.includes("Northing")) add(kindType, "Northing", ["OLDNORTHING"]);
+  }
+  return out;
+})();
+
+/** The BDBSA columns that read as `field` on a `kind:type` record. */
+export function bdbsaAliasesFor(kindType: string, field: string): string[] {
+  return BDBSA_COLUMN_ALIASES[kindType]?.[field] ?? [];
+}
+
+// A real row carries more than its own record type's template has. A SITE row has the landform, geology and soil columns (the Non-biotic concepts,
+// see the Known Gap on them), a VISIT row the fire, bare earth, litter, climate and vegetation condition columns, a species row the columns of the
+// other Observation types, and a Population Occurrence the voucher columns. They are not errors (an earlier pass reported them as "a different record
+// type's field") and they are not another record's: the value is kept on the record that carries it, under the concept's own name, and flagged for
+// review with the column and the record type whose concept it is. No record is made for them: whether a SITE row's landform columns become a Non-biotic
+// Observation of their own is still the open Known Gap.
+const CARRY_OWNERS: Record<string, string[]> = {
+  "Event:Site": ["Observation:Non-biotic"],
+  "Event:Visit": ["Observation:Non-biotic", "Observation:Community"],
+  "Observation:Community": ["Observation:Individual", "Observation:Population"],
+  "Observation:Individual": ["Observation:Population"],
+  "Observation:Population": ["Observation:Individual"],
+  "Occurrence:Population": ["Occurrence:Individual"],
+};
+// Shared blocks (who, when, where) are the receiving type's own, or not carried at all.
+const NEVER_CARRIED = new Set([...TEMPORAL_FIELDS, ...OBSERVER_FIELDS, ...LOCATION_FIELDS, ...COORDINATE_FIELDS, ...PHOTOPOINT_FIELDS, "Location Details", "Description"]);
+
+export interface CarriedField {
+  field: string;
+  columns: string[];
+  owner: string;
+}
+
+const carriedCache = new Map<string, CarriedField[]>();
+
+export function carriedFieldsFor(kindType: string): CarriedField[] {
+  const cached = carriedCache.get(kindType);
+  if (cached) return cached;
+  const own = new Set(FIELD_SCHEMA[kindType] ?? []);
+  const taken = new Set<string>();
+  const out: CarriedField[] = [];
+  for (const owner of CARRY_OWNERS[kindType] ?? []) {
+    for (const field of FIELD_SCHEMA[owner] ?? []) {
+      if (own.has(field) || taken.has(field) || NEVER_CARRIED.has(field)) continue;
+      const columns = bdbsaAliasesFor(owner, field);
+      if (columns.length === 0) continue;
+      taken.add(field);
+      out.push({ field, columns, owner });
+    }
+  }
+  carriedCache.set(kindType, out);
+  return out;
+}
+
 // ── The 20/10 check: newer BDBSA codes, beside the confirmed crosswalk ──
 //
 // The designer, 20 Oct 2026: for the fields the crosswalk above calls "No equivalent found" (and a
@@ -811,10 +1006,11 @@ const seen = (code: string, ...where: string[]): ReportedCode => ({ code, seenIn
 // The designer, 6 Nov 2026, with a screenshot of the code table's sheet (a header row, DSTBIMPACTCODE and DSTBIMPACTDESC, and 20 codes from PL "Power
 // Lines" to CA "Campsite"): BDBSA's two columns for a disturbance impact. The frames draw one field, "Disturbance Impact (Code & Desc)", on Non-biotic and
 // Community, so the two columns are the code half and the description half of that one field, as for Life Form. No file we hold shows either header, so
-// both are unseen: reported, not confirmed.
+// both are unseen: reported, not confirmed. On 16 Nov 2026 the designer sent the sheet again and said these are the correct values for the code and the
+// description: its 20 rows are now the Community form's "Disturbance code" list (`field-options.ts`). Still no file we hold shows the headers, so they stay unseen.
 const DISTURBANCE_IMPACT: ReportedCodes = {
   codes: [unseen("DSTBIMPACTCODE"), unseen("DSTBIMPACTDESC")],
-  note: "Two columns for the one field: DSTBIMPACTCODE is the code and DSTBIMPACTDESC its description. Reported from a code table's header row, not seen in an export we hold.",
+  note: "Two columns for the one field: DSTBIMPACTCODE is the code and DSTBIMPACTDESC its description. Reported from a code table's header row (the designer confirmed its 20 values on 16 Nov 2026), not seen in an export we hold.",
 };
 
 export const BDBSA_REPORTED_CODES: Record<string, Record<string, ReportedCodes>> = {

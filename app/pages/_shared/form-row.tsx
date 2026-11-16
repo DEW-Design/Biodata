@@ -1,7 +1,11 @@
 import type { ReactNode } from "react";
+import { HintText } from "@/components/base/input/hint-text";
 
 // The label-left / fields-right row every long form here is built from (DSA, DLA, and the second
 // Add Project layout). One source so a form row reads identically on every create/edit screen.
+/** The width of a form's field column, for the few things that sit in a form outside a row (the review, a section's lead-in action). */
+export const FORM_FIELD_WIDTH = "max-w-[720px]";
+
 /** `wide` lets the fields use the whole row instead of 720px, for fields shown beside something that needs room (version 2 Append's hierarchy tree). */
 export function FormRow({ title, description, required, error, wide = false, children }: { title: string; description?: string; required?: boolean; error?: string; wide?: boolean; children: ReactNode }) {
   return (
@@ -15,7 +19,7 @@ export function FormRow({ title, description, required, error, wide = false, chi
       </div>
       <div className={wide ? "flex flex-col gap-4" : "flex max-w-[720px] flex-col gap-4"}>
         {children}
-        {error && <p className="text-sm text-error-primary">{error}</p>}
+        {error && <HintText isInvalid>{error}</HintText>}
       </div>
     </div>
   );

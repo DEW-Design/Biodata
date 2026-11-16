@@ -24,6 +24,8 @@ import {
 import { useDatasets } from "@/app/pages/_shared/dataset-upload/dataset-store";
 import { describePlace, useDetectedConcepts } from "@/app/pages/_shared/dataset-upload/custom-concepts";
 import { CustomConceptRows } from "@/app/pages/_shared/dataset-upload/custom-concepts-views";
+import { sampleAcknowledgement, sampleDatasetFiles } from "@/app/pages/_shared/dataset-upload/dataset-sample";
+import { useSampleContent } from "@/app/_prototype-tools/sample-content";
 import { projectDetailsPath } from "@/app/pages/_shared/project-routes";
 import { useRoleHref } from "@/lib/use-role-href";
 import { NumberedSteps } from "@/app/pages/_shared/numbered-steps";
@@ -32,7 +34,7 @@ import { ArrowLeft, Trash01 } from "@untitledui/icons";
 // The upload-dataset form, fitted from the wireframe (Figma YMproGZfrFB5jUqPHPxMhk node 67:33213)
 // into the shared form pattern (FormPage, sections in column 2, CONTRACTS 4.1). The wireframe's one
 // screen becomes two sections: Upload files (instructions, the drop area and queue, the recommended
-// templates) and Data upload acknowledgement (licence, classification, First Nations, privacy),
+// templates) and Data upload acknowledgement (licence, First Nations, privacy),
 // ending in "Confirm and upload". Departures from the wireframe, on purpose:
 //   - the three "select one" groups are radio buttons, not checkboxes (a checkbox lets two be ticked);
 //   - there is no Save draft: a draft has nothing to save before validation (the workflow sheet's
@@ -42,6 +44,9 @@ import { ArrowLeft, Trash01 } from "@untitledui/icons";
 // upload can hold both. Those files have no custom concepts and are not checked before upload: they go straight to post-flight validation on Fluree
 // (the designer, 2 Nov 2026). A dataset with no spreadsheet in it is stored as unstructured.
 // Mandatory details block Continue for the section being left, never ahead of it.
+// The Pre-fill sample content switch on the Prototype tools bar adds a real workbook (with columns the vocabularies do not have, so the Custom concepts
+// section shows) and a PDF, and answers the acknowledgement down its fullest branch (dataset-sample.ts). Switching it off takes those files out again.
+// The Custom concepts section has nothing to decide before the upload: it lists the columns, and a BioData admin approves each one afterwards.
 
 const uploadInstructions = [
   "Supported file formats for data: .XLS and .XLSX",
@@ -93,6 +98,13 @@ export function UploadForm({
   const [confirmDiscard, setConfirmDiscard] = useState(false);
 
   const update = (change: Partial<typeof answers>) => setAnswers((a) => ({ ...a, ...change }));
+  // The Pre-fill sample content switch (Prototype tools): a workbook with custom concepts and a PDF, and every acknowledgement answer down its fullest branch.
+  useSampleContent({
+    value: answers,
+    onChange: setAnswers,
+    sample: sampleAcknowledgement,
+    files: { sample: sampleDatasetFiles, add: queue.add, remove: queue.removeByName },
+  });
   const draft: UploadDraft = { ...emptyUploadDraft, ...answers, ...(kindOfFiles(queue.files) === "unstructured" ? { kind: "unstructured" as const } : {}), files: queue.files.filter((f) => f.status === "complete").map((f) => ({ name: f.name, size: f.size, ...(f.sheets ? { sheets: f.sheets } : {}) })) };
   const missing = missingForUpload(draft, queue.uploading);
   // Columns the controlled vocabularies do not have: a section of their own while there are some, and none when there are not.
@@ -101,7 +113,7 @@ export function UploadForm({
   const index = Math.max(0, order.indexOf(section));
   const isLast = index === order.length - 1;
   const showErrors = (id: UploadSection) => submitPressed || blocked.has(id);
-  const dirty = queue.files.length > 0 || answers.licence !== "" || answers.classification !== "" || answers.firstNations !== "" || answers.privacyConfirmed;
+  const dirty = queue.files.length > 0 || answers.licence !== "" || answers.firstNations !== "" || answers.privacyConfirmed;
 
   const goTo = (next: UploadSection) => {
     setVisited((v) => new Set(v).add(section));

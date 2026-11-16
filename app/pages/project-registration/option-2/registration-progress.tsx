@@ -18,6 +18,7 @@ export function RegistrationProgress({
   version = 1,
   steps,
   validOf,
+  created = false,
   onSelect,
 }: {
   sections: SectionId[];
@@ -29,6 +30,8 @@ export function RegistrationProgress({
   /** Option 2 groups its sections in four steps and answers for the sections option 1 does not have; the default is option 1's three. */
   steps?: { title: string; of: (id: SectionId) => boolean }[];
   validOf?: (id: SectionId) => boolean;
+  /** The project has been created: the closing step is done too, so it is ticked like the rest. */
+  created?: boolean;
   onSelect: (id: SectionId) => void;
 }) {
   const editable = sections.filter((id) => id !== "review");
@@ -42,7 +45,7 @@ export function RegistrationProgress({
       heading="Add project"
       progress={{ done: editable.filter((id) => visited.has(id) && valid(id)).length, total: editable.length }}
       groups={groups}
-      closing={item("review")}
+      closing={created ? { ...item("review"), status: "complete" } : item("review")}
       onSelect={(id) => onSelect(id as SectionId)}
     />
   );

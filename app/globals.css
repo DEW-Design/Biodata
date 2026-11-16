@@ -564,7 +564,10 @@
 @utility pill-text {
   /* A pill can be capped in width: its label shrinks with it, and a label that truncates (`truncate` on a span inside it) still does. */
   min-width: 0;
-  & > .truncate { display: block; }
+  /* A truncating label is cut sideways only. `truncate` sets `overflow: hidden`, which also cut the label top and bottom at its own line box, and
+     that line is as tall as the type (`leading-none`), so descenders lost their tails: "embargo" read "embarao" in a multi-select's chips (11 Nov
+     2026). `clip` on the inline axis still gives the ellipsis and leaves the block axis visible. Padding on the span would stop the trim below. */
+  & > .truncate { display: block; overflow-x: clip; overflow-y: visible; }
   @supports (text-box: trim-both cap alphabetic) {
     text-box: trim-both cap alphabetic;
     padding-block: calc((1lh - 1cap) / 2);

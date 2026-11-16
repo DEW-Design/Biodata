@@ -136,7 +136,7 @@ export function NtShell({
   useRegisterTool(
     canManage
       ? {
-          id: "sample",
+          id: "sample-size",
           label: "How much data to show",
           barLabel: "Sample size",
           icon: Database01,

@@ -1,6 +1,8 @@
 "use client";
 
-import { useState, type ReactNode } from "react";
+import { useState, type Dispatch, type ReactNode, type SetStateAction } from "react";
+import type { SampleFiles } from "@/app/_prototype-tools/sample-content";
+import { sampleDatasetFiles } from "@/app/pages/_shared/dataset-upload/dataset-sample";
 import { FormRow } from "@/app/pages/_shared/form-row";
 import { AcknowledgementRows, emptyAcknowledgement, type Acknowledgement } from "@/app/pages/_shared/dataset-upload/acknowledgement-rows";
 import { FileQueue, UploadDropzone, useFileQueue } from "@/app/pages/_shared/dataset-upload/upload-dropzone";
@@ -8,7 +10,6 @@ import { addDataset, useDatasets } from "@/app/pages/_shared/dataset-upload/data
 import { readFileFacts } from "@/app/pages/_shared/dataset-upload/file-facts";
 import { FileFactsCard, type FileRead } from "./file-facts-card";
 import {
-  classificationLabel,
   emptyUploadDraft,
   firstNationsLabel,
   formatFileSize,
@@ -49,6 +50,8 @@ export interface DatasetStep {
   reviewRows: ReviewRow[];
   /** Creates the dataset on the project that was just created. Does nothing when no file was added. */
   create: (project: { id: string; code: string }) => void;
+  /** What the Pre-fill sample content switch (Prototype tools) needs to fill this step: its answers, the way to set them, and how its files go in and come out. The switch is the flow's, because it fills the whole project form. */
+  sample: { answers: Acknowledgement; setAnswers: Dispatch<SetStateAction<Acknowledgement>>; files: SampleFiles };
 }
 
 export function useDatasetStep(): DatasetStep {
@@ -82,20 +85,30 @@ export function useDatasetStep(): DatasetStep {
       });
   };
 
+  // Takes out the files with these names, and what was read from them: the sample files the switch added, and nothing the person added.
+  const removeFilesNamed = (names: string[]) => {
+    const keys = queue.files.filter((f) => names.includes(f.name)).map(keyOf);
+    queue.removeByName(names);
+    setReads((r) => {
+      const next = { ...r };
+      for (const key of keys) delete next[key];
+      return next;
+    });
+  };
+
   const files = queue.files.filter((f) => f.status === "complete").map((f) => ({ name: f.name, size: f.size, ...(f.sheets ? { sheets: f.sheets } : {}) }));
   const draft: UploadDraft = { ...emptyUploadDraft, ...answers, ...(kindOfFiles(files) === "unstructured" ? { kind: "unstructured" as const } : {}), files };
   const hasFiles = queue.files.length > 0;
   const needed = missingForUpload(draft, queue.uploading);
   // A file that could not be read is not a dataset: with only those in the queue there is nothing to create.
   const missing = !hasFiles ? [] : queue.uploading || files.length === 0 ? needed.files : needed.acknowledgement;
-  const dirty = hasFiles || answers.licence !== "" || answers.classification !== "" || answers.firstNations !== "" || answers.privacyConfirmed;
+  const dirty = hasFiles || answers.licence !== "" || answers.firstNations !== "" || answers.privacyConfirmed;
 
   const reviewRows: ReviewRow[] = !hasFiles
     ? [{ label: "Dataset files", value: "None added" }]
     : [
         { label: "Dataset files", value: files.map((f) => `${f.name} (${formatFileSize(f.size)})`).join(", ") },
         { label: "Data licence", value: answers.licence ? licenceLabel(answers.licence) : "" },
-        { label: "Security classification", value: answers.classification ? classificationLabel(answers.classification) : "" },
         { label: "First Nations considerations", value: answers.firstNations ? `${firstNationsLabel(answers.firstNations)}${answers.iiaReference.trim() ? `, ${answers.iiaReference.trim()}` : ""}` : "" },
         { label: "Privacy and restriction", value: answers.privacyConfirmed ? "Confirmed" : "" },
       ];
@@ -140,5 +153,6 @@ export function useDatasetStep(): DatasetStep {
     create: (project) => {
       if (hasFiles && missing.length === 0) addDataset(project, draft);
     },
+    sample: { answers, setAnswers, files: { sample: sampleDatasetFiles, add: addFiles, remove: removeFilesNamed } },
   };
 }

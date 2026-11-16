@@ -106,6 +106,15 @@ const hardRules = [
     message: "A FormPage screen uses tabs. Form sections live in column 2 as a FormSectionList (rendered through FormSidebar), never tabs or a stepper.",
   },
   {
+    // 3.14: every form has the Pre-fill sample content switch (the Prototype tools bar), so a walk-through never starts with typing.
+    id: "3.14",
+    name: "a form has the Pre-fill sample content switch",
+    test: (s) => /<FormPage[\s>]/.test(s) && !/\buseSampleContent\s*(?:<[^(]*>)?\s*\(/.test(s),
+    // The two review screens decide on what is already there rather than collect (3.14 "Not covered"), and the record drawer is not reached by any route (the live add-record form is record-full-view.tsx).
+    allow: ["project-detail/review-view.tsx", "project-detail/custom-concepts-review.tsx", "project-detail/record-form.tsx"],
+    message: "A form (<FormPage>) without the Pre-fill sample content switch. Call useSampleContent (app/_prototype-tools/sample-content.ts) with a sample that answers the whole form down its fullest branch, files included (CONTRACTS.md 3.14).",
+  },
+  {
     id: "4.7",
     name: "role belongs to the data owner's contact",
     test: (s) => /\bRegistered by\b/i.test(s),
@@ -117,7 +126,7 @@ const hardRules = [
     name: "table fits the viewport",
     test: (s) => /<TableCard\.Root\b/.test(s) && !/\bbodyScrollable\b/.test(s),
     // Tables embedded in a detail tab: the page is the scroll container there, and rows are few.
-    allow: ["_shared/dsa/dsa-detail.tsx", "observation-detail/page.tsx", "_shared/user-management/um-detail.tsx", "_shared/nominations/nomination-protection.tsx"],
+    allow: ["_shared/dsa/dsa-detail.tsx", "_shared/user-management/um-detail.tsx", "_shared/nominations/nomination-protection.tsx", "project-registration/species-restriction.tsx"],
     message: "A collection table without bodyScrollable. Every collection screen's table fits the viewport: header, search and pagination stay put and only the rows scroll (Table bodyScrollable + Table.Header sticky, see CONTRACTS.md 4.2).",
   },
   {
@@ -562,6 +571,18 @@ export function runChecks() {
   const layout110 = readFileSync(join(ROOT, "app/layout.tsx"), "utf8").replace(/\/\*[\s\S]*?\*\/|^\s*\/\/.*$/gm, "");
   for (const m of layout110.matchAll(/from\s+"(@\/app\/[^"]+)"/g)) {
     if (!OPEN_1_10.includes(m[1])) violations.push({ clause: "1.10", file: "app/layout.tsx", message: `The root layout renders ${m[1]}, which is built under app/. A behaviour or element more than one screen has is a component and is built in components/** with the designer's override (CONTRACTS.md 1.10, 1.4).` });
+  }
+
+  // 2.11b a date is entered DD/MM/YYYY, always: both date fields fix the locale (an I18nProvider with DATE_ENTRY_LOCALE) and the locale is a day-first one, so a browser's own language never reorders the segments.
+  for (const f of ["components/custom/date-picker/input-date-picker.tsx", "components/base/input/input-date.tsx"]) {
+    const src = readFileSync(join(ROOT, f), "utf8");
+    if (!/<I18nProvider\s+locale=\{DATE_ENTRY_LOCALE\}/.test(src)) {
+      violations.push({ clause: "2.11b", file: f, message: "A date field that does not fix its locale (`<I18nProvider locale={DATE_ENTRY_LOCALE}>`): the segment order then follows the browser and an en-US browser draws MM/DD/YYYY. Dates are entered DD/MM/YYYY, always (CONTRACTS.md 2.11)." });
+    }
+  }
+  const dateLocale = existsSync(join(ROOT, "utils/date-entry-locale.ts")) ? readFileSync(join(ROOT, "utils/date-entry-locale.ts"), "utf8") : "";
+  if (!/DATE_ENTRY_LOCALE\s*=\s*"en-(AU|GB|NZ|IE|IN|ZA)"/.test(dateLocale)) {
+    violations.push({ clause: "2.11b", file: "utils/date-entry-locale.ts", message: "DATE_ENTRY_LOCALE is missing or is not a day-first locale (en-AU, en-GB). Dates are entered DD/MM/YYYY, always (CONTRACTS.md 2.11)." });
   }
 
   // 2.17 one scrollbar: the browser's bar is off in one global rule and one component draws the thumb for every scroller. Neither may go, and no scroller makes its own (comments stripped).

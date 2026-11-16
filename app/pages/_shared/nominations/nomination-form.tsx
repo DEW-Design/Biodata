@@ -18,6 +18,9 @@ import { SPECIES_GROUP_ICON } from "@/app/pages/_shared/map-search/species-group
 import { SpeciesField } from "@/app/pages/_shared/species-picker";
 import { AreasEditor } from "@/app/pages/_shared/nominations/nomination-areas";
 import { AssessmentView, ProtectionView } from "@/app/pages/_shared/nominations/nomination-protection";
+import { useSampleContent } from "@/app/_prototype-tools/sample-content";
+import { sampleEvidenceFiles } from "@/app/_prototype-tools/sample-files";
+import { sampleNomination } from "@/app/pages/_shared/nominations/nomination-sample";
 import { FileQueue, UploadDropzone, useFileQueue, type QueuedFile } from "@/app/pages/_shared/dataset-upload/upload-dropzone";
 import { ExistingRestrictionsTable } from "@/app/pages/_shared/nominations/nomination-restrictions";
 import { GeoExtentPicker } from "@/app/pages/project-registration/geo-extent-picker";
@@ -95,7 +98,7 @@ import { useRoleHref } from "@/lib/use-role-href";
 //   any action button here. Just show the changes"). A change (a new location, another attribute) is nominated on the next step.
 //   A nomination saved with `removals` (25 Oct 2026, before this) keeps them and still shows them on Review and the record.
 // - The business's Word document (the designer, 6 Nov 2026, "make these tweaks"): the choice is "What data should be restricted?", All
-//   occurrence records or a Subset of them; "Observation type / evidence of presence" is one more attribute; and the Main reason moved below the
+//   occurrence records or a Subset of them; "Evidence of presence" is one more attribute; and the Main reason moved below the
 //   attributes and became three mandatory answers: Likelihood and consequences (the old main reason, kept in `justification`; an attribute or
 //   area no longer takes a reason of its own, "Write a different one" having been removed the same day), Risks of not releasing the data, and whether the data is already in the public domain (Yes or No, then where when Yes).
 //   Supporting evidence (optional files, names and sizes kept) and the FYI note on events follow. Not asked of a nomination past its draft that was
@@ -218,6 +221,7 @@ function SummaryRow({ title, onEdit, children }: { title: string; onEdit: () => 
 export function NominationForm({
   initial,
   kind: newKind = "species",
+  initialSpeciesId,
   canRate = false,
   onBack,
   onSaveDraft,
@@ -227,6 +231,8 @@ export function NominationForm({
   initial?: Nomination;
   /** What a new nomination is for. An existing one keeps its own. */
   kind?: NominationKind;
+  /** A new species nomination opens on this species (a scientific name), as from Taxonomy's Sensitive species risk tab. An existing one keeps its own. */
+  initialSpeciesId?: string;
   /** Both admin roles editing a nomination past its draft (`onSaveChanges`): a risk and level for each thing protected, set beside it (What to protect, or Location). */
   canRate?: boolean;
   onBack: () => void;
@@ -240,7 +246,7 @@ export function NominationForm({
   const order = sectionOrderFor(kind);
   const adminEdit = !!onSaveChanges;
   const [ratings, setRatings] = useState<Record<string, Rating>>(initial?.ratings ?? {});
-  const [speciesId, setSpeciesId] = useState(initial?.speciesId ?? "");
+  const [speciesId, setSpeciesId] = useState(initial?.speciesId ?? (initialSpeciesId && speciesFor(initialSpeciesId) ? initialSpeciesId : ""));
   const [locationName, setLocationName] = useState(initial?.location?.name ?? "");
   const [extent, setExtent] = useState<GeoExtentValue>(initial?.location?.extent ?? emptyGeoExtent());
   const [scope, setScope] = useState<ProtectionScope>(initial?.scope ?? "selected");
@@ -431,6 +437,26 @@ export function NominationForm({
       </div>
     );
   };
+  // The Pre-fill sample content switch (Prototype tools): every answer, down the fullest branch, with the supporting files. Only a new nomination has it.
+  const sampleKey = useSampleContent({
+    value: { speciesId, locationName, extent, scope, rows, areas, justification, risks, publicDomain, publicWhere },
+    onChange: (s) => {
+      setSpeciesId(s.speciesId);
+      setLocationName(s.locationName);
+      setExtent(s.extent);
+      setScope(s.scope);
+      setRows(s.rows);
+      setAreas(s.areas);
+      setJustification(s.justification);
+      setRisks(s.risks);
+      setPublicDomain(s.publicDomain);
+      setPublicWhere(s.publicWhere);
+      touch();
+    },
+    sample: () => sampleNomination(nominations, kind),
+    enabled: !initial,
+    files: { sample: sampleEvidenceFiles, add: queue.add, remove: queue.removeByName },
+  });
   // The questions below what is protected (the designer, 6 Nov 2026, from the business's Word document): the main reason moved down and became
   // three mandatory answers, then the supporting evidence and a note on events. The first answer is the old main reason, kept in `justification`.
   const needsAnswers = !legacyLive;
@@ -450,12 +476,13 @@ export function NominationForm({
       <FormRow
         title="Likelihood and consequences"
         required={likelihoodRequired}
-        description="The likelihood of the species data being misused to threaten or disturb the species population and/or environment, and the consequences if it is. Consider, for example, site specificity of the species, poaching threat, sensitivities to disturbance and social media interest."
+        description="The likelihood of the species data being misused to threaten or disturb the species population and/or environment, and the consequences if it is."
       >
         <TextArea
           aria-label="Likelihood and consequences"
           isRequired={likelihoodRequired}
           rows={5}
+          placeholder="E.g., site specificity of the species, poaching threat, sensitivities to disturbance, social media interest"
           value={justification}
           isInvalid={likelihoodMissing}
           hint={likelihoodMissing ? "Describe the likelihood and consequences of misuse" : undefined}
@@ -468,12 +495,13 @@ export function NominationForm({
       <FormRow
         title="Risks of not releasing the data"
         required={needsAnswers}
-        description="The risks created by not releasing the data as held, and how they can be minimised. For example, accidental destruction of habitat due to lack of data access."
+        description="The risks created by not releasing the data as held, and how they can be minimised."
       >
         <TextArea
           aria-label="Risks of not releasing the data"
           isRequired={needsAnswers}
           rows={4}
+          placeholder="E.g., accidental destruction of habitat due to lack of data access"
           value={risks}
           isInvalid={risksMissing}
           hint={risksMissing ? "Describe the risks of not releasing the data" : undefined}
@@ -506,9 +534,10 @@ export function NominationForm({
             label="Where is it public?"
             isRequired
             rows={3}
+            placeholder="E.g., in academic publications that cannot be redacted"
             value={publicWhere}
             isInvalid={whereMissing}
-            hint={whereMissing ? "Say where the data is already public" : "For example, in academic publications that cannot be redacted."}
+            hint={whereMissing ? "Say where the data is already public" : undefined}
             onChange={(v) => {
               setPublicWhere(v);
               touch();
@@ -607,6 +636,7 @@ export function NominationForm({
               error={showErrors("location") && missing.location.includes("Define the location's area") ? "Define the location's area" : undefined}
             >
               <GeoExtentPicker
+                key={sampleKey}
                 value={extent}
                 expand="modal"
                 onChange={(next) => {
@@ -657,6 +687,7 @@ export function NominationForm({
                 }
               >
                 <ConceptRows
+                  key={sampleKey}
                   noun="attribute"
                   allowEmpty={chosenRemovals.length > 0}
                   rows={rows}

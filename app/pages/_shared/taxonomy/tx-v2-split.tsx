@@ -59,6 +59,8 @@ import {
   italicRank,
 } from "@/app/pages/_shared/taxonomy/tx-v2-list";
 import { ValueGrid } from "@/app/pages/_shared/taxonomy/tx-v2-record";
+import { sampleSplit } from "@/app/pages/_shared/taxonomy/tx-sample";
+import { useSampleContent } from "@/app/_prototype-tools/sample-content";
 import { useRoleHref } from "@/lib/use-role-href";
 
 // Version 2's Split Taxon (the designer, 14 Oct 2026: "the idea is the same as append"), agreed in wireframes. Borrowed from
@@ -122,6 +124,20 @@ export function SplitTaxonForm({
     setMoves({});
     setAttempted(false);
   };
+
+  // The Pre-fill sample content switch (Prototype tools): a genus split in two, the species it holds moved to the first and renamed.
+  const sampleKey = useSampleContent({
+    value: { kingdom, rank, oldId, parts, moves },
+    onChange: (s) => {
+      setKingdom(s.kingdom);
+      setRank(s.rank);
+      setOldId(s.oldId);
+      setParts(s.parts);
+      setMoves(s.moves);
+      setAttempted(false);
+    },
+    sample: () => sampleSplit(nodes),
+  });
 
   const kingdomId = kingdom ? KINGDOM_NAME[kingdom] : null;
   const path = lineage(nodes, oldId);
@@ -376,7 +392,7 @@ export function SplitTaxonForm({
               <FieldCard title="Hierarchy">
                 {tree && (
                   <NodeTree
-                    key={`${oldId}:${[...tree.newIds].join("|")}`}
+                    key={`${sampleKey}:${oldId}:${[...tree.newIds].join("|")}`}
                     label={`The ${rankLabel} being split`}
                     nodes={tree.list}
                     expanded={tree.expanded}
@@ -444,7 +460,7 @@ export function SplitTaxonForm({
                   }))}
                 />
                 <TaxonPicker
-                  key={`${kingdom}:${rank}`}
+                  key={`${sampleKey}:${kingdom}:${rank}`}
                   rank={rank}
                   kingdom={kingdom}
                   nodes={nodes}

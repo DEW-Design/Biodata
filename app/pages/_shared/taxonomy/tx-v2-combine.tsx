@@ -59,6 +59,8 @@ import {
   italicRank,
 } from "@/app/pages/_shared/taxonomy/tx-v2-list";
 import { ValueGrid } from "@/app/pages/_shared/taxonomy/tx-v2-record";
+import { sampleCombine } from "@/app/pages/_shared/taxonomy/tx-sample";
+import { useSampleContent } from "@/app/_prototype-tools/sample-content";
 import { useRoleHref } from "@/lib/use-role-href";
 
 // Version 2's Combine Taxon (the designer, 14 Oct 2026), agreed in wireframes: Split Taxon in reverse (tx-v2-split.tsx), and
@@ -118,6 +120,21 @@ export function CombineTaxonForm({
     setFresh({ rank: "", name: "" });
     setAttempted(false);
   };
+
+  // The Pre-fill sample content switch (Prototype tools): three genera of one family, combined under a new name.
+  const sampleKey = useSampleContent({
+    value: { kingdom, rank, picked, naming, kept, fresh },
+    onChange: (s) => {
+      setKingdom(s.kingdom);
+      setRank(s.rank);
+      setPicked(s.picked);
+      setNaming(s.naming);
+      setKept(s.kept);
+      setFresh(s.fresh);
+      setAttempted(false);
+    },
+    sample: () => sampleCombine(nodes),
+  });
 
   const kingdomId = kingdom ? KINGDOM_NAME[kingdom] : null;
   const inputs = picked
@@ -370,7 +387,7 @@ export function CombineTaxonForm({
               <FieldCard title="Hierarchy">
                 {tree && (
                   <NodeTree
-                    key={`${picked.join("|")}:${[...tree.newIds].join("|")}`}
+                    key={`${sampleKey}:${picked.join("|")}:${[...tree.newIds].join("|")}`}
                     label={`The ${rank ? plural(rank, 2) : "taxa"} being combined`}
                     nodes={tree.list}
                     expanded={tree.expanded}
@@ -447,7 +464,7 @@ export function CombineTaxonForm({
                     }
                   >
                     <TaxonPicker
-                      key={`${kingdom}:${rank}:${i}:${first?.parentId ?? ""}`}
+                      key={`${sampleKey}:${kingdom}:${rank}:${i}:${first?.parentId ?? ""}`}
                       rank={rank}
                       kingdom={kingdom}
                       nodes={nodes}

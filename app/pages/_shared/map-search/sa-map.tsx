@@ -9,6 +9,7 @@ import { Circle, CircleMarker, MapContainer, Marker, Polygon, Rectangle, ScaleCo
 import type { Boundary, GeoBlock } from "./geo";
 import { assetPath } from "@/lib/base-path";
 import { cx } from "@/utils/cx";
+import { MAP_CONTROLS_Z_INDEX } from "@/lib/layers";
 import { MapZoomButtons } from "./map-zoom-buttons";
 
 // A real, working map of South Australia - OpenStreetMap tiles via Leaflet, not a fabricated grid
@@ -50,6 +51,8 @@ const MIN_ZOOM = 3;
 // highlighted area" state, reused here for the same semantic (the current search boundary) so the
 // two map widgets read consistently if a user sees both.
 const BOUNDARY_COLOR = "var(--color-brand-600)";
+/** A dot that is not the highlighted one, while the others are dimmed: the group colour is gone, so the one in focus is the only colour left on the map. */
+const DIMMED_COLOR = "var(--color-gray-300)";
 
 /** A single compact zoom pill (+ over -, one shared border and a thin divider) rather than two
  *  separate floating buttons - real DEW tokens, not the full `Button` component, since nothing in
@@ -120,7 +123,7 @@ function ResizeSync() {
 /** A restricted record's block: the square cell of the generalisation grid that contains it, drawn flat with a thin
  *  edge and no centre mark (a blur or a dot would point at a place inside it). Pixel-aware, so it re-sizes itself on
  *  every zoom. */
-function FuzzyArea({ marker, highlighted, onClick }: { marker: SAMapMarker; highlighted: boolean; onClick?: () => void }) {
+function FuzzyArea({ marker, highlighted, dimmed = false, onClick }: { marker: SAMapMarker; highlighted: boolean; dimmed?: boolean; onClick?: () => void }) {
     const map = useMap();
     const [zoom, setZoom] = useState(() => map.getZoom());
     useMapEvents({ zoomend: () => setZoom(map.getZoom()) });
@@ -130,7 +133,7 @@ function FuzzyArea({ marker, highlighted, onClick }: { marker: SAMapMarker; high
     const minHalfLat = (MIN_BLOCK_PX / 2) * metersPerPixel / 111000;
     const halfLat = Math.max((block.north - block.south) / 2, minHalfLat);
     const halfLon = Math.max((block.east - block.west) / 2, minHalfLat / Math.cos((centreLat * Math.PI) / 180));
-    const fill = markerFill(marker, highlighted);
+    const fill = dimmed ? DIMMED_COLOR : markerFill(marker, highlighted);
     return (
         <Rectangle
             ref={onClick ? keyboardDot(marker.label, onClick) : undefined}
@@ -166,7 +169,7 @@ function MapReady({ onMapReady }: { onMapReady?: (map: L.Map) => void }) {
 
 function ZoomControls({ position }: { position: "top-right" | "top-left" }) {
     const map = useMap();
-    return <MapZoomButtons map={map} className={cx("absolute top-4 z-[1000]", position === "top-left" ? "left-4" : "right-4")} />;
+    return <MapZoomButtons map={map} className={cx("absolute top-4", MAP_CONTROLS_Z_INDEX, position === "top-left" ? "left-4" : "right-4")} />;
 }
 
 /** Pans/zooms to fit every currently-active boundary at once, however each one was defined (drawn,
@@ -406,6 +409,8 @@ export interface SAMapProps {
     onMarkerClick?: (id: string) => void;
     /** The marker to draw larger and darker (the result card being hovered). */
     highlightedMarkerId?: string | null;
+    /** While a marker is highlighted, draw every other marker grey, so the one in focus is the only colour on the map. Nothing changes when none is highlighted. @default false */
+    dimUnhighlighted?: boolean;
     /** Boundary ids to draw heavier (the area row being hovered in the areas list). */
     highlightedBoundaryIds?: Set<string>;
     /** Fly to these boundaries whenever `key` changes ("zoom to this area"). */
@@ -457,6 +462,7 @@ export default function SAMap({
     markers,
     onMarkerClick,
     highlightedMarkerId,
+    dimUnhighlighted = false,
     highlightedBoundaryIds,
     fitRequest,
     onBoundaryHover,
@@ -467,6 +473,8 @@ export default function SAMap({
 }: SAMapProps) {
     // A shape is something to point at and press (a pointer, a heavier outline, its list entry lit), except while one is being drawn: then every press is a point of the new shape and the cursor is the crosshair
     // all over the map, over the shapes already there too.
+    // Only while the highlighted marker is one of those drawn: a highlight that matches nothing (a record with no point) greys nothing.
+    const dimsOthers = dimUnhighlighted && !!highlightedMarkerId && !!markers?.some((m) => m.id === highlightedMarkerId);
     const shapeEvents = (id: string) =>
         activeDrawTool
             ? undefined
@@ -536,6 +544,7 @@ export default function SAMap({
                             key={marker.id}
                             marker={marker}
                             highlighted={marker.id === highlightedMarkerId}
+                            dimmed={dimsOthers && marker.id !== highlightedMarkerId}
                             onClick={onMarkerClick ? () => onMarkerClick(marker.id) : undefined}
                         />
                     ) : (
@@ -547,7 +556,7 @@ export default function SAMap({
                         pathOptions={{
                             color: marker.color && marker.id === highlightedMarkerId ? "var(--ui-text-primary)" : "var(--ui-bg-primary)",
                             weight: 2,
-                            fillColor: markerFill(marker, marker.id === highlightedMarkerId),
+                            fillColor: dimsOthers && marker.id !== highlightedMarkerId ? DIMMED_COLOR : markerFill(marker, marker.id === highlightedMarkerId),
                             fillOpacity: 1,
                         }}
                         eventHandlers={{ click: () => onMarkerClick?.(marker.id) }}

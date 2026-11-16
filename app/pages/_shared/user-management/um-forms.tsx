@@ -19,6 +19,8 @@ import { FormSectionList, FormSidebar, deriveSectionStatus } from "@/app/pages/_
 import { INDIVIDUAL, UM_ORGANISATIONS, accessStatusMeta, permissionCategories, type RoleKind, type UmRole } from "@/app/pages/_shared/user-management/um-data";
 import { PermissionGroups } from "@/app/pages/_shared/user-management/um-detail";
 import { usePermissions, useRoles, type PermissionDraft, type RoleDraft, type UserDraft } from "@/app/pages/_shared/user-management/um-store";
+import { useSampleContent } from "@/app/_prototype-tools/sample-content";
+import { samplePermission, sampleRole, sampleUser } from "@/app/pages/_shared/user-management/um-sample";
 
 // The three User Management add forms, on THE form page (CONTRACTS.md 4.1). Fields follow the
 // wireframe (Figma YMproGZfrFB5jUqPHPxMhk, node 1558:10575, frames "Add User", "Add Role", "Add
@@ -142,7 +144,7 @@ const USER_SECTION_META: Record<UserSection, { title: string; description: strin
   roles: { title: "Roles", description: "What they can do. System roles apply across BioData SA; custom roles belong to one organisation." },
 };
 
-interface UserFormState {
+export interface UserFormState {
   firstName: string;
   lastName: string;
   displayName: string;
@@ -201,6 +203,18 @@ export function AddUserForm({ onCancel, onSubmit, initial }: { onCancel: () => v
   const [submitPressed, setSubmitPressed] = useState(false);
   const [dirty, setDirty] = useState(false);
   const [confirmCancel, setConfirmCancel] = useState(false);
+  const [submitted, setSubmitted] = useState(false);
+  const allRoles = useRoles();
+  // The Pre-fill sample content switch (Prototype tools): every answer, down the fullest branch. A new user only, and not once it is added.
+  const sampleKey = useSampleContent({
+    value: s,
+    onChange: (next) => {
+      setS(next);
+      setDirty(true);
+    },
+    sample: () => sampleUser(allRoles),
+    enabled: !editing && !submitted,
+  });
 
   const patch = (p: Partial<UserFormState>) => {
     setS((prev) => ({ ...prev, ...p }));
@@ -230,6 +244,7 @@ export function AddUserForm({ onCancel, onSubmit, initial }: { onCancel: () => v
       setSection(firstBad);
       return;
     }
+    setSubmitted(true);
     onSubmit({
       firstName: s.firstName.trim(),
       lastName: s.lastName.trim(),
@@ -306,6 +321,7 @@ export function AddUserForm({ onCancel, onSubmit, initial }: { onCancel: () => v
           <>
             <FormRow title="Organisation / institution" required description="Registered users with no organisation are individuals.">
               <Select
+                key={`organisation-${sampleKey}`}
                 aria-label="Organisation / institution"
                 isRequired
                 placeholder="Select an organisation"
@@ -320,8 +336,8 @@ export function AddUserForm({ onCancel, onSubmit, initial }: { onCancel: () => v
             </FormRow>
             <FormRow title="Access period" required description="Leave the end date empty for ongoing access.">
               <div className="grid gap-4 sm:grid-cols-2">
-                <InputDatePicker label="Start date" isRequired value={s.startDate} onChange={(v) => patch({ startDate: v })} isInvalid={err("access", !!s.startDate)} hint={err("access", !!s.startDate) ? "Choose a start date" : undefined} />
-                <InputDatePicker label="End date" value={s.endDate} onChange={(v) => patch({ endDate: v })} minValue={s.startDate ?? undefined} />
+                <InputDatePicker key={`start-${sampleKey}`} label="Start date" isRequired value={s.startDate} onChange={(v) => patch({ startDate: v })} isInvalid={err("access", !!s.startDate)} hint={err("access", !!s.startDate) ? "Choose a start date" : undefined} />
+                <InputDatePicker key={`end-${sampleKey}`} label="End date" value={s.endDate} onChange={(v) => patch({ endDate: v })} minValue={s.startDate ?? undefined} />
               </div>
             </FormRow>
           </>
@@ -330,7 +346,7 @@ export function AddUserForm({ onCancel, onSubmit, initial }: { onCancel: () => v
         {section === "roles" && (
           <>
             <FormRow title="Assign roles" required>
-              <RolePicker value={s.roleIds} onChange={(roleIds) => patch({ roleIds })} invalid={err("roles", s.roleIds.length > 0)} />
+              <RolePicker key={`roles-${sampleKey}`} value={s.roleIds} onChange={(roleIds) => patch({ roleIds })} invalid={err("roles", s.roleIds.length > 0)} />
             </FormRow>
             <FormRow title="What they can do" description="Every permission the chosen roles give, together.">
               <PermissionPreview roleIds={s.roleIds} />
@@ -356,10 +372,27 @@ export function AddRoleForm({ onCancel, onSubmit }: { onCancel: () => void; onSu
   const [attempted, setAttempted] = useState(false);
   const [dirty, setDirty] = useState(false);
   const [confirmCancel, setConfirmCancel] = useState(false);
+  const [submitted, setSubmitted] = useState(false);
   const touch = <T,>(set: (v: T) => void) => (v: T) => {
     set(v);
     setDirty(true);
   };
+  // The Pre-fill sample content switch (Prototype tools): a custom role, so the department is asked too, with an end date.
+  const sampleKey = useSampleContent({
+    value: { kind, department, roleType, name, description, startDate, endDate },
+    onChange: (next) => {
+      setKind(next.kind);
+      setDepartment(next.department);
+      setRoleType(next.roleType);
+      setName(next.name);
+      setDescription(next.description);
+      setStartDate(next.startDate);
+      setEndDate(next.endDate);
+      setDirty(true);
+    },
+    sample: sampleRole,
+    enabled: !submitted,
+  });
 
   const missing = [
     ...(kind === "custom" && !department ? ["Department"] : []),
@@ -373,6 +406,7 @@ export function AddRoleForm({ onCancel, onSubmit }: { onCancel: () => void; onSu
   const submit = () => {
     setAttempted(true);
     if (missing.length) return;
+    setSubmitted(true);
     onSubmit({
       kind,
       department: kind === "custom" ? (department ?? undefined) : undefined,
@@ -395,12 +429,13 @@ export function AddRoleForm({ onCancel, onSubmit }: { onCancel: () => void; onSu
         onPrimary={submit}
       >
         <FormRow title="Role details" required description="A system role applies across BioData SA; a custom role belongs to one department.">
-          <RadioGroup aria-label="Role kind" orientation="horizontal" value={kind} onChange={(v) => touch(setKind)(v as RoleKind)}>
+          <RadioGroup key={`kind-${sampleKey}`} aria-label="Role kind" orientation="horizontal" value={kind} onChange={(v) => touch(setKind)(v as RoleKind)}>
             <RadioButton value="system" label="System role" />
             <RadioButton value="custom" label="Custom role" />
           </RadioGroup>
           {kind === "custom" && (
             <Select
+              key={`department-${sampleKey}`}
               label="Department"
               isRequired
               placeholder="Select department"
@@ -438,8 +473,8 @@ export function AddRoleForm({ onCancel, onSubmit }: { onCancel: () => void; onSu
         </FormRow>
         <FormRow title="Active period" required description="Leave the end date empty for a role with no end.">
           <div className="grid gap-4 sm:grid-cols-2">
-            <InputDatePicker label="Start date" isRequired value={startDate} onChange={touch(setStartDate)} isInvalid={bad(!!startDate)} hint={bad(!!startDate) ? "Choose a start date" : undefined} />
-            <InputDatePicker label="End date" value={endDate} onChange={touch(setEndDate)} minValue={startDate ?? undefined} />
+            <InputDatePicker key={`start-${sampleKey}`} label="Start date" isRequired value={startDate} onChange={touch(setStartDate)} isInvalid={bad(!!startDate)} hint={bad(!!startDate) ? "Choose a start date" : undefined} />
+            <InputDatePicker key={`end-${sampleKey}`} label="End date" value={endDate} onChange={touch(setEndDate)} minValue={startDate ?? undefined} />
           </div>
         </FormRow>
       </FormPage>
@@ -462,6 +497,21 @@ export function AddPermissionForm({ onCancel, onSubmit }: { onCancel: () => void
   const [attempted, setAttempted] = useState(false);
   const [dirty, setDirty] = useState(false);
   const [confirmCancel, setConfirmCancel] = useState(false);
+  const [submitted, setSubmitted] = useState(false);
+  // The Pre-fill sample content switch (Prototype tools): "New category", which asks for the category's name, and two permissions in it.
+  const sampleKey = useSampleContent({
+    value: { category, newCategory, entries, startDate, endDate },
+    onChange: (next) => {
+      setCategory(next.category);
+      setNewCategory(next.newCategory);
+      setEntries(next.entries);
+      setStartDate(next.startDate);
+      setEndDate(next.endDate);
+      setDirty(true);
+    },
+    sample: () => samplePermission(NEW_CATEGORY),
+    enabled: !submitted,
+  });
 
   const categoryValue = category === NEW_CATEGORY ? newCategory.trim() : (category ?? "");
   const missing = [
@@ -479,6 +529,7 @@ export function AddPermissionForm({ onCancel, onSubmit }: { onCancel: () => void
   const submit = () => {
     setAttempted(true);
     if (missing.length) return;
+    setSubmitted(true);
     onSubmit(
       entries.map((e) => ({
         category: categoryValue,
@@ -502,6 +553,7 @@ export function AddPermissionForm({ onCancel, onSubmit }: { onCancel: () => void
       >
         <FormRow title="Category" required description="Permissions are grouped by category wherever they're listed.">
           <Select
+            key={`category-${sampleKey}`}
             aria-label="Category"
             isRequired
             placeholder="Select a category"
@@ -579,6 +631,7 @@ export function AddPermissionForm({ onCancel, onSubmit }: { onCancel: () => void
         <FormRow title="Active period" required description="Leave the end date empty for a permission with no end.">
           <div className="grid gap-4 sm:grid-cols-2">
             <InputDatePicker
+              key={`start-${sampleKey}`}
               label="Start date"
               isRequired
               value={startDate}
@@ -590,6 +643,7 @@ export function AddPermissionForm({ onCancel, onSubmit }: { onCancel: () => void
               hint={bad(!!startDate) ? "Choose a start date" : undefined}
             />
             <InputDatePicker
+              key={`end-${sampleKey}`}
               label="End date"
               value={endDate}
               onChange={(v) => {

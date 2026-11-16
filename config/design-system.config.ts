@@ -241,6 +241,21 @@ export const designSystemConfig: DesignSystemConfig = {
     },
   },
 
+  "command-menu": {
+    title: "Command menu",
+    // Inactive (12 Nov 2026): brought in as a test and kept for later. Hidden from the sidebar and overview; set to true to bring it back.
+    enabled: false,
+    features: {
+      playground: true,
+      itemTypes: true,
+      sections: true,
+      preview: true,
+      emptyState: true,
+      usage: true,
+      figma: true,
+    },
+  },
+
   "date-picker": {
     title: "Date picker",
     enabled: true,

@@ -13,6 +13,7 @@ import { useRoleHref } from "@/lib/use-role-href";
 import { useUserRole } from "@/lib/use-user-role";
 import type { UserRole } from "@/lib/user-role";
 import { recordAccess } from "@/app/pages/_shared/map-search/record-access";
+import { formatShortDate } from "@/app/pages/_shared/dla/dla-data";
 import { MAP_SURFACE_EDGE } from "@/app/pages/_shared/map-search/map-surface";
 import { SummaryCloseButton, SummaryFacts } from "@/app/pages/_shared/map-search/summary-card-parts";
 
@@ -88,6 +89,9 @@ export function RecordPeekCard({ record, onClose, className }: { record: DetailR
   );
 }
 
+// A date as the product writes it ("12 Aug 2026"); it was the stored "2026-08-12". Anything that is not a full date is shown as it is held.
+const shortDate = (value: string) => (/^\d{4}-\d{2}-\d{2}$/.test(value) ? formatShortDate(value) : value);
+
 interface PeekView {
   eyebrow: string;
   title: string;
@@ -111,7 +115,7 @@ function describe(record: DetailRecord, role: UserRole): PeekView {
       provenance: e.type === "Project" ? e.org : `${project.org}, ${project.name}`,
       facts: [
         { label: "ID", value: e.code },
-        { label: "Start date", value: e.startDate },
+        { label: "Start date", value: shortDate(e.startDate) },
         ...(e.type === "Project" ? [{ label: "Status", value: <Badge color={e.statusColor} size="sm">{e.status}</Badge> }] : []),
         { label: "Region", value: e.region },
       ],
@@ -128,7 +132,7 @@ function describe(record: DetailRecord, role: UserRole): PeekView {
     subtitle: hasScientificName(r.species) ? r.species : undefined,
     provenance: project ? `${project.org}, ${project.name}` : undefined,
     facts: [
-      { label: "Date", value: r.date },
+      { label: "Date", value: shortDate(r.date) },
       { label: "Region", value: r.region },
       ...(isOcc ? [{ label: "Count", value: record.occurrence.count ?? "Not provided" }] : [{ label: "Observer", value: record.observation.observerName }]),
     ],

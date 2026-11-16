@@ -45,6 +45,8 @@ import {
 import { useCvs } from "@/app/pages/_shared/ctrl-vocab/cv-store";
 import { mergeTemplate, type ParsedTemplate } from "@/app/pages/_shared/ctrl-vocab/cv-template";
 import { AvailabilityNote, DescriptiveGrid, EntriesGrid, MappingTable, type RowOps, type Upload } from "@/app/pages/_shared/ctrl-vocab/cv-grids";
+import { useSampleContent } from "@/app/_prototype-tools/sample-content";
+import { sampleCv } from "@/app/pages/_shared/ctrl-vocab/cv-sample";
 
 // Add or edit a vocabulary (Figma "Create Ctrl Vocab - Reference / Descriptive" and "Edit Ctrl Vocab",
 // nodes 1335:3468, 1339:29976, 1366:91960), re-fitted to the form pattern (CONTRACTS 4.1): sections in
@@ -171,6 +173,16 @@ export function CvForm({
     setDraft((d) => ({ ...d, ...patch }));
     setDirty(true);
   };
+  // The Pre-fill sample content switch (Prototype tools): a Reference vocabulary down its fullest branch, every column and a few entries. Only a new vocabulary has it.
+  const sampleKey = useSampleContent({
+    value: draft,
+    onChange: (next) => {
+      setDraft(next);
+      setDirty(true);
+    },
+    sample: () => sampleCv(all),
+    enabled: !initial && !initialUpload,
+  });
   const updateEntry = (id: string, patch: Partial<CvEntry>) => update({ entries: draft.entries.map((e) => (e.id === id ? { ...e, ...patch } : e)) });
   const toggleField = (id: StandardField, on: boolean) => update({ fields: on ? STANDARD_FIELDS.map((f) => f.id).filter((f) => f === id || draft.fields.includes(f)) : draft.fields.filter((f) => f !== id) });
   const addEntry = () => update({ entries: [...draft.entries, { ...emptyEntry(), code: draft.type === "reference" && draft.idKind === "number" ? nextNumber(draft.entries) : "" }] });
@@ -456,6 +468,7 @@ export function CvForm({
               )}
               {errors.entries && <p className="text-sm text-error-primary">Add at least one entry.</p>}
               <EntriesGrid
+                key={sampleKey}
                 widthKey={initial?.id ?? "new"}
                 draft={draft}
                 savedIds={savedIds}
@@ -474,7 +487,7 @@ export function CvForm({
             <p className="text-sm font-semibold text-primary">{sourceTable(draft.sourceTable) ? `Fields and values from the ${sourceTable(draft.sourceTable)!.label} table` : "Fields and values"}</p>
             <AvailabilityNote />
             {errors.entries && <p className="text-sm text-error-primary">Add at least one entry.</p>}
-            <DescriptiveGrid widthKey={initial?.id ?? "new"} draft={draft} savedIds={savedIds} errors={errors} ops={ops} onChange={updateEntry} onAdd={addEntry} />
+            <DescriptiveGrid key={sampleKey} widthKey={initial?.id ?? "new"} draft={draft} savedIds={savedIds} errors={errors} ops={ops} onChange={updateEntry} onAdd={addEntry} />
           </div>
         )}
       </FormPage>

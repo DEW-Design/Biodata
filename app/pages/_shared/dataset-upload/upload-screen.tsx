@@ -7,6 +7,7 @@ import { UploadForm } from "@/app/pages/_shared/dataset-upload/upload-form";
 import { UploadShell, type UploadProject } from "@/app/pages/_shared/dataset-upload/upload-shell";
 import { projectDetailsPath } from "@/app/pages/_shared/project-routes";
 import { useFeatureAccess } from "@/lib/use-feature-access";
+import { useCanOpen } from "@/lib/use-can-open";
 import { useRoleHref } from "@/lib/use-role-href";
 
 // The upload-dataset screen for one project: the shell and the form. Confirming stages the files for ingestion, shows a toast and returns
@@ -18,6 +19,7 @@ export function UploadScreen({ projectId, project }: { projectId: string; projec
   const router = useRouter();
   const roleHref = useRoleHref();
   const canUpload = useFeatureAccess("datasetUpload");
+  const canOpen = useCanOpen();
   const back = () => router.push(roleHref(projectDetailsPath(projectId)));
 
   return (
@@ -30,8 +32,9 @@ export function UploadScreen({ projectId, project }: { projectId: string; projec
             const dataset = addDataset(project, draft);
             toast.success("Your files are uploaded", {
               description: `${dataset.id} is being added to the project. Follow it on the project page.`,
-              actionLabel: "View report",
-              onAction: () => router.push(roleHref(`/pages/reports/data-ingestion?q=${dataset.id}`)),
+              ...(canOpen("/pages/reports/data-ingestion")
+                ? { actionLabel: "View report", onAction: () => router.push(roleHref(`/pages/reports/data-ingestion?q=${dataset.id}`)) }
+                : {}),
             });
             back();
           }}

@@ -31,7 +31,6 @@ import { HeroMeta, RecordBackLink, RecordHero, RecordRow } from "@/app/pages/_sh
 import { RecordActionBar, type RecordAction } from "@/app/pages/_shared/record-action-bar";
 import { formatShortDate } from "@/app/pages/_shared/dla/dla-data";
 import {
-  classificationLabel,
   datasetStatusFor,
   subjectOf,
   datasetStatusMeta,
@@ -43,82 +42,19 @@ import {
   type DatasetStatus,
 } from "@/app/pages/_shared/dataset-upload/dataset-data";
 import { approveDataset, restartIngestion, useDatasetApprovals, useDatasets } from "@/app/pages/_shared/dataset-upload/dataset-store";
+import { SAMPLE_DATASETS, SAMPLE_DATASET_IDS } from "@/app/pages/_shared/dataset-upload/sample-datasets";
 import { TOTAL_MS, viewAt, type RunView } from "@/app/pages/_shared/dataset-upload/ingestion";
 import { IngestionDetail, isSystemFault, placedRows } from "@/app/pages/_shared/dataset-upload/ingestion-views";
 import { AuditLog, milestones } from "@/app/pages/_shared/audit-log";
 import { AuditFeed } from "@/app/pages/_shared/audit-feed";
 import { BreadcrumbSwitcher } from "@/app/pages/_shared/breadcrumb-switcher";
 import { useFeatureAccess } from "@/lib/use-feature-access";
+import { useCanOpen } from "@/lib/use-can-open";
 import { uploadPath } from "@/app/pages/_shared/project-routes";
 import { useRoleHref } from "@/lib/use-role-href";
 import { useEditStore } from "./edit-store";
 
-// The project the sample uploads belong to. Every other project shows only its own uploads.
-const SAMPLE_PROJECT = { id: "adelaide-hills", code: "BD-5039" };
-
-// SAMPLE: three earlier uploads to BD-5039, one per way a run can end (added, partly added, not
-// ingested), uploaded by the placeholder people. Illustrative, like the project records themselves.
-const SAMPLE_DATASETS: Dataset[] = [
-  {
-    id: "DS-2025-00012",
-    projectId: SAMPLE_PROJECT.id,
-    projectCode: SAMPLE_PROJECT.code,
-    files: [{ name: "AHL_spring_survey_2025.xlsx", size: 421_888 }],
-    licence: "ccby",
-    classification: "official",
-    firstNations: "none",
-    status: "approved",
-    uploadedBy: "Phoenix Baker",
-    uploadedAt: "2025-10-18",
-    history: [
-      { status: "file_uploaded", at: "2025-10-18", by: "Phoenix Baker" },
-      { status: "validation_in_progress", at: "2025-10-18", by: "System" },
-      { status: "processing", at: "2025-10-18", by: "System" },
-      { status: "under_review", at: "2025-10-18", by: "System" },
-      { status: "approved", at: "2025-10-24", by: "Maya Dewitt" },
-    ],
-    ingestion: { outcome: "success", startedAt: 0 },
-  },
-  {
-    id: "DS-2025-00018",
-    projectId: SAMPLE_PROJECT.id,
-    projectCode: SAMPLE_PROJECT.code,
-    files: [{ name: "AHL_bandicoot_trapping_Nov2025.xlsx", size: 98_304 }],
-    licence: "ccby",
-    classification: "official_sensitive",
-    firstNations: "none",
-    status: "under_review",
-    uploadedBy: "Lana Steiner",
-    uploadedAt: "2025-11-22",
-    history: [
-      { status: "file_uploaded", at: "2025-11-22", by: "Lana Steiner" },
-      { status: "validation_in_progress", at: "2025-11-22", by: "System" },
-      { status: "processing", at: "2025-11-22", by: "System" },
-      { status: "under_review", at: "2025-11-22", by: "System" },
-    ],
-    ingestion: { outcome: "partial", startedAt: 0 },
-  },
-  {
-    id: "DS-2026-00003",
-    projectId: SAMPLE_PROJECT.id,
-    projectCode: SAMPLE_PROJECT.code,
-    files: [{ name: "AHL_summer_vegetation_2026.xlsx", size: 161_792 }],
-    licence: "cc0",
-    classification: "official",
-    firstNations: "none",
-    status: "validation_failed",
-    uploadedBy: "Olivia Wyatt",
-    uploadedAt: "2026-02-09",
-    history: [
-      { status: "file_uploaded", at: "2026-02-09", by: "Olivia Wyatt" },
-      { status: "validation_in_progress", at: "2026-02-09", by: "System" },
-      { status: "validation_failed", at: "2026-02-09", by: "System" },
-    ],
-    ingestion: { outcome: "fail-model", startedAt: 0 },
-  },
-];
-
-const SAMPLE_IDS = new Set(SAMPLE_DATASETS.map((d) => d.id));
+const SAMPLE_IDS = new Set<string>(SAMPLE_DATASET_IDS);
 
 /** A dataset with its run worked out: where it is now, and its workflow status. */
 export interface DatasetRow {
@@ -347,6 +283,7 @@ function DatasetDetail({ row, datasetId, backHref, recordsHref }: { row: Dataset
   const router = useRouter();
   const roleHref = useRoleHref();
   const canReview = useFeatureAccess("datasetReview");
+  const canOpen = useCanOpen();
   if (!row) {
     return (
       <div className="flex min-h-0 flex-1 flex-col">
@@ -363,15 +300,18 @@ function DatasetDetail({ row, datasetId, backHref, recordsHref }: { row: Dataset
   // The next step sits in the card, as on every record page (4.6 item 2), and not inside the Validation tab: a reviewer approves a dataset
   // that is under review, and the uploader fixes one that did not go in (the same step the run's own problems used to offer).
   const problem = !!view && view.done && (view.failed || view.partial);
+  // A role that cannot open the upload page or Reports is not offered the step that goes there (3.15).
   const fix: RecordAction | undefined = !view || !problem
     ? undefined
     : isSystemFault(view)
       ? { id: "retry", label: "Try again", icon: RefreshCcw01, onPress: () => retry(d.id) }
-      : { id: "upload", label: "Upload a corrected file", icon: Upload01, onPress: () => router.push(roleHref(uploadPath(d.projectId))) };
+      : canOpen(uploadPath(d.projectId))
+        ? { id: "upload", label: "Upload a corrected file", icon: Upload01, onPress: () => router.push(roleHref(uploadPath(d.projectId))) }
+        : undefined;
   const approve: RecordAction | undefined = canReview && status === "under_review"
     ? { id: "approve", label: "Approve", icon: CheckCircle, onPress: () => approveDataset(d.id) }
     : undefined;
-  const reports: RecordAction | undefined = problem
+  const reports: RecordAction | undefined = problem && canOpen("/pages/reports/data-ingestion")
     ? { id: "reports", label: "View in Reports", icon: BarChart01, onPress: () => router.push(roleHref(`/pages/reports/data-ingestion?q=${d.id}`)) }
     : undefined;
   const menu = [approve ? fix : undefined, reports].filter((a): a is RecordAction => !!a);
@@ -423,7 +363,6 @@ function DatasetDetail({ row, datasetId, backHref, recordsHref }: { row: Dataset
               </span>
             </RecordRow>
             <RecordRow label="Data licence">{licenceLabel(d.licence)}</RecordRow>
-            <RecordRow label="Security classification">{classificationLabel(d.classification)}</RecordRow>
             <RecordRow label="First Nations consideration">{firstNationsLabel(d.firstNations)}</RecordRow>
             {d.iiaReference && <RecordRow label="IIA reference">{d.iiaReference}</RecordRow>}
           </div>

@@ -28,7 +28,8 @@
 // in the inspector, through one shared card and edit flow (editable-section.tsx). Edits are kept for
 // the session (edit-store.tsx).
 
-import { Suspense, useMemo, useState, type ReactNode } from "react";
+import { Suspense, useCallback, useMemo, useRef, useState, type ReactNode } from "react";
+import { flushSync } from "react-dom";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import {
@@ -37,7 +38,7 @@ import {
   TabPanel,
   Tabs as ContentTabs,
 } from "@/components/application/tabs/tabs";
-import { ArrowNarrowRight, Database01, Feather, Grid01, Key01, Paperclip, UploadCloud02 } from "@untitledui/icons";
+import { ArrowNarrowRight, Database01, Feather, Grid01, Key01, Lock01, Paperclip, Upload01, UploadCloud02 } from "@untitledui/icons";
 import { Button } from "@/components/base/buttons/button";
 import { BadgeWithDot } from "@/components/base/badges/badges";
 import { AlertFullWidth } from "@/components/application/alerts/alerts";
@@ -60,7 +61,7 @@ import { useUserRole } from "@/lib/use-user-role";
 import { ProjectAccessTab } from "./project-access-view";
 import { useRoleHref } from "@/lib/use-role-href";
 import { navForRole, keyHref, type NavNode } from "@/lib/registered-user-nav";
-import { ProjectTab, formatDay } from "./project-tab";
+import { ProjectTab, formatDay, hasRestrictionToAdd, type ProjectTabHandle } from "./project-tab";
 import { SpeciesView, useProjectSpecies } from "./species-view";
 import { ProjectSwitcher } from "@/app/pages/_shared/project-switcher";
 import { HeroMeta, RecordBackLink, RecordHero } from "@/app/pages/_shared/record-hero";
@@ -68,8 +69,14 @@ import { EditStoreProvider, useEditStore } from "./edit-store";
 import { ADELAIDE_HILLS_ID, adelaideHillsSeed, exploreProject, seedFromExplore, type ProjectSeed } from "./project-seed";
 import {
   RecordsExplorer,
+  type RecordsExplorerHandle,
   type RecordsView,
 } from "./records-explorer";
+import { KIND_PLURAL } from "./record-inspector";
+import { childOptions } from "./record-rules";
+import { kindShape, type RecordKind } from "@/app/pages/_shared/record-shapes";
+import { uploadPath } from "@/app/pages/_shared/project-routes";
+import { useCreateContext, type CreateContext } from "@/lib/create-context";
 import type { FilterSelection } from "@/app/pages/_shared/list-filter";
 
 type DetailTab = "project" | "records" | "species" | "datasets" | "artefacts" | "access";
@@ -180,7 +187,7 @@ function ProjectDetail({ basePath, notice }: ProjectDetailTemplateProps) {
   const nav = navForRole(role);
   const roleHref = useRoleHref();
   const [activeSection, setActiveSection] = useState("Projects");
-  const { project, records, recordById, meta } = useEditStore();
+  const { project, records, recordById, meta, canEdit } = useEditStore();
   // Datasets are the uploaders' and the admins' (the roles that can upload a dataset): a visitor who is not signed in does not see them, as the Datasets card never showed for them.
   const canSeeDatasets = useFeatureAccess("datasetUpload");
   const searchParams = useSearchParams();
@@ -267,6 +274,56 @@ function ProjectDetail({ basePath, notice }: ProjectDetailTemplateProps) {
     setFocusSeq(nonce);
     setFocusField(fieldKey ? { recordId: id, key: fieldKey, nonce } : null);
   };
+
+  // What the header's Add menu offers on this project (lib/create-context.ts; the designer, 11 Nov 2026: "Add on the project page would be: Add a
+  // dataset, event, occ, obs, add restrictions"). Each item is one the page already has a control for, with the same test for who gets it, and
+  // picking it does what that control does: it opens the tab the thing lives on and starts it there. Offered on the project's own page only, not
+  // on a dataset's page or the flagged concepts review, which do not have the tabs.
+  const overviewRef = useRef<ProjectTabHandle>(null);
+  const explorerRef = useRef<RecordsExplorerHandle>(null);
+  // A card of the Overview is being edited (one at a time, CONTRACTS 4.8): "Add restriction" is not offered beside it, as on the tab itself.
+  // The Overview forgets its edit when it leaves the screen, so this does too (adjusted during render).
+  const [cardEditing, setCardEditing] = useState(false);
+  const overviewShown = activeSection === "Projects" && !reviewing && !viewingDataset && detailTab === "project";
+  if (!overviewShown && cardEditing) setCardEditing(false);
+  const onProjectPage = activeSection === "Projects" && !reviewing && !viewingDataset;
+  const canAddRestriction = canEdit && hasRestrictionToAdd(project.restrictions) && !cardEditing;
+  const uploadHref = roleHref(uploadPath(meta.id));
+  // Picking one. The tab is on screen before its view is asked to start something (`flushSync`), so the view is there to ask.
+  const onAdd = useCallback(
+    (id: string, type?: string) => {
+      if (id === "dataset") return router.push(uploadHref);
+      if (id === "attachments") return setBulkAttach(true);
+      if (id === "restriction") {
+        flushSync(() => setDetailTab("project"));
+        return overviewRef.current?.addRestriction();
+      }
+      const option = childOptions(null, []).find((o) => o.kind === id && o.type === type);
+      if (!option) return;
+      flushSync(() => setDetailTab("records"));
+      explorerRef.current?.add(option);
+    },
+    [router, uploadHref, setDetailTab, setBulkAttach],
+  );
+  const createContext = useMemo<CreateContext | null>(() => {
+    if (!onProjectPage) return null;
+    const options = canEdit ? childOptions(null, []) : [];
+    const kinds: RecordKind[] = ["event", "occurrence", "observation"];
+    return {
+      title: "This project",
+      replaces: ["dataset"],
+      onAction: onAdd,
+      items: [
+        ...(canSeeDatasets ? [{ id: "dataset", label: "Dataset", icon: Upload01 }] : []),
+        { id: "attachments", label: "Attachments", icon: Paperclip },
+        ...kinds
+          .filter((kind) => options.some((o) => o.kind === kind))
+          .map((kind) => ({ id: kind, label: KIND_PLURAL[kind], icon: kindShape(kind), children: options.filter((o) => o.kind === kind).map((o) => ({ id: o.type, label: o.type })) })),
+        ...(canAddRestriction ? [{ id: "restriction", label: "Restriction", icon: Lock01 }] : []),
+      ],
+    };
+  }, [onProjectPage, canEdit, canSeeDatasets, canAddRestriction, onAdd]);
+  useCreateContext(createContext);
 
   // "Go to record" from the all-projects Flagged concepts page arrives as `?record=<id>&field=<key>`:
   // open that record in Project records at the field, once per link (adjusted during render).
@@ -414,7 +471,7 @@ function ProjectDetail({ basePath, notice }: ProjectDetailTemplateProps) {
                     <TabPanel id="project" className="pt-6">
                       {/* One sheet, as the designer's frame (30 Oct 2026): the Overview open, "Data collection and methodology" and "Privacy and restrictions" closed under their headings, each opening in place.
                           The header already shows the status and the dates, so the details card does not repeat them (4.3). */}
-                      <ProjectTab layout="v3" sheet repeatHeaderFacts={false} disclosure />
+                      <ProjectTab ref={overviewRef} onEditingChange={setCardEditing} layout="v3" sheet repeatHeaderFacts={false} disclosure />
                     </TabPanel>
 
                     <TabPanel id="records" className="flex flex-col gap-4 pt-4">
@@ -431,6 +488,7 @@ function ProjectDetail({ basePath, notice }: ProjectDetailTemplateProps) {
                         />
                       )}
                       <RecordsExplorer
+                        ref={explorerRef}
                         focusField={focusField}
                         selectedId={selectedId}
                         onSelect={setSelectedId}

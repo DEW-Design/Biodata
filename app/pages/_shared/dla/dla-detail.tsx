@@ -36,6 +36,9 @@ import {
   type DlaRequestor,
   type DlaStatus,
 } from "@/app/pages/_shared/dla/dla-data";
+import { useSampleContent } from "@/app/_prototype-tools/sample-content";
+import { sampleFile } from "@/app/_prototype-tools/sample-files";
+import { sampleApproval } from "@/app/pages/_shared/dla/dla-sample";
 import { useFeatureAccess } from "@/lib/use-feature-access";
 import { useRoleHref } from "@/lib/use-role-href";
 import { cx } from "@/utils/cx";
@@ -165,7 +168,7 @@ function downloadAgreementFile(file: DlaAgreementFile) {
 // Approve moves straight to Active if the chosen start date has already arrived, otherwise
 // Approved / Auto Approved until that date (agreement-status.ts) - the modal's own copy says which
 // outcome the current date field will produce, computed live as the reviewer picks a date.
-function ApproveModal({ dla, isOpen, onOpenChange, onApprove }: { dla: Dla; isOpen: boolean; onOpenChange: (open: boolean) => void; onApprove: (input: DlaApproveInput) => void }) {
+function ApproveModal({ dla, isOpen, onOpenChange, onApprove, canSample }: { dla: Dla; isOpen: boolean; onOpenChange: (open: boolean) => void; onApprove: (input: DlaApproveInput) => void; canSample: boolean }) {
   const [validFrom, setValidFrom] = useState(dla.requestPeriodFrom);
   const [validTo, setValidTo] = useState(dla.requestPeriodTo);
   const [agreementFile, setAgreementFile] = useState<DlaAgreementFile | null>(null);
@@ -174,6 +177,40 @@ function ApproveModal({ dla, isOpen, onOpenChange, onApprove }: { dla: Dla; isOp
   const [isCustom, setIsCustom] = useState(false);
   const [customNote, setCustomNote] = useState("");
   const willBeActiveNow = !!validFrom && validFrom <= todayIso();
+
+  // The attached agreement, as the file field takes it: within the size limit, read for real. The field and the Pre-fill sample content switch both come here.
+  const takeFile = (file: File) => {
+    if (file.size > MAX_AGREEMENT_FILE_BYTES) {
+      setFileError(`"${file.name}" is over 2MB - choose a smaller file.`);
+      setAgreementFile(null);
+      return;
+    }
+    setFileError("");
+    setIsReadingFile(true);
+    readAgreementFile(file)
+      .then(setAgreementFile)
+      .catch(() => setFileError(`Couldn't read "${file.name}" - try again.`))
+      .finally(() => setIsReadingFile(false));
+  };
+
+  // The Pre-fill sample content switch (Prototype tools), on the page while the reviewer can approve: every question, the Custom DLA branch with its note, and the agreement as a file.
+  const sampleKey = useSampleContent({
+    value: { validFrom, validTo, isCustom, customNote },
+    onChange: (s) => {
+      setValidFrom(s.validFrom);
+      setValidTo(s.validTo);
+      setIsCustom(s.isCustom);
+      setCustomNote(s.customNote);
+      setFileError("");
+    },
+    sample: () => sampleApproval(dla.requestPeriodFrom, dla.requestPeriodTo),
+    enabled: canSample,
+    files: {
+      sample: () => [sampleFile("sample-signed-agreement.pdf", 64)],
+      add: (files) => files[0] && takeFile(files[0]),
+      remove: (names) => setAgreementFile((f) => (f && names.includes(f.name) ? null : f)),
+    },
+  });
 
   return (
     <FormModal submitIcon={CheckCircle}
@@ -198,8 +235,8 @@ function ApproveModal({ dla, isOpen, onOpenChange, onApprove }: { dla: Dla; isOp
       }}
     >
       <div className="grid grid-cols-2 gap-3">
-        <InputDatePicker label="Agreement Start Date" value={validFrom ? parseDate(validFrom) : null} onChange={(v) => setValidFrom(v ? v.toString() : "")} />
-        <InputDatePicker label="Agreement End Date" value={validTo ? parseDate(validTo) : null} onChange={(v) => setValidTo(v ? v.toString() : "")} />
+        <InputDatePicker key={`from-${sampleKey}`} label="Agreement Start Date" value={validFrom ? parseDate(validFrom) : null} onChange={(v) => setValidFrom(v ? v.toString() : "")} />
+        <InputDatePicker key={`to-${sampleKey}`} label="Agreement End Date" value={validTo ? parseDate(validTo) : null} onChange={(v) => setValidTo(v ? v.toString() : "")} />
       </div>
       <InputFile
         label="Attach Agreement"
@@ -211,18 +248,7 @@ function ApproveModal({ dla, isOpen, onOpenChange, onApprove }: { dla: Dla; isOp
         isLoading={isReadingFile}
         onChange={(files) => {
           const file = files?.[0];
-          if (!file) return;
-          if (file.size > MAX_AGREEMENT_FILE_BYTES) {
-            setFileError(`"${file.name}" is over 2MB - choose a smaller file.`);
-            setAgreementFile(null);
-            return;
-          }
-          setFileError("");
-          setIsReadingFile(true);
-          readAgreementFile(file)
-            .then(setAgreementFile)
-            .catch(() => setFileError(`Couldn't read "${file.name}" - try again.`))
-            .finally(() => setIsReadingFile(false));
+          if (file) takeFile(file);
         }}
       />
       <Checkbox label="Custom DLA" hint={isCustom ? undefined : "This is a custom DLA…"} isSelected={isCustom} onChange={setIsCustom} />
@@ -477,7 +503,7 @@ export function DlaDetail({
         </div>
       </Tabs>
 
-      <ApproveModal dla={dla} isOpen={approveOpen} onOpenChange={setApproveOpen} onApprove={(input) => { onApprove(input); setApproveOpen(false); }} />
+      <ApproveModal dla={dla} isOpen={approveOpen} onOpenChange={setApproveOpen} onApprove={(input) => { onApprove(input); setApproveOpen(false); }} canSample={isPendingReview} />
       <RejectModal id={dla.id} isOpen={rejectOpen} onOpenChange={setRejectOpen} onReject={(reason) => { onReject(reason); setRejectOpen(false); }} />
       <AddLocationModal isOpen={addLocationOpen} onOpenChange={setAddLocationOpen} onAdd={onAddLocation} />
 

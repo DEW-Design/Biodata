@@ -3,7 +3,10 @@
 import { Edit05 } from "@untitledui/icons";
 import { getLocalTimeZone } from "@internationalized/date";
 import type { DateValue } from "react-aria-components";
-import { Button } from "@/components/base/buttons/button";
+import { ButtonUtility } from "@/components/base/buttons/button-utility";
+import { RecordRow } from "@/app/pages/_shared/record-hero";
+import { FORM_FIELD_WIDTH } from "@/app/pages/_shared/form-row";
+import { cx } from "@/utils/cx";
 import { accessLabel, accessOf, COLLECTION_METHOD_OPTIONS, FOCUS_AREA_OPTIONS, PROJECT_MANAGER_ROLE, ROLE_OF_WORK_OPTIONS, SURVEY_TYPE_OPTIONS } from "../data";
 import { geoExtentSummary } from "../geo-extent-picker";
 import { isGeoExtentComplete } from "../types";
@@ -17,23 +20,25 @@ import { contactsOf, methodologySummary, STEP_TITLES, type FormState, type FormV
 
 const formatDate = (d: DateValue | null) => (d ? d.toDate(getLocalTimeZone()).toLocaleDateString("en-AU") : "");
 
+// One answer: the record pages' own label and value row (`RecordRow`, as the file facts card in the Datasets step uses), with the way back to
+// its section at the end of the value. It was a hand-built row with an uppercase label until 11 Nov 2026.
 function SummaryRow({ label, value, onEdit }: { label: string; value?: string; onEdit: () => void }) {
   return (
-    <div className="flex items-center justify-between gap-4 px-4 py-3">
-      <div className="flex min-w-0 flex-col gap-0.5">
-        <p className="text-xs font-semibold tracking-wide text-quaternary uppercase">{label}</p>
-        {value ? <p className="line-clamp-2 text-sm text-balance text-secondary">{value}</p> : <p className="text-sm text-quaternary">Not provided</p>}
+    <RecordRow label={label}>
+      <div className="flex items-start justify-between gap-4">
+        {value ? <p className="m-0 line-clamp-2 min-w-0 text-balance">{value}</p> : <p className="m-0 text-quaternary">Not provided</p>}
+        <ButtonUtility color="tertiary" size="xs" icon={Edit05} tooltip={`Edit ${label.toLowerCase()}`} aria-label={`Edit ${label}`} onClick={onEdit} className="-my-1 shrink-0" />
       </div>
-      <Button color="link-gray" size="sm" iconLeading={Edit05} aria-label={`Edit ${label}`} onClick={onEdit} />
-    </div>
+    </RecordRow>
   );
 }
 
+// A step's answers: a bordered card of rows under the step's name, as a record page's tab panel is.
 function StepCard({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <section className="flex flex-col overflow-hidden rounded-lg border border-secondary">
-      <h3 className="m-0! border-b border-secondary bg-secondary px-4 py-2.5 text-sm! font-semibold! tracking-normal! text-primary!">{title}</h3>
-      <div className="flex flex-col [&>*+*]:border-t [&>*+*]:border-[var(--ui-border-secondary)]">{children}</div>
+    <section className="flex flex-col gap-2">
+      <p className="m-0 text-sm font-semibold text-primary">{title}</p>
+      <div className="overflow-hidden rounded-xl border border-secondary bg-primary">{children}</div>
     </section>
   );
 }
@@ -58,7 +63,7 @@ export function ReviewSection({ state, onEdit, version = 1, dataset }: { state: 
   const restrictionRows = restrictionsSummaryRows(r);
 
   return (
-    <div className="flex max-w-[720px] flex-col gap-6">
+    <div className={cx(FORM_FIELD_WIDTH, "flex flex-col gap-6")}>
       <StepCard title={STEP_TITLES[1]}>
         <SummaryRow label="Project name" value={d.shortTitle} onEdit={() => onEdit("basics")} />
         <SummaryRow label="Abstract" value={d.abstract} onEdit={() => onEdit("basics")} />
@@ -113,7 +118,7 @@ function ReviewSectionV2({ state, onEdit, dataset }: { state: FormState; onEdit:
   const extentRow = <SummaryRow label="Geographic extent" value={isGeoExtentComplete(c.geographicExtent) ? geoExtentSummary(c.geographicExtent) : ""} onEdit={() => onEdit("extent")} />;
 
   return (
-    <div className="flex max-w-[720px] flex-col gap-6">
+    <div className={cx(FORM_FIELD_WIDTH, "flex flex-col gap-6")}>
       <StepCard title={STEP_TITLES[1]}>
         <SummaryRow label="Project name" value={d.shortTitle} onEdit={() => onEdit("basics")} />
         <SummaryRow label="Abstract" value={d.abstract} onEdit={() => onEdit("basics")} />

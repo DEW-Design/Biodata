@@ -158,7 +158,7 @@ export function NominationShell({
         section={
           recordId && canAccess && !otherSection ? (
             <NominationSwitcher currentId={recordId} />
-          ) : breadcrumbCurrent && !otherSection ? (
+          ) : breadcrumbCurrent && !otherSection && canAccess ? (
             <Link href={roleHref(NOMINATION_ROOT)} className="hover:text-primary">
               {activeSection}
             </Link>

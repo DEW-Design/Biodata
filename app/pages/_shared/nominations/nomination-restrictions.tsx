@@ -1,6 +1,7 @@
 "use client";
 
 import { Badge } from "@/components/base/badges/badges";
+import { Button } from "@/components/base/buttons/button";
 import { EmbeddedTable } from "@/app/pages/_shared/embedded-table";
 import { nominationStatusMeta, restrictionConditions, restrictionWhere, type Nomination } from "@/app/pages/_shared/nominations/nomination-data";
 
@@ -12,7 +13,14 @@ import { nominationStatusMeta, restrictionConditions, restrictionWhere, type Nom
 // for any action button here. Just show the changes"); what should change is nominated on the next step.
 // The basic table while it fits one page, the paged card past that (`EmbeddedTable`, 4.2h).
 
-export function ExistingRestrictionsTable({ restrictions }: { restrictions: Nomination[] }) {
+export function ExistingRestrictionsTable({
+  restrictions,
+  hrefFor,
+}: {
+  restrictions: Nomination[];
+  /** Makes each nomination's id a link to it (Taxonomy's Sensitive species risk tab). Absent: the id is plain text, as on the nomination form, where a row has no action. */
+  hrefFor?: (nomination: Nomination) => string;
+}) {
   return (
     <EmbeddedTable
       ariaLabel="Existing restrictions for this species"
@@ -25,7 +33,14 @@ export function ExistingRestrictionsTable({ restrictions }: { restrictions: Nomi
       ]}
       rows={restrictions}
       cell={(n, column) => {
-        if (column === "id") return <span className="text-sm font-medium whitespace-nowrap text-primary tabular-nums">{n.id}</span>;
+        if (column === "id")
+          return hrefFor ? (
+            <Button color="link-color" size="sm" href={hrefFor(n)} className="tabular-nums">
+              {n.id}
+            </Button>
+          ) : (
+            <span className="text-sm font-medium whitespace-nowrap text-primary tabular-nums">{n.id}</span>
+          );
         if (column === "where") return <span className="text-sm text-secondary">{restrictionWhere(n)}</span>;
         if (column === "what")
           return (

@@ -31,6 +31,8 @@ import { FittedText } from "@/app/pages/_shared/fitted-text";
 import { Breadcrumb } from "@/components/scaffold/breadcrumb";
 import { REPORTS_SECTION_LABEL, keyHref } from "@/lib/registered-user-nav";
 import { useRoleHref } from "@/lib/use-role-href";
+import { useCanOpen } from "@/lib/use-can-open";
+import { MAP_CONTROLS_Z_INDEX } from "@/lib/layers";
 import { useUserRole } from "@/lib/use-user-role";
 import { cx } from "@/utils/cx";
 
@@ -83,7 +85,10 @@ const floatCard = cx("flex flex-col overflow-hidden rounded-xl", MAP_SURFACE_EDG
  */
 export function DatasetBreadcrumb({ datasetId, orgLabel }: { datasetId: string; orgLabel: string | undefined }) {
   const roleHref = useRoleHref();
+  const canOpen = useCanOpen();
   const report = REPORTS.find((r) => r.id === "data-validation-error");
+  // A role that cannot open Reports (a link to it would land on a restriction, 3.15) gets the plain Explore trail.
+  if (!canOpen(keyHref("reports"))) return <Breadcrumb orgLabel={orgLabel} section="Explore" current="Map visualise" />;
   return (
     <Breadcrumb
       orgLabel={orgLabel}
@@ -155,6 +160,7 @@ export function DatasetErrorMap({ datasetId, onSearchExplore }: { datasetId: str
     [run, role],
   );
   const reportHref = roleHref(`/pages/reports/data-validation-error?dataset=${encodeURIComponent(datasetId)}`);
+  const canOpen = useCanOpen();
 
   const [view, setView] = useState<View>("all");
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -258,11 +264,11 @@ export function DatasetErrorMap({ datasetId, onSearchExplore }: { datasetId: str
   // The way back says which report it goes back to (not "Back to report"): the Data Validation Error Report, on this same dataset. It is the record pages' back link (`RecordBackLink`, 14/500 tertiary), not a
   // button: a button's text is 600, the way back is 500 on every record page. It has its own row, so it is never crowded by the list's toggle; only a card narrower than the report's name cuts it.
   const reportName = REPORTS.find((r) => r.id === "data-validation-error")?.title ?? "report";
-  const backButton = (
+  const backButton = canOpen("/pages/reports/data-validation-error") ? (
     <RecordBackLink href={reportHref} inline>
       {`Back to ${reportName}`}
     </RecordBackLink>
-  );
+  ) : null;
   // Hide or show the list, so the map can be seen whole. The card folds to its header, as Explore's second layout folds its search card (a chevron on the card's top row), not to a separate button: it
   // stays the same object in the same place, and the way back, the dataset, its file and project stay with it. It is a labelled link, not an icon alone, so what it does is stated. It sits at the right of
   // the header's first line (the eyebrow), which has the room now that the id is the title, and not beside the way back, where a long report name left it no room.
@@ -368,7 +374,7 @@ export function DatasetErrorMap({ datasetId, onSearchExplore }: { datasetId: str
       </div>
       {/* The panels are laid out by one layer, as in Explore, so they cannot overlap (CONTRACTS 2.8): the card on the left, the zoom
           buttons and a chosen record's summary on the right, the key along the bottom. */}
-      <div className="pointer-events-none absolute inset-0 z-[1000] @container">
+      <div className={cx("pointer-events-none absolute inset-0 @container", MAP_CONTROLS_Z_INDEX)}>
         <div className="flex size-full flex-col gap-4 p-4 pb-9">
           <div className="flex min-h-0 flex-1 flex-col gap-4 @min-[648px]:flex-row">
             <div className="flex min-h-0 w-full flex-col items-start gap-3 @max-[647px]:min-h-[72px] @max-[647px]:shrink-[1000] @min-[648px]:w-[440px] @min-[648px]:min-w-[280px] @min-[648px]:shrink">{card}</div>

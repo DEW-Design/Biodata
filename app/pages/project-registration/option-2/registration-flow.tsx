@@ -26,7 +26,8 @@
 // is no Version tool; its rules stay in sections.ts for the project page's edit form. See sections.ts's `FormVersion`.
 //
 // The Pre-fill sample content switch on the Prototype tools bar fills every section with sample-content.ts, for showing the
-// form to stakeholders, and switching it off puts back what was there.
+// form to stakeholders, and switching it off puts back what was there. In option 2 it also fills the Datasets step: a workbook and a
+// PDF are added to the queue and the acknowledgement is answered (dataset-sample.ts), and switching off takes those files out again.
 //
 // Same form state, validation rules, restriction editors and success screen as the first layout.
 // No backend: "Create project" keeps the project in this browser's localStorage (created-projects-store.ts),
@@ -34,16 +35,18 @@
 
 import { useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { ArrowLeft, LogIn01, Trash01, UserPlus01 } from "@untitledui/icons";
-import { Button } from "@/components/base/buttons/button";
+import { ArrowLeft, Trash01 } from "@untitledui/icons";
 import { DestructiveModal } from "@/components/application/modals/modal";
 import { toast } from "@/components/application/toast/toast";
 import { useRoleHref } from "@/lib/use-role-href";
 import { useUserRole } from "@/lib/use-user-role";
 import { FormPage } from "@/app/pages/_shared/form-page";
+import { RestrictedState } from "@/app/pages/_shared/restricted-state";
 import { createdProjectHref, saveCreatedProject, type CreatedProject } from "@/app/pages/_shared/created-projects-store";
 import { useSampleContent } from "@/app/_prototype-tools/sample-content";
+import { sampleAcknowledgement } from "@/app/pages/_shared/dataset-upload/dataset-sample";
 import { sampleProjectForm } from "../sample-content";
+import { DuplicatePreviousProject } from "../duplicate-project";
 import { SuccessScreen } from "../success-screen";
 import { initialDataCollection, initialProjectDetails, initialRestrictions } from "../types";
 import { SectionFields } from "./form-sections";
@@ -57,25 +60,10 @@ import { isFormValid, isSectionValid, missingFields, sectionMeta, STEP_TITLES, t
 const BASE_PATH = "/pages/project-registration";
 const version: FormVersion = 2;
 
+// A signed-out visitor: the one restricted state every gated page shows (`RestrictedState`: the line, Log in, Sign up, Go to Home). It was a
+// hand-built copy until 11 Nov 2026.
 function GuestPrompt() {
-  const roleHref = useRoleHref();
-  return (
-    <div className="flex flex-1 flex-col items-center justify-center gap-4 p-12 text-center">
-      <h1 className="text-lg font-semibold text-primary">Sign up to add a project</h1>
-      <p className="max-w-sm text-sm text-balance text-tertiary">Create a free BioData SA account to start contributing projects to South Australia&apos;s biodiversity record.</p>
-      <div className="flex gap-3">
-        <Button color="secondary" iconLeading={LogIn01} href="/pages/auth/login">
-          Log in
-        </Button>
-        <Button color="primary" iconLeading={UserPlus01} href="/pages/auth/signup">
-          Sign up
-        </Button>
-      </div>
-      <Button color="link-gray" size="sm" href={roleHref("/pages/project-list")}>
-        Back to projects
-      </Button>
-    </div>
-  );
+  return <RestrictedState title="Sign up to add a project" description="Create a free BioData SA account to start contributing projects to South Australia's biodiversity record." />;
 }
 
 /** `datasetStep` (opt-in, option 2: a Datasets step after Method and details) and the route it lives at (`basePath`) are the only differences between the two flows; without them this is option 1, unchanged. */
@@ -91,6 +79,8 @@ export function RegistrationFlow({ datasetStep, basePath = BASE_PATH }: { datase
   // The project once it is created: kept in localStorage, and where "Go to Project" leads.
   const [created, setCreated] = useState<CreatedProject | null>(null);
   const [confirmCancel, setConfirmCancel] = useState(false);
+  // Bumped when the form is started from a previous project, so fields that keep their own state show the copied answers.
+  const [copyKey, setCopyKey] = useState(0);
 
   const sections = datasetStep ? withDatasetSection(visibleSections(state.restrictions)) : visibleSections(state.restrictions);
   const requested = searchParams.get("section") as SectionId | null;
@@ -158,15 +148,18 @@ export function RegistrationFlow({ datasetStep, basePath = BASE_PATH }: { datase
   const isGuest = role === "public-user";
 
   // A fresh key each time the sample goes in or comes out, so fields that keep their own state (the full title's tick,
-  // the extent picker's tab) show the new content.
+  // the extent picker's tab) show the new content. Option 2 fills its Datasets step too: the step's answers go in with the
+  // project form, and its files are added and taken out as the person's own are.
   const sampleKey = useSampleContent({
-    value: state,
+    value: { form: state, answers: datasetStep?.sample.answers },
     onChange: (next) => {
-      setState(next);
+      setState(next.form);
+      if (next.answers) datasetStep?.sample.setAnswers(next.answers);
       setDirty(true);
     },
-    sample: sampleProjectForm,
+    sample: () => ({ form: sampleProjectForm(), answers: datasetStep ? sampleAcknowledgement() : undefined }),
     enabled: !isGuest && !created,
+    files: datasetStep?.sample.files,
   });
 
   const sidebar = isGuest ? (
@@ -179,6 +172,7 @@ export function RegistrationFlow({ datasetStep, basePath = BASE_PATH }: { datase
       <RegistrationProgress
         sections={sections}
         current={created ? "review" : current}
+        created={!!created}
         state={state}
         visited={created ? new Set(sections) : visited}
         attempted={attempted}
@@ -226,7 +220,19 @@ export function RegistrationFlow({ datasetStep, basePath = BASE_PATH }: { datase
         ) : current === "dataset" ? (
           datasetStep?.fields(showErrors)
         ) : (
-          <SectionFields key={sampleKey} id={current} state={state} onChange={update} showErrors={showErrors} version={version} />
+          <>
+            {current === "basics" && !dirty && !datasetStep?.dirty && (
+              <DuplicatePreviousProject
+                onDuplicate={(form, from) => {
+                  setState(form);
+                  setDirty(true);
+                  setCopyKey((k) => k + 1);
+                  toast.brand(`Copied from ${from.code}`, { description: "Give the new project its own name." });
+                }}
+              />
+            )}
+            <SectionFields key={`${sampleKey}-${copyKey}`} id={current} state={state} onChange={update} showErrors={showErrors} version={version} />
+          </>
         )}
       </FormPage>
     );

@@ -6,13 +6,14 @@
 // "+" adds inside the record: an event,
 // occurrence or observation of the types allowed there (record-rules.ts), an attachment or a web link. A file or
 // link belongs to one of the record's fields (field-notes-store.ts), so adding one asks which field it documents.
-// Edit edits the record. The "..." holds Delete alone, kept out of reach of a stray click. Each action is here once:
+// Edit edits the record. The "..." holds Duplicate (a copy of this record, beside it; designer, 16 Nov 2026: a control on
+// the record, where it was rows in the Add menu), then, under a divider, Delete, kept out of reach of a stray click. Each action is here once:
 // the header above keeps only the path and full screen (designer, 25 Oct 2026: no two controls for one action, and
 // icon-only "+" and pencil were not clear, so both are labelled).
 
 import { useMemo, useRef, useState } from "react";
 import { Autocomplete, Input as AriaInput, SearchField, SubmenuTrigger } from "react-aria-components";
-import { ChevronDown, DotsVertical, Edit05, LayoutAlt04, Link01, Paperclip, Plus, SearchLg, Trash01, Upload01 } from "@untitledui/icons";
+import { ChevronDown, Copy01, DotsVertical, Edit05, LayoutAlt04, Link01, Paperclip, Plus, SearchLg, Trash01, Upload01 } from "@untitledui/icons";
 import { Button } from "@/components/base/buttons/button";
 import { Dropdown } from "@/components/base/dropdown/dropdown";
 import { Input } from "@/components/base/input/input";
@@ -22,8 +23,10 @@ import { FormModal } from "@/components/application/modals/modal";
 import { toast } from "@/components/application/toast/toast";
 import { kindShape } from "@/app/pages/_shared/record-shapes";
 import { useUserRole } from "@/lib/use-user-role";
+import { useSampleContent } from "@/app/_prototype-tools/sample-content";
+import { sampleFile } from "@/app/_prototype-tools/sample-files";
 import { useEditStore } from "./edit-store";
-import { childOptions, type ChildOption } from "./record-rules";
+import { childOptions, copyOf, type ChildOption } from "./record-rules";
 import { KIND_PLURAL } from "./record-inspector";
 import { takesNotes, useCurrentUserName } from "./field-notes";
 import { fieldNotesActions, kindForFile, reviewForNewFile } from "./field-notes-store";
@@ -36,11 +39,12 @@ const squareButton =
   // The secondary button's own surface (button.tsx), as a square icon button.
   "flex size-9 cursor-pointer items-center justify-center rounded-lg bg-primary text-fg-quaternary shadow-xs-skeuomorphic ring-1 ring-primary ring-inset outline-focus-ring hover:bg-primary_hover hover:text-fg-quaternary_hover focus-visible:outline-2 aria-expanded:bg-primary_hover";
 
-/** The record's actions, under its title: Add (inside, attach, link, section), Edit, and "..." for Delete. Editors only. */
+/** The record's actions, under its title: Add (inside, attach, link, section), Edit, and "..." for Duplicate and Delete. Editors only. */
 export function RecordQuickActions({
   record,
   onAdd,
   onEdit,
+  onDuplicate,
   onDelete,
   sections = [],
   onAddSection,
@@ -48,6 +52,8 @@ export function RecordQuickActions({
   record: SurveyRecord | null;
   onAdd: (option: ChildOption) => void;
   onEdit?: () => void;
+  /** Starts a copy of the record, under its own parent (`copyOf`: left out where the record cannot have one). The caller opens the add form as it does for any new record. */
+  onDuplicate?: (parent: SurveyRecord | null, option: ChildOption) => void;
   onDelete?: () => void;
   /** The record's sections that are not on it now (removed, hidden or empty), offered as Add section. */
   sections?: MetaSection[];
@@ -58,6 +64,8 @@ export function RecordQuickActions({
   const [attach, setAttach] = useState<null | "file" | "link">(null);
   if (!store.canEdit) return null;
   const options = childOptions(record, store.childrenOf(record?.id ?? null));
+  // Duplicate: only where this record can have a copy beside it (the project is not one, nor an observation that is its occurrence's only one).
+  const copy = record && onDuplicate ? copyOf(record, store.records, store.childrenOf) : null;
   return (
     <div className="flex items-center gap-2">
       <AddMenu
@@ -73,7 +81,7 @@ export function RecordQuickActions({
           Edit
         </Button>
       )}
-      {onDelete && (
+      {(copy || onDelete) && (
         <Dropdown.Root>
           <Tooltip title="More actions">
             <TooltipTrigger aria-label="More actions" className={squareButton}>
@@ -81,8 +89,16 @@ export function RecordQuickActions({
             </TooltipTrigger>
           </Tooltip>
           <Dropdown.Popover placement="bottom start" className="w-48">
-            <Dropdown.Menu aria-label="More actions" onAction={(key) => key === "delete" && onDelete()}>
-              <Dropdown.Item id="delete" label="Delete record" icon={Trash01} destructive />
+            <Dropdown.Menu
+              aria-label="More actions"
+              onAction={(key) => {
+                if (key === "duplicate" && copy) onDuplicate?.(copy.parent, copy.option);
+                if (key === "delete") onDelete?.();
+              }}
+            >
+              {copy ? <Dropdown.Item id="duplicate" label="Duplicate" icon={Copy01} /> : null}
+              {copy && onDelete ? <Dropdown.Separator /> : null}
+              {onDelete ? <Dropdown.Item id="delete" label="Delete record" icon={Trash01} destructive /> : null}
             </Dropdown.Menu>
           </Dropdown.Popover>
         </Dropdown.Root>
@@ -288,6 +304,31 @@ function AttachModal({ record, mode, onClose }: { record: SurveyRecord; mode: "f
   const urlOk = /^https?:\/\/\S+\.\S+/.test(url.trim());
   const fieldLabel = fields.find((f) => f.id === fieldKey)?.label ?? "the concept";
 
+  // The Pre-fill sample content switch (Prototype tools): the first concept it can document, then a file, or a link to the BDBSA overview (the
+  // address is the one in ref-domain.md, a real page). The sample's file comes out again when the switch goes off; the person's own stays.
+  const sampleKey = useSampleContent({
+    value: { fieldKey, url, title },
+    onChange: (next) => {
+      setFieldKey(next.fieldKey);
+      setUrl(next.url);
+      setTitle(next.title);
+    },
+    sample: () => ({
+      fieldKey: fields[0]?.id ?? null,
+      url: mode === "link" ? "https://www.environment.sa.gov.au/topics/science/information-and-data/biological-databases-of-south-australia" : "",
+      title: mode === "link" ? "BDBSA overview" : "",
+    }),
+    enabled: fields.length > 0,
+    files:
+      mode === "file"
+        ? {
+            sample: () => [sampleFile("sample-site-photo.png", 64)],
+            add: (list) => setFile(list[0] ?? null),
+            remove: (names) => setFile((f) => (f && names.includes(f.name) ? null : f)),
+          }
+        : undefined,
+  });
+
   const submit = () => {
     setTried(true);
     if (!fieldKey) return;
@@ -319,6 +360,7 @@ function AttachModal({ record, mode, onClose }: { record: SurveyRecord; mode: "f
       onSubmit={submit}
     >
       <MultiSelect
+        key={sampleKey}
         label="Attach to"
         isRequired
         selectionMode="single"

@@ -57,7 +57,7 @@ import {
   SELECT_OPTIONS,
 } from "./field-options";
 import { LandscapeEditor, OverstoreyEditor } from "./landscape-editor";
-import { nameRow } from "./record-rules";
+import { autoName, inheritsStartDate, nameRow } from "./record-rules";
 import type { MetaRow, MetaSection } from "./survey-data";
 import type { FieldNotes } from "./field-notes-store";
 import {
@@ -238,23 +238,25 @@ export function CardEditor({
       },
     });
 
+  // A name is not asked for: left blank, the record is named by its type and a sequence number when it is saved (record-rules.ts `autoName`),
+  // and the field shows that name as its placeholder so the person can see what they will get (business comment, 10 Nov 2026).
   const nameControl = (label: string) => (
     <Input
       aria-label={label}
-      isRequired
       value={draft.name}
+      placeholder={autoName(record, store.records)}
       onChange={(name) => patch({ name })}
-      isInvalid={err && !draft.name.trim()}
-      hint={err && !draft.name.trim() ? "This field is required" : undefined}
     />
   );
+  // An Opportune or a Point intercept inside an event may leave its start date empty: it takes the parent's (record-rules.ts `inheritsStartDate`).
+  const startFromParent = inheritsStartDate(record);
   const dateControl = (label: string) => (
     <InputDatePicker
       aria-label={label}
       value={draft.date}
       onChange={(date) => patch({ date: date as CalendarDate | null })}
-      isInvalid={err && !draft.date}
-      hint={err && !draft.date ? "Choose a date" : undefined}
+      isInvalid={err && !draft.date && !startFromParent}
+      hint={err && !draft.date && !startFromParent ? "Choose a date" : undefined}
     />
   );
 
@@ -262,9 +264,9 @@ export function CardEditor({
     row: MetaRow,
   ): { control: ReactNode; required?: boolean; locked?: boolean } => {
     if (nr && nr.section === section.id && nr.label === row.label)
-      return { control: nameControl(row.label), required: true };
+      return { control: nameControl(row.label) };
     if ((row.term && DATE_TERMS.has(row.term)) || row.label === "Established")
-      return { control: dateControl(row.label), required: true };
+      return { control: dateControl(row.label), required: !startFromParent };
     if (fieldTypeOf(row) === "species")
       return {
         required: true,
@@ -296,6 +298,20 @@ export function CardEditor({
                 },
               });
             }}
+          />
+        ),
+      };
+    // Who recorded it, as a row of Details (an Opportune, a Point intercept): the same control as the Observers section's.
+    if (row.term === "recordedBy")
+      return {
+        control: (
+          <ObserversControl
+            names={draft.observers.map((o) => o.name).filter(Boolean)}
+            onChange={(names) =>
+              patch({
+                observers: names.map((name) => draft.observers.find((o) => o.name === name) ?? { id: localId(), name }),
+              })
+            }
           />
         ),
       };
@@ -353,13 +369,17 @@ export function CardEditor({
       const iso = /^\d{4}-\d{2}-\d{2}$/.test(row.value)
         ? parseDate(row.value)
         : null;
-      const before = !!iso && !!draft.date && iso.compare(draft.date) < 0;
+      // A site has no start date of its own to be after (its Start date is optional, below); its End date follows that one.
+      const isSite = record.kind === "event" && record.type === "Site";
+      const siteStart = sectionRows.find((r) => r.label === "Start date")?.value ?? "";
+      const minDate = row.optional && row.label === "Start date" ? null : isSite ? (/^\d{4}-\d{2}-\d{2}$/.test(siteStart) ? parseDate(siteStart) : null) : draft.date;
+      const before = !!iso && !!minDate && iso.compare(minDate) < 0;
       return {
         control: (
           <InputDatePicker
             aria-label={row.label}
             value={iso}
-            minValue={draft.date ?? undefined}
+            minValue={minDate ?? undefined}
             onChange={(d) => set(d ? d.toString() : "Not provided")}
             isInvalid={before}
             hint={before ? "Can't be before the start date" : undefined}
@@ -497,17 +517,22 @@ export function CardEditor({
           </Select>
         ),
       };
-    if (type === "textarea")
+    if (type === "textarea") {
+      const missing = err && !!row.required && !value.trim();
       return {
+        required: row.required,
         control: (
           <TextArea
             aria-label={row.label}
             rows={3}
             value={value}
             onChange={(v) => set(v || "Not provided")}
+            isInvalid={missing}
+            hint={missing ? "This field is required" : undefined}
           />
         ),
       };
+    }
     return {
       control: (
         <Input
@@ -652,6 +677,7 @@ export function CardEditor({
             <LocationField
               value={draft.location}
               allowed={allowed}
+              pointOnly={record.kind === "event" && record.type === "Point intercept"}
               onChange={(location) => {
                 const c = location.boundary
                   ? boundaryCentre(location.boundary)

@@ -26,7 +26,7 @@ import { CloseButton } from "@/components/base/buttons/close-button";
 import { Dialog, Modal, ModalOverlay } from "@/components/application/modals/modal";
 import type { SAMapProps } from "@/app/pages/_shared/map-search/sa-map";
 import { useMapEngine } from "@/app/pages/_shared/map-search/map-engine";
-import { MODAL_Z_INDEX } from "@/lib/layers";
+import { MAP_BUTTON_Z_INDEX, MODAL_Z_INDEX, TAKEOVER_Z_INDEX } from "@/lib/layers";
 import { cx } from "@/utils/cx";
 
 const SAMap = dynamic(() => import("@/app/pages/_shared/map-search/sa-map"), {
@@ -57,7 +57,7 @@ export function ExpandableMap({
   // The screen's own map when it has asked for one (map-engine.tsx), else the default Leaflet map.
   const renderEngine = useMapEngine();
   const drawMap = () => (renderEngine ? renderEngine({ ...map, className: "size-full" }) : <SAMap {...map} className="size-full" />);
-  const layer = overModal ? MODAL_Z_INDEX : "z-[9999]";
+  const layer = overModal ? MODAL_Z_INDEX : TAKEOVER_Z_INDEX;
 
   const bar = (
     <div className="flex min-h-14 shrink-0 items-center justify-between gap-3 border-b border-secondary py-2 pr-14 pl-4 sm:pl-6">
@@ -78,7 +78,7 @@ export function ExpandableMap({
           size="sm"
           iconLeading={Maximize02}
           aria-label={`Expand map: ${title}`}
-          className="absolute top-3 left-3 z-[1001] shadow-md"
+          className={cx("absolute top-3 left-3 shadow-md", MAP_BUTTON_Z_INDEX)}
           onClick={() => setOpen(true)}
         >
           Expand

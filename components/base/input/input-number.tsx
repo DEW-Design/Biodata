@@ -27,8 +27,8 @@ const NumberFieldContext = createContext<{
 
 const styles = {
     sm: "px-3 py-2 text-sm",
-    md: "px-3 py-2 text-md",
-    lg: "px-3.5 py-2.5 text-md",
+    md: "px-3 py-2 text-md leading-6", // 40px, as every medium field (see input.tsx)
+    lg: "px-3.5 py-2.5 text-md leading-6",
 };
 
 export interface InputNumberBaseProps extends AriaNumberFieldProps {

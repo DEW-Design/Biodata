@@ -20,6 +20,9 @@ import { FormSectionList, FormSidebar, deriveSectionStatus } from "@/app/pages/_
 import { FormRow } from "@/app/pages/_shared/form-row";
 import { DestructiveModal } from "@/components/application/modals/modal";
 import { useRoleHref } from "@/lib/use-role-href";
+import { useSampleContent } from "@/app/_prototype-tools/sample-content";
+import { sampleFile } from "@/app/_prototype-tools/sample-files";
+import { sampleDsa } from "@/app/pages/_shared/dsa/dsa-sample";
 import {
   dsaScopeOptions,
   dsaStatusMeta,
@@ -279,6 +282,33 @@ export function DsaForm({
 
   const goBack = () => (dirty ? setConfirmBack(true) : onBack());
 
+  // The signed agreement, as the file field takes it: a PDF within the size limit. The field and the Pre-fill sample content switch both come here.
+  const takeAgreement = (file: File) => {
+    if (file.type !== "application/pdf") return setFileError("Only PDF files are accepted");
+    if (file.size > MAX_FILE_BYTES) return setFileError("The file is larger than 5 MB");
+    setFileError(undefined);
+    update({ agreementFile: { name: file.name } });
+  };
+
+  // The Pre-fill sample content switch (Prototype tools): every question, both ways of sharing, two systems, and the signed agreement as a file. Only a new agreement has it.
+  const [sent, setSent] = useState(false);
+  useSampleContent({
+    value: { draft, openSystems: [...openSystems].map(String) },
+    onChange: (s) => {
+      setDraft(s.draft);
+      setOpenSystems(new Set(s.openSystems));
+      setFileError(undefined);
+      setDirty(true);
+    },
+    sample: sampleDsa,
+    enabled: !initial && !sent,
+    files: {
+      sample: () => [sampleFile("sample-signed-agreement.pdf", 96)],
+      add: (files) => files[0] && takeAgreement(files[0]),
+      remove: (names) => setDraft((d) => (d.agreementFile && names.includes(d.agreementFile.name) ? { ...d, agreementFile: null } : d)),
+    },
+  });
+
   const submit = () => {
     setAttempt("submit");
     setSubmitPressed(true);
@@ -288,6 +318,7 @@ export function DsaForm({
       setTab(errorTab(first));
       return;
     }
+    setSent(true);
     onSubmit(draft);
   };
 
@@ -297,6 +328,7 @@ export function DsaForm({
       setTab("agreement");
       return;
     }
+    setSent(true);
     onSaveDraft(draft);
   };
 
@@ -447,11 +479,7 @@ export function DsaForm({
                 isInvalid={!!(errors.agreementFile || fileError)}
                 onChange={(files) => {
                   const file = files?.[0];
-                  if (!file) return;
-                  if (file.type !== "application/pdf") return setFileError("Only PDF files are accepted");
-                  if (file.size > MAX_FILE_BYTES) return setFileError("The file is larger than 5 MB");
-                  setFileError(undefined);
-                  update({ agreementFile: { name: file.name } });
+                  if (file) takeAgreement(file);
                 }}
               />
               {(fileError || errors.agreementFile) && <p className="text-sm text-error-primary">{fileError ?? errors.agreementFile}</p>}

@@ -26,7 +26,7 @@ import { FormRow } from "@/app/pages/_shared/form-row";
 import { artefactTypeMeta, type ArtefactType } from "@/app/pages/_shared/artefact-lightbox";
 import { EditDrawer } from "./edit-drawer";
 import { useEditStore, type SurveyArtefact } from "./edit-store";
-import { nameRow } from "./record-rules";
+import { autoName, inheritsStartDate, nameRow } from "./record-rules";
 import type { ProjectMeta } from "./project-seed";
 import { formatDate, type MetaRow, type MetaSection, type SurveyRecord } from "./survey-data";
 
@@ -84,7 +84,8 @@ export interface TrapEntryDraft extends TrapEntry {
 }
 
 export function toDraft(record: SurveyRecord, attachments: SurveyArtefact[]): Draft {
-  const observerRow = record.sections.find((s) => s.id === "observers")?.rows?.[0];
+  // The observers are a section of their own on most events, or a row of Details (an Opportune, a Point intercept): the row that says who recorded.
+  const observerRow = record.sections.flatMap((s) => s.rows ?? []).find((r) => r.term === "recordedBy");
   const customRows = (record.sections.find((s) => s.id === "custom")?.rows ?? []).filter((r) => r.label !== "Custom properties");
   return {
     record: { ...record, sections: record.sections.map((s) => ({ ...s, rows: s.rows?.map((r) => ({ ...r })) })) },
@@ -108,7 +109,7 @@ export function toDraft(record: SurveyRecord, attachments: SurveyArtefact[]): Dr
 
 /** Rows edited as ordinary fields (not the name, dates, observers or custom list, which have their own controls). */
 export function isPlainRow(record: SurveyRecord, section: MetaSection, row: MetaRow): boolean {
-  if (section.id === "observers" || section.id === "custom") return false;
+  if (section.id === "observers" || section.id === "custom" || row.term === "recordedBy") return false;
   const nr = nameRow(record);
   if (nr && nr.section === section.id && nr.label === row.label) return false;
   if (row.term && DATE_TERMS.has(row.term)) return false;
@@ -118,9 +119,13 @@ export function isPlainRow(record: SurveyRecord, section: MetaSection, row: Meta
   return true;
 }
 
-export function fromDraft(d: Draft): SurveyRecord {
-  const iso = d.date ? d.date.toString() : d.record.date;
+/** `records` are the project's, to number an unnamed record: with none given (a draft read on its own) a blank name stays blank. */
+export function fromDraft(d: Draft, records?: SurveyRecord[]): SurveyRecord {
+  // A start date left empty on an Opportune or a Point intercept is the parent event's (the frames: "if not specified inherit from parent").
+  const parent = records?.find((r) => r.id === d.record.parentId);
+  const iso = d.date ? d.date.toString() : inheritsStartDate(d.record) && parent?.date ? parent.date : d.record.date;
   const nr = nameRow(d.record);
+  const name = d.name.trim() || (records ? autoName(d.record, records) : "");
   const observers = d.observers.map((o) => o.name.trim()).filter(Boolean);
   const sections = d.record.sections.map((s): MetaSection => {
     const measurements = s.measurements ? d.measurements.filter((m) => m.type.trim()).map(({ type, value, unit, method }) => ({ type, value, unit, method })) : undefined;
@@ -136,7 +141,8 @@ export function fromDraft(d: Draft): SurveyRecord {
       ...s,
       ...(measurements ? { measurements } : {}),
       rows: s.rows?.map((r) => {
-        if (nr && nr.section === s.id && nr.label === r.label) return { ...r, value: d.name };
+        if (nr && nr.section === s.id && nr.label === r.label) return { ...r, value: name };
+        if (r.term === "recordedBy") return { ...r, value: observers.join(" | ") || "Not provided" };
         if ((r.term && DATE_TERMS.has(r.term)) || r.label === "Established") return { ...r, value: formatDate(iso) };
         if (d.record.kind === "occurrence" && r.label === "Scientific name") return { ...r, value: d.scientificName };
         return r;
@@ -163,7 +169,7 @@ export function fromDraft(d: Draft): SurveyRecord {
   return {
     ...d.record,
     location,
-    name: d.name.trim(),
+    name,
     scientificName: d.record.kind === "occurrence" ? speciesOf(withIbra) ?? d.scientificName.trim() : d.record.scientificName,
     date: iso,
     lat: finalLat,
@@ -180,9 +186,10 @@ function speciesOf(sections: MetaSection[]): string | undefined {
 
 export function missingFor(d: Draft): string[] {
   const out: string[] = [];
-  if (!d.name.trim()) out.push(d.record.kind === "occurrence" ? "Occurrence name" : d.record.kind === "observation" ? "Observation name" : "Name");
   if (d.record.kind === "occurrence" && !(speciesOf(d.record.sections) ?? d.scientificName.trim())) out.push("Species");
-  if (!d.date) out.push("Date");
+  if (!d.date && !inheritsStartDate(d.record)) out.push("Date");
+  // A concept marked required on the record's own frame ("Location comment" on an Opportune and a Point intercept).
+  for (const s of d.record.sections) for (const r of s.rows ?? []) if (r.required && (!r.value.trim() || EMPTY.has(r.value.trim()))) out.push(r.label);
   if (!d.record.locationNote && (!Number.isFinite(Number(d.lat)) || !Number.isFinite(Number(d.lon)) || d.lat.trim() === "" || d.lon.trim() === "")) out.push("Latitude and longitude");
   if (d.measurements.some((m) => (m.type.trim() || m.value.trim()) && !(m.type.trim() && m.value.trim()))) out.push("A name and value for each measurement");
   if (d.properties.some((p) => p.value.trim() && !p.name.trim())) out.push("A name for each custom property");
@@ -267,7 +274,7 @@ export function RecordDrawer({
       setAttempted(true);
       return;
     }
-    const next = fromDraft(draft);
+    const next = fromDraft(draft, store.records);
     if (mode === "create") store.addRecord(next);
     else store.saveRecord(next);
     store.setArtefactsFor(next.id, draft.attachments.map((a) => ({ ...a, recordId: next.id, recordLabel: `${next.type} ${next.code}` })));

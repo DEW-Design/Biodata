@@ -189,8 +189,7 @@ export default function NavigationPatternPage() {
       <h2 className="text-balance">Top nav</h2>
       <p className="text-balance">
         A <strong>64px header</strong>: logo (37px, aspect ratio locked) + product name + breadcrumb on the left, primary actions +
-        profile on the right. Every canonical page (<code>/pages/dashboard</code>, <code>/pages/project-detail</code>,{" "}
-        <code>/pages/observation-detail</code>, ...) renders this same bar, just with its own section/current crumb. The right
+        profile on the right. Every canonical page (<code>/pages/dashboard</code>, <code>/pages/project-detail</code>, ...) renders this same bar, just with its own section/current crumb. The right
         side is one <strong>Add</strong> menu (a project, a data licence request, a data sharing agreement: only what the persona can create), the global search, and the account control.
       </p>
       <Section label="Top nav - anatomy" fullBleed>
@@ -211,7 +210,10 @@ export default function NavigationPatternPage() {
         </li>
         <li>
           <code>CreateMenu</code> and <code>lib/create-menu.ts</code>: what the Add menu offers each persona, filtered by the
-          role-access matrix. To let a persona create something new, add one entry there.
+          role-access matrix. To let a persona create something new, add one entry there. A page with things of its own to add
+          registers them with <code>useCreateContext</code> (<code>lib/create-context.ts</code>) and the menu lists them first,
+          under a heading that says where they go: on a project, &quot;This project&quot; with Dataset, Attachments, Events,
+          Occurrences, Observations and Restriction.
         </li>
         <li>
           <code>PrimaryRail</code> (<code>primary-rail.tsx</code>) and <code>sectionIcons</code> (<code>nav-icons.ts</code>): column 1, its

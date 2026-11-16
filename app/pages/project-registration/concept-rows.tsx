@@ -18,6 +18,10 @@ import { MultiSelect } from "@/components/base/select/multi-select";
 import { RadioButton, RadioGroup } from "@/components/base/radio-buttons/radio-buttons";
 import { InputDatePicker } from "@/components/custom/date-picker/input-date-picker";
 import { Button } from "@/components/base/buttons/button";
+import { ButtonUtility } from "@/components/base/buttons/button-utility";
+import { HintText } from "@/components/base/input/hint-text";
+import { Label } from "@/components/base/input/label";
+import { BentoCard } from "@/app/pages/_shared/bento-card";
 import type { ConceptOption } from "./data";
 import { TextArea } from "@/components/base/textarea/textarea";
 import { emptyConceptRow, type ConceptValueRow } from "./types";
@@ -127,12 +131,12 @@ function ValueControl({ row, option, update, showErrors }: { row: ConceptValueRo
         case "boolean":
             return (
                 <div className="flex flex-col gap-1.5">
-                    <span className="text-sm font-medium text-secondary">Value</span>
+                    <Label>Value</Label>
                     <RadioGroup aria-label={option.label} orientation="horizontal" value={row.value || null} onChange={(v) => update({ value: v })} className="gap-6">
                         <RadioButton value="yes" label="Yes" size="sm" />
                         <RadioButton value="no" label="No" size="sm" />
                     </RadioGroup>
-                    {valueMissing && <p className="m-0 text-sm text-error-primary">Choose Yes or No</p>}
+                    {valueMissing && <HintText isInvalid>Choose Yes or No</HintText>}
                 </div>
             );
         case "dateRange":
@@ -151,7 +155,7 @@ function ValueControl({ row, option, update, showErrors }: { row: ConceptValueRo
                 </div>
             );
         case "none":
-            return <p className="text-sm text-balance text-tertiary">Withheld entirely. There is no value to set.</p>;
+            return <HintText>Withheld entirely. There is no value to set.</HintText>;
         case "areas":
             // The areas editor is the caller's (`renderBelow`), placed here as this row's value.
             return null;
@@ -213,12 +217,13 @@ export function ConceptRows({
                 const taken = usedElsewhere(row.id);
                 const patch = (p: Partial<ConceptValueRow>) => update(row.id, p);
                 return (
-                    <div key={row.id} className="flex flex-col gap-4 rounded-lg border border-secondary bg-primary p-4">
+                    // The card of a repeated item, as a contact and a location are (`BentoCard`, the same padding and title weight; it was its own box).
+                    <BentoCard key={row.id} className="gap-4 bg-primary">
                         <div className="flex min-h-9 items-center justify-between gap-3">
-                            <p className="text-sm font-semibold text-primary">
+                            <p className="text-sm font-medium text-primary">
                                 {Noun} {index + 1}
                             </p>
-                            {(allowEmpty || rows.length > 1) && <Button color="tertiary" size="sm" iconLeading={Trash01} aria-label={`Remove ${noun} ${index + 1}`} onClick={() => remove(row.id)} />}
+                            {(allowEmpty || rows.length > 1) && <ButtonUtility color="tertiary" size="xs" icon={Trash01} tooltip={`Remove ${noun}`} aria-label={`Remove ${noun} ${index + 1}`} onClick={() => remove(row.id)} />}
                         </div>
                         {/* The card's heading names the field, so the select carries it as its accessible name only. */}
                         <Select
@@ -258,11 +263,11 @@ export function ConceptRows({
                                 hint={showErrors && !row.justification.trim() ? "Enter a justification" : undefined}
                             />
                         )}
-                    </div>
+                    </BentoCard>
                 );
             })}
             {!allUsed && (
-                <Button color="secondary" size="sm" iconLeading={Plus} className="w-max" onClick={add}>
+                <Button color="link-color" size="sm" iconLeading={Plus} className="w-max" onClick={add}>
                     Add {noun}
                 </Button>
             )}

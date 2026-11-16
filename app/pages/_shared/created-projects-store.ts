@@ -71,6 +71,12 @@ export function useCreatedProjects(): CreatedProject[] {
   return useStore((s) => s.created);
 }
 
+/** The project created most recently in this browser, for "Duplicate previous project" in Add Project (undefined until one has been made, and before localStorage has been read). */
+export function useLatestCreatedProject(): CreatedProject | undefined {
+  useRehydrate(useStore);
+  return useStore((s) => s.created[s.created.length - 1]);
+}
+
 /** One created project by id, and whether localStorage has been read yet (before that it looks missing). */
 export function useCreatedProject(id: string | null): { project: CreatedProject | undefined; hydrated: boolean } {
   useRehydrate(useStore);

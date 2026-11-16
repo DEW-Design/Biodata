@@ -4,7 +4,7 @@
 // components" section: this lives here until a stakeholder decides it belongs in the design
 // system proper, at which point it moves to components/base (and this directory entry goes away).
 //
-// A real single-date picker: the same segmented DD/MM/YYYY DateField/DateSegment primitives
+// A real single-date picker: the same segmented DD/MM/YYYY (always; see `InputDatePicker` below) DateField/DateSegment primitives
 // components/base/input/input-date.tsx already styles, plus a real calendar-icon trigger button
 // that opens a real Calendar popover - built on react-aria-components' own `DatePicker`
 // composition (DateField + Button + Popover + Calendar) and the real DEW Popover
@@ -34,11 +34,13 @@ import {
     Dialog,
     Group as AriaGroup,
     Heading,
+    I18nProvider,
     type DateValue,
 } from "react-aria-components";
 import { HintText } from "@/components/base/input/hint-text";
 import { Label } from "@/components/base/input/label";
 import { Popover } from "@/components/base/select/popover";
+import { DATE_ENTRY_LOCALE } from "@/utils/date-entry-locale";
 import { cx } from "@/utils/cx";
 
 export interface InputDatePickerProps<T extends DateValue = DateValue> extends Omit<AriaDatePickerProps<T>, "children" | "className"> {
@@ -70,7 +72,17 @@ function TodayButton() {
     );
 }
 
-export function InputDatePicker<T extends DateValue = DateValue>({ label, hint, hideRequiredIndicator, className, ...props }: InputDatePickerProps<T>) {
+// Dates are entered DD/MM/YYYY, always (designer, 11 Nov 2026). The field's segment order and the calendar's week come from its locale, so the locale is fixed here
+// (`DATE_ENTRY_LOCALE`) and never read from the browser: an en-US browser drew MM/DD/YYYY.
+export function InputDatePicker<T extends DateValue = DateValue>(props: InputDatePickerProps<T>) {
+    return (
+        <I18nProvider locale={DATE_ENTRY_LOCALE}>
+            <DatePickerField {...props} />
+        </I18nProvider>
+    );
+}
+
+function DatePickerField<T extends DateValue = DateValue>({ label, hint, hideRequiredIndicator, className, ...props }: InputDatePickerProps<T>) {
     return (
         <AriaDatePicker {...props} className={cx("font-barlow group flex h-max w-full flex-col items-start justify-start gap-1.5", className)}>
             {({ isInvalid, isRequired }) => (
@@ -92,7 +104,7 @@ export function InputDatePicker<T extends DateValue = DateValue>({ label, hint, 
                             )
                         }
                     >
-                        <AriaDateInput className="flex flex-1 px-3 py-2 text-sm">
+                        <AriaDateInput className="flex flex-1 px-3 py-2 text-sm leading-6">
                             {(segment) => (
                                 <AriaDateSegment
                                     segment={segment}

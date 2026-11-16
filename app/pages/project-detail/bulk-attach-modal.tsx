@@ -10,13 +10,14 @@
 // attached; the rest are left for the person to fix and add again. Borrowed: the drop area from Upload dataset
 // (upload-dropzone.tsx), the file row from its queue, and the embedded table (embedded-table.tsx, CONTRACTS 4.2h).
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Download01, File05, Trash01, Upload01 } from "@untitledui/icons";
 import { Badge } from "@/components/base/badges/badges";
 import { Button } from "@/components/base/buttons/button";
 import { FormModal } from "@/components/application/modals/modal";
 import { toast } from "@/components/application/toast/toast";
 import { UploadDropzone } from "@/app/pages/_shared/dataset-upload/upload-dropzone";
+import { useSampleContent } from "@/app/_prototype-tools/sample-content";
 import { formatFileSize } from "@/app/pages/_shared/dataset-upload/dataset-data";
 import { EmbeddedTable } from "@/app/pages/_shared/embedded-table";
 import { NumberedSteps } from "@/app/pages/_shared/numbered-steps";
@@ -24,6 +25,7 @@ import { useUserRole } from "@/lib/use-user-role";
 import { useEditStore } from "./edit-store";
 import { useCurrentUserName } from "./field-notes";
 import { fieldNotesActions, reviewForNewFile, useFieldNotes } from "./field-notes-store";
+import { sampleAttachmentFiles } from "./bulk-attach-sample";
 import {
   buildAttachmentTemplate,
   checkUpload,
@@ -42,12 +44,14 @@ const STATUS: Record<RowStatus, { label: string; color: "success" | "gray" | "er
 
 const plural = (n: number, one: string, many: string) => `${n} ${n === 1 ? one : many}`;
 
+type Upload = { names: string[]; size: number; files: UploadedFile[] } | null;
+
 export function BulkAttachModal({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) {
   const { records, meta, project } = useEditStore();
   const notes = useFieldNotes();
   const me = useCurrentUserName();
   const role = useUserRole();
-  const [upload, setUpload] = useState<{ names: string[]; size: number; files: UploadedFile[] } | null>(null);
+  const [upload, setUpload] = useState<Upload>(null);
   const [reading, setReading] = useState(false);
   const [readError, setReadError] = useState<string | null>(null);
   const [tried, setTried] = useState(false);
@@ -101,6 +105,37 @@ export function BulkAttachModal({ isOpen, onClose }: { isOpen: boolean; onClose:
       setReading(false);
     }
   };
+
+  // The Pre-fill sample content switch (Prototype tools), on the bar while this modal is open. The modal is filled with a zip of a filled-in template and the
+  // files it names, added as a person would add it, each time it opens while the switch is on. `sampleOn` is the switch as this modal sees it; what was
+  // in the modal before it went on (the hook's value) is put back when it goes off. A modal covers the bar (CONTRACTS 3.8), so the switch is
+  // reached here only by its remembered choice, turned on from another form.
+  const [sampleOn, setSampleOn] = useState(false);
+  useSampleContent({
+    value: { on: sampleOn, upload },
+    onChange: (next) => {
+      setSampleOn(next.on);
+      setUpload(next.upload);
+      setReadError(null);
+      setTried(false);
+    },
+    sample: () => ({ on: true, upload }),
+    enabled: isOpen && role !== "public-user",
+  });
+  const latest = useRef({ add, target, records });
+  useEffect(() => {
+    latest.current = { add, target, records };
+  });
+  useEffect(() => {
+    if (!isOpen || !sampleOn) return;
+    let current = true;
+    void sampleAttachmentFiles(latest.current.target, latest.current.records).then((files) => {
+      if (current) latest.current.add(files);
+    });
+    return () => {
+      current = false;
+    };
+  }, [isOpen, sampleOn]);
 
   const submit = () => {
     setTried(true);

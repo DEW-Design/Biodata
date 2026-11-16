@@ -14,7 +14,7 @@
 // CONTRACTS 4.6: each data owner contact carries its own role, shown with that contact. There is no
 // "Project team" card, and no separate role field for whoever registered the project.
 
-import { createContext, createElement, useContext, useEffect, useRef, useState, type Key, type ReactNode } from "react";
+import { createContext, createElement, useContext, useEffect, useImperativeHandle, useRef, useState, type Key, type ReactNode, type Ref } from "react";
 import { getLocalTimeZone } from "@internationalized/date";
 import type { DateValue } from "react-aria-components";
 import { ArrowLeft, Edit05, LockUnlocked01, Mail01, MarkerPin04, Phone01, Plus, Trash01, User01, Users01 } from "@untitledui/icons";
@@ -441,8 +441,14 @@ export function OnThisPage({ items, onBeforeGo }: { items: TocItem[]; /** Called
         // drawn inside the link, because the column scrolls (`overflow-y-auto`) and clips an outline that sits outside it, and the links run flush to its edges.
         className={cx(
           "-ml-px flex min-h-10 items-center border-l-2 outline-focus-ring transition-colors focus-visible:-outline-offset-2 focus-visible:outline-2",
-          child ? "pl-6 text-xs" : "pl-3 text-sm",
-          isActive ? "border-[var(--color-brand-500)] text-brand-secondary" : inSection ? "border-transparent text-primary" : "border-transparent text-tertiary hover:text-primary",
+          "text-sm",
+          child ? "pl-6" : "pl-3",
+          // One size (14px) for every link, so the type is a single step; what tells a section from the cards under it is the indent (12px against 24px) and one step of grey (gray-700 against gray-600). The section you are inside goes darker again.
+          isActive
+            ? "border-[var(--color-brand-500)] text-brand-secondary"
+            : inSection
+              ? "border-transparent text-primary"
+              : cx("border-transparent hover:text-primary", child ? "text-tertiary" : "text-secondary"),
         )}
       >
         {item.label}
@@ -451,7 +457,8 @@ export function OnThisPage({ items, onBeforeGo }: { items: TocItem[]; /** Called
   };
   return (
     <nav aria-label="On this page" className="sticky top-4 hidden max-h-[calc(100dvh-8rem)] w-56 shrink-0 self-start overflow-y-auto xl:block">
-      <p className="mb-2 text-xs font-semibold tracking-wide text-quaternary uppercase">On this page</p>
+      {/* The section label every column and panel uses (12px, semibold, tracked, uppercase, gray-500), set to start where the link labels do (the list's 1px rule, the link's 2px bar less the 1px it overlaps it by, and its 12px of padding), not at the column's edge. */}
+      <p className="mb-2 border-l-2 border-transparent pl-3 text-xs font-semibold tracking-wide text-quaternary uppercase">On this page</p>
       <ul className="flex flex-col border-l border-secondary">
         {items.map((item) => (
           <li key={item.id}>
@@ -472,7 +479,20 @@ export function OnThisPage({ items, onBeforeGo }: { items: TocItem[]; /** Called
 
 // ── The tab ──
 
+/** Whether the project still has a kind of restriction it does not carry: the one test behind "Add restriction", on this tab and in the header's Add menu. */
+export function hasRestrictionToAdd(restrictions: { hasRestrictions: boolean; enabledTypes: Set<RestrictionTypeKey> }): boolean {
+  return OFFERED_RESTRICTION_TYPES.some((m) => !(restrictions.hasRestrictions && restrictions.enabledTypes.has(m.key)));
+}
+
+/** What the page can ask of the Overview from outside it (the header's Add menu, CONTRACTS 3.5). */
+export interface ProjectTabHandle {
+  /** Opens "Add restriction", as the section's own button does. */
+  addRestriction: () => void;
+}
+
 export function ProjectTab({
+  ref,
+  onEditingChange,
   layout = "default",
   lead,
   sheet = false,
@@ -482,6 +502,9 @@ export function ProjectTab({
   disclosure = false,
   peopleStyle = "rows",
 }: {
+  ref?: Ref<ProjectTabHandle>;
+  /** Told when a card goes into or out of edit mode, so the page does not offer a second edit beside it (one card at a time, CONTRACTS 4.8). */
+  onEditingChange?: (editing: boolean) => void;
   /** "v3": icon-only card actions on hover and a full-width content column. */
   layout?: "default" | "v3";
   /** Content above the first section, inside the content column, so "On this page" starts level with it. */
@@ -508,11 +531,13 @@ export function ProjectTab({
   const setEditing = (next: ProjectCardId | null) => {
     setFocusLabel(undefined);
     setEditingState(next);
+    onEditingChange?.(next !== null);
     if (next) revealSection(`card-${next}`);
   };
   const openCard = (card: ProjectCardId, label?: string) => {
     setEditingState(card);
     setFocusLabel(label);
+    onEditingChange?.(true);
     revealSection(`card-${card}`);
   };
   const [removing, setRemoving] = useState<RestrictionTypeKey | null>(null);
@@ -545,6 +570,7 @@ export function ProjectTab({
     changeOpenSections(new Set([...openSections, key]));
     return true;
   };
+  useImperativeHandle(ref, () => ({ addRestriction: () => setEditing("add-restriction") }));
   // A person is there when something of them is written: a contact or manager the form left blank is not one.
   const written = (p: { firstName: string; lastName: string; email: string }) => `${p.firstName}${p.lastName}${p.email}`.trim() !== "";
   const hasContact = d.dataOwnerContacts.some(written);
@@ -735,7 +761,7 @@ export function ProjectTab({
           count={enabled.length}
           collapsedNote={needsDetails(enabled.map((m) => m.key)) ? detailsNeeded : undefined}
           action={
-            canEdit && OFFERED_RESTRICTION_TYPES.some((m) => !enabled.some((e) => e.key === m.key)) && !(layout === "v3" && editing !== null) ? (
+            canEdit && hasRestrictionToAdd(r) && !(layout === "v3" && editing !== null) ? (
               <Button color="secondary" size="sm" iconLeading={Plus} onClick={() => setEditing("add-restriction")}>
                 Add restriction
               </Button>

@@ -236,11 +236,16 @@ type the date or pick it from the calendar. A person should never have to type a
   day. An end date, an expiry, an embargo end and a filter's range stay empty, because empty means "ongoing" or "not narrowed";
   editing a record keeps the date it holds. The default is in the form's blank draft (`emptyDsaDraft`, `initialProjectDetails`),
   not in the field.
+- **A date is entered as DD/MM/YYYY, always** (designer, 11 Nov 2026: "DATE ENTRY FORMAT WILL ALWAYS BE DD/MM/YYYY"): day, month, year, in that order, whatever the browser's or the person's language setting. The field's segment order comes from its locale,
+  so both date fields fix it (`DATE_ENTRY_LOCALE`, `utils/date-entry-locale.ts`, set through an `I18nProvider` inside `InputDatePicker` and `InputDate`) and never read it from the browser. The calendar's week starts on Monday with it. MUST NOT
+  draw a date field in another order, accept a date typed another way (a text input for a date, `MM/DD`), or build a date field outside these two components. This is about entry; how a date is shown in text ("1 Mar 2026") follows 2.3 and the
+  record it sits in.
 - **Origin:** the Controlled Vocabulary, DSA and DLA forms used `InputDate`, typed segments with no
   calendar; the designer asked for the calendar field everywhere ("always remember to use date fields
   with calendar input field from design system", 30 Sept 2026). Add Project, DLA and DSA then opened with an empty start date
   while the vocabulary, user and notification forms opened as today (6 Oct 2026).
-- **Enforcement:** `AUTO §2.11` (an `<InputDate` under `app/pages` fails); the default is `REVIEW`.
+- **Origin of the order rule:** the date fields read their order from the browser, so an en-US browser drew MM/DD/YYYY under a comment that said DD/MM/YYYY; the designer stated the rule (11 Nov 2026).
+- **Enforcement:** `AUTO §2.11` (an `<InputDate` under `app/pages` fails), `AUTO §2.11b` (either date field loses its fixed locale); the default is `REVIEW`.
 
 ### §2.12 Nothing on screen without a purpose
 
@@ -391,6 +396,28 @@ draws its thumb, in one layer above everything (`SCROLLBAR_Z_INDEX`, `lib/layers
 - **Origin:** Explore's lists drew a classic bar that took 15px from the rows and showed a stray scrollbar under an area chip; the designer chose a drawn thumb from a lab of four (option D, 23 Oct 2026, `2026-10-23-53`), and then:
   "the scroll bar logic we added on the explore screens, let's make that consistent across the webapp." It had been built into `ScrollFade` for three lists; about 120 scrollers (page columns, tables, menus, modals) still showed the browser's.
 - **Enforcement:** `AUTO §2.17` (the global rule or the mount is gone, or a hand-made scrollbar rule appears in `app/pages` or `components`), `REVIEW` for the rest.
+
+### §2.18 A field a person writes in shows an example
+
+A text area, or a text input that asks for a sentence rather than a code, a name or a number (a reason, a description, a note), opens empty and asks the person to compose something. It MUST show what a good answer looks like, as its
+placeholder, so nobody meets a blank box and has to guess the kind, the register or the length of what is wanted.
+
+- **MUST** give it a placeholder that is an **example**, from a source (0.3): "E.g., ..." (the form the product's inputs already use: "E.g., Pygmy Bluetongue Lizard nesting site"), or, for a note or a reason, the question it answers
+  ("Why is this value questionable?"). The example comes from the business's own document or from the product's own data (a real species, a real project, a placeholder person), and is never made up to fill the gap. Where no
+  source has one, ask (0.4); do not write one.
+- **A placeholder is never the label and never the only place a requirement is said.** It goes when the person starts typing, and it is drawn at about 2.1 to 1 on white (`--ui-text-placeholder`, gray-400, measured 9 Nov 2026), below
+  the 4.5 to 1 that text needs, so anything a person must know to answer sits in the label, the row's description or the hint, which stay on screen. MUST NOT put a format, a limit or "required" in a placeholder. MUST NOT restate
+  the label in it ("Enter contact number" under "Contact number", "Type here").
+- **Each fact once (4.3).** An example that is the placeholder is not also in the description or the hint: it is moved, not repeated. The hint is kept for what to fix when the field is refused.
+- **Written as copy is (2.3):** sentence case, no full stop at the end, no em-dash.
+- **Exempt, because a placeholder would say nothing:** a field that edits a value the record already holds (the project record form, the card editor, the taxonomy fields): it opens filled, and an emptied one reads "Not provided"
+  (2.3); a search, a select and a combo box, whose placeholder names what the control does ("Search taxa", "Select role"); a field whose value is a code, a number or a date, which has its own format (2.11).
+- **Open (9 Nov 2026), for the designer (0.4):** the fields that compose text and have no placeholder: the DSA form's Purpose (its guidance is a hint) and the notification form's Sign-off. An example for each would be new copy, so none
+  is written here. Whether the placeholder colour should be darker is the designer's too (Figma wins on colour, 2.5).
+- **Origin:** the nomination form's "Main reason" had a placeholder ("What puts these records at risk if they stay public, and what protecting them would prevent.") and the three boxes that replaced it (6 Nov 2026) had none; the
+  designer: "the text area fields don't have placeholder text. This is an anomaly and needs to be addressed" (9 Nov 2026). Of the 29 text areas under `app/pages`, 8 had none: those three, five in the exempt or open lists above.
+- **Enforcement:** `REVIEW`. A first occurrence, so no `AUTO` check yet (0.8): whether a field composes text or edits a value it already holds is a judgement from the screen, and a count of `<TextArea` without `placeholder` would flag
+  the exempt ones. It is named here as a recurring pattern: when a form is restructured or a field replaced, the first thing to check is that the new one kept the old one's placeholder.
 
 ### §3.12 Every action button carries an icon
 

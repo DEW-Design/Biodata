@@ -11,9 +11,10 @@
 // This is a real, working tool, not a static mock - it actually parses an uploaded file and runs
 // real validation against the corrected record model (see the `project_projects_data_model`
 // memory / this session's own work on project-detail and observation-detail):
-// a project directly contains Events (Site/Transect/Ramble/Quadrat/Visit), Occurrences (Individual/
+// a project directly contains Events (Site/Visit/Block/Transect/Ramble/Quadrat/Opportune/Point intercept), Occurrences (Individual/
 // Population), and Observations (Individual/Non-biotic/Community/Population); an Event can nest
-// under any other Event except a Site can never sit under a Visit; an Observation is always a leaf.
+// under any other Event (a sub-event), the one exception being a Block, which can't hold a Ramble (the business, 10 Nov 2026; until then a
+// Site could not sit under a Visit); an Observation sits under an Event or a sub-event, and is always a leaf.
 // **Refined, this pass, per the user directly**: an Occurrence is no longer always a leaf too - "each
 // row on the species CSVs are occurrences... this is a nuance that sits between visits and
 // observations," confirmed as a real tree level (Visit -> Occurrence -> Observation), not just a
@@ -143,8 +144,13 @@ import {
   VALID_TYPES_BY_KIND,
   FIELD_SCHEMA,
   ALL_SCHEMA_FIELD_NAMES,
-  ALL_SCHEMA_FIELD_NAMES_WITH_ALIASES,
+  CROSS_TYPE_FIELD_NAMES,
   FIELD_ALIASES,
+  bdbsaAliasesFor,
+  carriedFieldsFor,
+  isEventNestingBlocked,
+  REQUIRED_FIELDS,
+  INHERITS_START_DATE,
   BDBSA_KEY_CROSSWALK,
   reportedCodesFor,
   reportedCodesText,
@@ -165,6 +171,7 @@ import {
   type SourceRole,
 } from "./workbook-ingest";
 import { StressTestShell } from "./stress-test-shell";
+import { ConceptHelp } from "./concept-help";
 import { convertRambleTemplate, type TemplateConversion } from "./template-ingest";
 import { convertFlatReturns, convertSampleMatrix, isFlatReturn } from "./methodology-ingest";
 
@@ -295,6 +302,8 @@ interface SourceReport {
   via: SourceClassification["via"] | "template" | "hidden" | "locked" | "derived";
   reason: string;
   read: boolean;
+  // The columns of this tab that only make the structure, and why each is used for it or not used (`STRUCTURAL_COLUMNS`). Nothing is dropped without being named here.
+  structure?: { used: string[]; unused: string[] };
 }
 
 // What a recognised form was turned into, kept so the 3-tier rows can be shown and downloaded.
@@ -305,6 +314,23 @@ interface TemplateResult {
 
 function sourceLabel(source: { file: string; sheet: string }): string {
   return source.sheet ? `${source.file} / ${source.sheet}` : source.file;
+}
+
+// Which of a tab's columns only make the structure, for the tab report: grouped by rule, with the column spellings the tab uses.
+function structureColumnsFor(headers: string[], role: SourceRole | null): SourceReport["structure"] {
+  if (!role || headers.length === 0) return undefined;
+  const kinds = role.id === "site" ? ["Event:Site"] : role.id === "visit" ? ["Event:Visit"] : role.kind === "Observation" || role.kind === "Occurrence" ? ["Occurrence", "Observation"] : [];
+  const out = { used: [] as string[], unused: [] as string[] };
+  const seen = new Set<string>();
+  for (const rule of STRUCTURAL_COLUMNS) {
+    if (!rule.kinds.some((k) => kinds.includes(k))) continue;
+    const present = rule.names.map((name) => headers.find((h) => normalizeHeader(h) === normalizeHeader(name))).filter((h): h is string => Boolean(h));
+    const key = `${rule.use}|${present.join(",")}`;
+    if (present.length === 0 || seen.has(key)) continue;
+    seen.add(key);
+    (rule.use === "used" ? out.used : out.unused).push(`${present.join(", ")}: ${rule.why}`);
+  }
+  return out.used.length + out.unused.length > 0 ? out : undefined;
 }
 
 // Stamps the role's Kind (and Type) on every row that does not already state its own - a row that
@@ -468,6 +494,7 @@ function prepareSources(sources: IngestSource[]): { rows: RawRow[]; reports: Sou
         via: verdict.via,
         reason: verdict.reason,
         read,
+        structure: read ? structureColumnsFor(Object.keys(source.rows[0] ?? {}), verdict.role) : undefined,
       });
       if (read) rows.push(...stampRole(source.rows, verdict.role, label));
     }
@@ -497,7 +524,7 @@ function prepareSources(sources: IngestSource[]): { rows: RawRow[]; reports: Sou
 
 function isKnownSchemaFieldName(key: string): boolean {
   const normalized = normalizeHeader(key);
-  return ALL_SCHEMA_FIELD_NAMES_WITH_ALIASES.some((f) => normalizeHeader(f) === normalized);
+  return CROSS_TYPE_FIELD_NAMES.some((f) => normalizeHeader(f) === normalized);
 }
 
 // "Each row on the species CSVs are occurrences... this is a nuance that sits between visits and
@@ -531,7 +558,21 @@ const IDENTITY_COLUMNS: string[][] = [
   ["species", "scientific name"],
   ["common name"],
   ["source id", "sourceid"],
-  ["voucher number", "voucher #", "voucher no"],
+  ["voucher number", "voucher #", "voucher no", "vouchernr"],
+  // The rest of a specimen's voucher: what BDBSA's species tab carries beside VOUCHERNR. A voucher is a fact about the specimen, so these
+  // are the Occurrence's too (the Individual frame's Voucher section has the fields; a Population Occurrence carries them for review).
+  ["voucher type", "vouchertype"],
+  ["voucher series", "voucherseriesnr"],
+  ["determiner 1", "determinernr1"],
+  ["determiner 2", "determinernr2"],
+  ["determination date", "determinedate"],
+  ["transfer date", "vouchertransdate"],
+  ["museumherbmnr"],
+  ["prefix"],
+  ["vouchercomm"],
+  ["accuracycode"],
+  ["collectornr"],
+  ["linkedvoucherseqnr"],
   // The organism's own facts that the template has no field for (a macroinvertebrate's family, life
   // stage and the habitat it was sampled in): kept on the Occurrence, where they are not mistaken for
   // another observation type's field.
@@ -611,6 +652,9 @@ function expandSpeciesOccurrences(rows: RawRow[]): RawRow[] {
     // Community frame has none, so there it is the Occurrence's ("Occurrence Comment"): said about this
     // species at this place, not about the vegetation.
     const commentCol = findColumn(rest, ["observation comment", "species comment", "spcomm"]);
+    // BDBSA's record status on a species row (U, Q ...) is the Occurrence's "Occurrence Status". The template's header is spelt RECSTUTUSCODE (a typo in the
+    // template itself) and RECSTATUSCODE elsewhere; both are read. Matched by meaning: no code table says what U and Q stand for.
+    const statusCol = findColumn(rest, ["recstutuscode", "recstatuscode", "occurrence status"]);
     const commentMovesUp = Boolean(commentCol) && !observationFields.some((f) => normalizeHeader(f) === "observationcomment");
 
     const occurrenceRow: RawRow = {
@@ -629,6 +673,7 @@ function expandSpeciesOccurrences(rows: RawRow[]): RawRow[] {
       ...(rest.__source ? { __source: rest.__source } : {}),
       ...(nsxAndSpecies ? { "NSX Code & Species": nsxAndSpecies } : {}),
       ...(commentMovesUp && commentCol && rest[commentCol] ? { "Occurrence Comment": rest[commentCol] } : {}),
+      ...(statusCol && rest[statusCol] ? { "Occurrence Status": rest[statusCol] } : {}),
       // No "Number Observed" here: the Occurrence frames have no count. A Population Observation keeps it
       // (below); an Individual or Community is implied by its type (one animal, present but not counted).
       "Taxonomic Type": taxonomicType,
@@ -645,6 +690,7 @@ function expandSpeciesOccurrences(rows: RawRow[]): RawRow[] {
             key !== taxonomicTypeColumn &&
             key !== nsxCodeCol &&
             !(commentMovesUp && key === commentCol) &&
+            key !== statusCol &&
             (keepNumberObserved || key !== numberObservedCol),
         ),
       ),
@@ -669,6 +715,8 @@ interface ParsedField {
   field: string;
   value: string;
   flagged?: boolean;
+  // An extra line for the JSON comment: where a carried value came from, or that the name was made up (10 Nov 2026).
+  note?: string;
 }
 
 interface ParsedRecord {
@@ -717,6 +765,9 @@ interface ParsedRecord {
   // row it was split from, or "coordinates and date". Blank when it has no parent. Also names the
   // column in the error when the pointer doesn't resolve.
   parentVia: string;
+  // Why a species row could not be traced to a Visit by Zone, Easting, Northing and date, with the nearest Visit that day when there is one (a suggestion only: it never links
+  // the record). Set by `resolveNaturalKeyRelationships`, read by `validateRecords` in place of the bare "need a Parent ID".
+  linkNote?: string;
   // True when `id` came from a type-specific key column ("Site ID") rather than a generic "ID"
   // column - such an id is only unique within its own tab, so `linkByReference` keeps it apart from
   // an identical id on another tab's records.
@@ -726,10 +777,54 @@ interface ParsedRecord {
   references: { type: string; column: string; value: string }[];
 }
 
-// Where an Event is. The Site and Visit templates have no field for them, yet every real Site and
-// Visit row carries them and the traceback needs them: they are kept, flagged for review as a column
-// the template does not have yet, rather than reported as another record type's field.
+// Where an Event is. The Site and Visit templates have no field for them (the Known Gap), yet every real Site and Visit row carries them and the
+// traceback needs them. Zone, Easting and Northing are used for the placement and are not shown on the record (see `STRUCTURAL_COLUMNS`); a Latitude or
+// Longitude is kept, flagged for review, rather than reported as another record type's field.
 const LOCATION_COLUMNS = new Set(["zone", "easting", "northing", "latitude", "longitude"]);
+
+// Columns that make the structure and are not a concept of the record they sit on (10 Nov 2026, the designer reading a Site that listed Sort_ID, SITETYPE,
+// RECSTATUSCODE, CAMPMAP, QUADSITE, PATCHQUAD, OLDZONE, OLDEASTING and OLDNORTHING as leftover rows: "these need to map back correctly to the UI concept names";
+// "we're not using these either, they're already mapped"). A record no longer shows them as fields; the tab report ("How the tabs were read") names each, says
+// what it is used for or why it is not used, so nothing is dropped silently. `kinds` is a Kind ("Occurrence"), or a Kind:Type ("Event:Site").
+interface StructuralColumn {
+  names: string[];
+  kinds: string[];
+  use: "used" | "not used";
+  why: string;
+}
+
+const ROW_RECORDS = ["Event:Site", "Event:Visit", "Occurrence", "Observation"];
+const STRUCTURAL_COLUMNS: StructuralColumn[] = [
+  { names: ["SURVEYNR"], kinds: ROW_RECORDS, use: "used", why: "the Project's ID, and part of every placement" },
+  { names: ["CAMPMAP", "QUADSITE", "PATCHQUAD"], kinds: ["Event:Site"], use: "used", why: "joined they are the Site's ID (ASA-002-01); a one-digit patch/quad is padded" },
+  {
+    names: ["OLDZONE", "OLDEASTING", "OLDNORTHING", "Zone", "Easting", "Northing"],
+    kinds: ["Event:Site", "Event:Visit"],
+    use: "used",
+    why: "the placement: a Visit goes under the Site, and a species row under its Visit, with the same Survey Number, Zone, Easting and Northing (neither has a Site number). A Site and a Visit have no Zone, Easting or Northing concept, so they are not shown on the record",
+  },
+  {
+    names: ["OLDZONE", "OLDEASTING", "OLDNORTHING", "Zone", "Easting", "Northing"],
+    kinds: ["Occurrence", "Observation"],
+    use: "used",
+    why: "the placement under the Visit (with the Survey Number and the visit date); shown as Zone, Easting and Northing on a Community or Non-biotic Observation, which has those concepts",
+  },
+  { names: ["VISITDATE", "EDITED_VISIT"], kinds: ["Event:Visit"], use: "used", why: "the Visit's Start Date, and the date a species row is placed under it by" },
+  { names: ["VISITDATE"], kinds: ["Occurrence", "Observation"], use: "used", why: "the placement: the date of the Visit the species row belongs to" },
+  { names: ["Sort_ID"], kinds: ROW_RECORDS, use: "not used", why: "BDBSA's row order in the load template; the file's own order is kept" },
+  // SITETYPE is kept (designer, 10 Nov 2026: "Matters, keep"): it stays on the record, flagged, until the business gives it a concept name. Not listed here.
+  { names: ["RECSTATUSCODE"], kinds: ["Event:Site", "Event:Visit"], use: "not used", why: "a record status; the Site and Visit templates have no status concept" },
+];
+
+const structuralAppliesTo = (rule: StructuralColumn, kind: string, kindType: string) => rule.kinds.some((k) => k === kind || k === kindType);
+
+// A coordinate as the number the file holds: a cell formatted 0.000 reads "537003.000", which is 537003. Only an all-zero fraction is dropped, so a real decimal keeps
+// every digit; a value that is not a number is left as it is.
+function normalizeCoordinate(value: string): string {
+  return value.replace(/^(-?\d+)\.0+$/, "$1");
+}
+
+const isCoordinateField = (field: string) => ["zone", "easting", "northing", "latitude", "longitude"].includes(normalizeHeader(field));
 
 // A Site's id is "ABC-NN-NN": the camp map, the quad/site and a two-digit patch/quad. A one-digit
 // patch/quad is padded with a leading zero, so ALT-12-1 reads ALT-12-01 (designer, 20 Oct 2026).
@@ -795,8 +890,10 @@ function toRecords(rows: RawRow[]): ParsedRecord[] {
               ...(lacksField("Longitude") ? [longitudeCol] : []),
             ]
           : [];
+    // Columns that only make the structure (`STRUCTURAL_COLUMNS`): not shown on the record, named in the tab report.
+    const structuralRuleCols = STRUCTURAL_COLUMNS.filter((rule) => structuralAppliesTo(rule, kind, `${kind}:${type}`)).flatMap((rule) => rule.names.map((name) => findColumn(row, [name])));
     const structuralCols = new Set(
-      [kindCol, typeCol, idCol, parentIdCol, labelCol, surveyCol, ...occurrenceTrace, ...referenceColumns.map((c) => c.column)].filter((c): c is string => c !== null),
+      [kindCol, typeCol, idCol, parentIdCol, labelCol, surveyCol, ...occurrenceTrace, ...structuralRuleCols, ...referenceColumns.map((c) => c.column)].filter((c): c is string => c !== null),
     );
 
     // A record whose kind:type has a real schema gets exactly that schema's own fields, always
@@ -818,14 +915,26 @@ function toRecords(rows: RawRow[]): ParsedRecord[] {
       // `FIELD_UNITS` are both keyed by our canonical names, so displaying the raw column text
       // instead silently broke both annotations for any real file whose header didn't happen to
       // already match our schema's own wording (i.e. every real file's schema'd fields).
+      // A field is also read from the BDBSA column the crosswalk gives for it on this record type (CAMPNAME for Site Name, LOCMETHODNR for Location
+      // Method): `bdbsaAliasesFor`, 10 Nov 2026. Until then only a column named like the field was matched, and every real BDBSA column fell through.
       for (const field of schemaFieldNames) {
-        const col = findColumn(row, [field, ...(FIELD_ALIASES[field] ?? [])]);
+        const col = findColumn(row, [field, ...(FIELD_ALIASES[field] ?? []), ...bdbsaAliasesFor(`${kind}:${type}`, field)]);
         if (col) matchedCols.add(col);
-        fields.push({ field, value: col ? row[col] : "" });
+        fields.push({ field, value: col ? (isCoordinateField(field) ? normalizeCoordinate(row[col]) : row[col]) : "" });
       }
     }
+    const carried = schemaFieldNames ? carriedFieldsFor(`${kind}:${type}`) : [];
     for (const [key, value] of Object.entries(row)) {
       if (key.startsWith("__") || structuralCols.has(key) || matchedCols.has(key)) continue;
+      // A column of another record type's concept that a real row of this type carries (SITESLOPE on a SITE row): kept under the concept's own
+      // name, flagged, and not an error. See `carriedFieldsFor`.
+      const carry = value ? carried.find((c) => c.columns.some((column) => normalizeHeader(column) === normalizeHeader(key))) : undefined;
+      if (carry) {
+        if (!fields.some((f) => f.field === carry.field)) {
+          fields.push({ field: carry.field, value, flagged: true, note: `${key} is an ${carry.owner.replace(":", " ")} concept, carried on this record` });
+        }
+        continue;
+      }
       if (!schemaFieldNames) {
         // No known schema for this record's kind:type at all (often because Kind/Type are missing
         // entirely, e.g. a raw legacy export with no normalization) - every field here is equally
@@ -864,6 +973,12 @@ function toRecords(rows: RawRow[]): ParsedRecord[] {
 
     const parentId = parentIdCol ? row[parentIdCol] : "";
 
+    // A Site's legacy ID is the three key columns joined: the crosswalk names them as the composite "Legacy Site ID" and says there is no single column.
+    const legacyAt = kind === "Event" && type === "Site" && campmap && quadsite && patchquad ? fields.findIndex((f) => normalizeHeader(f.field) === "legacysiteid") : -1;
+    if (legacyAt >= 0 && fields[legacyAt].value.trim() === "") {
+      fields[legacyAt] = { ...fields[legacyAt], value: `${campmap}-${quadsite}-${padSiteSequence(patchquad)}`, note: "CAMPMAP, QUADSITE and PATCHQUAD joined; BDBSA has no single column for it" };
+    }
+
     return {
       rowNumber: i + 2, // +1 for 0-index, +1 for the header row
       id,
@@ -875,9 +990,9 @@ function toRecords(rows: RawRow[]): ParsedRecord[] {
       errors,
       unresolved: false, // finalised by `validateRecords`
       surveyNumber: surveyCol ? row[surveyCol] : "",
-      easting: eastingCol ? row[eastingCol] : "",
-      northing: northingCol ? row[northingCol] : "",
-      zone: zoneCol ? row[zoneCol] : "",
+      easting: eastingCol ? normalizeCoordinate(row[eastingCol]) : "",
+      northing: northingCol ? normalizeCoordinate(row[northingCol]) : "",
+      zone: zoneCol ? normalizeCoordinate(row[zoneCol]) : "",
       visitDateKey: visitDateCol ? row[visitDateCol] : "",
       siteNaturalKey: campmap && quadsite && patchquad ? `${campmap}-${quadsite}-${padSiteSequence(patchquad)}` : "",
       source: row.__source ?? "",
@@ -1006,6 +1121,23 @@ function linkByReference(input: ParsedRecord[]): { records: ParsedRecord[]; kept
   return { records: linked, keptApart: renamed.size };
 }
 
+// A species row is placed under its Visit by Survey Number, Easting, Northing and the visit date, and all must match exactly (there is no Site number on a species row). When
+// none does, say what was looked for and, as a suggestion only, the nearest Visit that day: a coordinate one digit out is the usual cause. The row is never linked to it.
+function unmatchedVisitNote(r: ParsedRecord, all: ParsedRecord[]): string {
+  const num = (v: string) => Number(v);
+  const where = `Zone ${r.zone || "?"}, Easting ${num(r.easting)}, Northing ${num(r.northing)} on ${r.visitDateKey}`;
+  const sameDay = all.filter((v) => v.kind === "Event" && v.type === "Visit" && v.surveyNumber === r.surveyNumber && v.visitDateKey === r.visitDateKey && v.easting && v.northing);
+  const pool = sameDay.length > 0 ? sameDay : [];
+  let nearest: { v: ParsedRecord; metres: number } | null = null;
+  for (const v of pool) {
+    const metres = Math.hypot(num(v.easting) - num(r.easting), num(v.northing) - num(r.northing));
+    if (!nearest || metres < nearest.metres) nearest = { v, metres };
+  }
+  const base = `No Visit in this file matches ${where}. A species row is placed under its Visit by those and must match exactly.`;
+  if (!nearest) return `${base} No Visit has that date.`;
+  return `${base} The nearest Visit that day is at Easting ${num(nearest.v.easting)}, Northing ${num(nearest.v.northing)}, ${Math.round(nearest.metres)} m away: check this row's coordinates.`;
+}
+
 function resolveNaturalKeyRelationships(records: ParsedRecord[]): ParsedRecord[] {
   const withSiteIds = records.map((r) => {
     if (r.kind === "Event" && r.type === "Site" && !r.id) {
@@ -1020,11 +1152,21 @@ function resolveNaturalKeyRelationships(records: ParsedRecord[]): ParsedRecord[]
     return r;
   });
 
-  const siteByCoord = new Map<string, ParsedRecord>();
+  // The traceback keys (the designer's, ref-domain.md): a Visit finds its Site by Survey Number, Zone, Easting and Northing; a species row finds its Visit by the same
+  // and the visit date. Numbers are compared as numbers (537003 and 537003.000 are one place). The Zone is compared when both sides have one; when either has none the
+  // key is the Survey Number, Easting and Northing, as it was before the Zone was added. Where two records share a key the later one is used, as before.
+  const asNumber = (v: string) => {
+    const n = Number(v);
+    return v.trim() !== "" && Number.isFinite(n) ? String(n) : v.trim();
+  };
+  const sameZone = (a: string, b: string) => !a.trim() || !b.trim() || asNumber(a) === asNumber(b);
+  const placeKey = (r: ParsedRecord) => `${r.surveyNumber.trim()}|${asNumber(r.easting)}|${asNumber(r.northing)}`;
+  const addTo = (index: Map<string, ParsedRecord[]>, key: string, r: ParsedRecord) => index.set(key, [...(index.get(key) ?? []), r]);
+  const findIn = (index: Map<string, ParsedRecord[]>, key: string, zone: string) => [...(index.get(key) ?? [])].reverse().find((c) => sameZone(c.zone, zone));
+
+  const siteByCoord = new Map<string, ParsedRecord[]>();
   for (const r of withSiteIds) {
-    if (r.kind === "Event" && r.type === "Site" && r.easting && r.northing) {
-      siteByCoord.set(`${r.surveyNumber}|${r.easting}|${r.northing}`, r);
-    }
+    if (r.kind === "Event" && r.type === "Site" && r.easting && r.northing) addTo(siteByCoord, placeKey(r), r);
   }
 
   const withVisitIds = withSiteIds.map((r) => {
@@ -1035,24 +1177,23 @@ function resolveNaturalKeyRelationships(records: ParsedRecord[]): ParsedRecord[]
     return r;
   });
 
-  const visitByCoordAndDate = new Map<string, ParsedRecord>();
+  const visitByCoordAndDate = new Map<string, ParsedRecord[]>();
   for (const r of withVisitIds) {
-    if (r.kind === "Event" && r.type === "Visit" && r.easting && r.northing && r.visitDateKey) {
-      visitByCoordAndDate.set(`${r.surveyNumber}|${r.easting}|${r.northing}|${r.visitDateKey}`, r);
-    }
+    if (r.kind === "Event" && r.type === "Visit" && r.easting && r.northing && r.visitDateKey) addTo(visitByCoordAndDate, `${placeKey(r)}|${r.visitDateKey}`, r);
   }
 
   return withVisitIds.map((r) => {
     if (r.parentId) return r; // an explicit relationship always wins - never overridden
 
     if (r.kind === "Event" && r.type === "Visit" && r.easting && r.northing) {
-      const site = siteByCoord.get(`${r.surveyNumber}|${r.easting}|${r.northing}`);
+      const site = findIn(siteByCoord, placeKey(r), r.zone);
       if (site) return { ...r, parentId: site.id, parentVia: "coordinates" };
     }
 
     if (r.kind === "Occurrence" && r.easting && r.northing && r.visitDateKey) {
-      const visit = visitByCoordAndDate.get(`${r.surveyNumber}|${r.easting}|${r.northing}|${r.visitDateKey}`);
+      const visit = findIn(visitByCoordAndDate, `${placeKey(r)}|${r.visitDateKey}`, r.zone);
       if (visit) return { ...r, parentId: visit.id, parentVia: "coordinates and date" };
+      return { ...r, linkNote: unmatchedVisitNote(r, withVisitIds) };
     }
 
     return r;
@@ -1084,8 +1225,8 @@ function validateRecords(records: ParsedRecord[]): ParsedRecord[] {
     // Species data has no Type column at all (see `/config/data-model`'s Known Gaps), yet its Kind,
     // and therefore where it belongs, can still be confirmed via `resolveNaturalKeyRelationships`'s
     // coordinate+date traceback. So Type problems stay real, visible errors - just not an
-    // `unresolved` trigger on their own. (The one placement rule that does need Type - "a Site
-    // can't be a child of a Visit" - simply can't be evaluated when Type is unknown, and correctly
+    // `unresolved` trigger on their own. (The one placement rule that does need Type - "a Block
+    // can't have a Ramble" - simply can't be evaluated when Type is unknown, and correctly
     // doesn't fire rather than guessing.)
     if (!r.kind) {
       if (!errors.some((e) => e.includes("Kind"))) errors.push("Missing Kind");
@@ -1097,6 +1238,12 @@ function validateRecords(records: ParsedRecord[]): ParsedRecord[] {
       errors.push("Missing Type");
     } else if (!VALID_TYPES_BY_KIND[r.kind].includes(r.type)) {
       errors.push(`"${r.type}" isn't a valid ${r.kind} type - expected ${VALID_TYPES_BY_KIND[r.kind].join(", ")}`);
+    }
+
+    // A field the type's frame makes compulsory (Location Comment on Opportune and Point intercept) must have a value.
+    for (const field of REQUIRED_FIELDS[`${r.kind}:${r.type}`] ?? []) {
+      const value = r.fields.find((f) => normalizeHeader(f.field) === normalizeHeader(field))?.value ?? "";
+      if (!value.trim()) errors.push(`"${field}" is required on ${/^[aeiou]/i.test(r.type) ? "an" : "a"} ${r.type}`);
     }
 
     if (r.parentId) {
@@ -1123,13 +1270,18 @@ function validateRecords(records: ParsedRecord[]): ParsedRecord[] {
           errors.push(`An Event's parent must be another Event, not ${parent.kind || "unknown"}`);
           unresolved = true;
         }
-        if (r.type === "Site" && parent.type === "Visit") {
-          errors.push(`A Site cannot be a child of a Visit ("${r.parentId}")`);
+        // Any event can have any event (the business, 10 Nov 2026), except that a Block can't have a Ramble.
+        if (r.kind === "Event" && parent.kind === "Event" && isEventNestingBlocked(parent.type, r.type)) {
+          errors.push(`A ${r.type} can't sit inside a ${parent.type} ("${r.parentId}")`);
           unresolved = true;
         }
       }
     } else if (r.kind === "Occurrence" || r.kind === "Observation") {
-      errors.push(`${r.kind} records need a Parent ID - they can't sit at the root`);
+      errors.push(r.linkNote ?? `${r.kind} records need a Parent ID - they can't sit at the root`);
+      unresolved = true;
+    } else if (r.kind === "Event" && r.type === "Point intercept") {
+      // The Point intercept frame: it must be a child event. Under any event is fine (a Site and a Visit too); directly under the Project is not.
+      errors.push("A Point intercept must sit inside another event");
       unresolved = true;
     }
 
@@ -1152,6 +1304,57 @@ function validateRecords(records: ParsedRecord[]): ParsedRecord[] {
     }
   }
   return validated.map((r) => checked.get(r.rowNumber) ?? r);
+}
+
+// "If an event, occurrence, observation name field doesn't have a name, then default the type of the event + sq number (auto-gen)" - the business,
+// 10 Nov 2026. Run once on the finished records (after linking, so a made-up name is never taken for a pointer to the record). The number is the
+// record's place among the records of its own kind and type in the upload ("Visit 7" is the seventh Visit), so two never share one. An event is
+// "<Type> <n>" ("Opportune 1"); an occurrence or observation says which it is ("Population occurrence 3", "Community observation 12"), because
+// Individual and Population are both. A name the file gave is never replaced, and a type with no Name field in its template is left alone.
+function nameFieldFor(kind: string, type: string): string | null {
+  if (kind === "Event") return type ? `${type} Name` : null;
+  if (kind === "Occurrence") return "Occurrence Name";
+  if (kind === "Observation") return "Observation Name";
+  return null;
+}
+
+function applyDefaultNames(records: ParsedRecord[]): ParsedRecord[] {
+  const seen = new Map<string, number>();
+  return records.map((r) => {
+    const nameField = nameFieldFor(r.kind, r.type);
+    if (!nameField || !r.type) return r;
+    const key = `${r.kind}:${r.type}`;
+    const n = (seen.get(key) ?? 0) + 1;
+    seen.set(key, n);
+    const at = r.fields.findIndex((f) => normalizeHeader(f.field) === normalizeHeader(nameField));
+    if (at < 0 || r.fields[at].value.trim() !== "") return r;
+    const value = r.kind === "Event" ? `${r.type} ${n}` : `${r.type} ${r.kind.toLowerCase()} ${n}`;
+    const fields = r.fields.map((f, i) => (i === at ? { ...f, value, note: "auto-named: the type and a sequence number, because the file gave no name" } : f));
+    return { ...r, fields };
+  });
+}
+
+// "If not specified inherit from parent" (the Opportune and Point intercept frames' Temporal note): a Start Date left out takes the parent event's, which may
+// itself have been inherited. Only an Event parent has one (the Project has none), and a parent with no start date gives nothing: a date is never made up.
+// Runs on the finished records; the JSON comment says "inherited".
+function applyInheritedStartDates(records: ParsedRecord[]): ParsedRecord[] {
+  const byId = new Map<string, ParsedRecord>();
+  for (const r of records) if (r.id && !byId.has(r.id)) byId.set(r.id, r);
+  const startOf = (r: ParsedRecord, depth = 0): string => {
+    const own = r.fields.find((f) => normalizeHeader(f.field) === "startdate")?.value.trim() ?? "";
+    if (own || depth > 20 || !INHERITS_START_DATE.has(`${r.kind}:${r.type}`)) return own;
+    const parent = r.parentId ? byId.get(r.parentId) : undefined;
+    return parent && parent.kind === "Event" ? startOf(parent, depth + 1) : "";
+  };
+  return records.map((r) => {
+    if (!INHERITS_START_DATE.has(`${r.kind}:${r.type}`)) return r;
+    const at = r.fields.findIndex((f) => normalizeHeader(f.field) === "startdate");
+    if (at < 0 || r.fields[at].value.trim() !== "") return r;
+    const parent = r.parentId ? byId.get(r.parentId) : undefined;
+    const value = parent && parent.kind === "Event" ? startOf(parent) : "";
+    if (!value) return r;
+    return { ...r, fields: r.fields.map((f, i) => (i === at ? { ...f, value, note: `inherited from the parent event ${parent?.label || parent?.id}, because no start date was given` } : f)) };
+  });
 }
 
 // ── Structure - not just "is each row individually valid," but "does the file actually assemble
@@ -1234,6 +1437,8 @@ interface IngestedNode {
   label: string;
   fields: Record<string, string>;
   flaggedFields: string[];
+  // Per-field lines for the JSON comment (a carried value's origin, an auto-made name), keyed by field name.
+  fieldNotes: Record<string, string>;
   children: IngestedNode[];
 }
 
@@ -1245,6 +1450,7 @@ function toIngestedJson(nodes: TreeNode[]): IngestedNode[] {
     label: n.record.label,
     fields: Object.fromEntries(n.record.fields.map((f) => [f.field, f.value])),
     flaggedFields: n.record.fields.filter((f) => f.flagged).map((f) => f.field),
+    fieldNotes: Object.fromEntries(n.record.fields.filter((f) => f.note).map((f) => [f.field, f.note as string])),
     children: toIngestedJson(n.children),
   }));
 }
@@ -1294,6 +1500,7 @@ function toTemplateNode(node: IngestedNode): IngestedNode {
     label: "",
     fields: Object.fromEntries(Object.keys(node.fields).map((field) => [field, ""])),
     flaggedFields: node.flaggedFields,
+    fieldNotes: {},
     children: node.children.map(toTemplateNode),
   };
 }
@@ -1319,7 +1526,7 @@ function toTemplateProject(project: IngestedProject): IngestedProject {
 // (gms) - let's just keep Weight... handle that in the units bit in the json," per the user
 // directly. Units used to be baked into the field name itself; now the name always matches the
 // real column exactly, and the unit is this separate, explicit `// Unit: gms` note instead.
-function serializeIngestedFields(fields: Record<string, string>, flaggedFields: string[], kind: string, type: string, indent: string): string {
+function serializeIngestedFields(fields: Record<string, string>, flaggedFields: string[], fieldNotes: Record<string, string>, kind: string, type: string, indent: string): string {
   const entries = Object.entries(fields);
   if (entries.length === 0) return "{}";
   const crosswalk = BDBSA_KEY_CROSSWALK[`${kind}:${type}`];
@@ -1328,7 +1535,14 @@ function serializeIngestedFields(fields: Record<string, string>, flaggedFields: 
     const comma = i < entries.length - 1 ? "," : "";
     const notes: string[] = [];
     if (flaggedFields.includes(key)) notes.push("double check this");
-    if (crosswalk && key in crosswalk) notes.push(crosswalk[key] ? `BDBSA: ${crosswalk[key]}` : "BDBSA: no equivalent found");
+    if (fieldNotes[key]) notes.push(fieldNotes[key]);
+    // A column read for this field that the crosswalk does not list (VISITDATE beside EDITED_VISIT, OBSDATE where the crosswalk had no equivalent).
+    const crosswalkText = crosswalk?.[key] ?? "";
+    const readAlso = bdbsaAliasesFor(`${kind}:${type}`, key).filter((column) => !crosswalkText.includes(column));
+    if (crosswalk && key in crosswalk) {
+      if (crosswalkText) notes.push(`BDBSA: ${crosswalkText}${readAlso.length > 0 ? `, also read from ${readAlso.join(", ")}` : ""}`);
+      else notes.push(readAlso.length > 0 ? `BDBSA: read from ${readAlso.join(", ")} (the crosswalk had no equivalent)` : "BDBSA: no equivalent found");
+    } else if (readAlso.length > 0) notes.push(`BDBSA: read from ${readAlso.join(", ")} (matched by name, not in the crosswalk)`);
     // The 20/10 check, beside the confirmed code and marked as reported where no file we hold shows it.
     const reported = reportedCodesFor(`${kind}:${type}`, key);
     if (reported) notes.push(`BDBSA 20/10 check: ${reportedCodesText(reported)}${reported.codes.some((c) => c.seenIn.length > 0) ? "" : " (reported, not seen in a file we hold)"}`);
@@ -1353,7 +1567,7 @@ function serializeIngestedNode(node: IngestedNode, indent: string): string {
     `${inner}"kind": ${JSON.stringify(node.kind)},\n` +
     `${inner}"type": ${JSON.stringify(node.type)},\n` +
     `${inner}"label": ${JSON.stringify(node.label)},\n` +
-    `${inner}"fields": ${serializeIngestedFields(node.fields, node.flaggedFields, node.kind, node.type, inner)},\n` +
+    `${inner}"fields": ${serializeIngestedFields(node.fields, node.flaggedFields, node.fieldNotes, node.kind, node.type, inner)},\n` +
     `${inner}"children": ${serializeIngestedChildren(node.children, inner)}\n` +
     `${indent}}`
   );
@@ -1442,6 +1656,7 @@ function normalizeIngestedNode(raw: unknown): IngestedNode {
     label: typeof obj.label === "string" ? obj.label : "",
     fields: Object.fromEntries(Object.entries(rawFields).map(([k, v]) => [k, v == null ? "" : String(v)])),
     flaggedFields: [], // a hand-edited/pasted JSON was already reviewed once - no re-flagging on Save
+    fieldNotes: {},
     children: Array.isArray(obj.children) ? obj.children.map(normalizeIngestedNode) : [],
   };
 }
@@ -1594,6 +1809,10 @@ const SAMPLE_ROWS: SampleRow[] = [
   },
   { Kind: "Occurrence", Type: "Individual", ID: "OCC094", "Parent ID": "SU00501", Label: "Occurrence OBS094 - Individual", Species: "Yellow-footed Antechinus" },
   { Kind: "Event", Type: "Transect", ID: "TR00501", "Parent ID": "SU00501", Label: "Transect TR00501" },
+  // Any event can have any event: a sub-event (a Point intercept inside a Transect), and the business's two new types.
+  { Kind: "Event", Type: "Point intercept", ID: "PI00501", "Parent ID": "TR00501", Label: "Point intercept PI00501", "Location Comment": "Marked by the second stake" },
+  { Kind: "Event", Type: "Opportune", ID: "OP00501", "Parent ID": "SU00501", Label: "Opportune OP00501", "Location Comment": "Beside the Site gate" },
+  { Kind: "Event", Type: "Block", ID: "BK00501", "Parent ID": "SU00501", Label: "Block BK00501" },
   {
     Kind: "Observation",
     Type: "Individual",
@@ -1661,7 +1880,7 @@ const SAMPLE_ROWS: SampleRow[] = [
   // record. Labels here match the same plain naming convention as every good row above; what each
   // one actually tests is documented in the comment beside it, never in a field the UI renders.
   { Kind: "Occurrence", Type: "Population", ID: "OCC777", Label: "Occurrence OCC777 - Population" }, // Occurrences can't sit at the root - no Parent ID
-  { Kind: "Event", Type: "Site", ID: "BADSITE", "Parent ID": "VU00501", Label: "Site SU00888" }, // a Site can't be a child of a Visit
+  { Kind: "Event", Type: "Ramble", ID: "RMB00502", "Parent ID": "BK00501", Label: "Ramble RMB00502" }, // a Block can't have a Ramble
   { Kind: "Observation", Type: "Flying", ID: "OBSBAD", "Parent ID": "SU00501", Label: "Observation OBSBAD" }, // "Flying" isn't a real Observation type
   { Kind: "Event", Type: "Site", ID: "SU00501", Label: "Site SU00501" }, // duplicate ID - a real data-entry mistake looks identical to the original
   { Kind: "Event", Type: "Quadrat", ID: "QR00501", "Parent ID": "OBS094", Label: "Quadrat QR00501" }, // an Event's parent must be another Event, not an Observation
@@ -2156,6 +2375,7 @@ function SourceReportCard({
           <Column id="role">Read as</Column>
           <Column id="basis">Because</Column>
           <Column id="placed">Placed</Column>
+          <Column id="structure">Columns used for the structure, and not used</Column>
         </TableHeader>
         <TableBody items={reports}>
           {(r) => (
@@ -2169,6 +2389,30 @@ function SourceReportCard({
               </Cell>
               <Cell>{r.reason}</Cell>
               <Cell>{r.read ? (r.via === "template" && !placements.has(r.label) ? "Read into the rows below" : placements.get(r.label)) || <span className="text-quaternary">-</span> : "Left out"}</Cell>
+              <Cell>
+                {r.structure ? (
+                  <div className="flex flex-col gap-2 text-xs text-tertiary">
+                    {r.structure.used.length > 0 && (
+                      <div className="flex flex-col gap-1">
+                        <span className="font-medium text-secondary">Used for the structure</span>
+                        {r.structure.used.map((line) => (
+                          <span key={line} className="text-balance">{line}</span>
+                        ))}
+                      </div>
+                    )}
+                    {r.structure.unused.length > 0 && (
+                      <div className="flex flex-col gap-1">
+                        <span className="font-medium text-secondary">Not used</span>
+                        {r.structure.unused.map((line) => (
+                          <span key={line} className="text-balance">{line}</span>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <span className="text-quaternary">-</span>
+                )}
+              </Cell>
             </Row>
           )}
         </TableBody>
@@ -2352,7 +2596,12 @@ function RecordCard({ record, nestedCounts }: { record: ParsedRecord; nestedCoun
           <TableBody items={record.fields}>
             {(f) => (
               <Row id={f.field}>
-                <Cell>{f.field}</Cell>
+                <Cell>
+                  <span className="flex items-center gap-1">
+                    {f.field}
+                    <ConceptHelp concept={f.field} />
+                  </span>
+                </Cell>
                 <Cell>{f.value || <span className="text-quaternary">-</span>}</Cell>
               </Row>
             )}
@@ -2400,7 +2649,7 @@ function StressTest() {
     // `ParsedRecord` - see that function's own comment for why (synthetic Occurrence/Observation IDs
     // only need to be unique within this one call).
     const linked = linkByReference(toRecords(expandSpeciesOccurrences(rows)));
-    setRecords(validateRecords(resolveNaturalKeyRelationships(linked.records)));
+    setRecords(applyInheritedStartDates(applyDefaultNames(validateRecords(resolveNaturalKeyRelationships(linked.records)))));
     setSourceReports(reports);
     setTemplates(converted);
     setKeptApart(linked.keptApart);

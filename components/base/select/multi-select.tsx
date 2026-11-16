@@ -44,10 +44,13 @@ const popoverMaxHeights = {
 };
 
 // The field's height with nothing chosen, so the first pill does not move the rows below it.
+// `pills`: the pills sit the same distance from the field's left, top and bottom edges, and from each other (4px; 6px at lg). Until 11 Nov 2026
+// they kept the text's 12px on the left with 4px above and below, so a wrapped field looked lopsided. `pillsPadding` is that left inset, used in
+// place of `padding` while pills are shown; the placeholder and a single value keep the text's own inset.
 const triggerSizes = {
-    sm: { height: "min-h-9", padding: "pl-3", chevron: "h-9 pr-2.5", pills: "py-1" },
-    md: { height: "min-h-10", padding: "pl-3", chevron: "h-10 pr-3", pills: "py-1" },
-    lg: { height: "min-h-11", padding: "pl-3.5", chevron: "h-11 pr-3.5", pills: "py-1.5" },
+    sm: { height: "min-h-9", padding: "pl-3", chevron: "h-9 pr-2.5", pills: "gap-1 py-1", pillsPadding: "pl-1" },
+    md: { height: "min-h-10", padding: "pl-3", chevron: "h-10 pr-3", pills: "gap-1 py-1", pillsPadding: "pl-1" },
+    lg: { height: "min-h-11", padding: "pl-3.5", chevron: "h-11 pr-3.5", pills: "gap-1.5 py-1.5", pillsPadding: "pl-1.5" },
 };
 
 interface MultiSelectHeaderProps {
@@ -342,7 +345,7 @@ const MultiSelectRoot = ({
                             className={cx(
                                 "pointer-events-none relative flex min-w-0 flex-1 items-center truncate text-left",
                                 triggerSizes[size].height,
-                                triggerSizes[size].padding,
+                                !single && hasSelection && showSelectedBadges ? triggerSizes[size].pillsPadding : triggerSizes[size].padding,
                             )}
                         >
                             {single && selectedItem ? (
@@ -358,7 +361,7 @@ const MultiSelectRoot = ({
                                     inert={isDisabled}
                                     aria-label={name ? `${name}, selected` : "Selected"}
                                     className={cx(
-                                        "m-0 flex min-w-0 list-none flex-wrap gap-x-1.5 gap-y-1 p-0 [&_button]:pointer-events-auto",
+                                        "m-0 flex min-w-0 list-none flex-wrap p-0 [&_button]:pointer-events-auto",
                                         triggerSizes[size].pills,
                                     )}
                                 >

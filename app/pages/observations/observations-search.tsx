@@ -18,7 +18,7 @@ import type { Map as LeafletMap } from "leaflet";
 import { ArrowNarrowRight, Circle, Download01, File07, FileDownload01, FileLock01, Folder, Map02, MarkerPin02, Pentagon, Plus, Printer, RefreshCcw01, SearchLg, Upload01, UserPlus01, XClose } from "@untitledui/icons";
 import { Button } from "@/components/base/buttons/button";
 import { Dropdown } from "@/components/base/dropdown/dropdown";
-import { Badge, CountBadge } from "@/components/base/badges/badges";
+import { Badge } from "@/components/base/badges/badges";
 import { Input } from "@/components/base/input/input";
 import { InputNumber } from "@/components/base/input/input-number";
 import { InputFile } from "@/components/base/input/input-file";
@@ -61,6 +61,7 @@ import { useUserRole } from "@/lib/use-user-role";
 import { useRoleHref } from "@/lib/use-role-href";
 import { navForRole, keyHref, type NavNode } from "@/lib/registered-user-nav";
 import { cx } from "@/utils/cx";
+import { MAP_CONTROLS_Z_INDEX } from "@/lib/layers";
 
 // The map search interface built for the sidebar's Observations item, per direct request: a real,
 // interactive map of South Australia (Leaflet + OpenStreetMap tiles, not a fabricated grid) that
@@ -611,17 +612,6 @@ function ObservationsSearch() {
 
   const filteredProjects = useMemo(() => searchEvents.filter((e) => e.type === "Project" && matchingProjectIds.has(e.id)), [matchingProjectIds]);
 
-  const filteredEvents = useMemo(
-    () =>
-      searchEvents.filter(
-        (e) =>
-          e.type !== "Project" &&
-          isPointInAnyBoundary([e.lat, e.lon], boundaries) &&
-          matchesKeyword(`${e.name} ${e.type} ${e.org}`, keyword) &&
-          matchingProjectIds.has(rootProjectOfEvent(e).id),
-      ),
-    [boundaries, keyword, matchingProjectIds],
-  );
   const filteredOccurrences = useMemo(
     () =>
       visibleOccurrences.filter(
@@ -632,28 +622,9 @@ function ObservationsSearch() {
       ),
     [boundaries, keyword, matchingProjectIds, visibleOccurrences, role],
   );
-  const filteredObservations = useMemo(
-    () =>
-      visibleObservations.filter(
-        (o) =>
-          isRecordInAnyBoundary(o.lat, o.lon, generalisedKm(o, role), boundaries) &&
-          matchesKeyword(`${o.species} ${o.observerName} ${o.type}`, keyword) &&
-          matchingProjectIds.has(rootProjectForParentEventId(o.parentEventId)?.id ?? ""),
-      ),
-    [boundaries, keyword, matchingProjectIds, visibleObservations, role],
-  );
-  const filteredResources = useMemo(
-    () =>
-      visibleResources.filter(
-        (r) =>
-          isRecordInAnyBoundary(r.lat, r.lon, artefactGeneralisedKm(r, role), boundaries) &&
-          matchesKeyword(`${r.name} ${r.recordName} ${r.attachedToConcept}`, keyword) &&
-          matchingProjectIds.has(rootProjectForParentEventId(r.parentEventId)?.id ?? ""),
-      ),
-    [boundaries, keyword, matchingProjectIds, visibleResources, role],
-  );
+  // The events, observations and artefacts the search found were filtered here only to be counted in the heading; the card stopped listing them on 23 Oct 2026
+  // and the heading stopped counting them on 11 Nov 2026 (it is now Species plus Projects), so those three lists are gone.
 
-  const totalCount = filteredProjects.length + filteredEvents.length + filteredOccurrences.length + filteredObservations.length + filteredResources.length;
 
   // Same real behaviour the top-level DLA banner's own "Go to DLA"/"Sign up for access" CTA
   // already uses (see the AlertFullWidth below) - pulled out so Species mode's own DLA notice and
@@ -791,7 +762,8 @@ function ObservationsSearch() {
           onChange={(files) => files && files.length > 0 && handleShapefileUpload(Array.from(files))}
           className="min-w-0 flex-1"
         />
-        <InputNumber size="sm" label="Radius (km)" value={shapefileRadius} minValue={1} maxValue={100} step={1} onChange={(v) => setShapefileRadius(v || 1)} className={radiusClass} />
+        {/* The file field is the medium height (40px: its button is the design system's group button), so the Radius beside it is too; it was the small one, 4px shorter. */}
+        <InputNumber size="md" label="Radius (km)" value={shapefileRadius} minValue={1} maxValue={100} step={1} onChange={(v) => setShapefileRadius(v || 1)} className={radiusClass} />
       </div>
     </>
   );
@@ -915,6 +887,9 @@ function ObservationsSearch() {
     { id: "species", label: "Species", count: speciesRows.length },
     { id: "projects", label: "Projects", count: filteredProjects.length },
   ];
+  // The heading's count is the two tabs' counts added up: what the card lists (the designer, 11 Nov 2026: "should be species plus projects"). Until then it
+  // still summed projects, events, occurrences, observations and artefacts, the kinds the card stopped listing on 23 Oct 2026, so it read 55 over 13 and 4.
+  const totalCount = panelTabs.reduce((sum, tab) => sum + tab.count, 0);
 
   // Cards for the current view. `markerId` ties a card to its dot on the map.
   interface CardItem {
@@ -1090,7 +1065,7 @@ function ObservationsSearch() {
       {addingMethod !== "location" && (
         <div className="flex items-center justify-between gap-2">
           <p className="text-sm font-semibold text-primary">{addAreaTitle[addingMethod]}</p>
-          <Button color="link-gray" size="sm" onPress={cancelAdding}>
+          <Button color="tertiary" size="sm" iconLeading={XClose} onPress={cancelAdding}>
             Cancel
           </Button>
         </div>
@@ -1132,6 +1107,7 @@ function ObservationsSearch() {
         markers={mapMarkers}
         onMarkerClick={onMarkerClick}
         highlightedMarkerId={hoveredMarkerId ?? selectedMarkerId}
+        dimUnhighlighted
         highlightedBoundaryIds={highlightedBoundaryIds}
         fitRequest={fitRequest}
         onBoundaryHover={(boundaryId) => setHoveredLayerId(boundaryId ? (layerOfBoundary.get(boundaryId) ?? null) : null)}
@@ -1170,7 +1146,7 @@ function ObservationsSearch() {
           side (below 648px) the right column moves under the left one. The bottom padding keeps the map's scale bar
           (bottom-left) and attribution (bottom-right) clear. The layer lets clicks through to the
           map; each panel takes its own. */}
-      <div className="pointer-events-none absolute inset-0 z-[1000] @container">
+      <div className={cx("pointer-events-none absolute inset-0 @container", MAP_CONTROLS_Z_INDEX)}>
         <div className="flex size-full flex-col gap-4 p-4 pb-9">
         <div className="flex min-h-0 flex-1 flex-col gap-4 @min-[648px]:flex-row">
       {/* One fixed width, whatever the state: empty, searching, results, a key or none. The card used to
@@ -1208,7 +1184,11 @@ function ObservationsSearch() {
             <div className="flex items-center justify-between gap-3">
               <h3 className="m-0! flex items-center gap-2 text-xs! font-semibold! tracking-wide! text-quaternary! uppercase">
                 Search results
-                <CountBadge count={totalCount} />
+                {/* The count as the tabs under it draw theirs (the design system's small grey pill): two counts a few pixels apart read as one kind of thing (the designer, 11 Nov 2026:
+                    "count treatment to be consistent across"). It was the bare `CountBadge`. */}
+                <Badge size="sm" type="pill-color" color="gray" className="min-w-5 justify-center py-1 tabular-nums">
+                  {totalCount}
+                </Badge>
               </h3>
               <ListToggleButton open={listOpen} onToggle={toggleList} controls="explore-results-list" />
             </div>

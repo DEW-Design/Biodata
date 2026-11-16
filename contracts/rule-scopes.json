@@ -22,7 +22,10 @@
       "paths": [
         "app/pages/**",
         "lib/create-menu.ts",
+        "lib/create-context.ts",
         "lib/registered-user-nav.ts",
+        "lib/page-access.ts",
+        "lib/use-can-open.ts",
         "config/role-access.config.ts"
       ],
       "summary": "The persona shell and page patterns: header, rail, columns, forms, lists, record pages, floating panels."
@@ -92,6 +95,7 @@
     "2.15": "build",
     "2.16": "build",
     "2.17": "build",
+    "2.18": "build",
     "2.7": "components",
     "2.8": "shell",
     "3.1": "shell",
@@ -106,6 +110,8 @@
     "3.11": "shell",
     "3.12": "build",
     "3.13": "shell",
+    "3.14": "prototyping",
+    "3.15": "shell",
     "3.9": "docs",
     "4.1": "shell",
     "4.2": "shell",

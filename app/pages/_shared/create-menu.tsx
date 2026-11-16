@@ -2,17 +2,20 @@
 
 import { useState, type FC } from "react";
 import { usePathname, useRouter } from "next/navigation";
+import { SubmenuTrigger } from "react-aria-components";
 import { Bell01, ChevronDown, Database01, Feather, FileCheck02, FileLock01, Folder, Plus, Upload01, UserPlus01 } from "@untitledui/icons";
 import { Button } from "@/components/base/buttons/button";
 import { Dropdown } from "@/components/base/dropdown/dropdown";
 import { ChooseProjectModal } from "@/app/pages/_shared/dataset-upload/choose-project-modal";
 import { createMenuItemsForRole, type CreateItemId } from "@/lib/create-menu";
+import { useCurrentCreateContext } from "@/lib/create-context";
 import { useRoleHref } from "@/lib/use-role-href";
 import { useUserRole } from "@/lib/use-user-role";
 
 // The header's single "Add" button (Jira-style "+ Create"): one control that opens the things this
 // persona can create - a project, a DLA request, a DSA - instead of a separate button per thing.
-// What appears comes from `lib/create-menu.ts` and the role-access matrix.
+// What appears comes from `lib/create-menu.ts` and the role-access matrix, and, on a page that says what can be
+// added there (`useCreateContext`, lib/create-context.ts), that page's own items first (CONTRACTS 3.5).
 //
 // A guest gets nothing here, not a visible-but-gated button - reversed per direct feedback back to
 // the earlier "hidden outright" behaviour (the same button + sign-up-invite version was tried and
@@ -35,14 +38,20 @@ export function CreateMenu() {
   const roleHref = useRoleHref();
   const pathname = usePathname();
   const [chooseProject, setChooseProject] = useState(false);
+  // What the page you are on can add (lib/create-context.ts): listed first, under the page's own heading. The general list follows a divider, without the
+  // items the page's own stand in for (on a project, its own "Dataset" for the one that asks which project).
+  const context = useCurrentCreateContext();
 
   if (role === "public-user") return null;
 
-  const items = createMenuItemsForRole(role);
+  const here = context && context.items.length > 0 ? context : null;
+  const items = createMenuItemsForRole(role).filter((item) => !here?.replaces?.includes(item.id));
   // On a project's own pages (/pages/project-list/<id>/...) that project is already the answer to
   // "which project is this dataset for?".
   // Adelaide Hills' own page is /pages/project-detail.
   const currentProjectId = pathname === "/pages/project-detail" ? "adelaide-hills" : pathname.match(/^\/pages\/project-list\/([^/]+)\//)?.[1];
+  const general = items.map((item) => <Dropdown.Item key={item.id} id={item.id} icon={itemIcons[item.id]} label={item.label} />);
+  const heading = "px-2.5 pt-1.5 pb-1 text-xs font-semibold text-quaternary";
   return (
     <>
       <Dropdown.Root>
@@ -53,15 +62,42 @@ export function CreateMenu() {
           <Dropdown.Menu
             aria-label="Add"
             onAction={(key) => {
+              const own = here?.items.find((i) => `here:${i.id}` === key);
+              if (own) return here?.onAction(own.id);
               const item = items.find((i) => i.id === key);
               if (!item) return;
               if (item.id === "dataset") setChooseProject(true);
               else if (item.href) router.push(roleHref(item.href));
             }}
           >
-            {items.map((item) => (
-              <Dropdown.Item key={item.id} id={item.id} icon={itemIcons[item.id]} label={item.label} />
-            ))}
+            {here ? (
+              <>
+                <Dropdown.Section>
+                  <Dropdown.SectionHeader className={heading}>{here.title}</Dropdown.SectionHeader>
+                  {here.items.map((item) =>
+                    item.children ? (
+                      // An item with types opens them beside it, as the record's own Add menu does.
+                      <SubmenuTrigger key={item.id}>
+                        <Dropdown.Item id={`here:${item.id}`} icon={item.icon} label={item.label} />
+                        <Dropdown.Popover placement="start top" className="w-52">
+                          <Dropdown.Menu aria-label={`Add ${item.label.toLowerCase()}`} onAction={(key) => here.onAction(item.id, String(key))}>
+                            {item.children.map((child) => (
+                              <Dropdown.Item key={child.id} id={child.id} label={child.label} />
+                            ))}
+                          </Dropdown.Menu>
+                        </Dropdown.Popover>
+                      </SubmenuTrigger>
+                    ) : (
+                      <Dropdown.Item key={item.id} id={`here:${item.id}`} icon={item.icon} label={item.label} />
+                    ),
+                  )}
+                </Dropdown.Section>
+                {general.length > 0 && <Dropdown.Separator />}
+                {general}
+              </>
+            ) : (
+              general
+            )}
           </Dropdown.Menu>
         </Dropdown.Popover>
       </Dropdown.Root>

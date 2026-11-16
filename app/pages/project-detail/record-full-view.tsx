@@ -35,14 +35,17 @@ import { Button } from "@/components/base/buttons/button";
 import { Tooltip, TooltipTrigger } from "@/components/base/tooltip/tooltip";
 import { SpeciesPhoto } from "@/app/pages/_shared/map-search/species-photo";
 import { cx } from "@/utils/cx";
+import { useSampleContent } from "@/app/_prototype-tools/sample-content";
 import { useEditStore } from "./edit-store";
-import { fromDraft, missingFor, toDraft, type Draft } from "./record-form";
+import { fromDraft, localId, missingFor, toDraft, type Draft } from "./record-form";
+import { sampleRecord, type RecordSample } from "./record-sample";
 import { RecordIcon, recordIcon } from "./record-inspector";
 import { typeLabel } from "@/app/pages/_shared/record-shapes";
 import { RecordQuickActions } from "./record-quick-actions";
 import { type ChildOption } from "./record-rules";
 import {
   formatDate,
+  type MetaRow,
   type MetaSection,
   type SurveyRecord,
 } from "./survey-data";
@@ -56,7 +59,6 @@ import {
   type FieldNotes,
 } from "./field-notes-store";
 import {
-  REQUIRED_FIELD,
   emptyFieldKeys,
   isSectionShown,
   sectionHasContent,
@@ -113,10 +115,17 @@ function SummaryRow({
   );
 }
 
+/** The row that says who recorded: in the Observers section, or in Details for an Opportune and a Point intercept. */
+function observersEntry(record: SurveyRecord): { key: string; row: MetaRow } | undefined {
+  for (const s of record.sections) {
+    const row = s.rows?.find((r) => r.term === "recordedBy");
+    if (row) return { key: `${s.id}:${row.label}`, row };
+  }
+  return undefined;
+}
+
 function observerNames(record: SurveyRecord): string[] {
-  const row = record.sections
-    .find((s) => s.id === "observers")
-    ?.rows?.find((r) => r.label === "Recorded by");
+  const row = observersEntry(record)?.row;
   if (!row || !row.value || row.value === "Not provided") return [];
   return row.value
     .split("|")
@@ -307,12 +316,8 @@ export function RecordFullView({
 
   const begin = (target: EditTarget): Session => {
     // Empty concepts start hidden: they are added by ticking them in the section's Manage concepts checklist.
-    const hidden = new Set([
-      ...savedHidden,
-      ...[...emptyFieldKeys(record)].filter(
-        (k) => !REQUIRED_FIELD.test(k.slice(k.indexOf(":") + 1)),
-      ),
-    ]);
+    const locked = new Set(record.sections.flatMap((x) => sectionFieldEntries(x)).filter((f) => f.locked).map((f) => f.key));
+    const hidden = new Set([...savedHidden, ...[...emptyFieldKeys(record)].filter((k) => !locked.has(k))]);
     const added = target.addSection ? record.sections.find((x) => x.id === target.sectionId) : undefined;
     if (added) {
       hidden.delete(sectionKey(added.id));
@@ -335,6 +340,14 @@ export function RecordFullView({
         ? begin(initialEdit)
         : null,
   );
+  // The Pre-fill sample content switch (Prototype tools): every question the new record asks, with every concept shown. Only a record being added has it.
+  const sampled: RecordSample | null = session ? { draft: session.draft, hidden: session.hidden, notes: session.notes } : null;
+  const sampleKey = useSampleContent<RecordSample | null>({
+    value: sampled,
+    onChange: (next) => next && setSession((s) => (s ? { ...s, ...next, dirty: true } : s)),
+    sample: () => sampled && sampleRecord(sampled, localId),
+    enabled: isNew && session !== null,
+  });
   const [confirm, setConfirm] = useState<null | "cancel" | "exit">(null);
   // A section added from "+" may sit far down the record: once it is drawn, take the eye to it.
   const [reveal, setReveal] = useState<string | null>(initialEdit?.addSection ? initialEdit.sectionId : null);
@@ -442,7 +455,7 @@ export function RecordFullView({
         ?.scrollIntoView({ block: "start", behavior: "smooth" });
       return;
     }
-    const next = fromDraft(session.draft);
+    const next = fromDraft(session.draft, store.records);
     if (isNew) store.addRecord(next);
     else store.saveRecord(next);
     fieldNotesActions.setRecordNotes(record.id, session.notes);
@@ -579,6 +592,7 @@ export function RecordFullView({
               record={record}
               onAdd={(o) => onAdd(record, o)}
               onEdit={() => startEdit(ALL)}
+              onDuplicate={onAdd}
               onDelete={del.ask}
               sections={offRecord}
               onAddSection={(id) => {
@@ -731,6 +745,7 @@ export function RecordFullView({
                         </div>
                       )}
                     <CardEditor
+                      key={sampleKey}
                       section={
                         session.draft.record.sections.find(
                           (s) => s.id === section.id,
@@ -788,7 +803,7 @@ export function RecordFullView({
                 {/* The first name and a count; the full list is one click away in Observers. */}
                 <button
                   type="button"
-                  onClick={() => jumpTo("observers:Recorded by")}
+                  onClick={() => jumpTo(observersEntry(record)?.key ?? "observers:Recorded by")}
                   className="rounded text-right text-brand-secondary outline-focus-ring hover:underline focus-visible:outline-2"
                 >
                   {observerNames(record)[0]}

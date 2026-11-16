@@ -11,5 +11,11 @@
 //   popovers   react-aria sets its own z-index of 100000, so a menu or date picker inside a modal
 //              still opens above it
 //   z-[100001] the drawn scrollbars (app/_scrollbars): one layer over everything, so the thumb of a scroller inside a menu or a modal is not under it. A thumb is drawn only where its scroller is what is under it.
+/** Map controls and the floating cards over a map (above Leaflet's own panes, which reach about 700). */
+export const MAP_CONTROLS_Z_INDEX = "z-[1000]";
+/** A button drawn on the map over its other controls (the Expand button). */
+export const MAP_BUTTON_Z_INDEX = "z-[1001]";
+/** A full-screen takeover (the expanded map outside a modal). */
+export const TAKEOVER_Z_INDEX = "z-[9999]";
 export const MODAL_Z_INDEX = "z-[20000]";
 export const SCROLLBAR_Z_INDEX = "z-[100001]";

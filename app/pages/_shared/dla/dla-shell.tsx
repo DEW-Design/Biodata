@@ -153,7 +153,7 @@ export function DlaShell({
         section={
               recordId && canAccess && !otherSection ? (
                 <DlaSwitcher currentId={recordId} />
-              ) : breadcrumbCurrent && !otherSection ? (
+              ) : breadcrumbCurrent && !otherSection && canAccess ? (
                 <Link href={roleHref("/pages/dla")} className="hover:text-primary">
                   {activeSection}
                 </Link>

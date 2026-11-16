@@ -64,7 +64,6 @@ export const isProcessingStatus = (status: DatasetStatus) => status === "validat
 
 // ── The acknowledgement ──
 export type DataLicence = "cc0" | "ccby";
-export type SecurityClassification = "official" | "official_sensitive";
 export type FirstNationsConsideration = "none" | "authorised" | "restricted";
 
 // Wording is the wireframe's (Figma YMproGZfrFB5jUqPHPxMhk node 67:33213), with the dash in
@@ -72,11 +71,6 @@ export type FirstNationsConsideration = "none" | "authorised" | "restricted";
 export const dataLicenceOptions: { id: DataLicence; label: string }[] = [
   { id: "cc0", label: "CC-0 (Public Domain)" },
   { id: "ccby", label: "CC-BY (Attribution Required)" },
-];
-
-export const securityClassificationOptions: { id: SecurityClassification; label: string }[] = [
-  { id: "official", label: "Official" },
-  { id: "official_sensitive", label: "Official Sensitive" },
 ];
 
 export const firstNationsOptions: { id: FirstNationsConsideration; label: string }[] = [
@@ -91,7 +85,6 @@ export function needsIiaReference(value: FirstNationsConsideration | ""): boolea
 }
 
 export const licenceLabel = (id: DataLicence) => dataLicenceOptions.find((o) => o.id === id)?.label ?? id;
-export const classificationLabel = (id: SecurityClassification) => securityClassificationOptions.find((o) => o.id === id)?.label ?? id;
 export const firstNationsLabel = (id: FirstNationsConsideration) => firstNationsOptions.find((o) => o.id === id)?.label ?? id;
 
 // ── What is uploaded: structured or unstructured ──
@@ -155,7 +148,6 @@ export interface Dataset {
   projectCode: string;
   files: DatasetFile[];
   licence: DataLicence;
-  classification: SecurityClassification;
   firstNations: FirstNationsConsideration;
   /** The approving authority, only when First Nations is Authorised or Restricted. */
   iiaReference?: string;
@@ -187,13 +179,12 @@ export interface UploadDraft {
   kind?: DataKind;
   files: DatasetFile[];
   licence: DataLicence | "";
-  classification: SecurityClassification | "";
   firstNations: FirstNationsConsideration | "";
   iiaReference: string;
   privacyConfirmed: boolean;
 }
 
-export const emptyUploadDraft: UploadDraft = { files: [], licence: "", classification: "", firstNations: "", iiaReference: "", privacyConfirmed: false };
+export const emptyUploadDraft: UploadDraft = { files: [], licence: "", firstNations: "", iiaReference: "", privacyConfirmed: false };
 
 // ── The form's sections ──
 export type UploadSection = "files" | "custom" | "acknowledgement";
@@ -216,7 +207,6 @@ export function missingForUpload(draft: UploadDraft, uploading: boolean): Record
 
   const acknowledgement: string[] = [];
   if (!draft.licence) acknowledgement.push("Data licence");
-  if (!draft.classification) acknowledgement.push("Security classification");
   if (!draft.firstNations) acknowledgement.push("First Nations considerations");
   else if (needsIiaReference(draft.firstNations) && !draft.iiaReference.trim()) acknowledgement.push("IIA reference or authority name");
   if (!draft.privacyConfirmed) acknowledgement.push("Privacy and restriction confirmation");

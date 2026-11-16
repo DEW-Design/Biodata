@@ -43,6 +43,7 @@ export const rawNav: NavSection[] = [
       { title: "Button utility", href: "/components/button-utility", description: "Icon-only button for toolbars and row actions. Secondary and tertiary colours, two sizes, a tooltip that doubles as the accessible name, optional link." },
       { title: "Carousel", href: "/components/carousel", description: "Pages through slides of one kind. Built on Embla and headless: arrows, dot indicators, swipe and arrow keys, horizontal or vertical, no autoplay. Replaces the hand-built species photo carousel." },
       { title: "Checkbox", href: "/components/checkbox", description: "Binary selection control with an indeterminate state and two sizes." },
+      { title: "Command menu", href: "/components/command-menu", description: "A search box over a list of actions and records in an overlay. Items carry an icon, avatar or dot, a description and shortcut keys, with sections, a preview and a footer. Built on React Aria." },
       { title: "Date picker", href: "/components/date-picker", description: "A date or a range of dates chosen from a calendar that opens under a button. The pick is a draft until Apply, and a range has presets. Built on React Aria." },
       { title: "Dropdown", href: "/components/dropdown", description: "Menu built on React Aria, with icon items, sections, and checkmark, checkbox, radio or toggle selection indicators." },
       { title: "Input", href: "/components/input", description: "Text field and its variants: password, date, number, payment, tags, file upload, PIN." },

@@ -22,9 +22,11 @@
 // button, or a double-click on a tree item or a table row).
 
 import {
+  useImperativeHandle,
   useMemo,
   useRef,
   useState,
+  type Ref,
   type KeyboardEvent,
   type MouseEvent,
   type PointerEvent,
@@ -67,7 +69,7 @@ import { useFlagCounts } from "./review-view";
 import { type FilterSection, type FilterSelection, useSelectionFilter } from "@/app/pages/_shared/list-filter";
 import { AttributeFilterChips } from "@/app/pages/_shared/attribute-filter";
 import { FilterMenu } from "@/app/pages/_shared/filter-menu";
-import { SAMPLING_TYPES, childOptions, createRecord, type ChildOption } from "./record-rules";
+import { SAMPLING_TYPES, childOptions, createRecord, duplicateRecord, type ChildOption } from "./record-rules";
 
 export type KindFilter = "all" | RecordKind;
 
@@ -134,7 +136,14 @@ function FlagMarker({ count }: { count: number }) {
   );
 }
 
+/** What the page can ask of the records view from outside it (the header's Add menu, CONTRACTS 3.5). */
+export interface RecordsExplorerHandle {
+  /** Starts a new record directly under the project, as the toolbar's own "Add record" does. */
+  add: (option: ChildOption) => void;
+}
+
 export function RecordsExplorer({
+  ref,
   selectedId,
   onSelect,
   filter,
@@ -143,6 +152,7 @@ export function RecordsExplorer({
   onViewChange,
   focusField,
 }: {
+  ref?: Ref<RecordsExplorerHandle>;
   selectedId: string | null;
   onSelect: (id: string | null) => void;
   filter: FilterSelection;
@@ -199,15 +209,19 @@ export function RecordsExplorer({
     option: ChildOption,
     origin: "panel" | "full" | "empty" = "panel",
   ) => {
-    const record = createRecord({
-      kind: option.kind,
-      type: option.type,
-      parent,
-      name: "",
-      date: new Date().toISOString().slice(0, 10),
-      recordedBy: "Olivia Wyatt",
-      records,
-    });
+    // A record's "Duplicate" starts from a copy of that record (`copyOf` sets `duplicateOf`); any other option starts blank.
+    const source = option.duplicateOf ? records.find((r) => r.id === option.duplicateOf) : undefined;
+    const record = source
+      ? duplicateRecord({ source, parent, recordedBy: "Olivia Wyatt", records })
+      : createRecord({
+          kind: option.kind,
+          type: option.type,
+          parent,
+          name: "",
+          date: new Date().toISOString().slice(0, 10),
+          recordedBy: "Olivia Wyatt",
+          records,
+        });
     if (origin === "panel") {
       setPanelEdit({ for: selectedId, creating: record });
       bringToTop();
@@ -217,6 +231,7 @@ export function RecordsExplorer({
     fromPanel.current = origin === "empty";
     setFullscreen("edit");
   };
+  useImperativeHandle(ref, () => ({ add: (option) => startAdd(null, option, "empty") }));
   const closeFullscreen = () => {
     fromPanel.current = false;
     wasEditing.current = false;

@@ -460,11 +460,16 @@ type the date or pick it from the calendar. A person should never have to type a
   day. An end date, an expiry, an embargo end and a filter's range stay empty, because empty means "ongoing" or "not narrowed";
   editing a record keeps the date it holds. The default is in the form's blank draft (`emptyDsaDraft`, `initialProjectDetails`),
   not in the field.
+- **A date is entered as DD/MM/YYYY, always** (designer, 11 Nov 2026: "DATE ENTRY FORMAT WILL ALWAYS BE DD/MM/YYYY"): day, month, year, in that order, whatever the browser's or the person's language setting. The field's segment order comes from its locale,
+  so both date fields fix it (`DATE_ENTRY_LOCALE`, `utils/date-entry-locale.ts`, set through an `I18nProvider` inside `InputDatePicker` and `InputDate`) and never read it from the browser. The calendar's week starts on Monday with it. MUST NOT
+  draw a date field in another order, accept a date typed another way (a text input for a date, `MM/DD`), or build a date field outside these two components. This is about entry; how a date is shown in text ("1 Mar 2026") follows 2.3 and the
+  record it sits in.
 - **Origin:** the Controlled Vocabulary, DSA and DLA forms used `InputDate`, typed segments with no
   calendar; the designer asked for the calendar field everywhere ("always remember to use date fields
   with calendar input field from design system", 30 Sept 2026). Add Project, DLA and DSA then opened with an empty start date
   while the vocabulary, user and notification forms opened as today (6 Oct 2026).
-- **Enforcement:** `AUTO §2.11` (an `<InputDate` under `app/pages` fails); the default is `REVIEW`.
+- **Origin of the order rule:** the date fields read their order from the browser, so an en-US browser drew MM/DD/YYYY under a comment that said DD/MM/YYYY; the designer stated the rule (11 Nov 2026).
+- **Enforcement:** `AUTO §2.11` (an `<InputDate` under `app/pages` fails), `AUTO §2.11b` (either date field loses its fixed locale); the default is `REVIEW`.
 
 ### §2.12 Nothing on screen without a purpose
 
@@ -616,6 +621,28 @@ draws its thumb, in one layer above everything (`SCROLLBAR_Z_INDEX`, `lib/layers
   "the scroll bar logic we added on the explore screens, let's make that consistent across the webapp." It had been built into `ScrollFade` for three lists; about 120 scrollers (page columns, tables, menus, modals) still showed the browser's.
 - **Enforcement:** `AUTO §2.17` (the global rule or the mount is gone, or a hand-made scrollbar rule appears in `app/pages` or `components`), `REVIEW` for the rest.
 
+### §2.18 A field a person writes in shows an example
+
+A text area, or a text input that asks for a sentence rather than a code, a name or a number (a reason, a description, a note), opens empty and asks the person to compose something. It MUST show what a good answer looks like, as its
+placeholder, so nobody meets a blank box and has to guess the kind, the register or the length of what is wanted.
+
+- **MUST** give it a placeholder that is an **example**, from a source (0.3): "E.g., ..." (the form the product's inputs already use: "E.g., Pygmy Bluetongue Lizard nesting site"), or, for a note or a reason, the question it answers
+  ("Why is this value questionable?"). The example comes from the business's own document or from the product's own data (a real species, a real project, a placeholder person), and is never made up to fill the gap. Where no
+  source has one, ask (0.4); do not write one.
+- **A placeholder is never the label and never the only place a requirement is said.** It goes when the person starts typing, and it is drawn at about 2.1 to 1 on white (`--ui-text-placeholder`, gray-400, measured 9 Nov 2026), below
+  the 4.5 to 1 that text needs, so anything a person must know to answer sits in the label, the row's description or the hint, which stay on screen. MUST NOT put a format, a limit or "required" in a placeholder. MUST NOT restate
+  the label in it ("Enter contact number" under "Contact number", "Type here").
+- **Each fact once (4.3).** An example that is the placeholder is not also in the description or the hint: it is moved, not repeated. The hint is kept for what to fix when the field is refused.
+- **Written as copy is (2.3):** sentence case, no full stop at the end, no em-dash.
+- **Exempt, because a placeholder would say nothing:** a field that edits a value the record already holds (the project record form, the card editor, the taxonomy fields): it opens filled, and an emptied one reads "Not provided"
+  (2.3); a search, a select and a combo box, whose placeholder names what the control does ("Search taxa", "Select role"); a field whose value is a code, a number or a date, which has its own format (2.11).
+- **Open (9 Nov 2026), for the designer (0.4):** the fields that compose text and have no placeholder: the DSA form's Purpose (its guidance is a hint) and the notification form's Sign-off. An example for each would be new copy, so none
+  is written here. Whether the placeholder colour should be darker is the designer's too (Figma wins on colour, 2.5).
+- **Origin:** the nomination form's "Main reason" had a placeholder ("What puts these records at risk if they stay public, and what protecting them would prevent.") and the three boxes that replaced it (6 Nov 2026) had none; the
+  designer: "the text area fields don't have placeholder text. This is an anomaly and needs to be addressed" (9 Nov 2026). Of the 29 text areas under `app/pages`, 8 had none: those three, five in the exempt or open lists above.
+- **Enforcement:** `REVIEW`. A first occurrence, so no `AUTO` check yet (0.8): whether a field composes text or edits a value it already holds is a judgement from the screen, and a count of `<TextArea` without `placeholder` would flag
+  the exempt ones. It is named here as a recurring pattern: when a form is restructured or a field replaced, the first thing to check is that the new one kept the old one's placeholder.
+
 ---
 
 ## PART IV - THE SHELL (persona-consistent)
@@ -654,6 +681,20 @@ deliberate exception, and only in account controls and gated actions.
 
 The header has one "Add" button (Jira-style). What it offers comes from `lib/create-menu.ts`, filtered by
 the role-access matrix. MUST NOT add a separate creation button to a header.
+
+**The menu is contextual (designer, 11 Nov 2026).** A page that has things of its own to add tells the menu (`useCreateContext`, `lib/create-context.ts`), and the menu lists them first, under a heading that says where they
+go ("This project"), then a divider, then the general list. A page that says nothing gets the general list alone, as before. The project page is the first: Dataset, Attachments, Events, Occurrences and Observations (each
+opening its types beside it, as a record's own Add menu does), and Restriction.
+
+- MUST NOT draw a second Add button for a page, and MUST NOT write a page's items into `CreateMenu` or the header: the page registers them and they go when the page does.
+- **Every item is one the page already has a control for.** It is offered on the same test as that control (the role, the feature, the state: Restriction only while a kind is left to add and no card is being edited), and
+  picking it does what that control does, on the tab the thing lives on. An item the role could not use is left out, never drawn disabled (3.15). MUST NOT add something to the menu that the page itself cannot do.
+- **Nothing is listed twice.** Where a page's item stands in for one of the general list, it replaces it (`replaces`: the project's own Dataset for the general one, which asks which project).
+- **Override of 3.12's "one control per action", for these items (designer, 11 Nov 2026):** each is also on the page (the card's Upload menu, the records toolbar's Add record, the section's Add restriction). The header's
+  menu is the one place to add from on any tab. Whether the page's own controls then stay is open, for the designer (0.4).
+- **Origin:** the Add menu on a project listed User, Project, Dataset, the agreements and the rest, and nothing of the project a person was looking at; the designer, with a screenshot: "Can we make the + Add button
+  contextual? Add on the project page would be: Add a dataset, event, occ, obs, add restrictions, etc" (11 Nov 2026).
+- **Enforcement:** `REVIEW`. A first occurrence, so no `AUTO` check yet (0.8).
 
 ### §3.6 Position
 
@@ -850,7 +891,7 @@ scans by shape as well as by word and the same section has the same icon on ever
 - **Which icon.** The one the app already uses for the same thing (§2.4): Overview `Grid01`, Locations `MarkerPin04`,
   Species `Feather`, Survey records and Data Collection Scope `Database01`, Artefacts and attachments `Paperclip`,
   Project and Projects `Folder`, Permit and Agreement `FileCheck02`, Audit Log `ClockRewind`, Privacy and
-  Restrictions `Lock01`, What to protect `Shield01`, Data Sharing `Share07`, Comments `MessageSquare01`, URI/DOI `Link01`,
+  Restrictions `Lock01`, What to protect `Shield01`, Sensitive species risk `ShieldTick`, Data Sharing `Share07`, Comments `MessageSquare01`, URI/DOI `Link01`,
   Roles `UserCheck01`, Permissions `Key01`, Users `Users01`, Details `File06`, Favourites `Star01`, Uploads and Datasets
   `UploadCloud02`; Flora and Fauna take the species group icons, and the record kinds the records tree's icons
   (`record-icons.ts`). A new tab takes an icon not already another concept's, and is added here.
@@ -863,6 +904,49 @@ scans by shape as well as by word and the same section has the same icon on ever
   also have icons"); the lab at `/proto/tab-icons` measured the options (A text, B every tab, C selected only) and B
   was chosen.
 - **Enforcement:** `AUTO §3.13` (an underline `TabList` in `app/pages` with no `icon` in it, except the two listed files).
+
+### §3.14 Every form has the Pre-fill sample content switch
+
+A form MUST call `useSampleContent` (`app/_prototype-tools/sample-content.ts`), so the Prototype tools bar's "Pre-fill sample content" switch fills it and a walk-through never starts with typing. A form is a `FormPage` screen,
+and a modal that takes more than one answer or a file. The switch is Scaffold (1.5, 3.8): it previews the form and is not product.
+
+- **The sample answers the whole form, down its fullest branch.** A question that branches is answered with the choice that opens the conditional field, and the field is filled too: a "Yes" with its "where", a type with the fields
+  it reveals, an "Other" with its text, repeatable rows with more than one entry. Where two branches exclude each other, the sample takes the one that shows more questions. The filled form is submittable: no missing details, and every
+  answer valid against the build's own data (a species, a project or a taxon that exists).
+- **File uploads are filled** (`files` in the hook; `sampleFile` and `sampleWorkbook`, `app/_prototype-tools/sample-files.ts`). A file is named "sample-...", and a spreadsheet is a real workbook where the form reads it. Switching off
+  takes out the files the sample added and leaves the person's own.
+- **Honest (0.3).** Placeholder people (Olivia Wyatt, Phoenix Baker, Lana Steiner, Maya Dewitt) with example.com addresses; organisations, species, parks and projects from the build's own lists; never an invented permit number, DOI,
+  identifier or phone number that looks real (a field with no honest sample stays empty and the report says so).
+- **Where it is offered.** A new record, not one being edited (`enabled`); and not to a role that is shown a restriction. The sample builder is its own `*-sample.ts` next to the form, and the form only wires the hook.
+- **A tool id is the switch's alone.** A shell that registers its own preview tool MUST NOT use the id `sample` (a tool of the same id replaces the other: the notification and vocabulary shells did, and the switch never showed).
+- **A modal covers the bar (3.8).** The switch cannot be pressed while a modal is open, so the person sets it on the page first and the modal fills when it opens. The page, not the modal, carries the switch where the page has no form of its own.
+- **Not covered:** a dialog with one answer (a reason, a confirmation); a screen that reviews and decides (the flagged concepts and custom concepts review) rather than collects; a form that no route reaches.
+- **Origin:** only Add Project had the switch (16 Oct 2026, kept across a refresh on 30 Oct). The designer, 10 Nov 2026: "If there's a form, let's have a fill sample content toggle. Also, for file uploads, etc, let's add that to the
+  scope of fill sample content. Let it cover branching questions as well. Good UX."
+- **Enforcement:** `AUTO §3.14` (a file under `app/pages` that renders `<FormPage` and does not call `useSampleContent`, except the two review screens and the unused record drawer named in the check); `REVIEW` for covering every
+  question, branch and file, and for a modal form.
+
+### §3.15 A role is never offered a screen it cannot open
+
+A link, a button, a menu item, a table row, a toast action, a breadcrumb crumb or an index entry that moves a person to another screen MUST be drawn only for a role that can open that screen. A role is never taken to a
+page that only tells it "this is not for you": that is wasted effort and noise (designer, 10 Nov 2026: "never take the user to the screen if they do not have role permission to access that particular screen. Creates so much bloat").
+Omit the control. Do not draw it disabled, and do not leave it to land on the restriction.
+
+- **What a role cannot open** is one list, `lib/page-access.ts` (`wholePageGates`, read through `canOpenPath`; `isPageBlockedFor` is the same test the Prototype tools use), built from the role-access matrix. A control that goes to a gated
+  page asks it with `useCanOpen()` (`lib/use-can-open.ts`). MUST NOT keep a second list, or test the role inline at the call site (3.4). A new whole-page gate goes in the list (`ref-shell.md`), and every control that leads to the page is checked.
+- **The restriction stays for arrival by address.** A person who types a gated address, or follows a stale link, still sees the shell with the restriction in main (3.7). This clause is about what the product offers, not about
+  that screen.
+- **Sign-up prompts are not a gated page.** A signed-out visitor pressing an action that needs an account is shown the sign-up prompt (`SignUpPromptModal`, `guest-action-gate.tsx`, the public user's gated actions, 3.4); that is the product offering a way in, not a screen
+  that refuses.
+- **The index and the maps.** The `/pages` index lists only what the chosen "Open screens as" role can open, and its access label for each screen matches the gate (`availability`, `app/_prototype-tools/pages-map-data.ts`). A screen's access
+  label in `screen-index.ts` that disagrees with the matrix is a defect: the data ingestion stress test said "Everyone" after it became registered users and above (30 Oct 2026).
+- **A restricted page offers nothing beyond itself.** Its breadcrumb is a plain label, not a link back to the section's list, and the restriction's own action goes Home.
+- **A page with no role** (a doc page) that links into a gated screen opens it as the lowest role that can use it (`?userRole=registered-user`), as the Prototype tools' "In production" link does (4.4).
+- **Origin:** a signed-out visitor was taken to the Data ingestion stress test's restriction (the `/pages` index offered it: its "Open screens as" defaults to the signed-out role and its row said the screen was for everyone); the designer, with a screenshot:
+  "Identify these cases, never take the user to the screen if they do not have role permission to access that particular screen." The audit that followed found the same fault in: the dataset page's "View in Reports" and "Upload a corrected file",
+  the upload problem buttons, the upload toast's "View report", the Map visualise back link and trail, the Home quick actions, the docs data model page's link to the sandbox, and the nomination, DLA and DSA breadcrumbs on their restricted record pages.
+- **Enforcement:** `REVIEW` (a crawl as each role that opens every screen the role can reach and lists each link whose target says the role has no access; the §0.6 item 4 pass). A first occurrence, so no `AUTO` check yet (0.8): which control
+  leads where is in the markup and the data, not a name a script can find. The first thing to check in any new link, button or menu item to a `/pages/**` address is `useCanOpen`.
 
 ### §4.1 The form pattern
 

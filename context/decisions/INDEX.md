@@ -674,3 +674,28 @@ Not imported into every session on purpose: read or grep it when a task needs hi
 - [2026-11-05] Activity lab: where Activity shows, emulated from a dataset submitted for approval - `2026-11-05-01-activity-lab-where-activity-shows-emulated-from-a.md`
 - [2026-11-06] Data model: disturbance impact has two BDBSA columns, DSTBIMPACTCODE and DSTBIMPACTDESC - `2026-11-06-01-data-model-disturbance-impact-has-two-bdbsa-columns.md`
 - [2026-11-06] Nominate sensitive species form: the business's Word document applied - `2026-11-06-02-nominate-sensitive-species-form-the-business-s-word.md`
+- [2026-11-09] Contract 2.18: a field a person writes in shows an example - `2026-11-09-01-contract-2-18-a-field-a-person-writes.md`
+- [2026-11-10] Taxonomy Management: a read-only Sensitive species risk tab on a species - `2026-11-10-01-taxonomy-management-a-read-only-sensitive-species-risk.md`
+- [2026-11-10] Every form has the Pre-fill sample content switch: files and branches covered - `2026-11-10-02-every-form-has-the-pre-fill-sample-content.md`
+- [2026-11-10] A role is never offered a screen it cannot open (contract 3.15) - `2026-11-10-03-a-role-is-never-offered-a-screen-it.md`
+- [2026-11-10] Ingestion: BDBSA load template columns map to concepts; new event types and hierarchy - `2026-11-10-04-ingestion-bdbsa-load-template-columns-map-to-concepts.md`
+- [2026-11-10] Add Project: Duplicate previous project - `2026-11-10-05-add-project-duplicate-previous-project.md`
+- [2026-11-10] Project records: Opportune and Point intercept, nesting, auto-name, persistence, Duplicate previous - `2026-11-10-06-project-records-opportune-and-point-intercept-nesting-auto.md`
+- [2026-11-10] Ingestion page: a "?" on a concept shows its controlled vocabulary and definitions; SITETYPE kept - `2026-11-10-07-ingestion-concept-help-controlled-vocabulary-and-definitions.md`
+- [2026-11-10] Dataset upload: the security classification question is removed - `2026-11-10-08-dataset-upload-the-security-classification-question-is-remov.md`
+- [2026-11-11] Date entry is always DD/MM/YYYY (contract 2.11 amended) - `2026-11-11-01-date-entry-is-always-dd-mm-yyyy-contract.md`
+- [2026-11-11] Create a project flow brought in line with the design system (consistency audit) - `2026-11-11-02-create-a-project-flow-brought-in-line-with.md`
+- [2026-11-11] Explore: consistency audit and its fixes (the results count, dates, layers, the close and zoom buttons) - `2026-11-11-03-explore-consistency-audit-and-its-fixes-the-results.md`
+- [2026-11-11] The header Add menu is contextual: a project's own things to add come first - `2026-11-11-04-the-header-add-menu-is-contextual-a-project.md`
+- [2026-11-12] Dataset ids skip the sample datasets, so the Datasets tab never lists one id twice - `2026-11-12-01-dataset-ids-skip-the-sample-datasets-so-the.md`
+- [2026-11-12] Explore greys out every other dot while one species is highlighted - `2026-11-12-02-explore-greys-out-every-other-dot-while-one.md`
+- [2026-11-12] Command menu ingested and documented (OVR-018 to OVR-026) - `2026-11-12-03-command-menu-ingested-and-documented-ovr-018-to.md`
+- [2026-11-12] Command menu set inactive, kept for later - `2026-11-12-04-command-menu-set-inactive-kept-for-later.md`
+- [2026-11-13] On this page outline polished - `2026-11-13-01-on-this-page-outline-polished.md`
+- [2026-11-13] On this page outline: one item size, the standard section label - `2026-11-13-02-on-this-page-outline-one-item-size-the.md`
+- [2026-11-13] Typography lab: Barlow headings with Aptos body, before and after - `2026-11-13-03-typography-lab-barlow-headings-with-aptos-body-before.md`
+- [2026-11-13] Typography lab: numbers in Aptos Mono with a slashed zero - `2026-11-13-04-typography-lab-numbers-in-aptos-mono-with-a.md`
+- [2026-11-16] Disturbance impact: the designer's code table is the Community form's list - `2026-11-16-01-disturbance-impact-the-designer-s-code-table-is.md`
+- [2026-11-16] Duplicate is a control on the record, not rows in the Add menu - `2026-11-16-02-duplicate-is-a-control-on-the-record-not.md`
+- [2026-11-16] Community observation: Upper stratum codes are SE, SA, MA, SN, HO - `2026-11-16-03-community-observation-upper-stratum-codes-are-se-sa.md`
+- [2026-11-17] Mohan merge parked: trial branch kept, sai-wips takes our own work only; 13 help-text fields open - `2026-11-17-01-mohan-merge-parked-trial-branch-kept-sai-wips.md`

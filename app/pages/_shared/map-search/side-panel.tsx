@@ -20,6 +20,7 @@ export function SidePanel({
   headerActions,
   widthClassName = "max-w-md",
   side = "right",
+  footer,
   children,
 }: {
   isOpen: boolean;
@@ -38,6 +39,9 @@ export function SidePanel({
    *  Species mode's own "All Filters" panel is the first `"left"` consumer, matching its Figma
    *  reference (node 2266:167054) exactly. */
   side?: "left" | "right";
+  /** The panel's actions (Cancel, Save), fixed at its foot under a divider while the body scrolls, as a form page's footer is (opt-in: a panel
+   *  without it is unchanged). */
+  footer?: ReactNode;
   children: ReactNode;
 }) {
   return (
@@ -93,6 +97,7 @@ export function SidePanel({
               scrolling its own content internally - the sidebar's own frame never grows past the
               viewport regardless of how much a record's accordion content expands to. */}
           <div className="min-h-0 flex-1 overflow-y-auto p-4">{children}</div>
+          {footer && <div className="flex shrink-0 flex-wrap items-center justify-end gap-3 border-t border-secondary p-4">{footer}</div>}
         </Dialog>
       </Modal>
     </ModalOverlay>

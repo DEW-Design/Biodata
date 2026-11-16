@@ -73,6 +73,8 @@ export function useFileQueue(accepts: Accepts = "spreadsheets") {
   );
 
   const remove = useCallback((id: string) => setFiles((prev) => prev.filter((f) => f.id !== id)), []);
+  // Takes out the files with these names: the sample files the Pre-fill sample content switch added (Prototype tools), and nothing the person added.
+  const removeByName = useCallback((names: string[]) => setFiles((prev) => prev.filter((f) => !names.includes(f.name))), []);
   const rules = fileRulesFor(accepts);
   // What to tell the person about the files that were not added, in the form's error line. A file of the wrong type and a file that is too big are
   // different things to fix, so each is named with its own reason.
@@ -87,6 +89,7 @@ export function useFileQueue(accepts: Accepts = "spreadsheets") {
     rejectedMessage: rejectedMessage || undefined,
     add,
     remove,
+    removeByName,
     uploading: files.some((f) => f.status === "uploading"),
   };
 }
@@ -146,9 +149,7 @@ export function FileQueue({ files, onRemove }: { files: QueuedFile[]; onRemove: 
         const percent = file.size === 0 ? 100 : Math.min(100, Math.round((file.loaded / file.size) * 100));
         return (
           <li key={file.id} className="flex items-start gap-3 rounded-xl border border-secondary bg-primary p-4">
-            <span className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-secondary text-fg-quaternary">
-              <File05 className="size-5" />
-            </span>
+            <FeaturedIcon icon={File05} theme="modern" color="gray" size="md" className="shrink-0" />
             <div className="flex min-w-0 flex-1 flex-col gap-2">
               <div className="flex flex-col gap-0.5">
                 <p className="truncate text-sm font-medium text-secondary">{file.name}</p>

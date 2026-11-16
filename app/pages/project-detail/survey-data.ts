@@ -2,11 +2,11 @@
 // (project-seed.ts). Every other project's records are built from Explore's data instead.
 //
 // One project, Adelaide Hills Bushland Survey (BD-5039), modelled the way a Darwin Core user reads a
-// survey: Events nest under the Site (Site > Visit, and Site > sampling event; a Visit holds no events), Occurrences sit under the sampling event that
+// survey: Events nest under the Site (Site > Visit, and Site > sampling event), and any event may hold any other event (record-rules.ts), Occurrences sit under the sampling event that
 // recorded them, and Observations hold the measurements (MeasurementOrFact) taken for an Occurrence,
 // or, for Non-biotic and Community observations, taken directly at a sampling event.
 //
-// Every event type (Site, Visit, Transect, Quadrat, Block, Ramble, Trap, Custom event), both
+// Every event type (Site, Visit, Transect, Quadrat, Block, Ramble, Trap, Custom event; Opportune and Point intercept can be added but are not in the seed), both
 // occurrence types (Individual, Population) and all four observation types (Individual, Population,
 // Non-biotic, Community) appear at least once, per direct request. Species are real South
 // Australian natives already used elsewhere in this build; people are the placeholder cast
@@ -39,7 +39,7 @@ const RAW_EVENTS: Record<string, { id: string; code: string; name: string; paren
 };
 
 export type RecordKind = "event" | "occurrence" | "observation";
-export type SurveyEventType = "Site" | "Visit" | "Transect" | "Quadrat" | "Block" | "Ramble" | "Trap" | "Custom event";
+export type SurveyEventType = "Site" | "Visit" | "Transect" | "Quadrat" | "Block" | "Ramble" | "Trap" | "Opportune" | "Point intercept" | "Custom event";
 export type SurveyOccurrenceType = "Individual" | "Population";
 export type SurveyObservationType = "Individual" | "Population" | "Non-biotic" | "Community";
 
@@ -52,6 +52,10 @@ export interface MetaRow {
   type?: FieldType;
   /** A code table's columns, when they differ from its label (field-options.ts CODE_TABLES). */
   table?: string;
+  /** A concept a record may have but never needs, even when its label is a required one elsewhere ("Start date" on a Site): it is not locked on in Manage concepts. */
+  optional?: boolean;
+  /** A concept the record cannot be saved without, and that stays on the form: "Location comment" on an Opportune and a Point intercept (the business's frames). */
+  required?: boolean;
 }
 
 /** One overstorey reading (a tree or stem measured). */
@@ -121,6 +125,8 @@ export const TYPE_DESCRIPTIONS: Record<string, string> = {
   Block: "A bounded area searched for a set time",
   Ramble: "An unstructured, opportunistic area search",
   Trap: "A trap or trap line left open for a period",
+  // The business's own wording (10 Nov 2026): "Opportune (one-time visits, e.g., road kill)". Point intercept came with a name and no description, so it has none (0.3).
+  Opportune: "A one-time visit, for example a road kill",
   "Custom event": "Any other sampling method",
   "Occurrence:Individual": "One organism, recorded on its own",
   "Occurrence:Population": "A group of the same species, counted or estimated",
@@ -201,8 +207,11 @@ export function siteSections(o: {
   locationComment: string;
   observers: string[];
   photopoint: { present: string; disc: string; direction: string };
+  /** Optional: a site is a place and has no date of its own (the Figma site frame has none), so these start as "Not provided" and stay out of view until Manage concepts shows them. */
+  temporal?: { startDate?: string; endDate?: string; duration?: string; dateAccuracy?: string };
 }): MetaSection[] {
   const ibra = ibraFor(o.lat, o.lon);
+  const t = o.temporal ?? {};
   return [
     {
       id: "details",
@@ -218,6 +227,16 @@ export function siteSections(o: {
         { label: "Mud map", value: o.mudMap, type: "yesno" },
         { label: "Paddock", value: o.paddock, type: "text" },
         { label: "Site comment", term: "locationRemarks", value: o.comment, type: "textarea" },
+      ],
+    },
+    {
+      id: "temporal",
+      title: "Temporal details",
+      rows: [
+        { label: "Start date", value: t.startDate ?? NP, type: "date", optional: true },
+        { label: "End date", value: t.endDate ?? NP, type: "date", optional: true },
+        { label: "Duration", value: t.duration ?? NP, type: "duration", optional: true },
+        { label: "Date accuracy", value: t.dateAccuracy ?? NP, type: "vocab", optional: true },
       ],
     },
     observersSection(o.observers),
@@ -281,6 +300,69 @@ export interface EventFields {
   trapEffort?: TrapEntry[];
 }
 
+/** The two events the business drew their own frames for (10 Nov 2026), in place of the sampling events' shared layout. */
+export const FRAME_EVENT_TYPES = ["Opportune", "Point intercept"] as const;
+export const hasOwnFrame = (type: string): boolean => (FRAME_EVENT_TYPES as readonly string[]).includes(type);
+
+/**
+ * The business's "Event - Opportune" and "Event - Point Intercept" frames, in their order: Details (ID, name, description, Source ID,
+ * Record status, Observers), Location information (the geometry, then Location method, Datum, Reliability, Sample site dimensions,
+ * Location comment, which is compulsory here), Temporal details (Start date, End date, Date accuracy, Duration, Observation time) and
+ * Comments (Comment type, Comment). The two differ in two places: a Point intercept's geometry is a single coordinate point, and it has no
+ * Sample site dimensions. There is no Photopoint, IBRA, Observers or Custom properties section, because the frames have none.
+ * Record status and Comment type are code lists the business has not supplied, so they hold "Not provided" and offer nothing (0.3).
+ * The frame's note on temporal, "if not specified inherit from parent", is the rule for the start date (record-rules.ts), not copy.
+ */
+function frameEventSections(o: EventFields): MetaSection[] {
+  const l = eventLabels(o.type);
+  return [
+    {
+      id: "details",
+      title: `${l.noun} details`,
+      rows: [
+        { label: `${l.noun} ID`, term: "eventID", value: o.code, type: "system" },
+        { label: l.name, value: o.name, type: "text" },
+        { label: "Description", value: o.description, type: "text" },
+        { label: "Source ID", value: o.sourceId, type: "text" },
+        { label: "Record status", value: NP, type: "vocab" },
+        { label: "Observers", term: "recordedBy", value: o.observers.length ? o.observers.join(" | ") : NP, type: "people" },
+      ],
+    },
+    {
+      id: "location",
+      title: "Location information",
+      withMap: true,
+      rows: [
+        { label: "Location method", term: "georeferenceProtocol", value: NP, type: "vocab" },
+        { label: "Datum", term: "geodeticDatum", value: NP, type: "vocab" },
+        { label: "Reliability", term: "coordinateUncertaintyInMeters", value: NP, type: "vocab" },
+        ...(o.type === "Opportune" ? [{ label: "Sample site dimensions", term: "sampleSizeValue", value: o.dimensions, type: "dimensions" as const }] : []),
+        { label: "Location comment", term: "locationRemarks", value: o.locationComment, type: "textarea", required: true },
+      ],
+    },
+    {
+      id: "temporal",
+      title: "Temporal details",
+      rows: [
+        { label: "Start date", term: "eventDate", value: formatDate(o.startDate) },
+        { label: "End date", value: o.endDate, type: "date" },
+        { label: "Date accuracy", value: o.dateAccuracy, type: "vocab" },
+        { label: "Duration", term: "samplingEffort", value: o.duration, type: "duration" },
+        // No time field exists in the product yet, so this is text until the designer chooses one.
+        { label: "Observation time", value: NP, type: "text" },
+      ],
+    },
+    {
+      id: "comments",
+      title: "Comments",
+      rows: [
+        { label: "Comment type", value: NP, type: "vocab" },
+        { label: "Comment", term: "eventRemarks", value: o.comment, type: "textarea" },
+      ],
+    },
+  ];
+}
+
 /**
  * Every event other than a site, with the fields and field types of its Figma "Details Container /
  * Edit" frame (file YMproGZfrFB5jUqPHPxMhk): Visit 1970:143761, Transect 1970:143999, Quadrat
@@ -289,6 +371,7 @@ export interface EventFields {
  * effort in place of observers (the trap effort itself follows the designer's table, not Figma).
  */
 export function eventSections(o: EventFields): MetaSection[] {
+  if (hasOwnFrame(o.type)) return frameEventSections(o);
   const l = eventLabels(o.type);
   const ibra = ibraFor(o.lat, o.lon);
   const isVisit = o.type === "Visit";
@@ -895,9 +978,10 @@ const observations: SurveyRecord[] = [
     details: {
       "Vegetation conditions": "Good",
       "SA structural formation": "Open woodland",
-      "Disturbance impact": JSON.stringify([["FI", "Recent"], ["WE", "Active"]]),
+      // Codes from the disturbance impact table (the project is a fire-recovery monitoring one: a fire break, and access tracks still in use).
+      "Disturbance impact": JSON.stringify([["FB", "Old"], ["AT", "Active"]]),
       "Assemblage information": JSON.stringify([["LA", "c"]]),
-      "Upper stratum (code & desc)": JSON.stringify([["EOB"], ["ELE"]]),
+      "Upper stratum (code & desc)": JSON.stringify([["MA"], ["SN"]]),
       "Ephemerals present?": "Yes",
     },
     landscape: { cover: "18", perimeter: "300", protectedPct: "8", riparian: "No", swamp: "No", landformFeatures: "2", wetlandFeature: "No" },

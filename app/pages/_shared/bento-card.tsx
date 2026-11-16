@@ -9,8 +9,10 @@ import { cx } from "@/utils/cx";
 // of data-overview.tsx once Flora needed the same blocks, so the shell has exactly one
 // definition instead of drifting between tabs - flagged directly by the user: keep the data
 // blocks consistent when flicking between tabs.
+// A card is 12px (`rounded-xl`, CONTRACTS 2.13: "a card is rounded-xl, a field rounded-lg"). It was 8px until 11 Nov 2026 (the designer: "contract says 12,
+// then it should be 12").
 export function BentoCard({ children, className }: { children: ReactNode; className?: string }) {
-  return <div className={cx("flex flex-col gap-4 rounded-lg border border-secondary p-6", className)}>{children}</div>;
+  return <div className={cx("flex flex-col gap-4 rounded-xl border border-secondary p-6", className)}>{children}</div>;
 }
 
 // `size="md"` (default) is the Flora and Fauna Dashboard's own KPI-row treatment - large centered

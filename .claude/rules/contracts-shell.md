@@ -2,7 +2,10 @@
 paths:
   - "app/pages/**"
   - "lib/create-menu.ts"
+  - "lib/create-context.ts"
   - "lib/registered-user-nav.ts"
+  - "lib/page-access.ts"
+  - "lib/use-can-open.ts"
   - "config/role-access.config.ts"
 ---
 
@@ -60,6 +63,20 @@ deliberate exception, and only in account controls and gated actions.
 
 The header has one "Add" button (Jira-style). What it offers comes from `lib/create-menu.ts`, filtered by
 the role-access matrix. MUST NOT add a separate creation button to a header.
+
+**The menu is contextual (designer, 11 Nov 2026).** A page that has things of its own to add tells the menu (`useCreateContext`, `lib/create-context.ts`), and the menu lists them first, under a heading that says where they
+go ("This project"), then a divider, then the general list. A page that says nothing gets the general list alone, as before. The project page is the first: Dataset, Attachments, Events, Occurrences and Observations (each
+opening its types beside it, as a record's own Add menu does), and Restriction.
+
+- MUST NOT draw a second Add button for a page, and MUST NOT write a page's items into `CreateMenu` or the header: the page registers them and they go when the page does.
+- **Every item is one the page already has a control for.** It is offered on the same test as that control (the role, the feature, the state: Restriction only while a kind is left to add and no card is being edited), and
+  picking it does what that control does, on the tab the thing lives on. An item the role could not use is left out, never drawn disabled (3.15). MUST NOT add something to the menu that the page itself cannot do.
+- **Nothing is listed twice.** Where a page's item stands in for one of the general list, it replaces it (`replaces`: the project's own Dataset for the general one, which asks which project).
+- **Override of 3.12's "one control per action", for these items (designer, 11 Nov 2026):** each is also on the page (the card's Upload menu, the records toolbar's Add record, the section's Add restriction). The header's
+  menu is the one place to add from on any tab. Whether the page's own controls then stay is open, for the designer (0.4).
+- **Origin:** the Add menu on a project listed User, Project, Dataset, the agreements and the rest, and nothing of the project a person was looking at; the designer, with a screenshot: "Can we make the + Add button
+  contextual? Add on the project page would be: Add a dataset, event, occ, obs, add restrictions, etc" (11 Nov 2026).
+- **Enforcement:** `REVIEW`. A first occurrence, so no `AUTO` check yet (0.8).
 
 ### §3.6 Position
 
@@ -142,7 +159,7 @@ scans by shape as well as by word and the same section has the same icon on ever
 - **Which icon.** The one the app already uses for the same thing (§2.4): Overview `Grid01`, Locations `MarkerPin04`,
   Species `Feather`, Survey records and Data Collection Scope `Database01`, Artefacts and attachments `Paperclip`,
   Project and Projects `Folder`, Permit and Agreement `FileCheck02`, Audit Log `ClockRewind`, Privacy and
-  Restrictions `Lock01`, What to protect `Shield01`, Data Sharing `Share07`, Comments `MessageSquare01`, URI/DOI `Link01`,
+  Restrictions `Lock01`, What to protect `Shield01`, Sensitive species risk `ShieldTick`, Data Sharing `Share07`, Comments `MessageSquare01`, URI/DOI `Link01`,
   Roles `UserCheck01`, Permissions `Key01`, Users `Users01`, Details `File06`, Favourites `Star01`, Uploads and Datasets
   `UploadCloud02`; Flora and Fauna take the species group icons, and the record kinds the records tree's icons
   (`record-icons.ts`). A new tab takes an icon not already another concept's, and is added here.
@@ -155,6 +172,28 @@ scans by shape as well as by word and the same section has the same icon on ever
   also have icons"); the lab at `/proto/tab-icons` measured the options (A text, B every tab, C selected only) and B
   was chosen.
 - **Enforcement:** `AUTO §3.13` (an underline `TabList` in `app/pages` with no `icon` in it, except the two listed files).
+
+### §3.15 A role is never offered a screen it cannot open
+
+A link, a button, a menu item, a table row, a toast action, a breadcrumb crumb or an index entry that moves a person to another screen MUST be drawn only for a role that can open that screen. A role is never taken to a
+page that only tells it "this is not for you": that is wasted effort and noise (designer, 10 Nov 2026: "never take the user to the screen if they do not have role permission to access that particular screen. Creates so much bloat").
+Omit the control. Do not draw it disabled, and do not leave it to land on the restriction.
+
+- **What a role cannot open** is one list, `lib/page-access.ts` (`wholePageGates`, read through `canOpenPath`; `isPageBlockedFor` is the same test the Prototype tools use), built from the role-access matrix. A control that goes to a gated
+  page asks it with `useCanOpen()` (`lib/use-can-open.ts`). MUST NOT keep a second list, or test the role inline at the call site (3.4). A new whole-page gate goes in the list (`ref-shell.md`), and every control that leads to the page is checked.
+- **The restriction stays for arrival by address.** A person who types a gated address, or follows a stale link, still sees the shell with the restriction in main (3.7). This clause is about what the product offers, not about
+  that screen.
+- **Sign-up prompts are not a gated page.** A signed-out visitor pressing an action that needs an account is shown the sign-up prompt (`SignUpPromptModal`, `guest-action-gate.tsx`, the public user's gated actions, 3.4); that is the product offering a way in, not a screen
+  that refuses.
+- **The index and the maps.** The `/pages` index lists only what the chosen "Open screens as" role can open, and its access label for each screen matches the gate (`availability`, `app/_prototype-tools/pages-map-data.ts`). A screen's access
+  label in `screen-index.ts` that disagrees with the matrix is a defect: the data ingestion stress test said "Everyone" after it became registered users and above (30 Oct 2026).
+- **A restricted page offers nothing beyond itself.** Its breadcrumb is a plain label, not a link back to the section's list, and the restriction's own action goes Home.
+- **A page with no role** (a doc page) that links into a gated screen opens it as the lowest role that can use it (`?userRole=registered-user`), as the Prototype tools' "In production" link does (4.4).
+- **Origin:** a signed-out visitor was taken to the Data ingestion stress test's restriction (the `/pages` index offered it: its "Open screens as" defaults to the signed-out role and its row said the screen was for everyone); the designer, with a screenshot:
+  "Identify these cases, never take the user to the screen if they do not have role permission to access that particular screen." The audit that followed found the same fault in: the dataset page's "View in Reports" and "Upload a corrected file",
+  the upload problem buttons, the upload toast's "View report", the Map visualise back link and trail, the Home quick actions, the docs data model page's link to the sandbox, and the nomination, DLA and DSA breadcrumbs on their restricted record pages.
+- **Enforcement:** `REVIEW` (a crawl as each role that opens every screen the role can reach and lists each link whose target says the role has no access; the §0.6 item 4 pass). A first occurrence, so no `AUTO` check yet (0.8): which control
+  leads where is in the markup and the data, not a name a script can find. The first thing to check in any new link, button or menu item to a `/pages/**` address is `useCanOpen`.
 
 ### §4.1 The form pattern
 

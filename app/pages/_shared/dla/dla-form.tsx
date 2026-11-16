@@ -17,6 +17,8 @@ import { FormRow } from "@/app/pages/_shared/form-row";
 import { DestructiveModal } from "@/components/application/modals/modal";
 import { AddLocationModal } from "@/app/pages/_shared/dla/add-location-modal";
 import { useRoleHref } from "@/lib/use-role-href";
+import { useSampleContent } from "@/app/_prototype-tools/sample-content";
+import { sampleDla } from "@/app/pages/_shared/dla/dla-sample";
 import {
   dlaLevel3Projects,
   dlaLevelMeta,
@@ -195,6 +197,19 @@ export function DlaForm({
 
   const goBack = () => (dirty ? setConfirmBack(true) : onBack());
 
+  // The Pre-fill sample content switch (Prototype tools): every question, with a Level 3 location so its projects are asked too. Only a new request has it.
+  const [sent, setSent] = useState(false);
+  const sampleKey = useSampleContent({
+    value: { draft, agreedToTerms },
+    onChange: (s) => {
+      setDraft(s.draft);
+      setAgreedToTerms(s.agreedToTerms);
+      setDirty(true);
+    },
+    sample: sampleDla,
+    enabled: !initial && !renewFrom && !sent,
+  });
+
   const submit = () => {
     setAttempt("submit");
     setSubmitPressed(true);
@@ -209,6 +224,7 @@ export function DlaForm({
       setTab("review");
       return;
     }
+    setSent(true);
     onSubmit(draft);
   };
 
@@ -218,6 +234,7 @@ export function DlaForm({
       setTab("details");
       return;
     }
+    setSent(true);
     onSaveDraft(draft);
   };
 
@@ -284,6 +301,7 @@ export function DlaForm({
             <FormRow title="Agreement Period" required description="When do you need access to the data?">
               <div className="grid gap-4 sm:grid-cols-2">
                 <InputDatePicker
+                  key={`from-${sampleKey}`}
                   label="Start Date"
                   isRequired
                   isDisabled={isEditingLive}
@@ -293,6 +311,7 @@ export function DlaForm({
                   hint={errors.requestPeriodFrom}
                 />
                 <InputDatePicker
+                  key={`to-${sampleKey}`}
                   label="End Date"
                   isRequired
                   isDisabled={isEditingLive}

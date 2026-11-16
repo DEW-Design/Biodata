@@ -169,6 +169,96 @@
       "reviewBy": "2027-03-25",
       "reason": "Designer ingested the Untitled UI Date picker (a single-date picker and a date-range picker with presets, built on react-aria-components, with their calendar, range calendar and cell: 5 files, plus hooks/use-breakpoint.ts) via the ingestion workflow (2 Nov 2026). Checked: components/custom/date-picker (InputDatePicker, a typed segmented field with a calendar, the form field of 2.11) does part of the same job; the other overlap, components/custom/date-range (DateRangeControl), was removed by the designer on 2 Nov 2026 (2026-11-02-01). These are button-triggered pickers with Apply and presets, so not an exact twin of the form field, but the overlap is a 1.7 question left open for the designer, and no caller was migrated. Shipped in components/application/ as ingested, matching the carousel precedent (OVR-012). After ingest: icons on Cancel, Apply and Today (3.12), the dead text-md removed (2.1), font-barlow on the popovers (2.2), doc-site heading overrides (2.7), 40px preset rows (2.16), and the pick held in a draft so Cancel, Escape and a press outside keep the date (1.9). The ingest also raised react-aria to 3.53.1 and react-aria-components to 1.22.1 and made @internationalized/date a direct dependency.",
       "status": "active"
+    },
+    {
+      "id": "OVR-018",
+      "component": "components/application/command-menus/command-menu.tsx",
+      "designer": "Sai Maniganahalli",
+      "approvedBy": "Sai Maniganahalli",
+      "date": "2026-11-12",
+      "reviewBy": "2027-03-25",
+      "reason": "Designer ingested the Untitled UI Command menu (12 Nov 2026, instruction: bring in the command menu component, build it in the design system docs): a searchable overlay dialog of grouped items with icon, avatar and dot types, stacked rows, per-item shortcut keys, a preview slot and a footer, built on react-aria-components Autocomplete, ListBox and Modal, with react-hotkeys-hook (already a dependency). 11 files under components/application/command-menus: command-menu.tsx, parseHotkeys.ts, utils.ts and six base-components. Checked: components/base/dropdown (a menu from a button, no search, no overlay), components/base/select (a ComboBox searches a list in a popover under a field), components/application/modals (confirm and form dialogs, no search or list) and GlobalSearch (a field in the header). None is a command palette: a global, keyboard-opened search over actions and records in a modal, so not a 1.7 twin. Shipped in components/application/ as ingested, matching the carousel and date-picker precedents (OVR-012, OVR-013). No screen uses it yet. After ingest: font-barlow on the portaled overlay (2.2), the dead text-md and bg-border-secondary removed (2.1), the shortcut hint off by default (2.10), the footer's settings button and return-to-parent hint dropped because nothing is wired to them (2.10, 2.12), 40px rows and hit areas (2.16), Escape and focus return checked by keyboard (1.9).",
+      "status": "active"
+    },
+    {
+      "id": "OVR-019",
+      "component": "components/application/command-menus/parseHotkeys.ts",
+      "designer": "Sai Maniganahalli",
+      "approvedBy": "Sai Maniganahalli",
+      "date": "2026-11-12",
+      "reviewBy": "2027-03-25",
+      "reason": "A 1:1 copy of react-hotkeys-hook's hotkey parser (the package does not export it), used to match an item's shortcutKeys to the key event. Part of the Untitled UI Command menu ingest authorised in OVR-018 (12 Nov 2026, designer instruction: bring in the command menu component and build it in the design system docs). Shipped in components/application/command-menus as ingested, no twin (1.7, checked in OVR-018).",
+      "status": "active"
+    },
+    {
+      "id": "OVR-020",
+      "component": "components/application/command-menus/utils.ts",
+      "designer": "Sai Maniganahalli",
+      "approvedBy": "Sai Maniganahalli",
+      "date": "2026-11-12",
+      "reviewBy": "2027-03-25",
+      "reason": "mergeRefs and isDeepEqual helpers for the command menu. Part of the Untitled UI Command menu ingest authorised in OVR-018 (12 Nov 2026, designer instruction: bring in the command menu component and build it in the design system docs). Shipped in components/application/command-menus as ingested, no twin (1.7, checked in OVR-018).",
+      "status": "active"
+    },
+    {
+      "id": "OVR-021",
+      "component": "components/application/command-menus/base-components/command-input.tsx",
+      "designer": "Sai Maniganahalli",
+      "approvedBy": "Sai Maniganahalli",
+      "date": "2026-11-12",
+      "reviewBy": "2027-03-25",
+      "reason": "The search field at the top of the menu: a search glass, the input, an optional help tooltip and an optional shortcut hint. Changed: the dead text-md replaced by text-sm leading-6, the size the medium Input renders at. Part of the Untitled UI Command menu ingest authorised in OVR-018 (12 Nov 2026, designer instruction: bring in the command menu component and build it in the design system docs). Shipped in components/application/command-menus as ingested, no twin (1.7, checked in OVR-018).",
+      "status": "active"
+    },
+    {
+      "id": "OVR-022",
+      "component": "components/application/command-menus/base-components/command-menu-footer.tsx",
+      "designer": "Sai Maniganahalli",
+      "approvedBy": "Sai Maniganahalli",
+      "date": "2026-11-12",
+      "reviewBy": "2027-03-25",
+      "reason": "The key hints under the list (arrows, Enter, Escape). Changed: the settings button and the return-to-parent hint removed because nothing is wired to them (2.10, 2.12), and the undefined bg-alpha-white/80 replaced by bg-primary (2.1). Part of the Untitled UI Command menu ingest authorised in OVR-018 (12 Nov 2026, designer instruction: bring in the command menu component and build it in the design system docs). Shipped in components/application/command-menus as ingested, no twin (1.7, checked in OVR-018).",
+      "status": "active"
+    },
+    {
+      "id": "OVR-023",
+      "component": "components/application/command-menus/base-components/command-menu-header.tsx",
+      "designer": "Sai Maniganahalli",
+      "approvedBy": "Sai Maniganahalli",
+      "date": "2026-11-12",
+      "reviewBy": "2027-03-25",
+      "reason": "A section's small heading. Part of the Untitled UI Command menu ingest authorised in OVR-018 (12 Nov 2026, designer instruction: bring in the command menu component and build it in the design system docs). Shipped in components/application/command-menus as ingested, no twin (1.7, checked in OVR-018).",
+      "status": "active"
+    },
+    {
+      "id": "OVR-024",
+      "component": "components/application/command-menus/base-components/command-menu-item.tsx",
+      "designer": "Sai Maniganahalli",
+      "approvedBy": "Sai Maniganahalli",
+      "date": "2026-11-12",
+      "reviewBy": "2027-03-25",
+      "reason": "A row: text, icon, avatar or dot, a description, optional stacked layout, optional shortcut keys, built on react-aria ListBoxItem. Part of the Untitled UI Command menu ingest authorised in OVR-018 (12 Nov 2026, designer instruction: bring in the command menu component and build it in the design system docs). Shipped in components/application/command-menus as ingested, no twin (1.7, checked in OVR-018).",
+      "status": "active"
+    },
+    {
+      "id": "OVR-025",
+      "component": "components/application/command-menus/base-components/command-menu-navigation-icon.tsx",
+      "designer": "Sai Maniganahalli",
+      "approvedBy": "Sai Maniganahalli",
+      "date": "2026-11-12",
+      "reviewBy": "2027-03-25",
+      "reason": "A key cap (an icon or short text) for the footer's hints. Part of the Untitled UI Command menu ingest authorised in OVR-018 (12 Nov 2026, designer instruction: bring in the command menu component and build it in the design system docs). Shipped in components/application/command-menus as ingested, no twin (1.7, checked in OVR-018).",
+      "status": "active"
+    },
+    {
+      "id": "OVR-026",
+      "component": "components/application/command-menus/base-components/command-shortcut.tsx",
+      "designer": "Sai Maniganahalli",
+      "approvedBy": "Sai Maniganahalli",
+      "date": "2026-11-12",
+      "reviewBy": "2027-03-25",
+      "reason": "The key chips an item or the search field shows. Changed: the undefined bg-secondary_alt replaced by bg-secondary and rounded-[4px] by rounded-sm, the radius token (2.1). Part of the Untitled UI Command menu ingest authorised in OVR-018 (12 Nov 2026, designer instruction: bring in the command menu component and build it in the design system docs). Shipped in components/application/command-menus as ingested, no twin (1.7, checked in OVR-018).",
+      "status": "active"
     }
   ]
 }

@@ -376,14 +376,36 @@ export function LocationField({
   value,
   onChange,
   allowed,
+  pointOnly = false,
 }: {
   value: GeoExtentValue;
   onChange: (next: GeoExtentValue) => void;
   allowed: AllowedArea[];
+  /** A single coordinate point and nothing else (a Point intercept's geometry, "coordinates only" in the business's frame): latitude and longitude, with no shapefile, drawn shape, list or radius. */
+  pointOnly?: boolean;
 }) {
   const [warning, setWarning] = useState<string | null>(null);
+  // A new shape is checked against the areas it must sit inside; one that is not inside is not taken.
+  const take = (next: GeoExtentValue) => {
+    const outside = next.boundary ? allowed.find((a) => !isBoundaryInside(next.boundary!, a.boundary)) : undefined;
+    if (outside) {
+      setWarning(`That location is outside ${outside.label}, so it wasn't used. Choose a location inside it.`);
+      return;
+    }
+    setWarning(null);
+    onChange(next);
+  };
+  const point = value.boundary?.kind === "circle" ? value.boundary.center : null;
+  const setPoint = (lat: number, lon: number) =>
+    Number.isFinite(lat) && Number.isFinite(lon) && take({ method: "coordinates", boundary: { id: "coordinates", kind: "circle", center: [lat, lon], radiusKm: 0.01 } });
   return (
     <div className="flex flex-col gap-3">
+      {pointOnly ? (
+        <div className="grid grid-cols-2 gap-4">
+          <InputNumber label="Latitude" placeholder="-34.93" step={0.00001} formatOptions={{ maximumFractionDigits: 6 }} minValue={-38} maxValue={-25} value={point ? point[0] : NaN} onChange={(lat) => setPoint(lat, point ? point[1] : 138)} />
+          <InputNumber label="Longitude" placeholder="138.60" step={0.00001} formatOptions={{ maximumFractionDigits: 6 }} minValue={129} maxValue={141} value={point ? point[1] : NaN} onChange={(lon) => setPoint(point ? point[0] : -34.93, lon)} />
+        </div>
+      ) : (
       <GeoExtentPicker
         value={value}
         defaultRadiusKm={0.1}
@@ -395,19 +417,10 @@ export function LocationField({
             onChange(next);
             return;
           }
-          const outside = allowed.find(
-            (a) => !isBoundaryInside(next.boundary!, a.boundary),
-          );
-          if (outside) {
-            setWarning(
-              `That location is outside ${outside.label}, so it wasn't used. Choose a location inside it.`,
-            );
-            return;
-          }
-          setWarning(null);
-          onChange(next);
+          take(next);
         }}
       />
+      )}
       {warning && (
         <p
           role="alert"

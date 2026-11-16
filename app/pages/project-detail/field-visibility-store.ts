@@ -69,10 +69,14 @@ export function sectionFieldEntries(section: MetaSection): FieldEntry[] {
           ? (section.measurements ?? []).map((m) => m.type)
           : []),
       ];
+  // A concept the record may have but never needs ("Start date" on a Site) is not locked on, whatever its label.
+  const optional = new Set((section.rows ?? []).filter((r) => r.optional).map((r) => r.label));
+  // A concept the record cannot be saved without ("Location comment" on an Opportune) stays on the form and cannot be hidden.
+  const required = new Set((section.rows ?? []).filter((r) => r.required).map((r) => r.label));
   return labels.map((label) => ({
     key: `${section.id}:${label}`,
     label,
-    locked: ALWAYS_SHOWN.test(label) || REQUIRED_FIELD.test(label),
+    locked: required.has(label) || (!optional.has(label) && (ALWAYS_SHOWN.test(label) || REQUIRED_FIELD.test(label))),
   }));
 }
 

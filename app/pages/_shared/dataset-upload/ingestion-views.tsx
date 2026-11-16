@@ -13,6 +13,7 @@ import { stagesFor, type Reason, type RunView } from "@/app/pages/_shared/datase
 import { CustomConceptsSection } from "@/app/pages/_shared/dataset-upload/custom-concepts-views";
 import { uploadPath } from "@/app/pages/_shared/project-routes";
 import { useRoleHref } from "@/lib/use-role-href";
+import { useCanOpen } from "@/lib/use-can-open";
 
 // The three ways to show an ingestion's progress on a project page, and the new records it adds to
 // the tree. The lab (page.tsx) composes them; each is built from real DEW components (`TaskItem`,
@@ -92,7 +93,13 @@ function ReasonList({ reasons }: { reasons: Reason[] }) {
 
 function ReasonActions({ view, projectId, datasetId, onRetry }: { view: RunView; projectId: string; datasetId?: string; onRetry: () => void }) {
   const roleHref = useRoleHref();
+  const canOpen = useCanOpen();
   const system = isSystemFault(view);
+  // A role that cannot open the upload page or Reports is not offered the button that goes there (3.15).
+  const reportsPath = datasetId ? `/pages/reports/data-ingestion?q=${datasetId}` : "/pages/reports/data-ingestion";
+  const canUpload = canOpen(uploadPath(projectId));
+  const canReport = canOpen(reportsPath);
+  if (!system && !canUpload && !canReport) return null;
   return (
     // Indented by the reason icon (16px) and its gap (10px), so the buttons line up with the reason
     // text above them rather than hanging off the icon column.
@@ -102,15 +109,19 @@ function ReasonActions({ view, projectId, datasetId, onRetry }: { view: RunView;
           Try again
         </Button>
       ) : (
-        <Button color="primary" size="sm" iconLeading={Upload01} href={roleHref(uploadPath(projectId))}>
-          Upload a corrected file
-        </Button>
+        canUpload && (
+          <Button color="primary" size="sm" iconLeading={Upload01} href={roleHref(uploadPath(projectId))}>
+            Upload a corrected file
+          </Button>
+        )
       )}
       {/* Every ingestion that doesn't fully succeed is in Reports as well, error file included: the
           Data Ingestion Report, opened on this dataset's row when we know which one it is. */}
-      <Button iconLeading={BarChart01} color="secondary" size="sm" href={roleHref(datasetId ? `/pages/reports/data-ingestion?q=${datasetId}` : "/pages/reports/data-ingestion")}>
-        View in Reports
-      </Button>
+      {canReport && (
+        <Button iconLeading={BarChart01} color="secondary" size="sm" href={roleHref(reportsPath)}>
+          View in Reports
+        </Button>
+      )}
     </div>
   );
 }

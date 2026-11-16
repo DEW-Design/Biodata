@@ -152,7 +152,7 @@ export function DsaShell({
         section={
               recordId && canManage && !otherSection ? (
                 <DsaSwitcher currentId={recordId} />
-              ) : breadcrumbCurrent && !otherSection ? (
+              ) : breadcrumbCurrent && !otherSection && canManage ? (
                 <Link href={roleHref("/pages/dsa")} className="hover:text-primary">
                   {activeSection}
                 </Link>

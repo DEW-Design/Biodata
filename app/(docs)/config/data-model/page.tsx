@@ -15,6 +15,7 @@ import {
   KNOWN_GAPS,
   BDBSA_KEY_CROSSWALK,
   BDBSA_REPORTED_CODES,
+  OPTIONAL_FIELDS,
   reportedCodesText,
   type RecordKind,
   type ReportedCodes,
@@ -214,7 +215,10 @@ function FieldSchemaTable({
           const verifyKey = `${kind}:${type}:${item.field}`;
           return (
             <Row id={item.field}>
-              <Cell>{item.field}</Cell>
+              <Cell>
+                {item.field}
+                {OPTIONAL_FIELDS[`${kind}:${type}`]?.includes(item.field) ? <span className="ml-2 text-xs text-quaternary">Optional, under Manage concepts</span> : null}
+              </Cell>
               <Cell>
                 <span className={bdbsaKey ? "text-tertiary" : "text-quaternary"}>{bdbsaText}</span>
               </Cell>
@@ -261,7 +265,9 @@ export default function DataModelConfigPage() {
   );
 
   // The sandbox is a page (it was a lab until 27 Oct 2026), so the link is there on the deployed site too.
-  const sandboxHref = "/pages/data-ingestion-stress-test";
+  // A doc page has no role, and a page opens as a signed-out visitor unless told otherwise; the sandbox is not open to one (3.15). So it opens as the lowest role that
+  // can use it, the Registered User (the same rule the Prototype tools' "In production" link follows, 4.4).
+  const sandboxHref = "/pages/data-ingestion-stress-test?userRole=registered-user";
 
   return (
     <div className="prose-doc">
@@ -299,7 +305,7 @@ export default function DataModelConfigPage() {
         Every field name here is real, pulled directly from that type&apos;s own Figma frame - never invented, never a wireframe&apos;s own example value.
         Site, Visit and the four Observation types were also hand-checked field-by-field against real BDBSA exports, so each of their rows reads either a
         real BDBSA column or an honest &ldquo;No equivalent found&rdquo;. Block, Transect, Ramble, Quadrat and the two Occurrence types come from the
-        record-page frames and have no BDBSA mapping yet, so they read &ldquo;Not yet checked&rdquo;. Where BDBSA has since reported a code (the 20/10
+        record-page frames and have no BDBSA mapping yet, so they read &ldquo;Not yet checked&rdquo;. Opportune and Point intercept, the two event types the business added on 10 Nov 2026, have a frame of their own: no IBRA or Photopoint fields, one Observers field, Location Comment compulsory, a Point intercept that must sit inside another event, and a start date left out taken from the parent event. They have no BDBSA mapping, as no legacy column is known. A BDBSA column listed here is also read as that concept when a file is ingested (CAMPNAME as Site Name, LOCMETHODNR as Location Method). Where BDBSA has since reported a code (the 20/10
         check), it sits in a third column with where it was seen as a real column header; a code no file we hold shows is reported, not confirmed. Tick a row off once you&apos;ve personally confirmed it - that stays saved in this browser.
       </p>
       <Accordion items={schemaAccordionItems} className="mb-10" />

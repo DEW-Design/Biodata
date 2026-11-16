@@ -3,7 +3,7 @@
 import { useState, type FC } from "react";
 import { useRouter } from "next/navigation";
 import { ListBox, ListBoxItem, ToggleButton, ToggleButtonGroup } from "react-aria-components";
-import { ChevronDown, Edit05, GitBranch01, GitMerge, PencilLine, Plus, Trash01, Flag01, ArrowLeft, Save01, XClose, File06, Type01, Map02, Globe01, MarkerPin04, BookClosed, List } from "@untitledui/icons";
+import { ChevronDown, Edit05, GitBranch01, GitMerge, PencilLine, Plus, Trash01, Flag01, ArrowLeft, Save01, XClose, File06, Type01, Map02, Globe01, MarkerPin04, BookClosed, List, ShieldTick } from "@untitledui/icons";
 import { AlertFullWidth } from "@/components/application/alerts/alerts";
 import { DestructiveModal } from "@/components/application/modals/modal";
 import { Table } from "@/components/application/table/table";
@@ -20,6 +20,7 @@ import { TaxonTabContent, TaxonTableEditor, linkedRows, useDynamicOptions } from
 import { nodeHref, useTaxonNodes } from "@/app/pages/_shared/taxonomy/tx-hierarchy";
 import { deleteSynonym, saveSynonym, saveTaxon, useTaxa, useTaxaHydrated, useTaxon } from "@/app/pages/_shared/taxonomy/tx-store";
 import { ATTRIBUTE_COLUMNS, CHANGE_META, TX_ROOT, CHANGE_TYPES, synonymFieldsFor, tabsFor, type ChangeType, type FieldDef, type Kingdom, type Synonym, type TabDef, type Taxon } from "@/app/pages/_shared/taxonomy/tx-data";
+import { SENSITIVITY_TAB, SensitivityTab } from "@/app/pages/_shared/taxonomy/tx-sensitivity";
 import { useRoleHref } from "@/lib/use-role-href";
 import { cx } from "@/utils/cx";
 
@@ -34,6 +35,8 @@ export const TAB_ICON: Record<string, FC<{ className?: string }>> = {
   regionalData: MarkerPin04,
   speciesReference: BookClosed,
   attributes: List,
+  // Sensitive species risk (CONTRACTS 3.13): a species' rating, read from its nominations. A new concept, so a new icon (the shield with a tick; Shield01 is the nomination's What to protect).
+  sensitivity: ShieldTick,
 };
 
 // Taxonomy Management shows a species the way every collection in the app does ("List -> deep dive",
@@ -329,7 +332,9 @@ export function SpeciesRecord({ id }: { id: string }) {
       </div>
     ) : null;
 
-  const tabs = tabsFor(taxon.kingdom);
+  // The Sensitive species risk tab goes right after the first (Main, the designer's "overview"); it is read only, so editing a species leaves it alone.
+  const fieldTabs = tabsFor(taxon.kingdom);
+  const tabs: (TabDef | typeof SENSITIVITY_TAB)[] = [fieldTabs[0], SENSITIVITY_TAB, ...fieldTabs.slice(1)];
   const successors = taxon.children.map((c) => taxa.find((t) => t.id === c)).filter((t): t is Taxon => !!t);
   const synSaved = synDraft ? taxon.synonyms.find((s) => s.id === synDraft.id) : undefined;
   const editing = draft ? "species" : synDraft ? "synonym" : null;
@@ -427,7 +432,9 @@ export function SpeciesRecord({ id }: { id: string }) {
             </div>
             {tabs.map((t) => (
               <TabPanel key={t.id} id={t.id} className="pt-4">
-                {draft ? (
+                {t.kind === "sensitivity" ? (
+                  <SensitivityTab taxon={taxon} />
+                ) : draft ? (
                   // One editing card per card shown in view mode, titled the same, so no heading repeats.
                   t.kind === "table" ? (
                     <div className="flex flex-col gap-4">

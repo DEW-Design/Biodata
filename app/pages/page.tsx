@@ -11,9 +11,10 @@ import { SectionHeader } from "@/components/application/section-headers/section-
 import { sortRows, type SortValue } from "@/app/pages/_shared/agreement-scope";
 import { USER_ROLES, type UserRole } from "@/lib/user-role";
 import { AREAS, SCREENS, type Access, type Screen } from "@/app/pages/_shared/screen-index";
+import { availability } from "@/app/_prototype-tools/pages-map-data";
 
-// /pages index: every screen of the BioData SA prototype in one table, so opening /pages shows what
-// exists instead of a 404. The same `SectionHeader` + search + `TableCard`/`Table` combination as the
+// /pages index: the screens of the BioData SA prototype in one table, so opening /pages shows what
+// exists instead of a 404. It lists only what the chosen role can open (CONTRACTS 3.15). The same `SectionHeader` + search + `TableCard`/`Table` combination as the
 // /proto index and every collection screen.
 //
 // It is a directory, not a product screen, so it has no header, rail or column 2 (named in the
@@ -55,8 +56,11 @@ export default function PagesIndex() {
   const [sort, setSort] = useState<SortDescriptor>({ column: "area", direction: "ascending" });
 
   const query = search.trim().toLowerCase();
+  // Only the screens the chosen role can open (CONTRACTS 3.15): a row that lands on "this is not for your role" is not offered. Change "Open screens as" to see the others.
   const matching = SCREENS.filter(
-    (s) => !query || [s.name, s.path, s.area, s.description].some((v) => v.toLowerCase().includes(query)),
+    (s) =>
+      availability(s, role).open &&
+      (!query || [s.name, s.path, s.area, s.description].some((v) => v.toLowerCase().includes(query))),
   );
   const rows = sortRows(matching, sort, sortKeys);
   const pageCount = Math.max(1, Math.ceil(rows.length / pageSize));
@@ -73,7 +77,7 @@ export default function PagesIndex() {
               <CountBadge count={rows.length} color="brand" />
             </div>
             <SectionHeader.Subheading>
-              Every screen of the BioData SA prototype. Pick who to view them as, then open one.
+              The screens of the BioData SA prototype that the chosen role can open. Pick who to view them as, then open one.
             </SectionHeader.Subheading>
           </div>
         </SectionHeader.Group>
@@ -112,7 +116,7 @@ export default function PagesIndex() {
         </div>
 
         {rows.length === 0 ? (
-          <p className="py-6 text-sm text-tertiary">No screens match your search.</p>
+          <p className="py-6 text-sm text-tertiary">No screens match your search for this role.</p>
         ) : (
           <TableCard.Root className="flex min-h-48 flex-1 flex-col">
             <Table layout="fixed" className="min-w-[840px]"

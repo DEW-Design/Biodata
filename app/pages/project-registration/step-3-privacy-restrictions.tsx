@@ -14,14 +14,16 @@
 // an index would silently point at the wrong card afterwards. Deselecting a type never clears its
 // own form state (same as the accordion version), so re-selecting it brings the answers back.
 
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import { today, getLocalTimeZone } from "@internationalized/date";
 import { Database01, DotsHorizontal, Edit05, Feather, Globe01, Hourglass03, Lock01, LockKeyholeCircle, MarkerPin04, Users03 } from "@untitledui/icons";
 import { Button } from "@/components/base/buttons/button";
 import { MultiSelect } from "@/components/base/select/multi-select";
 import { InputDatePicker } from "@/components/custom/date-picker/input-date-picker";
 import { Input } from "@/components/base/input/input";
+import { HintText } from "@/components/base/input/hint-text";
 import { TextArea } from "@/components/base/textarea/textarea";
+import { RecordRow } from "@/app/pages/_shared/record-hero";
 import { TypeformCard, ChoiceTile } from "./typeform-card";
 import { EMBARGO_TYPE_OPTIONS, PROJECT_METADATA_CONCEPTS, REGISTRATION_SPECIES, SPECIES_CONCEPTS, maxEmbargoMonths, formatEmbargoDuration } from "./data";
 import { SpeciesRestrictionSection, isSpeciesEntryValid } from "./species-restriction";
@@ -129,19 +131,33 @@ export function restrictionsSummaryRows(value: RestrictionsState): { key: Restri
  *  Owns its own local "has the user touched the embargo end date" tracking (reset per mount, which
  *  is correct here - each standalone edit session starts fresh) rather than depending on the
  *  wizard's own step-level state, since a standalone caller never has that state to hand down. */
+/** How a caller lays one field group out. Add Project passes its form row (label and help on the left, the field on the right, CONTRACTS 4.1
+ *  item 3); without it the fields stack under their own labels, as the project page's cards show them. */
+export type RestrictionRow = (row: { title: string; required?: boolean; children: ReactNode }) => ReactNode;
+
 export function RestrictionTypeFields({
     typeKey,
     value,
     onChange,
     showErrors = false,
+    row,
 }: {
     typeKey: RestrictionTypeKey;
     value: RestrictionsState;
     onChange: (value: RestrictionsState) => void;
     /** True once the person tried to move on with something missing: the newer kinds mark their empty fields. */
     showErrors?: boolean;
+    /** Opt-in: lay each field group out as a row of the caller's form. The row's title is then the field's label, so the field carries it as its
+     *  accessible name only. */
+    row?: RestrictionRow;
 }) {
     const patch = (partial: Partial<RestrictionsState>) => onChange({ ...value, ...partial });
+    const inRows = !!row;
+    // One field group: the caller's row, or the group as it is.
+    const group = (title: string, required: boolean, children: ReactNode) => (row ? row({ title, required, children }) : children);
+    // A field's label: its own when stacked, the row's title (so only an accessible name here) in a row.
+    const named = (label: string) => (inRows ? { "aria-label": label } : { label });
+    const stack = (children: ReactNode) => (inRows ? <>{children}</> : <div className="flex flex-col gap-4">{children}</div>);
 
     const [embargoEndDateTouched, setEmbargoEndDateTouched] = useState(false);
     const embargoMaxMonths = maxEmbargoMonths(value.embargo.types);
@@ -162,60 +178,82 @@ export function RestrictionTypeFields({
     };
 
     if (typeKey === "embargo")
-        return (
-            <div className="flex flex-col gap-4">
-                <MultiSelect
-                    label="Select type of Embargo"
-                    placeholder="Select embargo type(s)"
-                    isRequired
-                    items={EMBARGO_TYPE_ITEMS}
-                    selectedKeys={new Set(value.embargo.types)}
-                    onSelectionChange={(keys) => handleEmbargoTypesChange(keys as Set<string>)}
-                    onReset={() => handleEmbargoTypesChange(new Set())}
-                    onSelectAll={() => handleEmbargoTypesChange(new Set(EMBARGO_TYPE_ITEMS.map((o) => o.id)))}
-                >
-                    {(item) => <MultiSelect.Item {...item} selectionIndicator="checkbox" selectionIndicatorAlign="left" />}
-                </MultiSelect>
-                {value.embargo.types.length > 0 && (
-                    <ul className="-mt-2 flex flex-col gap-1 text-sm text-tertiary">
-                        {value.embargo.types.map((t) => (
-                            <li key={t}>{EMBARGO_TYPE_OPTIONS.find((o) => o.id === t)?.description}</li>
-                        ))}
-                    </ul>
-                )}
-                {value.embargo.types.includes("other") && (
-                    <Input label="Please specify" isRequired value={value.embargo.typeOther} onChange={(v) => patch({ embargo: { ...value.embargo, typeOther: v } })} />
+        return stack(
+            <>
+                {group(
+                    "Type of embargo",
+                    true,
+                    <>
+                        <MultiSelect
+                            {...named("Type of embargo")}
+                            placeholder="Select embargo type(s)"
+                            isRequired
+                            items={EMBARGO_TYPE_ITEMS}
+                            selectedKeys={new Set(value.embargo.types)}
+                            onSelectionChange={(keys) => handleEmbargoTypesChange(keys as Set<string>)}
+                            onReset={() => handleEmbargoTypesChange(new Set())}
+                            onSelectAll={() => handleEmbargoTypesChange(new Set(EMBARGO_TYPE_ITEMS.map((o) => o.id)))}
+                        >
+                            {(item) => <MultiSelect.Item {...item} selectionIndicator="checkbox" selectionIndicatorAlign="left" />}
+                        </MultiSelect>
+                        {value.embargo.types.length > 0 && (
+                            // What each chosen type means: one row per type in a bordered card, the type on the left and its meaning on the right (the
+                            // record pages' own label and value row, as the review uses), in the order they were chosen. They were four loose sentences
+                            // with nothing saying which type each was about.
+                            <div className="overflow-hidden rounded-xl border border-secondary bg-primary">
+                                {value.embargo.types.map((t) => {
+                                    const option = EMBARGO_TYPE_OPTIONS.find((o) => o.id === t);
+                                    return (
+                                        <RecordRow key={t} label={option?.label ?? t}>
+                                            <span className="text-balance">{option?.description}</span>
+                                        </RecordRow>
+                                    );
+                                })}
+                            </div>
+                        )}
+                        {value.embargo.types.includes("other") && (
+                            <Input label="Please specify" isRequired value={value.embargo.typeOther} onChange={(v) => patch({ embargo: { ...value.embargo, typeOther: v } })} />
+                        )}
+                    </>,
                 )}
                 {/* "Justification", as every other kind of restriction asks it (the designer, 25 Oct 2026; it was "Reason"). */}
-                <JustificationField value={value.embargo.reason} onChange={(v) => patch({ embargo: { ...value.embargo, reason: v } })} showErrors={showErrors} />
-                <div className="flex w-full max-w-xs flex-col gap-1.5">
-                    <InputDatePicker
-                        label="Embargo End Date"
-                        isRequired
-                        value={value.embargo.endDate}
-                        onChange={(v) => {
-                            setEmbargoEndDateTouched(true);
-                            patch({ embargo: { ...value.embargo, endDate: v } });
-                        }}
-                        minValue={today(getLocalTimeZone())}
-                        maxValue={embargoMaxDate ?? undefined}
-                    />
-                    {embargoMaxDate && (
-                        <p className="text-xs text-tertiary">
-                            Maximum embargo period for the selected type{value.embargo.types.length > 1 ? "s" : ""}: {formatEmbargoDuration(embargoMaxMonths)}
-                        </p>
-                    )}
-                </div>
+                {group("Justification", true, <JustificationField value={value.embargo.reason} onChange={(v) => patch({ embargo: { ...value.embargo, reason: v } })} showErrors={showErrors} hideLabel={inRows} />)}
+                {group(
+                    "Embargo end date",
+                    true,
+                    <div className="flex w-full max-w-xs flex-col gap-1.5">
+                        <InputDatePicker
+                            {...named("Embargo end date")}
+                            isRequired
+                            value={value.embargo.endDate}
+                            onChange={(v) => {
+                                setEmbargoEndDateTouched(true);
+                                patch({ embargo: { ...value.embargo, endDate: v } });
+                            }}
+                            minValue={today(getLocalTimeZone())}
+                            maxValue={embargoMaxDate ?? undefined}
+                        />
+                        {embargoMaxDate && (
+                            <HintText>
+                                Maximum embargo period for the selected type{value.embargo.types.length > 1 ? "s" : ""}: {formatEmbargoDuration(embargoMaxMonths)}
+                            </HintText>
+                        )}
+                    </div>,
+                )}
                 {/* The designer, 25 Oct 2026: what still needs care once the embargo has ended is asked here, with the embargo. */}
-                <TextArea
-                    label="Data sensitivities after the embargo ends"
-                    placeholder="Please outline below any additional data sensitivities of the project to consider once the embargo has ended"
-                    hint="Optional. A BioData Admin reviews these before the data is released."
-                    rows={3}
-                    value={value.embargo.afterEmbargo ?? ""}
-                    onChange={(v) => patch({ embargo: { ...value.embargo, afterEmbargo: v } })}
-                />
-            </div>
+                {group(
+                    "Data sensitivities after the embargo ends",
+                    false,
+                    <TextArea
+                        {...named("Data sensitivities after the embargo ends")}
+                        placeholder="Please outline below any additional data sensitivities of the project to consider once the embargo has ended"
+                        hint="Optional. A BioData Admin reviews these before the data is released."
+                        rows={3}
+                        value={value.embargo.afterEmbargo ?? ""}
+                        onChange={(v) => patch({ embargo: { ...value.embargo, afterEmbargo: v } })}
+                    />,
+                )}
+            </>,
         );
 
     if (typeKey === "cultural") {
@@ -223,64 +261,76 @@ export function RestrictionTypeFields({
         const c = culturalOf(value);
         const set = (p: Partial<typeof c>) => patch({ cultural: { ...c, ...p } });
         const missing = (v: string) => showErrors && !v.trim();
-        return (
-            <div className="flex flex-col gap-4">
-                <Input
-                    label="Indigenous Information Authority"
-                    isRequired
-                    placeholder="The community, organisation or person who speaks for this information"
-                    value={c.authority}
-                    onChange={(authority) => set({ authority })}
-                    isInvalid={missing(c.authority)}
-                    hint={missing(c.authority) ? "Enter the Indigenous Information Authority" : undefined}
-                />
-                <TextArea
-                    label="IIA contact details"
-                    isRequired
-                    rows={2}
-                    placeholder="Name, email and phone number"
-                    hint={missing(c.contact) ? "Enter the contact details" : "How a BioData Admin can reach the Indigenous Information Authority."}
-                    value={c.contact}
-                    onChange={(contact) => set({ contact })}
-                    isInvalid={missing(c.contact)}
-                />
-                <ExpectationSelect value={c.expectation} onChange={(expectation) => set({ expectation })} />
-                <JustificationField value={c.justification} onChange={(justification) => set({ justification })} showErrors={showErrors} />
-            </div>
+        return stack(
+            <>
+                {group(
+                    "Indigenous Information Authority",
+                    true,
+                    <Input
+                        {...named("Indigenous Information Authority")}
+                        isRequired
+                        placeholder="The community, organisation or person who speaks for this information"
+                        value={c.authority}
+                        onChange={(authority) => set({ authority })}
+                        isInvalid={missing(c.authority)}
+                        hint={missing(c.authority) ? "Enter the Indigenous Information Authority" : undefined}
+                    />,
+                )}
+                {group(
+                    "IIA contact details",
+                    true,
+                    <TextArea
+                        {...named("IIA contact details")}
+                        isRequired
+                        rows={2}
+                        placeholder="Name, email and phone number"
+                        hint={missing(c.contact) ? "Enter the contact details" : "How a BioData Admin can reach the Indigenous Information Authority."}
+                        value={c.contact}
+                        onChange={(contact) => set({ contact })}
+                        isInvalid={missing(c.contact)}
+                    />,
+                )}
+                {group("Expectations data restrictions", false, <ExpectationSelect value={c.expectation} onChange={(expectation) => set({ expectation })} hideLabel={inRows} />)}
+                {group("Justification", true, <JustificationField value={c.justification} onChange={(justification) => set({ justification })} showErrors={showErrors} hideLabel={inRows} />)}
+            </>,
         );
     }
 
     if (typeKey === "all") {
         const a = allRecordsOf(value);
         const set = (p: Partial<typeof a>) => patch({ allRecords: { ...a, ...p } });
-        return (
-            <div className="flex flex-col gap-4">
-                <ExpectationSelect value={a.expectation} onChange={(expectation) => set({ expectation })} />
-                <JustificationField value={a.justification} onChange={(justification) => set({ justification })} showErrors={showErrors} />
-            </div>
+        return stack(
+            <>
+                {group("Expectations data restrictions", false, <ExpectationSelect value={a.expectation} onChange={(expectation) => set({ expectation })} hideLabel={inRows} />)}
+                {group("Justification", true, <JustificationField value={a.justification} onChange={(justification) => set({ justification })} showErrors={showErrors} hideLabel={inRows} />)}
+            </>,
         );
     }
 
-    if (typeKey === "species") return <SpeciesRestrictionSection entries={value.species} onChange={(species) => patch({ species })} />;
-    if (typeKey === "locations") return <LocationRestrictionSection entries={value.locations} onChange={(locations) => patch({ locations })} showErrors={showErrors} />;
+    if (typeKey === "species") return group("Species", true, <SpeciesRestrictionSection entries={value.species} onChange={(species) => patch({ species })} />);
+    if (typeKey === "locations") return group("Locations", true, <LocationRestrictionSection entries={value.locations} onChange={(locations) => patch({ locations })} showErrors={showErrors} />);
 
     if (typeKey === "metadata")
-        return (
+        return group(
+            "Concepts",
+            true,
             <div className="flex flex-col gap-4">
                 <ConceptRows rows={value.metadata.concepts} onChange={(concepts) => patch({ metadata: { ...value.metadata, concepts } })} options={PROJECT_METADATA_CONCEPTS} justifyEach />
-            </div>
+            </div>,
         );
 
-    return (
+    return group(
+        "Other restrictions",
+        true,
         <TextArea
-            label="Other Restrictions"
+            {...named("Other restrictions")}
             placeholder="Provide reasons why this restriction is needed to this project..."
             isRequired
             rows={4}
             value={value.otherRestrictions}
             onChange={(v) => patch({ otherRestrictions: v })}
             autoFocus
-        />
+        />,
     );
 }
 
