@@ -27,8 +27,8 @@ import { FormPage } from "@/app/pages/_shared/form-page";
 import { FormRow } from "@/app/pages/_shared/form-row";
 import { FOCUS_AREA_OPTIONS, PERMIT_TYPE_OPTIONS, REGISTRATION_SPECIES, ROLE_OF_WORK_OPTIONS } from "@/app/pages/project-registration/data";
 import { GeoExtentPicker } from "@/app/pages/project-registration/geo-extent-picker";
-import { MethodologyRow, RestrictionKindsRow, SectionFields } from "@/app/pages/project-registration/option-2/form-sections";
-import { isSectionValid, methodologySummary, missingFields, missingMethodFieldsV2, missingOwnerFields, withLegacyMethodologies } from "@/app/pages/project-registration/option-2/sections";
+import { DataOwnersRow, MethodologyRow, RestrictionKindsRow, SectionFields } from "@/app/pages/project-registration/option-2/form-sections";
+import { isSectionValid, methodologySummary, missingFields, missingMethodFieldsV2, missingOwnerFields, missingOwnerFieldsV2, toSavedDetails, withLegacyMethodologies } from "@/app/pages/project-registration/option-2/sections";
 import { ManagerCard } from "@/app/pages/project-registration/step-1-project-details";
 import { RESTRICTION_TYPE_META } from "@/app/pages/project-registration/step-3-privacy-restrictions";
 import { emptyContact, emptyPermitRow, emptyProjectManager, isGeoExtentComplete, type ContactPerson, type ProjectDetailsState, type ProjectManager, type RestrictionTypeKey } from "@/app/pages/project-registration/types";
@@ -102,6 +102,8 @@ export function cardMissing(id: ProjectCardId, s: ProjectState): string[] {
     case "details":
       return missingFields("basics", s);
     case "owner": {
+      // A project with its owners saved as a list (Add Project since 16 Nov 2026) is checked as Add Project checks it.
+      if (d.dataOwners) return missingOwnerFieldsV2(d);
       out.push(...missingOwnerFields(s));
       const primary = contactRole(d, 0);
       if (!primary.role) out.push("Primary contact role");
@@ -150,6 +152,10 @@ function DetailsForm({ draft, update, showErrors }: FormProps) {
 
 function OwnerForm({ draft, update, showErrors }: FormProps) {
   const d = draft.details;
+  // Owners saved as a list are edited with Add Project's own row, and written back as creating a project writes them, so the
+  // Published by and Project managers cards and Project access read the change.
+  if (d.dataOwners)
+    return <DataOwnersRow state={draft} onChange={(next) => update({ ...draft, details: toSavedDetails(next.details) })} showErrors={showErrors} />;
   const patch = (p: Partial<ProjectDetailsState>) => update({ ...draft, details: { ...d, ...p } });
   // Every contact carries its role. The first contact's role is also written to `roleOfWork`, so the
   // registration's own rules still see it.

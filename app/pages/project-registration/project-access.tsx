@@ -1,7 +1,10 @@
 "use client";
 
-// What a project contact can do on the project, asked the same way wherever it is set: on each contact card in Add Project's
-// Project contacts, and in each row of the project page's Project access tab (both explored in `/proto/project-access`). A
+// Archived 16 Nov 2026 (designer: not a tranche 1 feature, not in the approved wireframes or the BRD): no product screen asks
+// for it now. Kept for `/proto/project-access`.
+//
+// What a project officer can do on the project, asked the same way wherever it is set: on each officer in Add Project's
+// data owners, and in each row of the project page's Project access tab (both explored in `/proto/project-access`). A
 // Project Manager always has full control, so their field is shown, locked, with the reason as its hint.
 
 import { Select } from "@/components/base/select/select";

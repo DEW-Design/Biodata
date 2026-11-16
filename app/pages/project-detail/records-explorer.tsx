@@ -27,9 +27,7 @@ import {
   useRef,
   useState,
   type Ref,
-  type KeyboardEvent,
   type MouseEvent,
-  type PointerEvent,
 } from "react";
 import {
   ToggleButton,
@@ -49,6 +47,7 @@ import { ToolbarSearch } from "@/app/pages/_shared/toolbar-search";
 import { Table, TableCard } from "@/components/application/table/table";
 import { TreeView } from "@/components/application/tree-view/tree-view";
 import { cx } from "@/utils/cx";
+import { SplitHandle } from "@/components/custom/split-handle/split-handle";
 import { segmentClass, segmentTrayClass } from "./segmented";
 import {
   KIND_COLOR,
@@ -256,32 +255,27 @@ export function RecordsExplorer({
     const px = Math.min(Math.max((pct / 100) * total, 280), total - 376);
     return Math.round((px / total) * 1000) / 10;
   };
-  const onHandleDown = (e: PointerEvent<HTMLDivElement>) => {
-    e.preventDefault();
-    e.currentTarget.setPointerCapture(e.pointerId);
+  // The handle (components/custom/split-handle) owns the gesture; this owns the sizes.
+  const onHandleMove = ({ x }: { x: number; y: number }) => {
     const box = rowRef.current?.getBoundingClientRect();
     const left = box?.left ?? 0;
     const right = box?.right ?? window.innerWidth;
-    const move = (ev: globalThis.PointerEvent) =>
-      view === "tree"
-        ? setTreePct(clampPct(((ev.clientX - left - 8) / rowTotal()) * 100))
-        : setPanelWidth(clampWidth(right - ev.clientX - 8));
-    const up = () => {
-      window.removeEventListener("pointermove", move);
-      window.removeEventListener("pointerup", up);
-    };
-    window.addEventListener("pointermove", move);
-    window.addEventListener("pointerup", up);
+    if (view === "tree") setTreePct(clampPct(((x - left - 8) / rowTotal()) * 100));
+    else setPanelWidth(clampWidth(right - x - 8));
   };
-  const onHandleKey = (e: KeyboardEvent<HTMLDivElement>) => {
-    const step = e.key === "ArrowLeft" ? -1 : e.key === "ArrowRight" ? 1 : 0;
-    if (!step) return;
+  const onHandleStep = (step: -1 | 1) => {
     if (view === "tree") setTreePct((p) => clampPct(p + step * 2));
     else setPanelWidth((w) => clampWidth(w - step * 24));
   };
-  const [expanded, setExpanded] = useState<Set<Key>>(
-    () => new Set([PROJECT_NODE, ...ALL_PARENT_IDS]),
-  );
+  // The tree opens at the first level only: the project and its direct children (designer, 11 Nov 2026). The person
+  // expands the rest. A record already selected (a link from elsewhere) also has its parents opened, so it is visible.
+  const [expanded, setExpanded] = useState<Set<Key>>(() => {
+    const initial = recordById(selectedId);
+    return new Set([
+      PROJECT_NODE,
+      ...(initial ? ancestorsOf(initial).map((a) => a.id) : []),
+    ]);
+  });
   const [sort, setSort] = useState<SortDescriptor>({
     column: "code",
     direction: "ascending",
@@ -769,22 +763,14 @@ export function RecordsExplorer({
           )}
         </div>
 
-        <div
-          role="separator"
-          aria-orientation="vertical"
-          aria-label="Resize the list and the details panel"
-          aria-valuenow={view === "tree" ? treePct : panelWidth}
-          tabIndex={0}
-          onPointerDown={onHandleDown}
-          onKeyDown={onHandleKey}
-          onDoubleClick={() =>
-            view === "tree" ? setTreePct(TREE_PCT) : setPanelWidth(440)
-          }
-          title="Drag to resize. Double-click to reset."
-          className="group flex w-[16px] shrink-0 cursor-col-resize touch-none items-center justify-center outline-focus-ring focus-visible:outline-2"
-        >
-          <span className="h-12 w-1 rounded-full bg-[var(--ui-border-primary)] transition-colors group-hover:bg-[var(--color-brand-500)] group-focus-visible:bg-[var(--color-brand-500)]" />
-        </div>
+        <SplitHandle
+          orientation="vertical"
+          label="Resize the list and the details panel"
+          value={view === "tree" ? treePct : panelWidth}
+          onMove={onHandleMove}
+          onStep={onHandleStep}
+          onReset={() => (view === "tree" ? setTreePct(TREE_PCT) : setPanelWidth(440))}
+        />
 
         <aside
           key={selectedId ?? "project"}

@@ -265,7 +265,7 @@ const LOGIN_ROUTE = "/pages/auth/login";
 
 const NAV_LINKS: { label: string; href: string }[] = [
   { label: "What is Biodata", href: "#about" },
-  { label: "Explore", href: "#explore" },
+  { label: "Explore", href: EXPLORE_ROUTE },
   { label: "Contribute", href: "#contribute" },
   { label: "Dashboard", href: DASHBOARD_ROUTE },
   { label: "Resources & User Guides", href: "#knowledge-centre" },
@@ -540,7 +540,7 @@ export default function BiodataHomePage() {
             <Button color="secondary" size="sm" iconLeading={UserPlus01} href="/pages/auth/signup">
               Sign up
             </Button>
-            <Button color="primary" size="sm" iconLeading={Map01} href={DASHBOARD_ROUTE}>
+            <Button color="primary" size="sm" iconLeading={Map01} href={EXPLORE_ROUTE}>
               Explore
             </Button>
           </div>

@@ -15,7 +15,7 @@ import { MAP_SURFACE_EDGE } from "@/app/pages/_shared/map-search/map-surface";
 import type { SAMapMarker } from "@/app/pages/_shared/map-search/sa-map";
 import { MapZoomButtons } from "@/app/pages/_shared/map-search/map-zoom-buttons";
 import type { Map as LeafletMap } from "leaflet";
-import { ArrowNarrowRight, Circle, Download01, File07, FileDownload01, FileLock01, Folder, Map02, MarkerPin02, Pentagon, Plus, Printer, RefreshCcw01, SearchLg, Upload01, UserPlus01, XClose } from "@untitledui/icons";
+import { ArrowNarrowRight, Circle, Download01, Feather, File07, FileDownload01, FileLock01, Folder, Map01, Map02, MarkerPin02, Pentagon, Plus, Printer, RefreshCcw01, SearchLg, Upload01, UserPlus01, XClose, Table as TableIcon } from "@untitledui/icons";
 import { Button } from "@/components/base/buttons/button";
 import { Dropdown } from "@/components/base/dropdown/dropdown";
 import { Badge } from "@/components/base/badges/badges";
@@ -62,6 +62,12 @@ import { useRoleHref } from "@/lib/use-role-href";
 import { navForRole, keyHref, type NavNode } from "@/lib/registered-user-nav";
 import { cx } from "@/utils/cx";
 import { MAP_CONTROLS_Z_INDEX } from "@/lib/layers";
+import { SplitHandle } from "@/components/custom/split-handle/split-handle";
+import { FullscreenToggle } from "@/app/pages/project-detail/record-panel";
+import { DataReport } from "@/app/pages/_shared/reports/report-table";
+import { reportBundleFor } from "@/app/pages/_shared/reports/report-records";
+import { speciesRowsFor, type SpeciesRow } from "@/app/pages/_shared/reports/species-detail-report-data";
+import { speciesDetailAttributes, speciesDetailColumns, speciesRowId, speciesSearchText } from "@/app/pages/_shared/reports/species-detail-report";
 
 // The map search interface built for the sidebar's Observations item, per direct request: a real,
 // interactive map of South Australia (Leaflet + OpenStreetMap tiles, not a fabricated grid) that
@@ -184,10 +190,15 @@ function SectionPlaceholder({ node }: { node: NavNode }) {
 /** Explore, at /pages/observations: a floating card over the map that lists the search areas as layers,
  *  with no Search step - results appear in the same card and follow the areas live. (Its second layout, a
  *  search and then a results page, was retired on 23 Oct 2026.) */
-export function ObservationsExplore() {
+/** Which layout of Explore to show: the map alone (option 1, /pages/observations), or "Table toggle" (option 2,
+ *  /pages/observations/option-2), where a floating "Map only" / "Map and table" switch stacks the map over the Species
+ *  Detail Report's table of what the search found. */
+export type ExploreVariant = "map" | "table-toggle";
+
+export function ObservationsExplore({ variant = "map" }: { variant?: ExploreVariant }) {
   return (
     <Suspense fallback={null}>
-      <HydratedObservationsSearch />
+      <HydratedObservationsSearch variant={variant} />
     </Suspense>
   );
 }
@@ -195,14 +206,24 @@ export function ObservationsExplore() {
 /** Waits for the saved search (explore-search-store.ts) to load, so the page opens on it rather
  *  than opening empty and then jumping. Nothing is prerendered here anyway: the page reads the URL,
  *  so it only renders in the browser. */
-function HydratedObservationsSearch() {
+function HydratedObservationsSearch({ variant }: { variant: ExploreVariant }) {
   const hydrated = useExploreSearchHydrated();
   if (!hydrated) return null;
-  return <ObservationsSearch />;
+  return <ObservationsSearch variant={variant} />;
 }
 
-function ObservationsSearch() {
+function ObservationsSearch({ variant }: { variant: ExploreVariant }) {
   const router = useRouter();
+  // Option 2, "Table toggle": the results on the map alone, or on the map with the Species Detail Report's table under it. The search card is the filter in both, so a search
+  // made in one is the search in the other. Option 1 (the map alone) has no switch and is not changed by it (4.4).
+  const hasTableToggle = variant === "table-toggle";
+  // "Map only" is option 1's screen; "Map and table" stacks the map over the Species Detail Report's table, split by a handle (components/custom/split-handle, the project
+  // page's), with the table able to go full screen, as the project page's details panel does.
+  const [resultsView, setResultsView] = useState<"map-only" | "map-and-table">("map-only");
+  const MAP_PCT = 50;
+  const [mapPct, setMapPct] = useState(MAP_PCT);
+  const [tableFullscreen, setTableFullscreen] = useState(false);
+  const splitRef = useRef<HTMLDivElement>(null);
   const role = useUserRole();
   const isPublicUser = role === "public-user";
   const nav = navForRole(role);
@@ -1017,6 +1038,8 @@ function ObservationsSearch() {
   // ── Adding an area: one menu, then a short flow for that method only ──
   const startAdding = (key: string) => {
     if (key === "circle" || key === "polygon") {
+      // A shape is drawn on the map, so drawing while the table is full screen brings the map back first.
+      setTableFullscreen(false);
       setAddingMethod("draw");
       setActiveDrawTool(key);
       return;
@@ -1092,6 +1115,32 @@ function ObservationsSearch() {
     />
   );
 
+  // The top of the search card: the title, New search and Add area, an add-area step when one is open, and the search field.
+  const cardTop = (
+    <>
+        <div className="flex shrink-0 flex-wrap items-center justify-between gap-x-2 gap-y-1 px-4 pt-4 pb-3">
+          {/* The card's title layer is Map visualise's: the eyebrow (12/600, uppercase) over the title (18/600). */}
+          <div className="min-w-0">
+            <p className="m-0 text-xs font-semibold tracking-wide text-quaternary uppercase">Explore</p>
+            <h2 className="m-0! mt-0.5! text-lg! font-semibold! tracking-normal! whitespace-nowrap text-primary!">Search the map</h2>
+          </div>
+          <div className="flex items-center gap-4">
+            {hasSearch && (
+              <Button color="link-gray" size="sm" iconLeading={RefreshCcw01} onPress={startNewSearch}>
+                New search
+              </Button>
+            )}
+            {addAreaMenu}
+          </div>
+        </div>
+        {/* Capped by the window, not by the card: the card is as tall as its content, so a percentage of it (it was 50%) cut the form to half of itself, "Add point" and the file hint with it. */}
+        {addAreaPanel && <div className="max-h-[50vh] shrink-0 overflow-y-auto">{addAreaPanel}</div>}
+        <div className={cx("flex shrink-0 flex-col gap-2 px-4 pb-3", addAreaPanel ? "pt-3" : "pt-1")}>
+          {growSearchField}
+        </div>
+    </>
+  );
+
   // Explore has no column 2 (designer, 1 Oct 2026; CONTRACTS 3.7): the map takes the whole width, the
   // search areas are a section of the floating card (`AreaLayerChips`, always shown under the card's Search results heading),
   // and the data-access notice some roles see is a warning banner across the top of the map (`dlaBanner`).
@@ -1135,7 +1184,27 @@ function ObservationsSearch() {
   );
 
   // ── 1. Grows in place ──
-  const growExplore = floatFrame(
+  const split = hasTableToggle && resultsView === "map-and-table";
+  // Option 2's floating switch, at the top of the right-hand column, above the zoom buttons: in the same flex layout as every other panel on the map, so it never covers one
+  // (2.8), and in the same place in both views. The design system's segmented tabs (`button-border`), on the map's surface edge and shadow so it reads over any tiles; each
+  // option carries the icon of what it shows (Map01: Map02 is "Choose national parks" in Add area, 2.4).
+  const viewSwitch = hasTableToggle ? (
+    <div className={cx("pointer-events-auto shrink-0 rounded-[10px] shadow-lg", MAP_SURFACE_EDGE)}>
+      <Tabs
+        selectedKey={resultsView}
+        onSelectionChange={(key) => {
+          setResultsView(key as "map-only" | "map-and-table");
+          setTableFullscreen(false);
+        }}
+      >
+        <TabList aria-label="Results view" type="button-border" size="sm">
+          <Tab id="map-only" label="Map only" icon={Map01} />
+          <Tab id="map-and-table" label="Map and table" icon={TableIcon} />
+        </TabList>
+      </Tabs>
+    </div>
+  ) : null;
+  const mapStage = (
     <>
       {floatMap([448, 48], [48, 48])}
       {/* Every floating panel on the map is laid out by this one layer, never positioned on its own:
@@ -1157,27 +1226,10 @@ function ObservationsSearch() {
         aria-label="Search the map"
         className={cx(floatCard, "pointer-events-auto min-h-0 w-full shrink @max-[647px]:min-h-[72px]")}
       >
-        <div className="flex shrink-0 flex-wrap items-center justify-between gap-x-2 gap-y-1 px-4 pt-4 pb-3">
-          {/* The card's title layer is Map visualise's: the eyebrow (12/600, uppercase) over the title (18/600). */}
-          <div className="min-w-0">
-            <p className="m-0 text-xs font-semibold tracking-wide text-quaternary uppercase">Explore</p>
-            <h2 className="m-0! mt-0.5! text-lg! font-semibold! tracking-normal! whitespace-nowrap text-primary!">Search the map</h2>
-          </div>
-          <div className="flex items-center gap-4">
-            {hasSearch && (
-              <Button color="link-gray" size="sm" iconLeading={RefreshCcw01} onPress={startNewSearch}>
-                New search
-              </Button>
-            )}
-            {addAreaMenu}
-          </div>
-        </div>
-        {/* Capped by the window, not by the card: the card is as tall as its content, so a percentage of it (it was 50%) cut the form to half of itself, "Add point" and the file hint with it. */}
-        {addAreaPanel && <div className="max-h-[50vh] shrink-0 overflow-y-auto">{addAreaPanel}</div>}
-        <div className={cx("flex shrink-0 flex-col gap-2 px-4 pb-3", addAreaPanel ? "pt-3" : "pt-1")}>
-          {growSearchField}
-        </div>
-        {hasAreas && (
+        {cardTop}
+        {/* With the table under the map, the table is the results: the card keeps the areas and drops its own count and list, so the screen counts the results once (4.3). */}
+        {split && explicitLayers.length > 0 && <div className="shrink-0 px-4 pb-4">{areaChips}</div>}
+        {!split && hasAreas && (
           <div className="flex shrink-0 flex-col gap-3 px-4 pb-4">
             {/* What the search found and where: the heading names the results and counts every record in every area, the areas are chips (an X takes one away), and Hide list folds what is under the divider so the map can be
                 seen, as on Map visualise. A keyword with no area searches the whole state, which is the search field's to say, so it has no chip. */}
@@ -1195,7 +1247,7 @@ function ObservationsSearch() {
             {areaChips}
           </div>
         )}
-        {hasAreas && listOpen && (
+        {!split && hasAreas && listOpen && (
           <div id="explore-results-list" className={cx("flex min-h-0 flex-1 flex-col border-t border-secondary", rise)}>
             {resultsBody}
           </div>
@@ -1203,6 +1255,7 @@ function ObservationsSearch() {
       </section>
       </div>
           <div className="flex min-h-0 flex-col items-end gap-3 @min-[648px]:ml-auto @min-[648px]:w-[320px] @min-[648px]:shrink-0">
+            {viewSwitch}
             <MapZoomButtons map={mapInstance} className="pointer-events-auto shrink-0" />
             {/* A picked record shows as a short summary card, not a slide-in panel; its "Show in
                 project" opens the record on its project's page. Artefacts open in the viewer, a
@@ -1234,7 +1287,84 @@ function ObservationsSearch() {
         </div>
         </div>
       </div>
-    </>,
+    </>
+  );
+  const growExplore = floatFrame(split ? null : mapStage);
+
+  // ── 2. Table toggle: Map and table ──
+  // The rows are the Species Detail Report's (its 45 columns, its Filter and Columns), read from the project page's own records (report-records.ts), for the projects the search
+  // found, kept to the search areas: so the table holds the records the map plots, in the report's words (2.15). With no search yet, it is every species record the role may
+  // see in South Australia (the map has nothing to plot then; a table has nothing to lose by showing the whole state). The keyword is the search card's field, passed to the
+  // report as its search, so the screen has one search box, not two. A restricted record is kept to the areas by its block, as on the map, and no column shows a location.
+  const publishedProjects = useMemo(() => searchEvents.filter((e) => e.type === "Project" && (e.status === "Active" || e.status === "Completed")), []);
+  const tableRows = useMemo<SpeciesRow[]>(() => {
+    if (!hasTableToggle) return [];
+    const searching = boundaries.length > 0;
+    const projectsInView = searching ? filteredProjects : publishedProjects;
+    const rows = projectsInView.flatMap((p) => speciesRowsFor(reportBundleFor(p, role)));
+    return searching ? rows.filter((r) => isRecordInAnyBoundary(r.lat, r.lon, r.blockKm ?? null, boundaries)) : rows;
+  }, [hasTableToggle, boundaries, filteredProjects, publishedProjects, role]);
+  const tableAttributes = useMemo(() => speciesDetailAttributes(tableRows), [tableRows]);
+  // The split: the map keeps at least 240px and the table at least 280px (its toolbar, its header and a few rows); the map starts at half the height. The handle is the project
+  // page's (drag, the arrow keys, a double click puts it back), and the table's full screen is the project page's details-panel control (`FullscreenToggle`): a way to read many
+  // columns and rows, and back. The map is not given its own full screen: that is "Map only", one control per outcome (3.12).
+  const splitHeight = () => splitRef.current?.getBoundingClientRect().height ?? 800;
+  const clampMapPct = (pct: number) => {
+    const total = splitHeight();
+    const px = Math.min(Math.max((pct / 100) * total, 240), total - 296);
+    return Math.round((px / total) * 1000) / 10;
+  };
+  const onSplitMove = ({ y }: { x: number; y: number }) => {
+    const top = splitRef.current?.getBoundingClientRect().top ?? 0;
+    setMapPct(clampMapPct(((y - top - 8) / splitHeight()) * 100));
+  };
+  // A table row lights its dot on the map: a row's id is its project's id, then the record's own id, which is the dot's id on the map.
+  const markerIdOfRow = (row: SpeciesRow) => row.id.slice(row.projectId.length + 1);
+
+  const tableExplore = floatFrame(
+    <div ref={splitRef} className="absolute inset-0 flex flex-col bg-secondary">
+      {!tableFullscreen && (
+        <>
+          <div className="relative min-h-0 shrink-0 overflow-hidden" style={{ height: `${mapPct}%` }}>
+            {mapStage}
+          </div>
+          <SplitHandle
+            orientation="horizontal"
+            label="Resize the map and the table"
+            value={mapPct}
+            onMove={onSplitMove}
+            onStep={(step) => setMapPct((p) => clampMapPct(p + step * 4))}
+            onReset={() => setMapPct(MAP_PCT)}
+            className="w-full"
+          />
+        </>
+      )}
+      <section aria-label="Species records" className={cx("flex min-h-0 min-w-0 flex-1 flex-col px-4 pb-4", tableFullscreen && "pt-4")}>
+        <DataReport
+          header="none"
+          title="Species Detail Report"
+          subtitle="Every species record, with the observation made for it."
+          icon={Feather}
+          rows={tableRows}
+          rowId={speciesRowId}
+          columns={speciesDetailColumns}
+          attributes={tableAttributes}
+          search={keyword}
+          searchText={speciesSearchText}
+          searchLabel="Search the report"
+          searchPlaceholder="Search by species, NSX code, project or sighting"
+          tableLabel="Species records found by the search, one row each"
+          noun="species records"
+          emptyDescription="Species recorded in the projects this search finds appear here. Try a larger area or another word."
+          initialSort={{ column: "common", direction: "ascending" }}
+          exportName="explore-species-records"
+          // A guest is asked to sign up before exporting, as the map's Export data does.
+          actions={isPublicUser ? exportControl : undefined}
+          toolbarEnd={<FullscreenToggle isFullscreen={tableFullscreen} onToggle={() => setTableFullscreen((v) => !v)} />}
+          onRowHover={(row) => setHoveredMarkerId(row ? markerIdOfRow(row) : null)}
+        />
+      </section>
+    </div>,
   );
 
   const datasetExplore = datasetId
@@ -1276,7 +1406,7 @@ function ObservationsSearch() {
           </main>
         </div>
       ) : (
-        datasetExplore ?? growExplore
+        datasetExplore ?? (split ? tableExplore : growExplore)
       )}
     </div>
   );

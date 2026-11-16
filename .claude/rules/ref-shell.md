@@ -139,6 +139,12 @@ Supabase pattern catalog gathered earlier is in the archive.
   shouldn't vanish when the pointer drifts, hover has no keyboard or touch equivalent, and `MobileNavTrigger`
   already reclaims space below `lg`. **Revisit if** main needs more width often; then make column 2
   collapsible by click, not hover.
+- **Project access (archived 16 Nov 2026).** What each project officer can do on a project (Full control, Add and edit records,
+  View only), asked on each officer in Add Project and the Published by editor, and listed on a Project access tab on the project
+  page (built 25 Oct 2026). The designer: "Let's archive the idea of project access across the project. This is not a tranche 1
+  feature that is part of our approved wireframes and BRD." No product screen shows it; the lab `/proto/project-access` keeps it,
+  with `ProjectAccessSelect` (`project-registration/project-access.tsx`) and `ProjectAccessView` (`project-detail/project-access-view.tsx`).
+  The data model still carries `access` and `projectAccess`, unused by the product. **Revisit when** a later tranche takes it up.
 - **Bulk sensitive species nomination.** The MVP is one species per nomination, the unit the panel decides.
   **Revisit if** nominators ask to submit a related group together.
 - **"What is a project?" for a first-time visitor (parked 1 Oct 2026).** Three treatments were tried on the Projects

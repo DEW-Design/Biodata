@@ -560,7 +560,7 @@ const POPULATION_SPECIES_FIELDS = [
   "Planted/Released",
 ];
 
-const LANDSCAPE_CONTEXT_BASE_FIELDS = ["Landscape Context Score", "IBRA Association", "IBRA subregion", "Vegetation cover", "Block shape", "Number of Landform Features within Block"];
+// Landscape context scores are a Block event's only (designer, 9 Nov 2026), so no observation here carries them.
 
 function observationDetailsFields(o: SearchObservation): { label: string; value: ReactNode }[] {
   const fields: { label: string; value: ReactNode }[] = [
@@ -630,22 +630,12 @@ function buildObservationSections(o: SearchObservation, role: UserRole): Accordi
           />
         ),
       },
-      { id: "landscape-context", title: "Landscape Context Scores", content: <PlaceholderFields labels={LANDSCAPE_CONTEXT_BASE_FIELDS} /> },
       { id: "environmental", title: "Environmental Conditions", content: <PlaceholderFields labels={["Air Temperature - Max", "Air Temperature - Min"]} /> },
     );
   }
 
   if (o.type === "Community") {
     sections.push(
-      {
-        id: "landscape-context",
-        title: "Landscape Context Scores",
-        content: (
-          <PlaceholderFields
-            labels={[...LANDSCAPE_CONTEXT_BASE_FIELDS, "Native veg. remaining", "Native veg. protected", "Wetland / riparian", "Does the block contain a wetland feature ?"]}
-          />
-        ),
-      },
       {
         id: "overstorey",
         title: "Overstorey Measurements",

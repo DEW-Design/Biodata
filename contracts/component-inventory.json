@@ -88,6 +88,7 @@
     "components/base/toggle/toggle.tsx",
     "components/base/tooltip/tooltip.tsx",
     "components/custom/date-picker/input-date-picker.tsx",
+    "components/custom/split-handle/split-handle.tsx",
     "components/custom/textarea/textarea.tsx",
     "components/foundations/dot-icon.tsx",
     "components/foundations/featured-icon/featured-icon.tsx",

@@ -71,6 +71,33 @@ export interface ProjectContact extends ProjectManager {
     access?: ProjectAccessLevel;
 }
 
+/** One data owner and its project officers (the designer, 16 Nov 2026: "Allow for the users to add multiple data owners and their
+ *  respective project officers", and "project contacts" became "project officers"). Each owner has its own primary contact. */
+export interface DataOwner {
+    id: number;
+    type: DataOwnerType;
+    /** The organisation's name; empty for an individual, who is named by their primary officer. */
+    orgName: string;
+    officers: ProjectContact[];
+}
+
+/** The data owners of a project. A project saved before there could be more than one has its one owner in the flat fields
+ *  (`dataOwnerType`, `dataOwnerOrgName`, `projectContacts`), read here as a list of one. */
+export function ownersOf(d: Pick<ProjectDetailsState, "dataOwners" | "dataOwnerType" | "dataOwnerOrgName" | "projectContacts">): DataOwner[] {
+    return d.dataOwners ?? [{ id: 1, type: d.dataOwnerType, orgName: d.dataOwnerOrgName, officers: d.projectContacts ?? [] }];
+}
+
+/** An owner's name: the organisation's, or an individual's primary officer. */
+export function ownerName(o: DataOwner): string {
+    if (o.type === "organisation") return o.orgName.trim();
+    const p = o.officers.find((x) => x.isPrimary) ?? o.officers[0];
+    return p ? `${p.firstName} ${p.lastName}`.trim() : "";
+}
+
+export function emptyDataOwner(id: number, officerId: number): DataOwner {
+    return { id, type: "organisation", orgName: "", officers: [{ ...emptyProjectContact(officerId), isPrimary: true }] };
+}
+
 /** What a project contact can do on the project. Read through `accessOf` (data.ts). */
 export type ProjectAccessLevel = "full" | "records" | "view";
 
@@ -103,8 +130,12 @@ export interface ProjectDetailsState {
     dataOwnerOrgLogo: OrgLogo | null;
     dataOwnerContacts: ContactPerson[];
     projectManagers: ProjectManager[];
-    /** Version 2 of option 2 only (see `ProjectContact`). Optional, so a project saved before it existed still reads. */
+    /** Version 2 of option 2 only (see `ProjectContact`). Optional, so a project saved before it existed still reads. Since
+     *  `dataOwners`, every owner's officers in one list (owner 1's first), kept in step by `withOwners` (option-2/sections.ts). */
     projectContacts?: ProjectContact[];
+    /** Every data owner with its project officers (see `DataOwner`); read through `ownersOf`. The flat owner fields above hold the
+     *  first owner, so what reads them still works. Optional, so a project saved before it existed still reads. */
+    dataOwners?: DataOwner[];
     /** What each person on the project can do, by lower-case email (the project page's Project access tab; set from Project
      *  contacts when a project is created). A person with no entry is View only; a project manager is always Full control.
      *  Kept apart from the contact lists so editing a contact never loses it. Optional, so older projects still read. */

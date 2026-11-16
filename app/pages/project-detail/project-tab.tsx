@@ -32,9 +32,10 @@ import { COLLECTION_METHOD_OPTIONS, EMBARGO_TYPE_OPTIONS, FOCUS_AREA_OPTIONS, PE
 import { conceptLabel, conceptValueLabel } from "@/app/pages/project-registration/concept-rows";
 import { drawnShapeLine, geoExtentSummary } from "@/app/pages/project-registration/geo-extent-picker";
 import { OFFERED_RESTRICTION_TYPES, RESTRICTION_TYPE_META } from "@/app/pages/project-registration/step-3-privacy-restrictions";
-import { allRecordsOf, culturalOf, isGeoExtentComplete, type RestrictionTypeKey } from "@/app/pages/project-registration/types";
+import { allRecordsOf, culturalOf, isGeoExtentComplete, ownerName, ownersOf, type RestrictionTypeKey } from "@/app/pages/project-registration/types";
 import { expectationLabel } from "@/app/pages/project-registration/restriction-fields";
 import { cx } from "@/utils/cx";
+import { useFeatureAccess } from "@/lib/use-feature-access";
 import { useEditStore } from "./edit-store";
 import { boundaryCentre } from "./field-schema";
 import { CARD_TITLES, InlineCardEditor, ProjectCardDrawer, cardMissing, contactRole, roleLabel, type ProjectCardId } from "./project-edit";
@@ -573,7 +574,11 @@ export function ProjectTab({
   useImperativeHandle(ref, () => ({ addRestriction: () => setEditing("add-restriction") }));
   // A person is there when something of them is written: a contact or manager the form left blank is not one.
   const written = (p: { firstName: string; lastName: string; email: string }) => `${p.firstName}${p.lastName}${p.email}`.trim() !== "";
-  const hasContact = d.dataOwnerContacts.some(written);
+  // DEW privacy standard (the designer, 11 Nov 2026): a person's details are not shared outside DEW. Every other role sees the data
+  // owner's organisation and no one in it, and no Project managers card (`personDetails`, config/role-access.config.ts).
+  const seesPeople = useFeatureAccess("personDetails");
+  const hasContact = seesPeople && d.dataOwnerContacts.some(written);
+  const owners = d.dataOwners ? ownersOf(d) : [];
   const hasManager = d.projectManagers.some(written);
   const overviewStacked = editing === "details" || editing === "owner" || editing === "managers";
   const needsDetails = (ids: ProjectCardId[]) => ids.some((x) => cardMissing(x, project).length > 0);
@@ -584,7 +589,7 @@ export function ProjectTab({
   );
 
   const toc: TocItem[] = [
-    { id: "overview", label: "Overview", children: [card("details"), card("owner"), card("managers")] },
+    { id: "overview", label: "Overview", children: [card("details"), card("owner"), ...(seesPeople ? [card("managers")] : [])] },
     { id: "data-collection", label: "Data collection and methodology", children: [card("extent"), card("collection"), card("permits")] },
     { id: "privacy", label: "Privacy and restrictions", children: enabled.map((m) => card(m.key)) },
   ];
@@ -631,6 +636,22 @@ export function ProjectTab({
               />
             </Card>
             <Card card="owner" onEdit={setEditing} bare={peopleStyle === "card" && hasContact}>
+              {owners.length > 1 ? (
+              // Several data owners (Add Project, 16 Nov 2026): each owner's name, then its project officers, one owner after another.
+              <div className="flex flex-col gap-5">
+                {owners.map((o, oi) => (
+                  <div key={o.id} className={cx("flex flex-col gap-3", oi > 0 && "border-t border-secondary pt-5")}>
+                    <p className="text-sm font-medium text-primary">{ownerName(o) || "Individual / Person"}</p>
+                    {seesPeople &&
+                      o.officers.filter(written).map((p) => (
+                        <div key={p.id} className={cx(peopleStyle !== "card" && "border-t border-secondary pt-3")}>
+                          <Person name={`${p.firstName} ${p.lastName}`.trim()} role={roleLabel(p.role, p.roleOther)} team={p.organisation} email={p.email} phone={p.phone} primary={p.isPrimary} />
+                        </div>
+                      ))}
+                  </div>
+                ))}
+              </div>
+              ) : (
               <div className="flex flex-col gap-3">
                 <div className="flex items-center gap-3">
                   {d.dataOwnerType === "organisation" && d.dataOwnerOrgLogo && (
@@ -639,7 +660,7 @@ export function ProjectTab({
                   )}
                   <p className="text-sm font-medium text-primary">{d.dataOwnerType === "organisation" ? d.dataOwnerOrgName : "Individual / Person"}</p>
                 </div>
-                {hasContact ? (
+                {!seesPeople ? null : hasContact ? (
                   d.dataOwnerContacts.map((contact, i) => {
                     const role = contactRole(d, i);
                     return (
@@ -667,7 +688,9 @@ export function ProjectTab({
                   </div>
                 )}
               </div>
+              )}
             </Card>
+            {seesPeople && (
             <Card card="managers" onEdit={setEditing} bare={peopleStyle === "card" && hasManager}>
               {hasManager ? (
                 <div className="flex flex-col gap-3">
@@ -687,6 +710,7 @@ export function ProjectTab({
                 />
               )}
             </Card>
+            )}
           </div>
         </Section>
 

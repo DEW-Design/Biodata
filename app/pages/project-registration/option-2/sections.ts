@@ -1,6 +1,6 @@
 import { accessKey, accessOf, PROJECT_MANAGER_ROLE } from "../data";
 import { OTHER_METHODOLOGY } from "../methodology-fields";
-import { allRecordsOf, culturalOf, isGeoExtentComplete, type DataCollectionState, type MethodologyChoice, type ProjectContact, type ProjectDetailsState, type RestrictionsState, type RestrictionTypeKey } from "../types";
+import { allRecordsOf, culturalOf, isGeoExtentComplete, ownersOf, type DataCollectionState, type DataOwner, type MethodologyChoice, type ProjectContact, type ProjectDetailsState, type RestrictionsState, type RestrictionTypeKey } from "../types";
 import { isTypeValid, OFFERED_RESTRICTION_TYPES } from "../step-3-privacy-restrictions";
 
 // The Add Project flow's sections for the second (three-column) layout. The first layout asks one
@@ -104,22 +104,43 @@ export const contactsOf = (d: ProjectDetailsState): ProjectContact[] => d.projec
 export const isManager = (p: ProjectContact) => p.role === PROJECT_MANAGER_ROLE;
 const contactRoleValid = (p: ProjectContact) => !!p.role && (p.role !== "other" || p.roleOther.trim().length > 0);
 
-/** Every mandatory detail of the Project contacts list, named the way the form labels it. */
-function missingContactFields(d: ProjectDetailsState): string[] {
-  const people = contactsOf(d);
+/** The data owners as written: `dataOwners`, with the flat fields kept in step (the first owner, and every officer in one
+ *  list), so the project page, project access and the reports read a project with several owners as they read one. */
+export function withOwners(owners: DataOwner[]): Pick<ProjectDetailsState, "dataOwners" | "dataOwnerType" | "dataOwnerOrgName" | "projectContacts"> {
+  return {
+    dataOwners: owners,
+    dataOwnerType: owners[0]?.type ?? "organisation",
+    dataOwnerOrgName: owners[0]?.orgName ?? "",
+    projectContacts: owners.flatMap((o) => o.officers),
+  };
+}
+
+/** The next free officer id, across every owner (officers are one list when saved). */
+export const nextOfficerId = (owners: DataOwner[]) => Math.max(0, ...owners.flatMap((o) => o.officers.map((p) => p.id))) + 1;
+
+/** Every mandatory detail of the data owners and their project officers, named the way the form labels it. */
+export function missingOwnerFieldsV2(d: ProjectDetailsState): string[] {
+  const owners = ownersOf(d);
   const out: string[] = [];
-  people.forEach((p, i) => {
-    const who = people.length > 1 ? `Contact ${i + 1} ` : "";
-    if (!p.firstName.trim()) out.push(`${who}first name`.trim());
-    if (!p.lastName.trim()) out.push(`${who}last name`.trim());
-    if (!p.email.trim()) out.push(`${who}email`.trim());
-    if (!p.role) out.push(`${who}role in project`.trim());
-    else if (!contactRoleValid(p)) out.push(`${who}role in project (please specify)`.trim());
+  owners.forEach((o, oi) => {
+    // Each item names the field, then the owner it belongs to in brackets, so the comma-separated alert reads one item at a time:
+    // "Officer 3 first name (data owner 1)".
+    const of = owners.length > 1 ? ` (data owner ${oi + 1})` : "";
+    if (o.type === "organisation" && !o.orgName.trim()) out.push(`Organisation / Institution name${of}`);
+    o.officers.forEach((p, i) => {
+      const who = o.officers.length > 1 ? `Officer ${i + 1}` : "Project officer";
+      if (!p.firstName.trim()) out.push(`${who} first name${of}`);
+      if (!p.lastName.trim()) out.push(`${who} last name${of}`);
+      if (!p.email.trim()) out.push(`${who} email${of}`);
+      if (!p.role) out.push(`${who} role in project${of}`);
+      else if (!contactRoleValid(p)) out.push(`${who} role in project, please specify${of}`);
+    });
+    if (!o.officers.some((p) => p.isPrimary)) out.push(`A primary contact${of}`);
   });
-  if (!people.some((p) => p.isPrimary)) out.push("A primary contact");
-  // An organisation names who manages the project, as version 1 asked; an individual owner is the person. A manager is a
-  // contact whose role in the project is Project Manager (the designer, 16 Oct 2026: it was a tick of its own).
-  if (d.dataOwnerType === "organisation" && !people.some(isManager)) out.push("A project manager");
+  // An organisation names who manages the project, as version 1 asked; an individual owner is the person. A manager is an
+  // officer whose role in the project is Project Manager (the designer, 16 Oct 2026: it was a tick of its own). One across
+  // the project is enough, whichever owner they are with.
+  if (owners.some((o) => o.type === "organisation") && !owners.some((o) => o.officers.some(isManager))) out.push("A project manager");
   return out.map((m) => m.charAt(0).toUpperCase() + m.slice(1));
 }
 
@@ -146,7 +167,7 @@ function missingFieldsV2(id: SectionId, s: FormState): string[] | null {
   const d = s.details;
   switch (id) {
     case "owner":
-      return [...(d.dataOwnerType === "organisation" && !d.dataOwnerOrgName.trim() ? ["Organisation / Institution name"] : []), ...missingContactFields(d)];
+      return missingOwnerFieldsV2(d);
     case "extent":
       return isGeoExtentComplete(s.collection.geographicExtent) ? [] : ["Geographic extent"];
     case "method":
@@ -181,22 +202,32 @@ export function methodologySummary(c: DataCollectionState): { names: string; not
  *  first) and the project managers, and the methodologies as `methodDetails` and `limitationsAndBiases`. */
 export function toSavedForm(s: FormState, version: FormVersion): FormState {
   if (version === 1) return s;
-  const people = contactsOf(s.details);
-  const primary = people.find((p) => p.isPrimary) ?? people[0];
-  const ordered = primary ? [primary, ...people.filter((p) => p !== primary)] : people;
   const { names, notes } = methodologySummary(s.collection);
   return {
     ...s,
-    details: {
-      ...s.details,
-      roleOfWork: primary?.role ?? null,
-      roleOfWorkOther: primary?.roleOther ?? "",
-      dataOwnerContacts: ordered.map(({ id, firstName, lastName, email, phone, role, roleOther }) => ({ id, firstName, lastName, email, phone, role, roleOther })),
-      projectManagers: people.filter(isManager).map(({ id, firstName, lastName, email, phone, organisation, role, roleOther, isPrimary }) => ({ id, firstName, lastName, email, phone, organisation, role, roleOther, isPrimary })),
-      // What each person can do, as set on their contact card (a project manager is always Full control, so is not stored).
-      projectAccess: Object.fromEntries(people.filter((p) => !isManager(p) && accessKey(p)).map((p) => [accessKey(p), accessOf(p)])),
-    },
+    details: toSavedDetails(s.details),
     collection: { ...s.collection, surveyType: null, methodDetails: names, limitationsAndBiases: notes },
+  };
+}
+
+/** The people half of `toSavedForm`, also used when the project page's Published by card is saved. The project's primary
+ *  contact is the first owner's. */
+export function toSavedDetails(d: ProjectDetailsState): ProjectDetailsState {
+  const people = contactsOf(d);
+  const firstOwner = ownersOf(d)[0]?.officers ?? [];
+  const primary = firstOwner.find((p) => p.isPrimary) ?? people.find((p) => p.isPrimary) ?? people[0];
+  const ordered = primary ? [primary, ...people.filter((p) => p !== primary)] : people;
+  return {
+    ...d,
+    // Saved as a list even when the owner section was never changed (a draft that kept the flat fields), so the project page
+    // edits the owners as Add Project does.
+    ...withOwners(ownersOf(d)),
+    roleOfWork: primary?.role ?? null,
+    roleOfWorkOther: primary?.roleOther ?? "",
+    dataOwnerContacts: ordered.map(({ id, firstName, lastName, email, phone, role, roleOther }) => ({ id, firstName, lastName, email, phone, role, roleOther })),
+    projectManagers: people.filter(isManager).map(({ id, firstName, lastName, email, phone, organisation, role, roleOther, isPrimary }) => ({ id, firstName, lastName, email, phone, organisation, role, roleOther, isPrimary })),
+    // What each person can do, as set on their officer card (a project manager is always Full control, so is not stored).
+    projectAccess: Object.fromEntries(people.filter((p) => !isManager(p) && accessKey(p)).map((p) => [accessKey(p), accessOf(p)])),
   };
 }
 

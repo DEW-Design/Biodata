@@ -28,7 +28,7 @@ import { useUserRole } from "@/lib/use-user-role";
 // Columns the app has no value for (NSL code, Time, Not in quadrat, the tissue and length-method columns, LnkVch #,
 // Source ID, Created date, Introduced species, Past record) are in the table and left empty.
 
-const columns: ViewColumn<SpeciesRow>[] = [
+export const speciesDetailColumns: ViewColumn<SpeciesRow>[] = [
   numberColumn("seq", "Species seq #", W.sm, (r) => r.seq, { sticky: true }),
   textColumn("project", "Projects", W.lg, (r) => r.project),
   textColumn("common", "Species", W.lg, (r) => r.common, { strong: true }),
@@ -92,8 +92,23 @@ const GROUP_TILES: { group: SpeciesGroup; label: string }[] = [
   { group: "Amphibian", label: "Amphibians" },
 ];
 
-const rowId = (r: SpeciesRow) => r.id;
-const searchText = (r: SpeciesRow) => [r.common, r.scientific, r.nsx, r.project, r.legacy, r.voucherId];
+export const speciesRowId = (r: SpeciesRow) => r.id;
+export const speciesSearchText = (r: SpeciesRow) => [r.common, r.scientific, r.nsx, r.project, r.legacy, r.voucherId];
+
+/** The report's Filter attributes, read from its rows: shared with Explore's Map and table view, so the two filter the same way. */
+export function speciesDetailAttributes(allRows: SpeciesRow[]): Attribute<SpeciesRow>[] {
+  const one = (id: string, label: string, get: (r: SpeciesRow) => string): Attribute<SpeciesRow>[] => {
+    const options = optionsFromValues(allRows.map(get));
+    return options.length > 0 ? [{ id, kind: "options", label, options, get }] : [];
+  };
+  return [
+    ...one("group", "Class", (r) => r.group),
+    ...one("status", "Species status", (r) => r.status),
+    ...one("dateAccuracy", "Date accuracy", (r) => r.dateAccuracy),
+    ...one("sex", "Sex", (r) => r.sex),
+    ...one("activity", "Activity", (r) => r.activity),
+  ];
+}
 
 export function SpeciesDetailReport() {
   const role = useUserRole();
@@ -107,19 +122,7 @@ export function SpeciesDetailReport() {
   const rows = useMemo(() => (active === ALL_PROJECTS ? allRows : allRows.filter((r) => r.projectId === active)), [allRows, active]);
   const counts = useMemo(() => sumCounts(bundles.filter((b) => active === ALL_PROJECTS || b.project.id === active).map((b) => countKinds(b.seed))), [bundles, active]);
 
-  const attributes = useMemo(() => {
-    const one = (id: string, label: string, get: (r: SpeciesRow) => string): Attribute<SpeciesRow>[] => {
-      const options = optionsFromValues(allRows.map(get));
-      return options.length > 0 ? [{ id, kind: "options", label, options, get }] : [];
-    };
-    return [
-      ...one("group", "Class", (r) => r.group),
-      ...one("status", "Species status", (r) => r.status),
-      ...one("dateAccuracy", "Date accuracy", (r) => r.dateAccuracy),
-      ...one("sex", "Sex", (r) => r.sex),
-      ...one("activity", "Activity", (r) => r.activity),
-    ];
-  }, [allRows]);
+  const attributes = useMemo(() => speciesDetailAttributes(allRows), [allRows]);
 
   const groupTiles = GROUP_TILES.filter((t) => allRows.some((r) => r.group === t.group)).map((t) => ({ label: t.label, icon: SPECIES_GROUP_ICON[t.group], value: rows.filter((r) => r.group === t.group).length }));
 
@@ -135,10 +138,10 @@ export function SpeciesDetailReport() {
       ]}
       icon={Feather}
       rows={rows}
-      rowId={rowId}
-      columns={columns}
+      rowId={speciesRowId}
+      columns={speciesDetailColumns}
       attributes={attributes}
-      searchText={searchText}
+      searchText={speciesSearchText}
       searchLabel="Search the report"
       searchPlaceholder="Search by species, NSX code, project or sighting"
       tableLabel="Species records, one row each"

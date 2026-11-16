@@ -1,4 +1,4 @@
-import { accessLabel, accessOf, COLLECTION_METHOD_OPTIONS, EMBARGO_TYPE_OPTIONS, FOCUS_AREA_OPTIONS, PERMIT_TYPE_OPTIONS, PROJECT_METADATA_CONCEPTS, projectPeople, REGISTRATION_SPECIES, ROLE_OF_WORK_OPTIONS, SURVEY_TYPE_OPTIONS } from "@/app/pages/project-registration/data";
+import { COLLECTION_METHOD_OPTIONS, EMBARGO_TYPE_OPTIONS, FOCUS_AREA_OPTIONS, PERMIT_TYPE_OPTIONS, PROJECT_METADATA_CONCEPTS, REGISTRATION_SPECIES, ROLE_OF_WORK_OPTIONS, SURVEY_TYPE_OPTIONS } from "@/app/pages/project-registration/data";
 import { allRecordsOf, culturalOf, type DataCollectionState, type ProjectDetailsState, type RestrictionsState, type RestrictionTypeKey } from "@/app/pages/project-registration/types";
 
 // What changed between two saves of a project, as the project audit log records it: one entry per field whose value, read the way
@@ -49,7 +49,6 @@ const FIELDS: { field: string; read: (s: ProjectFieldState) => string }[] = [
   { field: "Owner role", read: (s) => roleText(s.details) },
   { field: "Project manager", read: (s) => list(s.details.projectManagers.map(person)) },
   { field: "Project manager email", read: (s) => list(s.details.projectManagers.map((m) => m.email)) },
-  { field: "Project access", read: (s) => list(projectPeople(s.details).map((p) => `${person(p)}: ${accessLabel(accessOf(p))}`)) },
   {
     field: "Project location",
     read: (s) => {

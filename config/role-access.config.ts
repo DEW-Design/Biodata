@@ -23,7 +23,7 @@
 import { isBiodataAdmin, type UserRole } from "@/lib/user-role";
 
 /** One entry per gated product feature. Add a key as a feature is actually gated - don't pre-populate speculatively. */
-export type FeatureKey = "orgSwitcher" | "metricCardCustomization" | "dsaManagement" | "dlaAccess" | "dlaApproval" | "userManagement" | "restrictedData" | "nominationAccess" | "nominationReview" | "nominationAllView" | "datasetUpload" | "datasetReview" | "templateFinder" | "ctrlVocabManagement" | "taxonomyManagement" | "notificationManagement" | "voucherManagement" | "reports" | "projectAuditLog" | "specimenReports" | "dlaAllView" | "nominationRating" | "fieldNotes" | "ingestionStressTest";
+export type FeatureKey = "orgSwitcher" | "metricCardCustomization" | "dsaManagement" | "dlaAccess" | "dlaApproval" | "userManagement" | "restrictedData" | "nominationAccess" | "nominationReview" | "nominationAllView" | "datasetUpload" | "datasetReview" | "templateFinder" | "ctrlVocabManagement" | "taxonomyManagement" | "notificationManagement" | "voucherManagement" | "reports" | "projectAuditLog" | "specimenReports" | "dlaAllView" | "nominationRating" | "fieldNotes" | "ingestionStressTest" | "personDetails";
 
 /** Feature -> the roles (besides biodata-admin, which always passes) allowed to see it. */
 export const roleAccessMatrix: Record<FeatureKey, UserRole[]> = {
@@ -126,6 +126,10 @@ export const roleAccessMatrix: Record<FeatureKey, UserRole[]> = {
   // The Data ingestion stress test (/pages/data-ingestion-stress-test): a tool that reads a file against the record model. Registered
   // users and above (the designer, 30 Oct 2026); a signed-out visitor sees the section's restriction.
   ingestionStressTest: ["registered-user", "privileged-user", "privileged-admin", "biodata-user"],
+  // A person's details (name, role, team, email, phone) on the project page's Published by and Project managers cards. DEW only: under
+  // the DEW privacy standard, information about a person is not shared outside DEW (the designer, 11 Nov 2026). Everyone else sees the
+  // data owner's organisation and no one in it. The admin bypass passes both admin roles.
+  personDetails: ["biodata-user"],
 };
 
 /**

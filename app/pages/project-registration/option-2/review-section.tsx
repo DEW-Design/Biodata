@@ -1,5 +1,6 @@
 "use client";
 
+import { Fragment } from "react";
 import { Edit05 } from "@untitledui/icons";
 import { getLocalTimeZone } from "@internationalized/date";
 import type { DateValue } from "react-aria-components";
@@ -7,11 +8,11 @@ import { ButtonUtility } from "@/components/base/buttons/button-utility";
 import { RecordRow } from "@/app/pages/_shared/record-hero";
 import { FORM_FIELD_WIDTH } from "@/app/pages/_shared/form-row";
 import { cx } from "@/utils/cx";
-import { accessLabel, accessOf, COLLECTION_METHOD_OPTIONS, FOCUS_AREA_OPTIONS, PROJECT_MANAGER_ROLE, ROLE_OF_WORK_OPTIONS, SURVEY_TYPE_OPTIONS } from "../data";
+import { COLLECTION_METHOD_OPTIONS, FOCUS_AREA_OPTIONS, ROLE_OF_WORK_OPTIONS, SURVEY_TYPE_OPTIONS } from "../data";
 import { geoExtentSummary } from "../geo-extent-picker";
-import { isGeoExtentComplete } from "../types";
+import { isGeoExtentComplete, ownerName, ownersOf, type ProjectContact } from "../types";
 import { restrictionsSummaryRows } from "../step-3-privacy-restrictions";
-import { contactsOf, methodologySummary, STEP_TITLES, type FormState, type FormVersion, type SectionId } from "./sections";
+import { methodologySummary, STEP_TITLES, type FormState, type FormVersion, type SectionId } from "./sections";
 
 // The last section: every answer grouped by step, each row with an Edit link back to its section,
 // and - if anything is still missing - the sections that need attention listed at the top with a
@@ -92,23 +93,20 @@ export function ReviewSection({ state, onEdit, version = 1, dataset }: { state: 
   );
 }
 
-// Version 2: one Project contacts row (each person with their role, and which is the primary contact),
+// Version 2: each data owner, then its Project officers row (each person with their role, and which is the primary contact),
 // focus areas under Method and details, no survey type or your role, and one Methodology row (the method, then the
 // methodologies added) with their notes.
 function ReviewSectionV2({ state, onEdit, dataset }: { state: FormState; onEdit: (id: SectionId) => void; dataset?: DatasetReview }) {
   const { details: d, collection: c, restrictions: r } = state;
   const person = (p: { firstName: string; lastName: string }) => `${p.firstName} ${p.lastName}`.trim();
   const roleOf = (p: { role: string | null; roleOther: string }) => (p.role === "other" ? p.roleOther : ROLE_OF_WORK_OPTIONS.find((o) => o.id === p.role)?.label);
-  const people = contactsOf(d);
-  const primary = people.find((p) => p.isPrimary);
-  const contacts = people
-    .filter((p) => person(p))
-    .map((p) => {
-      // A project manager says so in their role (Project Manager), so only the primary contact is marked.
-      // A non-manager's access follows their role; a Project Manager is always Full control, so it is not repeated.
-      return [person(p), roleOf(p), p.role === PROJECT_MANAGER_ROLE ? "" : accessLabel(accessOf(p))].filter(Boolean).join(", ") + (p.isPrimary ? " (primary contact)" : "");
-    })
-    .join("; ");
+  const owners = ownersOf(d);
+  // A project manager says so in their role (Project Manager), so only the primary contact is marked.
+  const officers = (people: ProjectContact[]) =>
+    people
+      .filter((p) => person(p))
+      .map((p) => [person(p), roleOf(p)].filter(Boolean).join(", ") + (p.isPrimary ? " (primary contact)" : ""))
+      .join("; ");
   const focus = c.focusAreas.map((id) => (id === "other" && c.focusAreaOther ? c.focusAreaOther : (FOCUS_AREA_OPTIONS.find((o) => o.id === id)?.label ?? id))).join(", ");
   const method = COLLECTION_METHOD_OPTIONS.find((o) => o.id === c.collectionMethod)?.label;
   const { names, notes } = methodologySummary(c);
@@ -123,8 +121,12 @@ function ReviewSectionV2({ state, onEdit, dataset }: { state: FormState; onEdit:
         <SummaryRow label="Project name" value={d.shortTitle} onEdit={() => onEdit("basics")} />
         <SummaryRow label="Abstract" value={d.abstract} onEdit={() => onEdit("basics")} />
         <SummaryRow label="Dates" value={dates} onEdit={() => onEdit("basics")} />
-        <SummaryRow label="Data owner" value={d.dataOwnerType === "organisation" ? d.dataOwnerOrgName : primary ? person(primary) : ""} onEdit={() => onEdit("owner")} />
-        <SummaryRow label="Project contacts" value={contacts} onEdit={() => onEdit("owner")} />
+        {owners.map((o, i) => (
+          <Fragment key={o.id}>
+            <SummaryRow label={owners.length > 1 ? `Data owner ${i + 1}` : "Data owner"} value={ownerName(o)} onEdit={() => onEdit("owner")} />
+            <SummaryRow label="Project officers" value={officers(o.officers)} onEdit={() => onEdit("owner")} />
+          </Fragment>
+        ))}
         {dataset && extentRow}
       </StepCard>
 

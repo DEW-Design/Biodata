@@ -40,6 +40,7 @@ import { useEditStore } from "./edit-store";
 import { fromDraft, localId, missingFor, toDraft, type Draft } from "./record-form";
 import { sampleRecord, type RecordSample } from "./record-sample";
 import { RecordIcon, recordIcon } from "./record-inspector";
+import { RecordHeaderMeta } from "./record-header-meta";
 import { typeLabel } from "@/app/pages/_shared/record-shapes";
 import { RecordQuickActions } from "./record-quick-actions";
 import { type ChildOption } from "./record-rules";
@@ -583,6 +584,11 @@ export function RecordFullView({
                 <p className="text-base text-tertiary italic">
                   {record.scientificName}
                 </p>
+              )}
+              {!isNew && (
+                <div className="pt-1">
+                  <RecordHeaderMeta record={record} />
+                </div>
               )}
             </div>
           </div>

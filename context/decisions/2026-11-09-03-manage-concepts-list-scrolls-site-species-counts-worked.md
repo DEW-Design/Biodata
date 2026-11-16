@@ -1,0 +1,11 @@
+# 2026-11-09 - Manage concepts list scrolls, site species counts worked out from the site's records
+
+- **Nov 9 2026: Manage concepts list scrolls, site species counts worked out from the site's records.**
+  - **Manage concepts did not scroll** (designer, with a screenshot of the 20-concept Species list running off the screen: "unable to scroll when the list is long"). Its `max-h-80` was on the dropdown's popover, where the popover's own `min-h-fit` (kept so a menu flips rather than shrinks, 1.9) overrules it. The Filter and Add menus put their cap on the menu, which already scrolls (`overflow-y-auto`); Manage concepts now does the same (0.9). No other dropdown popover carries a max height (grepped). Measured: the menu is 320px over 768px of content, inside the window, and scrolls by wheel.
+  - **Site scores: the species counts are worked out from the site's records** (designer: "the species count must be calculated from the site's records"), no longer typed in the sample data: the distinct plant species among the site's occurrences, less those with an observation answering "Is annual herb?" Yes (the sheet's "minus herbaceous annuals"), and of those, the ones with an observation answering "Regeneration" Yes (`siteSpeciesCounts`, `site-scores-section.tsx`).
+  - **The badge question is closed:** the "For internal business consideration" badge stays off (designer: ignore it).
+- **Effect on the sample:** Mylor Creek has no plant records (its only species is the Common Froglet), so it now counts 0 native and 0 regenerating, and its vegetation condition score falls from the worked example's 25.01 to 14.90 (unit 17.58, total 351.60). Cleland has the plant records (South Australian Blue Gum, Yacca: 2 native, 1 regenerating) but no sheet entries, so its vegetation score is still "Not provided".
+- **Open:**
+  - The records have no native or introduced flag; every plant species recorded is counted as native.
+  - Whether the worked example's sheet entries should move to Cleland (where the plants are), or Cleland be given a block, so one site shows every score.
+- Verified: `tsc`, `eslint` and `check:contracts` clean; live pass in Chrome as BioData Admin (the menu's measurements and wheel scroll; both sites' figures and the vegetation sheet's counts). No console errors. Not committed.

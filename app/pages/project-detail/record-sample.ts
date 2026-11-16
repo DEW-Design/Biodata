@@ -202,7 +202,7 @@ export function sampleRecord(current: RecordSample, newId: () => number): Record
         return value === null ? row : { ...row, value };
       }),
     };
-    if (section.landscape) next.landscape = { ...section.landscape, inputs: { cover: "38", perimeter: "300", protectedPct: "15", riparian: "Yes", swamp: "Yes" } };
+    if (section.landscape) next.landscape = { ...section.landscape, inputs: { cover: "38", perimeter: "300", riparian: "Yes", swamp: "Yes" } };
     if (section.overstorey) {
       next.overstorey = {
         canopyType: CANOPY_TYPES[0],

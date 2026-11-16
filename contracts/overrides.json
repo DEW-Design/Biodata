@@ -259,6 +259,16 @@
       "reviewBy": "2027-03-25",
       "reason": "The key chips an item or the search field shows. Changed: the undefined bg-secondary_alt replaced by bg-secondary and rounded-[4px] by rounded-sm, the radius token (2.1). Part of the Untitled UI Command menu ingest authorised in OVR-018 (12 Nov 2026, designer instruction: bring in the command menu component and build it in the design system docs). Shipped in components/application/command-menus as ingested, no twin (1.7, checked in OVR-018).",
       "status": "active"
+    },
+    {
+      "id": "OVR-027",
+      "component": "components/custom/split-handle/split-handle.tsx",
+      "designer": "mohanasok1",
+      "approvedBy": "mohanasok1",
+      "date": "2026-11-06",
+      "reviewBy": "2027-05-05",
+      "reason": "Designer approved in session (6 Nov 2026) making the resize handle a component when Explore's Table toggle needed the project page's tree and details split (drag, arrow keys, double-click to reset). Checked components/** first: no splitter or resizable pane exists in base, application or custom; app/pages/_shared/resizable-columns.tsx resizes table columns, not panes. The handle was inline in app/pages/project-detail/records-explorer.tsx (a behaviour in a screen, 1.10); that screen now uses this component, so there is one implementation (1.7). Starts in components/custom (1.4).",
+      "status": "active"
     }
   ]
 }
