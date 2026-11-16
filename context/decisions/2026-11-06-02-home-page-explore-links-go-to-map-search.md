@@ -1,0 +1,7 @@
+# 2026-11-06 - Home page Explore links go to Map search
+
+- **Nov 6 2026: Home page Explore links go to Map search.** The designer: "on both options of the home page, make sure all explore buttons or links are redirected to Map search".
+  - **Changed.** On both options (`/pages/biodata-home`, `/pages/biodata-home/version-2`) the header nav's "Explore" link went to the page's own `#explore` section; it now goes to Explore (`EXPLORE_ROUTE`, `/pages/observations` as the public user). Option 1's footer link list is the same `NAV_LINKS`, so it follows. Option 2's primary "Explore" button in the header went to the Dashboard (`DASHBOARD_ROUTE`); it now goes to Explore.
+  - **Already right, unchanged.** Option 1's hero "Explore" button, its "Explore BioData SA" quick link and the Explore section's button; option 2's "Start Exploring" tile and the Explore section's button. "Dashboard and Reporting" (whose description starts "Explore live indicators") still goes to the Dashboard: it is the Dashboard's link.
+  - **Open.** The `#explore` section is now reached only by scrolling; nothing on either page links to it.
+  - Verified: `npx tsc --noEmit` clean, eslint clean on both files, `npm run check:contracts` OK; live in Chrome, every link whose text contains "Explor" on both pages read from the DOM: all go to `/pages/observations?userRole=public-user` except the Dashboard tile. No console errors from the pages. Not committed.

@@ -169,6 +169,16 @@
       "reviewBy": "2027-03-25",
       "reason": "Designer ingested the Untitled UI Date picker (a single-date picker and a date-range picker with presets, built on react-aria-components, with their calendar, range calendar and cell: 5 files, plus hooks/use-breakpoint.ts) via the ingestion workflow (2 Nov 2026). Checked: components/custom/date-picker (InputDatePicker, a typed segmented field with a calendar, the form field of 2.11) does part of the same job; the other overlap, components/custom/date-range (DateRangeControl), was removed by the designer on 2 Nov 2026 (2026-11-02-01). These are button-triggered pickers with Apply and presets, so not an exact twin of the form field, but the overlap is a 1.7 question left open for the designer, and no caller was migrated. Shipped in components/application/ as ingested, matching the carousel precedent (OVR-012). After ingest: icons on Cancel, Apply and Today (3.12), the dead text-md removed (2.1), font-barlow on the popovers (2.2), doc-site heading overrides (2.7), 40px preset rows (2.16), and the pick held in a draft so Cancel, Escape and a press outside keep the date (1.9). The ingest also raised react-aria to 3.53.1 and react-aria-components to 1.22.1 and made @internationalized/date a direct dependency.",
       "status": "active"
+    },
+    {
+      "id": "OVR-018",
+      "component": "components/custom/split-handle/split-handle.tsx",
+      "designer": "mohanasok1",
+      "approvedBy": "mohanasok1",
+      "date": "2026-11-06",
+      "reviewBy": "2027-05-05",
+      "reason": "Designer approved in session (6 Nov 2026) making the resize handle a component when Explore's Table toggle needed the project page's tree and details split (drag, arrow keys, double-click to reset). Checked components/** first: no splitter or resizable pane exists in base, application or custom; app/pages/_shared/resizable-columns.tsx resizes table columns, not panes. The handle was inline in app/pages/project-detail/records-explorer.tsx (a behaviour in a screen, 1.10); that screen now uses this component, so there is one implementation (1.7). Starts in components/custom (1.4).",
+      "status": "active"
     }
   ]
 }

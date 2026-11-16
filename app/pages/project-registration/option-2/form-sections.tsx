@@ -20,8 +20,8 @@ import { ProjectAccessSelect } from "../project-access";
 import { MethodologySelect, OTHER_METHODOLOGY, SurveyTypeRadios, useMethodologyOptions } from "../methodology-fields";
 import { ManagerCard } from "../step-1-project-details";
 import { OFFERED_RESTRICTION_TYPES, RESTRICTION_TYPE_META, RestrictionTypeFields } from "../step-3-privacy-restrictions";
-import { emptyContact, emptyPermitRow, emptyProjectContact, emptyProjectManager, type CollectionMethod, type DataCollectionState, type MethodologyChoice, type ProjectContact, type ProjectDetailsState, type ProjectManager, type RestrictionsState } from "../types";
-import { contactsOf, isManager, PROJECT_NAME_MAX, type FormState, type FormVersion, type SectionId } from "./sections";
+import { emptyContact, emptyDataOwner, emptyPermitRow, emptyProjectContact, ownersOf, type DataOwner, emptyProjectManager, type CollectionMethod, type DataCollectionState, type MethodologyChoice, type ProjectContact, type ProjectDetailsState, type ProjectManager, type RestrictionsState } from "../types";
+import { isManager, nextOfficerId, PROJECT_NAME_MAX, withOwners, type FormState, type FormVersion, type SectionId } from "./sections";
 
 // One component per section of the second Add Project layout. Every field is a real DEW component
 // (`Input`, `TextArea`, `Select`, `MultiSelect`, `RadioGroup`, `Checkbox`, `Accordion`); the one
@@ -182,8 +182,7 @@ function OwnerSection(props: SectionProps) {
   if (props.version === 2)
     return (
       <>
-        <DataOwnerRow {...props} />
-        <ContactsRow {...props} showAccess />
+        <DataOwnersRow {...props} />
       </>
     );
   return (
@@ -269,72 +268,107 @@ function OwnerRows(props: SectionProps) {
   );
 }
 
-// Version 2's Project contacts (the designer, 9 Oct 2026): one list instead of a Primary contact block and a Project managers
-// block. Each person is a card like the managers' (ManagerCard), with a role in the project, and a Primary contact tick
-// (exactly one person; ticking it moves it). A project manager is a person whose role is Project Manager (16 Oct 2026: the
-// Project manager tick went into the role list). The Primary contact tick only works with two or more people: one person is
-// the primary contact, so their tick is on and cannot be changed. It replaces "Your role" as well: the person registering adds
-// themselves here with their role (CONTRACTS 4.7: the role belongs to the contact). `showAccess` (off by default, so Add Project
-// is unchanged) adds what each person can do on the project to their card: explored in `/proto/project-access`.
-export function ContactsRow({ state, onChange, showErrors, showAccess = false }: SectionProps & { showAccess?: boolean }) {
+// Version 2's data owners and their project officers. One list of people per data owner (the designer, 9 Oct 2026: the separate
+// Primary contact and Project managers blocks became one list, each person with a role in the project and one the primary
+// contact; 16 Oct 2026: Project Manager is a role, not a tick). The designer, 16 Nov 2026: "Allow for the users to add multiple data
+// owners and their respective project officers", "change the project contacts to project officers", and keep it clean while adding
+// several. So each owner is one card (its type and name, then its officers), and its officers are rows inside that card divided by a
+// line, not cards in a card. Each owner has its own primary contact (the tick only works with two or more officers; one officer is the
+// primary contact). One Project Manager across the project is enough. The role belongs to the officer (CONTRACTS 4.7). `showAccess`
+// adds what each officer can do on the project; only `/proto/project-access` turns it on, since Project access was archived (16 Nov
+// 2026: not a tranche 1 feature, not in the approved wireframes or the BRD). Also the project page's Published by editor.
+export function DataOwnersRow({ state, onChange, showErrors, showAccess = false }: SectionProps & { showAccess?: boolean }) {
   const { patchDetails } = useSectionPatches(state, onChange);
-  const d = state.details;
-  const people = contactsOf(d);
-  const set = (projectContacts: ProjectContact[]) => patchDetails({ projectContacts });
-  const update = (id: number, p: Partial<ProjectContact>) => set(people.map((m) => (m.id === id ? { ...m, ...p } : m)));
-  const remove = (id: number) => {
-    const removingPrimary = people.find((m) => m.id === id)?.isPrimary;
-    const rest = people.filter((m) => m.id !== id);
-    // The one person left is the primary contact, whatever was ticked before.
-    set(removingPrimary || rest.length === 1 ? rest.map((m, i) => (i === 0 ? { ...m, isPrimary: true } : m)) : rest);
+  const owners = ownersOf(state.details);
+  const set = (next: DataOwner[]) => patchDetails(withOwners(next));
+  const updateOwner = (id: number, p: Partial<DataOwner>) => set(owners.map((o) => (o.id === id ? { ...o, ...p } : o)));
+  const setOfficers = (owner: DataOwner, officers: ProjectContact[]) => updateOwner(owner.id, { officers });
+  const removeOfficer = (owner: DataOwner, id: number) => {
+    const removingPrimary = owner.officers.find((m) => m.id === id)?.isPrimary;
+    const rest = owner.officers.filter((m) => m.id !== id);
+    // The one officer left is the primary contact, whatever was ticked before.
+    setOfficers(owner, removingPrimary || rest.length === 1 ? rest.map((m, i) => (i === 0 ? { ...m, isPrimary: true } : m)) : rest);
   };
-  const add = () => set([...people, emptyProjectContact(Math.max(0, ...people.map((m) => m.id)) + 1)]);
-  const noPrimary = showErrors && !people.some((p) => p.isPrimary);
-  const noManager = showErrors && d.dataOwnerType === "organisation" && !people.some(isManager);
-  const rowError =
-    noPrimary && noManager
-      ? "Mark one person as the primary contact, and give at least one the role Project Manager."
-      : noPrimary
-        ? "Mark one person as the primary contact."
-        : noManager
-          ? "Give at least one person the role Project Manager."
-          : undefined;
+  const addOfficer = (owner: DataOwner) => setOfficers(owner, [...owner.officers, emptyProjectContact(nextOfficerId(owners))]);
+  const addOwner = () => set([...owners, emptyDataOwner(Math.max(0, ...owners.map((o) => o.id)) + 1, nextOfficerId(owners))]);
+  const noManager = showErrors && owners.some((o) => o.type === "organisation") && !owners.some((o) => o.officers.some(isManager));
+  const many = owners.length > 1;
 
   return (
     <FormRow
-      title="Project contacts"
+      title={many ? "Data owners" : "Data owner"}
       required
-      description={
-        d.dataOwnerType === "organisation"
-          ? "The people to contact about this project, and their role in it. Mark one as the primary contact; at least one is the Project Manager."
-          : "The people to contact about this project, and their role in it. Mark one as the primary contact."
-      }
-      error={rowError}
+      description="The organisations or people responsible for this project's data, and the project officers for each. Mark one officer of each as the primary contact; at least one officer is the Project Manager."
+      error={noManager ? "Give at least one officer the role Project Manager." : undefined}
     >
-      {people.map((person, i) => (
-        <ContactCard
-          key={person.id}
-          person={person}
-          index={i}
-          showErrors={showErrors}
-          showAccess={showAccess}
-          canRemove={people.length > 1}
-          canChoosePrimary={people.length > 1}
-          onChange={(p) => update(person.id, p)}
-          onRemove={() => remove(person.id)}
-          onSetPrimary={() => set(people.map((m) => ({ ...m, isPrimary: m.id === person.id })))}
-        />
-      ))}
-      <Button color="link-color" size="sm" iconLeading={Plus} className="w-max" onClick={add}>
-        Add another contact
+      {owners.map((owner, oi) => {
+        const title = many ? `Data owner ${oi + 1}` : "Data owner";
+        const missing = (v: string) => showErrors && !v.trim();
+        const noPrimary = showErrors && !owner.officers.some((p) => p.isPrimary);
+        return (
+          <BentoCard key={owner.id} className="gap-5">
+            <div className="flex items-center justify-between gap-4">
+              <p className="text-sm font-semibold text-primary">{title}</p>
+              {many && <Button color="secondary" size="sm" iconLeading={Trash01} aria-label={`Remove ${title.toLowerCase()}`} onClick={() => set(owners.filter((o) => o.id !== owner.id))} />}
+            </div>
+            <RadioGroup
+              aria-label={`${title} type`}
+              orientation="horizontal"
+              className="gap-6"
+              value={owner.type}
+              onChange={(v) => updateOwner(owner.id, { type: v as DataOwner["type"] })}
+            >
+              <RadioButton value="organisation" label="Organisation / Institution" />
+              <RadioButton value="individual" label="Individual / Person" />
+            </RadioGroup>
+            {owner.type === "organisation" && (
+              <Input
+                label="Organisation / Institution name"
+                isRequired
+                placeholder="Department for Housing and Urban Development"
+                value={owner.orgName}
+                onChange={(v) => updateOwner(owner.id, { orgName: v })}
+                isInvalid={missing(owner.orgName)}
+                hint={missing(owner.orgName) ? "Enter the organisation name" : undefined}
+              />
+            )}
+            <div className="flex flex-col border-t border-secondary">
+              {owner.officers.map((person, i) => (
+                <OfficerFields
+                  key={person.id}
+                  person={person}
+                  title={owner.officers.length > 1 ? `Project officer ${i + 1}` : "Project officer"}
+                  showErrors={showErrors}
+                  showAccess={showAccess}
+                  canRemove={owner.officers.length > 1}
+                  canChoosePrimary={owner.officers.length > 1}
+                  onChange={(p) => setOfficers(owner, owner.officers.map((m) => (m.id === person.id ? { ...m, ...p } : m)))}
+                  onRemove={() => removeOfficer(owner, person.id)}
+                  onSetPrimary={() => setOfficers(owner, owner.officers.map((m) => ({ ...m, isPrimary: m.id === person.id })))}
+                />
+              ))}
+              {/* The foot of the officers keeps the card's own step (gap-5, the rows' py-5): 20px under the last row's line, as every
+                  officer's content sits 20px from its lines. The button had none and touched the line. */}
+              <div className="flex flex-col items-start gap-3 pt-5">
+                {noPrimary && <p className="text-sm text-error-primary">Mark one officer as the primary contact.</p>}
+                <Button color="link-color" size="sm" iconLeading={Plus} onClick={() => addOfficer(owner)}>
+                  Add project officer
+                </Button>
+              </div>
+            </div>
+          </BentoCard>
+        );
+      })}
+      <Button color="secondary" size="sm" iconLeading={Plus} className="w-max" onClick={addOwner}>
+        Add data owner
       </Button>
     </FormRow>
   );
 }
 
-function ContactCard({
+function OfficerFields({
   person,
-  index,
+  title,
   showErrors,
   showAccess,
   canRemove,
@@ -344,11 +378,11 @@ function ContactCard({
   onSetPrimary,
 }: {
   person: ProjectContact;
-  index: number;
+  title: string;
   showErrors: boolean;
   showAccess: boolean;
   canRemove: boolean;
-  /** False with only one person, who is the primary contact. */
+  /** False with only one officer, who is the primary contact. */
   canChoosePrimary: boolean;
   onChange: (p: Partial<ProjectContact>) => void;
   onRemove: () => void;
@@ -359,12 +393,12 @@ function ContactCard({
   const otherMissing = showErrors && person.role === "other" && !person.roleOther.trim();
 
   return (
-    <BentoCard className="gap-4">
+    <div className="flex flex-col gap-4 border-b border-secondary py-5">
       <div className="flex items-center justify-between gap-4">
-        <p className="text-sm font-medium text-primary">Contact {index + 1}</p>
+        <p className="text-sm font-medium text-secondary">{title}</p>
         <div className="flex items-center gap-4">
           <Checkbox size="sm" label="Primary contact" isSelected={person.isPrimary} isDisabled={!canChoosePrimary} onChange={(on) => (on ? onSetPrimary() : onChange({ isPrimary: false }))} />
-          {canRemove && <Button color="secondary" size="sm" iconLeading={Trash01} aria-label={`Remove contact ${index + 1}`} onClick={onRemove} />}
+          {canRemove && <Button color="secondary" size="sm" iconLeading={Trash01} aria-label={`Remove ${title.toLowerCase()}`} onClick={onRemove} />}
         </div>
       </div>
       <div className="grid gap-4 sm:grid-cols-2">
@@ -372,24 +406,25 @@ function ContactCard({
         <Input label="Last name" isRequired placeholder="Doe" value={person.lastName} onChange={(v) => onChange({ lastName: v })} isInvalid={missing(person.lastName)} hint={missing(person.lastName) ? REQUIRED : undefined} />
         <Input label="Email" type="email" isRequired placeholder="john.doe@sa.gov.au" value={person.email} onChange={(v) => onChange({ email: v })} isInvalid={missing(person.email)} hint={missing(person.email) ? REQUIRED : undefined} />
         <Input label="Phone number" placeholder="Enter contact number" value={person.phone} onChange={(v) => onChange({ phone: v })} />
+        {/* Role and access side by side: what the officer does, and what that lets them do. */}
+        <Select
+          label="Role in project"
+          isRequired
+          placeholder="Select a role"
+          items={ROLE_IN_PROJECT_OPTIONS}
+          selectedKey={person.role}
+          onSelectionChange={(key) => onChange({ role: key as string, roleOther: key === "other" ? person.roleOther : "" })}
+          isInvalid={roleMissing}
+          hint={roleMissing ? "Select a role" : undefined}
+        >
+          {(item) => <Select.Item {...item}>{item.label}</Select.Item>}
+        </Select>
+        {showAccess && <ProjectAccessSelect person={person} onChange={(access) => onChange({ access })} />}
+        {person.role === "other" && (
+          <Input label="Please specify" isRequired placeholder="Describe their role in the project" value={person.roleOther} onChange={(v) => onChange({ roleOther: v })} isInvalid={otherMissing} hint={otherMissing ? REQUIRED : undefined} className="sm:col-span-2" />
+        )}
       </div>
-      <Select
-        label="Role in project"
-        isRequired
-        placeholder="Select a role"
-        items={ROLE_IN_PROJECT_OPTIONS}
-        selectedKey={person.role}
-        onSelectionChange={(key) => onChange({ role: key as string, roleOther: key === "other" ? person.roleOther : "" })}
-        isInvalid={roleMissing}
-        hint={roleMissing ? "Select a role" : undefined}
-      >
-        {(item) => <Select.Item {...item}>{item.label}</Select.Item>}
-      </Select>
-      {person.role === "other" && (
-        <Input label="Please specify" isRequired placeholder="Describe their role in the project" value={person.roleOther} onChange={(v) => onChange({ roleOther: v })} isInvalid={otherMissing} hint={otherMissing ? REQUIRED : undefined} />
-      )}
-      {showAccess && <ProjectAccessSelect person={person} onChange={(access) => onChange({ access })} />}
-    </BentoCard>
+    </div>
   );
 }
 
@@ -772,7 +807,7 @@ function RestrictionsSection({ state, onChange, showErrors }: SectionProps) {
           <AlertFullWidth
             color="gray"
             title="Project Managers and BioData Admins can view and edit these restrictions"
-            description="Everyone with the role Project Manager in Project contacts, and every BioData Admin, can see and change the restrictions set here."
+            description="Every project officer with the role Project Manager, and every BioData Admin, can see and change the restrictions set here."
             confirmLabel=""
             contained
             wrap

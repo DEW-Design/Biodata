@@ -66,6 +66,7 @@ export const rawNav: NavSection[] = [
     title: "Custom Components",
     items: [
       { title: "Date picker", href: "/custom-components/date-picker", description: "Segmented DD/MM/YYYY field with a calendar-icon trigger that opens a Calendar popover. input-date.tsx is segmented entry only, with no clickable picker. Pending a stakeholder decision on promotion into Components." },
+      { title: "Split handle", href: "/custom-components/split-handle", description: "The handle between two panes that share a row or a column: drag, arrow keys, double-click to reset. Used by the project page's records and details, and Explore's map and table." },
     ],
   },
   {

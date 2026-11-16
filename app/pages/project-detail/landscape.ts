@@ -1,31 +1,28 @@
-// Landscape context scores: how the land around a survey block scores, factor by factor, and the
-// total. Bands, points and wording come from the Figma "Landscape Context Scores" section
-// (Community 1970:147553, Non-biotic 1970:146811, view reference 1970:147032).
+// Landscape context scores: how the land around a survey block scores, factor by factor, and the total. Only a Block event
+// carries them (designer, 9 Nov 2026: "Landscape context scores will only be applicable for block type events"). The rules,
+// bands, points and words are DEW's scoresheet ("Landscape Context Scores", the Bushland Assessment workbook the designer
+// supplied), which replaces the Figma frames these were first read from (Community 1970:147553, Non-biotic 1970:146811).
 //
-// A Community observation scores five factors; a Non-biotic observation scores the first two.
-// What is typed: vegetation cover (%), the block's cleared perimeter (m), native vegetation
-// protected (%), and whether a riparian zone and a swamp or wetland are present. Everything else is
-// calculated: the block shape ratio (perimeter over the block's area, from its location), the IBRA
-// association and subregion (from the location) and their native vegetation remaining.
+// What is typed is what the sheet colours purple: percent vegetation cover (5 km radius), the block's cleared perimeter (m), and
+// whether a riparian zone and a swamp or wetland are present. Everything else is worked out: the cleared perimeter to area ratio
+// (the perimeter over the block's area, from its location), and the IBRA association and subregion (from the location) with their
+// native vegetation remaining and protected.
 //
-// Two things in the Figma frames don't add up, so the rules here follow the bands, not the example:
-//  - The vegetation cover bands skip 50 to 75% (">25–50%" then ">75–100%"); here the top band is
-//    >50–100%. Its points are 0.08 in the Community frame and 0.03 in the Non-biotic one; 0.08 is used.
-//  - The example total reads "1.16 of 1.25 max" while its parts sum to 0.16. Here the total is the sum
-//    of the factors and the maximum is the sum of their top points.
+// The total is the sheet's: every block scores at least 1 ("Blocks will score a minimum Landscape Context Score of 1"), and the
+// factors' points are added to it. The sheet names the maximum 1.25; its own top bands add up to 1.27 (0.06 + 0.03 + 0.10 + 0.03
+// + 0.05), which is raised with the designer. 1.25 is shown, as the sheet shows it.
 
 import type { Boundary } from "@/app/pages/_shared/map-search/geo";
 import { ibraFor } from "./field-schema";
 
 export type FactorId = "cover" | "block" | "remaining" | "protected" | "wetland";
 
+/** The sheet's purple cells: what a person types. */
 export interface LandscapeInputs {
   /** Percent vegetation cover within 5 km. */
   cover?: string;
   /** Cleared perimeter of the block, in metres. */
   perimeter?: string;
-  /** Native vegetation protected in the IBRA association, %. */
-  protectedPct?: string;
   riparian?: "Yes" | "No";
   swamp?: "Yes" | "No";
 }
@@ -42,7 +39,8 @@ export const COVER_BANDS: Band[] = [
   { label: ">5–10%", points: 0.02, test: (v) => v > 5 && v <= 10 },
   { label: ">10–25%", points: 0.04, test: (v) => v > 10 && v <= 25 },
   { label: ">25–50%", points: 0.06, test: (v) => v > 25 && v <= 50 },
-  { label: ">50–100%", points: 0.08, test: (v) => v > 50 },
+  { label: ">50–75%", points: 0.03, test: (v) => v > 50 && v <= 75 },
+  { label: ">75–100%", points: 0, test: (v) => v > 75 },
 ];
 export const BLOCK_BANDS: Band[] = [
   { label: "<6", points: 0.03, test: (v) => v < 6 },
@@ -74,16 +72,21 @@ export const FACTOR_TITLES: Record<FactorId, { title: string; short: string; sub
   wetland: { title: "Wetland or riparian habitat", short: "Wetland / riparian", subtitle: "Presence, not extent" },
 };
 
-export const FACTORS_FOR: Record<"Community" | "Non-biotic", FactorId[]> = {
-  Community: ["cover", "block", "remaining", "protected", "wetland"],
-  "Non-biotic": ["cover", "block"],
-};
+/** The concept the score is shown and hidden as. */
+export const LANDSCAPE_SCORE_LABEL = "Landscape context score";
 
-// Native vegetation remaining in each IBRA association and subregion. Mount Lofty Ranges and Aldinga
-// (3% and 15%) are the Figma example's values; the rest are illustrative until the real IBRA
-// statistics are loaded, and the association is one per subregion, for this preview only.
-const REMAINING_BY_SUBREGION: Record<string, { association: string; associationPct: number; subregionPct: number }> = {
-  "Mount Lofty Ranges": { association: "Aldinga", associationPct: 3, subregionPct: 15 },
+/** Every factor the sheet scores, in its reading order. */
+export const BLOCK_FACTORS: FactorId[] = ["cover", "block", "remaining", "protected", "wetland"];
+/** Every block scores at least this; the factors are added to it. */
+export const LANDSCAPE_MIN = 1;
+/** The maximum the sheet names. */
+export const LANDSCAPE_MAX = 1.25;
+
+// Native vegetation remaining in each IBRA association and subregion, and protected in the association. Mount Lofty Ranges and
+// Aldinga (3% and 15% remaining, 8% protected) are the Figma example's values; the rest are illustrative until the real IBRA
+// statistics are loaded, have no protected figure, and the association is one per subregion, for this preview only.
+const REMAINING_BY_SUBREGION: Record<string, { association: string; associationPct: number; subregionPct: number; protectedPct?: number }> = {
+  "Mount Lofty Ranges": { association: "Aldinga", associationPct: 3, subregionPct: 15, protectedPct: 8 },
   Fleurieu: { association: "Myponga", associationPct: 12, subregionPct: 18 },
   "Kangaroo Island": { association: "Gosse", associationPct: 48, subregionPct: 52 },
   Broughton: { association: "Clare", associationPct: 6, subregionPct: 9 },
@@ -97,6 +100,7 @@ export function ibraContext(lat: number, lon: number) {
     association: known?.association ?? "Not in a mapped association",
     associationPct: known?.associationPct,
     subregionPct: known?.subregionPct,
+    protectedPct: known?.protectedPct,
   };
 }
 
@@ -137,7 +141,7 @@ export function scoreLandscape(ids: FactorId[], inputs: LandscapeInputs, ctx: { 
     if (id === "cover") {
       const v = num(inputs.cover);
       const b = bandFor(COVER_BANDS, v);
-      return { id, points: b?.points ?? 0, max: 0.08, band: b?.label, entered: !!b, detail: b ? `${v}% cover` : "Not entered" };
+      return { id, points: b?.points ?? 0, max: 0.06, band: b?.label, entered: !!b, detail: b ? `${v}% cover` : "Not entered" };
     }
     if (id === "block") {
       const b = bandFor(BLOCK_BANDS, ratio);
@@ -155,9 +159,9 @@ export function scoreLandscape(ids: FactorId[], inputs: LandscapeInputs, ctx: { 
       };
     }
     if (id === "protected") {
-      const v = num(inputs.protectedPct);
+      const v = ibra.protectedPct ?? NaN;
       const b = bandFor(PROTECTED_BANDS, v);
-      return { id, points: b?.points ?? 0, max: 0.03, band: b?.label, entered: !!b, detail: b ? `${v}% protected` : "Not entered" };
+      return { id, points: b?.points ?? 0, max: 0.03, band: b?.label, entered: !!b, detail: b ? `${v}% protected` : "No IBRA figure for this location" };
     }
     const r = inputs.riparian === "Yes";
     const w = inputs.swamp === "Yes";
@@ -170,9 +174,8 @@ export function scoreLandscape(ids: FactorId[], inputs: LandscapeInputs, ctx: { 
       detail: inputs.riparian == null && inputs.swamp == null ? "Not entered" : parts.length ? parts.join(" and ") : "Neither present",
     };
   });
-  const total = results.reduce((s, f) => s + f.points, 0);
-  const max = results.reduce((s, f) => s + f.max, 0);
-  return { results, total, max, ratio, ibra };
+  const points = results.reduce((s, f) => s + f.points, 0);
+  return { results, points, total: LANDSCAPE_MIN + points, max: LANDSCAPE_MAX, ratio, ibra };
 }
 
 export const pts = (n: number) => n.toFixed(2);

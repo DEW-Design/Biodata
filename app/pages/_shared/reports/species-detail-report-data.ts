@@ -48,6 +48,11 @@ export interface SpeciesRow {
   inPouch: string;
   comments: string;
   annualHerb: string;
+  /** Where the occurrence is, as its project page has it: not a column, so the report never shows it. Explore's Map and table view uses it to keep a row to the search areas, a
+   *  restricted record (`blockKm`) by its block. */
+  lat: number;
+  lon: number;
+  blockKm?: number;
 }
 
 /** Tree health is many fields on the record page; here it reads as the ones that were recorded. */
@@ -107,6 +112,9 @@ export function speciesRowsFor({ project, seed }: ReportProject): SpeciesRow[] {
       inPouch: ob("No. in pouch"),
       comments: (observation ? firstField(observation, "Observation comment") : "") || fieldOf(occurrence, "Occurrence comment"),
       annualHerb: ob("Is annual herb?"),
+      lat: occurrence.lat,
+      lon: occurrence.lon,
+      blockKm: occurrence.blockKm,
     };
   });
 }

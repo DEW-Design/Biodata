@@ -19,7 +19,7 @@
 // edited as a value only: it takes no notes.
 
 import { createElement, useRef, useState, type FC, type ReactNode } from "react";
-import { Check, CheckCircle, ChevronDown, DotsVertical, Edit05, FileAttachment02, FileCheck02, Flag01, Image01, Link01, MessageSquare01, Paperclip, Plus, Save01, Trash01, UploadCloud02, VideoRecorder, XClose } from "@untitledui/icons";
+import { Check, CheckCircle, ChevronDown, DotsVertical, Edit05, FileAttachment02, FileCheck02, Flag01, HelpCircle, Image01, Link01, MessageSquare01, Paperclip, Plus, Save01, Trash01, UploadCloud02, VideoRecorder, XClose } from "@untitledui/icons";
 import { Button } from "@/components/base/buttons/button";
 import { Dropdown } from "@/components/base/dropdown/dropdown";
 import { Input } from "@/components/base/input/input";
@@ -40,6 +40,7 @@ import {
   type FieldFileKind,
   type FieldNotes,
 } from "./field-notes-store";
+import { fieldHelp } from "./field-help";
 
 const EMPTY = new Set(["", "Not provided", "None recorded"]);
 export const FILE_ICON: Record<FieldFileKind, typeof Image01> = {
@@ -836,6 +837,29 @@ export function FieldNoteMenu({
 }
 
 /**
+ * What a field means (field-help.ts), as a help icon after its name, only for a name that does not explain itself.
+ * Hidden until the row is pointed at (the caller passes its row's hover variant in `className`) or the icon is focused,
+ * like the row's edit icon; always shown on a touch screen, which has no hover. The same in view and in edit.
+ */
+export function FieldHelp({ label, className }: { label: string; className?: string }) {
+  const help = fieldHelp(label);
+  if (!help) return null;
+  return (
+    <Tooltip title={label} description={help} placement="top">
+      <TooltipTrigger
+        aria-label={`About ${label}`}
+        className={cx(
+          "inline-flex cursor-help items-center align-middle text-fg-quaternary opacity-0 transition-opacity hover:text-fg-quaternary_hover focus-visible:opacity-100 pointer-coarse:opacity-100",
+          className,
+        )}
+      >
+        <HelpCircle className="size-3.5" />
+      </TooltipTrigger>
+    </Tooltip>
+  );
+}
+
+/**
  * One field, when viewing: label, value and note indicators. A field with notes is one button: click
  * it to show or hide its notes. On hover, an editor sees the edit icon and the "..." menu, so notes can
  * be added, edited, resolved or removed without editing the record (saved at once).
@@ -873,11 +897,13 @@ export function FieldRow({
   const save = (next: FieldNotes) =>
     fieldNotesActions.setFieldNotes(recordId, fieldKey, next);
   const grid = { gridTemplateColumns: `minmax(0,${labelWidth}) minmax(0,1fr)` };
+  const help = !!fieldHelp(label);
   const body = (
     <>
       {/* The note markers sit with the field name, so they read as belonging to the field, not the value. */}
       <span className="flex min-w-0 flex-wrap items-center gap-x-1.5 gap-y-0.5">
         <span className="text-sm text-tertiary">{label}</span>
+        {help && <FieldHelp label={label} className="group-hover/field:opacity-100" />}
         {noted && (
           <span className="flex shrink-0 items-center gap-1">
             <NoteIndicators notes={current} />
@@ -920,16 +946,22 @@ export function FieldRow({
         )}
       >
         {noted ? (
-          <button
-            type="button"
-            aria-expanded={open}
-            aria-label={`${label}: ${open ? "hide" : "show"} notes`}
-            onClick={() => setOpen((o) => !o)}
+          // The toggle covers the row from behind its text, so a control in the row (the help icon, a link in the value)
+          // sits above it and is not a button inside a button.
+          <div
             style={grid}
-            className="grid min-w-0 flex-1 cursor-pointer gap-x-4 rounded-md py-2.5 pl-3 text-left outline-focus-ring focus-visible:outline-2"
+            className="relative grid min-w-0 flex-1 cursor-pointer gap-x-4 py-2.5 pl-3 [&_a]:relative [&_a]:z-[1] [&_button:not([data-row-toggle])]:relative [&_button:not([data-row-toggle])]:z-[1]"
           >
+            <button
+              type="button"
+              data-row-toggle
+              aria-expanded={open}
+              aria-label={`${label}: ${open ? "hide" : "show"} notes`}
+              onClick={() => setOpen((o) => !o)}
+              className="absolute inset-0 cursor-pointer rounded-md outline-focus-ring focus-visible:outline-2"
+            />
             {body}
-          </button>
+          </div>
         ) : (
           <div style={grid} className="grid min-w-0 flex-1 gap-x-4 py-2.5 pl-3">
             {body}

@@ -671,3 +671,15 @@ Not imported into every session on purpose: read or grep it when a task needs hi
 - [2026-11-04] Site scores lab: one read-only section, the vegetation score opens the scoresheet - `2026-11-04-05-site-scores-lab-one-read-only-section-the.md`
 - [2026-11-04] Merge mohan-wips into this branch: site scores lab - `2026-11-04-06-merge-mohan-wips-into-this-branch-site-scores.md`
 - [2026-11-04] Site scores moved from /proto to /pages, for internal business consideration - `2026-11-04-07-site-scores-moved-from-proto-to-pages-for.md`
+- [2026-11-06] Explore option 2 Table toggle - `2026-11-06-01-explore-option-2-table-toggle.md`
+- [2026-11-06] Home page Explore links go to Map search - `2026-11-06-02-home-page-explore-links-go-to-map-search.md`
+- [2026-11-09] Landscape scores on Block events, record header parent and start time, readings above summary, Measurements... - `2026-11-09-01-landscape-scores-on-block-events-record-header-parent.md`
+- [2026-11-09] Site scores move from the test page onto every Site in the project - `2026-11-09-02-site-scores-move-from-the-test-page-onto.md`
+- [2026-11-09] Manage concepts list scrolls, site species counts worked out from the site's records - `2026-11-09-03-manage-concepts-list-scrolls-site-species-counts-worked.md`
+- [2026-11-11] Project tree opens at first level, person details DEW only, score sheet options lab - `2026-11-11-01-project-tree-opens-at-first-level-person-details.md`
+- [2026-11-11] Scoresheets group each scored item - `2026-11-11-02-scoresheets-group-each-scored-item.md`
+- [2026-11-16] Help icon on record field names that need explaining - `2026-11-16-01-help-icon-on-record-field-names-that-need.md`
+- [2026-11-16] Several data owners, each with its project officers - `2026-11-16-02-several-data-owners-each-with-its-project-officers.md`
+- [2026-11-16] Add project officer sat on the officers' line - `2026-11-16-03-add-project-officer-sat-on-the-officers-line.md`
+- [2026-11-16] Help icon in the Manage concepts checklist - `2026-11-16-04-help-icon-in-the-manage-concepts-checklist.md`
+- [2026-11-16] Project access archived - `2026-11-16-05-project-access-archived.md`

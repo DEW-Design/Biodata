@@ -20,6 +20,8 @@ import { Input } from "@/components/base/input/input";
 import { cx } from "@/utils/cx";
 import type { MetaSection, SurveyRecord } from "./survey-data";
 import { recordFieldEntries, sectionFieldEntries } from "./field-visibility-store";
+import { FieldHelp } from "./field-notes";
+import { fieldHelp } from "./field-help";
 
 export function VisibilityPanel({
   record,
@@ -253,6 +255,8 @@ export function VisibilityPanel({
  * checklist of that section's fields. Ticking applies at once and closing keeps it (CONTRACTS 1.9); identifiers and
  * required fields stay ticked. Changes belong to the edit session, saved with Save changes.
  */
+const stop = (e: { stopPropagation: () => void }) => e.stopPropagation();
+
 export function SectionFieldsMenu({
   section,
   hidden,
@@ -279,9 +283,12 @@ export function SectionFieldsMenu({
           {shown.length}/{fields.length}
         </span>
       </Button>
-      <Dropdown.Popover placement="bottom end" className="max-h-80 w-64">
+      {/* The height is capped on the menu, which scrolls itself, as the Filter and Add menus do: on the popover it is
+          overruled by the popover's min-h-fit and a long list ran off the screen. */}
+      <Dropdown.Popover placement="bottom end" className="w-64">
         <Dropdown.Menu
           aria-label={`Concepts shown in ${section.title}`}
+          className="max-h-80"
           selectionMode="multiple"
           selectedKeys={new Set(shown.map((f) => f.key))}
           disabledKeys={fields.filter((f) => f.locked).map((f) => f.key)}
@@ -296,14 +303,30 @@ export function SectionFieldsMenu({
             onChange(next);
           }}
         >
+          {/* A concept whose name needs explaining carries the record cards' help icon (FieldHelp, field-help.ts; designer,
+              16 Nov 2026: "Manage columns need help icons as well"), shown while its row is pointed at or reached from the
+              keyboard. The icon is its own button, so pointing at or pressing it opens the help and does not tick the row. */}
           {fields.map((f) => (
             <Dropdown.Item
               key={f.key}
               id={f.key}
-              label={f.label}
+              textValue={f.label}
+              aria-label={f.label}
+              label={fieldHelp(f.label) ? undefined : f.label}
               selectionIndicator="checkbox"
               addon={f.locked ? "Always shown" : undefined}
-            />
+            >
+              {fieldHelp(f.label) && (
+                <span className="inline-flex items-center gap-1.5">
+                  {f.label}
+                  {/* The row takes its press from the pointer events under it, so they stop here: a press on the icon opens
+                      the help and leaves the tick as it was. */}
+                  <span className="inline-flex" onPointerDown={stop} onPointerUp={stop} onMouseDown={stop} onClick={stop}>
+                    <FieldHelp label={f.label} className="group-hover:opacity-100 group-data-[focused]:opacity-100" />
+                  </span>
+                </span>
+              )}
+            </Dropdown.Item>
           ))}
         </Dropdown.Menu>
       </Dropdown.Popover>

@@ -1,6 +1,6 @@
 "use client";
 
-// LAB: the site's scores as the scoresheet's "Total Scores for the Site" lists them (landscape context, vegetation condition,
+// A site's scores (site-scores-section.tsx), as the scoresheet's "Total Scores for the Site" lists them (landscape context, vegetation condition,
 // conservation significance, unit biodiversity, total biodiversity), and how the two products are worked out.
 
 import { fixed2, round2 } from "./vegetation-condition";

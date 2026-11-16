@@ -57,11 +57,13 @@ import {
   SELECT_OPTIONS,
 } from "./field-options";
 import { LandscapeEditor, OverstoreyEditor } from "./landscape-editor";
+import { SiteScoresSection } from "./site-scores-section";
 import { nameRow } from "./record-rules";
 import type { MetaRow, MetaSection } from "./survey-data";
 import type { FieldNotes } from "./field-notes-store";
 import {
   EMPTY_FIELD_NOTES,
+  FieldHelp,
   FieldNoteMenu,
   FieldNotesArea,
   takesNotes,
@@ -125,9 +127,15 @@ function EditRow({
       <div className="flex items-start gap-1">
         <div className="grid min-w-0 flex-1 grid-cols-1 items-start gap-1.5 @md:grid-cols-[minmax(0,12rem)_minmax(0,1fr)] @md:gap-x-4">
           <div className="@md:pt-2">
-            <p className="text-sm text-tertiary">
-              {label}
-              {required && <span className="text-brand-tertiary"> *</span>}
+            <p className="flex flex-wrap items-center gap-x-1.5 text-sm text-tertiary">
+              <span>
+                {label}
+                {required && <span className="text-brand-tertiary"> *</span>}
+              </span>
+              <FieldHelp
+                label={label}
+                className="group-focus-within/editrow:opacity-100 group-hover/editrow:opacity-100"
+              />
             </p>
           </div>
           <div className="min-w-0">{children}</div>
@@ -820,6 +828,25 @@ export function CardEditor({
         </>
       ) : (
         <>
+          {section.siteScores && (
+            <div className="px-3 py-3">
+              <SiteScoresSection
+                record={draft.record}
+                sectionId={section.id}
+                data={section.siteScores}
+                onSave={(siteScores) =>
+                  patch({
+                    record: {
+                      ...draft.record,
+                      sections: draft.record.sections.map((s) =>
+                        s.id === section.id ? { ...s, siteScores } : s,
+                      ),
+                    },
+                  })
+                }
+              />
+            </div>
+          )}
           {section.landscape && (
             <LandscapeEditor
               section={section}
@@ -836,7 +863,7 @@ export function CardEditor({
           )}
           {sectionRows.map((row) => {
             if (row.type === "measurements")
-              return (
+              return hidden.has(key(row.label)) ? null : (
                 <div key="__measurements" className="contents">
                   {measurementEditor}
                 </div>

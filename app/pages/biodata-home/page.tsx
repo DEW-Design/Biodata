@@ -79,7 +79,7 @@ const SIGNUP_ROUTE = "/pages/auth/signup";
 
 const NAV_LINKS: { label: string; href: string }[] = [
   { label: "What is Biodata", href: "#about" },
-  { label: "Explore", href: "#explore" },
+  { label: "Explore", href: EXPLORE_ROUTE },
   { label: "Contribute", href: "#contribute" },
   { label: "Dashboard", href: DASHBOARD_ROUTE },
   { label: "Resources & User Guides", href: "#knowledge-centre" },

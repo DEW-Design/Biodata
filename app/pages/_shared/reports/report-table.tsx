@@ -211,8 +211,18 @@ export interface DataReportProps<R> {
   exportPreamble?: string[][] | ((state: { search: string; filter: AttributeFilterApi<R> }) => string[][]);
   /** What the hero holds besides export: the white next-step button, and more items for the "..." menu (after the exports). */
   extraActions?: { primary?: RecordAction; menu?: RecordAction[] };
-  /** The card ("card", the record page's gradient identity card) or a slim header ("line": the list screens' title and subheading, the facts on one line, the actions in a plain bar). Compared in /proto/layouts. */
-  header?: "card" | "line";
+  /** The card ("card", the record page's gradient identity card) or a slim header ("line": the list screens' title and subheading, the facts on one line, the actions in a plain bar). Compared in /proto/layouts.
+   *  "none" draws no header at all, for a report shown inside another screen that already says what it is (Explore's Map and table view): the actions (the "..." menu with the exports) sit at the right of the toolbar. */
+  header?: "card" | "line" | "none";
+  /** The search, when it is kept by the screen around the report (Explore's Map and table view: the search card's field). The toolbar then has no search box of its own, so the
+   *  screen never shows two (4.6: "doesn't make sense to have two different search bars"). Left out, the report has its own search, as every report page does. */
+  search?: string;
+  /** With `header="none"`: what sits at the right of the toolbar in place of the report's "..." menu (a screen that gates export for a role draws its own control). */
+  actions?: ReactNode;
+  /** After the actions at the right of the toolbar: a control of the screen around the report (Explore's full screen for the table). */
+  toolbarEnd?: ReactNode;
+  /** Told which row the pointer is over, or none (Explore's Map and table view lights the row's dot on its map). */
+  onRowHover?: (row: R | null) => void;
   /** A panel of facets beside the table in place of the Filter menu and its chips. Gets the filter and every row, so it can count. Compared in /proto/layouts. */
   filterPanel?: (filter: AttributeFilterApi<R>, allRows: R[]) => ReactNode;
   /** When this changes the search, filters, sort and page go back to how they start, without remounting (a tab list
@@ -258,11 +268,22 @@ export function DataReport<R>({
   resetKey,
   keepSearch,
   wrapBody,
+  search: outerSearch,
+  actions,
+  toolbarEnd,
+  onRowHover,
 }: DataReportProps<R>) {
   const showingExample = realRows.length === 0 && example !== undefined;
   const allRows = useMemo(() => (showingExample ? [example] : realRows), [showingExample, example, realRows]);
-  const [search, setSearch] = useState(initialQuery);
+  const [ownSearch, setSearch] = useState(initialQuery);
+  const search = outerSearch ?? ownSearch;
+  // A search kept outside the report starts the table at page 1 when it changes, as the report's own box does (adjusted while rendering, as `resetKey` below).
+  const [seenOuterSearch, setSeenOuterSearch] = useState(outerSearch);
   const [page, setPage] = useState(1);
+  if (seenOuterSearch !== outerSearch) {
+    setSeenOuterSearch(outerSearch);
+    setPage(1);
+  }
   const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE);
   const [sort, setSort] = useState<SortDescriptor | undefined>(initialSort);
 
@@ -305,10 +326,13 @@ export function DataReport<R>({
   const heroActions = <RecordActionBar onDark primary={extraActions?.primary} menu={[...reportExportActions(rows, columns, exportName, typeof exportPreamble === "function" ? exportPreamble({ search, filter }) : exportPreamble), ...(extraActions?.menu ?? [])]} />;
   const latestDay = latest ? newestDay(allRows, latest) : null;
   const heroFacts = typeof facts === "function" ? facts(rows) : facts;
+  const lineActions = isValidElement(heroActions) ? cloneElement(heroActions as ReactElement<{ onDark?: boolean }>, { onDark: false }) : heroActions;
+  const noneActions = actions ?? lineActions;
 
   const body = (
-    <div className={cx("flex min-h-0 min-w-0 flex-1 flex-col", header === "line" ? "gap-3 px-6 pb-4 pt-3" : "gap-4 p-6")}>
+    <div className={cx("flex min-h-0 min-w-0 flex-1 flex-col", header === "line" ? "gap-3 px-6 pb-4 pt-3" : header === "none" ? "gap-3" : "gap-4 p-6")}>
       <div className={cx("flex shrink-0 flex-wrap gap-3", parameters?.inline ? "items-end" : "items-center")}>
+        {outerSearch === undefined && (
         <ToolbarSearch
           label={searchLabel}
           placeholder={searchPlaceholder}
@@ -322,6 +346,7 @@ export function DataReport<R>({
             setPage(1);
           }}
         />
+        )}
         {parameters ? <ParametersPopover parameters={parameters} /> : null}
         {!filterPanel && <FilterMenu filter={filter} />}
         {/* A report whose parameters are drawn inline has them here, to the right of Filter, as dropdowns (report-parameters.tsx). */}
@@ -329,6 +354,8 @@ export function DataReport<R>({
         <div className="ml-auto flex items-center gap-3">
           {showingExample ? <Badge color="gray" size="md">Example record</Badge> : null}
           <ColumnChooser chooser={chooser} />
+          {header === "none" ? noneActions : null}
+          {toolbarEnd}
         </div>
       </div>
       {!filterPanel && <AttributeFilterChips filter={filter} />}
@@ -341,7 +368,8 @@ export function DataReport<R>({
             icon={SearchLg}
             title={`No ${noun} match`}
             description={filter.count > 0 ? "Try a different search, or remove a filter." : "Try a different search."}
-            action={{ label: `Show all ${noun}`, onPress: showAll }}
+            // A search kept outside the report is not the report's to clear: only the filters are, so the action is offered only when one is on.
+            action={outerSearch === undefined ? { label: `Show all ${noun}`, onPress: showAll } : filter.count > 0 ? { label: "Remove all filters", onPress: () => filter.clear() } : undefined}
           />
         )
       ) : (
@@ -370,7 +398,7 @@ export function DataReport<R>({
             </Table.Header>
             <Table.Body items={paged} dependencies={[shownColumns]}>
               {(r) => (
-                <Table.Row id={rowId(r)} textValue={rowId(r)}>
+                <Table.Row id={rowId(r)} textValue={rowId(r)} onHoverChange={onRowHover ? (hovered) => onRowHover(hovered ? r : null) : undefined}>
                   {shownColumns.map((c) => (
                     <Table.Cell key={c.id} className={cx("whitespace-nowrap", c.sticky && "sticky left-0 z-1 border-r border-secondary bg-primary [tr:hover_&]:bg-secondary")}>
                       {c.cell(r)}
@@ -397,7 +425,6 @@ export function DataReport<R>({
   );
 
   const lineFacts: ReportFact[] = [...(latestDay ? [{ label: "Latest record", value: latestDay }] : []), ...heroFacts];
-  const lineActions = isValidElement(heroActions) ? cloneElement(heroActions as ReactElement<{ onDark?: boolean }>, { onDark: false }) : heroActions;
 
   const panelled = filterPanel ? (
     <div className="flex min-h-0 flex-1">
@@ -412,7 +439,7 @@ export function DataReport<R>({
 
   return (
     <div className="flex min-h-0 flex-1 flex-col">
-      {header === "line" ? (
+      {header === "none" ? null : header === "line" ? (
         <div className="shrink-0 px-6 pt-4">
           <div className="flex items-start justify-between gap-4">
             <div className="flex min-w-0 flex-col gap-1">
@@ -442,7 +469,7 @@ export function DataReport<R>({
         </RecordHero>
       )}
 
-      {belowHeader ? <div className={cx("flex shrink-0 flex-col", header === "line" ? "pt-0" : "pt-4")}>{resolve(belowHeader)}</div> : null}
+      {belowHeader ? <div className={cx("flex shrink-0 flex-col", header === "card" ? "pt-4" : "pt-0")}>{resolve(belowHeader)}</div> : null}
 
       {wrapBody ? wrapBody(panelled) : panelled}
     </div>

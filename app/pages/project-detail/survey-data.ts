@@ -21,7 +21,9 @@ import type { Artefact } from "@/app/pages/_shared/artefact-lightbox";
 import type { GeoExtentValue } from "@/app/pages/project-registration/types";
 import type { SpeciesGroup } from "@/app/pages/_shared/map-search/search-data";
 import { NSX_SPECIES, ibraFor, type FieldType, type TrapEntry } from "./field-schema";
-import { FACTORS_FOR, type FactorId, type LandscapeInputs } from "./landscape";
+import type { LandscapeInputs } from "./landscape";
+import type { VegetationInputs } from "./site-scores/vegetation-condition";
+import type { ConservationSheet } from "./site-scores/scoresheet";
 
 // The event skeleton (code, name, parent), declared first because the record builders below read it
 // while the full records are being assembled.
@@ -79,10 +81,24 @@ export interface MetaSection {
   withMap?: boolean;
   /** A trap's trap types, each with its Effort and Specs lines (field-schema.ts). */
   trapEffort?: TrapEntry[];
-  /** Landscape context scores: which factors this record scores, and what was entered (landscape.ts). */
-  landscape?: { factors: FactorId[]; inputs: LandscapeInputs };
+  /** Landscape context scores, a Block event's only (landscape.ts): what was typed; the rest is worked out from the location. */
+  landscape?: { inputs: LandscapeInputs };
   /** Overstorey measurements (Community). */
   overstorey?: OverstoreyData;
+  /** A site's scores (DEW's Bushland Assessment scoresheet), its last section (site-scores-section.tsx). */
+  siteScores?: SiteScoresData;
+}
+
+/**
+ * What a site's scores are worked out from. The vegetation condition sheet's entries and the BCM region (a weed's threat rating
+ * is looked up by it); the conservation significance sheet's entries. Not here, because they are worked out from other records:
+ * the species counts (the site's own occurrences and observations, site-scores-section.tsx) and the landscape context score (the
+ * Block event in the site, landscape.ts).
+ */
+export interface SiteScoresData {
+  vegetation: VegetationInputs;
+  region: string;
+  conservation: ConservationSheet;
 }
 
 export interface SurveyRecord {
@@ -167,6 +183,7 @@ function site(o: {
   dimensions: string;
   locationComment: string;
   photopoint: { present: string; disc: string; direction: string };
+  scores?: SiteScoresData;
 }): SurveyRecord {
   return {
     id: o.id,
@@ -201,6 +218,8 @@ export function siteSections(o: {
   locationComment: string;
   observers: string[];
   photopoint: { present: string; disc: string; direction: string };
+  /** A new site starts with nothing entered. */
+  scores?: SiteScoresData;
 }): MetaSection[] {
   const ibra = ibraFor(o.lat, o.lon);
   return [
@@ -244,6 +263,7 @@ export function siteSections(o: {
         { label: "Photopoint direction", value: o.photopoint.direction, type: "unitNumber" },
       ],
     },
+    { id: "scores", title: "Site scores", siteScores: o.scores ?? EMPTY_SCORES },
     { ...CUSTOM },
   ];
 }
@@ -267,6 +287,8 @@ export interface EventFields {
   /** Custom event only. */
   eventArray?: string;
   startDate: string;
+  /** "09:30", 24-hour, or absent. */
+  startTime?: string;
   /** ISO date, or "Not provided". */
   endDate: string;
   /** "2d 3h 30m" (field-schema.ts). */
@@ -279,6 +301,37 @@ export interface EventFields {
   locationComment: string;
   photopoint: { present: string; disc: string; direction: string };
   trapEffort?: TrapEntry[];
+  /** Block only: the landscape context scores' typed values, and the block's two landform questions. */
+  landscape?: BlockLandscape;
+}
+
+export type BlockLandscape = LandscapeInputs & { landformFeatures?: string; wetlandFeature?: string };
+
+/** The time a record started, from its Temporal details, or undefined. */
+export function startTimeOf(record: SurveyRecord): string | undefined {
+  const v = record.sections.find((s) => s.id === "temporal")?.rows?.find((r) => r.label === "Start time")?.value;
+  return v && v !== NP ? v : undefined;
+}
+
+/** "09:30" as "9:30 am". */
+export function formatTime(hhmm: string): string {
+  const m = /^(\d{1,2}):(\d{2})$/.exec(hhmm.trim());
+  if (!m) return hhmm;
+  const h = Number(m[1]);
+  return `${h % 12 === 0 ? 12 : h % 12}:${m[2]} ${h < 12 ? "am" : "pm"}`;
+}
+
+/** A Block's Landscape context scores section (landscape.ts). */
+function landscapeSection(l: BlockLandscape | undefined): MetaSection {
+  return {
+    id: "landscape",
+    title: "Landscape context scores",
+    landscape: { inputs: { cover: l?.cover, perimeter: l?.perimeter, riparian: l?.riparian, swamp: l?.swamp } },
+    rows: [
+      { label: "Number of landform features within block", value: l?.landformFeatures ?? NP, type: "number" },
+      { label: "Does the block contain a wetland feature?", value: l?.wetlandFeature ?? NP, type: "yesno" },
+    ],
+  };
 }
 
 /**
@@ -312,6 +365,7 @@ export function eventSections(o: EventFields): MetaSection[] {
       title: "Temporal details",
       rows: [
         { label: "Start date", term: "eventDate", value: formatDate(o.startDate) },
+        { label: "Start time", term: "eventTime", value: o.startTime ?? NP, type: "text" },
         { label: "End date", value: o.endDate, type: "date" },
         { label: "Duration", term: "samplingEffort", value: o.duration, type: "duration" },
         { label: "Date accuracy", value: o.dateAccuracy, type: "vocab" },
@@ -336,6 +390,7 @@ export function eventSections(o: EventFields): MetaSection[] {
             ],
           },
         ]),
+    ...(o.type === "Block" ? [landscapeSection(o.landscape)] : []),
     {
       id: "photopoint",
       title: "Photopoint",
@@ -348,6 +403,15 @@ export function eventSections(o: EventFields): MetaSection[] {
     { ...CUSTOM },
   ];
 }
+
+// The sample records' start times, 24-hour (the seed's own, made up like the rest of it). A record's observations and
+// occurrences start with the event they belong to.
+const SAMPLE_START_TIMES: Record<string, string> = {
+  vu1: "07:30", tr1: "06:45", qr1: "09:15", trp1: "17:30", vu2: "08:00", bk1: "10:00", rmb1: "11:15", cu1: "20:30",
+  oc1: "06:52", ob1: "06:52", oc2: "09:40", ob2: "09:40", oc3: "10:05", ob3: "10:05", oc4: "06:20", ob6: "06:20",
+  oc5: "10:20", ob7: "10:20", oc6: "11:30", ob8: "11:30", oc7: "21:10", ob9: "21:10", oc8: "10:30", ob10: "10:30",
+  ob4: "09:15", ob5: "11:00",
+};
 
 function event(o: Omit<EventFields, "code" | "name"> & { id: string; parentId: string; radiusKm?: number }): SurveyRecord {
   const raw = RAW_EVENTS[o.id];
@@ -363,7 +427,7 @@ function event(o: Omit<EventFields, "code" | "name"> & { id: string; parentId: s
     lon: o.lon,
     location: o.type === "Visit" ? undefined : { method: "map", boundary: { id: `ev-${o.id}`, kind: "circle", center: [o.lat, o.lon], radiusKm: o.radiusKm ?? 0.05 } },
     summary: o.description,
-    sections: eventSections({ ...o, code: raw.code, name: raw.name }),
+    sections: eventSections({ ...o, startTime: o.startTime ?? SAMPLE_START_TIMES[o.id], code: raw.code, name: raw.name }),
   };
 }
 
@@ -385,6 +449,8 @@ export interface CommonFields {
   description: string;
   comment: string;
   startDate: string;
+  /** "09:30", 24-hour, or absent. */
+  startTime?: string;
   endDate: string;
   duration: string;
   dateAccuracy: string;
@@ -396,12 +462,13 @@ export interface CommonFields {
   locationComment: string;
 }
 
-function temporalSection(o: Pick<CommonFields, "startDate" | "endDate" | "duration" | "dateAccuracy">): MetaSection {
+function temporalSection(o: Pick<CommonFields, "startDate" | "startTime" | "endDate" | "duration" | "dateAccuracy">): MetaSection {
   return {
     id: "temporal",
     title: "Temporal details",
     rows: [
       { label: "Start date", term: "eventDate", value: formatDate(o.startDate) },
+      { label: "Start time", term: "eventTime", value: o.startTime ?? NP, type: "text" },
       { label: "End date", value: o.endDate, type: "date" },
       { label: "Duration", term: "samplingEffort", value: o.duration, type: "duration" },
       { label: "Date accuracy", value: o.dateAccuracy, type: "vocab" },
@@ -502,7 +569,6 @@ export interface ObservationFields extends CommonFields {
   /** Non-biotic and Community: extra detail rows by label. */
   details?: Record<string, string>;
   land?: Record<string, string>;
-  landscape?: LandscapeInputs & { landformFeatures?: string; wetlandFeature?: string };
   environment?: { max?: string; min?: string };
   overstorey?: OverstoreyData;
   treeHealth?: Record<string, string>;
@@ -524,12 +590,6 @@ export function observationSections(o: ObservationFields): MetaSection[] {
   ];
   const comment: MetaRow = { label: "Observation comment", term: "measurementRemarks", value: o.comment, type: "textarea" };
   const tail = [observersSection(o.observers), temporalSection(o), recordLocation(o), { ...CUSTOM }];
-  const landscape = (factors: FactorId[], extra: (string | [string, FieldType])[]): MetaSection => ({
-    id: "landscape",
-    title: "Landscape context scores",
-    landscape: { factors, inputs: { cover: o.landscape?.cover, perimeter: o.landscape?.perimeter, protectedPct: o.landscape?.protectedPct, riparian: o.landscape?.riparian, swamp: o.landscape?.swamp } },
-    rows: rowsOf(extra, { "Number of landform features within block": o.landscape?.landformFeatures ?? NP, "Does the block contain a wetland feature?": o.landscape?.wetlandFeature ?? NP }),
-  });
 
   const treeHealth: MetaSection = {
       id: "treeHealth",
@@ -646,7 +706,6 @@ export function observationSections(o: ObservationFields): MetaSection[] {
           o.land,
         ),
       },
-      landscape(FACTORS_FOR["Non-biotic"], [["Number of landform features within block", "number"]]),
       {
         id: "environment",
         title: "Environmental conditions",
@@ -669,10 +728,6 @@ export function observationSections(o: ObservationFields): MetaSection[] {
         comment,
       ],
     },
-    landscape(FACTORS_FOR.Community, [
-      ["Number of landform features within block", "number"],
-      ["Does the block contain a wetland feature?", "yesno"],
-    ]),
     { id: "overstorey", title: "Overstorey measurements", overstorey: o.overstorey ?? { canopyType: NP, foliageCover: NP, readings: [] } },
     ...tail,
   ];
@@ -711,6 +766,7 @@ function occurrence(o: Omit<OccurrenceFields, "code" | "name" | "description" | 
       name: o.common,
       description: o.description ?? NP,
       startDate: o.date,
+      startTime: SAMPLE_START_TIMES[o.id],
       endDate: NP,
       duration: NP,
       dateAccuracy: "D",
@@ -729,7 +785,7 @@ function observation(o: Omit<ObservationFields, "startDate" | "endDate" | "durat
   scientific?: string;
   description?: string;
   locationNote?: string;
-  /** The block's extent, for a Community or Non-biotic observation (its area feeds the block shape score). */
+  /** The observed area's extent, drawn on its map. */
   radiusKm?: number;
 }): SurveyRecord {
   return {
@@ -750,6 +806,7 @@ function observation(o: Omit<ObservationFields, "startDate" | "endDate" | "durat
       ...o,
       description: o.description ?? NP,
       startDate: o.date,
+      startTime: SAMPLE_START_TIMES[o.id],
       endDate: NP,
       duration: NP,
       dateAccuracy: "D",
@@ -761,6 +818,37 @@ function observation(o: Omit<ObservationFields, "startDate" | "endDate" | "durat
 }
 
 // ── The dataset ──
+
+// The sites' scores. Mylor Creek carries the scoresheet's own worked example, Site 4 of "BAM Site 42" (an EP 2 community in
+// the Northern Agricultural & Yorke Peninsula region), so its vegetation condition and conservation significance can be checked
+// against the PDF (25.01, 1.00); it is sample data, not Mylor Creek's. Its landscape context score is its block's. Cleland has
+// nothing entered yet and no block, so its scores show what a site looks like before the sheet is filled in. The species counts
+// are not the worked example's (10 native, 1 regenerating): they are counted from each site's own records.
+const NO_THREATENED = { stateRare: 0, stateVulnerable: 0, stateEndangered: 0, nationalVulnerable: 0, nationalEndangered: 0 };
+const SITE_4_SCORES: SiteScoresData = {
+  vegetation: {
+    community: "EP 2 Open Forests & Woodlands with Mid dense Shrub & Grassy Understorey",
+    associationDescription: "Degraded native grassland with scattered larger shrubs of Acacia spp. and Senna artemisioides (Desert Senna) over native chenopods.",
+    sizeHa: 20,
+    lifeForms: { "Trees > 15m": 10, "Shrubs 0.5 - 2m": 2, "Shrubs <0.5m": 2, Forbs: 1, "Grasses > 0.2m": 2 },
+    weeds: [
+      { species: "Avena barbata", cover: 5 },
+      { species: "Centaurea calcitrapa", cover: 1 },
+      { species: "Gazania sp.", cover: 2 },
+      { species: "Reseda luteola" },
+      { species: "Marrubium vulgare", cover: 1 },
+    ],
+    naturallyTreeless: true,
+    biomass: 3,
+  },
+  region: "Northern Agricultural & Yorke Peninsula",
+  conservation: { inputs: { community: {} }, flora: NO_THREATENED, fauna: NO_THREATENED },
+};
+const EMPTY_SCORES: SiteScoresData = {
+  vegetation: { lifeForms: {}, weeds: [] },
+  region: "Not provided",
+  conservation: { inputs: { community: {} }, flora: NO_THREATENED, fauna: NO_THREATENED },
+};
 
 const S1 = { lat: -35.03, lon: 138.72 };
 const S2 = { lat: -35.0, lon: 138.68 };
@@ -784,6 +872,7 @@ const events: SurveyRecord[] = [
     dimensions: "100 × 100 m",
     locationComment: "Centre of the plot is the star picket at the fire-track bend.",
     photopoint: { present: "Yes", disc: "192", direction: "45" },
+    scores: EMPTY_SCORES,
   }),
   site({
     id: "su2",
@@ -803,6 +892,7 @@ const events: SurveyRecord[] = [
     dimensions: "200 × 50 m",
     locationComment: "Plot runs along the eastern bank from the ford.",
     photopoint: { present: "Yes", disc: "193", direction: "180" },
+    scores: SITE_4_SCORES,
   }),
   event({ id: "vu1", type: "Visit", parentId: "su1", ...S1, description: "First spring round after the 2024 burn.", sourceId: "AHL-2025-SPR", comment: "Clear, light north-easterly, 14 to 22 °C.", seq: "1/1", startDate: "2025-10-14", endDate: "2025-10-15", duration: "1d 0h 30m", dateAccuracy: "D", observers: ["Olivia Wyatt", "Maya Dewitt", "Phoenix Baker"], dimensions: NP, locationComment: NP, photopoint: { present: "Yes", disc: "192", direction: "45" } }),
   event({ id: "vu2", type: "Visit", parentId: "su2", ...S2, description: "Autumn round after the first winter rains.", sourceId: "AHL-2026-AUT", comment: "Overcast after rain, still, 11 to 17 °C.", seq: "1/1", startDate: "2026-03-18", endDate: "2026-03-18", duration: "0d 6h 30m", dateAccuracy: "D", observers: ["Olivia Wyatt", "Lana Steiner"], dimensions: NP, locationComment: NP, photopoint: NO_PHOTOPOINT }),
@@ -830,7 +920,7 @@ const events: SurveyRecord[] = [
       { trapType: "Pitfall", values: { count: { value: "6" } }, durations: [{ value: "4", unit: "nights" }], specs: [] },
     ],
   }),
-  event({ id: "bk1", type: "Block", parentId: "su2", lat: -35.001, lon: 138.681, description: "Timed area search of the creekline.", sourceId: "AHL-BK-01", comment: "Logs, rocks and leaf litter turned and replaced.", startDate: "2026-03-18", endDate: "2026-03-18", duration: "0d 1h 0m", dateAccuracy: "D", observers: ["Olivia Wyatt", "Lana Steiner"], dimensions: "100 × 100 m", locationComment: NP, photopoint: NO_PHOTOPOINT }),
+  event({ id: "bk1", type: "Block", parentId: "su2", lat: -35.001, lon: 138.681, description: "Timed area search of the creekline.", sourceId: "AHL-BK-01", comment: "Logs, rocks and leaf litter turned and replaced.", startDate: "2026-03-18", endDate: "2026-03-18", duration: "0d 1h 0m", dateAccuracy: "D", observers: ["Olivia Wyatt", "Lana Steiner"], dimensions: "100 × 100 m", locationComment: NP, photopoint: NO_PHOTOPOINT, landscape: { cover: "18", perimeter: "300", riparian: "Yes", swamp: "No", landformFeatures: "2", wetlandFeature: "No" } }),
   event({ id: "rmb1", type: "Ramble", parentId: "su2", lat: -34.998, lon: 138.679, description: "Opportunistic search along about 800 m of creek bank.", sourceId: NP, comment: "Unstructured search while walking back to the vehicle.", startDate: "2026-03-18", endDate: "2026-03-18", duration: "0d 0h 45m", dateAccuracy: "D", observers: ["Lana Steiner"], dimensions: NP, locationComment: NP, photopoint: NO_PHOTOPOINT }),
   event({ id: "cu1", type: "Custom event", parentId: "su2", lat: -35.002, lon: 138.683, description: "Spotlighting on foot with two 50 W lights over a 1.2 km route.", sourceId: "AHL-SPOT-01", comment: "Moon one-quarter, no wind. Route repeated in both directions.", eventArray: "Nocturnal fauna", startDate: "2026-03-18", endDate: "2026-03-18", duration: "0d 2h 0m", dateAccuracy: "D", observers: ["Olivia Wyatt", "Lana Steiner"], dimensions: NP, locationComment: NP, photopoint: NO_PHOTOPOINT }),
 ];
@@ -900,7 +990,6 @@ const observations: SurveyRecord[] = [
       "Upper stratum (code & desc)": JSON.stringify([["EOB"], ["ELE"]]),
       "Ephemerals present?": "Yes",
     },
-    landscape: { cover: "18", perimeter: "300", protectedPct: "8", riparian: "No", swamp: "No", landformFeatures: "2", wetlandFeature: "No" },
     overstorey: {
       canopyType: "Tree",
       foliageCover: "32",
@@ -939,7 +1028,6 @@ const observations: SurveyRecord[] = [
       "Soil texture class": "Sandy loam",
       "Landform comment": "Shallow stony soil on the ridge crest.",
     },
-    landscape: { cover: "18", perimeter: "300", landformFeatures: "2" },
     environment: { max: "22 °C", min: "14 °C" },
   }),
   observation({

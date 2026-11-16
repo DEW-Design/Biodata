@@ -31,17 +31,17 @@ import {
   EMPTY_VALUES,
   displayValue,
   fieldTypeOf,
-  hasDateField,
   isLockedRow,
   locationSummary,
   rowHasValue,
   trapLabels,
 } from "./field-schema";
 import { RecordMap } from "./record-map";
+import { RecordHeaderMeta } from "./record-header-meta";
+import { SiteScoresSection } from "./site-scores-section";
 import { flashElement } from "./flash";
 import { type ChildOption } from "./record-rules";
 import {
-  formatDate,
   type MetaSection,
   type RecordKind,
   type SurveyRecord,
@@ -49,14 +49,15 @@ import {
 import { FieldRow, NOTE_MARK, NOTE_TONE } from "./field-notes";
 import { TrapEntryView } from "./trap-effort";
 import {
-  FactorValue,
-  LandscapeTotal,
+  LANDSCAPE_SCORE_LABEL,
+  LandscapeScoreLink,
+  LandscapeSummary,
   OverstoreyStats,
   ReadingsTable,
-  factorLabel,
   foliageCoverText,
+  scoreBlock,
 } from "./landscape-view";
-import { boundaryAreaKm2, scoreLandscape } from "./landscape";
+import { boundaryAreaKm2 } from "./landscape";
 import { hasNotes, sectionSummary, useFieldNotes } from "./field-notes-store";
 import {
   isSectionShown,
@@ -92,7 +93,7 @@ export function SectionFields({
   /** The edit session's hidden fields, used instead of the saved ones while editing. */
   hiddenOverride?: Set<string>;
 }) {
-  const { canEdit } = useEditStore();
+  const { canEdit, saveRecord } = useEditStore();
   const notes = useFieldNotes();
   const saved = useHiddenFields(record.id);
   const hidden = hiddenOverride ?? saved;
@@ -115,13 +116,11 @@ export function SectionFields({
         : rowHasValue(r, section.rows) || noted(r.label)),
   );
   const [lat, lon] = shownPosition(record);
-  const landscapeScore = section.landscape
-    ? scoreLandscape(section.landscape.factors, section.landscape.inputs, {
-        lat: record.lat,
-        lon: record.lon,
-        areaKm2: boundaryAreaKm2(record.location?.boundary),
-      })
-    : null;
+  const landscapeCtx = {
+    lat: record.lat,
+    lon: record.lon,
+    areaKm2: boundaryAreaKm2(record.location?.boundary),
+  };
   const measurementRows = measurements.map((m) => (
     <FieldRow
       key={`m-${m.type}`}
@@ -184,7 +183,27 @@ export function SectionFields({
         </>
       )}
       <div className="flex flex-col">
-        {section.trapEffort ? (
+        {section.siteScores ? (
+          <SiteScoresSection
+            record={record}
+            sectionId={section.id}
+            data={section.siteScores}
+            labelWidth={labelWidth}
+            onSave={
+              canEdit
+                ? (siteScores) => {
+                    saveRecord({
+                      ...record,
+                      sections: record.sections.map((x) =>
+                        x.id === section.id ? { ...x, siteScores } : x,
+                      ),
+                    });
+                    toast.success("Conservation significance score saved");
+                  }
+                : undefined
+            }
+          />
+        ) : section.trapEffort ? (
           (() => {
             const names = trapLabels(section.trapEffort);
             const shown = section.trapEffort
@@ -212,32 +231,43 @@ export function SectionFields({
         ) : (
           <>
             {section.landscape &&
-              landscapeScore &&
-              landscapeScore.results.some(
-                (r) => r.entered && r.id !== "remaining",
-              ) && (
+              !hidden.has(`${section.id}:${LANDSCAPE_SCORE_LABEL}`) && (
                 <>
-                  <div className="pb-3">
-                    <LandscapeTotal score={landscapeScore} />
+                  <div className="@container pb-3">
+                    <LandscapeSummary
+                      score={scoreBlock(section.landscape.inputs, landscapeCtx)}
+                    />
                   </div>
-                  {landscapeScore.results
-                    .filter(
-                      (r) =>
-                        !hidden.has(`${section.id}:${factorLabel(r.id)}`) &&
-                        (r.entered || noted(factorLabel(r.id))),
-                    )
-                    .map((r) => (
-                      <FieldRow
-                        key={r.id}
-                        recordId={record.id}
-                        fieldKey={`${section.id}:${factorLabel(r.id)}`}
-                        label={factorLabel(r.id)}
-                        notes={forRecord[`${section.id}:${factorLabel(r.id)}`]}
-                        onEdit={onEdit}
-                        labelWidth={labelWidth}
-                        value={<FactorValue result={r} />}
+                  <FieldRow
+                    recordId={record.id}
+                    fieldKey={`${section.id}:${LANDSCAPE_SCORE_LABEL}`}
+                    label={LANDSCAPE_SCORE_LABEL}
+                    notes={forRecord[`${section.id}:${LANDSCAPE_SCORE_LABEL}`]}
+                    labelWidth={labelWidth}
+                    editable={false}
+                    value={
+                      <LandscapeScoreLink
+                        inputs={section.landscape.inputs}
+                        ctx={landscapeCtx}
+                        title={`${record.name}, ${record.code}`}
+                        onSave={
+                          canEdit
+                            ? (inputs) => {
+                                saveRecord({
+                                  ...record,
+                                  sections: record.sections.map((x) =>
+                                    x.id === section.id
+                                      ? { ...x, landscape: { inputs } }
+                                      : x,
+                                  ),
+                                });
+                                toast.success("Landscape context scores saved");
+                              }
+                            : undefined
+                        }
                       />
-                    ))}
+                    }
+                  />
                 </>
               )}
             {section.overstorey && (
@@ -261,11 +291,6 @@ export function SectionFields({
                       value={r.value}
                     />
                   ))}
-                {section.overstorey.readings.length > 0 && (
-                  <div className="py-3">
-                    <OverstoreyStats data={section.overstorey} />
-                  </div>
-                )}
                 {!hidden.has(`${section.id}:Readings`) &&
                   (section.overstorey.readings.length > 0 ||
                     noted("Readings")) && (
@@ -279,6 +304,11 @@ export function SectionFields({
                       value={<ReadingsTable data={section.overstorey} />}
                     />
                   )}
+                {section.overstorey.readings.length > 0 && (
+                  <div className="py-3">
+                    <OverstoreyStats data={section.overstorey} />
+                  </div>
+                )}
               </>
             )}
             {rows.length === 0 &&
@@ -770,7 +800,6 @@ export function RecordPanel({
                   {typeLabel(record)}
                   <span className="font-normal normal-case tracking-normal">
                     , {record.code}
-                    {hasDateField(record) && `, ${formatDate(record.date)}`}
                   </span>
                 </span>
               </p>
@@ -778,6 +807,9 @@ export function RecordPanel({
               {record.scientificName && (
                 <p className="text-sm text-tertiary italic">{record.scientificName}</p>
               )}
+              <div className="pt-1">
+                <RecordHeaderMeta record={record} />
+              </div>
             </div>
           </div>
           <RecordQuickActions

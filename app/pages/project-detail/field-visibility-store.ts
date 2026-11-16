@@ -16,7 +16,7 @@ import {
 } from "@/app/pages/_shared/zustand-persist";
 import type { MetaSection, SurveyRecord } from "./survey-data";
 import { rowHasValue, trapLabels } from "./field-schema";
-import { FACTOR_TITLES } from "./landscape";
+import { LANDSCAPE_SCORE_LABEL } from "./landscape";
 
 interface VisibilityState {
   /** recordId -> hidden field keys (`${sectionId}:${label}`). */
@@ -54,17 +54,12 @@ export function sectionFieldEntries(section: MetaSection): FieldEntry[] {
   const labels = section.trapEffort
     ? trapLabels(section.trapEffort)
     : [
-        ...(section.landscape
-          ? section.landscape.factors.map((f) => FACTOR_TITLES[f].short)
-          : []),
+        ...(section.landscape ? [LANDSCAPE_SCORE_LABEL] : []),
         ...(section.overstorey
           ? ["Canopy type", "Projected foliage cover", "Readings"]
           : []),
-        ...(section.rows ?? []).flatMap((r) =>
-          r.type === "measurements"
-            ? (section.measurements ?? []).map((m) => m.type)
-            : [r.label],
-        ),
+        // The measurements are one concept, "Measurements", shown or hidden whole (designer, 9 Nov 2026).
+        ...(section.rows ?? []).map((r) => r.label),
         ...(!section.rows
           ? (section.measurements ?? []).map((m) => m.type)
           : []),
@@ -87,22 +82,6 @@ export function emptyFieldKeys(record: SurveyRecord): Set<string> {
       if (r.type === "measurements" || r.label === "Custom properties")
         continue;
       if (!rowHasValue(r, s.rows)) out.add(`${s.id}:${r.label}`);
-    }
-    if (s.landscape) {
-      const entered = Object.values(s.landscape.inputs).some(
-        (v) => v != null && String(v).trim() !== "",
-      );
-      for (const f of s.landscape.factors) {
-        const input = {
-          cover: s.landscape.inputs.cover,
-          block: s.landscape.inputs.perimeter,
-          protected: s.landscape.inputs.protectedPct,
-          wetland: s.landscape.inputs.riparian ?? s.landscape.inputs.swamp,
-          remaining: entered ? "x" : undefined,
-        }[f];
-        if (input == null || String(input).trim() === "")
-          out.add(`${s.id}:${FACTOR_TITLES[f].short}`);
-      }
     }
     if (s.overstorey) {
       if (
@@ -130,6 +109,7 @@ export function sectionShownInEdit(
   if (hidden.has(sectionKey(section.id))) return false;
   if (
     section.withMap ||
+    section.siteScores ||
     section.trapEffort ||
     section.id === "custom" ||
     (section.measurements && !section.rows)
@@ -171,7 +151,7 @@ export function sectionHasContent(
   section: MetaSection,
   noted: (key: string) => boolean = () => false,
 ): boolean {
-  if (section.withMap) return true;
+  if (section.withMap || section.siteScores) return true;
   if (section.trapEffort) return section.trapEffort.length > 0;
   if ((section.measurements ?? []).length > 0) return true;
   if (

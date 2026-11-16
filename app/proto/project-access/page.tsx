@@ -6,7 +6,7 @@ import { Tabs } from "react-aria-components";
 import { Tab, TabList, TabPanel } from "@/components/application/tabs/tabs";
 import { PrototypeTools } from "@/app/_prototype-tools/prototype-tools";
 import { useRegisterTool } from "@/app/_prototype-tools/tools";
-import { ContactsRow } from "@/app/pages/project-registration/option-2/form-sections";
+import { DataOwnersRow } from "@/app/pages/project-registration/option-2/form-sections";
 import type { FormState } from "@/app/pages/project-registration/option-2/sections";
 import { emptyProjectContact, initialDataCollection, initialProjectDetails, initialRestrictions, type ProjectAccessLevel, type ProjectContact } from "@/app/pages/project-registration/types";
 import { ProjectAccessView } from "@/app/pages/project-detail/project-access-view";
@@ -17,7 +17,7 @@ import { useUserRole } from "@/lib/use-user-role";
 // over the project, or a page with which the project manager can assign what the user can do" should work, and approved the
 // recommendation: access is set on each person where they are added (Add Project's Project contacts), and managed afterwards on a
 // Project access tab on the project page. Both places are here, picked with the Screen tool on the Prototype tools bar:
-//   1  Add project: the real Project contacts row (`ContactsRow showAccess`), each card with a "Project access" field.
+//   1  Add project: the real data owners row (`DataOwnersRow showAccess`), each card with a "Project access" field.
 //   2  Project page: the Project access tab, read first, changed through "Edit access" with one Cancel / Save changes bar
 //      (CONTRACTS 4.8), as the project's other cards are. Its table is the role record's Users tab (`EmbeddedTableFrame`, 0.9).
 // The rules shown: a Project Manager always has full control (their field is locked, with the reason); anyone else starts as View
@@ -80,7 +80,7 @@ function CreateScreen({ people, onChange }: { people: ProjectContact[]; onChange
     collection: initialDataCollection(),
     restrictions: initialRestrictions(),
   };
-  return <ContactsRow state={state} onChange={(next) => onChange(next.details.projectContacts ?? [])} showErrors={false} showAccess />;
+  return <DataOwnersRow state={state} onChange={(next) => onChange(next.details.projectContacts ?? [])} showErrors={false} showAccess />;
 }
 
 function PageScreen({ people, onChange }: { people: ProjectContact[]; onChange: (people: ProjectContact[]) => void }) {

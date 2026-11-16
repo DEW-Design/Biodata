@@ -1,183 +1,348 @@
 "use client";
 
-// VERSION 3: how landscape context scores and overstorey measurements read (landscape.ts).
+// How landscape context scores and overstorey measurements read (landscape.ts).
 //
-// Landscape context scores follow the Figma sections (Community 1970:147553, Non-biotic 1970:146811)
-// and the view reference 1970:147032: a total card on top (points of the maximum, a bar, and the
-// IBRA association and subregion the location falls in), then one line per factor. Each factor
-// shows what was entered or worked out, the band it fell in (a strip of every band with the
-// matched one filled, so the reader sees where the value sits and what the other bands are), and the
-// points it scored. The same strip and total are shown live while editing.
+// Landscape context scores are a Block event's only, and read as the site scores page reads its scores (designer, 9 Nov 2026:
+// "we must match the landscape context scores like this", /pages/site-scores): a grey card with each factor's points and the
+// sum that makes the score, then the score itself, which opens the scoresheet's own block, in its order and with its words
+// (the Bushland Assessment workbook's "Landscape Context Scores"). The sheet's purple cells are the fields a person types there
+// (vegetation cover, cleared perimeter, riparian zone, swamp or wetland); every other figure is worked out and shown as text.
+// Saved from the record's view, the sheet saves the record; opened while the card is being edited, it goes into that edit.
 //
-// Overstorey: canopy type and projected foliage cover (with its structural class worked out), the
-// averages worked out from the readings, then the readings themselves.
+// Overstorey: canopy type and projected foliage cover (with its structural class worked out), the readings, then the averages
+// worked out from them (designer, 9 Nov 2026: "bring the reading above the summary").
 
+import { useState } from "react";
+import { Save01 } from "@untitledui/icons";
 import { cx } from "@/utils/cx";
-import { ProgressBarBase } from "@/components/base/progress-indicators/progress-indicators";
+import { Button } from "@/components/base/buttons/button";
+import { InputNumber } from "@/components/base/input/input-number";
+import {
+  Dialog,
+  FormModal,
+  Modal,
+  ModalHeader,
+  ModalOverlay,
+} from "@/components/application/modals/modal";
+import { Line, ScoreGroup } from "./site-scores/scoresheet";
 import { foliageCoverClass } from "./field-options";
+import { YesNoControl } from "./field-controls";
 import {
   BLOCK_BANDS,
+  BLOCK_FACTORS,
   COVER_BANDS,
   FACTOR_TITLES,
+  LANDSCAPE_MAX,
+  LANDSCAPE_MIN,
+  LANDSCAPE_SCORE_LABEL,
   PROTECTED_BANDS,
   REMAINING_BANDS,
+  RIPARIAN_POINTS,
+  SWAMP_POINTS,
   pts,
   scoreLandscape,
   type Band,
-  type FactorId,
-  type FactorResult,
+  type LandscapeInputs,
 } from "./landscape";
 import type { OverstoreyData } from "./survey-data";
 import { EMPTY_VALUES } from "./field-schema";
 
-export const FACTOR_BANDS: Partial<Record<FactorId, Band[]>> = {
-  cover: COVER_BANDS,
-  block: BLOCK_BANDS,
-  remaining: REMAINING_BANDS,
-  protected: PROTECTED_BANDS,
-};
+export { LANDSCAPE_SCORE_LABEL };
 
 export type LandscapeScore = ReturnType<typeof scoreLandscape>;
-
-/** The points pill beside a factor: brand when it scored, muted when it didn't. */
-export function PointsPill({ points, max }: { points: number; max: number }) {
-  return (
-    <span
-      className={cx(
-        "inline-flex shrink-0 items-center rounded-full px-2 py-0.5 text-xs font-medium tabular-nums",
-        points > 0
-          ? "bg-brand-50 text-brand-secondary"
-          : "bg-secondary text-tertiary",
-      )}
-      title={`${pts(points)} of ${pts(max)} points`}
-    >
-      {pts(points)} pts
-    </span>
-  );
+export interface LandscapeContext {
+  lat: number;
+  lon: number;
+  areaKm2?: number;
 }
 
-/** Every band of a factor, the matched one filled. `bands` is a factor's scale; `match` its label. */
-export function BandStrip({
-  bands,
-  match,
-  compact,
-}: {
-  bands: Band[];
-  match?: string;
-  compact?: boolean;
-}) {
-  return (
-    <ol className="flex w-full max-w-md gap-0.5" aria-label="Bands">
-      {bands.map((b) => {
-        const on = b.label === match;
-        return (
-          <li
-            key={b.label}
-            aria-current={on ? "true" : undefined}
-            className="min-w-0 flex-1"
-          >
-            <span
-              className={cx(
-                "block h-1.5 rounded-full",
-                on ? "bg-brand-solid" : "bg-tertiary",
-              )}
-            />
-            {!compact && (
-              <span
-                className={cx(
-                  "mt-1 block truncate text-center text-xs tabular-nums",
-                  on ? "font-medium text-brand-secondary" : "text-quaternary",
-                )}
-              >
-                {b.label}
-              </span>
-            )}
-          </li>
-        );
-      })}
-    </ol>
-  );
-}
+const NP = "Not provided";
+const pointsText = (n: number) => (n === 0 ? "0 pts" : `${pts(n)} pts`);
+/** A factor's bands as the sheet writes them: "0–5% = 0 pts; >5–10% = 0.02 pts". */
+const bandsText = (bands: Band[]) =>
+  bands.map((b) => `${b.label} = ${pointsText(b.points)}`).join("; ");
+const toNum = (v?: string) => (v == null || v.trim() === "" ? NaN : Number(v));
+const fromNum = (n: number) => (Number.isFinite(n) ? String(n) : undefined);
 
-/** The total card: points of the maximum, a bar, and the IBRA context the location falls in. */
-export function LandscapeTotal({
-  score,
-  live,
-}: {
-  score: LandscapeScore;
-  live?: boolean;
-}) {
-  const pct = score.max > 0 ? Math.round((score.total / score.max) * 100) : 0;
-  const entered = score.results.filter((r) => r.entered).length;
-  // The IBRA association matters only to the factors that read it (Community); Non-biotic doesn't show it.
-  const usesIbra = score.results.some(
-    (r) => r.id === "remaining" || r.id === "protected",
-  );
+export const scoreBlock = (inputs: LandscapeInputs, ctx: LandscapeContext) =>
+  scoreLandscape(BLOCK_FACTORS, inputs, ctx);
+
+/** The grey card: each factor's points, then the sum that makes the score (site scores' figures and breakdown). */
+export function LandscapeSummary({ score }: { score: LandscapeScore }) {
   return (
     <div className="flex flex-col gap-3 rounded-lg border border-secondary bg-secondary p-4">
-      <div className="flex flex-wrap items-end justify-between gap-x-4 gap-y-1">
-        <p className="flex items-baseline gap-1.5">
-          <span className="text-display-xs font-semibold text-primary tabular-nums">
-            {pts(score.total)}
-          </span>
-          <span className="text-sm text-tertiary">
-            pts of {pts(score.max)} max
-          </span>
-        </p>
-        <p className="text-sm font-medium text-secondary tabular-nums">
-          {pct}%
+      <dl className="grid grid-cols-2 gap-x-6 gap-y-3 @2xl:grid-cols-5">
+        {score.results.map((r) => (
+          <div key={r.id} className="flex flex-col gap-0.5">
+            <dt className="text-xs text-balance text-tertiary">
+              {FACTOR_TITLES[r.id].short}
+            </dt>
+            <dd className="text-sm font-medium text-primary tabular-nums">
+              {pts(r.points)}
+            </dd>
+          </div>
+        ))}
+      </dl>
+      <div className="flex flex-col gap-1 border-t border-secondary pt-3">
+        <dl className="grid grid-cols-1 gap-0.5 text-sm @md:grid-cols-[minmax(0,12rem)_minmax(0,1fr)] @md:gap-x-4">
+          <dt className="text-tertiary">{LANDSCAPE_SCORE_LABEL}</dt>
+          <dd className="text-primary tabular-nums">
+            {[
+              String(LANDSCAPE_MIN),
+              ...score.results.map((r) => pts(r.points)),
+            ].join(" + ")}{" "}
+            = {pts(score.total)}
+          </dd>
+        </dl>
+        <p className="text-xs text-balance text-tertiary">
+          Every block scores at least {LANDSCAPE_MIN}, and the points of each
+          factor are added to it, to a maximum of {LANDSCAPE_MAX}. The IBRA
+          association and subregion are worked out from the location.
         </p>
       </div>
-      <ProgressBarBase value={pct} />
-      {usesIbra && (
-        <dl className="grid grid-cols-1 gap-x-6 gap-y-1 text-sm @md:grid-cols-2">
-          <div className="flex gap-1.5">
-            <dt className="text-tertiary">IBRA association</dt>
-            <dd className="text-primary">{score.ibra.association}</dd>
-          </div>
-          <div className="flex gap-1.5">
-            <dt className="text-tertiary">IBRA subregion</dt>
-            <dd className="text-primary">{score.ibra.subregion}</dd>
-          </div>
-        </dl>
-      )}
-      <p className="text-xs text-balance text-tertiary">
-        {live ? "Updates as you enter values. " : ""}
-        {entered < score.results.length
-          ? `${entered} of ${score.results.length} factors scored; the rest count as 0 until entered. `
-          : ""}
-        {usesIbra
-          ? "IBRA association and subregion are worked out from the location."
-          : ""}
-      </p>
     </div>
   );
 }
 
-/** A factor as it reads when viewed: what was entered, its band, and its points. */
-export function FactorValue({ result }: { result: FactorResult }) {
-  const bands = FACTOR_BANDS[result.id];
+/** The scoresheet's Landscape Context Scores block. With `set`, the sheet's purple cells are fields; without it, text. */
+export function LandscapeScoresheet({
+  inputs,
+  ctx,
+  set,
+}: {
+  inputs: LandscapeInputs;
+  ctx: LandscapeContext;
+  set?: (next: LandscapeInputs) => void;
+}) {
+  const score = scoreBlock(inputs, ctx);
+  const result = (id: (typeof BLOCK_FACTORS)[number]) =>
+    score.results.find((r) => r.id === id)!;
+  const ibra = score.ibra;
+  const pct = (n?: number) => (n != null ? String(n) : NP);
+  const yesNo = (label: string, key: "riparian" | "swamp") =>
+    set ? (
+      <YesNoControl
+        label={label}
+        value={inputs[key] ?? NP}
+        onChange={(v) => set({ ...inputs, [key]: v as "Yes" | "No" })}
+      />
+    ) : (
+      (inputs[key] ?? NP)
+    );
   return (
-    <span className="flex flex-col gap-2">
-      <span className="flex items-start justify-between gap-3">
-        <span
-          className={cx(
-            "text-sm",
-            result.entered ? "text-primary" : "text-quaternary",
-          )}
-        >
-          {result.detail}
-        </span>
-        <PointsPill points={result.points} max={result.max} />
-      </span>
-      {bands && result.id !== "remaining" && (
-        <BandStrip bands={bands} match={result.band} />
-      )}
-    </span>
+    <div className="flex flex-col gap-4">
+      <ScoreGroup
+        title="% native veg. remaining"
+        sub="Score received for both IBRA assoc. and subregion then summed"
+        score={
+          <Line
+            label="Score"
+            hint={bandsText(REMAINING_BANDS)}
+            value={pts(result("remaining").points)}
+            strong
+          />
+        }
+      >
+        <Line
+          label="% native veg. remaining in IBRA assoc."
+          hint={`${ibra.association}, from the location`}
+          value={pct(ibra.associationPct)}
+        />
+        <Line
+          label="% native veg. remaining in IBRA subregion"
+          hint={`${ibra.subregion}, from the location`}
+          value={pct(ibra.subregionPct)}
+        />
+      </ScoreGroup>
+
+      <ScoreGroup
+        title="Percent vegetation cover (5 km radius) (%)"
+        score={
+          <Line
+            label="Score"
+            hint={bandsText(COVER_BANDS)}
+            value={pts(result("cover").points)}
+            strong
+          />
+        }
+      >
+        <Line
+          label="Percent vegetation cover"
+          value={
+            set ? (
+              <InputNumber
+                aria-label="Percent vegetation cover (5 km radius)"
+                size="sm"
+                className="w-28"
+                minValue={0}
+                maxValue={100}
+                formatOptions={{
+                  style: "unit",
+                  unit: "percent",
+                  unitDisplay: "narrow",
+                }}
+                value={toNum(inputs.cover)}
+                onChange={(n) => set({ ...inputs, cover: fromNum(n) })}
+              />
+            ) : (
+              (inputs.cover ?? NP)
+            )
+          }
+        />
+      </ScoreGroup>
+
+      <ScoreGroup
+        title="% native veg. protected IBRA assoc."
+        score={
+          <Line
+            label="Score"
+            hint={bandsText(PROTECTED_BANDS)}
+            value={pts(result("protected").points)}
+            strong
+          />
+        }
+      >
+        <Line
+          label="% native veg. protected"
+          hint={`${ibra.association}, from the location`}
+          value={pct(ibra.protectedPct)}
+        />
+      </ScoreGroup>
+
+      <ScoreGroup
+        title="Block shape"
+        sub="Cleared perimeter:area (km/km²)"
+        score={
+          <Line
+            label="Score"
+            hint={bandsText(BLOCK_BANDS)}
+            value={pts(result("block").points)}
+            strong
+          />
+        }
+      >
+        <Line
+          label="Cleared perimeter (m)"
+          value={
+            set ? (
+              <InputNumber
+                aria-label="Cleared perimeter (m)"
+                size="sm"
+                className="w-28"
+                minValue={0}
+                value={toNum(inputs.perimeter)}
+                onChange={(n) => set({ ...inputs, perimeter: fromNum(n) })}
+              />
+            ) : (
+              (inputs.perimeter ?? NP)
+            )
+          }
+        />
+        <Line
+          label="Cleared perimeter to area ratio"
+          hint={
+            ctx.areaKm2
+              ? "The perimeter over the block's area, from its location"
+              : "Needs the block's location"
+          }
+          value={Number.isFinite(score.ratio) ? score.ratio.toFixed(2) : NP}
+        />
+      </ScoreGroup>
+
+      <ScoreGroup
+        title="Wetland or riparian habitat present"
+        sub="Swamp or wetland may be with or without a riparian zone"
+        score={
+          <Line label="Score" value={pts(result("wetland").points)} strong />
+        }
+      >
+        <Line
+          label={`Riparian zone present (${pts(RIPARIAN_POINTS)} pts)`}
+          value={yesNo("Riparian zone present", "riparian")}
+        />
+        <Line
+          label={`Swamp or wetland present (${pts(SWAMP_POINTS)} pts)`}
+          value={yesNo("Swamp or wetland present", "swamp")}
+        />
+      </ScoreGroup>
+
+      <div className="mt-2 rounded-lg border border-secondary bg-secondary px-4">
+        <Line
+          label={`${LANDSCAPE_SCORE_LABEL} (max ${LANDSCAPE_MAX})`}
+          hint={`Blocks will score a minimum landscape context score of ${LANDSCAPE_MIN}`}
+          value={pts(score.total)}
+          strong
+        />
+      </div>
+    </div>
   );
 }
 
-export const factorLabel = (id: FactorId) => FACTOR_TITLES[id].short;
+/**
+ * The score as a link that opens the scoresheet: editable where `onSave` is given, read only where it is not. `title` is
+ * the record the sheet belongs to, for the modal's description.
+ */
+export function LandscapeScoreLink({
+  inputs,
+  ctx,
+  title,
+  onSave,
+}: {
+  inputs: LandscapeInputs;
+  ctx: LandscapeContext;
+  title: string;
+  onSave?: (next: LandscapeInputs) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const [draft, setDraft] = useState<LandscapeInputs | null>(null);
+  const total = pts(scoreBlock(inputs, ctx).total);
+  return (
+    <>
+      <Button
+        color="link-color"
+        size="sm"
+        className="tabular-nums"
+        aria-label={`${LANDSCAPE_SCORE_LABEL} ${total}: open the scoresheet${onSave ? " to edit it" : ""}`}
+        onClick={() => (onSave ? setDraft(inputs) : setOpen(true))}
+      >
+        {total}
+      </Button>
+      {onSave ? (
+        <FormModal
+          size="lg"
+          isOpen={draft != null}
+          onOpenChange={(o) => !o && setDraft(null)}
+          title="Landscape context scores"
+          description={title}
+          submitLabel="Save changes"
+          submitIcon={Save01}
+          onSubmit={() => {
+            if (draft) onSave(draft);
+            setDraft(null);
+          }}
+        >
+          {draft && (
+            <LandscapeScoresheet inputs={draft} ctx={ctx} set={setDraft} />
+          )}
+        </FormModal>
+      ) : (
+        <ModalOverlay isDismissable isOpen={open} onOpenChange={setOpen}>
+          <Modal className="w-full sm:max-w-160">
+            <Dialog aria-label="Landscape context scores">
+              <ModalHeader
+                title="Landscape context scores"
+                description={title}
+              />
+              <div className="px-4 pt-5 pb-6 sm:px-6">
+                <LandscapeScoresheet inputs={inputs} ctx={ctx} />
+              </div>
+            </Dialog>
+          </Modal>
+        </ModalOverlay>
+      )}
+    </>
+  );
+}
 
 // ── Overstorey ──
 
@@ -217,12 +382,10 @@ export function overstoreyStats(o: OverstoreyData) {
 
 export function foliageCoverText(v: string): string {
   const n = num(v);
-  return Number.isFinite(n)
-    ? `${n}%, ${foliageCoverClass(n)}`
-    : "Not provided";
+  return Number.isFinite(n) ? `${n}%, ${foliageCoverClass(n)}` : "Not provided";
 }
 
-/** The worked-out averages, as a small grid of figures. */
+/** The worked-out averages, as a small grid of figures, under the readings they are worked out from. */
 export function OverstoreyStats({
   data,
   live,
@@ -249,7 +412,7 @@ export function OverstoreyStats({
       </dl>
       <p className="text-xs text-tertiary">
         {live
-          ? "Worked out from the readings below as you enter them."
+          ? "Worked out from the readings above as you enter them."
           : "Worked out from the readings."}
       </p>
     </div>

@@ -25,7 +25,7 @@ import {
 } from "@/app/pages/_shared/zustand-persist";
 import { trapLabels } from "./field-schema";
 import type { SurveyRecord } from "./survey-data";
-import { FACTOR_TITLES } from "./landscape";
+import { LANDSCAPE_SCORE_LABEL } from "./landscape";
 import { isBiodataAdmin, type UserRole } from "@/lib/user-role";
 import { useFeatureAccess } from "@/lib/use-feature-access";
 import type { DataLicence } from "@/app/pages/_shared/dataset-upload/dataset-data";
@@ -640,10 +640,9 @@ export function recordFieldKeys(record: SurveyRecord): Set<string> {
     (s.rows ?? [])
       .filter((r) => r.type !== "measurements")
       .forEach((r) => keys.add(`${s.id}:${r.label}`));
-    if (s.landscape)
-      s.landscape.factors.forEach((f) =>
-        keys.add(`${s.id}:${FACTOR_TITLES[f].short}`),
-      );
+    if (s.landscape) keys.add(`${s.id}:${LANDSCAPE_SCORE_LABEL}`);
+    if (s.siteScores)
+      ["Vegetation condition score", "Conservation significance score"].forEach((l) => keys.add(`${s.id}:${l}`));
     if (s.overstorey)
       ["Canopy type", "Projected foliage cover", "Readings"].forEach((l) =>
         keys.add(`${s.id}:${l}`),

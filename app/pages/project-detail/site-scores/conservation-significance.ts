@@ -35,7 +35,7 @@ export interface ConservationInputs {
 }
 
 // N18 and N28: the weighted total's band. Fauna scores half of flora at every band.
-const BANDS = [
+export const THREATENED_BANDS = [
   { label: "0", test: (v: number) => v < 1, flora: 0, fauna: 0 },
   { label: "under 2", test: (v: number) => v >= 1 && v < 2, flora: 0.04, fauna: 0.02 },
   { label: "2 to under 5", test: (v: number) => v >= 2 && v < 5, flora: 0.08, fauna: 0.04 },
@@ -46,7 +46,7 @@ const BANDS = [
 
 function threatened(counts: SpeciesCountsByStatus, kind: "flora" | "fauna") {
   const weighted = SPECIES_STATUSES.reduce((s, x) => s + counts[x.id] * x.weight, 0);
-  const band = BANDS.find((b) => b.test(weighted))!;
+  const band = THREATENED_BANDS.find((b) => b.test(weighted))!;
   return { counts, weighted, band: band.label, points: band[kind], max: kind === "flora" ? 0.2 : 0.1 };
 }
 

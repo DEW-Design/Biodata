@@ -34,9 +34,14 @@ function seedFor(project: SearchEvent, role: UserRole): ProjectSeed {
   return seed;
 }
 
+/** One project with its page's records, as the role sees them: for a screen that picks its own projects (Explore's Map and table view, the projects its search found). */
+export function reportBundleFor(project: SearchEvent, role: UserRole): ReportProject {
+  return { project, seq: PLATFORM_ORDER.indexOf(project.id) + 1, seed: seedFor(project, role) };
+}
+
 /** The projects a role can report on, in platform order, each with its page's records. */
 export function reportBundlesFor(role: UserRole): ReportProject[] {
-  return reportProjectsFor(role).map((project) => ({ project, seq: PLATFORM_ORDER.indexOf(project.id) + 1, seed: seedFor(project, role) }));
+  return reportProjectsFor(role).map((project) => reportBundleFor(project, role));
 }
 
 // ── Counting ──

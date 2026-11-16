@@ -37,7 +37,7 @@ import {
   TabPanel,
   Tabs as ContentTabs,
 } from "@/components/application/tabs/tabs";
-import { ArrowNarrowRight, Database01, Feather, Grid01, Key01, Paperclip, UploadCloud02 } from "@untitledui/icons";
+import { ArrowNarrowRight, Database01, Feather, Grid01, Paperclip, UploadCloud02 } from "@untitledui/icons";
 import { Button } from "@/components/base/buttons/button";
 import { BadgeWithDot } from "@/components/base/badges/badges";
 import { AlertFullWidth } from "@/components/application/alerts/alerts";
@@ -57,7 +57,6 @@ import { useCanReview } from "./field-notes";
 import { allFiles, recordFieldKeys, useFieldNotes } from "./field-notes-store";
 import { useFeatureAccess } from "@/lib/use-feature-access";
 import { useUserRole } from "@/lib/use-user-role";
-import { ProjectAccessTab } from "./project-access-view";
 import { useRoleHref } from "@/lib/use-role-href";
 import { navForRole, keyHref, type NavNode } from "@/lib/registered-user-nav";
 import { ProjectTab, formatDay } from "./project-tab";
@@ -71,9 +70,10 @@ import {
   type RecordsView,
 } from "./records-explorer";
 import type { FilterSelection } from "@/app/pages/_shared/list-filter";
+import { ownerName, ownersOf } from "@/app/pages/project-registration/types";
 
-type DetailTab = "project" | "records" | "species" | "datasets" | "artefacts" | "access";
-const isDetailTab = (v: string | null): v is DetailTab => v === "project" || v === "records" || v === "species" || v === "datasets" || v === "artefacts" || v === "access";
+type DetailTab = "project" | "records" | "species" | "datasets" | "artefacts";
+const isDetailTab = (v: string | null): v is DetailTab => v === "project" || v === "records" || v === "species" || v === "datasets" || v === "artefacts";
 
 function ProjectHero({ onUploadAttachments }: { onUploadAttachments: () => void }) {
   const { project, meta } = useEditStore();
@@ -101,9 +101,12 @@ function ProjectHero({ onUploadAttachments }: { onUploadAttachments: () => void 
         </BadgeWithDot>
       </HeroMeta>
       <HeroMeta label="Published by">
-        {d.dataOwnerType === "organisation"
-          ? d.dataOwnerOrgName
-          : `${d.dataOwnerContacts[0]?.firstName ?? ""} ${d.dataOwnerContacts[0]?.lastName ?? ""}`.trim()}
+        {/* Every data owner, by name (CONTRACTS 2.3: attributes of one thing take a comma). */}
+        {d.dataOwners
+          ? ownersOf(d).map(ownerName).filter(Boolean).join(", ")
+          : d.dataOwnerType === "organisation"
+            ? d.dataOwnerOrgName
+            : `${d.dataOwnerContacts[0]?.firstName ?? ""} ${d.dataOwnerContacts[0]?.lastName ?? ""}`.trim()}
       </HeroMeta>
     </RecordHero>
   );
@@ -408,7 +411,6 @@ function ProjectDetail({ basePath, notice }: ProjectDetailTemplateProps) {
                         icon={Paperclip}
                         badge={artefacts.length}
                       />
-                      <Tab id="access" label="Project access" icon={Key01} />
                     </TabList>
 
                     <TabPanel id="project" className="pt-6">
@@ -459,10 +461,8 @@ function ProjectDetail({ basePath, notice }: ProjectDetailTemplateProps) {
                         onUploadAttachments={() => setBulkAttach(true)}
                       />
                     </TabPanel>
-
-                    <TabPanel id="access" className="pt-6">
-                      <ProjectAccessTab />
-                    </TabPanel>
+                    {/* The Project access tab (25 Oct 2026) was archived on 16 Nov 2026: not a tranche 1 feature, not in the approved
+                        wireframes or the BRD. The idea stays in the project-access lab. */}
                   </ContentTabs>
                 </div>
               ) : (
